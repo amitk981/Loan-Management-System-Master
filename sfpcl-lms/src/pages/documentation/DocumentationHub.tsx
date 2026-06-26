@@ -515,15 +515,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
                   <StageStepper steps={documentationSteps} />
                 </div>
 
-                {/* Blocker bar */}
-                {!disbursementReady && (
-                  <div className="mt-4 flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-                    <AlertTriangle size={16} className="text-red-600 flex-shrink-0" />
-                    <p className="text-sm text-red-800 font-medium">
-                      Disbursement blocked: {pendingBlockers.length} documentation items pending. Primary blocker: {firstBlocker ? (firstBlocker.label.includes('PAN / Aadhaar') ? `${firstBlocker.label} verification` : firstBlocker.label) : 'Final sign-offs'}.
-                    </p>
-                  </div>
-                )}
+
                 {disbursementReady && (
                   <div className="mt-4 flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
                     <CheckCircle2 size={14} className="text-green-600" />

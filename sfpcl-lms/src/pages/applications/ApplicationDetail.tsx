@@ -193,11 +193,11 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
 
   return (
     <div className="p-6 space-y-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <button onClick={onBack} className="mt-1 text-slate-500 hover:text-slate-700">
-            <ChevronLeft size={20} />
-          </button>
+      <div className="flex items-start gap-3">
+        <button onClick={onBack} className="mt-1 text-slate-500 hover:text-slate-700">
+          <ChevronLeft size={20} />
+        </button>
+        <div className="flex-1 flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold text-slate-900 num">{app.applicationNumber}</h1>
@@ -220,19 +220,18 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
               <span>·</span>
               <span>Applied {new Date(app.applicationDate).toLocaleDateString('en-IN')}</span>
               {app.tatDaysRemaining !== undefined && app.tatDaysRemaining <= 1 && (
-                <span className="flex items-center gap-1 text-amber-600 font-medium">
-                  <Clock size={12} /> TAT: {app.tatDaysRemaining === 0 ? 'Overdue' : `${app.tatDaysRemaining}d`}
-                </span>
+                <>
+                  <span>·</span>
+                  <span className="flex items-center gap-1 text-amber-600 font-medium">
+                    <Clock size={12} /> TAT: {app.tatDaysRemaining === 0 ? 'Overdue' : `${app.tatDaysRemaining}d`}
+                  </span>
+                </>
               )}
             </div>
           </div>
-        </div>
-        <div className="flex flex-col items-end gap-1 text-sm text-slate-500">
-          <span>Owner: <span className="font-medium text-slate-900">{computedOwner}</span></span>
-          {nextAction && <span className="text-indigo-600 font-medium">Next action: {nextAction}</span>}
-          {app.sapCustomerCode && (
-            <span>SAP Code: <span className="num font-medium text-slate-900">{app.sapCustomerCode}</span> · Confirmed</span>
-          )}
+          <div className="flex flex-col items-end gap-1 text-sm text-slate-500">
+            <span>Owner: <span className="font-medium text-slate-900">{computedOwner}</span></span>
+          </div>
         </div>
       </div>
 
