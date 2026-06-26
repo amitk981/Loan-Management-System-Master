@@ -18,6 +18,7 @@ const SECURITY_TYPE_LABELS: Record<string, string> = {
 };
 
 const maskSensitive = (value: string, visible: boolean) => visible ? value : value.replace(/[A-Z0-9]/g, '•');
+const docComplete = (doc?: { status: string }) => !!doc && ['verified', 'complete', 'notarised'].includes(doc.status);
 
 interface DocumentationHubProps {
   onOpenApplication: (id: string) => void;
@@ -48,10 +49,50 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
   const appDocuments = documents.filter(d => d.applicationId === selected);
   const appSecurities = securities.filter(s => s.applicationId === selected);
   const isAuditor = currentUser.role === 'auditor';
-  const isReadOnly = isAuditor || !can('manage_documentation');
+  const isReadOnly = isAuditor;
   const sensitiveVisible = can('manage_documentation') || can('initiate_disbursement') || currentUser.role === 'company_secretary';
   const recoveryApproved = app?.isException && app?.riskRating === 'high';
   const signatureMismatch = app?.id === 'app004';
+  const byType = (type: string) => appDocuments.find(doc => doc.documentType === type);
+  const borrowerKycReady = docComplete(byType('pan')) && docComplete(byType('aadhaar'));
+  const nomineeKycReady = docComplete(byType('nominee_pan')) && docComplete(byType('nominee_aadhaar'));
+  const witnessKycReady = docComplete(byType('witness_pan')) && docComplete(byType('witness_aadhaar'));
+  const cancelledChequeReady = docComplete(byType('cancelled_cheque'));
+  const blankChequeReady = docComplete(byType('blank_cheque'));
+  const poaDoc = byType('poa');
+  const poaReady = docComplete(poaDoc) && poaDoc?.stampStatus === 'complete' && poaDoc?.notarisationStatus === 'complete';
+  const triPartyReady = !app?.sapCustomerCode || docComplete(byType('tri_party'));
+  const sh4Ready = app?.shareMode !== 'physical' || (docComplete(byType('sh4')) && appSecurities.some(sec => sec.securityType === 'sh4' && sec.status === 'held'));
+  const cdslReady = app?.shareMode !== 'demat' || appSecurities.some(sec => sec.securityType === 'cdsl_pledge' && sec.status === 'pledged');
+  const termSheetReady = docComplete(byType('term_sheet'));
+  const loanAgreementDoc = byType('loan_agreement');
+  const loanAgreementReady = docComplete(loanAgreementDoc) && loanAgreementDoc?.stampStatus === 'complete' && loanAgreementDoc?.notarisationStatus === 'complete';
+  const bankVerificationReady = !signatureMismatch || docComplete(byType('bank_verification_letter'));
+  const approvalProgressCount = [isCSApproved, isCreditManagerApproved, isSanctionFinalApproved, isFinanceSigned].filter(Boolean).length;
+  const approvalsComplete = isCSApproved && isCreditManagerApproved && isSanctionFinalApproved && isFinanceSigned;
+  const mandatoryChecklistClear = [
+    borrowerKycReady,
+    nomineeKycReady,
+    witnessKycReady,
+    cancelledChequeReady,
+    blankChequeReady,
+    poaReady,
+    triPartyReady,
+    sh4Ready,
+    cdslReady,
+    termSheetReady,
+    loanAgreementReady,
+    bankVerificationReady,
+  ].every(Boolean);
+  const legalReadyByScreen: Record<string, boolean> = {
+    S28: poaReady,
+    S29: triPartyReady,
+    S30: sh4Ready,
+    S31: cdslReady,
+    S32: termSheetReady,
+    S33: loanAgreementReady,
+    S34: bankVerificationReady,
+  };
   const legalActions = [
     { screen: 'S32', name: 'Term Sheet', owner: 'Compliance Team', status: 'pending_signature' },
     { screen: 'S33', name: 'Loan Agreement', owner: 'Compliance Team', status: 'pending_notarisation' },
@@ -62,9 +103,9 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
       : [{ screen: 'S31', name: 'CDSL Pledge', owner: 'Company Secretary', status: 'pledged' }]),
     { screen: 'S34', name: 'Bank Verification / Signature Mismatch', owner: 'Senior Manager Finance', status: 'verified' },
   ];
-  const completedLegalCount = completedLegalActions.length;
+  const isLegalActionComplete = (screen: string) => legalReadyByScreen[screen] || completedLegalActions.includes(screen);
+  const completedLegalCount = legalActions.filter(action => isLegalActionComplete(action.screen)).length;
   const legalActionsComplete = completedLegalCount === legalActions.length;
-  const approvalsComplete = isCSApproved && isCreditManagerApproved && isSanctionFinalApproved && isFinanceSigned;
 
   const toggleLegalAction = (screen: string) => {
     setCompletedLegalActions(actions =>
@@ -74,10 +115,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
     );
   };
 
-  const approvalProgressCount = [isCSApproved, isCreditManagerApproved, isSanctionFinalApproved, isFinanceSigned].filter(Boolean).length;
-  const mandatoryChecklistClear = appDocuments.every(doc =>
-    doc.requiredFlag !== 'mandatory' || ['verified', 'complete', 'notarised'].includes(doc.status)
-  );
+  const disbursementReady = mandatoryChecklistClear && legalActionsComplete && approvalsComplete;
 
   const sectionTabs = [
     { id: 'checklist', label: 'Checklist', badge: app ? undefined : 0 },
@@ -123,7 +161,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
   ];
 
   const legalEvidenceFields = (action: typeof legalActions[number]) => {
-    const complete = completedLegalActions.includes(action.screen);
+    const complete = isLegalActionComplete(action.screen);
     const status = (pending: string) => complete ? 'complete' : pending;
     const highValueRoute = (app?.requestedAmount || 0) > 500000;
 
@@ -204,8 +242,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
   const actionDisabled = (label: string, screen?: string) => {
     if (isReadOnly) return true;
     if (label.includes('Invocation')) return !recoveryApproved;
-    if (label === 'Mark Accepted' && screen === 'S31') return !completedLegalActions.includes('S31');
-    if (label === 'Mark Resolved' && screen === 'S34') return !completedLegalActions.includes('S34');
+    if (['Mark Accepted', 'Mark Resolved', 'Mark Complete'].includes(label) && screen) return !legalReadyByScreen[screen];
     return false;
   };
 
@@ -214,23 +251,23 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
       label: app?.shareMode === 'physical' ? 'SH-4 physical custody' : 'CDSL PRF / DP evidence',
       value: app?.shareMode === 'physical' ? 'Original SH-4 and share security custody' : 'Pledge request form, PSN and DP acceptance',
       status: app?.shareMode === 'physical'
-        ? (completedLegalActions.includes('S30') ? 'complete' : 'pending')
-        : (completedLegalActions.includes('S31') ? 'complete' : 'pending'),
+        ? (sh4Ready ? 'complete' : 'pending')
+        : (cdslReady ? 'complete' : 'pending'),
     },
     {
       label: 'Blank-dated cheque custody',
       value: 'Cheque number and custodian register reference',
-      status: appSecurities.some(sec => sec.securityType === 'blank_cheque') ? 'held' : 'pending',
+      status: blankChequeReady ? 'held' : 'pending',
     },
     {
       label: 'Future-share pledge obligation',
-      value: 'Additional shares to be pledged when issued',
-      status: 'pending',
+      value: app?.shareMode === 'demat' ? 'Additional shares to be pledged when issued' : 'Physical-share case',
+      status: app?.shareMode === 'demat' ? (cdslReady ? 'complete' : 'pending') : 'not_required',
     },
     {
       label: 'Witness PAN / Aadhaar',
       value: 'Witness identity proof verified for security execution',
-      status: 'pending_upload',
+      status: witnessKycReady ? 'complete' : 'pending_upload',
     },
   ];
 
@@ -299,9 +336,31 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
       label: 'Mandatory checklist clear or exception approved',
       status: mandatoryChecklistClear ? 'complete' : 'blocked',
     },
-    { label: 'Signature mismatch resolved', status: completedLegalActions.includes('S34') ? 'complete' : 'blocked' },
-    { label: 'Security document complete', status: completedLegalActions.includes(app?.shareMode === 'physical' ? 'S30' : 'S31') ? 'complete' : 'blocked' },
-    { label: 'Term Sheet and Loan Agreement signed', status: completedLegalActions.includes('S32') && completedLegalActions.includes('S33') ? 'complete' : 'blocked' },
+    { label: 'Signature mismatch resolved', status: bankVerificationReady ? 'complete' : 'blocked' },
+    { label: 'Security document complete', status: app?.shareMode === 'physical' ? (sh4Ready ? 'complete' : 'blocked') : (cdslReady ? 'complete' : 'blocked') },
+    { label: 'Term Sheet and Loan Agreement signed', status: termSheetReady && loanAgreementReady ? 'complete' : 'blocked' },
+    { label: 'Final sign-offs complete', status: approvalsComplete ? 'complete' : 'blocked' },
+  ];
+  const blockerQueue = [
+    { label: 'Borrower KYC', owner: 'Credit / Compliance', action: 'View evidence', ready: borrowerKycReady },
+    { label: 'Nominee KYC', owner: 'Credit / Compliance', action: 'View evidence', ready: nomineeKycReady },
+    { label: 'Witness KYC', owner: 'Compliance', action: 'Verify shareholder witness', ready: witnessKycReady },
+    { label: 'Cancelled cheque', owner: 'Compliance / Finance', action: 'Verify bank proof', ready: cancelledChequeReady },
+    { label: 'Blank cheque custody', owner: 'Company Secretary', action: 'Log custody', ready: blankChequeReady },
+    { label: 'Power of Attorney', owner: 'Company Secretary', action: poaDoc?.stampStatus === 'complete' ? 'Mark notarised' : 'Mark stamped', ready: poaReady },
+    { label: 'Tri-party Agreement', owner: 'Compliance / CS', action: 'Upload signed agreement', ready: triPartyReady },
+    { label: app?.shareMode === 'physical' ? 'SH-4 custody' : 'CDSL pledge', owner: 'Company Secretary', action: app?.shareMode === 'physical' ? 'Assign custody' : 'Enter PSN / acceptance', ready: app?.shareMode === 'physical' ? sh4Ready : cdslReady },
+    { label: 'Term Sheet', owner: 'Compliance', action: 'Route signatures', ready: termSheetReady },
+    { label: 'Loan Agreement', owner: 'Compliance / CS', action: 'Upload stamped agreement', ready: loanAgreementReady },
+    { label: 'Bank mismatch', owner: 'Credit / Compliance', action: 'Upload bank letter / declaration', ready: bankVerificationReady },
+    { label: 'Final sign-offs', owner: 'CS / Credit / Sanction / Finance', action: 'Submit to next approver', ready: approvalsComplete },
+  ];
+  const firstBlocker = blockerQueue.find(item => !item.ready);
+  const summaryCards = [
+    { label: 'Pending', value: firstBlocker?.label || 'None', status: firstBlocker ? 'blocked' : 'complete' },
+    { label: 'Owner', value: firstBlocker?.owner || 'Treasury', status: firstBlocker ? 'pending' : 'ready_for_payment' },
+    { label: 'Allowed action', value: firstBlocker?.action || 'Mark ready for SAP', status: firstBlocker ? 'pending' : 'complete' },
+    { label: 'Disbursement', value: disbursementReady ? 'Ready' : 'Blocked', status: disbursementReady ? 'ready_for_payment' : 'blocked' },
   ];
 
   return (
@@ -384,6 +443,17 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
                 <div className="mt-4">
                   <StageStepper steps={documentationSteps} />
                 </div>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+                  {summaryCards.map(item => (
+                    <div key={item.label} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{item.label}</p>
+                        <StatusBadge label={item.status} size="sm" />
+                      </div>
+                      <p className="mt-2 text-sm font-semibold text-slate-900">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="card p-0 overflow-hidden">
@@ -419,6 +489,8 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
                         readOnly={isAuditor}
                         canVerify={can('manage_documentation') || can('approve_credit_checklist')}
                         sensitiveVisible={sensitiveVisible}
+                        finalSignoffsComplete={approvalsComplete}
+                        finalSignoffProgress={approvalProgressCount}
                       />
                     </div>
                   )}
@@ -453,7 +525,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
                                   <p className="text-xs text-slate-400 mt-1">Owner: {action.owner}</p>
                                 </div>
                               </div>
-                              <StatusBadge label={completedLegalActions.includes(action.screen) ? 'complete' : action.status} size="sm" />
+                              <StatusBadge label={isLegalActionComplete(action.screen) ? 'complete' : action.status} size="sm" />
                             </div>
                             <div className="mt-3 border border-slate-200 rounded-lg bg-white divide-y divide-slate-100">
                               {legalEvidenceFields(action).map(field => (
@@ -481,11 +553,11 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
                             <div className="mt-3 flex justify-end">
                               <button
                                 onClick={() => toggleLegalAction(action.screen)}
-                                disabled={isReadOnly}
+                                disabled={isReadOnly || !legalReadyByScreen[action.screen] || isLegalActionComplete(action.screen)}
                                 className="btn-secondary text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                                title={isReadOnly ? 'Read-only role' : 'Local prototype verification'}
+                                title={isReadOnly ? 'Read-only role' : !legalReadyByScreen[action.screen] ? 'Prerequisites incomplete' : 'Mark verified'}
                               >
-                                {completedLegalActions.includes(action.screen) ? 'Reopen' : 'Mark Verified'}
+                                {isLegalActionComplete(action.screen) ? 'Verified' : 'Mark Verified'}
                               </button>
                             </div>
                           </div>
@@ -621,7 +693,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
                               Requires all legal actions and final sign-offs before moving to SAP / disbursement readiness.
                             </p>
                           </div>
-                          <StatusBadge label={isDocComplete ? 'complete' : approvalsComplete && legalActionsComplete ? 'ready_for_payment' : 'blocked'} size="sm" />
+                          <StatusBadge label={isDocComplete ? 'complete' : disbursementReady ? 'ready_for_payment' : 'blocked'} size="sm" />
                         </div>
                         {isDocComplete ? (
                           <div className="flex items-center gap-2 text-green-700 bg-green-50 rounded-lg p-3 mt-4">
@@ -656,9 +728,9 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
                                 {can('manage_documentation') ? (
                                   <button
                                     className="btn-primary disabled:opacity-50"
-                                    disabled={!legalActionsComplete || !approvalsComplete || !mandatoryChecklistClear}
+                                    disabled={!disbursementReady}
                                     onClick={() => setIsDocComplete(true)}
-                                    title={!legalActionsComplete || !approvalsComplete || !mandatoryChecklistClear ? 'Complete legal actions, mandatory checklist items and final approvals first' : undefined}
+                                    title={!disbursementReady ? 'Clear document, security, bank and final sign-off blockers first' : undefined}
                                   >
                                     <Lock size={16} className="mr-2" /> Mark Ready for SAP / Disbursement
                                   </button>
