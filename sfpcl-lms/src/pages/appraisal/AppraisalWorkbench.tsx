@@ -230,11 +230,16 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                     setRiskRating(a.isException ? 'high' : 'low');
                   }}
                   className={`w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors text-left ${
-                    selected === a.id ? 'bg-green-50 ring-1 ring-inset ring-green-200' : ''
+                    selected === a.id ? 'bg-green-50 border-l-4 border-l-green-500' : ''
                   }`}
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-slate-900 num text-sm">{a.applicationNumber}</div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <div className="font-semibold text-slate-900 num text-sm">{a.applicationNumber}</div>
+                      {a.isException && (
+                        <span className="text-[10px] bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded font-bold tracking-wide">EX</span>
+                      )}
+                    </div>
                     <div className="text-xs text-slate-500 truncate">{a.memberName}</div>
                     <div className="text-xs text-slate-400 num">{fmt(a.requestedAmount)}</div>
                   </div>
@@ -243,9 +248,6 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                       label={formatBadge(a.status)} 
                       size="sm" 
                     />
-                    {a.isException && (
-                      <span className="text-xs bg-violet-100 text-violet-700 px-1 py-0.5 rounded font-medium">EX</span>
-                    )}
                   </div>
                 </button>
               ))}
