@@ -51,6 +51,13 @@ const isDocVerified = (doc?: DocumentRecord) => !!doc && ['verified', 'complete'
 const verifiedTrail = (doc?: DocumentRecord) =>
   doc?.verifiedBy && doc.verifiedAt ? `${doc.verifiedBy} · ${new Date(doc.verifiedAt).toLocaleDateString('en-IN')}` : '';
 const securityByType = (items: SecurityInstrument[], type: string) => items.find(item => item.securityType === type);
+const shortStatus = (status: CompactState) => status.replace(/_/g, ' ');
+const executionSummary = (row: ChecklistRow) => [
+  row.signatureStatus !== 'not_required' ? `Sig ${shortStatus(row.signatureStatus)}` : null,
+  row.stampStatus !== 'not_required' ? `Stamp ${shortStatus(row.stampStatus)}` : null,
+  row.notaryStatus !== 'not_required' ? `Notary ${shortStatus(row.notaryStatus)}` : null,
+  row.verificationStatus !== 'not_required' ? `Verify ${shortStatus(row.verificationStatus)}` : null,
+].filter(Boolean);
 
 const DocumentChecklist: React.FC<DocumentChecklistProps> = ({
   applicationId,
@@ -298,56 +305,72 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({
         </div>
       )}
 
-      <div className="overflow-x-auto border border-slate-200 rounded-lg">
-        <table className="w-full text-sm">
+      <div className="border border-slate-200 rounded-lg overflow-hidden">
+        <table className="w-full text-sm table-fixed">
           <thead className="bg-slate-50">
             <tr>
-              <th className="table-header text-left">Document</th>
-              <th className="table-header text-left">Req.</th>
-              <th className="table-header text-left">Owner</th>
-              <th className="table-header text-left">Status</th>
-              <th className="table-header text-left">Sig.</th>
-              <th className="table-header text-left">Stamp</th>
-              <th className="table-header text-left">Notary</th>
-              <th className="table-header text-left">Verified</th>
-              <th className="table-header text-left">Evidence</th>
-              <th className="table-header text-left">Deficiency</th>
-              <th className="table-header text-left">Next</th>
+              <th className="table-header text-left w-[24%]">Document</th>
+              <th className="table-header text-left w-[17%]">Requirement</th>
+              <th className="table-header text-left w-[19%]">Readiness</th>
+              <th className="table-header text-left w-[28%]">Evidence / Deficiency</th>
+              <th className="table-header text-left w-[12%]">Next</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {rows.map(row => (
-              <tr key={row.id} className="hover:bg-slate-50">
-                <td className="table-cell font-medium text-slate-900 min-w-48">{row.name}</td>
-                <td className="table-cell"><StatusBadge label={row.required} size="sm" /></td>
-                <td className="table-cell text-xs text-slate-600 min-w-32">{row.owner}</td>
-                <td className="table-cell"><StatusBadge label={row.status} size="sm" /></td>
-                <td className="table-cell"><StatusBadge label={row.signatureStatus} size="sm" /></td>
-                <td className="table-cell"><StatusBadge label={row.stampStatus} size="sm" /></td>
-                <td className="table-cell"><StatusBadge label={row.notaryStatus} size="sm" /></td>
-                <td className="table-cell"><StatusBadge label={row.verificationStatus} size="sm" /></td>
-                <td className="table-cell text-xs text-slate-500 min-w-44">{row.evidence}</td>
-                <td className="table-cell text-xs text-slate-500 min-w-44">{row.deficiency}</td>
-                <td className="table-cell">
-                  <div className="flex items-center gap-1">
-                    <button
-                      className="text-xs px-2 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-50"
-                      disabled={readOnly}
-                      title={readOnly ? 'Read-only role' : row.nextAction}
-                    >
-                      {row.nextAction === 'View' ? <Eye size={12} /> : row.nextAction.includes('Upload') ? <Upload size={12} /> : row.nextAction}
-                    </button>
-                    <button
-                      className="text-xs px-2 py-1 bg-blue-50 border border-blue-200 rounded text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={markVerifiedDisabled(row)}
-                      title={markVerifiedDisabled(row) ? 'Prerequisites or role approval required' : 'Mark verified'}
-                    >
-                      Verify
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {rows.map(row => {
+              const details = executionSummary(row);
+              const canMarkVerified = !markVerifiedDisabled(row);
+
+              return (
+                <tr key={row.id} className="hover:bg-slate-50 align-top">
+                  <td className="table-cell">
+                    <div className="font-medium text-slate-900">{row.name}</div>
+                    {row.prerequisitesComplete && (
+                      <div className="text-xs text-green-700 mt-1">Ready for gate</div>
+                    )}
+                  </td>
+                  <td className="table-cell">
+                    <StatusBadge label={row.required} size="sm" />
+                    <div className="text-xs text-slate-500 mt-1">{row.owner}</div>
+                  </td>
+                  <td className="table-cell">
+                    <StatusBadge label={row.status} size="sm" />
+                    <div className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      {details.length > 0 ? details.join(' · ') : 'No execution controls'}
+                    </div>
+                  </td>
+                  <td className="table-cell">
+                    <div className="text-xs text-slate-600 truncate" title={row.evidence}>{row.evidence}</div>
+                    {row.deficiency !== '-' && (
+                      <div className={row.prerequisitesComplete ? 'text-xs text-slate-400 mt-1 truncate' : 'text-xs text-amber-700 mt-1 truncate'} title={row.deficiency}>
+                        {row.deficiency}
+                      </div>
+                    )}
+                  </td>
+                  <td className="table-cell">
+                    <div className="flex flex-col items-start gap-1">
+                      {row.nextAction !== 'None' && (
+                        <button
+                          className="text-xs px-2 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                          disabled={readOnly}
+                          title={readOnly ? 'Read-only role' : row.nextAction}
+                        >
+                          {row.nextAction === 'View' ? <span className="inline-flex items-center gap-1"><Eye size={12} /> View</span> : row.nextAction.includes('Upload') ? <span className="inline-flex items-center gap-1"><Upload size={12} /> Upload</span> : row.nextAction}
+                        </button>
+                      )}
+                      {canMarkVerified && (
+                        <button
+                          className="text-xs px-2 py-1 bg-blue-50 border border-blue-200 rounded text-blue-700 hover:bg-blue-100"
+                          title="Mark verified"
+                        >
+                          Verify
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

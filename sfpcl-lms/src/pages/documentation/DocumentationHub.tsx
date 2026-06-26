@@ -152,13 +152,24 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
     { id: 'final', label: 'Final Lock', state: stepState(4, isDocComplete) },
   ];
 
-  const queueStatusItems = (loanApp: typeof docQueue[number]) => [
-    { label: 'Mode', value: loanApp.shareMode },
-    { label: 'PoA', value: loanApp.documentationStatus === 'complete' ? 'complete' : 'pending' },
-    { label: 'SH-4/CDSL', value: loanApp.shareMode === 'physical' ? 'sh4_required' : 'cdsl_required' },
-    { label: 'Bank', value: loanApp.bankAccount ? 'verified' : 'pending' },
-    { label: 'Owner', value: loanApp.currentOwner },
-  ];
+  const queueSummary = (loanApp: typeof docQueue[number]) => {
+    const docsForApp = documents.filter(doc => doc.applicationId === loanApp.id);
+    const securitiesForApp = securities.filter(sec => sec.applicationId === loanApp.id);
+    const qDoc = (type: string) => docsForApp.find(doc => doc.documentType === type);
+    const qSigMismatch = loanApp.id === 'app004';
+    const checks = [
+      { label: 'Witness KYC', owner: 'Compliance', ready: docComplete(qDoc('witness_pan')) && docComplete(qDoc('witness_aadhaar')) },
+      { label: 'PoA stamp/notary', owner: 'Company Secretary', ready: docComplete(qDoc('poa')) && qDoc('poa')?.stampStatus === 'complete' && qDoc('poa')?.notarisationStatus === 'complete' },
+      { label: loanApp.shareMode === 'physical' ? 'SH-4 custody' : 'CDSL pledge', owner: 'Company Secretary', ready: loanApp.shareMode === 'physical'
+        ? docComplete(qDoc('sh4')) && securitiesForApp.some(sec => sec.securityType === 'sh4' && sec.status === 'held')
+        : securitiesForApp.some(sec => sec.securityType === 'cdsl_pledge' && sec.status === 'pledged') },
+      { label: 'Loan Agreement', owner: 'Compliance / CS', ready: docComplete(qDoc('loan_agreement')) && qDoc('loan_agreement')?.stampStatus === 'complete' && qDoc('loan_agreement')?.notarisationStatus === 'complete' },
+      { label: 'Bank mismatch', owner: 'Credit / Compliance', ready: !qSigMismatch || docComplete(qDoc('bank_verification_letter')) },
+      { label: 'Final sign-offs', owner: 'CS / Credit / Sanction', ready: false },
+    ];
+    const blocker = checks.find(check => !check.ready);
+    return blocker || { label: 'Ready for sign-off', owner: loanApp.currentOwner, ready: true };
+  };
 
   const legalEvidenceFields = (action: typeof legalActions[number]) => {
     const complete = isLegalActionComplete(action.screen);
@@ -378,42 +389,45 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
           <p className="text-slate-600 font-semibold">All documentation is complete</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="card p-0 overflow-hidden lg:col-span-1">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6">
+          <div className="card p-0 overflow-hidden">
             <div className="p-4 bg-slate-50 border-b border-slate-200">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Doc Queue ({docQueue.length})</p>
             </div>
-            <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto">
-              {docQueue.map(a => (
-                <button
-                  key={a.id}
-                  onClick={() => {
-                    setSelected(a.id);
-                    setActiveSection('checklist');
-                  }}
-                  className={`w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors text-left ${selected === a.id ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}
-                >
-                  <FolderOpen size={16} className="text-amber-500 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-slate-900 num text-sm">{a.applicationNumber}</div>
-                    <div className="text-xs text-slate-500 truncate">{a.memberName}</div>
-                    <div className="text-xs text-slate-400 num">{fmt(a.requestedAmount)}</div>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {queueStatusItems(a).map(item => (
-                        <span key={item.label} className="text-[11px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
-                          {item.label}: {item.value}
-                        </span>
-                      ))}
+            <div className="divide-y divide-slate-100">
+              {docQueue.map(a => {
+                const queue = queueSummary(a);
+
+                return (
+                  <button
+                    key={a.id}
+                    onClick={() => {
+                      setSelected(a.id);
+                      setActiveSection('checklist');
+                    }}
+                    className={`w-full flex items-start gap-3 p-4 hover:bg-slate-50 transition-colors text-left ${selected === a.id ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}
+                  >
+                    <FolderOpen size={16} className="text-amber-500 flex-shrink-0 mt-1" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-semibold text-slate-900 num text-sm truncate">{a.applicationNumber}</div>
+                        <StatusBadge label={queue.ready ? 'ready_for_payment' : a.documentationStatus} size="sm" />
+                      </div>
+                      <div className="text-xs text-slate-500 truncate mt-0.5">{a.memberName} · {fmt(a.requestedAmount)}</div>
+                      <div className="mt-2 text-xs text-slate-600">
+                        <span className="font-medium text-slate-700">{queue.label}</span>
+                        <span className="text-slate-400"> · {queue.owner}</span>
+                      </div>
+                      <div className="mt-1 text-xs text-slate-400 capitalize">{a.shareMode} shares</div>
                     </div>
-                  </div>
-                  <StatusBadge label={a.documentationStatus} size="sm" />
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {app && (
-            <div className="lg:col-span-2 space-y-4 min-w-0">
+            <div className="space-y-4 min-w-0">
               <div className="card">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
@@ -443,14 +457,12 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
                 <div className="mt-4">
                   <StageStepper steps={documentationSteps} />
                 </div>
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-wrap items-center gap-x-5 gap-y-2">
                   {summaryCards.map(item => (
-                    <div key={item.label} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{item.label}</p>
-                        <StatusBadge label={item.status} size="sm" />
-                      </div>
-                      <p className="mt-2 text-sm font-semibold text-slate-900">{item.value}</p>
+                    <div key={item.label} className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{item.label}</span>
+                      <StatusBadge label={item.status} size="sm" />
+                      <span className="text-sm font-semibold text-slate-900 truncate">{item.value}</span>
                     </div>
                   ))}
                 </div>
