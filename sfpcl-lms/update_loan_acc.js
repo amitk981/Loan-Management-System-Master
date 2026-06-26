@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ArrowRight, FileText, CheckCircle2, Banknote, Calendar, Check, AlertOctagon } from 'lucide-react';
+const fs = require('fs');
+const path = require('path');
+
+const code = `import React, { useState } from 'react';
+import { ChevronLeft, ArrowRight } from 'lucide-react';
 import Tabs from '../../components/ui/Tabs';
 import StatusBadge from '../../components/ui/StatusBadge';
 import AlertBanner from '../../components/ui/AlertBanner';
+import RepaymentLedger from '../../components/loan/RepaymentLedger';
+import AuditTimeline from '../../components/loan/AuditTimeline';
 import { loanAccounts, loanApplications } from '../../data/mockData';
 import { useRole } from '../../contexts/RoleContext';
 
@@ -11,13 +16,6 @@ const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
 const formatDate = (dateStr: string | undefined) => {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-};
-
-const formatTime = (dateStr: string | undefined) => {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) +
-    ' at ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 };
 
 const DPD_BUCKET_LABELS: Record<string, string> = {
@@ -33,7 +31,7 @@ const mapStatus = (status: string) => {
   if (status === 'overdue') return 'Overdue';
   if (status === 'active') return 'Active';
   if (status === 'closed') return 'Closed';
-  return status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  return status.replace(/_/g, ' ').replace(/\\b\\w/g, c => c.toUpperCase());
 };
 
 interface LoanAccount360Props {
@@ -47,6 +45,8 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
   const { currentUser } = useRole();
   const role = currentUser.role;
 
+  // Basic permission check - only roles that should see loan accounts can enter this screen. 
+  // Normally handled by App.tsx router, but adding defensive check here.
   const isAllowed = ['admin', 'credit_manager', 'senior_manager_finance', 'deputy_manager_finance', 'accounts_team', 'cfo', 'auditor', 'sales', 'field_officer', 'compliance_team'].includes(role);
 
   if (!isAllowed) {
@@ -110,7 +110,7 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
                        />
                     </td>
                     <td className="table-cell">
-                      <span className={`font-semibold ${isClosed ? 'text-slate-400' : l.dpd > 90 ? 'text-red-600' : l.dpd > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                      <span className={\`font-semibold \${isClosed ? 'text-slate-400' : l.dpd > 90 ? 'text-red-600' : l.dpd > 0 ? 'text-amber-600' : 'text-green-600'}\`}>
                         {isClosed ? '—' : l.dpd}
                       </span>
                       <div className="text-xs text-slate-400">{dpdLabel}</div>
@@ -137,7 +137,7 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
 
   const TABS = [
     { id: 'summary', label: 'Summary' },
-    { id: 'ledger', label: 'Loan Ledger' },
+    { id: 'repayment', label: 'Repayment Ledger' },
     { id: 'schedule', label: 'Repayment Schedule' },
     { id: 'audit', label: 'Audit Trail' },
   ];
@@ -183,14 +183,14 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
       {loan.status === 'overdue' && (
         <AlertBanner
           type="error"
-          title={`Loan Overdue — DPD: ${loan.dpd} days`}
-          message={`Overdue since ${formatDate(loan.repaymentDueDate)}. Please initiate recovery communication.`}
+          title={\`Loan Overdue — DPD: \${loan.dpd} days\`}
+          message={\`Overdue since \${formatDate(loan.repaymentDueDate)}. Please initiate recovery communication.\`}
         />
       )}
       {loan.status === 'grace_period' && loan.gracePeriodEnd && (
         <AlertBanner
           type="warning"
-          title={`Grace Period Active — ends ${formatDate(loan.gracePeriodEnd)}`}
+          title={\`Grace Period Active — ends \${formatDate(loan.gracePeriodEnd)}\`}
           message="Repayment expected before grace period expiry to avoid default classification."
         />
       )}
@@ -199,22 +199,22 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: 'Sanctioned', value: fmt(loan.sanctionedAmount), color: 'slate' },
-          { label: 'Outstanding Principal', value: fmt(loan.outstandingPrincipal), color: loan.outstandingPrincipal > 0 ? 'amber' : 'green' },
-          { label: 'Accrued Interest', value: fmt(loan.accruedInterest), color: loan.accruedInterest > 0 ? 'amber' : 'slate' },
-          { label: 'Interest Rate', value: `${loan.interestRate}% p.a.`, color: 'slate' },
+          { label: 'Principal O/S', value: fmt(loan.outstandingPrincipal), color: loan.outstandingPrincipal > 0 ? 'amber' : 'green' },
+          { label: 'Interest O/S', value: fmt(loan.accruedInterest), color: loan.accruedInterest > 0 ? 'amber' : 'slate' },
+          { label: 'Interest Rate', value: \`\${loan.interestRate}% p.a.\`, color: 'slate' },
           { label: 'DPD', value: isClosed ? '—' : String(loan.dpd), color: isClosed ? 'slate' : loan.dpd > 90 ? 'red' : loan.dpd > 0 ? 'amber' : 'green' },
         ].map(({ label, value, color }) => (
-          <div key={label} className={`rounded-lg border p-3 ${
+          <div key={label} className={\`rounded-lg border p-3 \${
             color === 'red' ? 'bg-red-50 border-red-200' :
             color === 'amber' ? 'bg-amber-50 border-amber-200' :
             color === 'green' ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'
-          }`}>
+          }\`}>
             <p className="text-xs text-slate-500 font-medium">{label}</p>
-            <p className={`text-lg font-bold num mt-0.5 ${
+            <p className={\`text-lg font-bold num mt-0.5 \${
               color === 'red' ? 'text-red-900' :
               color === 'amber' ? 'text-amber-900' :
               color === 'green' ? 'text-green-900' : 'text-slate-900'
-            }`}>{value}</p>
+            }\`}>{value}</p>
           </div>
         ))}
       </div>
@@ -230,14 +230,11 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
               { label: 'Loan Type', value: loan.loanType === 'short_term' ? 'Short Term' : 'Long Term' },
               { label: 'Disbursement Date', value: formatDate(loan.disbursementDate) },
               { label: 'Repayment Due', value: formatDate(loan.repaymentDueDate) },
-              { label: 'Scheduled Instalment', value: fmt(monthlyEMI) },
+              { label: 'Monthly EMI (indicative)', value: fmt(monthlyEMI) },
               { label: 'Last Repayment', value: loan.lastRepaymentDate ? formatDate(loan.lastRepaymentDate) : 'None' },
               { label: 'Last Amount', value: loan.lastRepaymentAmount ? fmt(loan.lastRepaymentAmount) : '—' },
               { label: 'SAP Customer Code', value: loan.sapCustomerCode || 'Pending' },
               { label: 'DPD Bucket', value: dpdLabelDetail },
-              { label: 'Current Owner', value: 'Accounts / Credit Manager' },
-              { label: 'Next Action', value: 'No repayment due' },
-              { label: 'Monitoring Status', value: 'Current' },
               ...(loan.gracePeriodEnd ? [{ label: 'Grace Period End', value: formatDate(loan.gracePeriodEnd) }] : []),
             ].map(({ label, value }) => (
               <div key={label} className="bg-slate-50 rounded-lg p-3">
@@ -258,57 +255,19 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
           )}
         </div>
 
-        {/* Tab 1: Loan Ledger */}
-        <div className="card p-0 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50">
-                <tr className="border-b border-slate-200">
-                  <th className="table-header text-left">Date</th>
-                  <th className="table-header text-left">Type</th>
-                  <th className="table-header text-left">Reference</th>
-                  <th className="table-header text-right">Debit</th>
-                  <th className="table-header text-right">Credit</th>
-                  <th className="table-header text-right">Principal Bal.</th>
-                  <th className="table-header text-right">Interest Bal.</th>
-                  <th className="table-header text-left">SAP Status</th>
-                  <th className="table-header text-left">Remarks</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="table-cell">{formatDate(loan.disbursementDate)}</td>
-                  <td className="table-cell font-medium text-slate-900">Disbursement</td>
-                  <td className="table-cell font-mono text-xs text-slate-500">{loan.sapCustomerCode || 'SAP-230035'}</td>
-                  <td className="table-cell text-right num font-semibold">{fmt(loan.disbursedAmount)}</td>
-                  <td className="table-cell text-right text-slate-400">—</td>
-                  <td className="table-cell text-right num text-slate-700">{fmt(loan.disbursedAmount)}</td>
-                  <td className="table-cell text-right num text-slate-700">₹0</td>
-                  <td className="table-cell"><StatusBadge label="Posted" size="sm" /></td>
-                  <td className="table-cell text-slate-500">Disbursement recorded</td>
-                </tr>
-                {loan.accruedInterest > 0 && (
-                  <tr className="hover:bg-slate-50 transition-colors bg-slate-50/50">
-                    <td className="table-cell">{formatDate(new Date(new Date(loan.disbursementDate).getTime() + 30*24*60*60*1000).toISOString())}</td>
-                    <td className="table-cell font-medium text-slate-900">Interest Accrual</td>
-                    <td className="table-cell font-mono text-xs text-slate-500">—</td>
-                    <td className="table-cell text-right num font-semibold">{fmt(loan.accruedInterest)}</td>
-                    <td className="table-cell text-right text-slate-400">—</td>
-                    <td className="table-cell text-right num text-slate-700">{fmt(loan.disbursedAmount)}</td>
-                    <td className="table-cell text-right num text-slate-700">{fmt(loan.accruedInterest)}</td>
-                    <td className="table-cell"><StatusBadge label="Pending" size="sm" type="warning" /></td>
-                    <td className="table-cell text-slate-500">Monthly interest accrued</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+        {/* Tab 1: Repayment Ledger */}
+        <div className="card">
+          <RepaymentLedger
+            loanAccountId={loan.id}
+            outstandingPrincipal={loan.outstandingPrincipal}
+            disbursedAmount={loan.disbursedAmount}
+          />
         </div>
 
         {/* Tab 2: Schedule */}
         <div className="card">
           <h3 className="text-sm font-semibold text-slate-700 mb-3">Indicative Repayment Schedule</h3>
-          <p className="text-xs text-slate-400 mb-4">Based on configured rate and term sheet schedule.</p>
+          <p className="text-xs text-slate-400 mb-4">Based on flat interest rate @ {loan.interestRate}% p.a. · Monthly instalments</p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -318,10 +277,8 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
                   <th className="table-header text-right">Opening Principal</th>
                   <th className="table-header text-right">Principal</th>
                   <th className="table-header text-right">Interest</th>
-                  <th className="table-header text-right">Total Due</th>
-                  <th className="table-header text-right">Amount Received</th>
+                  <th className="table-header text-right">EMI</th>
                   <th className="table-header text-right">Closing Balance</th>
-                  <th className="table-header text-left">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -342,9 +299,7 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
                       <td className="table-cell text-right num text-green-700">{fmt(principal)}</td>
                       <td className="table-cell text-right num text-amber-700">{fmt(interest)}</td>
                       <td className="table-cell text-right num font-semibold">{fmt(emi)}</td>
-                      <td className="table-cell text-right text-slate-400">—</td>
                       <td className="table-cell text-right num">{fmt(close)}</td>
-                      <td className="table-cell"><StatusBadge label="Pending" size="sm" type="slate" /></td>
                     </tr>
                   );
                 })}
@@ -355,33 +310,7 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
 
         {/* Tab 3: Audit Trail */}
         <div className="card">
-          <div className="space-y-0 p-2">
-            {[
-              { label: 'Loan account created', role: 'System', date: loan.disbursementDate, icon: <CheckCircle2 size={14} />, color: 'bg-blue-100 text-blue-700' },
-              { label: 'SAP customer code confirmed', role: 'Accounts', date: loan.disbursementDate, icon: <Check size={14} />, color: 'bg-green-100 text-green-700' },
-              { label: 'Disbursement recorded', role: 'Senior Manager – Finance', date: loan.disbursementDate, icon: <Banknote size={14} />, color: 'bg-green-100 text-green-700' },
-              { label: 'Repayment schedule generated', role: 'System', date: loan.disbursementDate, icon: <Calendar size={14} />, color: 'bg-slate-100 text-slate-700' },
-              { label: 'Interest accrued', role: 'System', date: new Date(new Date(loan.disbursementDate).getTime() + 30*24*60*60*1000).toISOString(), icon: <FileText size={14} />, color: 'bg-amber-100 text-amber-700' }
-            ].map((event, idx, arr) => (
-              <div key={idx} className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${event.color}`}>
-                    {event.icon}
-                  </div>
-                  {idx !== arr.length - 1 && <div className="w-0.5 flex-1 bg-slate-200 my-1" />}
-                </div>
-                <div className={`flex-1 ${idx !== arr.length - 1 ? 'pb-4' : ''}`}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <span className="text-sm font-semibold text-slate-900">{event.label}</span>
-                    </div>
-                    <span className="text-xs text-slate-400 flex-shrink-0">{formatTime(event.date)}</span>
-                  </div>
-                  <div className="text-xs text-slate-500 mt-0.5">{event.role}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <AuditTimeline entityId={loan.applicationId} />
         </div>
       </Tabs>
     </div>
@@ -389,3 +318,7 @@ const LoanAccount360: React.FC<LoanAccount360Props> = ({ loanAccountId, onSelect
 };
 
 export default LoanAccount360;
+`;
+
+fs.writeFileSync(path.join(__dirname, 'src/pages/loan-accounts/LoanAccount360.tsx'), code);
+console.log('Update successful');

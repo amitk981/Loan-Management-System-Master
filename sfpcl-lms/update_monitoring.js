@@ -1,4 +1,7 @@
-import React from 'react';
+const fs = require('fs');
+const path = require('path');
+
+const code = `import React from 'react';
 import { AlertTriangle, TrendingDown, Bell, FileBarChart2, Eye, Calendar, Phone } from 'lucide-react';
 import StatusBadge from '../../components/ui/StatusBadge';
 import AlertBanner from '../../components/ui/AlertBanner';
@@ -70,8 +73,8 @@ const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({ onOpenLoan })
       {overdue.length > 0 && (
         <AlertBanner
           type="error"
-          title={`${overdue.length} newly overdue loan${overdue.length > 1 ? 's' : ''} needs review`}
-          message={overdue.map(l => `${l.accountNumber} · DPD ${l.dpd}`).join(', ')}
+          title={\`\${overdue.length} newly overdue loan\${overdue.length > 1 ? 's' : ''} needs review\`}
+          message={overdue.map(l => \`\${l.accountNumber} · DPD \${l.dpd}\`).join(', ')}
         />
       )}
 
@@ -82,22 +85,22 @@ const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({ onOpenLoan })
           {displayBuckets.map(b => (
             <div
               key={b.key}
-              className={`rounded-lg border p-4 text-center ${
+              className={\`rounded-lg border p-4 text-center \${
                 b.color === 'green' ? 'bg-green-50 border-green-200' :
                 b.color === 'amber' ? 'bg-amber-50 border-amber-200' :
                 b.color === 'orange' ? 'bg-orange-50 border-orange-200' : 'bg-red-50 border-red-200'
-              }`}
+              }\`}
             >
-              <div className={`text-2xl font-bold num ${
+              <div className={\`text-2xl font-bold num \${
                 b.color === 'green' ? 'text-green-900' :
                 b.color === 'amber' ? 'text-amber-900' :
                 b.color === 'orange' ? 'text-orange-900' : 'text-red-900'
-              }`}>{b.loans.length}</div>
-              <div className={`text-xs font-medium mt-0.5 ${
+              }\`}>{b.loans.length}</div>
+              <div className={\`text-xs font-medium mt-0.5 \${
                 b.color === 'green' ? 'text-green-700' :
                 b.color === 'amber' ? 'text-amber-700' :
                 b.color === 'orange' ? 'text-orange-700' : 'text-red-700'
-              }`}>{b.label}</div>
+              }\`}>{b.label}</div>
               {b.amount > 0 && (
                 <div className="text-xs text-slate-500 mt-1 num">{fmt(b.amount)}</div>
               )}
@@ -142,10 +145,10 @@ const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({ onOpenLoan })
                       <td className="table-cell text-right num font-semibold text-amber-700">{fmt(l.outstandingPrincipal)}</td>
                       <td className="table-cell text-right num text-red-700">{fmt(l.accruedInterest)}</td>
                       <td className="table-cell">
-                        <StatusBadge label={l.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} size="sm" type={l.status.includes('recovery') ? 'error' : l.status === 'grace_period' ? 'warning' : 'slate'}/>
+                        <StatusBadge label={l.status.replace(/_/g, ' ').replace(/\\b\\w/g, c => c.toUpperCase())} size="sm" type={l.status.includes('recovery') ? 'error' : l.status === 'grace_period' ? 'warning' : 'slate'}/>
                       </td>
                       <td className="table-cell text-right">
-                        <span className={`font-bold num ${l.dpd > 90 ? 'text-red-600' : 'text-amber-600'}`}>{l.dpd}</span>
+                        <span className={\`font-bold num \${l.dpd > 90 ? 'text-red-600' : 'text-amber-600'}\`}>{l.dpd}</span>
                       </td>
                       <td className="table-cell text-sm text-slate-600">{formatDate(l.repaymentDueDate)}</td>
                       <td className="table-cell">
@@ -216,3 +219,7 @@ const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({ onOpenLoan })
 };
 
 export default MonitoringDashboard;
+`;
+
+fs.writeFileSync(path.join(__dirname, 'src/pages/monitoring/MonitoringDashboard.tsx'), code);
+console.log('Update successful');

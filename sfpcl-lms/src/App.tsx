@@ -20,10 +20,13 @@ import AppraisalWorkbench from './pages/appraisal/AppraisalWorkbench';
 import SanctionWorkbench from './pages/sanction/SanctionWorkbench';
 import DocumentationHub from './pages/documentation/DocumentationHub';
 import DisbursementHub from './pages/disbursement/DisbursementHub';
+import PaymentAuthorisationHub from './pages/disbursement/PaymentAuthorisationHub';
 import LoanAccount360 from './pages/loan-accounts/LoanAccount360';
 import RepaymentsHub from './pages/repayments/RepaymentsHub';
 import MonitoringDashboard from './pages/monitoring/MonitoringDashboard';
 import ComplianceDashboard from './pages/compliance/ComplianceDashboard';
+import GrievancesHub from './pages/compliance/GrievancesHub';
+import AuditArchiveHub from './pages/compliance/AuditArchiveHub';
 import RegistersHub from './pages/registers/RegistersHub';
 import TaskInbox from './pages/tasks/TaskInbox';
 import DefaultRecoveryHub from './pages/defaults/DefaultRecoveryHub';
@@ -33,6 +36,7 @@ import SettingsHub from './pages/settings/SettingsHub';
 import ReportsMIS from './pages/reports/ReportsMIS';
 import GlobalSearchResults from './pages/search/GlobalSearchResults';
 import NotificationsCenter from './pages/notifications/NotificationsCenter';
+import MyProfile from './pages/profile/MyProfile';
 
 export type Page =
   | 'dashboard' | 'tasks'
@@ -47,7 +51,7 @@ export type Page =
   | 'defaults' | 'closure'
   | 'compliance' | 'registers'
   | 'reports' | 'grievances'
-  | 'audit' | 'settings'
+  | 'audit' | 'settings' | 'profile'
   | 'borrower';
 
 type AuthView = 'staff' | 'memberLogin' | 'memberActivation' | 'memberForgot';
@@ -217,8 +221,9 @@ const AppInner: React.FC = () => {
       case 'documentation':
         return <DocumentationHub onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} />;
       case 'disbursement':
-      case 'cfc':
         return <DisbursementHub onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} />;
+      case 'cfc':
+        return <PaymentAuthorisationHub onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} />;
       case 'interest':
         return <InterestManagement />;
       case 'loan-accounts':
@@ -242,13 +247,17 @@ const AppInner: React.FC = () => {
       case 'compliance':
         return <ComplianceDashboard />;
       case 'registers':
-      case 'audit':
-      case 'grievances':
         return <RegistersHub />;
+      case 'audit':
+        return <AuditArchiveHub />;
+      case 'grievances':
+        return <GrievancesHub />;
       case 'reports':
         return <ReportsMIS />;
       case 'settings':
         return <SettingsHub />;
+      case 'profile':
+        return <MyProfile />;
       default:
         return <Dashboard onNavigate={navigate} />;
     }

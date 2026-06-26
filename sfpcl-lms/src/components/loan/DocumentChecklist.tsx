@@ -321,7 +321,7 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({
               <th className="table-header text-left w-[28%]">Evidence / Deficiency</th>
               <th className="table-header text-left w-[12%]">
                 <span title="Immediate allowed action. Later steps stay locked until prerequisites pass." className="border-b border-dotted border-slate-400 cursor-help">
-                  Next step
+                  Action
                 </span>
               </th>
             </tr>

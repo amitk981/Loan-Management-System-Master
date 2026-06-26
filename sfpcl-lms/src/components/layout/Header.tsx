@@ -192,8 +192,8 @@ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLog
                 <div className="text-xs text-slate-400">{currentUser.email}</div>
               </div>
               <div className="p-2 space-y-0.5">
-                <button className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">My Profile</button>
-                <button className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">Settings</button>
+                <button onClick={() => { onNavigate?.('profile'); closeAll(); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">My Profile</button>
+                <button onClick={() => { onNavigate?.('settings'); closeAll(); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">Settings</button>
                 <div className="h-px bg-slate-100 my-1" />
                 <button
                   onClick={onLogout}

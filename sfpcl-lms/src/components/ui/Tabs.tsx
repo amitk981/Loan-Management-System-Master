@@ -35,12 +35,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, children, defaultTab, activeIndex, on
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="border-b border-slate-200 overflow-x-auto">
-        <div className="flex gap-0 min-w-max">
+        <div className="flex gap-0 min-w-max pr-6">
           {tabs.map((tab, idx) => (
             <button
               key={tab.id}
               onClick={() => handleClick(idx)}
-              className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 ${
                 active === tab.id
                   ? 'border-green-600 text-green-700'
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'

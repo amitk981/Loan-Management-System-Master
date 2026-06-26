@@ -145,10 +145,10 @@ export const loanApplications: LoanApplication[] = [
     memberId: 'm004', memberName: 'Vijay Deshmukh', memberType: 'individual',
     nomineeId: 'nom004', requestedAmount: 200000, purpose: 'crop_production',
     loanType: 'short_term', tenure: 12, sharesHeld: 2000, shareMode: 'physical',
-    landAreaAcres: 2.0, status: 'sanctioned', documentationStatus: 'in_progress',
-    disbursementStatus: 'pending_documentation', eligibleAmount: 200000,
+    landAreaAcres: 2.0, status: 'sanctioned', documentationStatus: 'complete',
+    disbursementStatus: 'ready_for_payment', eligibleAmount: 200000,
     shareholdingLimit: 240000, landBasedLimit: 40000, isException: false,
-    currentOwner: 'Compliance Team', currentOwnerRole: 'compliance_team',
+    currentOwner: 'Senior Manager – Finance', currentOwnerRole: 'senior_manager_finance',
     submittedAt: '2026-05-20T09:00:00Z', referenceGeneratedAt: '2026-05-20T11:00:00Z',
     sanctionedAt: '2026-05-25T14:00:00Z', sanctionDecision: 'approved',
     riskRating: 'low', sapCustomerCode: 'SAP-240039',
@@ -158,10 +158,11 @@ export const loanApplications: LoanApplication[] = [
     memberId: 'm002', memberName: 'Sunita Bhosale', memberType: 'individual',
     nomineeId: 'nom002', requestedAmount: 120000, purpose: 'crop_production',
     loanType: 'short_term', tenure: 12, sharesHeld: 300, shareMode: 'demat',
-    landAreaAcres: 3.2, status: 'sanctioned', documentationStatus: 'complete',
-    disbursementStatus: 'pending_disbursement', eligibleAmount: 120000,
-    shareholdingLimit: 360000, landBasedLimit: 64000, isException: false,
-    currentOwner: 'Compliance Team', currentOwnerRole: 'compliance_team',
+    landAreaAcres: 3.2, status: 'sanctioned', documentationStatus: 'in_progress',
+    disbursementStatus: 'pending_documentation', eligibleAmount: 64000,
+    shareholdingLimit: 360000, landBasedLimit: 64000, isException: true,
+    exceptionReason: 'Requested amount ₹1,20,000 exceeds eligible limit ₹64,000 by ₹56,000.',
+    currentOwner: 'Compliance Team / Company Secretary', currentOwnerRole: 'compliance_team',
     submittedAt: '2026-04-15T10:00:00Z', referenceGeneratedAt: '2026-04-15T12:00:00Z',
     sanctionedAt: '2026-04-20T10:00:00Z', sanctionDecision: 'approved',
     riskRating: 'low', sapCustomerCode: 'SAP-230035',
@@ -209,13 +210,13 @@ export const loanApplications: LoanApplication[] = [
     memberId: 'm009', memberName: 'Manoj Jadhav', memberType: 'individual',
     nomineeId: 'nom009', requestedAmount: 300000, purpose: 'allied_activity',
     loanType: 'long_term', tenure: 24, sharesHeld: 800, shareMode: 'demat',
-    landAreaAcres: 8.0, status: 'sanctioned', documentationStatus: 'pending_signature',
-    disbursementStatus: 'pending_documentation', eligibleAmount: 300000,
+    landAreaAcres: 8.0, status: 'sanctioned', documentationStatus: 'complete',
+    disbursementStatus: 'pending_disbursement', eligibleAmount: 300000,
     shareholdingLimit: 960000, landBasedLimit: 160000, isException: false,
-    currentOwner: 'Company Secretary', currentOwnerRole: 'company_secretary',
+    currentOwner: 'Senior Manager – Finance', currentOwnerRole: 'senior_manager_finance',
     submittedAt: '2026-05-10T10:00:00Z', referenceGeneratedAt: '2026-05-10T12:00:00Z',
     sanctionedAt: '2026-05-15T14:00:00Z', sanctionDecision: 'approved',
-    riskRating: 'medium', sapCustomerCode: 'SAP-240038',
+    riskRating: 'medium',
   },
   {
     id: 'app010', applicationNumber: 'LO00000030', applicationDate: '2026-03-05',
@@ -366,29 +367,41 @@ export const securities: SecurityInstrument[] = [
 ];
 
 export const auditEvents: AuditEvent[] = [
-  { id: 'ae001', entityType: 'application', entityId: 'app001', eventType: 'Application Submitted', timestamp: '2026-06-10T09:30:00Z', actorName: 'Credit Assessment Team', actorRole: 'deputy_manager_finance', newState: 'submitted' },
-  { id: 'ae002', entityType: 'application', entityId: 'app001', eventType: 'Reference Number Generated', timestamp: '2026-06-10T11:00:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'submitted', newState: 'reference_generated', comment: 'Application complete. Ref LO00000042 issued.' },
-  { id: 'ae003', entityType: 'application', entityId: 'app001', eventType: 'Appraisal Note Prepared', timestamp: '2026-06-11T10:00:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'appraisal_pending', newState: 'credit_review' },
-  { id: 'ae004', entityType: 'application', entityId: 'app001', eventType: 'Submitted to Sanction Committee', timestamp: '2026-06-11T15:30:00Z', actorName: 'Priya Kulkarni', actorRole: 'credit_manager', previousState: 'credit_review', newState: 'pending_sanction' },
+  { id: 'ae001', entityType: 'application', entityId: 'LO00000042', eventType: 'Application Submitted', timestamp: '2026-06-10T09:30:00Z', actorName: 'Vijay Mane', actorRole: 'field_officer', newState: 'submitted' },
+  { id: 'ae002', entityType: 'application', entityId: 'LO00000042', eventType: 'Reference Number Generated', timestamp: '2026-06-10T11:00:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'submitted', newState: 'reference_generated', comment: 'Application complete. Ref LO00000042 issued.' },
+  { id: 'ae003', entityType: 'application', entityId: 'LO00000042', eventType: 'Appraisal Note Prepared', timestamp: '2026-06-11T10:00:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'appraisal_pending', newState: 'credit_review' },
+  { id: 'ae004', entityType: 'application', entityId: 'LO00000042', eventType: 'Submitted to Sanction Committee', timestamp: '2026-06-11T15:30:00Z', actorName: 'Anil Deshmukh', actorRole: 'credit_manager', previousState: 'credit_review', newState: 'pending_sanction' },
   
-  // Custom audit trail for app004
-  { id: 'ae005', entityType: 'application', entityId: 'app004', eventType: 'Sanction Approved', timestamp: '2026-05-25T19:30:00Z', actorName: 'Rajesh Sharma', actorRole: 'admin', previousState: 'pending_sanction', newState: 'sanctioned', comment: 'Sanction approved. Evidence: Sanction note SN-2026-039.' },
-  { id: 'ae_app004_2', entityType: 'application', entityId: 'app004', eventType: 'Document Pack Generated', timestamp: '2026-05-25T19:45:00Z', actorName: 'Meera Joshi', actorRole: 'admin', comment: 'Document pack generated. Evidence: Document pack DP-2026-039.' },
-  { id: 'ae_app004_3', entityType: 'application', entityId: 'app004', eventType: 'Signature Requested', timestamp: '2026-05-26T10:15:00Z', actorName: 'Meera Joshi', actorRole: 'admin', comment: 'PoA signature requested. Evidence: Signature request SR-2026-014.' },
-  { id: 'ae_app004_4', entityType: 'application', entityId: 'app004', eventType: 'Custody Logged', timestamp: '2026-05-26T11:20:00Z', actorName: 'Company Secretary', actorRole: 'admin', comment: 'SH-4 custody logged. Evidence: Custody ref ••••0042.' },
-  { id: 'ae_app004_5', entityType: 'application', entityId: 'app004', eventType: 'Disbursement Blocked', timestamp: '2026-05-26T12:05:00Z', actorName: 'System', actorRole: 'admin', reason: 'Witness PAN / Aadhaar verification pending.' },
-  { id: 'ae_app004_6', entityType: 'application', entityId: 'app004', eventType: 'Correction Requested', timestamp: '2026-05-26T12:20:00Z', actorName: 'Meera Joshi', actorRole: 'admin', reason: 'Missing witness verification.' },
+  // Custom audit trail for LO00000039
+  { id: 'ae005', entityType: 'application', entityId: 'LO00000039', eventType: 'Sanction Approved', timestamp: '2026-05-25T19:30:00Z', actorName: 'Rajesh Sharma', actorRole: 'sanction_committee', previousState: 'pending_sanction', newState: 'sanctioned', comment: 'Sanction approved. Evidence: Sanction note SN-2026-039.' },
+  { id: 'ae_app004_2', entityType: 'application', entityId: 'LO00000039', eventType: 'Document Pack Generated', timestamp: '2026-05-25T19:45:00Z', actorName: 'Meera Joshi', actorRole: 'compliance_team', comment: 'Document pack generated. Evidence: Document pack DP-2026-039.' },
+  { id: 'ae_app004_3', entityType: 'application', entityId: 'LO00000039', eventType: 'Signature Requested', timestamp: '2026-05-26T10:15:00Z', actorName: 'Meera Joshi', actorRole: 'compliance_team', comment: 'PoA signature requested. Evidence: Signature request SR-2026-014.' },
+  { id: 'ae_app004_4', entityType: 'application', entityId: 'LO00000039', eventType: 'Custody Logged', timestamp: '2026-05-26T11:20:00Z', actorName: 'Anita Kulkarni', actorRole: 'company_secretary', comment: 'SH-4 custody logged. Evidence: Custody ref ••••0042.' },
+  { id: 'ae_app004_5', entityType: 'application', entityId: 'LO00000039', eventType: 'Disbursement Blocked', timestamp: '2026-05-26T12:05:00Z', actorName: 'System', actorRole: 'system', reason: 'Witness PAN / Aadhaar verification pending.' },
+  { id: 'ae_app004_6', entityType: 'application', entityId: 'LO00000039', eventType: 'Correction Requested', timestamp: '2026-05-26T12:20:00Z', actorName: 'Meera Joshi', actorRole: 'compliance_team', reason: 'Missing witness verification.' },
 
-  { id: 'ae006', entityType: 'application', entityId: 'app010', eventType: 'Disbursement Initiated', timestamp: '2026-03-12T10:00:00Z', actorName: 'Deepak Rao', actorRole: 'senior_manager_finance', previousState: 'ready_for_payment', newState: 'pending_cfc_approval' },
-  { id: 'ae007', entityType: 'loan_account', entityId: 'ln004', eventType: 'Default Recovery Action Initiated', timestamp: '2026-06-01T10:00:00Z', actorName: 'Rajesh Sharma', actorRole: 'sanction_committee', previousState: 'default_review', newState: 'recovery_in_progress' },
+  // Custom audit trail for LO00000035 (Sunita Bhosale)
+  { id: 'ae_app005_1', entityType: 'application', entityId: 'LO00000035', eventType: 'Application Submitted', timestamp: '2026-04-15T10:00:00Z', actorName: 'Sunita Bhosale', actorRole: 'borrower', newState: 'submitted' },
+  { id: 'ae_app005_2', entityType: 'application', entityId: 'LO00000035', eventType: 'Reference Generated', timestamp: '2026-04-15T12:00:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'submitted', newState: 'reference_generated', comment: 'Completeness passed.' },
+  { id: 'ae_app005_3', entityType: 'application', entityId: 'LO00000035', eventType: 'Appraisal Prepared', timestamp: '2026-04-17T11:00:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'reference_generated', newState: 'appraisal_pending' },
+  { id: 'ae_app005_4', entityType: 'application', entityId: 'LO00000035', eventType: 'Credit Manager Reviewed', timestamp: '2026-04-18T14:00:00Z', actorName: 'Anil Deshmukh', actorRole: 'credit_manager', previousState: 'appraisal_pending', newState: 'pending_sanction' },
+  { id: 'ae_app005_5', entityType: 'application', entityId: 'LO00000035', eventType: 'Exception Approved', timestamp: '2026-04-20T09:45:00Z', actorName: 'Suresh Nair', actorRole: 'cfo', comment: 'Approved for limit override.' },
+  { id: 'ae_app005_6', entityType: 'application', entityId: 'LO00000035', eventType: 'Sanction Approved', timestamp: '2026-04-20T10:00:00Z', actorName: 'Sanction Committee', actorRole: 'sanction_committee', previousState: 'pending_sanction', newState: 'sanctioned' },
+  { id: 'ae_app005_7', entityType: 'application', entityId: 'LO00000035', eventType: 'SAP Code Confirmed', timestamp: '2026-04-21T09:30:00Z', actorName: 'System', actorRole: 'system', comment: 'SAP-230035 synced.' },
+  { id: 'ae_app005_8', entityType: 'application', entityId: 'LO00000035', eventType: 'CDSL Pledge Recorded', timestamp: '2026-04-22T11:00:00Z', actorName: 'Anita Kulkarni', actorRole: 'company_secretary' },
+  { id: 'ae_app005_9', entityType: 'application', entityId: 'LO00000035', eventType: 'Documentation Blocker Raised', timestamp: '2026-04-23T10:00:00Z', actorName: 'Meera Joshi', actorRole: 'compliance_team', reason: 'Borrower PAN / Aadhaar verification pending.' },
+  { id: 'ae_app005_10', entityType: 'application', entityId: 'LO00000035', eventType: 'Disbursement Blocked', timestamp: '2026-04-23T10:05:00Z', actorName: 'System', actorRole: 'system', reason: 'Blocked due to documentation.' },
+
+  { id: 'ae006', entityType: 'application', entityId: 'APP-2026-001', eventType: 'Disbursement Initiated', timestamp: '2026-03-12T10:00:00Z', actorName: 'Deepak Rao', actorRole: 'senior_manager_finance', previousState: 'ready_for_payment', newState: 'pending_cfc_approval' },
+  { id: 'ae007', entityType: 'loan_account', entityId: 'LN-2026-0044', eventType: 'Default Recovery Action Initiated', timestamp: '2026-06-01T10:00:00Z', actorName: 'Rajesh Sharma', actorRole: 'sanction_committee', previousState: 'default_review', newState: 'recovery_in_progress' },
 ];
 
 export const complianceRecords: ComplianceRecord[] = [
   { id: 'c001', area: 'Producer Company Lending — Members Only', frequency: 'ongoing', owner: 'Company Secretary', lastReviewDate: '2026-06-01', nextDueDate: '2026-07-01', status: 'compliant', evidenceCount: 42 },
   { id: 'c002', area: 'Section 186 Loan Limits', frequency: 'quarterly', owner: 'CFO', lastReviewDate: '2026-04-01', nextDueDate: '2026-07-01', status: 'warning', evidenceCount: 3 },
   { id: 'c003', area: 'NBFC Principal Business Test', frequency: 'quarterly', owner: 'CFO', lastReviewDate: '2026-04-01', nextDueDate: '2026-07-01', status: 'compliant', evidenceCount: 2 },
-  { id: 'c004', area: 'KYC / AML Verification', frequency: 'ongoing', owner: 'Credit Head', lastReviewDate: '2026-06-15', nextDueDate: '2026-08-15', status: 'warning', evidenceCount: 8 },
-  { id: 'c005', area: 'Re-KYC (2-year cycle)', frequency: 'ongoing', owner: 'Credit Head', lastReviewDate: '2026-03-01', nextDueDate: '2026-09-01', status: 'warning', evidenceCount: 3 },
+  { id: 'c004', area: 'KYC / AML Verification', frequency: 'ongoing', owner: 'Compliance Team', lastReviewDate: '2026-06-15', nextDueDate: '2026-08-15', status: 'warning', evidenceCount: 8 },
+  { id: 'c005', area: 'Re-KYC (2-year cycle)', frequency: 'ongoing', owner: 'Compliance Team', lastReviewDate: '2026-03-01', nextDueDate: '2026-09-01', status: 'warning', evidenceCount: 3 },
   { id: 'c006', area: 'Stamp Duty & Notarisation', frequency: 'ongoing', owner: 'Company Secretary', lastReviewDate: '2026-06-10', nextDueDate: '2026-06-25', status: 'pending', evidenceCount: 1 },
   { id: 'c007', area: 'Money-Lending Law Exemption Review', frequency: 'annual', owner: 'Company Secretary', lastReviewDate: '2026-01-15', nextDueDate: '2027-01-15', status: 'compliant', evidenceCount: 1 },
   { id: 'c008', area: 'Record Retention & Archive (8 years)', frequency: 'annual', owner: 'Company Secretary', lastReviewDate: '2026-03-31', nextDueDate: '2027-03-31', status: 'compliant', evidenceCount: 38 },
@@ -408,3 +421,11 @@ export const dashboardStats: DashboardStats = {
   openExceptions: 2,
   reKycDue: 3,
 };
+
+export const grievances = [
+  { id: 'GR-2026-001', borrower: 'Ramesh Patil', loanRef: 'LO00000042', category: 'Recovery Harassment', receivedChannel: 'Call Center', receivedDate: '2026-06-20', owner: 'Company Secretary', tat: '6 days', status: 'overdue', lastUpdate: '2026-06-25', description: 'Borrower complaining about abusive language during recovery call.', borrowerInformed: false, borrowerAck: 'Pending', targetResolution: '2026-06-24' },
+  { id: 'GR-2026-002', borrower: 'Sunita Bhosale', loanRef: 'LO00000035', category: 'Interest Calculation', receivedChannel: 'Email', receivedDate: '2026-06-22', owner: 'Credit Manager', tat: '4 days', status: 'under_review', lastUpdate: '2026-06-24', description: 'Dispute regarding penal interest applied on May EMI.', borrowerInformed: false, borrowerAck: 'Pending', targetResolution: '2026-06-26' },
+  { id: 'GR-2026-003', borrower: 'Vijay Deshmukh', loanRef: 'LO00000047', category: 'Disbursement Delay', receivedChannel: 'Portal', receivedDate: '2026-06-25', owner: 'Senior Manager – Finance', tat: '1 day', status: 'new', lastUpdate: '2026-06-25', description: 'Loan sanctioned but disbursement not received in bank account.', borrowerInformed: false, borrowerAck: 'Pending', targetResolution: '2026-06-29' },
+  { id: 'GR-2026-004', borrower: 'Kisan FPC Ltd', loanRef: 'LO00000028', category: 'NOC Issuance', receivedChannel: 'Branch', receivedDate: '2026-06-10', owner: 'Company Secretary', tat: '16 days', status: 'closed', lastUpdate: '2026-06-15', description: 'Requesting NOC after loan closure, delay in processing.', borrowerInformed: true, borrowerAck: 'Received', targetResolution: '2026-06-14', resolutionDate: '2026-06-14', resolutionSummary: 'NOC issued manually and handed over.' },
+];
+

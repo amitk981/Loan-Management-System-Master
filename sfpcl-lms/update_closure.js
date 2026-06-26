@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+const fs = require('fs');
+const path = require('path');
+
+const code = `import React, { useState } from 'react';
 import {
   CheckCircle2, FileText, Download, Archive, Shield,
   AlertTriangle, BadgeCheck, Clock, ChevronRight, Unlock, Upload, Send, FileCheck
@@ -82,24 +85,24 @@ const LoanClosureHub: React.FC = () => {
 
   const completedCount = closureChecklist.filter(c => c.done).length;
   const publicationImpact = [
-    { label: 'Borrower communication', status: nocSent ? 'sent' : nocComplete ? 'ready' : 'not_ready', note: nocSent ? 'Communication sent to borrower.' : 'Send after NOC is issued.' },
-    { label: 'NOC Register', status: nocComplete ? 'issued' : 'pending', note: nocComplete ? 'NOC reference and issue date are visible in the register.' : 'Waiting for NOC issue.' },
-    { label: 'Security Register', status: securityComplete ? 'returned' : (cdslUnpledgeStart || sh4Returned || chequeReturned || poaReturned) ? 'return_pending' : 'held_in_custody', note: securityComplete ? 'SH-4, cheque, PoA and CDSL release states are complete.' : 'Security return pending.' },
-    { label: 'Archive Register', status: archiveComplete ? 'archived' : 'pending', note: archiveComplete ? 'Archive ID and retention date are staged.' : 'Archive after closure checklist completion.' },
-    { label: 'Audit Trail', status: archiveComplete ? 'recorded' : 'in_progress', note: 'Closure events are recorded automatically.' },
+    { label: 'Borrower Communication', status: nocComplete ? 'published' : nocGenerated ? 'ready_to_publish' : 'not_ready', note: nocGenerated ? 'Closure/NOC status is staged for the borrower portal.' : 'Publish after NOC generation.' },
+    { label: 'NOC Register', status: nocComplete ? 'updated' : 'pending', note: nocComplete ? 'NOC reference and issue date are visible in the register preview.' : 'Waiting for NOC issue.' },
+    { label: 'Security Register', status: securityComplete ? 'returned' : 'held', note: securityComplete ? 'SH-4, cheque, PoA and CDSL release states are complete.' : 'Security remains in custody.' },
+    { label: 'Archive Register', status: archiveComplete ? 'archived' : loanMarkedClosed ? 'ready' : 'pending', note: archiveComplete ? 'Archive ID and retention date are staged.' : 'Archive after closure checklist completion.' },
+    { label: 'Audit Trail', status: 'updated', note: 'Local prototype events show closure, NOC, security return and archive actions.' },
   ];
 
   const isEligible = selectedLoan.outstanding === 0;
 
   const getLoanStatus = (loan: ClosureLoan) => {
-    if (loan.outstanding > 0) return 'Blocked';
-    if (loan.status === 'closed' && archiveComplete && nocComplete && securityComplete) return 'Closed';
+    if (loan.outstanding > 0) return 'Not Eligible';
+    if (loan.status === 'closed') return 'Closed';
     if (archiveCompleted) return 'Archived';
     if (loanMarkedClosed) return 'Ready to Archive';
     if (!securityComplete) return 'Security Return Pending';
     if (!nocComplete) return 'NOC Pending';
-    if (loan.status === 'fully_repaid') return 'Closure in progress';
-    return 'Fully repaid';
+    if (loan.status === 'fully_repaid') return 'Closure In Progress';
+    return 'Fully Repaid';
   };
 
   const currentLoanStatus = getLoanStatus(selectedLoan);
@@ -120,21 +123,21 @@ const LoanClosureHub: React.FC = () => {
               if (loan.outstanding === 0) setSelectedLoan(loan);
             }}
             disabled={loan.outstanding > 0}
-            className={`text-left border rounded-xl p-4 transition-all ${
+            className={\`text-left border rounded-xl p-4 transition-all \${
               selectedLoan.id === loan.id
                 ? 'border-green-300 bg-green-50'
                 : loan.outstanding > 0
                 ? 'border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed'
                 : 'border-slate-200 bg-white hover:border-slate-300'
-            }`}
+            }\`}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-mono font-medium text-slate-600">{loan.loanNo}</span>
-              <StatusBadge label={loan.outstanding > 0 ? 'Blocked' : (loan.status === 'closed' ? 'Closed' : 'Closure in progress')} size="sm" type={loan.outstanding > 0 ? 'slate' : 'default'} />
+              <StatusBadge label={loan.outstanding > 0 ? 'Not Eligible' : (loan.status === 'closed' ? 'Closed' : 'Closure In Progress')} size="sm" type={loan.outstanding > 0 ? 'slate' : 'default'} />
             </div>
             <div className="font-medium text-slate-900 text-sm">{loan.borrower}</div>
             <div className="text-xs text-slate-500 mt-1">
-              {loan.outstanding === 0 ? 'Fully repaid' : `₹${loan.outstanding.toLocaleString('en-IN')} outstanding`}
+              {loan.outstanding === 0 ? 'Fully repaid' : \`₹\${loan.outstanding.toLocaleString('en-IN')} outstanding\`}
             </div>
           </button>
         ))}
@@ -147,11 +150,11 @@ const LoanClosureHub: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              className={\`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors \${
                 activeTab === tab.id
                   ? 'border-green-600 text-green-700'
                   : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
+              }\`}
             >
               {tab.label}
             </button>
@@ -162,8 +165,8 @@ const LoanClosureHub: React.FC = () => {
       <div className="bg-white border border-slate-200 rounded-xl p-4 mb-6">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div>
-            <h3 className="text-sm font-semibold text-slate-900">Closure status</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Current readiness for NOC, security return, archive and audit.</p>
+            <h3 className="text-sm font-semibold text-slate-900">Closure Status</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Current status across NOC, security return, archive and audit.</p>
           </div>
           <StatusBadge label={currentLoanStatus} size="sm" />
         </div>
@@ -198,18 +201,18 @@ const LoanClosureHub: React.FC = () => {
             <div className="w-full bg-slate-100 rounded-full h-2 mb-5">
               <div
                 className="bg-green-500 h-2 rounded-full transition-all"
-                style={{ width: `${(completedCount / closureChecklist.length) * 100}%` }}
+                style={{ width: \`\${(completedCount / closureChecklist.length) * 100}%\` }}
               />
             </div>
 
             <div className="space-y-2">
               {closureChecklist.map((item, i) => (
-                <div key={i} className={`flex items-center gap-3 p-3 rounded-lg ${item.done ? 'bg-green-50' : 'bg-slate-50'}`}>
+                <div key={i} className={\`flex items-center gap-3 p-3 rounded-lg \${item.done ? 'bg-green-50' : 'bg-slate-50'}\`}>
                   {item.done
                     ? <CheckCircle2 size={16} className="text-green-600 flex-shrink-0" />
                     : <Clock size={16} className="text-slate-300 flex-shrink-0" />
                   }
-                  <span className={`text-sm ${item.done ? 'text-green-800' : 'text-slate-500'}`}>{item.item}</span>
+                  <span className={\`text-sm \${item.done ? 'text-green-800' : 'text-slate-500'}\`}>{item.item}</span>
                 </div>
               ))}
             </div>
@@ -246,7 +249,7 @@ const LoanClosureHub: React.FC = () => {
             {selectedLoan.outstanding > 0 && (
               <div className="mt-4 flex items-center gap-2 text-amber-700 bg-amber-50 rounded-xl p-4 text-sm">
                 <AlertTriangle size={16} className="flex-shrink-0" />
-                Closure blocked: ₹{selectedLoan.outstanding.toLocaleString('en-IN')} outstanding.
+                Closure cannot proceed — outstanding balance of ₹{selectedLoan.outstanding.toLocaleString('en-IN')} remains.
               </div>
             )}
           </div>
@@ -281,7 +284,7 @@ const LoanClosureHub: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4">
                     {[
                       { label: 'NOC Date', type: 'date', defaultValue: new Date().toISOString().split('T')[0] },
-                      { label: 'Reference Number', type: 'text', defaultValue: 'NOC-' + new Date().getFullYear() + '-042' },
+                      { label: 'Reference Number', type: 'text', defaultValue: 'NOC-2025-042' },
                     ].map(f => (
                       <div key={f.label}>
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">{f.label}</label>
@@ -295,14 +298,14 @@ const LoanClosureHub: React.FC = () => {
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1.5">Authorised Signatory</label>
                       <select className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500">
-                        <option>Company Secretary</option>
-                        <option>Authorised closure signatory</option>
+                        <option>Director - Operations</option>
+                        <option>CFO</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1.5">Delivery Mode</label>
                       <select className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500">
-                        <option>Email + portal</option>
+                        <option>Email & Portal (MP20)</option>
                         <option>Registered Post</option>
                         <option>In-Person Collection</option>
                       </select>
@@ -353,7 +356,7 @@ const LoanClosureHub: React.FC = () => {
                       <CheckCircle2 size={20} className="text-green-600 flex-shrink-0" />
                       <div>
                         <div className="font-medium text-green-800 text-sm">NOC generated, issued, and acknowledged</div>
-                        <div className="text-xs text-green-600 mt-0.5">Ref: NOC-2025-042 · Borrower communication updated</div>
+                        <div className="text-xs text-green-600 mt-0.5">Ref: NOC-2025-042 · Borrower Communication (MP20) updated</div>
                       </div>
                       <button className="ml-auto flex items-center gap-1.5 text-sm text-green-700 font-medium hover:underline flex-shrink-0">
                         <Download size={14} />
@@ -387,10 +390,10 @@ const LoanClosureHub: React.FC = () => {
               <>
                 <div className="space-y-3 mb-5">
                   {[
-                    { doc: 'SH-4 Transfer Form',   securityType: 'Original held; return pending',    status: securityComplete || sh4Returned ? 'Returned' : 'Held in custody', onReturn: () => setSh4Returned(true) },
-                    { doc: 'Blank Cheque',         securityType: 'Original held; return pending', status: securityComplete || chequeReturned ? 'Returned' : 'Held in custody', onReturn: () => setChequeReturned(true) },
-                    { doc: 'CDSL Pledge Release',  securityType: 'Pledge active; unpledge pending',      status: securityComplete || cdslUnpledged ? 'Unpledged' : cdslUnpledgeStart ? 'Unpledge pending' : 'Pledge active', onReturn: () => cdslUnpledgeStart ? setCdslUnpledged(true) : setCdslUnpledgeStart(true), actionText: cdslUnpledgeStart ? 'Mark Unpledge Complete' : 'Start Unpledge' },
-                    { doc: 'Power of Attorney',    securityType: 'Cancellation / return pending',      status: securityComplete || poaReturned ? 'Cancelled' : 'Held in custody', onReturn: () => setPoaReturned(true) },
+                    { doc: 'SH-4 Transfer Form',   securityType: 'Physical share transfer',    status: securityComplete || sh4Returned ? 'Returned' : 'Held in Custody', onReturn: () => setSh4Returned(true) },
+                    { doc: 'Blank Cheque',         securityType: 'Cheque returned to borrower', status: securityComplete || chequeReturned ? 'Returned' : 'Held in Custody', onReturn: () => setChequeReturned(true) },
+                    { doc: 'CDSL Pledge Release',  securityType: 'Demat shares unpledged',      status: securityComplete || cdslUnpledged ? 'Unpledged' : cdslUnpledgeStart ? 'Unpledge Pending' : 'Pledge Active', onReturn: () => cdslUnpledgeStart ? setCdslUnpledged(true) : setCdslUnpledgeStart(true), actionText: cdslUnpledgeStart ? 'Mark Unpledge Complete' : 'Start Unpledge' },
+                    { doc: 'Power of Attorney',    securityType: 'PoA cancelled/returned',      status: securityComplete || poaReturned ? 'Returned' : 'Held in Custody', onReturn: () => setPoaReturned(true) },
                   ].map(item => (
                     <div key={item.doc} className="flex flex-col md:flex-row md:items-center justify-between p-4 border border-slate-100 rounded-xl hover:bg-slate-50 gap-4">
                       <div>
@@ -451,7 +454,7 @@ const LoanClosureHub: React.FC = () => {
                 Loan Record Archival
               </h3>
               <p className="text-xs text-slate-500 mb-5">
-                Archive loan records for 8 years after closure. Keep digital backup and physical file location.
+                Records must be archived for at least 8 years after closure. Store digital and physical archive references.
               </p>
 
               <div className="space-y-3 mb-5">
@@ -476,12 +479,12 @@ const LoanClosureHub: React.FC = () => {
               <div className="bg-slate-50 rounded-xl p-4 mb-4 text-sm">
                 <div className="grid grid-cols-2 gap-3">
                   <div><div className="text-slate-500 text-xs">Total Documents</div><div className="font-semibold text-slate-900">22</div></div>
-                  <div><div className="text-slate-500 text-xs">Archive Retention</div><div className="font-semibold text-slate-900">8 years (until {new Date().getFullYear() + 8})</div></div>
+                  <div><div className="text-slate-500 text-xs">Archive Retention</div><div className="font-semibold text-slate-900">8 years (until 2033)</div></div>
                   <div><div className="text-slate-500 text-xs">Closure Date</div><div className="font-semibold text-slate-900">{new Date().toLocaleDateString('en-IN')}</div></div>
                   <div><div className="text-slate-500 text-xs">Archive Date</div><div className="font-semibold text-slate-900">{archiveCompleted ? new Date().toLocaleDateString('en-IN') : 'Pending'}</div></div>
                   <div><div className="text-slate-500 text-xs">Archive Status</div><div className="font-semibold text-slate-900">{archiveCompleted ? 'Archived' : 'Ready'}</div></div>
-                  <div><div className="text-slate-500 text-xs">Archive ID</div><div className="font-semibold text-slate-900">{archiveCompleted ? 'ARC-2025-042' : 'Not assigned'}</div></div>
-                  <div><div className="text-slate-500 text-xs">Physical File Reference</div><div className="font-semibold text-slate-900">{archiveCompleted ? 'Cabinet 3, Row 2' : 'Not assigned'}</div></div>
+                  <div><div className="text-slate-500 text-xs">Archive ID</div><div className="font-semibold text-slate-900">ARC-2025-042</div></div>
+                  <div><div className="text-slate-500 text-xs">Physical File Reference</div><div className="font-semibold text-slate-900">Cabinet 3, Row 2</div></div>
                   <div><div className="text-slate-500 text-xs">Digital Checksum</div><div className="font-mono text-[10px] text-slate-500 truncate">sha256:8f4c2...</div></div>
                 </div>
               </div>
@@ -510,3 +513,7 @@ const LoanClosureHub: React.FC = () => {
 };
 
 export default LoanClosureHub;
+`;
+
+fs.writeFileSync(path.join(__dirname, 'src/pages/closure/LoanClosureHub.tsx'), code);
+console.log('Update successful');

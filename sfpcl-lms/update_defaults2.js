@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+const fs = require('fs');
+const path = require('path');
+
+const code = `import React, { useState } from 'react';
 import {
   AlertTriangle, Clock, FileText, CheckCircle2, XCircle,
   ChevronRight, Calendar, IndianRupee, User, MessageSquare,
@@ -155,8 +158,8 @@ const DefaultRecoveryHub: React.FC = () => {
           { label: 'Default Review',        value: '1',         amount: '₹1.8L', color: 'text-red-600',   bg: 'bg-red-50',    border: 'border-red-100' },
           { label: 'Recovery Approved',     value: '1',         amount: '₹8.9L', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-100' },
         ].map(kpi => (
-          <div key={kpi.label} className={`${kpi.bg} ${kpi.border} border rounded-xl p-4`}>
-            <div className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</div>
+          <div key={kpi.label} className={\`\${kpi.bg} \${kpi.border} border rounded-xl p-4\`}>
+            <div className={\`text-2xl font-bold \${kpi.color}\`}>{kpi.value}</div>
             <div className="text-xs text-slate-600 mt-0.5">{kpi.label}</div>
             <div className="text-sm font-semibold text-slate-700 mt-1">{kpi.amount}</div>
           </div>
@@ -170,15 +173,15 @@ const DefaultRecoveryHub: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+              className={\`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors \${
                 activeTab === tab.id
                   ? 'border-green-600 text-green-700'
                   : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
+              }\`}
             >
               {tab.label}
               {tab.badge !== undefined && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${activeTab === tab.id ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                <span className={\`text-xs px-1.5 py-0.5 rounded-full font-semibold \${activeTab === tab.id ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}\`}>
                   {tab.badge}
                 </span>
               )}
@@ -217,11 +220,11 @@ const DefaultRecoveryHub: React.FC = () => {
               <button
                 key={c.id}
                 onClick={() => setSelectedCase(c)}
-                className={`w-full text-left border rounded-xl p-4 transition-all ${
+                className={\`w-full text-left border rounded-xl p-4 transition-all \${
                   selectedCase?.id === c.id
                     ? 'border-green-300 bg-green-50'
                     : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
+                }\`}
               >
                 <div className="flex items-start justify-between mb-2">
                   <span className="text-xs font-mono font-medium text-slate-600">{c.loanNo}</span>
@@ -286,7 +289,7 @@ const DefaultRecoveryHub: React.FC = () => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mt-6">
                     {[
                       ['DPD Bucket', selectedCase.dpdBucket.replace('_', '–') + ' days'],
-                      ['Overdue Days', `${selectedCase.overdueDays} days`],
+                      ['Overdue Days', \`\${selectedCase.overdueDays} days\`],
                       ['Last Action', selectedCase.lastAction],
                       ['Next Action', selectedCase.nextAction],
                     ].map(([k, v]) => (
@@ -305,14 +308,14 @@ const DefaultRecoveryHub: React.FC = () => {
                 <div className="space-y-3">
                   {currentStepper.map(s => (
                     <div key={s.step} className="flex items-center gap-3">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
+                      <div className={\`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold \${
                         s.state === 'complete' ? 'bg-green-600 text-white' : 
                         s.state === 'active' ? 'bg-blue-600 text-white' : 
                         'bg-slate-100 text-slate-500'
-                      }`}>
+                      }\`}>
                         {s.state === 'complete' ? <CheckCircle2 size={14} /> : s.state === 'locked' ? <Lock size={12}/> : s.step}
                       </div>
-                      <span className={`text-sm ${s.state === 'complete' ? 'text-slate-900 font-medium' : s.state === 'active' ? 'text-blue-900 font-semibold' : 'text-slate-400'}`}>{s.label}</span>
+                      <span className={\`text-sm \${s.state === 'complete' ? 'text-slate-900 font-medium' : s.state === 'active' ? 'text-blue-900 font-semibold' : 'text-slate-400'}\`}>{s.label}</span>
                       {s.state === 'active' && <span className="text-[10px] uppercase font-bold tracking-wider text-blue-600 ml-2 bg-blue-50 px-2 py-0.5 rounded">Active</span>}
                     </div>
                   ))}
@@ -450,7 +453,7 @@ const DefaultRecoveryHub: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Supporting Evidence</label>
-                  <button onClick={() => setExtensionEvidence(!extensionEvidence)} className={`w-full border-2 border-dashed rounded-xl p-4 text-center text-sm transition-colors ${extensionEvidence ? 'border-green-500 text-green-700 bg-green-50' : 'border-slate-200 text-slate-400 cursor-pointer hover:border-green-300 hover:text-green-600'}`}>
+                  <button onClick={() => setExtensionEvidence(!extensionEvidence)} className={\`w-full border-2 border-dashed rounded-xl p-4 text-center text-sm transition-colors \${extensionEvidence ? 'border-green-500 text-green-700 bg-green-50' : 'border-slate-200 text-slate-400 cursor-pointer hover:border-green-300 hover:text-green-600'}\`}>
                     {extensionEvidence ? 'Evidence Attached (crop_survey.pdf)' : 'Click to attach crop survey report, insurance claim, or other evidence'}
                   </button>
                 </div>
@@ -520,7 +523,7 @@ const DefaultRecoveryHub: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Evidence Reviewed</label>
-                  <button onClick={() => setNonPaymentEvidence(!nonPaymentEvidence)} className={`w-full border-2 border-dashed rounded-xl p-2.5 text-center text-sm transition-colors ${nonPaymentEvidence ? 'border-green-500 text-green-700 bg-green-50' : 'border-slate-200 text-slate-400 cursor-pointer hover:border-green-300 hover:text-green-600'}`}>
+                  <button onClick={() => setNonPaymentEvidence(!nonPaymentEvidence)} className={\`w-full border-2 border-dashed rounded-xl p-2.5 text-center text-sm transition-colors \${nonPaymentEvidence ? 'border-green-500 text-green-700 bg-green-50' : 'border-slate-200 text-slate-400 cursor-pointer hover:border-green-300 hover:text-green-600'}\`}>
                     {nonPaymentEvidence ? 'Evidence Attached' : 'Attach Evidence'}
                   </button>
                 </div>
@@ -794,3 +797,7 @@ const DefaultRecoveryHub: React.FC = () => {
 };
 
 export default DefaultRecoveryHub;
+`;
+
+fs.writeFileSync(path.join(__dirname, 'src/pages/defaults/DefaultRecoveryHub.tsx'), code);
+console.log('Update successful');

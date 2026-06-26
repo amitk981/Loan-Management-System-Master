@@ -1,38 +1,38 @@
 import React, { useState } from 'react';
+import { useRole } from '../../contexts/RoleContext';
 import { BookOpen, FileText, Scale, Gavel, AlertOctagon, RotateCcw, Archive, Stamp, Search, Download, History, Filter } from 'lucide-react';
 import Tabs from '../../components/ui/Tabs';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { loanApplications, loanAccounts, securities, members, complianceRecords, auditEvents } from '../../data/mockData';
 
-const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
+const fmt = (n?: number) => n !== undefined && n !== null ? '₹' + n.toLocaleString('en-IN') : '—';
 
 const REGISTER_TABS = [
-  { id: 'loan_register',      label: 'Loan Account Register' },
-  { id: 'loan_request_register', label: 'Loan Request Register' },
-  { id: 'sanction_register',  label: 'Credit Sanction Register' },
-  { id: 'security_register',  label: 'Security Register' },
-  { id: 'exception_register', label: 'Exception Register' },
-  { id: 'member_register',    label: 'Member Register' },
-  { id: 'compliance_register', label: 'Compliance Register' },
-  { id: 'stamp_duty',         label: 'Stamp Duty Register' },
-  { id: 'audit_log',          label: 'Audit Log Explorer' },
-  { id: 'grievance_register', label: 'Grievance Register' },
-  { id: 'recovery_log',       label: 'Recovery Log' },
-  { id: 'blank_cheque_register', label: 'Blank-Dated Cheque Register' },
-  { id: 'sh4_register',       label: 'SH-4 Register' },
-  { id: 'cdsl_register',      label: 'CDSL Pledge Register' },
-  { id: 'sap_register',       label: 'SAP Customer Code Register' },
-  { id: 'disbursement_register', label: 'Disbursement Register' },
-  { id: 'repayment_register', label: 'Repayment Register' },
-  { id: 'interest_invoice_register', label: 'Interest Invoice Register' },
-  { id: 'accrual_register',   label: 'Accrual Register' },
-  { id: 'dpd_register',       label: 'DPD / Monitoring Register' },
-  { id: 'noc_register',       label: 'NOC / Closure Register' },
-  { id: 'archive_register',   label: 'Archive Register' },
-  { id: 'sop_change_register', label: 'SOP Change Register' },
+  { id: 'loan_register',      label: 'Loan account register' },
+  { id: 'loan_request_register', label: 'Loan request register' },
+  { id: 'sanction_register',  label: 'Credit sanction register' },
+  { id: 'security_register',  label: 'Security register' },
+  { id: 'exception_register', label: 'Exception register' },
+  { id: 'member_register',    label: 'Member register' },
+  { id: 'compliance_register', label: 'Compliance register' },
+  { id: 'stamp_duty',         label: 'Stamp duty register' },
+  { id: 'recovery_log',       label: 'Recovery log' },
+  { id: 'blank_cheque_register', label: 'Blank-dated cheque register' },
+  { id: 'sh4_register',       label: 'SH-4 register' },
+  { id: 'cdsl_register',      label: 'CDSL pledge register' },
+  { id: 'sap_register',       label: 'SAP customer code register' },
+  { id: 'disbursement_register', label: 'Disbursement register' },
+  { id: 'repayment_register', label: 'Repayment register' },
+  { id: 'interest_invoice_register', label: 'Interest invoice register' },
+  { id: 'accrual_register',   label: 'Accrual register' },
+  { id: 'dpd_register',       label: 'DPD / monitoring register' },
+  { id: 'noc_register',       label: 'NOC / closure register' },
+  { id: 'archive_register',   label: 'Archive register' },
+  { id: 'sop_change_register', label: 'SOP change register' },
 ];
 
 const RegistersHub: React.FC = () => {
+  const { can } = useRole();
   const [activeTab, setActiveTab] = useState(0);
   const [auditSearch, setAuditSearch] = useState('');
   const [auditRoleFilter, setAuditRoleFilter] = useState('all');
@@ -40,15 +40,38 @@ const RegistersHub: React.FC = () => {
   const [auditDateFrom, setAuditDateFrom] = useState('');
   const [auditDateTo, setAuditDateTo] = useState('');
 
+
+  const canExport = can('export_reports');
+  const processedLoans = loanAccounts.map(l => {
+    const due = new Date(l.repaymentDueDate);
+    const diffDays = Math.floor((new Date().getTime() - due.getTime()) / (1000 * 3600 * 24));
+    let calcDpd = l.status === 'closed' ? null : Math.max(0, diffDays);
+    let displayStatus = l.status;
+    let outstanding = l.status === 'closed' ? 0 : l.outstandingPrincipal;
+    
+    if (l.status === 'closed') {
+      displayStatus = 'closed';
+    } else if (calcDpd !== null && calcDpd > 90 && l.status === 'grace_period') {
+      displayStatus = 'default_review';
+    } else if (l.status === 'recovery_in_progress') {
+      const hasRecovery = auditEvents.some(a => a.entityId === l.id && a.eventType === 'Default Recovery Action Initiated');
+      if (!hasRecovery) displayStatus = 'default_review';
+    } else if (calcDpd !== null && calcDpd > 0 && l.status === 'active') {
+      displayStatus = 'overdue';
+    }
+    
+    return { ...l, calcDpd, displayStatus, outstanding };
+  });
+
   const exceptions = loanApplications.filter(a => a.isException);
-  const sanctionedApps = loanApplications.filter(a => a.sanctionDecision === 'approved');
+  const sanctionDecisions = loanApplications.filter(a => a.sanctionDecision === 'approved' || a.sanctionDecision === 'rejected');
 
   // Stamp duty data
   const stampDutyRecords = [
     { doc: 'Power of Attorney (PoA)', appNo: 'LO00000042', borrower: 'Ganesh Thorat', stampDutyAmt: 500, paidOn: '2024-09-18', status: 'paid', notarised: true, custodian: 'Company Secretary', challanNo: 'MSFM2024082100012' },
-    { doc: 'SH-4 Transfer Form', appNo: 'LO00000042', borrower: 'Ganesh Thorat', stampDutyAmt: 200, paidOn: '2024-09-15', status: 'paid', notarised: false, custodian: 'Company Secretary', challanNo: 'MSFM2024082100013' },
-    { doc: 'Power of Attorney (PoA)', appNo: 'LO00000035', borrower: 'Sunita Bhosale', stampDutyAmt: 500, paidOn: '2026-04-22', status: 'paid', notarised: true, custodian: 'Company Secretary', challanNo: 'MSFM2026042200001' },
-    { doc: 'Loan Agreement', appNo: 'LO00000047', borrower: 'Vijay Deshmukh', stampDutyAmt: 300, paidOn: null, status: 'pending', notarised: false, custodian: null, challanNo: null },
+    { doc: 'SH-4 transfer form', appNo: 'LO00000042', borrower: 'Ganesh Thorat', stampDutyAmt: 'Not required', paidOn: '2024-09-15', status: 'paid', notarised: 'not_required', custodian: 'Company Secretary', challanNo: 'MSFM2024082100013' },
+    { doc: 'Power of Attorney (PoA)', appNo: 'LO00000035', borrower: 'Kisan FPC Ltd', stampDutyAmt: 500, paidOn: '2026-04-22', status: 'paid', notarised: true, custodian: 'Company Secretary', challanNo: 'MSFM2026042200001' },
+    { doc: 'Loan Agreement', appNo: 'LO00000047', borrower: 'Vijay Deshmukh', stampDutyAmt: 500, paidOn: 'pending', status: 'pending', notarised: 'pending', custodian: 'not_assigned', challanNo: 'pending' },
   ];
 
   // Filtered audit events
@@ -181,11 +204,11 @@ const RegistersHub: React.FC = () => {
         <div>
           <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <BookOpen size={20} className="text-green-600" />
-            SOP Registers
+            Registers
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">All statutory and internal registers · 8-year retention policy</p>
+          <p className="text-sm text-slate-500 mt-0.5">Statutory and internal registers · 8-year retention</p>
         </div>
-        <button className="btn-secondary flex items-center gap-2 text-sm">
+        <button disabled={!canExport} className="btn-secondary flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <Archive size={14} />
           Export Register
         </button>
@@ -197,9 +220,9 @@ const RegistersHub: React.FC = () => {
           <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                <FileText size={14} className="text-green-600" /> Loan Register
+                <FileText size={14} className="text-green-600" /> Loan account register
               </p>
-              <p className="text-xs text-slate-500 mt-0.5">All loan accounts — {loanAccounts.length} records</p>
+              <p className="text-xs text-slate-500 mt-0.5">Showing {loanAccounts.length} of 23 loan accounts</p>
             </div>
           </div>
           <div className="overflow-x-auto">
@@ -210,25 +233,29 @@ const RegistersHub: React.FC = () => {
                   <th className="table-header text-left">Member</th>
                   <th className="table-header text-right">Disbursed</th>
                   <th className="table-header text-right">Outstanding</th>
-                  <th className="table-header text-right">Rate</th>
+                  <th className="table-header text-right">Current rate</th>
                   <th className="table-header text-left">Status</th>
-                  <th className="table-header text-left">SAP Code</th>
+                  <th className="table-header text-left">SAP code</th>
                   <th className="table-header text-right">DPD</th>
-                  <th className="table-header text-left">Due Date</th>
+                  <th className="table-header text-left">Repayment due date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {loanAccounts.map(l => (
+                {processedLoans.map(l => (
                   <tr key={l.id} className="hover:bg-slate-50">
                     <td className="table-cell num font-semibold text-green-700">{l.accountNumber}</td>
                     <td className="table-cell font-medium">{l.memberName}</td>
                     <td className="table-cell text-right num">{fmt(l.disbursedAmount)}</td>
-                    <td className="table-cell text-right num font-semibold">{fmt(l.outstandingPrincipal)}</td>
+                    <td className="table-cell text-right num font-semibold">{fmt(l.outstanding)}</td>
                     <td className="table-cell text-right">{l.interestRate}%</td>
-                    <td className="table-cell"><StatusBadge label={l.status} size="sm" /></td>
+                    <td className="table-cell"><StatusBadge label={l.displayStatus} size="sm" /></td>
                     <td className="table-cell num text-slate-600">{l.sapCustomerCode}</td>
                     <td className="table-cell text-right">
-                      <span className={`font-bold num ${l.dpd > 90 ? 'text-red-600' : l.dpd > 0 ? 'text-amber-600' : 'text-green-600'}`}>{l.dpd}</span>
+                      {l.calcDpd !== null ? (
+                        <span className={`font-bold num ${l.calcDpd > 90 ? 'text-red-600' : l.calcDpd > 0 ? 'text-amber-600' : 'text-green-600'}`}>{l.calcDpd}</span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
                     </td>
                     <td className="table-cell">{new Date(l.repaymentDueDate).toLocaleDateString('en-IN')}</td>
                   </tr>
@@ -243,9 +270,9 @@ const RegistersHub: React.FC = () => {
           <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                <FileText size={14} className="text-green-600" /> Loan Request Register
+                <FileText size={14} className="text-green-600" /> Loan request register
               </p>
-              <p className="text-xs text-slate-500 mt-0.5">All submitted and draft loan requests before account creation — {loanApplications.length} records</p>
+              <p className="text-xs text-slate-500 mt-0.5">All loan requests and application references — {loanApplications.length} records</p>
             </div>
           </div>
           <div className="overflow-x-auto">
@@ -255,8 +282,8 @@ const RegistersHub: React.FC = () => {
                   <th className="table-header text-left">Application No.</th>
                   <th className="table-header text-left">Member</th>
                   <th className="table-header text-left">Type</th>
-                  <th className="table-header text-right">Requested</th>
-                  <th className="table-header text-right">Eligible</th>
+                  <th className="table-header text-right">Requested amount</th>
+                  <th className="table-header text-right">Eligible limit</th>
                   <th className="table-header text-left">Purpose</th>
                   <th className="table-header text-left">Status</th>
                   <th className="table-header text-left">Owner</th>
@@ -264,27 +291,63 @@ const RegistersHub: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {loanApplications.map(app => (
-                  <tr key={app.id} className={`hover:bg-slate-50 ${app.isException ? 'bg-violet-50/30' : ''}`}>
-                    <td className="table-cell num font-semibold text-green-700">{app.applicationNumber}</td>
-                    <td className="table-cell font-medium">{app.memberName}</td>
-                    <td className="table-cell capitalize">{app.memberType.replace('_', ' ')}</td>
-                    <td className="table-cell text-right num">{fmt(app.requestedAmount)}</td>
-                    <td className="table-cell text-right num">{fmt(app.eligibleAmount)}</td>
-                    <td className="table-cell capitalize">{app.purpose.replace(/_/g, ' ')}</td>
-                    <td className="table-cell"><StatusBadge label={app.status} size="sm" /></td>
-                    <td className="table-cell text-slate-600">{app.currentOwner}</td>
-                    <td className="table-cell">
-                      {app.isException ? (
-                        <span className="flex items-center gap-1 text-xs text-violet-700">
-                          <AlertOctagon size={12} /> Yes
-                        </span>
-                      ) : (
-                        <span className="text-xs text-green-600">No</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {loanApplications.map(app => {
+                  const typeMap: Record<string, string> = { individual: 'Individual', fpc: 'FPC', producer_institution: 'Producer Institution' };
+                  const purposeMap: Record<string, string> = { crop_production: 'Crop production', agriculture_activity: 'Agriculture activity', allied_activity: 'Allied activity' };
+                  
+                  let displayType = typeMap[app.memberType] || app.memberType;
+                  let displayPurpose = purposeMap[app.purpose] || app.purpose;
+                  
+                  let displayStatus = app.status;
+                  if (app.status === 'sanctioned' && app.currentOwnerRole === 'compliance_team') {
+                    displayStatus = 'documentation_pending';
+                  }
+                  
+                  let displayOwner = app.currentOwner;
+                  if (app.status === 'credit_review' && app.currentOwner === 'Deputy Manager – Finance') {
+                    displayOwner = 'Credit Manager';
+                  }
+
+                  let displayEligible: string = fmt(app.eligibleAmount);
+                  let exceptionDisplay = 'None';
+                  let isExceptionActive = false;
+                  
+                  if (app.status === 'incomplete') {
+                    displayEligible = 'Not calculated';
+                    exceptionDisplay = 'Pending review';
+                  } else if (app.isException) {
+                    isExceptionActive = true;
+                    if (app.sanctionDecision === 'approved') {
+                      exceptionDisplay = 'Approved';
+                    } else {
+                      exceptionDisplay = 'Open';
+                    }
+                  }
+
+                  return (
+                    <tr key={app.id} className={`hover:bg-slate-50 ${isExceptionActive ? 'bg-violet-50/30' : ''}`}>
+                      <td className="table-cell num font-semibold text-green-700">{app.applicationNumber}</td>
+                      <td className="table-cell font-medium">{app.memberName}</td>
+                      <td className="table-cell">{displayType}</td>
+                      <td className="table-cell text-right num">{fmt(app.requestedAmount)}</td>
+                      <td className="table-cell text-right num font-medium text-slate-600">{displayEligible}</td>
+                      <td className="table-cell">{displayPurpose}</td>
+                      <td className="table-cell"><StatusBadge label={displayStatus} size="sm" /></td>
+                      <td className="table-cell text-slate-600">{displayOwner}</td>
+                      <td className="table-cell">
+                        {isExceptionActive ? (
+                          <span className="flex items-center gap-1 text-xs font-semibold text-violet-700">
+                            <AlertOctagon size={12} /> {exceptionDisplay}
+                          </span>
+                        ) : exceptionDisplay === 'Pending review' ? (
+                          <span className="text-xs text-slate-500 font-medium">{exceptionDisplay}</span>
+                        ) : (
+                          <span className="text-xs text-green-600 font-medium">None</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -294,9 +357,9 @@ const RegistersHub: React.FC = () => {
         <div className="card p-0 overflow-hidden">
           <div className="p-4 bg-slate-50 border-b border-slate-200">
             <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <Gavel size={14} className="text-green-600" /> Credit Sanction Register
+              <Gavel size={14} className="text-green-600" /> Credit sanction register
             </p>
-            <p className="text-xs text-slate-500 mt-0.5">All sanctioned loan applications — {sanctionedApps.length} records</p>
+            <p className="text-xs text-slate-500 mt-0.5">All sanction decisions — {sanctionDecisions.length} records</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -306,35 +369,57 @@ const RegistersHub: React.FC = () => {
                   <th className="table-header text-left">Member</th>
                   <th className="table-header text-right">Sanctioned Amount</th>
                   <th className="table-header text-left">Decision</th>
-                  <th className="table-header text-left">Sanctioned On</th>
-                  <th className="table-header text-left">Sanctioned By</th>
+                  <th className="table-header text-left">Decision date</th>
+                  <th className="table-header text-left">Approval authority</th>
                   <th className="table-header text-left">Exception</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {sanctionedApps.map(app => (
+                {sanctionDecisions.map(app => {
+                  let authority = app.requestedAmount > 500000 ? 'CFO + 2 Directors' : 'CFO + 1 Director';
+                  
+                  let exceptionDisplay = 'None';
+                  if (app.isException) {
+                     if (app.sanctionDecision === 'approved') {
+                       exceptionDisplay = 'Approved';
+                     } else if (app.sanctionDecision === 'rejected') {
+                       exceptionDisplay = 'Rejected';
+                     } else {
+                       exceptionDisplay = 'Open';
+                     }
+                  }
+                  
+                  let formattedDate = '—';
+                  if (app.sanctionedAt) {
+                    formattedDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(app.sanctionedAt));
+                  }
+
+                  let decisionBadgeColor = app.sanctionDecision === 'approved' ? 'bg-green-100 text-green-700' : app.sanctionDecision === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700';
+
+                  return (
                   <tr key={app.id} className="hover:bg-slate-50">
                     <td className="table-cell num font-semibold text-green-700">{app.applicationNumber}</td>
                     <td className="table-cell font-medium">{app.memberName}</td>
                     <td className="table-cell text-right num">{fmt(app.requestedAmount)}</td>
                     <td className="table-cell">
-                      <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full capitalize">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${decisionBadgeColor}`}>
                         {app.sanctionDecision}
                       </span>
                     </td>
-                    <td className="table-cell">{app.sanctionedAt ? new Date(app.sanctionedAt).toLocaleDateString('en-IN') : '—'}</td>
-                    <td className="table-cell text-slate-600">CFO + {app.requestedAmount > 500000 ? '2 Directors' : '1 Director'}</td>
+                    <td className="table-cell text-slate-600">{formattedDate}</td>
+                    <td className="table-cell text-slate-600">{authority}</td>
                     <td className="table-cell">
                       {app.isException ? (
-                        <span className="flex items-center gap-1 text-xs text-violet-700">
-                          <AlertOctagon size={12} /> Yes
+                        <span className={`flex items-center gap-1 text-xs font-semibold ${exceptionDisplay === 'Rejected' ? 'text-red-700' : 'text-violet-700'}`}>
+                          <AlertOctagon size={12} /> {exceptionDisplay}
                         </span>
                       ) : (
-                        <span className="text-xs text-green-600">No</span>
+                        <span className="text-xs text-green-600 font-medium">None</span>
                       )}
                     </td>
                   </tr>
-                ))}
+                )
+     })}
               </tbody>
             </table>
           </div>
@@ -344,9 +429,9 @@ const RegistersHub: React.FC = () => {
         <div className="card p-0 overflow-hidden">
           <div className="p-4 bg-slate-50 border-b border-slate-200">
             <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <Scale size={14} className="text-green-600" /> Security Register
+              <Scale size={14} className="text-green-600" /> Security register
             </p>
-            <p className="text-xs text-slate-500 mt-0.5">All collateral and security instruments — {securities.length} records</p>
+            <p className="text-xs text-slate-500 mt-0.5">All security instruments — {securities.length} records</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -363,26 +448,81 @@ const RegistersHub: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {securities.map(sec => (
-                  <tr key={sec.id} className="hover:bg-slate-50">
-                    <td className="table-cell font-semibold capitalize">{sec.securityType.replace('_', ' ')}</td>
-                    <td className="table-cell num text-green-700">{sec.applicationId}</td>
-                    <td className="table-cell"><StatusBadge label={sec.status} size="sm" /></td>
-                    <td className="table-cell">{sec.executionDate || '—'}</td>
-                    <td className="table-cell">{sec.custodian || '—'}</td>
-                    <td className="table-cell">
-                      <span className={`text-xs capitalize ${sec.stampDutyStatus === 'complete' ? 'text-green-600' : sec.stampDutyStatus === 'pending' ? 'text-amber-600' : 'text-slate-400'}`}>
-                        {sec.stampDutyStatus || '—'}
-                      </span>
-                    </td>
-                    <td className="table-cell">
-                      <span className={`text-xs capitalize ${sec.notarisationStatus === 'complete' ? 'text-green-600' : sec.notarisationStatus === 'pending' ? 'text-amber-600' : 'text-slate-400'}`}>
-                        {sec.notarisationStatus || '—'}
-                      </span>
-                    </td>
-                    <td className="table-cell num text-xs text-slate-500">{sec.psnNumber || '—'}</td>
-                  </tr>
-                ))}
+                {securities.map(sec => {
+                  const typeMap: Record<string, string> = { sh4: 'SH-4', poa: 'PoA', cdsl_pledge: 'CDSL pledge', blank_cheque: 'Blank cheque', loan_agreement: 'Loan agreement' };
+                  let displayType = typeMap[sec.securityType] || sec.securityType.replace('_', ' ');
+
+                  const appObj = loanApplications.find(a => a.id === sec.applicationId);
+                  let displayApp = appObj ? appObj.applicationNumber : sec.applicationId;
+
+                  let stampDisplay = sec.stampDutyStatus === 'complete' ? 'Complete' : sec.stampDutyStatus === 'pending' ? 'Pending' : '—';
+                  let notarisedDisplay = sec.notarisationStatus === 'complete' ? 'Complete' : sec.notarisationStatus === 'pending' ? 'Pending' : '—';
+                  
+                  let psnDisplay = sec.psnNumber || '—';
+
+                  if (sec.securityType === 'blank_cheque') {
+                    stampDisplay = 'Not required';
+                    notarisedDisplay = 'Not required';
+                    psnDisplay = 'Not required';
+                  } else if (sec.securityType === 'cdsl_pledge') {
+                    stampDisplay = 'Not required';
+                    notarisedDisplay = 'Not required';
+                    psnDisplay = sec.status === 'pledged' ? (sec.psnNumber || 'CDSL-PENDING') : sec.status === 'pending' ? 'Pending' : 'Not required';
+                  } else if (sec.securityType === 'sh4') {
+                    psnDisplay = 'Not required';
+                  }
+
+                  let displayStatus = sec.status;
+                  const statusMap: Record<string, string> = {
+                    held: 'Held in custody',
+                    executed: 'Executed',
+                    pledged: 'Pledged',
+                    pending: 'Pending',
+                    invoked: 'Invoked',
+                    returned: 'Returned',
+                    not_required: 'Not required'
+                  };
+                  
+                  if (sec.securityType === 'poa' && sec.status === 'executed' && (sec.stampDutyStatus === 'pending' || sec.notarisationStatus === 'pending')) {
+                    displayStatus = 'Execution pending';
+                  } else {
+                    displayStatus = statusMap[sec.status] || sec.status;
+                  }
+
+                  let formattedDate = '—';
+                  if (sec.executionDate) {
+                    formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(sec.executionDate));
+                  }
+                  
+                  const statusColor = displayStatus === 'Held in custody' || displayStatus === 'Executed' || displayStatus === 'Pledged' ? 'bg-green-100 text-green-700' : 
+                                      displayStatus === 'Execution pending' || displayStatus === 'Pending' ? 'bg-amber-100 text-amber-700' :
+                                      displayStatus === 'Invoked' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700';
+
+                  return (
+                    <tr key={sec.id} className="hover:bg-slate-50">
+                      <td className="table-cell font-semibold">{displayType}</td>
+                      <td className="table-cell num font-medium text-slate-800">{displayApp}</td>
+                      <td className="table-cell">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusColor}`}>
+                          {displayStatus}
+                        </span>
+                      </td>
+                      <td className="table-cell text-slate-600">{formattedDate}</td>
+                      <td className="table-cell text-slate-600">{sec.custodian || '—'}</td>
+                      <td className="table-cell">
+                        <span className={`text-xs font-medium ${stampDisplay === 'Complete' ? 'text-green-600' : stampDisplay === 'Pending' ? 'text-amber-600' : 'text-slate-500'}`}>
+                          {stampDisplay}
+                        </span>
+                      </td>
+                      <td className="table-cell">
+                        <span className={`text-xs font-medium ${notarisedDisplay === 'Complete' ? 'text-green-600' : notarisedDisplay === 'Pending' ? 'text-amber-600' : 'text-slate-500'}`}>
+                          {notarisedDisplay}
+                        </span>
+                      </td>
+                      <td className="table-cell num text-xs text-slate-500">{psnDisplay}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -392,29 +532,56 @@ const RegistersHub: React.FC = () => {
         <div className="card p-0 overflow-hidden">
           <div className="p-4 bg-slate-50 border-b border-slate-200">
             <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <AlertOctagon size={14} className="text-violet-600" /> Exception Register
+              <AlertOctagon size={14} className="text-violet-600" /> Exception register
             </p>
-            <p className="text-xs text-slate-500 mt-0.5">Applications where requested amount exceeds eligible limit — {exceptions.length} records</p>
+            <p className="text-xs text-slate-500 mt-0.5">Open and approved exception records — {exceptions.length} records</p>
           </div>
           {exceptions.length === 0 ? (
             <div className="p-8 text-center text-slate-400 text-sm">No exception cases on record.</div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {exceptions.map(app => (
-                <div key={app.id} className="p-4 bg-violet-50/50">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-900 num">{app.applicationNumber}</span>
-                        <StatusBadge label={app.status} size="sm" />
+              {exceptions.map(app => {
+                let excType = 'Limit breach';
+                let excDesc = ``;
+                let authority = 'CFO + 2 Directors required';
+                
+                if (app.requestedAmount === app.eligibleAmount && app.requestedAmount > 500000) {
+                  excType = 'High-value approval';
+                  excDesc = `${excType}: ${authority}.`;
+                } else {
+                  let diff = app.requestedAmount - app.eligibleAmount;
+                  if (diff > 0) {
+                    excDesc = `Limit breach: requested ${fmt(app.requestedAmount)} vs eligible ${fmt(app.eligibleAmount)}; excess ${fmt(diff)}.`;
+                  } else {
+                    excDesc = `Limit breach: requested ${fmt(app.requestedAmount)} vs eligible ${fmt(app.eligibleAmount)}.`;
+                  }
+                }
+
+                let excStatus = app.sanctionDecision === 'approved' ? 'Approved' : 'Open';
+                let formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(app.applicationDate));
+
+                return (
+                  <div key={app.id} className="p-4 bg-violet-50/50 hover:bg-violet-50/80 transition-colors">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-slate-900 num">{app.applicationNumber}</span>
+                          <StatusBadge label={app.status} size="sm" />
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${excStatus === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                            Exception: {excStatus}
+                          </span>
+                        </div>
+                        <p className="text-sm font-medium text-slate-800 mt-1.5">{app.memberName}</p>
+                        <p className="text-sm text-slate-600 mt-0.5">{excDesc}</p>
+                        <p className="text-xs text-violet-700 mt-1.5 font-medium flex items-center gap-1.5 bg-violet-100/50 w-max px-2 py-1 rounded">
+                          <AlertOctagon size={12} /> {excType} ({authority})
+                        </p>
                       </div>
-                      <p className="text-sm text-slate-700 mt-1">{app.memberName} · {fmt(app.requestedAmount)} requested · {fmt(app.eligibleAmount)} eligible</p>
-                      <p className="text-xs text-violet-700 mt-1 bg-violet-50 rounded px-2 py-1">{app.exceptionReason}</p>
+                      <div className="text-xs font-medium text-slate-500 flex-shrink-0">{formattedDate}</div>
                     </div>
-                    <div className="text-xs text-slate-400 flex-shrink-0">{app.applicationDate}</div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -423,7 +590,7 @@ const RegistersHub: React.FC = () => {
         <div className="card p-0 overflow-hidden">
           <div className="p-4 bg-slate-50 border-b border-slate-200">
             <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <BookOpen size={14} className="text-green-600" /> Member Register
+              <BookOpen size={14} className="text-green-600" /> Member register
             </p>
             <p className="text-xs text-slate-500 mt-0.5">All SFPCL members — {members.length} records</p>
           </div>
@@ -433,98 +600,198 @@ const RegistersHub: React.FC = () => {
                 <tr className="bg-slate-50 border-b border-slate-200">
                   <th className="table-header text-left">Name</th>
                   <th className="table-header text-left">Folio</th>
-                  <th className="table-header text-left">Type</th>
+                  <th className="table-header text-left">Member type</th>
                   <th className="table-header text-right">Shares</th>
                   <th className="table-header text-left">KYC</th>
-                  <th className="table-header text-left">Status</th>
+                  <th className="table-header text-left">Member status</th>
                   <th className="table-header text-right">Exposure</th>
-                  <th className="table-header text-left">Registered</th>
+                  <th className="table-header text-left">Member since</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {members.map(m => (
-                  <tr key={m.id} className="hover:bg-slate-50">
-                    <td className="table-cell font-semibold text-slate-900">{m.name}</td>
-                    <td className="table-cell num text-slate-600">{m.folioNumber}</td>
-                    <td className="table-cell capitalize text-xs">{m.memberType === 'fpc' ? 'FPC' : m.memberType}</td>
-                    <td className="table-cell text-right num">{m.sharesHeld.toLocaleString('en-IN')}</td>
-                    <td className="table-cell"><StatusBadge label={m.kycStatus} size="sm" /></td>
-                    <td className="table-cell"><StatusBadge label={m.activeStatus} size="sm" /></td>
-                    <td className="table-cell text-right num">{m.currentExposure > 0 ? fmt(m.currentExposure) : '—'}</td>
-                    <td className="table-cell">{new Date(m.registeredOn).toLocaleDateString('en-IN')}</td>
-                  </tr>
-                ))}
+                {members.map(m => {
+                  let displayName = m.name;
+                  if (displayName === 'Green Valley F P C') displayName = 'Green Valley FPC';
+
+                  const typeMap: Record<string, string> = { individual: 'Individual', fpc: 'FPC', producer_institution: 'Producer Institution' };
+                  let displayType = typeMap[m.memberType] || m.memberType;
+
+                  const kycMap: Record<string, string> = {
+                    verified: 'Verified',
+                    re_kyc_due: 'Re-KYC due',
+                    kyc_expired: 'KYC expired',
+                    pending: 'Pending'
+                  };
+                  let displayKyc = kycMap[m.kycStatus] || m.kycStatus;
+
+                  const statusMap: Record<string, string> = {
+                    active: 'Active',
+                    inactive: 'Inactive',
+                    under_review: 'Under review'
+                  };
+                  let displayStatus = statusMap[m.activeStatus] || m.activeStatus;
+                  
+                  let formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(m.registeredOn));
+
+                  return (
+                    <tr key={m.id} className="hover:bg-slate-50">
+                      <td className="table-cell font-semibold text-slate-900">{displayName}</td>
+                      <td className="table-cell num text-slate-600">{m.folioNumber}</td>
+                      <td className="table-cell text-xs font-medium text-slate-700">{displayType}</td>
+                      <td className="table-cell text-right num">{m.sharesHeld.toLocaleString('en-IN')}</td>
+                      <td className="table-cell">
+                        <StatusBadge label={displayKyc} size="sm" />
+                      </td>
+                      <td className="table-cell">
+                        <StatusBadge label={displayStatus} size="sm" />
+                      </td>
+                      <td className="table-cell text-right num font-medium">{fmt(m.currentExposure)}</td>
+                      <td className="table-cell text-slate-600">{formattedDate}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Tab 5: Audit Log */}
+        {/* Tab 6: Compliance Register */}
         <div className="card p-0 overflow-hidden">
           <div className="p-4 bg-slate-50 border-b border-slate-200">
             <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <RotateCcw size={14} className="text-green-600" /> Audit Log
+              <BookOpen size={14} className="text-green-600" /> Compliance register
             </p>
-            <p className="text-xs text-slate-500 mt-0.5">Compliance records — retained for 8 years per SOP</p>
+            <p className="text-xs text-slate-500 mt-0.5">Compliance controls and evidence records</p>
           </div>
           <div className="divide-y divide-slate-100">
-            {complianceRecords.map(rec => (
-              <div key={rec.id} className="flex items-center gap-4 p-4">
+            {complianceRecords.map(rec => {
+              const areaMap: Record<string, string> = {
+                'Producer Company lending': 'Producer Company lending — members only',
+                'Section 186 limit check': 'Section 186 loan limits',
+                'NBFC principal business test': 'NBFC principal business test',
+                'KYC & AML verification': 'KYC / AML verification',
+                'Re-KYC cycle': 'Re-KYC cycle',
+                'Stamp duty & notarisation': 'Stamp duty & notarisation',
+                'Money-lending exemption': 'Money-lending law exemption review'
+              };
+              let displayArea = areaMap[rec.area] || rec.area;
+
+              const ownerMap: Record<string, string> = {
+                'Producer Company lending — members only': 'Company Secretary',
+                'Section 186 loan limits': 'CFO',
+                'NBFC principal business test': 'CFO',
+                'KYC / AML verification': 'Compliance Team',
+                'Re-KYC cycle': 'Compliance Team',
+                'Stamp duty & notarisation': 'Company Secretary',
+                'Money-lending law exemption review': 'Company Secretary'
+              };
+              let displayOwner = ownerMap[displayArea] || rec.owner;
+              
+              let isOverdue = new Date(rec.nextDueDate) < new Date();
+              let displayStatus = rec.status;
+              
+              if (rec.status === 'compliant') displayStatus = 'Compliant';
+              else if (rec.status === 'warning') displayStatus = 'Warning';
+              else if (rec.status === 'pending') {
+                if (isOverdue) displayStatus = 'Overdue';
+                else displayStatus = 'Pending';
+              } else {
+                 displayStatus = rec.status;
+              }
+              
+              let statusColor = displayStatus === 'Compliant' ? 'bg-green-100 text-green-700' :
+                                displayStatus === 'Warning' ? 'bg-amber-100 text-amber-700' :
+                                displayStatus === 'Overdue' ? 'bg-red-100 text-red-700' :
+                                'bg-slate-100 text-slate-700';
+                                
+              let formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(rec.nextDueDate));
+              
+              let evidenceText = rec.evidenceCount === 1 ? '1 evidence record' : `${rec.evidenceCount} evidence records`;
+              
+              return (
+              <div key={rec.id} className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-900">{rec.area}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {rec.owner} · {rec.frequency} · {rec.evidenceCount} evidence records
+                  <p className="text-sm font-medium text-slate-900">{displayArea}</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {displayOwner} · {rec.frequency} · {evidenceText}
                   </p>
                 </div>
                 <div className="text-right">
-                  <StatusBadge label={rec.status} size="sm" />
-                  <p className="text-xs text-slate-400 mt-1">Due: {new Date(rec.nextDueDate).toLocaleDateString('en-IN')}</p>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusColor}`}>
+                    {displayStatus}
+                  </span>
+                  <p className="text-xs text-slate-500 font-medium mt-1.5">Due: {formattedDate}</p>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
 
-        {/* Tab 5: Stamp Duty Register (S66) */}
+        {/* Tab 7: Stamp Duty Register */}
         <div className="card p-0 overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                <FileText size={14} className="text-green-600" /> Stamp Duty Register
-              </p>
-              <p className="text-xs text-slate-500 mt-0.5">Stamp duty and notarisation records for all security documents</p>
-            </div>
-            <button className="flex items-center gap-1 text-xs text-green-700 hover:underline">
-              <Download size={12} /> Export
-            </button>
+          <div className="p-4 bg-slate-50 border-b border-slate-200">
+            <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+              <FileText size={14} className="text-green-600" /> Stamp duty register
+            </p>
+            <p className="text-xs text-slate-500 mt-0.5">Stamp duty and notarisation records for security documents</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  {['Document Type', 'Application No.', 'Borrower', 'Stamp Duty Amt', 'Paid On', 'Challan No.', 'Notarised', 'Custodian', 'Status'].map(h => (
-                    <th key={h} className="table-header text-left">{h}</th>
-                  ))}
+                  <th className="table-header text-left">Document Type</th>
+                  <th className="table-header text-left">Application No.</th>
+                  <th className="table-header text-left">Borrower</th>
+                  <th className="table-header text-left">Stamp Duty Amount</th>
+                  <th className="table-header text-left">Paid On</th>
+                  <th className="table-header text-left">Challan No.</th>
+                  <th className="table-header text-left">Notarised</th>
+                  <th className="table-header text-left">Custodian</th>
+                  <th className="table-header text-left">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {stampDutyRecords.map((row, i) => (
-                  <tr key={i} className={`hover:bg-slate-50 ${row.status === 'pending' ? 'bg-amber-50/30' : ''}`}>
-                    <td className="table-cell font-medium text-slate-800">{row.doc}</td>
-                    <td className="table-cell num text-slate-600">{row.appNo}</td>
-                    <td className="table-cell text-slate-700">{row.borrower}</td>
-                    <td className="table-cell num text-slate-900 font-semibold">₹{row.stampDutyAmt}</td>
-                    <td className="table-cell text-slate-600">{row.paidOn || '—'}</td>
-                    <td className="table-cell font-mono text-xs text-slate-500">{row.challanNo || '—'}</td>
-                    <td className="table-cell">
-                      {row.notarised
-                        ? <span className="text-xs text-green-700 font-semibold">Yes ✓</span>
-                        : <span className="text-xs text-amber-600">No</span>}
-                    </td>
-                    <td className="table-cell text-slate-600">{row.custodian || '—'}</td>
-                    <td className="table-cell"><StatusBadge label={row.status} size="sm" /></td>
-                  </tr>
-                ))}
+                {stampDutyRecords.map((row, i) => {
+                  
+                  let amtDisplay = typeof row.stampDutyAmt === 'number' ? fmt(row.stampDutyAmt) : row.stampDutyAmt;
+                  
+                  let dateDisplay = '—';
+                  if (row.paidOn === 'pending') {
+                    dateDisplay = 'Pending';
+                  } else if (row.paidOn) {
+                    dateDisplay = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(row.paidOn));
+                  }
+                  
+                  let challanDisplay = row.challanNo === 'pending' ? 'Pending' : (row.challanNo || '—');
+                  let custodianDisplay = row.custodian === 'not_assigned' ? 'Not assigned' : (row.custodian || '—');
+                  
+                  let notDisplay = null;
+                  if (row.notarised === 'not_required') {
+                    notDisplay = <span className="text-xs text-slate-500 font-medium">Not required</span>;
+                  } else if (row.notarised === 'pending') {
+                    notDisplay = <span className="text-xs text-amber-600 font-medium">Pending notarisation</span>;
+                  } else if (row.notarised === true) {
+                    notDisplay = <span className="text-xs text-green-700 font-semibold">Yes ✓</span>;
+                  } else {
+                    notDisplay = <span className="text-xs text-amber-600 font-medium">Pending notarisation</span>;
+                  }
+
+                  let statusDisplay = row.status === 'paid' && row.notarised === false ? 'pending_notarisation' : row.status;
+
+                  return (
+                    <tr key={i} className={`hover:bg-slate-50 ${row.status === 'pending' ? 'bg-amber-50/30' : ''}`}>
+                      <td className="table-cell font-medium text-slate-800">{row.doc}</td>
+                      <td className="table-cell num text-slate-600">{row.appNo}</td>
+                      <td className="table-cell text-slate-700">{row.borrower}</td>
+                      <td className="table-cell num text-slate-900 font-semibold">{amtDisplay}</td>
+                      <td className="table-cell text-slate-600">{dateDisplay}</td>
+                      <td className="table-cell font-mono text-xs text-slate-500">{challanDisplay}</td>
+                      <td className="table-cell">{notDisplay}</td>
+                      <td className="table-cell text-slate-600">{custodianDisplay}</td>
+                      <td className="table-cell"><StatusBadge label={statusDisplay} size="sm" /></td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -536,7 +803,7 @@ const RegistersHub: React.FC = () => {
           <div className="card">
             <div className="flex items-center gap-2 mb-3">
               <Filter size={14} className="text-slate-500" />
-              <p className="text-sm font-semibold text-slate-700">Audit Log Explorer</p>
+              <p className="text-sm font-semibold text-slate-700">Audit log explorer</p>
               <span className="text-xs text-slate-400 ml-auto">{filteredAudit.length} events</span>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -551,7 +818,7 @@ const RegistersHub: React.FC = () => {
                 />
               </div>
               <select value={auditRoleFilter} onChange={e => setAuditRoleFilter(e.target.value)} className="field-select text-sm py-2">
-                <option value="all">All Roles</option>
+                <option value="all">All roles</option>
                 <option value="deputy_manager_finance">Deputy Manager – Finance</option>
                 <option value="credit_manager">Credit Manager</option>
                 <option value="cfo">CFO</option>
@@ -560,7 +827,7 @@ const RegistersHub: React.FC = () => {
                 <option value="accounts">Accounts</option>
               </select>
               <select value={auditEntityFilter} onChange={e => setAuditEntityFilter(e.target.value)} className="field-select text-sm py-2">
-                <option value="all">All Entity Types</option>
+                <option value="all">All entity types</option>
                 <option value="application">Application</option>
                 <option value="loan_account">Loan Account</option>
                 <option value="member">Member</option>
@@ -580,7 +847,7 @@ const RegistersHub: React.FC = () => {
                 className="field-input text-sm py-2"
                 placeholder="To date"
               />
-              <button className="flex items-center gap-1 text-xs text-green-700 hover:underline">
+              <button disabled={!canExport} className="flex items-center gap-1 text-xs text-green-700 hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline">
                 <Download size={12} /> Export
               </button>
             </div>
@@ -601,27 +868,82 @@ const RegistersHub: React.FC = () => {
                     <tr>
                       <td colSpan={9} className="table-cell text-center text-slate-400 py-8">No events match the current filters.</td>
                     </tr>
-                  ) : filteredAudit.map(ev => (
-                    <tr key={ev.id} className="hover:bg-slate-50">
-                      <td className="table-cell text-xs text-slate-500 whitespace-nowrap">{new Date(ev.timestamp).toLocaleString('en-IN')}</td>
-                      <td className="table-cell font-medium text-slate-900">{ev.actorName}</td>
-                      <td className="table-cell text-xs text-slate-500 capitalize">{ev.actorRole.replace(/_/g, ' ')}</td>
-                      <td className="table-cell text-xs text-slate-500 capitalize">{ev.entityType.replace(/_/g, ' ')}</td>
-                      <td className="table-cell font-mono text-xs text-slate-600">{ev.entityId}</td>
-                      <td className="table-cell font-medium text-slate-800">{ev.eventType}</td>
-                      <td className="table-cell">
-                        {ev.previousState
-                          ? <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{ev.previousState}</span>
-                          : <span className="text-slate-300">—</span>}
-                      </td>
-                      <td className="table-cell">
-                        {ev.newState
-                          ? <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">{ev.newState}</span>
-                          : <span className="text-slate-300">—</span>}
-                      </td>
-                      <td className="table-cell text-xs text-slate-500 max-w-xs truncate">{ev.comment || '—'}</td>
-                    </tr>
-                  ))}
+                  ) : filteredAudit.map(ev => {
+                    const formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).format(new Date(ev.timestamp));
+                    
+                    let displayActor = ev.actorName;
+                    if (displayActor === 'Credit Assessment Team') displayActor = 'System';
+                    if (displayActor === 'System Admin' && (ev.eventType.includes('Sanction') || ev.eventType.includes('Document'))) {
+                        displayActor = 'System';
+                    }
+
+                    const roleMap: Record<string, string> = {
+                      deputy_manager_finance: 'Deputy Manager – Finance',
+                      credit_manager: 'Credit Manager',
+                      cfo: 'CFO',
+                      company_secretary: 'Company Secretary',
+                      director: 'Director',
+                      system: 'System'
+                    };
+                    let displayRole = roleMap[ev.actorRole] || ev.actorRole.replace(/_/g, ' ');
+
+                    let displayEntityId = ev.entityId;
+                    const matchedApp = loanApplications.find(a => a.id === ev.entityId);
+                    if (matchedApp) displayEntityId = matchedApp.applicationNumber;
+                    const matchedLoan = loanAccounts.find(l => l.id === ev.entityId);
+                    if (matchedLoan) displayEntityId = matchedLoan.accountNumber;
+
+                    const eventMap: Record<string, string> = {
+                      'Application Submitted': 'Application submitted',
+                      'Reference Number Generated': 'Reference number generated',
+                      'Appraisal Note Prepared': 'Appraisal note prepared',
+                      'Submitted to Sanction Committee': 'Submitted to Sanction Committee',
+                      'Sanction Approved': 'Sanction approved',
+                      'Document Pack Generated': 'Document pack generated',
+                      'Default Recovery Action Initiated': 'Default recovery action initiated',
+                      'Repayment Posted': 'Repayment posted'
+                    };
+                    let displayEvent = eventMap[ev.eventType] || ev.eventType;
+                    if (displayEvent.toLowerCase() === displayEvent) {
+                       displayEvent = displayEvent.charAt(0).toUpperCase() + displayEvent.slice(1);
+                    }
+
+                    const stateMap: Record<string, string> = {
+                      submitted: 'Submitted',
+                      reference_generated: 'Reference issued',
+                      appraisal_pending: 'Appraisal pending',
+                      credit_review: 'Credit review',
+                      pending_sanction: 'Pending sanction',
+                      sanctioned: 'Sanctioned',
+                      active: 'Active',
+                      default_review: 'Default review',
+                      recovery_in_progress: 'Recovery in progress'
+                    };
+                    let displayPrev = ev.previousState ? (stateMap[ev.previousState] || ev.previousState) : null;
+                    let displayNew = ev.newState ? (stateMap[ev.newState] || ev.newState) : null;
+
+                    return (
+                      <tr key={ev.id} className="hover:bg-slate-50">
+                        <td className="table-cell text-xs text-slate-500 whitespace-nowrap">{formattedDate}</td>
+                        <td className="table-cell font-medium text-slate-900">{displayActor}</td>
+                        <td className="table-cell text-xs text-slate-500 capitalize">{displayRole}</td>
+                        <td className="table-cell text-xs text-slate-500 capitalize">{ev.entityType.replace(/_/g, ' ')}</td>
+                        <td className="table-cell font-mono text-xs text-slate-600">{displayEntityId}</td>
+                        <td className="table-cell font-medium text-slate-800">{displayEvent}</td>
+                        <td className="table-cell">
+                          {displayPrev
+                            ? <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{displayPrev}</span>
+                            : <span className="text-slate-300">—</span>}
+                        </td>
+                        <td className="table-cell">
+                          {displayNew
+                            ? <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">{displayNew}</span>
+                            : <span className="text-slate-300">—</span>}
+                        </td>
+                        <td className="table-cell text-xs text-slate-500 max-w-xs truncate" title={ev.comment}>{ev.comment || '—'}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -632,39 +954,76 @@ const RegistersHub: React.FC = () => {
         <div className="card p-0 overflow-hidden">
           <div className="p-4 bg-slate-50 border-b border-slate-200">
             <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <AlertOctagon size={14} className="text-amber-500" /> Grievance Register
+              <AlertOctagon size={14} className="text-amber-500" /> Grievance register
             </p>
-            <p className="text-xs text-slate-500 mt-0.5">All borrower grievances — 7-day resolution SLA</p>
+            <p className="text-xs text-slate-500 mt-0.5">Borrower grievances and resolution status — 7-day TAT</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="table-header text-left">Ref No.</th>
+                  <th className="table-header text-left">Grievance Ref</th>
                   <th className="table-header text-left">Borrower</th>
                   <th className="table-header text-left">Subject</th>
                   <th className="table-header text-left">Raised On</th>
+                  <th className="table-header text-left">SLA Due</th>
                   <th className="table-header text-left">Status</th>
-                  <th className="table-header text-left">CS Response</th>
+                  <th className="table-header text-left">Resolution Note</th>
                   <th className="table-header text-left">Resolved On</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {[
-                  { ref: 'GR-001', borrower: 'Ganesh Thorat',   subject: 'Interest calculation query',        date: '2025-01-10', status: 'resolved', response: 'Interest calculated at 12% p.a. on outstanding principal per agreement.', resolved: '2025-01-17' },
-                  { ref: 'GR-002', borrower: 'Sunita Kamble',   subject: 'Repayment receipt not received',    date: '2025-03-05', status: 'resolved', response: 'Receipt sent via registered email. Physical copy couriered.', resolved: '2025-03-10' },
-                  { ref: 'GR-003', borrower: 'Kiran Pawar',     subject: 'Delay in NOC after repayment',      date: '2025-05-20', status: 'in_progress', response: 'Under CS review — NOC generation in progress.', resolved: null },
-                ].map(g => (
-                  <tr key={g.ref} className="hover:bg-slate-50">
+                  { ref: 'GR-2025-001', borrower: 'Ganesh Thorat',   subject: 'Interest calculation query',        date: '2025-01-10', status: 'resolved', response: 'Interest calculated at 12% p.a. on outstanding principal as per agreement.', resolved: '2025-01-17', owner: 'Company Secretary' },
+                  { ref: 'GR-2025-002', borrower: 'Sunita Kamble',   subject: 'Repayment receipt not received',    date: '2025-03-05', status: 'resolved', response: 'Receipt sent by registered email; physical copy couriered.', resolved: '2025-03-10', owner: 'Company Secretary' },
+                  { ref: 'GR-2025-003', borrower: 'Kiran Pawar',     subject: 'Delay in NOC after repayment',      date: '2025-05-20', status: 'in_progress', response: 'NOC generation in progress under Company Secretary review.', resolved: null, owner: 'Company Secretary' },
+                ].map(g => {
+                  const raisedDate = new Date(g.date);
+                  const slaDate = new Date(raisedDate);
+                  slaDate.setDate(raisedDate.getDate() + 7);
+                  
+                  let displayStatus = g.status;
+                  if (g.status !== 'resolved' && new Date() > slaDate) {
+                    displayStatus = 'overdue';
+                  }
+
+                  const statusMap: Record<string, string> = {
+                    in_progress: 'In progress',
+                    resolved: 'Resolved',
+                    overdue: 'Overdue',
+                    open: 'Open',
+                    escalated: 'Escalated'
+                  };
+
+                  let statusText = statusMap[displayStatus] || displayStatus;
+
+                  const dtFormat = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                  let raisedFmt = dtFormat.format(raisedDate);
+                  let slaFmt = dtFormat.format(slaDate);
+                  let resolvedFmt = g.resolved ? dtFormat.format(new Date(g.resolved)) : '—';
+                  
+                  const statusColor = statusText === 'Resolved' ? 'bg-green-100 text-green-700' :
+                                      statusText === 'Overdue' || statusText === 'Escalated' ? 'bg-red-100 text-red-700' :
+                                      statusText === 'In progress' ? 'bg-amber-100 text-amber-700' :
+                                      'bg-slate-100 text-slate-700';
+
+                  return (
+                  <tr key={g.ref} className={`hover:bg-slate-50 ${statusText === 'Overdue' ? 'bg-red-50/20' : ''}`}>
                     <td className="table-cell font-mono text-slate-600">{g.ref}</td>
                     <td className="table-cell font-medium text-slate-900">{g.borrower}</td>
                     <td className="table-cell text-slate-700">{g.subject}</td>
-                    <td className="table-cell">{g.date}</td>
-                    <td className="table-cell"><StatusBadge label={g.status} size="sm" /></td>
-                    <td className="table-cell text-xs text-slate-500 max-w-xs truncate">{g.response}</td>
-                    <td className="table-cell text-slate-500">{g.resolved || '—'}</td>
+                    <td className="table-cell text-slate-600">{raisedFmt}</td>
+                    <td className="table-cell text-slate-500 font-medium">{slaFmt}</td>
+                    <td className="table-cell">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusColor}`}>
+                        {statusText}
+                      </span>
+                    </td>
+                    <td className="table-cell text-xs text-slate-500 max-w-xs truncate" title={g.response}>{g.response}</td>
+                    <td className="table-cell text-slate-500">{resolvedFmt}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -721,7 +1080,7 @@ const RegistersHub: React.FC = () => {
                 </p>
                 <p className="text-xs text-slate-500 mt-0.5">{register.subtitle}</p>
               </div>
-              <button className="flex items-center gap-1 text-xs text-green-700 hover:underline">
+              <button disabled={!canExport} className="flex items-center gap-1 text-xs text-green-700 hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline">
                 <Download size={12} /> Export
               </button>
             </div>

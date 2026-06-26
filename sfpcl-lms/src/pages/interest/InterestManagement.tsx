@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   IndianRupee, Calendar, AlertTriangle, CheckCircle2,
-  FileText, Download, TrendingUp, Clock, ArrowUpRight
+  FileText, Download, TrendingUp, Clock, ArrowUpRight, Lock, Send
 } from 'lucide-react';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { useRole } from '../../contexts/RoleContext';
@@ -9,10 +9,10 @@ import { useRole } from '../../contexts/RoleContext';
 type InterestTab = 'accrual' | 'invoices' | 'capitalisation';
 
 const accrualData = [
-  { loanNo: 'LO00000042', borrower: 'Ganesh Thorat',   principal: 350000, rate: 12, daysInPeriod: 91, accrued: 10543, status: 'active',  dueDate: '2025-09-30' },
-  { loanNo: 'LO00000044', borrower: 'Sunita Kamble',   principal: 200000, rate: 12, daysInPeriod: 91, accrued: 6024,  status: 'active',  dueDate: '2025-09-30' },
-  { loanNo: 'LO00000045', borrower: 'Kiran Pawar',     principal: 150000, rate: 12, daysInPeriod: 91, accrued: 4527,  status: 'active',  dueDate: '2025-09-30' },
-  { loanNo: 'LO00000038', borrower: 'Malti Shinde',    principal: 180000, rate: 14, daysInPeriod: 91, accrued: 6273,  status: 'overdue', dueDate: '2025-06-30' },
+  { loanNo: 'LO00000042', borrower: 'Ganesh Thorat',   principal: 350000, rate: 12, daysInPeriod: 30, accrued: 3452, status: 'active',  dueDate: '2025-09-30', sapStatus: 'pending', postedDate: '-' },
+  { loanNo: 'LO00000044', borrower: 'Sunita Kamble',   principal: 200000, rate: 12, daysInPeriod: 30, accrued: 1972, status: 'active',  dueDate: '2025-09-30', sapStatus: 'posted', postedDate: '2025-09-28' },
+  { loanNo: 'LO00000045', borrower: 'Kiran Pawar',     principal: 150000, rate: 12, daysInPeriod: 30, accrued: 1479, status: 'active',  dueDate: '2025-09-30', sapStatus: 'pending', postedDate: '-' },
+  { loanNo: 'LO00000038', borrower: 'Malti Shinde',    principal: 180000, rate: 14, daysInPeriod: 30, accrued: 2071, status: 'overdue', dueDate: '2025-06-30', sapStatus: 'posted', postedDate: '2025-09-28' },
 ];
 
 const invoices = [
@@ -22,16 +22,23 @@ const invoices = [
 ];
 
 const InterestManagement: React.FC = () => {
-  const { can } = useRole();
+  const { currentUser } = useRole();
   const [activeTab, setActiveTab] = useState<InterestTab>('accrual');
-  const [accrualPeriod, setAccrualPeriod] = useState('Q2 FY 2025–26 (Jul–Sep 2025)');
-  const [capLoans, setCapLoans] = useState<string[]>([]);
+  const [accrualPeriod, setAccrualPeriod] = useState('September 2025');
+  
+  const role = currentUser.role;
+  const isAdmin = role === 'admin';
+  const isAccounts = isAdmin || role.includes('finance') || role.includes('account');
+  const isSales = isAdmin || role.includes('field') || role.includes('sales');
+  const isCredit = isAdmin || role.includes('credit');
+
+  const [capRemarks, setCapRemarks] = useState('');
 
   const totalAccrued = accrualData.reduce((sum, r) => sum + r.accrued, 0);
-  const overdueInterest = accrualData.filter(r => r.status === 'overdue').reduce((sum, r) => sum + r.accrued, 0);
+  const sapPendingCount = accrualData.filter(r => r.sapStatus === 'pending').length;
 
   const tabs: { id: InterestTab; label: string }[] = [
-    { id: 'accrual',        label: 'Interest Accrual' },
+    { id: 'accrual',        label: 'Monthly Interest Accrual' },
     { id: 'invoices',       label: 'Yearly Invoices' },
     { id: 'capitalisation', label: 'Interest Capitalisation' },
   ];
@@ -40,15 +47,15 @@ const InterestManagement: React.FC = () => {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-xl font-bold text-slate-900">Interest Management</h1>
-        <p className="text-sm text-slate-500 mt-1">Manage quarterly interest accruals, annual interest invoices, and post-April 30 capitalisation.</p>
+        <p className="text-sm text-slate-500 mt-1">Manage monthly interest accruals, annual interest invoices, and post–30 April capitalisation.</p>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Q2 Interest Accrued', value: `₹${totalAccrued.toLocaleString('en-IN')}`, icon: <TrendingUp size={16} />, color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100' },
-          { label: 'Overdue Interest',    value: `₹${overdueInterest.toLocaleString('en-IN')}`, icon: <AlertTriangle size={16} />, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' },
-          { label: 'Invoices Pending',    value: '1',    icon: <FileText size={16} />, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+          { label: 'Current Month Accrued', value: `₹${totalAccrued.toLocaleString('en-IN')}`, icon: <TrendingUp size={16} />, color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100' },
+          { label: 'Accrual Posting Due', value: sapPendingCount.toString(), icon: <AlertTriangle size={16} />, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' },
+          { label: 'Invoices Pending', value: '1', icon: <FileText size={16} />, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
           { label: 'Pending Capitalisation', value: '1', icon: <ArrowUpRight size={16} />, color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-100' },
         ].map(kpi => (
           <div key={kpi.label} className={`${kpi.bg} ${kpi.border} border rounded-xl p-4`}>
@@ -84,33 +91,38 @@ const InterestManagement: React.FC = () => {
           <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3 text-sm text-blue-800">
             <TrendingUp size={16} className="mt-0.5 flex-shrink-0 text-blue-600" />
             <div>
-              <strong>Accrual Method:</strong> Interest accrues daily on outstanding principal at the agreed rate (12% p.a. standard, 14% p.a. for overdue). Posted quarterly to SAP. Per SOP Section 9.2 — unpaid interest after 30 April is capitalised (added to principal) in the next financial year.
+              <strong>Accrual method:</strong> Interest is calculated using configured rate versions and posted monthly to SAP.
             </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="font-semibold text-slate-900">Quarterly Interest Accrual</h3>
+                <h3 className="font-semibold text-slate-900">Monthly Interest Accrual</h3>
                 <div className="flex items-center gap-3 mt-2">
                   <select
                     value={accrualPeriod}
                     onChange={e => setAccrualPeriod(e.target.value)}
                     className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
                   >
-                    <option>Q2 FY 2025–26 (Jul–Sep 2025)</option>
-                    <option>Q1 FY 2025–26 (Apr–Jun 2025)</option>
-                    <option>Q4 FY 2024–25 (Jan–Mar 2025)</option>
-                    <option>Q3 FY 2024–25 (Oct–Dec 2024)</option>
+                    <option>September 2025</option>
+                    <option>August 2025</option>
+                    <option>July 2025</option>
                   </select>
                 </div>
               </div>
-              {can('post_repayment') && (
-                <button className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                  <CheckCircle2 size={15} />
-                  Post to SAP
-                </button>
-              )}
+              <div>
+                {isAccounts || isCredit ? (
+                  <button className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    <CheckCircle2 size={15} />
+                    Mark SAP Posted
+                  </button>
+                ) : (
+                  <button disabled className="flex items-center gap-2 bg-slate-100 text-slate-400 px-4 py-2 rounded-lg text-sm font-medium cursor-not-allowed">
+                    <Lock size={14} /> Mark SAP Posted
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -119,25 +131,32 @@ const InterestManagement: React.FC = () => {
                   <tr>
                     <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase">Loan No.</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Borrower</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Principal O/S</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Principal Balance</th>
                     <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Rate</th>
                     <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Days</th>
                     <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Interest Accrued</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Status</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Due Date</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">SAP Status</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Posted Date / Due Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {accrualData.map(row => (
-                    <tr key={row.loanNo} className={`hover:bg-slate-50 transition-colors ${row.status === 'overdue' ? 'bg-red-50/30' : ''}`}>
-                      <td className="px-6 py-3 font-mono text-slate-700">{row.loanNo}</td>
+                    <tr key={row.loanNo} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-3 font-mono text-slate-700">
+                        <div className="flex items-center gap-2">
+                          {row.loanNo}
+                          {row.status === 'overdue' && <span className="bg-red-100 text-red-700 text-[10px] px-1.5 py-0.5 rounded-sm font-bold uppercase">Overdue</span>}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-slate-800">{row.borrower}</td>
                       <td className="px-4 py-3 text-right text-slate-700">₹{row.principal.toLocaleString('en-IN')}</td>
                       <td className="px-4 py-3 text-right text-slate-700">{row.rate}%</td>
                       <td className="px-4 py-3 text-right text-slate-700">{row.daysInPeriod}</td>
                       <td className="px-4 py-3 text-right font-semibold text-slate-900">₹{row.accrued.toLocaleString('en-IN')}</td>
-                      <td className="px-4 py-3"><StatusBadge label={row.status} size="sm" /></td>
-                      <td className="px-4 py-3 text-slate-500 text-xs">{row.dueDate}</td>
+                      <td className="px-4 py-3">
+                        {row.sapStatus === 'posted' ? <span className="text-green-600 font-medium flex items-center gap-1"><CheckCircle2 size={14}/> Posted</span> : <span className="text-amber-600 font-medium flex items-center gap-1"><Clock size={14}/> Pending</span>}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500 text-xs">{row.sapStatus === 'posted' ? row.postedDate : `Due: ${row.dueDate}`}</td>
                     </tr>
                   ))}
                   <tr className="bg-slate-100 font-semibold">
@@ -158,25 +177,31 @@ const InterestManagement: React.FC = () => {
           <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 flex items-start gap-3 text-sm text-amber-800">
             <FileText size={16} className="mt-0.5 flex-shrink-0 text-amber-600" />
             <div>
-              <strong>Annual Interest Invoices:</strong> Per SOP Section 9.3 — yearly interest invoices are to be sent to each borrower before 30 April. If interest remains unpaid by 30 April, it is capitalised (added to principal outstanding) in the next financial year.
+              <strong>Annual invoices are due by 30 April. Unpaid invoices after 30 April route to capitalisation.</strong>
             </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h3 className="font-semibold text-slate-900">FY 2024–25 Interest Invoices</h3>
-              {can('post_repayment') && (
-                <div className="flex gap-2">
-                  <button className="flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
-                    <Download size={15} />
-                    Export All
-                  </button>
+              <div className="flex gap-2">
+                <button className="flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+                  <Download size={15} />
+                  Export All
+                </button>
+                {isSales && (
                   <button className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                     <FileText size={15} />
-                    Generate Bulk Invoices
+                    Generate Invoice Batch / Issue Invoices
                   </button>
-                </div>
-              )}
+                )}
+                {isAccounts && !isSales && (
+                  <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    <FileText size={15} />
+                    Review Invoice Batch
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -187,7 +212,7 @@ const InterestManagement: React.FC = () => {
                     <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Loan</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Borrower</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Period</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Amount</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Invoice Amount</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Status</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Due By</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Actions</th>
@@ -203,10 +228,15 @@ const InterestManagement: React.FC = () => {
                       <td className="px-4 py-3 text-right font-semibold text-slate-900">₹{inv.amount.toLocaleString('en-IN')}</td>
                       <td className="px-4 py-3"><StatusBadge label={inv.status} size="sm" /></td>
                       <td className="px-4 py-3 text-slate-500 text-xs">{inv.dueBy}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 flex items-center gap-3">
                         <button className="text-xs text-green-700 font-medium hover:underline flex items-center gap-1">
                           <Download size={12} /> Download
                         </button>
+                        {isCredit && inv.status === 'overdue' && (
+                          <button className="text-xs text-amber-700 font-medium hover:underline flex items-center gap-1">
+                            <Send size={12} /> Send Reminder
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -223,7 +253,7 @@ const InterestManagement: React.FC = () => {
           <div className="bg-violet-50 border border-violet-100 rounded-xl p-4 flex items-start gap-3 text-sm text-violet-800">
             <ArrowUpRight size={16} className="mt-0.5 flex-shrink-0 text-violet-600" />
             <div>
-              <strong>SOP Section 9.4 — Interest Capitalisation:</strong> If a borrower fails to pay the annual interest by 30 April, the unpaid interest is added to the principal outstanding for the next financial year. This triggers a recalculated repayment schedule. Credit Manager must approve capitalisation.
+              <strong>Unpaid interest after 30 April is added to principal and recalculates the repayment schedule.</strong>
             </div>
           </div>
 
@@ -240,11 +270,16 @@ const InterestManagement: React.FC = () => {
                 </div>
                 <StatusBadge label="overdue" />
               </div>
-              <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
-                <div><div className="text-red-600 text-xs">Current Principal</div><div className="font-semibold text-red-900">₹1,80,000</div></div>
-                <div><div className="text-red-600 text-xs">Unpaid Interest</div><div className="font-semibold text-red-900">₹25,200</div></div>
-                <div><div className="text-red-600 text-xs">New Principal (post-cap)</div><div className="font-semibold text-red-900">₹2,05,200</div></div>
-                <div><div className="text-red-600 text-xs">Rate on New Principal</div><div className="font-semibold text-red-900">12% p.a.</div></div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-sm bg-white/50 p-3 rounded-lg">
+                <div><div className="text-slate-500 text-xs">Current Principal</div><div className="font-semibold text-slate-900">₹1,80,000</div></div>
+                <div><div className="text-slate-500 text-xs">Unpaid Interest</div><div className="font-semibold text-slate-900">₹25,200</div></div>
+                <div><div className="text-slate-500 text-xs">New Principal</div><div className="font-semibold text-slate-900">₹2,05,200</div></div>
+                <div><div className="text-slate-500 text-xs">Rate Version Used</div><div className="font-semibold text-slate-900">v2.1 (12%)</div></div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3 text-sm px-1">
+                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500"></div><span className="text-slate-600 text-xs font-medium">Approval Status: Pending</span></div>
+                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500"></div><span className="text-slate-600 text-xs font-medium">Borrower Intimation: Pending</span></div>
+                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-300"></div><span className="text-slate-600 text-xs font-medium">Ledger Posting: Not Started</span></div>
               </div>
             </div>
 
@@ -254,25 +289,41 @@ const InterestManagement: React.FC = () => {
                 <input type="date" defaultValue="2025-05-01" className="w-full max-w-xs px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Authorisation Remarks (mandatory)</label>
-                <textarea rows={3} placeholder="Credit Manager approval note for capitalisation…" className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none" />
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  {isCredit ? 'Enter approval or posting remarks (mandatory)' : 'Approval required from configured approver'}
+                </label>
+                <textarea 
+                  rows={3} 
+                  disabled={!isCredit}
+                  value={capRemarks}
+                  onChange={e => setCapRemarks(e.target.value)}
+                  placeholder={isCredit ? "Enter remarks..." : "Approval required from configured approver"} 
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none disabled:bg-slate-50" 
+                />
               </div>
-              <div className="flex items-center gap-2 text-amber-700 bg-amber-50 rounded-xl p-4 text-sm">
-                <Clock size={16} className="flex-shrink-0" />
-                Capitalisation will increase the principal to ₹2,05,200 and generate a revised repayment schedule. This action is irreversible without manual journal entries.
+              <div className="flex items-start gap-2 text-amber-800 bg-amber-50 border border-amber-100 rounded-xl p-4 text-sm">
+                <Clock size={16} className="flex-shrink-0 mt-0.5" />
+                This will update principal, create a ledger entry, recalculate the repayment schedule, and queue borrower intimation.
               </div>
-              {can('do_appraisal') && (
-                <div className="flex gap-3">
-                  <button className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors">
-                    <ArrowUpRight size={16} />
-                    Capitalise Unpaid Interest
+              <div className="flex flex-wrap gap-3">
+                {isCredit ? (
+                  <>
+                    <button disabled={!capRemarks} className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:hover:bg-violet-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors">
+                      <ArrowUpRight size={16} />
+                      Approve & Post Capitalisation
+                    </button>
+                    <button className="flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+                      <FileText size={16} />
+                      Preview New Schedule & Intimation
+                    </button>
+                  </>
+                ) : (
+                  <button disabled className="flex items-center gap-2 bg-slate-100 text-slate-400 px-5 py-2.5 rounded-lg text-sm font-semibold cursor-not-allowed">
+                    <Lock size={16} />
+                    Submit for Approval
                   </button>
-                  <button className="flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
-                    <FileText size={16} />
-                    Preview New Schedule
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
 
