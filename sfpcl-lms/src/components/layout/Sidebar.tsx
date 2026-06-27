@@ -21,6 +21,7 @@ const allNavItems: NavItem[] = [
   { id: 'dashboard',     label: 'Dashboard',             icon: <LayoutDashboard size={18} /> },
   { id: 'tasks',         label: 'Task Inbox',            icon: <Inbox size={18} />,           badge: 5, requiredPermission: 'view_applications' },
   { id: 'applications',  label: 'Applications',          icon: <FileText size={18} />,        badge: 3, requiredPermission: 'view_applications' },
+  { id: 'completeness',  label: 'Completeness',          icon: <ClipboardList size={18} />,   badge: 3, requiredPermission: 'do_completeness_check' },
   { id: 'members',       label: 'Members & Borrowers',   icon: <Users size={18} />,           requiredPermission: 'view_members' },
   { id: 'appraisal',     label: 'Appraisal',             icon: <ClipboardCheck size={18} />,  badge: 2, requiredPermission: 'do_appraisal' },
   { id: 'sanction',      label: 'Sanction',              icon: <Gavel size={18} />,           badge: 1, requiredPermission: 'view_sanction' },

@@ -221,7 +221,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
           <CheckCircle2 size={44} className="mx-auto text-green-600 mb-4" />
           <h3 className="text-lg font-bold text-slate-900">Application submitted for completeness check</h3>
           <p className="text-sm text-slate-500 mt-2">
-            Draft ID DRAFT-APP-0042 has been submitted. The official LO reference will be generated only after the Deputy Manager - Finance completes the mandatory checklist.
+            Application ID APP-2026-000001 has been submitted. The official LO reference will be generated only after the Deputy Manager - Finance completes the mandatory checklist.
           </p>
           <div className="mt-5 flex flex-col sm:flex-row justify-center gap-3">
             <button onClick={onNavigateToApplication} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm">

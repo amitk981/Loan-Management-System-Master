@@ -22,7 +22,7 @@ const RepaymentsHub: React.FC = () => {
   // View-only allowed for auditor, cfo, etc.
   const isAllowed = ['admin', 'credit_manager', 'senior_manager_finance', 'deputy_manager_finance', 'accounts_team', 'cfo', 'auditor', 'sales', 'field_officer', 'compliance_team'].includes(role);
 
-  const activeOrOverdueLoans = loanAccounts.filter(l => l.status === 'active' || l.status === 'overdue' || l.status === 'grace_period' || l.status.includes('recovery'));
+  const activeOrOverdueLoans = loanAccounts.filter(l => l.status !== 'closed' && l.status !== 'recovered');
   
   const [selectedLoan, setSelectedLoan] = useState<string>(activeOrOverdueLoans[0]?.id || '');
   const [showPostModal, setShowPostModal] = useState(false);
@@ -31,6 +31,8 @@ const RepaymentsHub: React.FC = () => {
   const [postRef, setPostRef] = useState('');
   const [postDate, setPostDate] = useState(formatDate(new Date().toISOString()));
   const [postBank, setPostBank] = useState('SFPCL HDFC A/c');
+  const [subsidiaryName, setSubsidiaryName] = useState('Sahyadri Farms Post Harvest Care Ltd.');
+  const [subsidiaryNarration, setSubsidiaryNarration] = useState('');
   const [posted, setPosted] = useState(false);
 
   if (!isAllowed) {
@@ -200,9 +202,39 @@ const RepaymentsHub: React.FC = () => {
                       >
                         <option value="direct_rtgs">Direct RTGS</option>
                         <option value="direct_neft">Direct NEFT</option>
-                        <option value="subsidiary_deduction" disabled>Subsidiary Deduction (Use dedicated route)</option>
+                        <option value="subsidiary_deduction">Subsidiary Deduction</option>
                       </select>
                     </div>
+
+                    {postChannel === 'subsidiary_deduction' && (
+                      <>
+                        <div>
+                          <label className="field-label">Subsidiary Name</label>
+                          <select
+                            value={subsidiaryName}
+                            onChange={e => setSubsidiaryName(e.target.value)}
+                            className="field-select"
+                            disabled={isModalLoanClosed}
+                          >
+                            <option>Sahyadri Farms Post Harvest Care Ltd.</option>
+                            <option>Sahyadri Agro</option>
+                            <option>Sahyadri Farms</option>
+                            <option>Sahyadri Post Harvest</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="field-label">Deduction Narration</label>
+                          <input
+                            type="text"
+                            value={subsidiaryNarration}
+                            onChange={e => setSubsidiaryNarration(e.target.value)}
+                            className="field-input"
+                            placeholder="e.g. Crop produce deduction FY 2025-26"
+                            disabled={isModalLoanClosed}
+                          />
+                        </div>
+                      </>
+                    )}
 
                     <div>
                       <label className="field-label">Payment Date</label>
@@ -290,7 +322,7 @@ const RepaymentsHub: React.FC = () => {
               {!posted && (
                 <button
                   className="btn-primary disabled:opacity-50"
-                  disabled={!postAmount || Number(postAmount) <= 0 || !postRef || !postDate || isModalLoanClosed}
+                  disabled={!postAmount || Number(postAmount) <= 0 || !postDate || isModalLoanClosed || (postChannel !== 'subsidiary_deduction' && !postRef) || (postChannel === 'subsidiary_deduction' && !subsidiaryNarration)}
                   onClick={() => setPosted(true)}
                 >
                   Record Receipt

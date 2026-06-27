@@ -50,6 +50,8 @@ const LoanClosureHub: React.FC = () => {
   const [archiveCompleted, setArchiveCompleted] = useState(false);
   const [loanMarkedClosed, setLoanMarkedClosed] = useState(false);
   const [closureNotes, setClosureNotes] = useState('');
+  const [manualChecks, setManualChecks] = useState<Record<number, boolean>>({});
+  const toggleManualCheck = (idx: number) => setManualChecks(prev => ({ ...prev, [idx]: !prev[idx] }));
 
   if (!canAccess) {
     return <div className="p-6 text-red-600">Access Denied. You do not have permission to view this module.</div>;
@@ -80,7 +82,7 @@ const LoanClosureHub: React.FC = () => {
     { item: 'Loan record archived',                         done: archiveComplete },
   ];
 
-  const completedCount = closureChecklist.filter(c => c.done).length;
+  const completedCount = closureChecklist.filter((c, i) => c.done || manualChecks[i]).length;
   const publicationImpact = [
     { label: 'Borrower communication', status: nocSent ? 'sent' : nocComplete ? 'ready' : 'not_ready', note: nocSent ? 'Communication sent to borrower.' : 'Send after NOC is issued.' },
     { label: 'NOC Register', status: nocComplete ? 'issued' : 'pending', note: nocComplete ? 'NOC reference and issue date are visible in the register.' : 'Waiting for NOC issue.' },
@@ -203,15 +205,27 @@ const LoanClosureHub: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              {closureChecklist.map((item, i) => (
-                <div key={i} className={`flex items-center gap-3 p-3 rounded-lg ${item.done ? 'bg-green-50' : 'bg-slate-50'}`}>
-                  {item.done
-                    ? <CheckCircle2 size={16} className="text-green-600 flex-shrink-0" />
-                    : <Clock size={16} className="text-slate-300 flex-shrink-0" />
-                  }
-                  <span className={`text-sm ${item.done ? 'text-green-800' : 'text-slate-500'}`}>{item.item}</span>
-                </div>
-              ))}
+              {closureChecklist.map((item, i) => {
+                const effectiveDone = item.done || manualChecks[i];
+                const canToggle = canComply && !item.done && isEligible;
+                return (
+                  <button
+                    key={i}
+                    disabled={!canToggle}
+                    onClick={() => canToggle && toggleManualCheck(i)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${effectiveDone ? 'bg-green-50' : canToggle ? 'bg-slate-50 hover:bg-slate-100 cursor-pointer' : 'bg-slate-50 cursor-default'}`}
+                  >
+                    {effectiveDone
+                      ? <CheckCircle2 size={16} className="text-green-600 flex-shrink-0" />
+                      : <Clock size={16} className="text-slate-300 flex-shrink-0" />
+                    }
+                    <span className={`text-sm flex-1 ${effectiveDone ? 'text-green-800' : 'text-slate-500'}`}>{item.item}</span>
+                    {canToggle && !effectiveDone && (
+                      <span className="text-xs text-slate-400">Tap to confirm</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             {selectedLoan.outstanding === 0 && (

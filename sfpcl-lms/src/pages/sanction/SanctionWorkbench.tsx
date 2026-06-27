@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Gavel, ChevronRight, Check, AlertOctagon, Shield, CheckCircle2,
+  Gavel, ChevronRight, FileText, Check, AlertOctagon, Shield, CheckCircle2,
   XCircle, AlertTriangle, MessageSquare, Download, Clock, Info,
   UserCheck, ArrowRight, Scale, AlertCircle
 } from 'lucide-react';
 import StatusBadge from '../../components/ui/StatusBadge';
 import AlertBanner from '../../components/ui/AlertBanner';
 import ApprovalPanel from '../../components/loan/ApprovalPanel';
-import { loanApplications } from '../../data/mockData';
+import { loanApplications as mockApplications } from '../../data/mockData';
+import type { LoanApplication } from '../../types';
 import { useRole } from '../../contexts/RoleContext';
 
 const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
@@ -29,12 +30,15 @@ const REJECTION_REASONS = [
 interface SanctionWorkbenchProps {
   onOpenApplication: (id: string) => void;
   initialSelectedId?: string;
+  applications?: LoanApplication[];
+  onUpdateStatus?: (id: string, newStatus: string) => void;
 }
 
-const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication, initialSelectedId }) => {
+const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication, initialSelectedId, applications, onUpdateStatus }) => {
   const { can } = useRole();
+  const loanApplications = applications ?? mockApplications;
   const sanctionQueue = loanApplications.filter(a =>
-    a.status === 'pending_sanction'
+    ['pending_sanction_committee_approval', 'pending_sanction', 'under_sanction_review', 'clarification_requested'].includes(a.status)
   );
   const exceptions = loanApplications.filter(a => a.isException);
   const specialCases = loanApplications.filter(a => a.specialCase);
@@ -55,6 +59,18 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
 
   const { currentUser } = useRole();
   const app = sanctionQueue.find(a => a.id === selected);
+
+  useEffect(() => {
+    if (!app || !onUpdateStatus) return;
+    const decs = slotDecisions[app.id] || {};
+    const cfoApproved = decs['CFO']?.decision === 'approved';
+    const reqDirs = app.requestedAmount > 500000 ? 2 : 1;
+    const dirDecisions = reqDirs === 2
+      ? [decs['Director 1']?.decision, decs['Director 2']?.decision]
+      : [decs['Director 1']?.decision];
+    const dirsApproved = dirDecisions.every(d => d === 'approved');
+    if (cfoApproved && dirsApproved) onUpdateStatus(app.id, 'sanctioned');
+  }, [slotDecisions, app?.id]);
 
   const isDirectorRole = currentUser.role === 'director' || currentUser.role === 'admin';
   const isCFO = currentUser.role === 'cfo' || currentUser.role === 'admin';
@@ -192,8 +208,8 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
                     </div>
                     <p className="text-sm text-slate-500">{app.memberName} · {fmt(app.requestedAmount)}</p>
                   </div>
-                  <button onClick={() => onOpenApplication(app.id)} className="text-xs text-green-600 hover:underline flex items-center gap-1">
-                    Full view <ChevronRight size={12} />
+                  <button onClick={() => onOpenApplication(app.id)} className="btn-secondary flex items-center gap-2 flex-shrink-0">
+                    <FileText size={14} /> Full Application
                   </button>
                 </div>
 

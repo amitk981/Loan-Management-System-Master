@@ -82,7 +82,7 @@ const ActionRow: React.FC<{
 /* ─── Component ─────────────────────────────────────────── */
 const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, initialSelectedId }) => {
   const docQueue = loanApplications.filter(a =>
-    ['sanctioned', 'documentation_in_progress'].includes(a.status) &&
+    ['sanctioned', 'documentation_in_progress', 'documentation_deficiency_raised', 'pending_final_checklist_approvals'].includes(a.status) &&
     a.documentationStatus !== 'complete'
   );
 
@@ -460,7 +460,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="font-semibold text-slate-900 num text-sm truncate">{a.applicationNumber}</div>
-                        <StatusBadge label={qs.ready ? 'ready_for_payment' : a.documentationStatus} size="sm" />
+                        <StatusBadge label={qs.ready ? 'disbursement_ready' : a.documentationStatus} size="sm" />
                       </div>
                       <div className="text-xs text-slate-500 truncate mt-0.5">{a.memberName} · {fmt(a.requestedAmount)}</div>
                       <div className="mt-1.5 flex items-center gap-1.5 text-xs">
@@ -504,8 +504,8 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
                     >
                       {completedLegalCount > 0 ? (signatureMismatch ? 'Regenerate Document Pack' : 'View Document Pack') : 'Generate Document Pack'}
                     </button>
-                    <button onClick={() => onOpenApplication(app.id)} className="text-xs text-green-600 hover:underline flex items-center gap-1 self-center">
-                      Full view <ChevronRight size={12} />
+                    <button onClick={() => onOpenApplication(app.id)} className="btn-secondary flex items-center gap-2 flex-shrink-0">
+                      <FileText size={14} /> Full Application
                     </button>
                   </div>
                 </div>
@@ -716,6 +716,73 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
                         </div>
                       ))}
                     </div>
+
+                    {/* Witness Detail Panel */}
+                    <div className="mt-5 rounded-lg border border-slate-200 overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+                        <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                          <FileSignature size={13} className="text-blue-500" /> Witness Detail Panel
+                        </h4>
+                        <StatusBadge label={witnessKycReady ? 'verified' : 'pending'} size="sm" />
+                      </div>
+                      <div className="divide-y divide-slate-100">
+                        {[
+                          {
+                            name: 'Rajan Marathe', role: 'Witness 1 (Required)',
+                            folio: 'FO-0442', relation: 'Neighbour',
+                            shareholderVerification: 'Verified', dob: '10 May 1975', age: 49, gender: 'Male',
+                            mobile: '9821234567', address: 'Village Panchkund, Nashik, MH 422001',
+                            identity: 'Aadhaar ****-****-7321', pan: 'Pending', aadhaar: 'Uploaded',
+                            signatureObtained: true, signatureDate: '18 Sep 2024',
+                          },
+                          {
+                            name: 'Sunanda Patil', role: 'Witness 2 (Optional)',
+                            folio: 'FO-0211', relation: 'Village member',
+                            shareholderVerification: 'Pending', dob: '22 Nov 1968', age: 55, gender: 'Female',
+                            mobile: '9922345678', address: 'Village Panchkund, Nashik, MH 422001',
+                            identity: 'Aadhaar ****-****-4490', pan: 'Pending', aadhaar: 'Uploaded',
+                            signatureObtained: false, signatureDate: null,
+                          },
+                        ].map((w, i) => (
+                          <div key={i} className="p-4 space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">{w.name}</p>
+                                <p className="text-xs text-slate-500">{w.role} · Folio {w.folio} · {w.relation}</p>
+                              </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <StatusBadge label={w.shareholderVerification === 'Verified' ? 'shareholder_verified' : 'shareholder_pending'} size="sm" />
+                                <span className={`text-[10px] font-medium ${w.shareholderVerification === 'Verified' ? 'text-green-700' : 'text-amber-700'}`}>
+                                  SFPCL Shareholder: {w.shareholderVerification}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {[
+                                { label: 'DOB / Age', value: `${w.dob} · ${w.age} yrs` },
+                                { label: 'Gender', value: w.gender },
+                                { label: 'Mobile', value: w.mobile },
+                                { label: 'Identity', value: w.identity },
+                                { label: 'PAN Status', value: w.pan },
+                                { label: 'Aadhaar Status', value: w.aadhaar },
+                                { label: 'Signature', value: w.signatureObtained ? `Signed · ${w.signatureDate}` : 'Not yet obtained' },
+                                { label: 'Address', value: w.address },
+                              ].map(({ label, value }) => (
+                                <div key={label} className="bg-slate-50 rounded p-2">
+                                  <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">{label}</p>
+                                  <p className={`text-xs font-semibold mt-0.5 ${value === 'Pending' || value === 'Not yet obtained' ? 'text-amber-700' : 'text-slate-800'}`}>{value}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className={`px-4 py-2 text-xs font-medium border-t ${witnessKycReady ? 'bg-green-50 border-green-100 text-green-700' : 'bg-amber-50 border-amber-100 text-amber-700'}`}>
+                        {witnessKycReady
+                          ? 'Witness verification complete — security instruments are unblocked.'
+                          : 'Witness PAN/Aadhaar verification pending — blocks SH-4 share transfer and security package completion.'}
+                      </div>
+                    </div>
                   </div>
 
                   {/* ─ Tab 3: Approvals (S35) ─ */}
@@ -801,7 +868,7 @@ const DocumentationHub: React.FC<DocumentationHubProps> = ({ onOpenApplication, 
                             Requires all legal actions and final sign-offs before moving to SAP / disbursement readiness.
                           </p>
                         </div>
-                        <StatusBadge label={isDocComplete ? 'complete' : disbursementReady ? 'ready_for_payment' : 'blocked'} size="sm" />
+                        <StatusBadge label={isDocComplete ? 'complete' : disbursementReady ? 'disbursement_ready' : 'blocked'} size="sm" />
                       </div>
 
                       {isDocComplete ? (

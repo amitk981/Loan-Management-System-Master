@@ -106,7 +106,7 @@ export const loanApplications: LoanApplication[] = [
     memberId: 'm001', memberName: 'Ramesh Patil', memberType: 'individual',
     nomineeId: 'nom001', requestedAmount: 450000, purpose: 'crop_production',
     loanType: 'short_term', tenure: 12, sharesHeld: 500, shareMode: 'physical',
-    landAreaAcres: 4.5, status: 'pending_sanction', documentationStatus: 'not_started',
+    landAreaAcres: 4.5, status: 'pending_sanction_committee_approval', documentationStatus: 'not_started',
     disbursementStatus: 'pending_documentation', eligibleAmount: 90000,
     shareholdingLimit: 600000, landBasedLimit: 90000, isException: true,
     exceptionReason: 'Requested ₹4,50,000 exceeds eligible limit ₹90,000.',
@@ -119,7 +119,7 @@ export const loanApplications: LoanApplication[] = [
     memberId: 'm002', memberName: 'Sunita Bhosale', memberType: 'individual',
     nomineeId: 'nom002', requestedAmount: 350000, purpose: 'crop_production',
     loanType: 'short_term', tenure: 12, sharesHeld: 300, shareMode: 'demat',
-    landAreaAcres: 3.2, status: 'credit_review', documentationStatus: 'not_started',
+    landAreaAcres: 3.2, status: 'pending_credit_manager_review', documentationStatus: 'not_started',
     disbursementStatus: 'pending_documentation', eligibleAmount: 64000,
     shareholdingLimit: 360000, landBasedLimit: 64000, isException: true,
     exceptionReason: 'Requested amount ₹3,50,000 exceeds eligible limit ₹64,000 by ₹2,86,000.',
@@ -132,7 +132,7 @@ export const loanApplications: LoanApplication[] = [
     memberId: 'm003', memberName: 'Kisan Samruddhi FPC Ltd.', memberType: 'fpc',
     nomineeId: 'nom003', requestedAmount: 800000, purpose: 'agriculture_activity',
     loanType: 'long_term', tenure: 24, sharesHeld: 2000, shareMode: 'demat',
-    landAreaAcres: 18, status: 'pending_sanction', documentationStatus: 'not_started',
+    landAreaAcres: 18, status: 'under_sanction_review', documentationStatus: 'not_started',
     disbursementStatus: 'pending_documentation', eligibleAmount: 360000,
     shareholdingLimit: 2400000, landBasedLimit: 360000, isException: true,
     exceptionReason: 'Requested amount ₹8,00,000 exceeds eligible limit ₹3,60,000',
@@ -145,8 +145,8 @@ export const loanApplications: LoanApplication[] = [
     memberId: 'm004', memberName: 'Vijay Deshmukh', memberType: 'individual',
     nomineeId: 'nom004', requestedAmount: 200000, purpose: 'crop_production',
     loanType: 'short_term', tenure: 12, sharesHeld: 2000, shareMode: 'physical',
-    landAreaAcres: 2.0, status: 'sanctioned', documentationStatus: 'complete',
-    disbursementStatus: 'ready_for_payment', eligibleAmount: 200000,
+    landAreaAcres: 2.0, status: 'disbursement_ready', documentationStatus: 'complete',
+    disbursementStatus: 'disbursement_ready', eligibleAmount: 200000,
     shareholdingLimit: 240000, landBasedLimit: 40000, isException: false,
     currentOwner: 'Senior Manager – Finance', currentOwnerRole: 'senior_manager_finance',
     submittedAt: '2026-05-20T09:00:00Z', referenceGeneratedAt: '2026-05-20T11:00:00Z',
@@ -158,7 +158,7 @@ export const loanApplications: LoanApplication[] = [
     memberId: 'm002', memberName: 'Sunita Bhosale', memberType: 'individual',
     nomineeId: 'nom002', requestedAmount: 120000, purpose: 'crop_production',
     loanType: 'short_term', tenure: 12, sharesHeld: 300, shareMode: 'demat',
-    landAreaAcres: 3.2, status: 'sanctioned', documentationStatus: 'in_progress',
+    landAreaAcres: 3.2, status: 'documentation_in_progress', documentationStatus: 'documentation_in_progress',
     disbursementStatus: 'pending_documentation', eligibleAmount: 64000,
     shareholdingLimit: 360000, landBasedLimit: 64000, isException: true,
     exceptionReason: 'Requested amount ₹1,20,000 exceeds eligible limit ₹64,000 by ₹56,000.',
@@ -170,10 +170,11 @@ export const loanApplications: LoanApplication[] = [
   },
   {
     id: 'app006', applicationNumber: 'LO00000045', applicationDate: '2026-06-15',
+    officialReference: 'LO00000045', source: 'borrower',
     memberId: 'm006', memberName: 'Sanjay Pawar', memberType: 'individual',
     nomineeId: 'nom006', requestedAmount: 500000, purpose: 'crop_production',
     loanType: 'short_term', tenure: 12, sharesHeld: 600, shareMode: 'demat',
-    landAreaAcres: 5.5, status: 'appraisal_pending', documentationStatus: 'not_started',
+    landAreaAcres: 5.5, status: 'appraisal_in_progress', documentationStatus: 'not_started',
     disbursementStatus: 'pending_documentation', eligibleAmount: 550000,
     shareholdingLimit: 720000, landBasedLimit: 110000, isException: false,
     currentOwner: 'Deputy Manager – Finance', currentOwnerRole: 'deputy_manager_finance',
@@ -182,10 +183,11 @@ export const loanApplications: LoanApplication[] = [
   },
   {
     id: 'app007', applicationNumber: 'LO00000046', applicationDate: '2026-06-16',
+    officialReference: 'LO00000046', intakeReference: 'LO00000046', source: 'borrower',
     memberId: 'm007', memberName: 'Nashik Grape Growers Coop', memberType: 'fpc',
     nomineeId: 'nom007', requestedAmount: 1200000, purpose: 'agriculture_activity',
     loanType: 'long_term', tenure: 36, sharesHeld: 5000, shareMode: 'demat',
-    landAreaAcres: 25, status: 'incomplete', documentationStatus: 'not_started',
+    landAreaAcres: 25, status: 'returned_for_rectification', documentationStatus: 'not_started',
     disbursementStatus: 'pending_documentation', eligibleAmount: 1200000,
     shareholdingLimit: 6000000, landBasedLimit: 500000, isException: true,
     exceptionReason: 'Requested amount exceeds ₹5,00,000 threshold',
@@ -194,7 +196,8 @@ export const loanApplications: LoanApplication[] = [
     sanctionDecision: 'pending', riskRating: 'medium', tatDaysRemaining: 3,
   },
   {
-    id: 'app008', applicationNumber: 'LO00000047', applicationDate: '2026-06-18',
+    id: 'app008', applicationNumber: 'APP-INT-2026-000003', applicationDate: '2026-06-18',
+    intakeReference: 'APP-INT-2026-000003', source: 'assisted_entry',
     memberId: 'm008', memberName: 'Anjali Wagh', memberType: 'individual',
     nomineeId: 'nom008', requestedAmount: 100000, purpose: 'crop_production',
     loanType: 'short_term', tenure: 12, sharesHeld: 150, shareMode: 'physical',
@@ -210,8 +213,8 @@ export const loanApplications: LoanApplication[] = [
     memberId: 'm009', memberName: 'Manoj Jadhav', memberType: 'individual',
     nomineeId: 'nom009', requestedAmount: 300000, purpose: 'allied_activity',
     loanType: 'long_term', tenure: 24, sharesHeld: 800, shareMode: 'demat',
-    landAreaAcres: 8.0, status: 'sanctioned', documentationStatus: 'complete',
-    disbursementStatus: 'pending_disbursement', eligibleAmount: 300000,
+    landAreaAcres: 8.0, status: 'sap_customer_code_pending', documentationStatus: 'complete',
+    disbursementStatus: 'sap_customer_code_pending', eligibleAmount: 300000,
     shareholdingLimit: 960000, landBasedLimit: 160000, isException: false,
     currentOwner: 'Senior Manager – Finance', currentOwnerRole: 'senior_manager_finance',
     submittedAt: '2026-05-10T10:00:00Z', referenceGeneratedAt: '2026-05-10T12:00:00Z',
@@ -223,7 +226,7 @@ export const loanApplications: LoanApplication[] = [
     memberId: 'm010', memberName: 'Green Valley FPC', memberType: 'fpc',
     nomineeId: 'nom010', requestedAmount: 400000, purpose: 'crop_production',
     loanType: 'short_term', tenure: 12, sharesHeld: 1200, shareMode: 'physical',
-    landAreaAcres: 10.0, status: 'sanctioned', documentationStatus: 'complete',
+    landAreaAcres: 10.0, status: 'payment_initiated', documentationStatus: 'complete',
     disbursementStatus: 'pending_cfc_approval', eligibleAmount: 400000,
     shareholdingLimit: 1440000, landBasedLimit: 200000, isException: false,
     currentOwner: 'CFC', currentOwnerRole: 'cfc',
@@ -231,6 +234,60 @@ export const loanApplications: LoanApplication[] = [
     sanctionedAt: '2026-03-10T16:00:00Z', sanctionDecision: 'approved',
     riskRating: 'low', sapCustomerCode: 'SAP-240030',
     bankAccount: '****9999', bankIfsc: 'HDFC0000002',
+  },
+  // D-001: Demo records — additional application lifecycle statuses
+  {
+    id: 'app015', applicationNumber: 'APP-INT-2026-000001', applicationDate: '2026-06-20',
+    intakeReference: 'APP-INT-2026-000001', source: 'assisted_entry',
+    memberId: 'm006', memberName: 'Sanjay Pawar', memberType: 'individual',
+    nomineeId: 'nom006', requestedAmount: 180000, purpose: 'crop_production',
+    loanType: 'short_term', tenure: 12, sharesHeld: 600, shareMode: 'demat',
+    landAreaAcres: 3.0, status: 'submitted', documentationStatus: 'not_started',
+    disbursementStatus: 'pending_documentation', eligibleAmount: 108000,
+    shareholdingLimit: 720000, landBasedLimit: 60000, isException: false,
+    currentOwner: 'Deputy Manager – Finance', currentOwnerRole: 'deputy_manager_finance',
+    submittedAt: '2026-06-20T10:00:00Z', referenceGeneratedAt: '',
+    sanctionDecision: 'pending', riskRating: 'low', tatDaysRemaining: 3,
+  },
+  {
+    id: 'app016', applicationNumber: 'APP-INT-2026-000002', applicationDate: '2026-06-18',
+    intakeReference: 'APP-INT-2026-000002', source: 'assisted_entry',
+    memberId: 'm004', memberName: 'Vijay Deshmukh', memberType: 'individual',
+    nomineeId: 'nom004', requestedAmount: 250000, purpose: 'crop_production',
+    loanType: 'short_term', tenure: 12, sharesHeld: 2000, shareMode: 'physical',
+    landAreaAcres: 2.5, status: 'deficiency_raised', documentationStatus: 'not_started',
+    disbursementStatus: 'pending_documentation', eligibleAmount: 200000,
+    shareholdingLimit: 240000, landBasedLimit: 50000, isException: false,
+    currentOwner: 'Field Officer', currentOwnerRole: 'field_officer',
+    submittedAt: '2026-06-18T09:00:00Z', referenceGeneratedAt: '',
+    sanctionDecision: 'pending', riskRating: 'low', tatDaysRemaining: 2,
+    exceptionReason: 'Deficiency raised: Land records (7/12 extract) not uploaded. Aadhaar copy unclear.',
+  },
+  {
+    id: 'app017', applicationNumber: 'LO00000041', applicationDate: '2026-05-28',
+    memberId: 'm009', memberName: 'Manoj Jadhav', memberType: 'individual',
+    nomineeId: 'nom009', requestedAmount: 600000, purpose: 'allied_activity',
+    loanType: 'long_term', tenure: 24, sharesHeld: 800, shareMode: 'demat',
+    landAreaAcres: 8.0, status: 'rejected_by_credit_manager', documentationStatus: 'not_started',
+    disbursementStatus: 'pending_documentation', eligibleAmount: 160000,
+    shareholdingLimit: 960000, landBasedLimit: 160000, isException: true,
+    exceptionReason: 'Rejected by Credit Manager: Requested ₹6,00,000 exceeds eligible limit ₹1,60,000. Existing default on LN-2024-000015. Risk rating: High.',
+    currentOwner: 'Credit Manager', currentOwnerRole: 'credit_manager',
+    submittedAt: '2026-05-28T09:00:00Z', referenceGeneratedAt: '2026-05-28T14:00:00Z',
+    sanctionDecision: 'rejected', riskRating: 'high', tatDaysRemaining: undefined,
+  },
+  {
+    id: 'app018', applicationNumber: 'LO00000040', applicationDate: '2026-05-15',
+    memberId: 'm008', memberName: 'Anjali Wagh', memberType: 'individual',
+    nomineeId: 'nom008', requestedAmount: 350000, purpose: 'crop_production',
+    loanType: 'short_term', tenure: 12, sharesHeld: 150, shareMode: 'physical',
+    landAreaAcres: 1.5, status: 'rejected_by_sanction_committee', documentationStatus: 'not_started',
+    disbursementStatus: 'pending_documentation', eligibleAmount: 30000,
+    shareholdingLimit: 180000, landBasedLimit: 30000, isException: true,
+    exceptionReason: 'Rejected by Sanction Committee: Exception for ₹3,50,000 denied. Borrower KYC pending, insufficient land records, member active < 1 year.',
+    currentOwner: 'Deputy Manager – Finance', currentOwnerRole: 'deputy_manager_finance',
+    submittedAt: '2026-05-15T09:00:00Z', referenceGeneratedAt: '2026-05-15T12:00:00Z',
+    sanctionedAt: '2026-05-22T11:00:00Z', sanctionDecision: 'rejected', riskRating: 'high', tatDaysRemaining: undefined,
   },
 ];
 
@@ -241,7 +298,7 @@ export const loanAccounts: LoanAccount[] = [
     memberType: 'individual', sanctionedAmount: 120000, disbursedAmount: 120000,
     outstandingPrincipal: 120000, accruedInterest: 4800, interestRate: 12.5,
     loanType: 'short_term', disbursementDate: '2026-04-28', repaymentDueDate: '2027-04-28',
-    status: 'active', dpd: 0, dpdBucket: '0_30', lastRepaymentDate: undefined,
+    status: 'active_repayment', dpd: 0, dpdBucket: '0_30', lastRepaymentDate: undefined,
     sapCustomerCode: 'SAP-230035',
   },
   {
@@ -269,7 +326,7 @@ export const loanAccounts: LoanAccount[] = [
     memberType: 'individual', sanctionedAmount: 250000, disbursedAmount: 250000,
     outstandingPrincipal: 250000, accruedInterest: 45000, interestRate: 14.0,
     loanType: 'long_term', disbursementDate: '2024-01-05', repaymentDueDate: '2026-01-05',
-    status: 'recovery_in_progress', dpd: 165, dpdBucket: '91_365',
+    status: 'recovery_review', dpd: 165, dpdBucket: '91_365',
     lastRepaymentDate: '2025-06-01', lastRepaymentAmount: 20000, sapCustomerCode: 'SAP-210015',
   },
   {
@@ -287,8 +344,27 @@ export const loanAccounts: LoanAccount[] = [
     memberType: 'producer_institution', sanctionedAmount: 1500000, disbursedAmount: 1500000,
     outstandingPrincipal: 1000000, accruedInterest: 85000, interestRate: 11.0,
     loanType: 'long_term', disbursementDate: '2024-08-12', repaymentDueDate: '2027-08-12',
-    status: 'active', dpd: 0, dpdBucket: '0_30', lastRepaymentDate: '2025-08-10',
+    status: 'active_repayment', dpd: 0, dpdBucket: '0_30', lastRepaymentDate: '2025-08-10',
     lastRepaymentAmount: 500000, sapCustomerCode: 'SAP-210022',
+  },
+  // D-002: Demo records — extension and recovered statuses
+  {
+    id: 'ln007', applicationId: 'app014', applicationNumber: 'LO00000033',
+    accountNumber: 'LN-2025-000033', memberId: 'm001', memberName: 'Ramesh Patil',
+    memberType: 'individual', sanctionedAmount: 200000, disbursedAmount: 200000,
+    outstandingPrincipal: 175000, accruedInterest: 28000, interestRate: 12.5,
+    loanType: 'short_term', disbursementDate: '2025-01-10', repaymentDueDate: '2026-07-10',
+    status: 'extended', dpd: 0, dpdBucket: '0_30', lastRepaymentDate: '2025-12-01',
+    lastRepaymentAmount: 25000, sapCustomerCode: 'SAP-220033',
+  },
+  {
+    id: 'ln008', applicationId: 'app016', applicationNumber: 'LO00000036',
+    accountNumber: 'LN-2025-000036', memberId: 'm005', memberName: 'Lalita Shinde',
+    memberType: 'individual', sanctionedAmount: 90000, disbursedAmount: 90000,
+    outstandingPrincipal: 0, accruedInterest: 0, interestRate: 12.5,
+    loanType: 'short_term', disbursementDate: '2025-02-20', repaymentDueDate: '2026-02-20',
+    status: 'recovered', dpd: 0, dpdBucket: '0_30', lastRepaymentDate: '2026-05-30',
+    lastRepaymentAmount: 90000, sapCustomerCode: 'SAP-220036',
   },
 ];
 
@@ -369,11 +445,11 @@ export const securities: SecurityInstrument[] = [
 export const auditEvents: AuditEvent[] = [
   { id: 'ae001', entityType: 'application', entityId: 'LO00000042', eventType: 'Application Submitted', timestamp: '2026-06-10T09:30:00Z', actorName: 'Vijay Mane', actorRole: 'field_officer', newState: 'submitted' },
   { id: 'ae002', entityType: 'application', entityId: 'LO00000042', eventType: 'Reference Number Generated', timestamp: '2026-06-10T11:00:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'submitted', newState: 'reference_generated', comment: 'Application complete. Ref LO00000042 issued.' },
-  { id: 'ae003', entityType: 'application', entityId: 'LO00000042', eventType: 'Appraisal Note Prepared', timestamp: '2026-06-11T10:00:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'appraisal_pending', newState: 'credit_review' },
-  { id: 'ae004', entityType: 'application', entityId: 'LO00000042', eventType: 'Submitted to Sanction Committee', timestamp: '2026-06-11T15:30:00Z', actorName: 'Anil Deshmukh', actorRole: 'credit_manager', previousState: 'credit_review', newState: 'pending_sanction' },
+  { id: 'ae003', entityType: 'application', entityId: 'LO00000042', eventType: 'Appraisal Note Prepared', timestamp: '2026-06-11T10:00:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'appraisal_pending', newState: 'pending_credit_manager_review' },
+  { id: 'ae004', entityType: 'application', entityId: 'LO00000042', eventType: 'Submitted to Sanction Committee', timestamp: '2026-06-11T15:30:00Z', actorName: 'Anil Deshmukh', actorRole: 'credit_manager', previousState: 'pending_credit_manager_review', newState: 'pending_sanction_committee_approval' },
   
   // Custom audit trail for LO00000039
-  { id: 'ae005', entityType: 'application', entityId: 'LO00000039', eventType: 'Sanction Approved', timestamp: '2026-05-25T19:30:00Z', actorName: 'Rajesh Sharma', actorRole: 'sanction_committee', previousState: 'pending_sanction', newState: 'sanctioned', comment: 'Sanction approved. Evidence: Sanction note SN-2026-039.' },
+  { id: 'ae005', entityType: 'application', entityId: 'LO00000039', eventType: 'Sanction Approved', timestamp: '2026-05-25T19:30:00Z', actorName: 'Rajesh Sharma', actorRole: 'sanction_committee', previousState: 'pending_sanction_committee_approval', newState: 'sanctioned', comment: 'Sanction approved. Evidence: Sanction note SN-2026-039.' },
   { id: 'ae_app004_2', entityType: 'application', entityId: 'LO00000039', eventType: 'Document Pack Generated', timestamp: '2026-05-25T19:45:00Z', actorName: 'Meera Joshi', actorRole: 'compliance_team', comment: 'Document pack generated. Evidence: Document pack DP-2026-039.' },
   { id: 'ae_app004_3', entityType: 'application', entityId: 'LO00000039', eventType: 'Signature Requested', timestamp: '2026-05-26T10:15:00Z', actorName: 'Meera Joshi', actorRole: 'compliance_team', comment: 'PoA signature requested. Evidence: Signature request SR-2026-014.' },
   { id: 'ae_app004_4', entityType: 'application', entityId: 'LO00000039', eventType: 'Custody Logged', timestamp: '2026-05-26T11:20:00Z', actorName: 'Anita Kulkarni', actorRole: 'company_secretary', comment: 'SH-4 custody logged. Evidence: Custody ref ••••0042.' },
@@ -384,16 +460,42 @@ export const auditEvents: AuditEvent[] = [
   { id: 'ae_app005_1', entityType: 'application', entityId: 'LO00000035', eventType: 'Application Submitted', timestamp: '2026-04-15T10:00:00Z', actorName: 'Sunita Bhosale', actorRole: 'borrower', newState: 'submitted' },
   { id: 'ae_app005_2', entityType: 'application', entityId: 'LO00000035', eventType: 'Reference Generated', timestamp: '2026-04-15T12:00:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'submitted', newState: 'reference_generated', comment: 'Completeness passed.' },
   { id: 'ae_app005_3', entityType: 'application', entityId: 'LO00000035', eventType: 'Appraisal Prepared', timestamp: '2026-04-17T11:00:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'reference_generated', newState: 'appraisal_pending' },
-  { id: 'ae_app005_4', entityType: 'application', entityId: 'LO00000035', eventType: 'Credit Manager Reviewed', timestamp: '2026-04-18T14:00:00Z', actorName: 'Anil Deshmukh', actorRole: 'credit_manager', previousState: 'appraisal_pending', newState: 'pending_sanction' },
+  { id: 'ae_app005_4', entityType: 'application', entityId: 'LO00000035', eventType: 'Credit Manager Reviewed', timestamp: '2026-04-18T14:00:00Z', actorName: 'Anil Deshmukh', actorRole: 'credit_manager', previousState: 'appraisal_pending', newState: 'pending_sanction_committee_approval' },
   { id: 'ae_app005_5', entityType: 'application', entityId: 'LO00000035', eventType: 'Exception Approved', timestamp: '2026-04-20T09:45:00Z', actorName: 'Suresh Nair', actorRole: 'cfo', comment: 'Approved for limit override.' },
-  { id: 'ae_app005_6', entityType: 'application', entityId: 'LO00000035', eventType: 'Sanction Approved', timestamp: '2026-04-20T10:00:00Z', actorName: 'Sanction Committee', actorRole: 'sanction_committee', previousState: 'pending_sanction', newState: 'sanctioned' },
+  { id: 'ae_app005_6', entityType: 'application', entityId: 'LO00000035', eventType: 'Sanction Approved', timestamp: '2026-04-20T10:00:00Z', actorName: 'Sanction Committee', actorRole: 'sanction_committee', previousState: 'pending_sanction_committee_approval', newState: 'sanctioned' },
   { id: 'ae_app005_7', entityType: 'application', entityId: 'LO00000035', eventType: 'SAP Code Confirmed', timestamp: '2026-04-21T09:30:00Z', actorName: 'System', actorRole: 'system', comment: 'SAP-230035 synced.' },
   { id: 'ae_app005_8', entityType: 'application', entityId: 'LO00000035', eventType: 'CDSL Pledge Recorded', timestamp: '2026-04-22T11:00:00Z', actorName: 'Anita Kulkarni', actorRole: 'company_secretary' },
   { id: 'ae_app005_9', entityType: 'application', entityId: 'LO00000035', eventType: 'Documentation Blocker Raised', timestamp: '2026-04-23T10:00:00Z', actorName: 'Meera Joshi', actorRole: 'compliance_team', reason: 'Borrower PAN / Aadhaar verification pending.' },
   { id: 'ae_app005_10', entityType: 'application', entityId: 'LO00000035', eventType: 'Disbursement Blocked', timestamp: '2026-04-23T10:05:00Z', actorName: 'System', actorRole: 'system', reason: 'Blocked due to documentation.' },
 
-  { id: 'ae006', entityType: 'application', entityId: 'APP-2026-001', eventType: 'Disbursement Initiated', timestamp: '2026-03-12T10:00:00Z', actorName: 'Deepak Rao', actorRole: 'senior_manager_finance', previousState: 'ready_for_payment', newState: 'pending_cfc_approval' },
-  { id: 'ae007', entityType: 'loan_account', entityId: 'LN-2026-0044', eventType: 'Default Recovery Action Initiated', timestamp: '2026-06-01T10:00:00Z', actorName: 'Rajesh Sharma', actorRole: 'sanction_committee', previousState: 'default_review', newState: 'recovery_in_progress' },
+  { id: 'ae006', entityType: 'application', entityId: 'APP-2026-001', eventType: 'Disbursement Initiated', timestamp: '2026-03-12T10:00:00Z', actorName: 'Deepak Rao', actorRole: 'senior_manager_finance', previousState: 'disbursement_ready', newState: 'payment_initiated' },
+  { id: 'ae007', entityType: 'loan_account', entityId: 'LN-2026-0044', eventType: 'Default Recovery Action Initiated', timestamp: '2026-06-01T10:00:00Z', actorName: 'Rajesh Sharma', actorRole: 'sanction_committee', previousState: 'recovery_review', newState: 'recovery_action_approved' },
+
+  // Audit trail for APP-INT-2026-000001 (submitted)
+  { id: 'ae_app015_1', entityType: 'application', entityId: 'APP-INT-2026-000001', eventType: 'Application Submitted', timestamp: '2026-06-20T10:00:00Z', actorName: 'Vijay Mane', actorRole: 'field_officer', newState: 'submitted', comment: 'Submitted for completeness check. Formal LO reference is pending.' },
+
+  // Audit trail for APP-INT-2026-000002 (deficiency_raised)
+  { id: 'ae_app016_1', entityType: 'application', entityId: 'APP-INT-2026-000002', eventType: 'Application Submitted', timestamp: '2026-06-18T09:00:00Z', actorName: 'Vijay Mane', actorRole: 'field_officer', newState: 'submitted' },
+  { id: 'ae_app016_2', entityType: 'application', entityId: 'APP-INT-2026-000002', eventType: 'Deficiency Raised', timestamp: '2026-06-18T14:30:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'submitted', newState: 'deficiency_raised', comment: 'Land records (7/12 extract) not uploaded. Aadhaar copy unclear. Returned to field officer. Formal LO reference is pending.' },
+
+  // Audit trail for LO00000041 (rejected_by_credit_manager)
+  { id: 'ae_app017_1', entityType: 'application', entityId: 'LO00000041', eventType: 'Application Submitted', timestamp: '2026-05-28T09:00:00Z', actorName: 'Vijay Mane', actorRole: 'field_officer', newState: 'submitted' },
+  { id: 'ae_app017_2', entityType: 'application', entityId: 'LO00000041', eventType: 'Reference Generated', timestamp: '2026-05-28T14:00:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'submitted', newState: 'reference_generated' },
+  { id: 'ae_app017_3', entityType: 'application', entityId: 'LO00000041', eventType: 'Forwarded to Credit Review', timestamp: '2026-05-29T10:00:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'appraisal_pending', newState: 'pending_credit_manager_review' },
+  { id: 'ae_app017_4', entityType: 'application', entityId: 'LO00000041', eventType: 'Rejected by Credit Manager', timestamp: '2026-06-02T11:30:00Z', actorName: 'Anil Deshmukh', actorRole: 'credit_manager', previousState: 'pending_credit_manager_review', newState: 'rejected_by_credit_manager', comment: 'Existing default on LN-2024-000015. Risk too high for exception approval. Application rejected.' },
+
+  // Audit trail for LO00000040 (rejected_by_sanction_committee)
+  { id: 'ae_app018_1', entityType: 'application', entityId: 'LO00000040', eventType: 'Application Submitted', timestamp: '2026-05-15T09:00:00Z', actorName: 'Vijay Mane', actorRole: 'field_officer', newState: 'submitted' },
+  { id: 'ae_app018_2', entityType: 'application', entityId: 'LO00000040', eventType: 'Reference Generated', timestamp: '2026-05-15T12:00:00Z', actorName: 'Priya Kulkarni', actorRole: 'deputy_manager_finance', previousState: 'submitted', newState: 'reference_generated' },
+  { id: 'ae_app018_3', entityType: 'application', entityId: 'LO00000040', eventType: 'Forwarded to Sanction Committee', timestamp: '2026-05-20T15:00:00Z', actorName: 'Anil Deshmukh', actorRole: 'credit_manager', previousState: 'pending_credit_manager_review', newState: 'pending_sanction_committee_approval' },
+  { id: 'ae_app018_4', entityType: 'application', entityId: 'LO00000040', eventType: 'Rejected by Sanction Committee', timestamp: '2026-05-22T11:00:00Z', actorName: 'Rajesh Sharma', actorRole: 'sanction_committee', previousState: 'pending_sanction_committee_approval', newState: 'rejected_by_sanction_committee', comment: 'Exception for ₹3,50,000 denied. KYC pending, insufficient land records, member tenure < 1 year.' },
+
+  // Audit trail for LN-2025-000033 (extension)
+  { id: 'ae_ln007_1', entityType: 'loan_account', entityId: 'LN-2025-000033', eventType: 'Loan Extended', timestamp: '2026-01-08T10:00:00Z', actorName: 'Rajesh Sharma', actorRole: 'sanction_committee', comment: 'Term extended by 6 months due to crop failure. New due date: 10 Jul 2026.' },
+
+  // Audit trail for LN-2025-000036 (recovered)
+  { id: 'ae_ln008_1', entityType: 'loan_account', entityId: 'LN-2025-000036', eventType: 'Recovery Action Completed', timestamp: '2026-05-30T14:00:00Z', actorName: 'Meera Joshi', actorRole: 'compliance_team', comment: 'SH-4 invocation proceeds received. Full outstanding ₹90,000 recovered.' },
+  { id: 'ae_ln008_2', entityType: 'loan_account', entityId: 'LN-2025-000036', eventType: 'Loan Marked Recovered', timestamp: '2026-05-30T15:00:00Z', actorName: 'Anil Deshmukh', actorRole: 'credit_manager', comment: 'Account closed post-recovery. NOC issued.' },
 ];
 
 export const complianceRecords: ComplianceRecord[] = [
@@ -428,4 +530,3 @@ export const grievances = [
   { id: 'GR-2026-003', borrower: 'Vijay Deshmukh', loanRef: 'LO00000047', category: 'Disbursement Delay', receivedChannel: 'Portal', receivedDate: '2026-06-25', owner: 'Senior Manager – Finance', tat: '1 day', status: 'new', lastUpdate: '2026-06-25', description: 'Loan sanctioned but disbursement not received in bank account.', borrowerInformed: false, borrowerAck: 'Pending', targetResolution: '2026-06-29' },
   { id: 'GR-2026-004', borrower: 'Kisan FPC Ltd', loanRef: 'LO00000028', category: 'NOC Issuance', receivedChannel: 'Branch', receivedDate: '2026-06-10', owner: 'Company Secretary', tat: '16 days', status: 'closed', lastUpdate: '2026-06-15', description: 'Requesting NOC after loan closure, delay in processing.', borrowerInformed: true, borrowerAck: 'Received', targetResolution: '2026-06-14', resolutionDate: '2026-06-14', resolutionSummary: 'NOC issued manually and handed over.' },
 ];
-

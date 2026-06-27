@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 
 type CheckResult = 'pass' | 'fail' | 'needs_review' | 'pending' | 'not_required';
@@ -13,6 +13,7 @@ interface EligibilityItem {
 interface EligibilityChecklistProps {
   memberId?: string;
   applicationId?: string;
+  onComplete?: (allPassed: boolean) => void;
 }
 
 const checks: EligibilityItem[] = [
@@ -38,11 +39,15 @@ const resultConfig = {
   not_required: { icon: <CheckCircle2 size={16} className="text-slate-400" />, bg: 'bg-slate-50', text: 'text-slate-500', label: 'Not required at appraisal' },
 };
 
-const EligibilityChecklist: React.FC<EligibilityChecklistProps> = () => {
+const EligibilityChecklist: React.FC<EligibilityChecklistProps> = ({ onComplete }) => {
   const activeChecks = checks.filter(c => c.result !== 'not_required');
   const pass = activeChecks.filter(c => c.result === 'pass').length;
   const total = activeChecks.length;
   const hasBlocking = activeChecks.some(c => c.result === 'fail');
+
+  useEffect(() => {
+    onComplete?.(!hasBlocking && pass === total);
+  }, []);
 
   return (
     <div className="space-y-4">

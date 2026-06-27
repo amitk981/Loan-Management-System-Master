@@ -12,6 +12,7 @@ import AlertBanner from '../components/ui/AlertBanner';
 import { dashboardStats, loanApplications, loanAccounts, auditEvents } from '../data/mockData';
 import { useRole, ROLE_LABELS } from '../contexts/RoleContext';
 import type { Page } from '../App';
+import { getApplicationReference } from '../utils/applicationDisplay';
 
 const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
 
@@ -27,9 +28,9 @@ const CreditManagerCards: React.FC<{ onNavigate: (p: Page) => void, readyToDisbu
       <h2 className="section-title mb-3">Application Pipeline</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <KPICard title="New Applications" value={String(dashboardStats.newApplications)} subtitle="last 7 days" icon={FileText} trend="up" onClick={() => onNavigate('applications')} />
-        <KPICard title="Completeness Check" value={String(dashboardStats.pendingCompleteness)} subtitle="DM Finance review" icon={CheckCircle2} highlight={dashboardStats.pendingCompleteness > 0 ? 'warning' : 'normal'} onClick={() => onNavigate('applications')} />
+        <KPICard title="Completeness Check" value={String(dashboardStats.pendingCompleteness)} subtitle="DM Finance review" icon={CheckCircle2} highlight={dashboardStats.pendingCompleteness > 0 ? 'warning' : 'normal'} onClick={() => onNavigate('completeness')} />
         <KPICard title="Appraisal Review" value={String(dashboardStats.pendingAppraisal)} subtitle="Credit Manager action" icon={Scale} highlight={dashboardStats.pendingAppraisal > 2 ? 'warning' : 'normal'} onClick={() => onNavigate('appraisal')} />
-        <KPICard title="Pending Sanction" value={String(dashboardStats.pendingSanction)} subtitle="at committee" icon={Gavel} highlight="warning" onClick={() => onNavigate('sanction')} />
+        <KPICard title="Pending Sanction Committee" value={String(dashboardStats.pendingSanction)} subtitle="approval queue" icon={Gavel} highlight="warning" onClick={() => onNavigate('sanction')} />
         <KPICard title="Documentation" value={String(dashboardStats.documentationPending)} subtitle="in progress" icon={FolderOpen} onClick={() => onNavigate('documentation')} />
         <KPICard title="Disbursement Queue" value={String(readyToDisburse)} subtitle="finance action" icon={Banknote} highlight={readyToDisburse > 0 ? 'success' : 'normal'} onClick={() => onNavigate('disbursement')} />
       </div>
@@ -241,7 +242,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     return true; // auditor gets all exceptions for review
   });
   const overdueLoans = loanAccounts.filter(l => l.status === 'overdue' || l.status === 'grace_period');
-  const docBlockers = loanApplications.filter(a => a.documentationStatus === 'in_progress' || a.documentationStatus === 'pending_signature');
+  const docBlockers = loanApplications.filter(a =>
+    ['in_progress', 'documentation_in_progress', 'documentation_deficiency_raised', 'pending_signature'].includes(a.documentationStatus)
+  );
   const greeting = new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening';
 
   const myTasks = currentUser.role === 'admin'
@@ -254,7 +257,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         { id: 'f1', applicationNumber: 'LO00000042', memberName: 'Ramesh Patil', rightStatus: 'Borrower follow-up due', statusBadge: 'Docs Pending', amount: 450000 },
         { id: 'f2', applicationNumber: 'LO00000043', memberName: 'Sunita Bhosale', rightStatus: 'TAT due', statusBadge: 'KYC Upload', amount: 350000, isTatDue: true },
         { id: 'f3', applicationNumber: 'LO00000044', memberName: 'Kisan Samruddhi FPC Ltd.', rightStatus: 'Collect details', statusBadge: 'Nominee / witness pending', amount: 800000 },
-        { id: 'f4', applicationNumber: 'LO00000039', memberName: 'Vijay Deshmukh', rightStatus: 'Finance review · Read-only', statusBadge: 'Submitted', amount: 200000 },
+        { id: 'f4', applicationNumber: 'APP-INT-2026-000003', memberName: 'Vijay Deshmukh', rightStatus: 'Finance review · Read-only', statusBadge: 'Submitted', amount: 200000 },
       ] as any[]
     : currentUser.role === 'auditor'
     ? loanApplications.slice(0, 4)
@@ -267,7 +270,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     a.sapCustomerCode && 
     a.bankAccount &&
     !a.isException &&
-    a.status === 'sanctioned'
+    ['sanctioned', 'disbursement_ready', 'sap_customer_code_confirmed', 'payment_initiated'].includes(a.status)
   ).length;
 
   const renderRoleCards = () => {
@@ -473,7 +476,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           message={
             currentUser.role === 'field_officer'
               ? 'LO00000042: borrower documents pending · LO00000043: KYC upload pending'
-              : urgentApps.map(a => `${a.applicationNumber} (${a.memberName})`).join(' · ')
+              : urgentApps.map(a => `${getApplicationReference(a)} (${a.memberName})`).join(' · ')
           }
         />
       )}
@@ -508,7 +511,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-slate-900 num">{app.applicationNumber}</span>
+                      <span className="text-sm font-semibold text-slate-900 num">{'applicationNumber' in app && 'status' in app ? getApplicationReference(app as any) : app.applicationNumber}</span>
                       {app.isException && (
                         <span className="text-xs bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded font-medium">Exception</span>
                       )}
@@ -570,7 +573,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors text-left border border-transparent hover:border-slate-200 focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-slate-900 num">{app.applicationNumber}</div>
+                      <div className="text-sm font-semibold text-slate-900 num">{getApplicationReference(app)}</div>
                       <div className="text-xs text-slate-500">{app.memberName}</div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
@@ -972,7 +975,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                   <div key={event.id} className="flex gap-3 text-sm">
                     <div className="text-green-500 mt-0.5"><CheckCircle2 size={14} /></div>
                     <div>
-                      <p className="text-slate-900 font-medium">{event.entityType === 'application' && loanApplications.find(a => a.id === event.entityId)?.applicationNumber} {event.eventType.toLowerCase()}</p>
+                      <p className="text-slate-900 font-medium">{event.entityType === 'application' && (() => {
+                        const app = loanApplications.find(a => a.id === event.entityId);
+                        return app ? getApplicationReference(app) : undefined;
+                      })()} {event.eventType.toLowerCase()}</p>
                       <p className="text-xs text-slate-500 mt-0.5">{new Date(event.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · {event.actorName}</p>
                     </div>
                   </div>

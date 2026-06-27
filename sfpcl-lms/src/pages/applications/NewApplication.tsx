@@ -10,6 +10,7 @@ import type { LoanPurpose, LoanType, Member } from '../../types';
 
 interface NewApplicationProps {
   onBack: () => void;
+  onNavigateTasks?: () => void;
 }
 
 type Step = 'member' | 'applicant' | 'shareholding' | 'loan' | 'nominee' | 'documents' | 'declarations' | 'review';
@@ -57,7 +58,7 @@ const formatMemberType = (type: string) => {
 
 const blankDocs = Object.fromEntries(REQUIRED_DOCUMENTS.map(doc => [doc.id, { uploaded: false, selfAttested: false }]));
 
-const NewApplication: React.FC<NewApplicationProps> = ({ onBack }) => {
+const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks }) => {
   const { can } = useRole();
 
   const [step, setStep] = useState<Step>('member');
@@ -267,9 +268,14 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack }) => {
             <Check size={32} className="text-green-600" />
           </div>
           <h2 className="text-xl font-bold text-slate-900 mb-2">Application Submitted for Completeness Check</h2>
-          <p className="text-slate-500 mb-1">Draft ID DRAFT-APP-0042 created. Official LO reference will be generated after mandatory checklist verification.</p>
+          <p className="text-slate-500 mb-1">Application ID APP-INT-2026-000001 created. Official LO reference will be generated after mandatory checklist verification.</p>
           <p className="text-xs text-slate-400 mb-6">Member: {applicationForm.borrowerName} · Amount: {fmt(applicationForm.requestedAmount)}</p>
-          <button onClick={onBack} className="btn-primary">Back to Applications</button>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <button onClick={onBack} className="btn-secondary">Back to Applications</button>
+            {onNavigateTasks && (
+              <button onClick={onNavigateTasks} className="btn-primary">View in Task Inbox</button>
+            )}
+          </div>
         </div>
       </div>
     );

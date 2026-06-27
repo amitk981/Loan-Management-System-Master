@@ -15,26 +15,36 @@ interface DisbursementHubProps {
 type DisbStage = 'sap_pending' | 'bank_verify' | 'ready' | 'initiated';
 
 const STAGE_LABELS: Record<DisbStage, string> = {
-  sap_pending: 'SAP Code',
-  bank_verify: 'Bank Verification',
-  ready: 'Ready for Payment',
+  sap_pending: 'SAP Pending',
+  bank_verify: 'SAP Confirmed',
+  ready: 'Disbursement Ready',
   initiated: 'Payment Initiated',
 };
 
-const formatDisbBadge = (stage: DisbStage) => {
+const statusForStage = (stage: DisbStage) => {
   switch (stage) {
-    case 'sap_pending': return 'SAP code pending';
-    case 'bank_verify': return 'Bank verification pending';
-    case 'ready': return 'Ready for payment';
-    case 'initiated': return 'Payment initiated';
-    default: return 'Pending';
+    case 'sap_pending': return 'sap_customer_code_pending';
+    case 'bank_verify': return 'sap_customer_code_confirmed';
+    case 'ready': return 'disbursement_ready';
+    case 'initiated': return 'payment_initiated';
+    default: return 'sap_customer_code_pending';
   }
+};
+
+const getDisbursementStatus = (app: { status: string; disbursementStatus: string; sapCustomerCode?: string }, selectedStage?: DisbStage) => {
+  if (selectedStage) return statusForStage(selectedStage);
+  if (['payment_initiated', 'payment_authorized', 'transfer_executed', 'disbursed'].includes(app.status)) return app.status;
+  if (['payment_initiated', 'payment_authorized', 'transfer_executed', 'disbursed'].includes(app.disbursementStatus)) return app.disbursementStatus;
+  if (app.status === 'disbursement_ready' || app.disbursementStatus === 'disbursement_ready' || app.disbursementStatus === 'ready_for_payment') return 'disbursement_ready';
+  if (app.status === 'sap_customer_code_confirmed' || app.disbursementStatus === 'sap_customer_code_confirmed' || app.sapCustomerCode) return 'sap_customer_code_confirmed';
+  return 'sap_customer_code_pending';
 };
 
 const DisbursementHub: React.FC<DisbursementHubProps> = ({ onOpenApplication, initialSelectedId }) => {
   const allSMQueue = loanApplications.filter(a =>
-    a.status === 'sanctioned' && a.documentationStatus === 'complete' && 
-    a.disbursementStatus !== 'completed' && a.disbursementStatus !== 'pending_cfc_approval'
+    ['sanctioned', 'disbursement_ready', 'sap_customer_code_pending', 'sap_customer_code_confirmed', 'payment_initiated'].includes(a.status) &&
+    a.documentationStatus === 'complete' && 
+    !['completed', 'disbursed', 'pending_cfc_approval', 'payment_authorized', 'transfer_executed'].includes(a.disbursementStatus)
   );
   
   const initialApp = initialSelectedId ? allSMQueue.find(a => a.id === initialSelectedId || a.applicationNumber === initialSelectedId) : null;
@@ -60,6 +70,7 @@ const DisbursementHub: React.FC<DisbursementHubProps> = ({ onOpenApplication, in
   
   // Ready State
   const [readyForPayment, setReadyForPayment] = useState(false);
+  const [readinessChecks, setReadinessChecks] = useState<Record<string, boolean>>({});
   
   // Payment Initiation State
   const [paymentMode, setPaymentMode] = useState('RTGS');
@@ -71,7 +82,15 @@ const DisbursementHub: React.FC<DisbursementHubProps> = ({ onOpenApplication, in
 
   useEffect(() => {
     if (app) {
-      if (app.sapCustomerCode || app.id === 'l003' || app.id === 'app005') { 
+      if (app.status === 'payment_initiated' || app.disbursementStatus === 'payment_initiated') {
+        setStage('initiated');
+        setSapConfirmed(true);
+        setSapCodeInput(app.sapCustomerCode || 'SAP-240039');
+      } else if (app.status === 'disbursement_ready' || app.disbursementStatus === 'disbursement_ready' || app.disbursementStatus === 'ready_for_payment') {
+        setStage('ready');
+        setSapConfirmed(true);
+        setSapCodeInput(app.sapCustomerCode || 'SAP-240039');
+      } else if (app.sapCustomerCode || app.status === 'sap_customer_code_confirmed' || app.disbursementStatus === 'sap_customer_code_confirmed' || app.id === 'l003' || app.id === 'app005') { 
         setStage('bank_verify');
         setSapConfirmed(true);
         setSapCodeInput(app.sapCustomerCode || 'SAP-230035');
@@ -150,7 +169,7 @@ const DisbursementHub: React.FC<DisbursementHubProps> = ({ onOpenApplication, in
                           <div className="text-xs text-slate-500 truncate">{a.memberName}</div>
                           <div className="text-xs text-green-700 num font-medium">{fmt(a.requestedAmount)}</div>
                         </div>
-                        <StatusBadge label={selected === a.id ? formatDisbBadge(stage) : 'SAP code pending'} size="sm" />
+                        <StatusBadge label={selected === a.id ? getDisbursementStatus(a, stage) : getDisbursementStatus(a)} size="sm" />
                       </button>
                     ))}
                   </div>
@@ -175,7 +194,7 @@ const DisbursementHub: React.FC<DisbursementHubProps> = ({ onOpenApplication, in
                           <div className="text-xs text-slate-500 truncate">{a.memberName}</div>
                           <div className="text-xs text-green-700 num font-medium">{fmt(a.requestedAmount)}</div>
                         </div>
-                        <StatusBadge label={selected === a.id ? formatDisbBadge(stage) : 'Bank verification pending'} size="sm" />
+                        <StatusBadge label={selected === a.id ? getDisbursementStatus(a, stage) : getDisbursementStatus(a)} size="sm" />
                       </button>
                     ))}
                   </div>
@@ -200,7 +219,7 @@ const DisbursementHub: React.FC<DisbursementHubProps> = ({ onOpenApplication, in
                           <div className="text-xs text-slate-500 truncate">{a.memberName}</div>
                           <div className="text-xs text-green-700 num font-medium">{fmt(a.requestedAmount)}</div>
                         </div>
-                        <StatusBadge label="Payment initiated" size="sm" />
+                        <StatusBadge label="payment_initiated" size="sm" />
                       </button>
                     ))}
                   </div>
@@ -217,12 +236,12 @@ const DisbursementHub: React.FC<DisbursementHubProps> = ({ onOpenApplication, in
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-lg font-bold text-slate-900 num">{app.applicationNumber}</h2>
-                      <StatusBadge label={formatDisbBadge(stage)} size="sm" />
+                      <StatusBadge label={getDisbursementStatus(app, stage)} size="sm" />
                     </div>
                     <p className="text-sm text-slate-500">{app.memberName} · {fmt(app.requestedAmount)}</p>
                   </div>
-                  <button onClick={() => onOpenApplication(app.id)} className="text-xs text-green-600 hover:underline flex items-center gap-1">
-                    Open full application <ChevronRight size={12} />
+                  <button onClick={() => onOpenApplication(app.id)} className="btn-secondary flex items-center gap-2 flex-shrink-0">
+                    <FileText size={14} /> Full Application
                   </button>
                 </div>
 
@@ -304,7 +323,7 @@ const DisbursementHub: React.FC<DisbursementHubProps> = ({ onOpenApplication, in
                 </div>
               )}
 
-              {/* 2. Bank Verification panel */}
+              {/* 2. Bank verification panel */}
               {(stage === 'bank_verify' || bankVerified) && (
                 <div className="card">
                   <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
@@ -312,7 +331,7 @@ const DisbursementHub: React.FC<DisbursementHubProps> = ({ onOpenApplication, in
                   </h3>
                   {bankVerified ? (
                     <div className="flex items-center gap-2 text-green-700 bg-green-50 rounded-lg p-3 text-sm">
-                      <Check size={16} /> Bank verification complete. Ready for final readiness check.
+                      <Check size={16} /> Bank verification complete. SAP customer code is confirmed.
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -359,7 +378,7 @@ const DisbursementHub: React.FC<DisbursementHubProps> = ({ onOpenApplication, in
                 </div>
               )}
 
-              {/* 3. Ready for Payment panel */}
+              {/* 3. Disbursement Ready panel */}
               {(stage === 'ready' || readyForPayment) && (
                 <div className="card">
                   <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
@@ -373,23 +392,31 @@ const DisbursementHub: React.FC<DisbursementHubProps> = ({ onOpenApplication, in
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                         {[
-                          { label: 'Sanction approved', ok: true },
-                          { label: 'Documentation checklist complete', ok: true },
-                          { label: 'Company Secretary sign-off complete', ok: true },
-                          { label: 'Credit Manager sign-off complete', ok: true },
-                          { label: 'Sanction Committee final approval', ok: true },
-                          { label: 'SAP customer code created / reused', ok: sapConfirmed },
-                          { label: 'Borrower bank details entered', ok: true },
-                          { label: 'Cancelled cheque verified', ok: bankVerified },
-                          { label: 'Bank verification letter resolved', ok: true },
-                          { label: 'No blocking exceptions', ok: true },
-                          { label: 'Disbursement amount within sanction', ok: true },
-                        ].map(item => (
-                          <div key={item.label} className={`rounded-lg border p-3 ${item.ok ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100'}`}>
-                            <p className="text-xs text-slate-500">{item.label}</p>
-                            <p className={`text-sm font-semibold mt-0.5 ${item.ok ? 'text-green-800' : 'text-amber-800'}`}>{item.ok ? 'Verified ✓' : 'Pending'}</p>
-                          </div>
-                        ))}
+                          { id: 'sanction', label: 'Sanction approved', autoOk: true },
+                          { id: 'docs', label: 'Documentation checklist complete', autoOk: true },
+                          { id: 'cs', label: 'Company Secretary sign-off complete', autoOk: true },
+                          { id: 'cm', label: 'Credit Manager sign-off complete', autoOk: true },
+                          { id: 'sc', label: 'Sanction Committee final approval', autoOk: true },
+                          { id: 'sap', label: 'SAP customer code created / reused', autoOk: sapConfirmed },
+                          { id: 'bank_details', label: 'Borrower bank details entered', autoOk: true },
+                          { id: 'cheque', label: 'Cancelled cheque verified', autoOk: bankVerified },
+                          { id: 'bvl', label: 'Bank verification letter resolved', autoOk: true },
+                          { id: 'exceptions', label: 'No blocking exceptions', autoOk: true },
+                          { id: 'amount', label: 'Disbursement amount within sanction', autoOk: true },
+                        ].map(item => {
+                          const ok = item.autoOk || readinessChecks[item.id];
+                          return (
+                            <button
+                              key={item.id}
+                              disabled={item.autoOk || !isSeniorManager}
+                              onClick={() => setReadinessChecks(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                              className={`rounded-lg border p-3 text-left w-full transition-colors ${ok ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100 hover:bg-amber-100'}`}
+                            >
+                              <p className="text-xs text-slate-500">{item.label}</p>
+                              <p className={`text-sm font-semibold mt-0.5 ${ok ? 'text-green-800' : 'text-amber-800'}`}>{ok ? 'Verified ✓' : 'Tap to verify'}</p>
+                            </button>
+                          );
+                        })}
                       </div>
                       
                       {!bankVerified && (
@@ -402,7 +429,7 @@ const DisbursementHub: React.FC<DisbursementHubProps> = ({ onOpenApplication, in
                       <div className="flex gap-3 flex-wrap">
                         {isSeniorManager ? (
                           <>
-                            <button className="btn-primary text-sm flex-[2]" disabled={!sapConfirmed || !bankVerified} onClick={() => { setReadyForPayment(true); setStage('initiated'); auditLog('MARKED_READY_FOR_PAYMENT'); }}>Mark ready for payment</button>
+                            <button className="btn-primary text-sm flex-[2]" disabled={!sapConfirmed || !bankVerified} onClick={() => { setReadyForPayment(true); setStage('initiated'); auditLog('MARKED_DISBURSEMENT_READY'); }}>Mark disbursement ready</button>
                             <button className="btn-secondary text-sm flex-1" onClick={() => auditLog('RETURNED_TO_DOCUMENTATION')}>Return to documentation</button>
                             <button className="btn-secondary text-sm flex-1" onClick={() => auditLog('RETURNED_TO_SAP')}>Return to SAP setup</button>
                             <button className="btn-secondary text-sm flex-1 text-red-600 hover:bg-red-50" onClick={() => auditLog('ADDED_FINANCE_BLOCKER')}>Add finance blocker</button>

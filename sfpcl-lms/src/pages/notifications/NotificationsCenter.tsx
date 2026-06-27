@@ -51,7 +51,7 @@ const NotificationsCenter: React.FC<NotificationsCenterProps> = ({ onNavigate })
       })) : [];
 
     const sanctionItems = can('view_sanction') ? loanApplications
-      .filter(app => app.status === 'pending_sanction' || app.isException)
+      .filter(app => ['pending_sanction_committee_approval', 'pending_sanction', 'under_sanction_review', 'clarification_requested'].includes(app.status) || app.isException)
       .map(app => ({
         id: `sanction-${app.id}`,
         severity: app.isException ? 'urgent' as const : 'warning' as const,
@@ -68,7 +68,7 @@ const NotificationsCenter: React.FC<NotificationsCenterProps> = ({ onNavigate })
       })) : [];
 
     const documentationItems = can('view_documentation') ? loanApplications
-      .filter(app => app.status === 'sanctioned' && app.documentationStatus !== 'complete')
+      .filter(app => ['sanctioned', 'documentation_in_progress', 'documentation_deficiency_raised', 'pending_final_checklist_approvals'].includes(app.status) && app.documentationStatus !== 'complete')
       .map(app => ({
         id: `doc-${app.id}`,
         severity: 'warning' as const,

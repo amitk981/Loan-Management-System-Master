@@ -6,7 +6,7 @@ import {
 import StatusBadge from '../../components/ui/StatusBadge';
 import { useRole } from '../../contexts/RoleContext';
 
-type InterestTab = 'accrual' | 'invoices' | 'capitalisation';
+type InterestTab = 'accrual' | 'invoices' | 'capitalisation' | 'rate_history';
 
 const accrualData = [
   { loanNo: 'LO00000042', borrower: 'Ganesh Thorat',   principal: 350000, rate: 12, daysInPeriod: 30, accrued: 3452, status: 'active',  dueDate: '2025-09-30', sapStatus: 'pending', postedDate: '-' },
@@ -33,6 +33,7 @@ const InterestManagement: React.FC = () => {
   const isCredit = isAdmin || role.includes('credit');
 
   const [capRemarks, setCapRemarks] = useState('');
+  const [sapPosted, setSapPosted] = useState(false);
 
   const totalAccrued = accrualData.reduce((sum, r) => sum + r.accrued, 0);
   const sapPendingCount = accrualData.filter(r => r.sapStatus === 'pending').length;
@@ -41,6 +42,7 @@ const InterestManagement: React.FC = () => {
     { id: 'accrual',        label: 'Monthly Interest Accrual' },
     { id: 'invoices',       label: 'Yearly Invoices' },
     { id: 'capitalisation', label: 'Interest Capitalisation' },
+    { id: 'rate_history',   label: 'Interest Rate History' },
   ];
 
   return (
@@ -113,10 +115,16 @@ const InterestManagement: React.FC = () => {
               </div>
               <div>
                 {isAccounts || isCredit ? (
-                  <button className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    <CheckCircle2 size={15} />
-                    Mark SAP Posted
-                  </button>
+                  sapPosted ? (
+                    <button disabled className="flex items-center gap-2 bg-slate-100 text-slate-500 px-4 py-2 rounded-lg text-sm font-medium cursor-not-allowed">
+                      <CheckCircle2 size={15} className="text-green-600" /> SAP Posted
+                    </button>
+                  ) : (
+                    <button onClick={() => setSapPosted(true)} className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                      <CheckCircle2 size={15} />
+                      Mark SAP Posted
+                    </button>
+                  )
                 ) : (
                   <button disabled className="flex items-center gap-2 bg-slate-100 text-slate-400 px-4 py-2 rounded-lg text-sm font-medium cursor-not-allowed">
                     <Lock size={14} /> Mark SAP Posted
@@ -330,6 +338,63 @@ const InterestManagement: React.FC = () => {
           <div className="bg-white border border-slate-200 rounded-xl p-6">
             <h3 className="font-semibold text-slate-900 mb-4">Capitalisation History</h3>
             <div className="text-sm text-slate-500 text-center py-6">No prior capitalisation events on record</div>
+          </div>
+        </div>
+      )}
+
+      {/* Interest Rate History */}
+      {activeTab === 'rate_history' && (
+        <div className="space-y-5">
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3 text-sm text-blue-800">
+            <IndianRupee size={16} className="mt-0.5 flex-shrink-0 text-blue-600" />
+            <div>
+              <strong>Interest rate versions are configured by Senior Management and approved by the Board.</strong> Changes apply to new disbursements from the effective date.
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-semibold text-slate-900">Interest Rate Versions</h3>
+              <span className="text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full">All loan types</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase">Version</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Loan Type</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Short-Term Rate</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Long-Term Rate</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Penal Rate</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Effective From</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Effective To</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Status</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Approved By</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {[
+                    { version: 'v3.0', shortRate: 12.5, longRate: 11.0, penal: 2.0, from: '01 Apr 2026', to: '—', status: 'active', approvedBy: 'Board — 28 Mar 2026' },
+                    { version: 'v2.2', shortRate: 12.0, longRate: 11.0, penal: 2.0, from: '01 Oct 2025', to: '31 Mar 2026', status: 'superseded', approvedBy: 'Board — 26 Sep 2025' },
+                    { version: 'v2.1', shortRate: 12.0, longRate: 10.5, penal: 2.0, from: '01 Apr 2025', to: '30 Sep 2025', status: 'superseded', approvedBy: 'Board — 29 Mar 2025' },
+                    { version: 'v2.0', shortRate: 11.5, longRate: 10.0, penal: 2.0, from: '01 Apr 2024', to: '31 Mar 2025', status: 'superseded', approvedBy: 'Board — 30 Mar 2024' },
+                    { version: 'v1.0', shortRate: 11.0, longRate: 9.5,  penal: 2.0, from: '01 Apr 2023', to: '31 Mar 2024', status: 'archived',   approvedBy: 'Board — 28 Mar 2023' },
+                  ].map(row => (
+                    <tr key={row.version} className={`hover:bg-slate-50 transition-colors ${row.status === 'active' ? 'bg-green-50/30' : ''}`}>
+                      <td className="px-6 py-3 font-semibold text-slate-800">{row.version}</td>
+                      <td className="px-4 py-3 text-slate-600">All Members</td>
+                      <td className="px-4 py-3 text-right font-semibold text-slate-900">{row.shortRate}%</td>
+                      <td className="px-4 py-3 text-right font-semibold text-slate-900">{row.longRate}%</td>
+                      <td className="px-4 py-3 text-right text-red-700 font-semibold">+{row.penal}%</td>
+                      <td className="px-4 py-3 text-slate-600">{row.from}</td>
+                      <td className="px-4 py-3 text-slate-500">{row.to}</td>
+                      <td className="px-4 py-3"><StatusBadge label={row.status} size="sm" type={row.status === 'active' ? 'success' : 'slate'} /></td>
+                      <td className="px-4 py-3 text-slate-500 text-xs">{row.approvedBy}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

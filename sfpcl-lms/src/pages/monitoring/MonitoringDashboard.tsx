@@ -1,5 +1,5 @@
-import React from 'react';
-import { AlertTriangle, TrendingDown, Bell, FileBarChart2, Eye, Calendar, Phone } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertTriangle, TrendingDown, Bell, FileBarChart2, Eye, Calendar, Phone, MessageSquare, CheckCircle2, Clock, X as XIcon } from 'lucide-react';
 import StatusBadge from '../../components/ui/StatusBadge';
 import AlertBanner from '../../components/ui/AlertBanner';
 import { loanAccounts } from '../../data/mockData';
@@ -24,11 +24,21 @@ const DPD_BUCKETS = [
 
 interface MonitoringDashboardProps {
   onOpenLoan: (id: string) => void;
+  onOpenDefault?: () => void;
 }
 
-const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({ onOpenLoan }) => {
+const REMINDER_LOG = [
+  { id: 'r1', accountNumber: 'LN-2025-000028', memberName: 'Sunita Bhosale', type: 'SMS', date: '2026-06-24', by: 'System Auto', status: 'delivered', dpd: 47, response: 'No response' },
+  { id: 'r2', accountNumber: 'LN-2025-000028', memberName: 'Sunita Bhosale', type: 'Call', date: '2026-06-20', by: 'Ramesh Jadhav (FO)', status: 'connected', dpd: 43, response: 'Promised payment by 30 Jun' },
+  { id: 'r3', accountNumber: 'LN-2024-000019', memberName: 'Vijay Deshmukh', type: 'SMS', date: '2026-06-22', by: 'System Auto', status: 'delivered', dpd: 12, response: 'No response' },
+  { id: 'r4', accountNumber: 'LN-2024-000015', memberName: 'Manoj Jadhav', type: 'Call', date: '2026-06-18', by: 'Priya Kulkarni (CM)', status: 'not_reached', dpd: 95, response: 'Phone switched off' },
+  { id: 'r5', accountNumber: 'LN-2024-000015', memberName: 'Manoj Jadhav', type: 'Notice', date: '2026-06-10', by: 'Priya Kulkarni (CM)', status: 'sent', dpd: 87, response: 'Notice delivered via registered post' },
+];
+
+const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({ onOpenLoan, onOpenDefault }) => {
   const { currentUser } = useRole();
   const role = currentUser.role;
+  const [showReminderLog, setShowReminderLog] = useState(false);
 
   // Role permissions
   const isAllowed = ['admin', 'credit_manager', 'senior_manager_finance', 'deputy_manager_finance', 'accounts_team', 'cfo', 'auditor', 'sales', 'field_officer', 'compliance_team'].includes(role);
@@ -46,7 +56,7 @@ const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({ onOpenLoan })
   const activeLoans = loanAccounts.filter(l => l.status !== 'closed');
   
   const atRisk = activeLoans.filter(l => l.dpd > 0 || l.status === 'grace_period');
-  const overdue = activeLoans.filter(l => l.status === 'overdue' || l.status === 'default_review');
+  const overdue = activeLoans.filter(l => l.status === 'overdue' || l.status === 'default_review' || l.status === 'recovery_review');
 
   const bucketCounts = DPD_BUCKETS.map(b => ({
     ...b,
@@ -152,7 +162,7 @@ const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({ onOpenLoan })
                         <div className="flex flex-col gap-1.5 items-start">
                           {l.status === 'grace_period' ? (
                             canActOnReminder ? (
-                              <button className="text-xs px-2 py-1 bg-amber-50 border border-amber-200 rounded text-amber-700 hover:bg-amber-100 flex items-center">
+                              <button onClick={onOpenDefault} className="text-xs px-2 py-1 bg-amber-50 border border-amber-200 rounded text-amber-700 hover:bg-amber-100 flex items-center">
                                 <Eye size={10} className="mr-1" /> View Grace Case
                               </button>
                             ) : (
@@ -160,7 +170,7 @@ const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({ onOpenLoan })
                             )
                           ) : l.status.includes('recovery') || l.status === 'default_review' ? (
                             canActOnReminder ? (
-                              <button className="text-xs px-2 py-1 bg-red-50 border border-red-200 rounded text-red-700 hover:bg-red-100 flex items-center">
+                              <button onClick={onOpenDefault} className="text-xs px-2 py-1 bg-red-50 border border-red-200 rounded text-red-700 hover:bg-red-100 flex items-center">
                                 <TrendingDown size={10} className="mr-1" /> View Recovery Case
                               </button>
                             ) : (
@@ -188,6 +198,74 @@ const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({ onOpenLoan })
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Reminder Log */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="section-title flex items-center gap-2">
+            <MessageSquare size={16} className="text-blue-500" />
+            Reminder Log
+          </h2>
+          <button
+            onClick={() => setShowReminderLog(!showReminderLog)}
+            className="text-xs px-3 py-1.5 bg-blue-50 border border-blue-200 rounded text-blue-700 hover:bg-blue-100 flex items-center gap-1"
+          >
+            <Bell size={12} /> {showReminderLog ? 'Hide' : 'View All'} ({REMINDER_LOG.length})
+          </button>
+        </div>
+        {showReminderLog && (
+          <div className="card p-0 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="table-header text-left">Account</th>
+                  <th className="table-header text-left">Member</th>
+                  <th className="table-header text-left">Type</th>
+                  <th className="table-header text-left">Date</th>
+                  <th className="table-header text-left">By</th>
+                  <th className="table-header text-right">DPD</th>
+                  <th className="table-header text-left">Status</th>
+                  <th className="table-header text-left">Response</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {REMINDER_LOG.map(r => (
+                  <tr key={r.id} className="hover:bg-slate-50">
+                    <td className="table-cell">
+                      <button onClick={() => onOpenLoan(r.id)} className="font-semibold text-green-700 num hover:underline text-xs">{r.accountNumber}</button>
+                    </td>
+                    <td className="table-cell font-medium text-slate-800">{r.memberName}</td>
+                    <td className="table-cell">
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                        r.type === 'Call' ? 'bg-blue-50 text-blue-700' :
+                        r.type === 'SMS' ? 'bg-slate-100 text-slate-600' :
+                        'bg-amber-50 text-amber-700'
+                      }`}>{r.type}</span>
+                    </td>
+                    <td className="table-cell text-slate-500 text-xs">{new Date(r.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</td>
+                    <td className="table-cell text-slate-500 text-xs">{r.by}</td>
+                    <td className="table-cell text-right">
+                      <span className={`font-bold num text-xs ${r.dpd > 90 ? 'text-red-600' : r.dpd > 30 ? 'text-amber-600' : 'text-slate-600'}`}>{r.dpd}</span>
+                    </td>
+                    <td className="table-cell">
+                      {r.status === 'connected' ? (
+                        <span className="flex items-center gap-1 text-xs text-green-700"><CheckCircle2 size={11} /> Connected</span>
+                      ) : r.status === 'delivered' ? (
+                        <span className="flex items-center gap-1 text-xs text-blue-600"><CheckCircle2 size={11} /> Delivered</span>
+                      ) : r.status === 'sent' ? (
+                        <span className="flex items-center gap-1 text-xs text-slate-600"><Clock size={11} /> Sent</span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-xs text-red-600"><XIcon size={11} /> Not reached</span>
+                      )}
+                    </td>
+                    <td className="table-cell text-slate-500 text-xs">{r.response}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

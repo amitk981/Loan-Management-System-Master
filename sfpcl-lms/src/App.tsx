@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Agentation } from 'agentation';
 import { Permission, RoleProvider, useRole } from './contexts/RoleContext';
-import { Role } from './types';
+import { Role, LoanApplication } from './types';
+import { loanApplications as initialApplications } from './data/mockData';
 import AppShell from './components/layout/AppShell';
 import LoginScreen from './pages/auth/LoginScreen';
 import BorrowerPortal from './pages/borrower/BorrowerPortal';
@@ -13,6 +14,7 @@ import Dashboard from './pages/Dashboard';
 import ApplicationList from './pages/applications/ApplicationList';
 import ApplicationDetail from './pages/applications/ApplicationDetail';
 import NewApplication from './pages/applications/NewApplication';
+import CompletenessWorkbench from './pages/applications/CompletenessWorkbench';
 import MemberDirectory from './pages/members/MemberDirectory';
 import MemberProfile from './pages/members/MemberProfile';
 import Borrower360 from './pages/members/Borrower360';
@@ -41,7 +43,7 @@ import MyProfile from './pages/profile/MyProfile';
 export type Page =
   | 'dashboard' | 'tasks'
   | 'search' | 'notifications'
-  | 'applications' | 'applications/new' | 'applications/detail'
+  | 'applications' | 'applications/new' | 'applications/detail' | 'completeness'
   | 'members' | 'members/profile' | 'members/borrower360'
   | 'appraisal' | 'sanction'
   | 'documentation' | 'disbursement' | 'cfc'
@@ -61,6 +63,7 @@ const PAGE_PERMISSIONS: Partial<Record<Page, Permission>> = {
   applications: 'view_applications',
   'applications/new': 'create_application',
   'applications/detail': 'view_applications',
+  completeness: 'do_completeness_check',
   members: 'view_members',
   'members/profile': 'view_members',
   'members/borrower360': 'view_members',
@@ -96,6 +99,10 @@ const AppInner: React.FC = () => {
   const [authView, setAuthView] = useState<AuthView>('staff');
   const [blockedPage, setBlockedPage] = useState<Page | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [applications, setApplications] = useState<LoanApplication[]>(initialApplications);
+  const updateApplicationStatus = useCallback((id: string, newStatus: string) => {
+    setApplications(prev => prev.map(a => a.id === id ? { ...a, status: newStatus as LoanApplication['status'] } : a));
+  }, []);
 
   const handleLogin = (role: Role) => {
     setRole(role);
@@ -156,7 +163,7 @@ const AppInner: React.FC = () => {
     setBlockedPage(null);
     setPage(target);
     if (
-      ['applications/detail', 'appraisal', 'sanction', 'documentation', 'disbursement', 'cfc'].includes(target) && id
+      ['applications/detail', 'completeness', 'appraisal', 'sanction', 'documentation', 'disbursement', 'cfc'].includes(target) && id
     ) {
       setSelectedApplicationId(id);
     }
@@ -187,13 +194,21 @@ const AppInner: React.FC = () => {
           />
         );
       case 'applications/new':
-        return <NewApplication onBack={() => navigate('applications')} />;
+        return <NewApplication onBack={() => navigate('applications')} onNavigateTasks={() => navigate('tasks')} />;
       case 'applications/detail':
         return (
           <ApplicationDetail
             applicationId={selectedApplicationId || 'app001'}
             onBack={() => navigate('applications')}
             onNavigateMember={id => navigate('members/profile', id)}
+          />
+        );
+      case 'completeness':
+        return (
+          <CompletenessWorkbench
+            initialSelectedId={selectedApplicationId || undefined}
+            onOpenApplication={id => navigate('applications/detail', id)}
+            onOpenAppraisal={id => navigate('appraisal', id)}
           />
         );
       case 'members':
@@ -215,9 +230,9 @@ const AppInner: React.FC = () => {
           />
         );
       case 'appraisal':
-        return <AppraisalWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} />;
+        return <AppraisalWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} applications={applications} onUpdateStatus={updateApplicationStatus} />;
       case 'sanction':
-        return <SanctionWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} />;
+        return <SanctionWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} applications={applications} onUpdateStatus={updateApplicationStatus} />;
       case 'documentation':
         return <DocumentationHub onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} />;
       case 'disbursement':
@@ -239,7 +254,7 @@ const AppInner: React.FC = () => {
       case 'repayments':
         return <RepaymentsHub />;
       case 'monitoring':
-        return <MonitoringDashboard onOpenLoan={id => navigate('loan-accounts/detail', id)} />;
+        return <MonitoringDashboard onOpenLoan={id => navigate('loan-accounts/detail', id)} onOpenDefault={() => navigate('defaults')} />;
       case 'defaults':
         return <DefaultRecoveryHub />;
       case 'closure':
@@ -247,7 +262,7 @@ const AppInner: React.FC = () => {
       case 'compliance':
         return <ComplianceDashboard />;
       case 'registers':
-        return <RegistersHub />;
+        return <RegistersHub onOpenLoan={id => navigate('loan-accounts/detail', id)} onOpenApplication={id => navigate('applications/detail', id)} />;
       case 'audit':
         return <AuditArchiveHub />;
       case 'grievances':

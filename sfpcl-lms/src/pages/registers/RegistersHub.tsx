@@ -4,34 +4,42 @@ import { BookOpen, FileText, Scale, Gavel, AlertOctagon, RotateCcw, Archive, Sta
 import Tabs from '../../components/ui/Tabs';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { loanApplications, loanAccounts, securities, members, complianceRecords, auditEvents } from '../../data/mockData';
+import { getApplicationReference, getApplicationStatusLabel } from '../../utils/applicationDisplay';
 
 const fmt = (n?: number) => n !== undefined && n !== null ? '₹' + n.toLocaleString('en-IN') : '—';
 
 const REGISTER_TABS = [
-  { id: 'loan_register',      label: 'Loan account register' },
-  { id: 'loan_request_register', label: 'Loan request register' },
-  { id: 'sanction_register',  label: 'Credit sanction register' },
-  { id: 'security_register',  label: 'Security register' },
-  { id: 'exception_register', label: 'Exception register' },
-  { id: 'member_register',    label: 'Member register' },
-  { id: 'compliance_register', label: 'Compliance register' },
-  { id: 'stamp_duty',         label: 'Stamp duty register' },
-  { id: 'recovery_log',       label: 'Recovery log' },
-  { id: 'blank_cheque_register', label: 'Blank-dated cheque register' },
-  { id: 'sh4_register',       label: 'SH-4 register' },
-  { id: 'cdsl_register',      label: 'CDSL pledge register' },
-  { id: 'sap_register',       label: 'SAP customer code register' },
-  { id: 'disbursement_register', label: 'Disbursement register' },
-  { id: 'repayment_register', label: 'Repayment register' },
+  { id: 'loan_register',           label: 'Loan account register' },
+  { id: 'loan_request_register',   label: 'Loan request register' },
+  { id: 'sanction_register',       label: 'Credit sanction register' },
+  { id: 'security_register',       label: 'Security register' },
+  { id: 'exception_register',      label: 'Exception register' },
+  { id: 'member_register',         label: 'Member register' },
+  { id: 'compliance_register',     label: 'Compliance register' },
+  { id: 'stamp_duty',              label: 'Stamp duty register' },
+  { id: 'audit_log',               label: 'Audit log' },
+  { id: 'grievance_register',      label: 'Grievance register' },
+  { id: 'recovery_log',            label: 'Recovery log' },
+  { id: 'blank_cheque_register',   label: 'Blank-dated cheque register' },
+  { id: 'sh4_register',            label: 'SH-4 register' },
+  { id: 'cdsl_register',           label: 'CDSL pledge register' },
+  { id: 'sap_register',            label: 'SAP customer code register' },
+  { id: 'disbursement_register',   label: 'Disbursement register' },
+  { id: 'repayment_register',      label: 'Repayment register' },
   { id: 'interest_invoice_register', label: 'Interest invoice register' },
-  { id: 'accrual_register',   label: 'Accrual register' },
-  { id: 'dpd_register',       label: 'DPD / monitoring register' },
-  { id: 'noc_register',       label: 'NOC / closure register' },
-  { id: 'archive_register',   label: 'Archive register' },
-  { id: 'sop_change_register', label: 'SOP change register' },
+  { id: 'accrual_register',        label: 'Accrual register' },
+  { id: 'dpd_register',            label: 'DPD / monitoring register' },
+  { id: 'noc_register',            label: 'NOC / closure register' },
+  { id: 'archive_register',        label: 'Archive register' },
+  { id: 'sop_change_register',     label: 'SOP change register' },
 ];
 
-const RegistersHub: React.FC = () => {
+interface RegistersHubProps {
+  onOpenLoan?: (id: string) => void;
+  onOpenApplication?: (id: string) => void;
+}
+
+const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplication }) => {
   const { can } = useRole();
   const [activeTab, setActiveTab] = useState(0);
   const [auditSearch, setAuditSearch] = useState('');
@@ -41,7 +49,7 @@ const RegistersHub: React.FC = () => {
   const [auditDateTo, setAuditDateTo] = useState('');
 
 
-  const canExport = can('export_reports');
+  const canExport = can('export_registers');
   const processedLoans = loanAccounts.map(l => {
     const due = new Date(l.repaymentDueDate);
     const diffDays = Math.floor((new Date().getTime() - due.getTime()) / (1000 * 3600 * 24));
@@ -53,10 +61,10 @@ const RegistersHub: React.FC = () => {
       displayStatus = 'closed';
     } else if (calcDpd !== null && calcDpd > 90 && l.status === 'grace_period') {
       displayStatus = 'default_review';
-    } else if (l.status === 'recovery_in_progress') {
+    } else if (l.status === 'recovery_in_progress' || l.status === 'recovery_review') {
       const hasRecovery = auditEvents.some(a => a.entityId === l.id && a.eventType === 'Default Recovery Action Initiated');
-      if (!hasRecovery) displayStatus = 'default_review';
-    } else if (calcDpd !== null && calcDpd > 0 && l.status === 'active') {
+      if (!hasRecovery) displayStatus = 'recovery_review';
+    } else if (calcDpd !== null && calcDpd > 0 && (l.status === 'active' || l.status === 'active_repayment')) {
       displayStatus = 'overdue';
     }
     
@@ -243,7 +251,11 @@ const RegistersHub: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {processedLoans.map(l => (
                   <tr key={l.id} className="hover:bg-slate-50">
-                    <td className="table-cell num font-semibold text-green-700">{l.accountNumber}</td>
+                    <td className="table-cell num font-semibold text-green-700">
+                      {onOpenLoan ? (
+                        <button onClick={() => onOpenLoan(l.id)} className="hover:underline text-left">{l.accountNumber}</button>
+                      ) : l.accountNumber}
+                    </td>
                     <td className="table-cell font-medium">{l.memberName}</td>
                     <td className="table-cell text-right num">{fmt(l.disbursedAmount)}</td>
                     <td className="table-cell text-right num font-semibold">{fmt(l.outstanding)}</td>
@@ -298,13 +310,13 @@ const RegistersHub: React.FC = () => {
                   let displayType = typeMap[app.memberType] || app.memberType;
                   let displayPurpose = purposeMap[app.purpose] || app.purpose;
                   
-                  let displayStatus = app.status;
-                  if (app.status === 'sanctioned' && app.currentOwnerRole === 'compliance_team') {
+                  let displayStatus = getApplicationStatusLabel(app);
+                  if (['sanctioned', 'documentation_in_progress', 'documentation_deficiency_raised'].includes(app.status) && app.currentOwnerRole === 'compliance_team') {
                     displayStatus = 'documentation_pending';
                   }
                   
                   let displayOwner = app.currentOwner;
-                  if (app.status === 'credit_review' && app.currentOwner === 'Deputy Manager – Finance') {
+                  if ((app.status === 'pending_credit_manager_review' || app.status === 'credit_review') && app.currentOwner === 'Deputy Manager – Finance') {
                     displayOwner = 'Credit Manager';
                   }
 
@@ -312,7 +324,7 @@ const RegistersHub: React.FC = () => {
                   let exceptionDisplay = 'None';
                   let isExceptionActive = false;
                   
-                  if (app.status === 'incomplete') {
+                  if (app.status === 'incomplete' || app.status === 'returned_for_rectification' || app.status === 'deficiency_raised') {
                     displayEligible = 'Not calculated';
                     exceptionDisplay = 'Pending review';
                   } else if (app.isException) {
@@ -326,7 +338,11 @@ const RegistersHub: React.FC = () => {
 
                   return (
                     <tr key={app.id} className={`hover:bg-slate-50 ${isExceptionActive ? 'bg-violet-50/30' : ''}`}>
-                      <td className="table-cell num font-semibold text-green-700">{app.applicationNumber}</td>
+                      <td className="table-cell num font-semibold text-green-700">
+                        {onOpenApplication ? (
+                          <button onClick={() => onOpenApplication(app.id)} className="hover:underline text-left">{getApplicationReference(app)}</button>
+                        ) : getApplicationReference(app)}
+                      </td>
                       <td className="table-cell font-medium">{app.memberName}</td>
                       <td className="table-cell">{displayType}</td>
                       <td className="table-cell text-right num">{fmt(app.requestedAmount)}</td>
@@ -398,7 +414,7 @@ const RegistersHub: React.FC = () => {
 
                   return (
                   <tr key={app.id} className="hover:bg-slate-50">
-                    <td className="table-cell num font-semibold text-green-700">{app.applicationNumber}</td>
+                    <td className="table-cell num font-semibold text-green-700">{getApplicationReference(app)}</td>
                     <td className="table-cell font-medium">{app.memberName}</td>
                     <td className="table-cell text-right num">{fmt(app.requestedAmount)}</td>
                     <td className="table-cell">
@@ -565,7 +581,7 @@ const RegistersHub: React.FC = () => {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-900 num">{app.applicationNumber}</span>
+                          <span className="font-semibold text-slate-900 num">{getApplicationReference(app)}</span>
                           <StatusBadge label={app.status} size="sm" />
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${excStatus === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                             Exception: {excStatus}
@@ -889,7 +905,7 @@ const RegistersHub: React.FC = () => {
 
                     let displayEntityId = ev.entityId;
                     const matchedApp = loanApplications.find(a => a.id === ev.entityId);
-                    if (matchedApp) displayEntityId = matchedApp.applicationNumber;
+                    if (matchedApp) displayEntityId = getApplicationReference(matchedApp);
                     const matchedLoan = loanAccounts.find(l => l.id === ev.entityId);
                     if (matchedLoan) displayEntityId = matchedLoan.accountNumber;
 
@@ -910,14 +926,31 @@ const RegistersHub: React.FC = () => {
 
                     const stateMap: Record<string, string> = {
                       submitted: 'Submitted',
-                      reference_generated: 'Reference issued',
+                      reference_generated: 'Application complete / appraisal in progress',
+                      appraisal_in_progress: 'Application complete / appraisal in progress',
                       appraisal_pending: 'Appraisal pending',
-                      credit_review: 'Credit review',
-                      pending_sanction: 'Pending sanction',
+                      returned_for_rectification: 'Returned for rectification',
+                      credit_review: 'Pending credit manager review',
+                      pending_credit_manager_review: 'Pending credit manager review',
+                      pending_sanction: 'Pending sanction committee approval',
+                      pending_sanction_committee_approval: 'Pending sanction committee approval',
+                      under_sanction_review: 'Under sanction review',
+                      clarification_requested: 'Clarification requested',
                       sanctioned: 'Sanctioned',
-                      active: 'Active',
-                      default_review: 'Default review',
-                      recovery_in_progress: 'Recovery in progress'
+                      documentation_in_progress: 'Documentation in progress',
+                      pending_final_checklist_approvals: 'Pending final checklist approvals',
+                      sap_customer_code_pending: 'SAP customer code pending',
+                      sap_customer_code_confirmed: 'SAP customer code confirmed',
+                      payment_initiated: 'Payment initiated',
+                      payment_authorized: 'Payment authorized',
+                      transfer_executed: 'Transfer executed',
+                      active: 'Active repayment',
+                      active_repayment: 'Active repayment',
+                      default_review: 'Recovery review',
+                      recovery_review: 'Recovery review',
+                      recovery_in_progress: 'Recovery in progress',
+                      recovery_action_approved: 'Recovery action approved',
+                      closure_review: 'Closure review'
                     };
                     let displayPrev = ev.previousState ? (stateMap[ev.previousState] || ev.previousState) : null;
                     let displayNew = ev.newState ? (stateMap[ev.newState] || ev.newState) : null;
@@ -1053,8 +1086,8 @@ const RegistersHub: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {[
                   { loan: 'LO00000042', borrower: 'Ganesh Thorat',   outstanding: 350000, dpd: 45,  stage: 'grace_period',    action: 'Reminder calls + SMS issued',      date: '2025-06-10' },
-                  { loan: 'LO00000038', borrower: 'Malti Shinde',    outstanding: 180000, dpd: 95,  stage: 'default_review',  action: 'Non-payment note submitted to SC', date: '2025-06-15' },
-                  { loan: 'LO00000035', borrower: 'Kisan FPC Ltd',   outstanding: 890000, dpd: 187, stage: 'recovery_approved', action: 'CFO approved security invocation', date: '2025-04-28' },
+                  { loan: 'LO00000038', borrower: 'Malti Shinde',    outstanding: 180000, dpd: 95,  stage: 'recovery_review',  action: 'Non-payment note submitted to SC', date: '2025-06-15' },
+                  { loan: 'LO00000035', borrower: 'Kisan FPC Ltd',   outstanding: 890000, dpd: 187, stage: 'recovery_action_approved', action: 'CFO approved security invocation', date: '2025-04-28' },
                 ].map(r => (
                   <tr key={r.loan} className={`hover:bg-slate-50 ${r.dpd > 90 ? 'bg-red-50/20' : ''}`}>
                     <td className="table-cell font-mono text-slate-700">{r.loan}</td>

@@ -599,6 +599,7 @@ audit.audit_log.read
 | `applications.loan_application.update` | Update draft application | High |
 | `applications.loan_application.submit` | Submit application | High |
 | `applications.loan_application.complete_check` | Mark completeness result | High |
+| `applications.loan_application.reference_generate` | Generate official sequential loan reference number | High |
 | `applications.loan_application.return_deficiency` | Return application with deficiencies | High |
 | `applications.loan_application.cancel` | Cancel application | High |
 | `applications.document.upload` | Upload application documents | High |
@@ -1754,6 +1755,7 @@ Detail APIs should return:
 | `/members` | `members.member.read` |
 | `/applications` | `applications.loan_application.read` |
 | `/applications/new` | `applications.loan_application.create` |
+| `/completeness` | `applications.loan_application.complete_check` |
 | `/applications/:id/appraisal` | `credit.appraisal.create` or `credit.appraisal.review` |
 | `/approvals` | `approvals.case.read` |
 | `/documents` | `documents.loan_document.read` |
@@ -1839,6 +1841,7 @@ def submit_to_sanction_committee(user, loan_application_id):
 | Create application | `applications.loan_application.create` | Member must exist |
 | Submit application | `applications.loan_application.submit` | Required fields and docs |
 | Completeness check | `applications.loan_application.complete_check` | Submitted state |
+| Generate reference number | `applications.loan_application.reference_generate` | All mandatory completeness checks passed |
 | Return deficiency | `applications.loan_application.return_deficiency` | Deficiency details required |
 | Cancel application | `applications.loan_application.cancel` | Not disbursed |
 | Create rejection | `applications.rejection_note.create` | Valid rejection stage |

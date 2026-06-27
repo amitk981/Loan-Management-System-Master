@@ -174,7 +174,7 @@ const AuditArchiveHub: React.FC = () => {
             <div className="max-w-3xl space-y-4">
               {[
                 { id: 1, action: 'Sanction approved', detail: 'pending_sanction → sanctioned', user: 'Rajesh Sharma · Sanction Committee', date: '25 May 2026 at 07:30 PM', linkedRef: 'LO00000039' },
-                { id: 2, action: 'Disbursement initiated', detail: 'ready_for_payment → payment_authorisation_pending', user: 'Amit Deshmukh · Senior Manager – Finance', date: '26 May 2026 at 10:15 AM', linkedRef: 'LO00000039' },
+                { id: 2, action: 'Disbursement initiated', detail: 'disbursement_ready → payment_initiated', user: 'Amit Deshmukh · Senior Manager – Finance', date: '26 May 2026 at 10:15 AM', linkedRef: 'LO00000039' },
                 { id: 3, action: 'Exception flagged', detail: 'limit_check_passed → exception_flagged', user: 'System · Limit check', date: '27 May 2026 at 09:00 AM', linkedRef: 'LO00000047' },
               ].map(event => (
                 <div key={event.id} className="flex gap-4">

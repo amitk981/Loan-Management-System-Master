@@ -52,7 +52,7 @@ const Borrower360: React.FC<Borrower360Props> = ({ memberId, onBack, onOpenAppli
 
   const activeLoansCount = memberLoans.filter(l => ['active', 'overdue', 'grace_period', 'recovery_in_progress'].includes(l.status)).length;
   const overdueLoansCount = memberLoans.filter(l => ['overdue', 'grace_period', 'recovery_in_progress'].includes(l.status)).length;
-  const openAppsCount = memberApps.filter(a => !['rejected_credit','rejected_sanction','disbursed','closed'].includes(a.status)).length;
+  const openAppsCount = memberApps.filter(a => !['rejected_credit', 'rejected_by_credit_manager', 'rejected_sanction', 'rejected_by_sanction_committee', 'disbursed', 'closed'].includes(a.status)).length;
   const maxDpd = Math.max(0, ...memberLoans.map(l => l.dpd || 0));
 
   const kycBadgeText = (member.kycStatus === 'verified' && riskExceptions.some(e => e.type === 'KYC Re-verification' && e.status === 'open'))
@@ -74,6 +74,7 @@ const Borrower360: React.FC<Borrower360Props> = ({ memberId, onBack, onOpenAppli
     { id: 'repayments',  label: 'Repayment History' },
     { id: 'security',    label: 'Security Instruments' },
     { id: 'docs',        label: 'Documentation' },
+    { id: 'nominee',     label: 'Nominee' },
     { id: 'comms',       label: 'Communications' },
     { id: 'risk',        label: 'Risk & Exceptions', badge: riskExceptions.length || undefined },
     { id: 'audit',       label: 'Audit Trail' },
@@ -117,7 +118,7 @@ const Borrower360: React.FC<Borrower360Props> = ({ memberId, onBack, onOpenAppli
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-400">Open Applications</p>
-            <p className="text-lg font-bold text-slate-900">{memberApps.filter(a => a.status !== 'rejected_credit' && a.status !== 'rejected_sanction').length}</p>
+            <p className="text-lg font-bold text-slate-900">{memberApps.filter(a => !['rejected_credit', 'rejected_by_credit_manager', 'rejected_sanction', 'rejected_by_sanction_committee'].includes(a.status)).length}</p>
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-400">Accrued Interest</p>
@@ -381,7 +382,63 @@ const Borrower360: React.FC<Borrower360Props> = ({ memberId, onBack, onOpenAppli
           ))}
         </div>
 
-        {/* ── Tab 6: Communications ── */}
+        {/* ── Tab 6: Nominee ── */}
+        <div className="space-y-4">
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                <User size={16} className="text-green-600" /> Nominee Details
+              </h3>
+              <StatusBadge label="Pending Signature" size="sm" type="warning" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {[
+                { label: 'Full Name', value: 'Sudha Patil' },
+                { label: 'Date of Birth', value: '15 Mar 1980' },
+                { label: 'Age at Application', value: '45 years' },
+                { label: 'Gender', value: 'Female' },
+                { label: 'Relationship', value: 'Spouse' },
+                { label: 'Mobile', value: '9900112233' },
+                { label: 'Address', value: 'Sr. No. 88, Igatpuri, Nashik' },
+                { label: 'PAN Document', value: 'Pending' },
+                { label: 'Aadhaar Document', value: 'Uploaded' },
+              ].map(({ label, value }) => (
+                <div key={label} className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{label}</p>
+                  <p className={`text-sm font-semibold mt-0.5 ${value === 'Pending' ? 'text-amber-700' : 'text-slate-900'}`}>{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Identity & Verification</h3>
+            <div className="space-y-2">
+              {[
+                { label: 'Nominee PAN', value: '••••••••••', status: 'Pending', note: 'Reveal requires authorised access' },
+                { label: 'Nominee Aadhaar (last 4)', value: '••••', status: 'Uploaded', note: 'Aadhaar copy uploaded, not yet verified' },
+                { label: 'Minor age check', value: '≥ 18 years confirmed', status: 'Passed', note: '' },
+                { label: 'Nominee signature', value: 'Not yet obtained', status: 'Pending', note: 'Required before disbursement' },
+              ].map(({ label, value, status, note }) => (
+                <div key={label} className="flex items-start justify-between gap-4 py-2 border-b border-slate-100 last:border-0">
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">{label}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{value}{note ? ` — ${note}` : ''}</p>
+                  </div>
+                  <StatusBadge label={status} size="sm" type={status === 'Passed' ? 'success' : status === 'Uploaded' ? 'info' : 'warning'} />
+                </div>
+              ))}
+            </div>
+          </div>
+          {memberApps.length > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs text-blue-700 font-medium">
+                Nominee details are linked to application {memberApps[0].applicationNumber}. View full nominee panel in ApplicationDetail → Nominee tab.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* ── Tab 7: Communications ── */}
         <div className="card p-0 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <h3 className="font-semibold text-slate-800">Communications Log</h3>
@@ -410,7 +467,7 @@ const Borrower360: React.FC<Borrower360Props> = ({ memberId, onBack, onOpenAppli
           </div>
         </div>
 
-        {/* ── Tab 7: Risk & Exceptions ── */}
+        {/* ── Tab 8: Risk & Exceptions ── */}
         <div className="space-y-3">
           {riskExceptions.length === 0 ? (
             <div className="card text-center py-8 text-slate-400 text-sm">
@@ -443,7 +500,7 @@ const Borrower360: React.FC<Borrower360Props> = ({ memberId, onBack, onOpenAppli
             </div>
           ))}
         </div>
-        {/* ── Tab 8: Audit Trail ── */}
+        {/* ── Tab 9: Audit Trail ── */}
         <div className="card p-0 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
             <h3 className="font-semibold text-slate-800">Audit Trail</h3>

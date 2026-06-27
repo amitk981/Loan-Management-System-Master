@@ -15,18 +15,29 @@ interface PaymentAuthorisationHubProps {
 type AuthStage = 'cfc_pending' | 'completed';
 
 const STAGE_LABELS: Record<AuthStage, string> = {
-  cfc_pending: 'CFC Authorisation',
-  completed: 'Disbursed',
+  cfc_pending: 'Payment Initiated',
+  completed: 'Transfer Executed',
+};
+
+const isTransferExecuted = (app: { status: string; disbursementStatus: string }) =>
+  ['completed', 'disbursed', 'transfer_executed'].includes(app.disbursementStatus) ||
+  ['disbursed', 'transfer_executed'].includes(app.status);
+
+const getAuthorisationStatus = (app: { status: string; disbursementStatus: string }, stage?: AuthStage) => {
+  if (stage === 'completed' || isTransferExecuted(app)) return 'transfer_executed';
+  if (app.status === 'payment_authorized' || app.disbursementStatus === 'payment_authorized') return 'payment_authorized';
+  return 'payment_initiated';
 };
 
 const PaymentAuthorisationHub: React.FC<PaymentAuthorisationHubProps> = ({ onOpenApplication, initialSelectedId }) => {
   const cfcQueue = loanApplications.filter(a =>
-    a.disbursementStatus === 'pending_cfc_approval' || (a.status === 'sanctioned' && a.disbursementStatus === 'completed')
+    ['pending_cfc_approval', 'payment_authorized', 'transfer_executed', 'completed', 'disbursed'].includes(a.disbursementStatus) ||
+    ['payment_initiated', 'payment_authorized', 'transfer_executed', 'disbursed'].includes(a.status)
   );
   
   const initialApp = initialSelectedId ? cfcQueue.find(a => a.id === initialSelectedId || a.applicationNumber === initialSelectedId) : null;
   const [selected, setSelected] = useState<string | null>(
-    initialApp?.id || cfcQueue.find(a => a.disbursementStatus === 'pending_cfc_approval')?.id || cfcQueue[0]?.id || null
+    initialApp?.id || cfcQueue.find(a => a.disbursementStatus === 'pending_cfc_approval' || a.status === 'payment_initiated')?.id || cfcQueue[0]?.id || null
   );
 
   const { currentUser, can } = useRole();
@@ -44,7 +55,7 @@ const PaymentAuthorisationHub: React.FC<PaymentAuthorisationHubProps> = ({ onOpe
 
   useEffect(() => {
     if (app) {
-      if (app.disbursementStatus === 'completed') {
+      if (isTransferExecuted(app)) {
         setStage('completed');
         setUtrReference('UTR202606241234'); // dummy
         setCfcBankEvidence(true);
@@ -95,13 +106,13 @@ const PaymentAuthorisationHub: React.FC<PaymentAuthorisationHubProps> = ({ onOpe
                   onClick={() => setSelected(a.id)}
                   className={`w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors text-left ${selected === a.id ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}
                 >
-                  <ShieldCheck size={16} className={`${a.disbursementStatus === 'completed' ? 'text-green-600' : 'text-amber-600'} flex-shrink-0`} />
+                  <ShieldCheck size={16} className={`${isTransferExecuted(a) ? 'text-green-600' : 'text-amber-600'} flex-shrink-0`} />
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-slate-900 num text-sm">{a.applicationNumber}</div>
                     <div className="text-xs text-slate-500 truncate">{a.memberName}</div>
                     <div className="text-xs text-green-700 num font-medium">{fmt(a.requestedAmount)}</div>
                   </div>
-                  <StatusBadge label={a.disbursementStatus === 'completed' ? 'Disbursed' : 'CFC authorisation pending'} size="sm" />
+                  <StatusBadge label={getAuthorisationStatus(a)} size="sm" />
                 </button>
               ))}
             </div>
@@ -115,12 +126,12 @@ const PaymentAuthorisationHub: React.FC<PaymentAuthorisationHubProps> = ({ onOpe
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-lg font-bold text-slate-900 num">{app.applicationNumber}</h2>
-                      <StatusBadge label={stage === 'completed' ? 'Disbursed' : 'CFC authorisation pending'} size="sm" />
+                      <StatusBadge label={getAuthorisationStatus(app, stage)} size="sm" />
                     </div>
                     <p className="text-sm text-slate-500">{app.memberName} · {fmt(app.requestedAmount)}</p>
                   </div>
-                  <button onClick={() => onOpenApplication(app.id)} className="text-xs text-green-600 hover:underline flex items-center gap-1">
-                    Open full application <ChevronRight size={12} />
+                  <button onClick={() => onOpenApplication(app.id)} className="btn-secondary flex items-center gap-2 flex-shrink-0">
+                    <FileText size={14} /> Full Application
                   </button>
                 </div>
 

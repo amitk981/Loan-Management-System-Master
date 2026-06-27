@@ -6,24 +6,43 @@ export type LoanType = 'short_term' | 'long_term';
 export type LoanPurpose = 'crop_production' | 'agriculture_activity' | 'allied_activity';
 
 export type ApplicationStatus =
-  | 'draft' | 'submitted' | 'incomplete' | 'reference_generated'
-  | 'appraisal_pending' | 'credit_review' | 'pending_sanction'
-  | 'sanctioned' | 'rejected_credit' | 'rejected_sanction';
+  | 'draft' | 'submitted' | 'incomplete' | 'completeness_check'
+  | 'deficiency_raised' | 'returned_for_rectification' | 'rejected_completeness'
+  | 'reference_generated' | 'appraisal_in_progress' | 'appraisal_pending'
+  | 'pending_credit_manager_review' | 'credit_review'
+  | 'pending_sanction_committee_approval' | 'pending_sanction'
+  | 'rejected_by_credit_manager' | 'rejected_credit'
+  | 'under_sanction_review' | 'clarification_requested'
+  | 'rejected_by_sanction_committee' | 'rejected_sanction'
+  | 'sanctioned'
+  | 'documentation_in_progress' | 'documentation_deficiency_raised'
+  | 'pending_final_checklist_approvals'
+  | 'disbursement_ready' | 'sap_customer_code_pending'
+  | 'sap_customer_code_confirmed' | 'payment_initiated'
+  | 'payment_authorized' | 'transfer_executed' | 'disbursed';
 
 export type DocumentationStatus =
   | 'not_started' | 'in_progress' | 'pending_signature' | 'pending_stamp'
   | 'pending_notarisation' | 'pending_cs_review' | 'pending_credit_review'
-  | 'pending_final_approval' | 'complete' | 'blocked';
+  | 'pending_final_approval' | 'documentation_in_progress'
+  | 'documentation_deficiency_raised' | 'pending_final_checklist_approvals'
+  | 'complete' | 'blocked';
 
 export type DisbursementStatus =
   | 'pending_documentation' | 'pending_sap_code' | 'sap_code_created'
-  | 'pending_bank_verification' | 'ready_for_payment' | 'payment_initiated'
-  | 'pending_cfc_approval' | 'completed' | 'failed';
+  | 'pending_bank_verification' | 'ready_for_payment' | 'pending_disbursement'
+  | 'disbursement_ready' | 'sap_customer_code_pending'
+  | 'sap_customer_code_confirmed' | 'payment_initiated'
+  | 'pending_cfc_approval' | 'payment_authorized' | 'transfer_executed'
+  | 'completed' | 'disbursed' | 'failed';
 
 export type LoanStatus =
   | 'sanctioned' | 'documentation_pending' | 'disbursement_pending'
-  | 'active' | 'overdue' | 'grace_period' | 'extension' | 'default_review'
-  | 'recovery_approved' | 'recovery_in_progress' | 'closed' | 'archived';
+  | 'active' | 'active_repayment' | 'overdue' | 'grace_period'
+  | 'extension' | 'extended' | 'default_review' | 'recovery_review'
+  | 'recovery_approved' | 'recovery_action_approved'
+  | 'recovery_in_progress' | 'recovered' | 'closure_review'
+  | 'closed' | 'archived';
 
 export type DPDBucket = '0_30' | '31_60' | '61_90' | '91_365' | '1_2_years' | '2_3_years' | '3plus_years';
 
@@ -86,6 +105,9 @@ export interface Nominee {
 export interface LoanApplication {
   id: string;
   applicationNumber: string;
+  intakeReference?: string;
+  officialReference?: string;
+  source?: 'borrower' | 'assisted_entry';
   applicationDate: string;
   memberId: string;
   memberName: string;

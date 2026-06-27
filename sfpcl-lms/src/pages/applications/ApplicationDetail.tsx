@@ -16,36 +16,26 @@ import DocumentChecklist from '../../components/loan/DocumentChecklist';
 import AuditTimeline from '../../components/loan/AuditTimeline';
 import { loanApplications, members, securities, auditEvents, documents } from '../../data/mockData';
 import { useRole } from '../../contexts/RoleContext';
+import { COMPLETENESS_CATEGORIES, COMPLETENESS_ITEMS } from './completenessChecklist';
+import { getApplicationReference, getApplicationStatusLabel, hasFormalLoanReference } from '../../utils/applicationDisplay';
 
 const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
 
 const STAGE_MAP: Record<string, number> = {
-  draft: 0, submitted: 0, incomplete: 0,
-  reference_generated: 1, appraisal_pending: 2, credit_review: 2,
-  pending_sanction: 3, sanctioned: 4, rejected_credit: 4, rejected_sanction: 4,
+  draft: 0, submitted: 0, incomplete: 0, deficiency_raised: 0,
+  returned_for_rectification: 0, completeness_check: 0, rejected_completeness: 0,
+  reference_generated: 1, appraisal_in_progress: 2, appraisal_pending: 2,
+  pending_credit_manager_review: 2, credit_review: 2,
+  pending_sanction_committee_approval: 3, pending_sanction: 3,
+  under_sanction_review: 3, clarification_requested: 3,
+  sanctioned: 4, rejected_by_credit_manager: 4, rejected_credit: 4,
+  rejected_by_sanction_committee: 4, rejected_sanction: 4,
+  documentation_in_progress: 4, documentation_deficiency_raised: 4,
+  pending_final_checklist_approvals: 4,
+  disbursement_ready: 5, sap_customer_code_pending: 5,
+  sap_customer_code_confirmed: 5, payment_initiated: 6,
+  payment_authorized: 6, transfer_executed: 6, disbursed: 6,
 };
-
-const COMPLETENESS_ITEMS = [
-  { id: 'c00a', category: 'Application Data', label: 'Folio number present', required: true },
-  { id: 'c00b', category: 'Application Data', label: 'Shares held present', required: true },
-  { id: 'c00c', category: 'Application Data', label: 'Requested loan amount present', required: true },
-  { id: 'c00d', category: 'Application Data', label: 'Loan purpose valid', required: true },
-  { id: 'c00e', category: 'Application Data', label: 'Nominee details complete', required: true },
-  { id: 'c00f', category: 'Application Data', label: 'Applicant signature present', required: true },
-  { id: 'c01', category: 'Borrower KYC', label: 'PAN Card (self-attested)', required: true },
-  { id: 'c02', category: 'Borrower KYC', label: 'Aadhaar Card (self-attested)', required: true },
-  { id: 'c03', category: 'Borrower KYC', label: 'Recent photograph', required: true },
-  { id: 'c04', category: 'Nominee KYC', label: 'Nominee PAN copy', required: true },
-  { id: 'c05', category: 'Nominee KYC', label: 'Nominee Aadhaar copy', required: true },
-  { id: 'c06', category: 'Shareholding', label: 'Folio / demat holding evidence', required: true },
-  { id: 'c07', category: 'Land & Crop', label: '7/12 extract (current season)', required: true },
-  { id: 'c08', category: 'Land & Crop', label: 'Crop plan / scale of finance evidence', required: true },
-  { id: 'c09', category: 'Financial', label: 'Six-month bank statement', required: true },
-  { id: 'c10', category: 'Financial', label: 'Repayment capacity evidence — Optional / appraisal support', required: false },
-  { id: 'c11', category: 'Application Form', label: 'Signed application form (all pages)', required: true },
-  { id: 'c12', category: 'Application Form', label: 'Nominee signature & consent', required: true },
-  { id: 'c13', category: 'Other', label: 'Board Resolution — FPC / Producer Institution only', required: true },
-];
 
 const witnessData = {
   w1: {
@@ -71,11 +61,17 @@ interface ApplicationDetailProps {
 const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
   applicationId, onBack, onNavigateMember,
 }) => {
-  const app = loanApplications.find(a => a.id === applicationId || a.applicationNumber === applicationId) || loanApplications[0];
+  const app = loanApplications.find(a =>
+    a.id === applicationId ||
+    a.applicationNumber === applicationId ||
+    a.intakeReference === applicationId ||
+    a.officialReference === applicationId
+  ) || loanApplications[0];
   const member = members.find(m => m.id === app.memberId);
   const appDocs = documents.filter(d => d.applicationId === applicationId);
   const appSecurities = securities.filter(s => s.applicationId === applicationId);
   const { can, currentUser } = useRole();
+  const isDisbursed = ['completed', 'disbursed', 'transfer_executed'].includes(app.disbursementStatus) || ['disbursed', 'transfer_executed'].includes(app.status);
 
   const [activeTab, setActiveTab] = useState(0);
   const [panRevealed, setPanRevealed] = useState(false);
@@ -121,7 +117,7 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
     { id: 's4', label: 'Sanction',     state: stageState(stageIndex > 3, stageIndex === 3), meta: '20 Apr 2026' },
     { id: 's5', label: 'Documentation', state: (app.documentationStatus === 'complete' ? 'completed' : app.documentationStatus !== 'not_started' ? 'in_progress' : 'not_started') as StepState, meta: app.documentationStatus === 'complete' ? 'CS verified' : '' },
     { id: 's6', label: 'SAP Setup',    state: (app.sapCustomerCode ? 'completed' : app.documentationStatus === 'complete' ? 'in_progress' : 'not_started') as StepState, meta: app.sapCustomerCode ? `${app.sapCustomerCode} confirmed` : '' },
-    { id: 's7', label: 'Disbursement', state: (app.disbursementStatus === 'completed' ? 'completed' : app.sapCustomerCode ? 'in_progress' : 'not_started') as StepState, meta: app.disbursementStatus === 'completed' ? 'Disbursed' : 'Pending' },
+    { id: 's7', label: 'Disbursement', state: (isDisbursed ? 'completed' : app.sapCustomerCode ? 'in_progress' : 'not_started') as StepState, meta: isDisbursed ? 'Disbursed' : 'Pending' },
   ];
 
   if (isLO35 && docsPending) {
@@ -148,19 +144,19 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
   ];
 
   // Specific Gate Checks
-  const isReadyForPayment = app.status === 'sanctioned' && !docsPending && !!app.sapCustomerCode && app.disbursementStatus !== 'completed';
+  const isReadyForPayment = ['sanctioned', 'disbursement_ready', 'sap_customer_code_confirmed'].includes(app.status) && !docsPending && !!app.sapCustomerCode && !isDisbursed;
 
-  let statusBadgeLabel = app.status;
+  let statusBadgeLabel = getApplicationStatusLabel(app);
   if (isLO35 && docsPending) {
     statusBadgeLabel = 'Sanctioned · Documentation Pending';
-  } else if (app.status === 'sanctioned') {
+  } else if (['sanctioned', 'documentation_in_progress', 'pending_final_checklist_approvals', 'disbursement_ready', 'sap_customer_code_pending', 'sap_customer_code_confirmed', 'payment_initiated', 'payment_authorized', 'transfer_executed', 'disbursed'].includes(app.status)) {
     if (app.disbursementStatus === 'pending_disbursement' || app.disbursementStatus === 'pending_documentation') {
       statusBadgeLabel = 'Sanctioned · Pending Disbursement';
-    } else if (app.disbursementStatus === 'ready_for_payment') {
-      statusBadgeLabel = 'Ready for Payment';
+    } else if (app.disbursementStatus === 'ready_for_payment' || app.disbursementStatus === 'disbursement_ready') {
+      statusBadgeLabel = 'Disbursement Ready';
     } else if (app.disbursementStatus === 'pending_cfc_approval') {
       statusBadgeLabel = 'Payment Authorisation Pending';
-    } else if (app.disbursementStatus === 'completed') {
+    } else if (isDisbursed) {
       statusBadgeLabel = 'Disbursed';
     }
   }
@@ -171,13 +167,13 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
   if (isLO35 && docsPending) {
     computedOwner = 'Compliance Team / Company Secretary';
     nextAction = 'Clear documentation blockers';
-  } else if (app.documentationStatus === 'in_progress' || app.documentationStatus === 'not_started') {
+  } else if (app.documentationStatus === 'in_progress' || app.documentationStatus === 'documentation_in_progress' || app.documentationStatus === 'not_started') {
     computedOwner = 'Compliance Team';
   } else if (app.documentationStatus === 'pending_signature') {
     computedOwner = 'Company Secretary';
   } else if (app.documentationStatus === 'complete' && !app.sapCustomerCode) {
     computedOwner = 'Senior Manager – Finance';
-  } else if (app.documentationStatus === 'complete' && app.sapCustomerCode && app.disbursementStatus !== 'completed') {
+  } else if (app.documentationStatus === 'complete' && app.sapCustomerCode && !isDisbursed) {
     if (app.disbursementStatus === 'pending_cfc_approval') {
       computedOwner = 'Chief Financial Controller';
       nextAction = 'Authorise bank transfer';
@@ -185,11 +181,26 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
       computedOwner = 'Senior Manager – Finance';
       nextAction = 'Mark ready for payment';
     }
-  } else if (app.disbursementStatus === 'completed') {
+  } else if (isDisbursed) {
     computedOwner = 'Accounts';
   }
 
   const [completenessNote, setCompletenessNote] = useState('');
+  const [completenessSubmitted, setCompletenessSubmitted] = useState(false);
+  const [deficiencyNoticeSent, setDeficiencyNoticeSent] = useState(false);
+
+  // For submitted apps being reviewed for the first time, items start as 'pending'
+  const isInCompletenessReview = stageIndex === 0 && (app.status === 'submitted' || app.status === 'draft');
+
+  const [itemOverrides, setItemOverrides] = useState<Record<string, 'passed' | 'deficiency' | 'pending'>>({});
+  const [deficiencyNotes, setDeficiencyNotes] = useState<Record<string, string>>({});
+
+  const getItemStatus = (id: string): 'passed' | 'deficiency' | 'pending' =>
+    (itemOverrides[id] as 'passed' | 'deficiency' | 'pending') ?? (isInCompletenessReview ? 'pending' : 'passed');
+
+  const markPassed = (id: string) => { if (canEditCompleteness) setItemOverrides(prev => ({ ...prev, [id]: 'passed' })); };
+  const markDeficiency = (id: string) => { if (canEditCompleteness) setItemOverrides(prev => ({ ...prev, [id]: 'deficiency' })); };
+  const clearItem = (id: string) => { if (canEditCompleteness) setItemOverrides(prev => ({ ...prev, [id]: 'pending' })); };
 
   return (
     <div className="p-6 space-y-4">
@@ -200,7 +211,7 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
         <div className="flex-1 flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold text-slate-900 num">{app.applicationNumber}</h1>
+              <h1 className="text-xl font-bold text-slate-900 num">{getApplicationReference(app)}</h1>
               <StatusBadge label={statusBadgeLabel} size="md" />
               {app.isException && (
                 <span className="flex items-center gap-1 text-xs bg-violet-100 text-violet-700 px-2 py-1 rounded-full font-semibold">
@@ -257,7 +268,7 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
               <p className="text-sm font-semibold text-red-800 flex items-center gap-2"><AlertTriangle size={16}/> Disbursement blocked: 11 documentation items pending. Primary blocker: Borrower PAN / Aadhaar verification.</p>
             </div>
           )}
-          {app.status === 'sanctioned' && !docsPending && sapMissing && (
+          {['sanctioned', 'disbursement_ready', 'sap_customer_code_pending'].includes(app.status) && !docsPending && sapMissing && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <p className="text-sm font-semibold text-red-800 flex items-center gap-2"><AlertTriangle size={16}/> Disbursement blocked: SAP code pending.</p>
             </div>
@@ -275,7 +286,7 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
                   <p className="text-xs text-slate-500 mt-1">Ref: EX-2026-015</p>
                 </div>
               )}
-              
+
               {[
                 { label: 'Requested Amount', value: fmt(app.requestedAmount) },
                 { label: 'Eligible Amount', value: fmt(app.eligibleAmount || 0) },
@@ -293,6 +304,73 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
               ))}
             </div>
           </div>
+
+          {/* Deficiency Communication Log — shown when deficiency has been raised */}
+          {['deficiency_raised', 'documentation_deficiency_raised', 'returned_for_rectification'].includes(app.status) && (
+            <div className="card p-0 overflow-hidden">
+              <div className="px-5 py-3 bg-amber-50 border-b border-amber-200 flex items-center gap-2">
+                <MessageSquare size={15} className="text-amber-600" />
+                <h3 className="text-sm font-semibold text-amber-800">Deficiency Communication Log</h3>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {[
+                  {
+                    id: 'dc1',
+                    date: '2026-06-15',
+                    type: 'System Notice',
+                    by: 'Deputy Manager – Finance',
+                    channel: 'Portal + SMS',
+                    message: 'Deficiency notice generated and dispatched. Borrower notified to resubmit: (1) Self-attested PAN copy — blurred image, (2) Land record extract — missing survey number, (3) Bank passbook — last 12 months required.',
+                    status: 'sent',
+                  },
+                  {
+                    id: 'dc2',
+                    date: '2026-06-17',
+                    type: 'Borrower Response',
+                    by: `${app.memberName}`,
+                    channel: 'Portal Upload',
+                    message: 'Borrower uploaded revised PAN copy and bank passbook. Land record extract still pending — borrower indicated it will take 5–7 working days from Talathi office.',
+                    status: 'received',
+                  },
+                  {
+                    id: 'dc3',
+                    date: '2026-06-18',
+                    type: 'Follow-up',
+                    by: 'Deputy Manager – Finance',
+                    channel: 'SMS',
+                    message: 'Follow-up reminder sent. TAT window closing in 4 days. Land record extract to be submitted by 22 Jun 2026.',
+                    status: 'sent',
+                  },
+                ].map(entry => (
+                  <div key={entry.id} className="px-5 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className={`text-xs px-1.5 py-0.5 rounded font-semibold ${
+                            entry.type === 'Borrower Response' ? 'bg-blue-100 text-blue-700' :
+                            entry.type === 'Follow-up' ? 'bg-amber-100 text-amber-700' :
+                            'bg-slate-100 text-slate-600'
+                          }`}>{entry.type}</span>
+                          <span className="text-xs text-slate-400">{entry.channel}</span>
+                        </div>
+                        <p className="text-sm text-slate-700">{entry.message}</p>
+                        <p className="text-xs text-slate-400 mt-1">By: {entry.by}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-xs text-slate-500">{new Date(entry.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                        <span className={`inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                          entry.status === 'received' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
+                        }`}>{entry.status === 'received' ? 'Received' : 'Sent'}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="px-5 py-3 bg-amber-50 border-t border-amber-100">
+                <p className="text-xs text-amber-700 font-medium">Pending: Land record extract. TAT deadline: 22 Jun 2026. Application will be rejected if not received.</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Tab 1: Completeness Check ── */}
@@ -303,31 +381,59 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
             </div>
           )}
 
-          <div className="card">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-                  <ClipboardList size={16} className="text-green-600" /> Application Completeness Check
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">Performed by: Deputy Manager – Finance · {COMPLETENESS_ITEMS.length}/{COMPLETENESS_ITEMS.length} items reviewed</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <p className="text-xs text-slate-400">Pass</p>
-                  <p className="text-lg font-bold text-green-700">{COMPLETENESS_ITEMS.length}</p>
+          {(() => {
+            const naItems = COMPLETENESS_ITEMS.filter(i => i.id === 'share_certificate' && app.shareMode !== 'physical');
+            const naIds = new Set(naItems.map(i => i.id));
+            const reviewableItems = COMPLETENESS_ITEMS.filter(i => !naIds.has(i.id));
+            const passedCount = reviewableItems.filter(i => getItemStatus(i.id) === 'passed').length;
+            const deficiencyCount = reviewableItems.filter(i => getItemStatus(i.id) === 'deficiency').length;
+            const pendingCount = reviewableItems.filter(i => getItemStatus(i.id) === 'pending').length;
+            const reviewedCount = passedCount + deficiencyCount;
+            const progressPct = Math.round((reviewedCount / reviewableItems.length) * 100);
+            return (
+              <div className="card">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                      <ClipboardList size={16} className="text-green-600" /> Application Completeness Check
+                    </h3>
+                    {isInCompletenessReview && canEditCompleteness ? (
+                      <p className="text-xs text-amber-700 mt-0.5 font-medium">In review — {reviewedCount} of {reviewableItems.length} items checked · Use Pass / Flag buttons on each item</p>
+                    ) : (
+                      <p className="text-xs text-slate-500 mt-0.5">Performed by: Deputy Manager – Finance · {reviewableItems.length}/{reviewableItems.length} items reviewed</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {isInCompletenessReview && (
+                      <div className="text-right">
+                        <p className="text-xs text-slate-400">Pending</p>
+                        <p className="text-lg font-bold text-amber-600">{pendingCount}</p>
+                      </div>
+                    )}
+                    <div className="text-right">
+                      <p className="text-xs text-slate-400">Passed</p>
+                      <p className="text-lg font-bold text-green-700">{passedCount}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-slate-400">Deficiency</p>
+                      <p className="text-lg font-bold text-red-600">{deficiencyCount}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-slate-400">Deficiency</p>
-                  <p className="text-lg font-bold text-red-600">0</p>
+                <div className="w-full bg-slate-100 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all ${deficiencyCount > 0 ? 'bg-red-400' : 'bg-green-500'}`}
+                    style={{ width: isInCompletenessReview ? `${progressPct}%` : '100%' }}
+                  />
                 </div>
+                {isInCompletenessReview && (
+                  <p className="text-xs text-slate-400 mt-1">{progressPct}% reviewed</p>
+                )}
               </div>
-            </div>
-            <div className="w-full bg-slate-100 rounded-full h-2">
-              <div className="h-2 rounded-full transition-all bg-green-500 w-full" />
-            </div>
-          </div>
+            );
+          })()}
 
-          {['Application Data', 'Borrower KYC', 'Nominee KYC', 'Shareholding', 'Land & Crop', 'Financial', 'Application Form', 'Other'].map(cat => {
+          {COMPLETENESS_CATEGORIES.map(cat => {
             const items = COMPLETENESS_ITEMS.filter(i => i.category === cat);
             if (items.length === 0) return null;
             return (
@@ -337,24 +443,72 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
                 </div>
                 <div className="divide-y divide-slate-50">
                   {items.map(item => {
-                    let displayLabel = item.label;
-                    if (item.id === 'c06') displayLabel = app.shareMode === 'physical' ? 'Share certificate / folio evidence' : 'Demat holding evidence / folio reference';
-                    const isNa = item.id === 'c13' && member?.memberType === 'individual';
+                    const displayLabel = item.label;
+                    const isNa = item.id === 'share_certificate' && app.shareMode !== 'physical';
+                    const status = isNa ? 'na' : getItemStatus(item.id);
 
                     return (
-                      <div key={item.id} className="px-5 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
+                      <div key={item.id} className={`px-5 py-3 ${status === 'deficiency' ? 'bg-red-50' : status === 'passed' ? 'bg-green-50/40' : ''}`}>
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-sm font-medium text-slate-800">{displayLabel}</span>
                               {!item.required && <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Optional</span>}
                             </div>
+                            {status === 'deficiency' && (
+                              <>
+                                <p className="text-xs text-red-600 mt-1 font-medium">{item.deficiencyReason}</p>
+                                {canEditCompleteness && (
+                                  <input
+                                    type="text"
+                                    value={deficiencyNotes[item.id] || ''}
+                                    onChange={e => setDeficiencyNotes(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                    placeholder="Add note for borrower (e.g. Aadhaar copy is blurred)"
+                                    className="mt-1.5 w-full text-xs border border-red-200 rounded px-2.5 py-1.5 bg-white text-red-800 placeholder-red-300 focus:outline-none focus:ring-1 focus:ring-red-300"
+                                  />
+                                )}
+                              </>
+                            )}
+                            {status === 'pending' && canEditCompleteness && (
+                              <p className="text-xs text-slate-400 mt-0.5">Not yet reviewed</p>
+                            )}
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">
                             {isNa ? (
                               <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">N/A</span>
+                            ) : status === 'passed' ? (
+                              <>
+                                <StatusBadge label="Passed" size="sm" />
+                                {canEditCompleteness && (
+                                  <button onClick={() => markDeficiency(item.id)} className="text-xs text-slate-400 hover:text-red-600 px-1.5 py-1 rounded hover:bg-red-50 transition-colors">Flag</button>
+                                )}
+                              </>
+                            ) : status === 'deficiency' ? (
+                              <>
+                                <StatusBadge label="deficiency_raised" size="sm" />
+                                {canEditCompleteness && (
+                                  <button onClick={() => clearItem(item.id)} className="text-xs text-slate-400 hover:text-slate-700 px-1.5 py-1 rounded hover:bg-slate-100 transition-colors">Clear</button>
+                                )}
+                              </>
                             ) : (
-                              <StatusBadge label="Passed" size="sm" />
+                              canEditCompleteness ? (
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() => markPassed(item.id)}
+                                    className="text-xs px-2.5 py-1 rounded border border-green-200 text-green-700 bg-white hover:bg-green-50 font-medium transition-colors flex items-center gap-1"
+                                  >
+                                    <CheckCircle2 size={11} /> Pass
+                                  </button>
+                                  <button
+                                    onClick={() => markDeficiency(item.id)}
+                                    className="text-xs px-2.5 py-1 rounded border border-red-200 text-red-600 bg-white hover:bg-red-50 font-medium transition-colors flex items-center gap-1"
+                                  >
+                                    <AlertTriangle size={11} /> Flag
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded font-medium">Pending</span>
+                              )
                             )}
                           </div>
                         </div>
@@ -366,23 +520,94 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
             );
           })}
 
-          <div className="card space-y-4">
-            <h4 className="text-sm font-semibold text-slate-700">Completeness Check Note</h4>
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm text-slate-700">
-              Completeness passed. Reference generated and application moved to appraisal.
-            </div>
-            
-            <div className="border-t border-slate-100 pt-4 mt-4">
-              <h4 className="text-sm font-semibold text-slate-700 mb-2">Deficiency History</h4>
-              <p className="text-xs text-slate-500">No deficiencies recorded during completeness check.</p>
-            </div>
+          {(() => {
+            const naIds = new Set(COMPLETENESS_ITEMS.filter(i => i.id === 'share_certificate' && app.shareMode !== 'physical').map(i => i.id));
+            const reviewable = COMPLETENESS_ITEMS.filter(i => !naIds.has(i.id));
+            const deficiencyItems = reviewable.filter(i => getItemStatus(i.id) === 'deficiency');
+            const pendingItems = reviewable.filter(i => getItemStatus(i.id) === 'pending');
+            const allRequiredPassed = reviewable.filter(i => i.required).every(i => getItemStatus(i.id) === 'passed');
+            const hasDeficiencies = deficiencyItems.length > 0;
 
-            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-100">
-              <span className="text-sm font-medium text-green-700 bg-green-50 px-4 py-2 rounded-lg flex items-center gap-2 border border-green-200">
-                <CheckCircle2 size={16} /> Reference generated · {app.applicationNumber}
-              </span>
-            </div>
-          </div>
+            return (
+              <div className="card space-y-4">
+                <h4 className="text-sm font-semibold text-slate-700">Completeness Check Note</h4>
+
+                {isInCompletenessReview && canEditCompleteness ? (
+                  <>
+                    <textarea
+                      value={completenessNote}
+                      onChange={e => setCompletenessNote(e.target.value)}
+                      rows={2}
+                      placeholder="Add an internal note (optional) — e.g. Borrower called on 27 Jun, will resubmit 7/12 by 30 Jun"
+                      className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-300 resize-none"
+                    />
+
+                    {hasDeficiencies && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+                        <p className="text-sm font-semibold text-amber-800 flex items-center gap-2">
+                          <AlertTriangle size={15} /> {deficiencyItems.length} deficien{deficiencyItems.length === 1 ? 'cy' : 'cies'} flagged
+                        </p>
+                        <ul className="text-xs text-amber-700 space-y-1 list-disc list-inside">
+                          {deficiencyItems.map(i => (
+                            <li key={i.id}>{i.label}{deficiencyNotes[i.id] ? ` — ${deficiencyNotes[i.id]}` : ''}</li>
+                          ))}
+                        </ul>
+                        {deficiencyNoticeSent ? (
+                          <div className="flex items-center gap-2 text-sm font-medium text-amber-700 bg-amber-100 border border-amber-200 rounded-lg px-3 py-2">
+                            <CheckCircle2 size={14} /> Deficiency notice sent to borrower · {new Date().toLocaleDateString('en-IN')}
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setDeficiencyNoticeSent(true)}
+                            className="text-sm font-medium px-4 py-2 rounded-lg border border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors flex items-center gap-2"
+                          >
+                            <MessageSquare size={14} /> Send Deficiency Notice to Borrower
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {pendingItems.length === 0 && !hasDeficiencies && !completenessSubmitted && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p className="text-sm font-semibold text-green-800 mb-3 flex items-center gap-2">
+                          <CheckCircle2 size={15} /> All items reviewed — no deficiencies
+                        </p>
+                        <button
+                          onClick={() => setCompletenessSubmitted(true)}
+                          className="btn-primary text-sm flex items-center gap-2"
+                        >
+                          <ArrowRight size={14} /> Pass Completeness &amp; Generate Reference
+                        </button>
+                      </div>
+                    )}
+
+                    {completenessSubmitted && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-green-700 bg-green-50 px-4 py-2 rounded-lg flex items-center gap-2 border border-green-200">
+                          <CheckCircle2 size={16} /> {hasFormalLoanReference(app) ? `Reference generated · ${getApplicationReference(app)}` : 'Reference generated'}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm text-slate-700">
+                      Completeness passed. Reference generated and application moved to appraisal.
+                    </div>
+                    <div className="border-t border-slate-100 pt-4 mt-4">
+                      <h4 className="text-sm font-semibold text-slate-700 mb-2">Deficiency History</h4>
+                      <p className="text-xs text-slate-500">No deficiencies recorded during completeness check.</p>
+                    </div>
+                    <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-100">
+                      <span className="text-sm font-medium text-green-700 bg-green-50 px-4 py-2 rounded-lg flex items-center gap-2 border border-green-200">
+                        <CheckCircle2 size={16} /> Reference generated · {getApplicationReference(app)}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* ── Tab 2: Applicant & Member ── */}
@@ -722,7 +947,13 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
             </button>
           </div>
           <div className="divide-y divide-slate-50">
-            {auditEvents.filter(e => e.entityId === applicationId || e.entityId === app.applicationNumber).map((ev, i) => (
+            {auditEvents.filter(e =>
+              e.entityId === applicationId ||
+              e.entityId === app.id ||
+              e.entityId === app.applicationNumber ||
+              e.entityId === app.intakeReference ||
+              e.entityId === app.officialReference
+            ).map((ev, i) => (
               <div key={i} className="flex gap-4 px-6 py-4 hover:bg-slate-50">
                 <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <History size={14} className="text-slate-500" />

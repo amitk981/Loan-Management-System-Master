@@ -1,46 +1,87 @@
 import React, { useState, useEffect } from 'react';
 import {
   Scale, ChevronRight, FileText, Check, CheckCircle2, XCircle,
-  AlertTriangle, User, Shield, RefreshCw, Clock, BarChart2,
+  AlertTriangle, Clock, BarChart2,
   ArrowRight, Info, Lock, Leaf, BadgeCheck, FileDown, Save,
-  Send, RotateCcw
+  Send, RotateCcw, Download, Wheat
 } from 'lucide-react';
 import StatusBadge from '../../components/ui/StatusBadge';
 import AlertBanner from '../../components/ui/AlertBanner';
 import LoanLimitCalculator from '../../components/loan/LoanLimitCalculator';
 import EligibilityChecklist from '../../components/loan/EligibilityChecklist';
-import { loanApplications, members } from '../../data/mockData';
+import { loanApplications as mockApplications, members } from '../../data/mockData';
+import type { LoanApplication } from '../../types';
 import { useRole } from '../../contexts/RoleContext';
 
 const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
 
+const FLOATING_RATE = '12.5% p.a. (floating — board-approved rate)';
+
+const downloadJson = (filename: string, data: object) => {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const TatChip: React.FC<{ daysRemaining: number | undefined; referenceGeneratedAt?: string }> = ({ daysRemaining, referenceGeneratedAt }) => {
+  if (!referenceGeneratedAt) return <span className="text-xs text-slate-400">TAT not started</span>;
+  if (daysRemaining === undefined) return null;
+  if (daysRemaining <= 0) return (
+    <span className="inline-flex items-center gap-1 text-xs font-semibold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+      <Clock size={10} /> TAT Breach
+    </span>
+  );
+  if (daysRemaining === 1) return (
+    <span className="inline-flex items-center gap-1 text-xs font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+      <Clock size={10} /> 1 day left
+    </span>
+  );
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+      <Clock size={10} /> {daysRemaining}d left
+    </span>
+  );
+};
+
 const formatBadge = (status: string) => {
   if (status === 'reference_generated') return 'Verification pending';
+  if (status === 'appraisal_in_progress') return 'Application Complete / Appraisal In Progress';
   if (status === 'appraisal_pending') return 'Appraisal draft pending';
-  if (status === 'credit_review') return 'Credit review pending';
+  if (status === 'pending_credit_manager_review' || status === 'credit_review') return 'Pending Credit Manager Review';
   return status.replace(/_/g, ' ');
 };
 
-// ── Risk Rating options per spec ──────────────────────────────────────────
 const RISK_RATINGS = ['low', 'medium', 'high', 'very_high'] as const;
 
 interface AppraisalWorkbenchProps {
   onOpenApplication: (id: string) => void;
   initialSelectedId?: string;
+  applications?: LoanApplication[];
+  onUpdateStatus?: (id: string, newStatus: string) => void;
 }
 
-const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplication, initialSelectedId }) => {
+const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplication, initialSelectedId, applications, onUpdateStatus }) => {
+  const loanApplications = applications ?? mockApplications;
   const appraisalQueue = loanApplications.filter(a =>
-    ['reference_generated', 'appraisal_pending', 'credit_review'].includes(a.status)
+    ['reference_generated', 'appraisal_in_progress', 'appraisal_pending', 'pending_credit_manager_review', 'credit_review'].includes(a.status)
   );
-  const initialApp = initialSelectedId ? appraisalQueue.find(a => a.id === initialSelectedId || a.applicationNumber === initialSelectedId) : appraisalQueue[0];
+  const initialApp = initialSelectedId ? appraisalQueue.find(a =>
+    a.id === initialSelectedId ||
+    a.applicationNumber === initialSelectedId ||
+    a.intakeReference === initialSelectedId ||
+    a.officialReference === initialSelectedId
+  ) : appraisalQueue[0];
   const [selected, setSelected] = useState<string | null>(initialApp?.id || null);
   const [noteText, setNoteText] = useState('');
   const [riskRating, setRiskRating] = useState<typeof RISK_RATINGS[number]>(initialApp?.isException ? 'high' : 'low');
-  
+
   const [appraisalStep, setAppraisalStep] = useState<'verification' | 'appraisal' | 'submitted'>(
-    initialApp?.status === 'reference_generated' ? 'verification' : 
-    initialApp?.status === 'appraisal_pending' ? 'appraisal' : 'submitted'
+    initialApp?.status === 'reference_generated' ? 'verification' :
+    (initialApp?.status === 'appraisal_in_progress' || initialApp?.status === 'appraisal_pending') ? 'appraisal' : 'submitted'
   );
   const [recommendedAmount, setRecommendedAmount] = useState('');
   const [recommendedTenure, setRecommendedTenure] = useState('12');
@@ -51,28 +92,51 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
   const [recommendation, setRecommendation] = useState<'approve' | 'approve_conditions' | 'exception' | 'reject'>('approve');
   const [creditManagerComment, setCreditManagerComment] = useState('');
   const [appraisalDraftSaved, setAppraisalDraftSaved] = useState(false);
-  const [decisionStatus, setDecisionStatus] = useState<null | 'forwarded' | 'returned' | 'rejected'>(null);
+  const [decisionStatus, setDecisionStatus] = useState<null | 'forwarded' | 'returned' | 'rejected' | 'documents_requested'>(null);
+
+  // New state for ledger fixes
+  const [eligibilityComplete, setEligibilityComplete] = useState(false);
+  const [cropObservation, setCropObservation] = useState('');
+  const [showExceptionConfirm, setShowExceptionConfirm] = useState(false);
+  const [exceptionRegistered, setExceptionRegistered] = useState(false);
+  const [pdfDownloaded, setPdfDownloaded] = useState(false);
+
   const { currentUser, can } = useRole();
 
-  // ── S16 Active Member Verification ──────────────────────────────────────
+  // S16 Active Member Verification
   const [activeMemberVerified, setActiveMemberVerified] = useState(initialApp?.status !== 'reference_generated');
   const [activeMemberRelaxationRecorded, setActiveMemberRelaxationRecorded] = useState(false);
   const [activeMemberNote, setActiveMemberNote] = useState('');
 
-  // ── S17 KYC Verification ─────────────────────────────────────────────────
+  // S17 KYC Verification
   const [kycVerified, setKycVerified] = useState(initialApp?.status !== 'reference_generated' || members.find(m => m.id === initialApp?.memberId)?.kycStatus === 'verified');
   const [kycNote, setKycNote] = useState('');
 
-  // Credit risk score ────────────────────────────────────────────────────────
+  // Credit risk score
   const [creditScoreVerified, setCreditScoreVerified] = useState(false);
   const [creditScore, setCreditScore] = useState('');
 
   const app = appraisalQueue.find(a => a.id === selected);
   const member = app ? members.find(m => m.id === app.memberId) : null;
 
+  // Auto-select first queue item when sidebar is clicked with no pre-selected app
+  useEffect(() => {
+    if (!selected && appraisalQueue.length > 0) {
+      const first = appraisalQueue[0];
+      setSelected(first.id);
+      setAppraisalStep(
+        first.status === 'reference_generated' ? 'verification' :
+        (first.status === 'appraisal_in_progress' || first.status === 'appraisal_pending') ? 'appraisal' : 'submitted'
+      );
+    }
+  }, []);
+
   useEffect(() => {
     setDecisionStatus(null);
-    if (app?.status === 'credit_review') {
+    setShowExceptionConfirm(false);
+    setExceptionRegistered(false);
+    setPdfDownloaded(false);
+    if (app?.status === 'pending_credit_manager_review' || app?.status === 'credit_review') {
       setRecommendedAmount(String(app.requestedAmount));
       setRecommendation(app.isException ? 'exception' : 'approve');
       setRiskRationale('High risk due to requested amount exceeding eligible limit. Member has strong repayment history and adequate subsidiary income to service the loan.');
@@ -96,6 +160,7 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
     bankObservation.trim().length > 5 &&
     securityProposed.trim().length > 5 &&
     recommendedAmountNumber > 0 &&
+    cropObservation.trim().length > 5 &&
     (recommendedWithinLimit || requiresException));
 
   const handleRecordRelaxation = () => {
@@ -104,6 +169,75 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
     } else {
       setActiveMemberRelaxationRecorded(true);
     }
+  };
+
+  const handleGeneratePdf = () => {
+    if (!app) return;
+    const data = {
+      appraisalSnapshot: {
+        applicationNumber: app.applicationNumber,
+        memberName: app.memberName,
+        memberType: app.memberType,
+        requestedAmount: app.requestedAmount,
+        eligibleAmount: app.eligibleAmount,
+        recommendedAmount: recommendedAmountNumber,
+        recommendedTenure: `${recommendedTenure} months`,
+        interestRate: FLOATING_RATE,
+        riskRating,
+        riskRationale,
+        bankObservation,
+        cropObservation,
+        securityProposed,
+        conditionsPrecedent,
+        recommendation,
+        requiresException,
+        noteText,
+        generatedAt: new Date().toISOString(),
+        generatedBy: currentUser.name,
+      },
+    };
+    downloadJson(`appraisal-${app.applicationNumber}-${Date.now()}.json`, data);
+    setPdfDownloaded(true);
+    setAppraisalDraftSaved(true);
+  };
+
+  const handleForwardToSanction = () => {
+    if (!app) return;
+    console.log({ action: 'FORWARDED', actor: currentUser.role, time: new Date().toISOString(), reason: creditManagerComment, app: app.id, exception: requiresException });
+    if (requiresException && !exceptionRegistered) {
+      setShowExceptionConfirm(true);
+      return;
+    }
+    setDecisionStatus('forwarded');
+    onUpdateStatus?.(app.id, 'pending_sanction_committee_approval');
+  };
+
+  const handleConfirmException = () => {
+    if (!app) return;
+    console.log({ action: 'EXCEPTION_REGISTERED', app: app.id, reason: creditManagerComment, time: new Date().toISOString() });
+    setExceptionRegistered(true);
+    setShowExceptionConfirm(false);
+    setDecisionStatus('forwarded');
+    onUpdateStatus?.(app.id, 'pending_sanction_committee_approval');
+  };
+
+  const handleReject = () => {
+    if (!app) return;
+    const rejectionNote = {
+      rejectionNote: {
+        applicationReference: app.applicationNumber,
+        borrowerName: app.memberName,
+        rejectionStage: 'Credit Assessment',
+        rejectionReason: creditManagerComment,
+        correctiveAction: 'Applicant may reapply after rectifying the flagged issues.',
+        date: new Date().toISOString(),
+        rejectedBy: currentUser.name,
+      },
+    };
+    console.log({ action: 'REJECTED', actor: currentUser.role, time: new Date().toISOString(), reason: creditManagerComment, app: app.id });
+    downloadJson(`rejection-note-${app.applicationNumber}-${Date.now()}.json`, rejectionNote);
+    setDecisionStatus('rejected');
+    onUpdateStatus?.(app.id, 'rejected_by_credit_manager');
   };
 
   const workflowSteps = [
@@ -129,14 +263,16 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
         bankObservation.trim().length > 5,
         securityProposed.trim().length > 5,
         recommendedAmountNumber > 0,
-      ].filter(Boolean).length}/5 fields`,
+        eligibilityComplete,
+        cropObservation.trim().length > 5,
+      ].filter(Boolean).length}/7 fields`,
     },
     {
       step: 'submitted' as const,
       label: 'Step 3',
       title: 'Review',
-      owner: isCreditManager ? 'Credit Manager' : 'Credit Manager',
-      description: decisionStatus === 'forwarded' ? 'Forwarded to Sanction Committee' : decisionStatus === 'returned' ? 'Returned to appraisal' : decisionStatus === 'rejected' ? 'Rejected' : 'Review package and record decision',
+      owner: 'Credit Manager',
+      description: decisionStatus === 'forwarded' ? 'Forwarded to Sanction Committee' : decisionStatus === 'returned' ? 'Returned to appraisal' : decisionStatus === 'rejected' ? 'Rejected' : decisionStatus === 'documents_requested' ? 'Documents requested' : 'Review package and record decision',
       state: appraisalStep === 'submitted' ? 'complete' : canForwardToSanction ? 'available' : 'locked',
       count: decisionStatus ? 'Done' : 'Pending',
     },
@@ -218,16 +354,20 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
               {appraisalQueue.map(a => (
                 <button
                   key={a.id}
-                  onClick={() => { 
-                    setSelected(a.id); 
+                  onClick={() => {
+                    setSelected(a.id);
                     setDecisionStatus(null);
-                    const nextStep = a.status === 'reference_generated' ? 'verification' : a.status === 'appraisal_pending' ? 'appraisal' : 'submitted';
-                    setAppraisalStep(nextStep); 
-                    setActiveMemberVerified(a.status !== 'reference_generated'); 
+                    setShowExceptionConfirm(false);
+                    setExceptionRegistered(false);
+                    setPdfDownloaded(false);
+                    const nextStep = a.status === 'reference_generated' ? 'verification' : (a.status === 'appraisal_in_progress' || a.status === 'appraisal_pending') ? 'appraisal' : 'submitted';
+                    setAppraisalStep(nextStep);
+                    setActiveMemberVerified(a.status !== 'reference_generated');
                     setActiveMemberRelaxationRecorded(false);
                     const kycStatus = members.find(m => m.id === a.memberId)?.kycStatus;
                     setKycVerified(a.status !== 'reference_generated' || kycStatus === 'verified');
                     setRiskRating(a.isException ? 'high' : 'low');
+                    setCropObservation('');
                   }}
                   className={`w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors text-left ${
                     selected === a.id ? 'bg-green-50 border-l-4 border-l-green-500' : ''
@@ -244,10 +384,10 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                     <div className="text-xs text-slate-400 num">{fmt(a.requestedAmount)}</div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <StatusBadge 
-                      label={formatBadge(a.status)} 
-                      size="sm" 
-                    />
+                    <StatusBadge label={formatBadge(a.status)} size="sm" />
+                    {a.referenceGeneratedAt && (
+                      <TatChip daysRemaining={a.tatDaysRemaining} referenceGeneratedAt={a.referenceGeneratedAt} />
+                    )}
                   </div>
                 </button>
               ))}
@@ -260,19 +400,31 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
 
               {/* Header card */}
               <div className="card">
-                <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start justify-between mb-3">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h2 className="text-lg font-bold text-slate-900 num">{app.applicationNumber}</h2>
                       <StatusBadge label={app.status} size="sm" />
                       {app.isException && (
                         <span className="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded font-medium">Exception</span>
                       )}
                     </div>
-                    <p className="text-sm text-slate-500">{app.memberName} · {fmt(app.requestedAmount)}</p>
+                    <p className="text-sm text-slate-600 mt-0.5">
+                      {app.memberName}
+                      <span className="mx-1.5 text-slate-300">·</span>
+                      <span className="text-slate-500 capitalize">{app.memberType === 'fpc' ? 'FPC' : app.memberType.replace(/_/g, ' ')}</span>
+                      <span className="mx-1.5 text-slate-300">·</span>
+                      <span className="font-medium text-slate-700">{fmt(app.requestedAmount)}</span>
+                    </p>
+                    {app.referenceGeneratedAt && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <TatChip daysRemaining={app.tatDaysRemaining} referenceGeneratedAt={app.referenceGeneratedAt} />
+                        <span className="text-xs text-slate-400">TAT starts from LO# generation · {new Date(app.referenceGeneratedAt).toLocaleDateString('en-IN')}</span>
+                      </div>
+                    )}
                   </div>
-                  <button onClick={() => onOpenApplication(app.id)} className="text-xs text-green-600 hover:underline flex items-center gap-1">
-                    Open full application <ChevronRight size={12} />
+                  <button onClick={() => onOpenApplication(app.id)} className="btn-secondary flex items-center gap-2 flex-shrink-0">
+                    <FileText size={14} /> Full Application
                   </button>
                 </div>
 
@@ -486,25 +638,79 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl p-3 text-xs text-green-700">
                     <CheckCircle2 size={14} className="flex-shrink-0" />
-                    <span><strong>Step 2: Prepare appraisal note.</strong> Add recommendation, risk rationale, repayment observations, security and conditions.</span>
+                    <span><strong>Step 2: Prepare appraisal note.</strong> Complete eligibility checklist first, then calculate limits and add recommendation, risk, repayment observations, security and conditions.</span>
                   </div>
 
-                  {/* Loan limit */}
+                  {/* S15: Eligibility Checklist — FIRST, gates the calculator */}
                   <div className="card">
-                    <h3 className="text-sm font-semibold text-slate-700 mb-4">Loan Limit Calculation</h3>
-                    <LoanLimitCalculator
-                      sharesHeld={app.sharesHeld}
-                      shareMode={app.shareMode}
-                      landAreaAcres={app.landAreaAcres}
-                      requestedAmount={app.requestedAmount}
-                      readonly
+                    <h3 className="text-sm font-semibold text-slate-700 mb-4">Eligibility Checklist (S15)</h3>
+                    <EligibilityChecklist
+                      memberId={app.memberId}
+                      applicationId={app.id}
+                      onComplete={setEligibilityComplete}
                     />
                   </div>
 
-                  {/* Eligibility */}
+                  {/* S18: Loan Limit Calculation — gated until eligibility passes */}
                   <div className="card">
-                    <h3 className="text-sm font-semibold text-slate-700 mb-4">Eligibility Checklist</h3>
-                    <EligibilityChecklist memberId={app.memberId} applicationId={app.id} />
+                    <h3 className="text-sm font-semibold text-slate-700 mb-4">Loan Limit Calculation (S18)</h3>
+                    {eligibilityComplete ? (
+                      <LoanLimitCalculator
+                        sharesHeld={app.sharesHeld}
+                        shareMode={app.shareMode}
+                        landAreaAcres={app.landAreaAcres}
+                        requestedAmount={app.requestedAmount}
+                        readonly
+                      />
+                    ) : (
+                      <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                        <Lock size={16} className="text-slate-400 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-semibold text-slate-600">Loan limit calculation is locked</p>
+                          <p className="text-xs text-slate-400 mt-0.5">Complete the eligibility checklist above to unlock loan limit calculation.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* P1-02: Crop Plan & Purpose */}
+                  <div className="card">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-green-50">
+                        <Wheat size={16} className="text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-700">Crop Plan & Purpose</h3>
+                        <p className="text-xs text-slate-500">Verify loan purpose aligns with agricultural / crop production activity</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+                      <div className="rounded-lg bg-slate-50 p-2.5">
+                        <p className="text-xs text-slate-500">Loan Purpose</p>
+                        <p className="text-sm font-semibold text-slate-900 capitalize mt-0.5">{String(app.purpose).replace(/_/g, ' ')}</p>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-2.5">
+                        <p className="text-xs text-slate-500">Loan Type</p>
+                        <p className="text-sm font-semibold text-slate-900 capitalize mt-0.5">{app.loanType === 'short_term' ? 'Short-term (1 yr)' : 'Long-term'}</p>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-2.5">
+                        <p className="text-xs text-slate-500">Crop Plan</p>
+                        <p className="text-sm font-semibold text-green-700 mt-0.5">Submitted ✓</p>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="field-label">Crop Plan Observation Notes <span className="text-red-500">*</span></label>
+                      <textarea
+                        rows={3}
+                        value={cropObservation}
+                        onChange={e => setCropObservation(e.target.value)}
+                        className="field-input resize-none"
+                        placeholder="Summarise crop plan viability — crop type, acreage, expected yield, seasonal alignment, any concerns with the stated agricultural purpose."
+                      />
+                      {cropObservation.trim().length > 0 && cropObservation.trim().length <= 5 && (
+                        <p className="text-xs text-amber-600 mt-1">Please enter a meaningful observation (minimum 6 characters).</p>
+                      )}
+                    </div>
                   </div>
 
                   {/* Credit Risk Rating */}
@@ -536,7 +742,7 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                     </div>
                   </div>
 
-                  {/* Appraisal required fields */}
+                  {/* Required Appraisal Inputs */}
                   <div className="card">
                     <div className="flex items-start justify-between gap-3 mb-4">
                       <div>
@@ -553,13 +759,13 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                         <input
                           type="number"
                           value={recommendedAmount}
-                          onChange={e => { 
+                          onChange={e => {
                             const val = Number(e.target.value);
-                            setRecommendedAmount(e.target.value); 
+                            setRecommendedAmount(e.target.value);
                             if (val > (app?.eligibleAmount || 0) && recommendation !== 'exception' && recommendation !== 'reject') {
                               setRecommendation('exception');
                             }
-                            setAppraisalDraftSaved(false); 
+                            setAppraisalDraftSaved(false);
                           }}
                           className="field-input"
                           placeholder={String(app?.eligibleAmount)}
@@ -599,6 +805,14 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                             </>
                           )}
                         </select>
+                      </div>
+                      <div>
+                        <label className="field-label">Interest Rate Basis</label>
+                        <input
+                          value={FLOATING_RATE}
+                          readOnly
+                          className="field-input bg-slate-50 text-slate-600 cursor-default"
+                        />
                       </div>
                       <div>
                         <label className="field-label">Security Proposed</label>
@@ -662,12 +876,12 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                         {appraisalDraftSaved ? 'Draft Saved' : 'Save Appraisal Draft'}
                       </button>
                       <button
-                        onClick={() => setAppraisalDraftSaved(true)}
+                        onClick={handleGeneratePdf}
                         disabled={!canForwardToSanction}
                         className={`text-sm flex items-center gap-2 ${canForwardToSanction ? 'btn-secondary' : 'bg-slate-100 text-slate-400 px-4 py-2 rounded-lg cursor-not-allowed border border-transparent'}`}
                       >
-                        <FileDown size={14} />
-                        {appraisalStep === 'submitted' ? 'Generate Appraisal PDF' : 'Generate Draft PDF'}
+                        {pdfDownloaded ? <CheckCircle2 size={14} /> : <FileDown size={14} />}
+                        {pdfDownloaded ? 'Appraisal Snapshot Downloaded ✓' : 'Download Appraisal Snapshot'}
                       </button>
                     </div>
                   </div>
@@ -695,8 +909,8 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                         ← Back to Verification
                       </button>
                       <div className="flex gap-3">
-                        <button className="btn-secondary text-sm" onClick={() => onOpenApplication(app.id)}>
-                          Open full application
+                        <button className="btn-secondary text-sm flex items-center gap-2" onClick={() => onOpenApplication(app.id)}>
+                          <FileText size={14} /> Full Application
                         </button>
                         {allowedToPrepareAppraisal ? (
                           <button
@@ -707,7 +921,7 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                             {canForwardToSanction ? 'Submit to Credit Manager' : 'Complete appraisal first'}
                           </button>
                         ) : (
-                          <button className="bg-slate-100 text-slate-400 px-4 py-2 rounded-lg text-sm font-semibold opacity-50 cursor-not-allowed" disabled title="Deputy Manager Finance or Credit Manager only">
+                          <button className="bg-slate-100 text-slate-400 px-4 py-2 rounded-lg text-sm font-semibold opacity-50 cursor-not-allowed" disabled>
                             Submit to Credit Manager
                           </button>
                         )}
@@ -718,7 +932,7 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                         <AlertBanner
                           type="warning"
                           title="Step 2 is not complete"
-                          message="Recommended amount, risk rationale, bank observations, proposed security and appraisal note are required before forwarding."
+                          message="Eligibility checklist, crop plan observation, recommended amount, risk rationale, bank observations, proposed security and appraisal note are all required before forwarding."
                         />
                       </div>
                     )}
@@ -726,13 +940,37 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                 </div>
               )}
 
-              {/* ── STEP 3: Submitted ── */}
+              {/* ── STEP 3: Credit Manager Review ── */}
               {appraisalStep === 'submitted' && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
                     <Send size={14} className="flex-shrink-0" />
-                    <span><strong>Step 3: Credit Manager review.</strong> Review appraisal package, record decision reason, then forward, return, or reject.</span>
+                    <span><strong>Step 3: Credit Manager review.</strong> Review appraisal package, record decision reason, then forward, return, request documents, or reject.</span>
                   </div>
+
+                  {/* P1-04: Borrower & Default History */}
+                  {member && (
+                    <div className="card">
+                      <h3 className="text-sm font-semibold text-slate-700 mb-3">Borrower & Default History</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {[
+                          { label: 'Active Status', value: member.activeStatus, badge: member.activeStatus !== 'active' ? 'rejected' : 'approved' },
+                          { label: 'Default Status', value: member.defaultStatus.replace(/_/g, ' '), badge: member.defaultStatus !== 'no_default' ? (member.defaultStatus === 'current_default' ? 'rejected' : 'pending') : 'approved' },
+                          { label: 'Supply Years', value: `${member.supplyYears} yrs`, badge: member.supplyYears >= 4 ? 'approved' : 'pending' },
+                          { label: 'Member Type', value: app.memberType === 'fpc' ? 'FPC' : app.memberType.replace(/_/g, ' '), badge: 'neutral' },
+                          { label: 'Subsidiary', value: member.subsidiaryLinkage || 'Direct', badge: 'neutral' },
+                          { label: 'KYC Status', value: member.kycStatus.replace(/_/g, ' '), badge: member.kycStatus === 'verified' ? 'approved' : 'pending' },
+                        ].map(({ label, value, badge }) => (
+                          <div key={label} className="rounded-lg bg-slate-50 p-3">
+                            <p className="text-xs text-slate-500">{label}</p>
+                            <p className={`text-sm font-semibold capitalize mt-1 ${badge === 'rejected' ? 'text-red-700' : badge === 'pending' ? 'text-amber-700' : badge === 'approved' ? 'text-green-700' : 'text-slate-900'}`}>
+                              {value}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="card">
                     <div className="flex items-start justify-between gap-4 mb-4">
@@ -750,6 +988,7 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                         ['Risk Rating', riskRating.replace('_', ' ')],
                         ['Recommendation', recommendation.replace('_', ' ')],
                         ['Security', securityProposed],
+                        ['Interest Rate', FLOATING_RATE],
                       ].map(([label, value]) => (
                         <div key={label} className="rounded-lg bg-slate-50 border border-slate-100 p-3">
                           <p className="text-xs text-slate-500">{label}</p>
@@ -771,6 +1010,12 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                         </p>
                       </div>
                     </div>
+                    {cropObservation.trim() && (
+                      <div className="rounded-lg border border-green-100 bg-green-50 p-3 mt-4">
+                        <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Crop Plan Observations</p>
+                        <p className="text-sm text-green-900 mt-2 whitespace-pre-wrap">{cropObservation}</p>
+                      </div>
+                    )}
                     {conditionsPrecedent && (
                       <div className="rounded-lg border border-amber-100 bg-amber-50 p-3 mt-4">
                         <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Conditions Precedent</p>
@@ -779,7 +1024,7 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                     )}
                   </div>
 
-                  {!decisionStatus ? (
+                  {!decisionStatus && !showExceptionConfirm ? (
                     <>
                       <div className="card">
                         <h3 className="text-sm font-semibold text-slate-700 mb-3">Credit Manager Decision</h3>
@@ -791,41 +1036,55 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                           className="field-input resize-none mb-4"
                         />
                         {(!riskRationale.trim() || !bankObservation.trim() || !noteText.trim()) && (
-                           <div className="mb-4">
-                             <AlertBanner type="error" title="Appraisal package incomplete" message="Return to appraisal before forwarding." />
-                           </div>
+                          <div className="mb-4">
+                            <AlertBanner type="error" title="Appraisal package incomplete" message="Return to appraisal before forwarding." />
+                          </div>
                         )}
                         <div className="flex flex-wrap gap-3">
+                          {/* Return */}
                           <button
                             disabled={!creditManagerComment.trim()}
                             onClick={() => {
                               console.log({ action: 'RETURNED', actor: currentUser.role, time: new Date().toISOString(), reason: creditManagerComment, app: app.id });
                               setDecisionStatus('returned');
+                              onUpdateStatus?.(app.id, 'appraisal_in_progress');
                             }}
                             className="btn-secondary text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <RotateCcw size={14} />
                             Return to appraisal
                           </button>
+
                           {can('do_completeness_check') ? (
                             <>
+                              {/* Request Documents */}
                               <button
                                 disabled={!creditManagerComment.trim()}
                                 onClick={() => {
-                                  console.log({ action: 'REJECTED', actor: currentUser.role, time: new Date().toISOString(), reason: creditManagerComment, app: app.id });
-                                  setDecisionStatus('rejected');
+                                  console.log({ action: 'DOCUMENTS_REQUESTED', actor: currentUser.role, time: new Date().toISOString(), reason: creditManagerComment, app: app.id });
+                                  setDecisionStatus('documents_requested');
+                                  onUpdateStatus?.(app.id, 'appraisal_in_progress');
                                 }}
+                                className="btn-secondary text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <FileDown size={14} />
+                                Request Documents
+                              </button>
+
+                              {/* Reject */}
+                              <button
+                                disabled={!creditManagerComment.trim()}
+                                onClick={handleReject}
                                 className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm flex items-center gap-2"
                               >
                                 <XCircle size={14} />
                                 Reject
                               </button>
+
+                              {/* Forward to Sanction */}
                               <button
                                 disabled={!creditManagerComment.trim() || !riskRationale.trim() || !bankObservation.trim() || !noteText.trim() || !recommendedAmountNumber || (requiresException && recommendation !== 'exception')}
-                                onClick={() => {
-                                  console.log({ action: 'FORWARDED', actor: currentUser.role, time: new Date().toISOString(), reason: creditManagerComment, app: app.id, exception: requiresException });
-                                  setDecisionStatus('forwarded');
-                                }}
+                                onClick={handleForwardToSanction}
                                 className="btn-primary text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
                               >
                                 <Send size={14} />
@@ -840,7 +1099,7 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                         </div>
                         {requiresException && (
                           <div className="mt-3 text-xs text-violet-600 font-medium flex justify-end">
-                            Exception approval required
+                            Exception approval required — forwarding will create an Exception Register entry.
                           </div>
                         )}
                         <div className="mt-4 text-xs text-slate-500">
@@ -858,23 +1117,79 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                         </p>
                       </div>
                     </>
+                  ) : showExceptionConfirm ? (
+                    /* P2-04: Exception Register pre-confirmation */
+                    <div className="card border-violet-200 bg-violet-50">
+                      <div className="flex items-start gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
+                          <AlertTriangle size={18} className="text-violet-700" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-violet-900">Confirm Exception Registration</h3>
+                          <p className="text-sm text-violet-700 mt-1">
+                            This case requires exception approval. Forwarding will create an entry in the Exception Register for CFO + 2 Directors review.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="bg-white rounded-lg border border-violet-100 p-3 mb-4 space-y-2 text-sm">
+                        <div className="flex justify-between"><span className="text-slate-500">Application</span><span className="font-semibold">{app.applicationNumber}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">Borrower</span><span className="font-semibold">{app.memberName}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">Requested</span><span className="font-semibold">{fmt(recommendedAmountNumber)}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">Eligible Limit</span><span className="font-semibold">{fmt(app.eligibleAmount)}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">Exception Reason</span><span className="font-semibold text-violet-700">{creditManagerComment}</span></div>
+                      </div>
+                      <p className="text-xs text-violet-600 mb-4">An Exception Register entry will be logged and routed to CFO + 2 Directors for countersignature before sanction committee review proceeds.</p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setShowExceptionConfirm(false)}
+                          className="btn-secondary text-sm"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleConfirmException}
+                          className="btn-primary text-sm flex items-center gap-2 ml-auto"
+                        >
+                          <Send size={14} />
+                          Confirm & Forward with Exception
+                        </button>
+                      </div>
+                    </div>
                   ) : (
+                    /* Decision outcome card */
                     <div className="card text-center py-8">
                       <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 ${
                         decisionStatus === 'forwarded' ? 'bg-green-100' :
-                        decisionStatus === 'rejected' ? 'bg-red-100' : 'bg-amber-100'
+                        decisionStatus === 'rejected' ? 'bg-red-100' :
+                        decisionStatus === 'documents_requested' ? 'bg-blue-100' : 'bg-amber-100'
                       }`}>
                         {decisionStatus === 'forwarded' ? <Check size={28} className="text-green-600" /> :
-                         decisionStatus === 'rejected' ? <XCircle size={28} className="text-red-600" /> : <RotateCcw size={28} className="text-amber-600" />}
+                         decisionStatus === 'rejected' ? <XCircle size={28} className="text-red-600" /> :
+                         decisionStatus === 'documents_requested' ? <FileDown size={28} className="text-blue-600" /> :
+                         <RotateCcw size={28} className="text-amber-600" />}
                       </div>
                       <h3 className="text-lg font-bold text-slate-900">
                         {decisionStatus === 'forwarded' ? 'Forwarded to Sanction Committee' :
-                         decisionStatus === 'rejected' ? 'Rejected' : 'Returned to appraisal'}
+                         decisionStatus === 'rejected' ? 'Rejected — Rejection Note Downloaded' :
+                         decisionStatus === 'documents_requested' ? 'Documents Requested' :
+                         'Returned to appraisal'}
                       </h3>
                       <p className="text-sm text-slate-500 mt-2">
                         {decisionStatus === 'forwarded' ? `${app.applicationNumber} was forwarded ${requiresException ? 'with exception route' : 'for standard sanction'}.` :
+                         decisionStatus === 'rejected' ? 'A rejection note has been downloaded. Applicant to be notified.' :
+                         decisionStatus === 'documents_requested' ? `Additional documents requested. ${app.memberName} to be notified.` :
                          `Action completed by ${currentUser.role.replace(/_/g, ' ')}.`}
                       </p>
+                      {exceptionRegistered && (
+                        <div className="inline-flex items-center gap-2 mt-3 bg-violet-50 border border-violet-200 text-violet-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+                          <BadgeCheck size={12} /> Exception entry registered for CFO + Directors review
+                        </div>
+                      )}
+                      {decisionStatus === 'rejected' && (
+                        <div className="inline-flex items-center gap-2 mt-3 bg-slate-50 border border-slate-200 text-slate-600 text-xs font-semibold px-3 py-1.5 rounded-full">
+                          <Download size={12} /> rejection-note-{app.applicationNumber}.json
+                        </div>
+                      )}
                       <div className="flex gap-3 justify-center mt-6">
                         <button onClick={() => { setSelected(appraisalQueue.find(a => a.id !== selected)?.id || null); setAppraisalStep('verification'); }} className="btn-secondary text-sm">Next in Queue</button>
                       </div>
