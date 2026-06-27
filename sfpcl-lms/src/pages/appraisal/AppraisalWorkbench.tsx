@@ -1013,57 +1013,62 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                             <AlertBanner type="error" title="Appraisal package incomplete" message="Return to appraisal before forwarding." />
                           </div>
                         )}
-                        <div className="flex flex-wrap gap-3">
-                          {/* Return */}
-                          <button
-                            disabled={!creditManagerComment.trim()}
-                            onClick={() => {
-                              console.log({ action: 'RETURNED', actor: currentUser.role, time: new Date().toISOString(), reason: creditManagerComment, app: app.id });
-                              setDecisionStatus('returned');
-                              onUpdateStatus?.(app.id, 'appraisal_in_progress');
-                            }}
-                            className="btn-secondary text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <RotateCcw size={14} />
-                            Return to appraisal
-                          </button>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          {/* Left group: secondary actions */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {/* Return */}
+                            <button
+                              disabled={!creditManagerComment.trim()}
+                              onClick={() => {
+                                console.log({ action: 'RETURNED', actor: currentUser.role, time: new Date().toISOString(), reason: creditManagerComment, app: app.id });
+                                setDecisionStatus('returned');
+                                onUpdateStatus?.(app.id, 'appraisal_in_progress');
+                              }}
+                              className="btn-secondary text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <RotateCcw size={14} />
+                              Return to appraisal
+                            </button>
 
+                            {can('do_completeness_check') && (
+                              <>
+                                {/* Request Documents */}
+                                <button
+                                  disabled={!creditManagerComment.trim()}
+                                  onClick={() => {
+                                    console.log({ action: 'DOCUMENTS_REQUESTED', actor: currentUser.role, time: new Date().toISOString(), reason: creditManagerComment, app: app.id });
+                                    setDecisionStatus('documents_requested');
+                                    onUpdateStatus?.(app.id, 'appraisal_in_progress');
+                                  }}
+                                  className="btn-secondary text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <FileDown size={14} />
+                                  Request Documents
+                                </button>
+
+                                {/* Reject */}
+                                <button
+                                  disabled={!creditManagerComment.trim()}
+                                  onClick={handleReject}
+                                  className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm flex items-center gap-2"
+                                >
+                                  <XCircle size={14} />
+                                  Reject
+                                </button>
+                              </>
+                            )}
+                          </div>
+
+                          {/* Right: primary action */}
                           {can('do_completeness_check') ? (
-                            <>
-                              {/* Request Documents */}
-                              <button
-                                disabled={!creditManagerComment.trim()}
-                                onClick={() => {
-                                  console.log({ action: 'DOCUMENTS_REQUESTED', actor: currentUser.role, time: new Date().toISOString(), reason: creditManagerComment, app: app.id });
-                                  setDecisionStatus('documents_requested');
-                                  onUpdateStatus?.(app.id, 'appraisal_in_progress');
-                                }}
-                                className="btn-secondary text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                <FileDown size={14} />
-                                Request Documents
-                              </button>
-
-                              {/* Reject */}
-                              <button
-                                disabled={!creditManagerComment.trim()}
-                                onClick={handleReject}
-                                className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm flex items-center gap-2"
-                              >
-                                <XCircle size={14} />
-                                Reject
-                              </button>
-
-                              {/* Forward to Sanction */}
-                              <button
-                                disabled={!creditManagerComment.trim() || !riskRationale.trim() || !bankObservation.trim() || !noteText.trim() || !recommendedAmountNumber || (requiresException && recommendation !== 'exception')}
-                                onClick={handleForwardToSanction}
-                                className="btn-primary text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
-                              >
-                                <Send size={14} />
-                                Forward to Sanction Committee
-                              </button>
-                            </>
+                            <button
+                              disabled={!creditManagerComment.trim() || !riskRationale.trim() || !bankObservation.trim() || !noteText.trim() || !recommendedAmountNumber || (requiresException && recommendation !== 'exception')}
+                              onClick={handleForwardToSanction}
+                              className="btn-primary text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
+                            >
+                              <Send size={14} />
+                              Forward to Sanction Committee
+                            </button>
                           ) : (
                             <div className="text-sm text-amber-700 bg-amber-50 p-2 rounded border border-amber-200 ml-auto">
                               Waiting for Credit Manager review and forwarding.
