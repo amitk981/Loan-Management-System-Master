@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  CheckCircle2, FileText, Download, Archive, Shield,
+  CheckCircle2, FileText, Download, Archive, Shield, Lock,
   AlertTriangle, BadgeCheck, Clock, ChevronRight, Unlock, Upload, Send, FileCheck
 } from 'lucide-react';
 import StatusBadge from '../../components/ui/StatusBadge';
