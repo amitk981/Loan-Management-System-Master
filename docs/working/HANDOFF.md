@@ -1,21 +1,23 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-01_122410_normal_run
+slice-plan-rewrite
 
 ## Current Status
-Initial product slice backlog has been created from `docs/source/`. Normal Ralph automation can now pick the first `Not Started` product slice.
+Planning-only rewrite completed. Broad slices 001-012 now live as parent epics in `docs/epics/`, and `docs/slices/` contains smaller Ralph implementation slices.
 
 ## Current Slice
-None selected.
+`002A-backend-scaffold-and-health-endpoint` is the next recommended implementation slice.
 
 ## What Completed
-- Slice 001: Ralph Bootstrap Verification is complete. See `.ralph/runs/2026-07-01_121336_bootstrap/`.
-- Product slices 002 through 012 now cover backend/API/database work and matching frontend gap closure, using `docs/source/` as source of truth.
-- A previous no-slice dry run is recorded at `.ralph/runs/2026-07-01_122410_normal_run/`.
+- Preserved parent epic summaries in `docs/epics/`.
+- Recreated small implementation slices under `docs/slices/`.
+- Added `docs/working/IMPLEMENTATION_SLICE_INDEX.md`.
+- Added `docs/working/MVP_TRACER_BULLET.md`.
+- Confirmed source docs remain under `docs/source/` and should be read as needed for each slice.
 
 ## Current Blocker
-No blocker. Slice 002 is the next eligible implementation slice.
+No blocker. The next run should be implementation, not more broad planning.
 
 ## Next Recommended Action
-Run `CODEX_PROFILE=deep ./scripts/afk-dev.sh 1 --mode normal` to start Slice 002: Platform Auth and Role Shell.
+Run `CODEX_PROFILE=deep ./scripts/afk-dev.sh 1 --mode normal --slice 002A` to start the backend scaffold and health endpoint slice.

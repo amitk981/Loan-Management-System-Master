@@ -1,6 +1,8 @@
 # Token Rules
 
 - Do not read all of `docs/source/` by default during normal runs.
+- Read all relevant `docs/source/` files, and the whole source folder if genuinely needed, when a slice touches business rules, architecture, permissions, data models, APIs, money, compliance, or end-to-end workflow behavior.
+- Use the existing frontend code in `sfpcl-lms/src/` as the visual and interaction reference for any frontend or full-stack slice.
 - Start with `docs/working/CONTEXT.md`.
 - Read `docs/working/HANDOFF.md` before choosing work.
 - Read only the selected slice file.

@@ -1,0 +1,154 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/001-ralph-bootstrap-verification.md
+ D docs/slices/002-platform-auth-shell.md
+ D docs/slices/003-audit-documents-config-foundation.md
+ D docs/slices/004-member-kyc-master.md
+ D docs/slices/005-application-intake-completeness.md
+ D docs/slices/006-eligibility-loan-limit-appraisal.md
+ D docs/slices/007-sanction-approval-workflow.md
+ D docs/slices/008-documentation-security-package.md
+ D docs/slices/009-sap-loan-account-disbursement.md
+ D docs/slices/010-servicing-repayments-interest-monitoring.md
+ D docs/slices/011-default-recovery-closure-compliance.md
+ D docs/slices/012-reports-exports-hardening-uat.md
+ M docs/working/HANDOFF.md
+ M docs/working/TOKEN_RULES.md
+?? .ralph/runs/slice-plan-rewrite/changed-files.txt
+?? .ralph/runs/slice-plan-rewrite/execution-plan.md
+?? .ralph/runs/slice-plan-rewrite/final-summary.md
+?? .ralph/runs/slice-plan-rewrite/prompt.md
+?? .ralph/runs/slice-plan-rewrite/ralph-artifact-validation.md
+?? .ralph/runs/slice-plan-rewrite/review-packet.md
+?? .ralph/runs/slice-plan-rewrite/risk-assessment.md
+?? docs/epics/001-ralph-bootstrap-verification.md
+?? docs/epics/002-platform-auth-shell.md
+?? docs/epics/003-audit-documents-config-foundation.md
+?? docs/epics/004-member-kyc-master.md
+?? docs/epics/005-application-intake-completeness.md
+?? docs/epics/006-eligibility-loan-limit-appraisal.md
+?? docs/epics/007-sanction-approval-workflow.md
+?? docs/epics/008-documentation-security-package.md
+?? docs/epics/009-sap-loan-account-disbursement.md
+?? docs/epics/010-servicing-repayments-interest-monitoring.md
+?? docs/epics/011-default-recovery-closure-compliance.md
+?? docs/epics/012-reports-exports-hardening-uat.md
+?? docs/slices/002A-backend-scaffold-and-health-endpoint.md
+?? docs/slices/002B-user-model-and-jwt-login-refresh-logout.md
+?? docs/slices/002C-role-and-permission-catalogue-seed.md
+?? docs/slices/002D-current-user-api-with-permissions-and-teams.md
+?? docs/slices/002E-protected-frontend-route-shell.md
+?? docs/slices/002F-role-aware-sidebar-header-navigation.md
+?? docs/slices/002G-admin-user-and-role-management-shell.md
+?? docs/slices/002H-state-machine-and-transition-guard-foundation.md
+?? docs/slices/002I-object-level-permission-test-harness.md
+?? docs/slices/002J-api-contract-test-harness.md
+?? docs/slices/002K-seed-data-and-demo-users.md
+?? docs/slices/003A-audit-log-foundation.md
+?? docs/slices/003B-workflow-event-foundation.md
+?? docs/slices/003C-document-metadata-and-storage-adapter.md
+?? docs/slices/003D-secure-document-download-with-audit.md
+?? docs/slices/003E-versioned-configuration-shell.md
+?? docs/slices/003F-communication-template-shell.md
+?? docs/slices/003G-dashboard-task-summary-api.md
+?? docs/slices/003H-dashboard-task-ui-wiring.md
+?? docs/slices/003I-notification-adapter-shell.md
+?? docs/slices/003J-background-job-scheduling-foundation.md
+?? docs/slices/003K-prototype-visual-gap-report-update.md
+?? docs/slices/003L-data-import-and-migration-planning.md
+?? docs/slices/004A-member-directory-api-and-ui.md
+?? docs/slices/004B-member-profile-api-and-ui.md
+?? docs/slices/004C-individual-farmer-and-fpc-profile-details.md
+?? docs/slices/004D-nominee-validation-and-ui.md
+?? docs/slices/004E-witness-shareholder-validation.md
+?? docs/slices/004F-shareholding-and-share-certificate-records.md
+?? docs/slices/004G-landholding-and-crop-plan-records.md
+?? docs/slices/004H-kyc-upload-and-verification.md
+?? docs/slices/004I-sensitive-masking-and-reveal-audit.md
+?? docs/slices/004J-bank-account-and-cancelled-cheque-profile-foundation.md
+?? docs/slices/005A-loan-application-draft-create-update.md
+?? docs/slices/005B-application-submit-and-status-transition.md
+?? docs/slices/005C-reference-number-generation-and-loan-request-register.md
+?? docs/slices/005D-application-document-checklist.md
+?? docs/slices/005E-completeness-workbench.md
+?? docs/slices/005F-deficiency-creation-and-resolution.md
+?? docs/slices/005G-member-portal-application-start-status.md
+?? docs/slices/005H-rejection-note-shell.md
+?? docs/slices/006A-active-member-eligibility-service.md
+?? docs/slices/006B-default-document-purpose-and-terms-eligibility-checks.md
+?? docs/slices/006C-loan-limit-configuration-and-calculator.md
+?? docs/slices/006D-loan-limit-snapshot-storage.md
+?? docs/slices/006E-appraisal-note-create-edit-submit.md
+?? docs/slices/006F-credit-manager-review.md
+?? docs/slices/006G-submit-to-sanction.md
+?? docs/slices/006H-eligibility-appraisal-frontend-integration.md
+?? docs/slices/006X-mvp-end-to-end-happy-path-tracer-bullet.md
+?? docs/slices/007A-approval-matrix-configuration.md
+?? docs/slices/007B-approval-case-creation-from-appraisal.md
+?? docs/slices/007C-cfo-and-director-threshold-routing.md
+?? docs/slices/007D-approval-action-api-approve-reject-return.md
+?? docs/slices/007E-conflict-of-interest-blocking.md
+?? docs/slices/007F-exception-approval-workflow.md
+?? docs/slices/007G-general-meeting-evidence-for-special-cases.md
+?? docs/slices/007H-credit-sanction-register.md
+?? docs/slices/007I-sanction-workbench-ui.md
+?? docs/slices/008A-document-template-model-and-versioning.md
+?? docs/slices/008B-document-generation-shell.md
+?? docs/slices/008C-documentation-checklist-applicability.md
+?? docs/slices/008D-stamp-duty-and-notarisation-tracking.md
+?? docs/slices/008E-signature-mismatch-workflow.md
+?? docs/slices/008F-power-of-attorney-workflow.md
+?? docs/slices/008G-tri-party-agreement-workflow.md
+?? docs/slices/008H-sh-4-physical-share-security-workflow.md
+?? docs/slices/008I-cdsl-pledge-workflow.md
+?? docs/slices/008J-blank-dated-cheque-and-cancelled-cheque-custody.md
+?? docs/slices/008K-final-documentation-approval-sequence.md
+?? docs/slices/008L-member-portal-documentation-actions.md
+?? docs/slices/009A-sap-customer-code-request.md
+?? docs/slices/009B-sap-customer-code-confirmation-and-reuse.md
+?? docs/slices/009C-loan-account-creation-from-sanctioned-application.md
+?? docs/slices/009D-disbursement-readiness-service.md
+?? docs/slices/009E-payment-initiation-by-senior-manager-finance.md
+?? docs/slices/009F-cfc-authorization-rejection.md
+?? docs/slices/009G-utr-capture-and-transfer-success.md
+?? docs/slices/009H-disbursement-advice-and-communication.md
+?? docs/slices/009I-member-portal-disbursement-status.md
+?? docs/slices/009J-loan-account-360-initial-view.md
+?? docs/slices/010A-loan-account-schedule-and-ledger.md
+?? docs/slices/010B-direct-repayment-posting.md
+?? docs/slices/010C-principal-first-allocation.md
+?? docs/slices/010D-bank-statement-matching-unmatched-receipts.md
+?? docs/slices/010E-subsidiary-deduction-reconciliation.md
+?? docs/slices/010F-interest-invoice-generation.md
+?? docs/slices/010G-monthly-interest-accrual.md
+?? docs/slices/010H-interest-capitalisation-after-30-april.md
+?? docs/slices/010I-dpd-calculation-and-monitoring-buckets.md
+?? docs/slices/010J-reminder-queue.md
+?? docs/slices/010K-cfo-quarterly-mis.md
+?? docs/slices/010L-member-portal-repayment-view.md
+?? docs/slices/011A-default-case-opening.md
+?? docs/slices/011B-grace-period-tracking.md
+?? docs/slices/011C-extension-note-workflow.md
+?? docs/slices/011D-non-payment-note-workflow.md
+?? docs/slices/011E-recovery-decision-approval.md
+?? docs/slices/011F-recovery-action-execution-shell.md
+?? docs/slices/011G-closure-readiness.md
+?? docs/slices/011H-noc-issuance.md
+?? docs/slices/011I-security-return-and-cdsl-unpledge-tracking.md
+?? docs/slices/011J-archive-record-and-retention.md
+?? docs/slices/011K-compliance-control-tracker-foundation.md
+?? docs/slices/011L-section-186-and-nbfc-test-trackers.md
+?? docs/slices/011M-kyc-re-kyc-compliance-tracker.md
+?? docs/slices/011N-grievance-workflow.md
+?? docs/slices/011O-auditor-read-only-views.md
+?? docs/slices/012A-report-api-foundation.md
+?? docs/slices/012B-register-exports.md
+?? docs/slices/012C-export-masking-and-permission-checks.md
+?? docs/slices/012D-audit-explorer.md
+?? docs/slices/012E-operational-dashboard-hardening.md
+?? docs/slices/012F-security-privacy-regression-checks.md
+?? docs/slices/012G-critical-e2e-uat-smoke-scenarios.md
+?? docs/slices/012H-deployment-readiness-and-smoke-checks.md
+?? docs/slices/012I-final-uat-review-packet.md
+?? docs/working/IMPLEMENTATION_SLICE_INDEX.md
+?? docs/working/MVP_TRACER_BULLET.md

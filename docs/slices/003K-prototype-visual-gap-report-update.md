@@ -1,10 +1,10 @@
-# Slice 001: Ralph Bootstrap Verification
+# Slice 003K: Prototype Visual Gap Report Update
 
 ## Status
-Complete
+Not Started
 
 ## Parent Epic
-Epic 001: Ralph Bootstrap Verification
+Epic 003: Audit, Documents, Config, and Dashboard Foundation
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.
@@ -13,14 +13,20 @@ Deliver this narrow capability as a small, testable Ralph implementation slice.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- None
+- 003J
 
 ## Source References
-- docs/source/
-- Ralph AFK Automation Requirements v2.1
+- docs/source/implementation-roadmap.md sections 10, 20-22
+- docs/source/api-contracts.md sections 26, 37, 39, 42-43
+- docs/source/data-model.md document/config/audit tables
+- docs/source/component-spec.md
+- docs/source/design-system.md
 
 ## Prototype Reference
-- None
+- sfpcl-lms/src/pages/Dashboard.tsx
+- sfpcl-lms/src/pages/tasks/TaskInbox.tsx
+- sfpcl-lms/src/components/loan/AuditTimeline.tsx
+- sfpcl-lms/src/components/loan/DocumentPackModal.tsx
 
 ## Screens Involved
 None directly.
@@ -41,19 +47,19 @@ None, unless this planning/test slice discovers a contract gap to document.
 Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
 
 ## Audit Requirements
-None.
+Record audit/workflow events for critical create/update/approval/access actions.
 
 ## Validation Rules
-Required Ralph files exist and parse correctly.
+Enforce source-doc business rules and block invalid state transitions.
 
 ## Test Cases
-Ralph preflight/artifact validation.
+Unit/service/API/permission tests plus frontend tests where UI is touched.
 
 ## Visual Acceptance Criteria
 None.
 
 ## Evidence Required
-Preflight and validation outputs.
+Test output, API response examples, and screenshots when frontend is touched.
 
 ## Risk Level
 Low
@@ -65,16 +71,16 @@ Low
 - The implementation stays within one small Ralph slice.
 
 ## Done Checklist
-- [x] Execution plan written
-- [x] Tests written or updated
-- [x] Code implemented
-- [x] API contracts updated, if needed
-- [x] Database rules followed, if needed
-- [x] Permissions tested, if needed
-- [x] Audit events tested, if needed
-- [x] Visual evidence saved, if frontend
-- [x] Tests/typecheck/lint/build passed
-- [x] Risk assessment completed
-- [x] Handoff updated
-- [x] State updated
-- [x] Commit created only after passing gates
+- [ ] Execution plan written
+- [ ] Tests written or updated
+- [ ] Code implemented
+- [ ] API contracts updated, if needed
+- [ ] Database rules followed, if needed
+- [ ] Permissions tested, if needed
+- [ ] Audit events tested, if needed
+- [ ] Visual evidence saved, if frontend
+- [ ] Tests/typecheck/lint/build passed
+- [ ] Risk assessment completed
+- [ ] Handoff updated
+- [ ] State updated
+- [ ] Commit created only after passing gates
