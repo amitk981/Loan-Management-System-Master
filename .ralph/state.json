@@ -7,7 +7,7 @@
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": null,
-  "last_run_id": "2026-07-01_121336_bootstrap",
+  "last_run_id": "2026-07-01_122410_normal_run",
   "last_run_status": "success",
   "slices_completed_since_architecture_review": 1,
   "architecture_review_due": false,

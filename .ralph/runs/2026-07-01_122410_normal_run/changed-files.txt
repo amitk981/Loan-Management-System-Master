@@ -1,0 +1,4 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/working/HANDOFF.md
+?? .ralph/runs/2026-07-01_122410_normal_run/

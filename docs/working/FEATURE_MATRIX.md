@@ -11,3 +11,19 @@
 | Servicing and Monitoring | Track repayment, interest, DPD, and reminders | Operational visibility | Loan account, repayments, interest, monitoring | Accounts, Credit, CFO | LoanAccount, Repayment, InterestAccrual, DPD | Servicing APIs | Account and monitoring permissions | Financial calculation tests | P1 | `data-model.md`, `test-plan.md` | Prototype only |
 | Default, Recovery, Closure | Manage delinquency, recovery approval, NOC, and archive | Controlled lifecycle completion | Default, recovery, closure | Credit, CFO, CS, Sanction | DefaultCase, RecoveryAction, Closure, NOC | Default/closure APIs | Recovery/closure permissions | Approval and archive tests | P1 | `functional-spec.md`, `screen-spec.md` | Prototype only |
 | Compliance and Reports | Provide statutory trackers, audit, and MIS | Compliance and management visibility | Compliance, registers, reports | Compliance, CFO, CS, Auditor | ComplianceTask, Register, AuditEvent, Report | Compliance/report APIs | Auditor and export masking | Report and audit tests | P1 | `auth-permissions.md`, `api-contracts.md` | Prototype only |
+
+## Slice Backlog Mapping
+
+| Slice | Release Coverage | Primary Outcome |
+|---|---|---|
+| 002 | R1 Sprint 1 | Platform backend scaffold, JWT auth, RBAC, protected frontend shell |
+| 003 | R1 Sprint 2 | Audit, document storage, configuration, dashboard/task foundations |
+| 004 | R2 Sprint 3 | Member, KYC, nominee, witness, shareholding, land/crop profile master |
+| 005 | R2 Sprint 4 | Application intake, application documents, completeness, deficiencies |
+| 006 | R2 Sprint 5-6 | Eligibility, active member rules, loan limit, appraisal, credit review |
+| 007 | R3 Sprint 7-8 | Approval matrix, sanction workflow, exception registers |
+| 008 | R4 Sprint 9-11 | Documentation, templates, legal/security package, checklist approvals |
+| 009 | R5 Sprint 12-13 | SAP workflow, loan account, disbursement readiness/payment |
+| 010 | R6 Sprint 14-16 | Repayments, interest, monitoring, member servicing views |
+| 011 | R7 Sprint 17-19 | Default, recovery, closure, compliance, grievances |
+| 012 | R8 Sprint 20-23 | Reports, exports, audit explorer, hardening, UAT readiness |
