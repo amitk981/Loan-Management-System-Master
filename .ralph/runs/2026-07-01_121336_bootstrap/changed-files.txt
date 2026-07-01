@@ -1,0 +1,84 @@
+ D .claude/launch.json
+ D .codex/spec-audit/00-specs.txt
+ D .codex/spec-audit/01-screen-headings.txt
+ D .codex/spec-audit/02-source-files.txt
+ D .codex/spec-audit/03-screen-id-source-refs.txt
+ D .codex/spec-audit/04-components-styles.txt
+ D .codex/spec-audit/05-checks.txt
+ M .gitignore
+ D APPRAISAL_FIX_LEDGER.md
+ D AUDIT_REPORT.md
+ D COMPONENT_REUSE_LOG.md
+ D DEMO_LEDGER.md
+ D FLOW_GATE_AUDIT.md
+ D PROGRESS.md
+ D ROLE_ACTION_MATRIX.md
+ D SCREEN_COVERAGE_MATRIX.md
+ D SPEC_FIX_LOG.md
+ D SPEC_TRACEABILITY.md
+ D "docs/Final SOP - Loan Disbursement V10 (1).pdf"
+ D "docs/SFPCL_Loan Sanction- Doc & Disbursement-SOP_WhatsLoan-25052026.pdf"
+ D docs/auth-permissions.md
+ D docs/component-spec.md
+ D docs/design-system.md
+ D docs/flow-gap-ledger.md
+ D docs/functional-spec.md
+ D docs/information-architecture.md
+ D docs/product-requirements.md
+ D docs/screen-spec-member-portal.md
+ D docs/screen-spec.md
+ D docs/user-flows.md
+ D scripts/ralph-spec-audit.sh
+ D sfpcl-lms/.claude/launch.json
+ D sfpcl-lms/fix_registers.js
+ D sfpcl-lms/generate_disb_split.js
+ D sfpcl-lms/generate_tasks.js
+ D sfpcl-lms/tasks.txt
+ D sfpcl-lms/update_accrual_reg.js
+ D sfpcl-lms/update_archive_reg.js
+ D sfpcl-lms/update_audit_reg.js
+ D sfpcl-lms/update_borrower360.js
+ D sfpcl-lms/update_cdsl_reg.js
+ D sfpcl-lms/update_cheque_reg.js
+ D sfpcl-lms/update_closure.js
+ D sfpcl-lms/update_closure_final.js
+ D sfpcl-lms/update_compliance_reg.js
+ D sfpcl-lms/update_credit_sanction.js
+ D sfpcl-lms/update_dashboard.js
+ D sfpcl-lms/update_defaults.js
+ D sfpcl-lms/update_defaults2.js
+ D sfpcl-lms/update_disburse_reg.js
+ D sfpcl-lms/update_disbursement.js
+ D sfpcl-lms/update_dpd_reg.js
+ D sfpcl-lms/update_exception_reg.js
+ D sfpcl-lms/update_grievance_reg.js
+ D sfpcl-lms/update_invoice_reg.js
+ D sfpcl-lms/update_loan_acc.js
+ D sfpcl-lms/update_loan_req.js
+ D sfpcl-lms/update_member_reg.js
+ D sfpcl-lms/update_monitoring.js
+ D sfpcl-lms/update_noc_reg.js
+ D sfpcl-lms/update_recovery_reg.js
+ D sfpcl-lms/update_registers.js
+ D sfpcl-lms/update_repayment_reg.js
+ D sfpcl-lms/update_repayments.js
+ D sfpcl-lms/update_reports.js
+ D sfpcl-lms/update_sap_reg.js
+ D sfpcl-lms/update_security_reg.js
+ D sfpcl-lms/update_sh4_reg.js
+ D sfpcl-lms/update_sop_reg.js
+ D sfpcl-lms/update_stamp_reg.js
+?? .ralph/
+?? AGENTS.md
+?? CLAUDE.md
+?? docs/adr/
+?? docs/slices/
+?? docs/source/
+?? docs/working/
+?? scripts/afk-dev.sh
+?? scripts/agent-adapters/
+?? scripts/ralph-bootstrap.sh
+?? scripts/ralph-cleanup.sh
+?? scripts/ralph-preflight.sh
+?? scripts/ralph-run.sh
+?? scripts/ralph-validate.sh

@@ -1,0 +1,39 @@
+{
+  "allowed_without_approval": [
+    "sfpcl-lms/src/**",
+    "sfpcl-lms/public/**",
+    "sfpcl-lms/index.html",
+    "docs/working/**",
+    "docs/slices/**",
+    "docs/adr/**",
+    ".ralph/progress.md",
+    ".ralph/state.json",
+    ".ralph/runs/**",
+    "AGENTS.md",
+    "CLAUDE.md"
+  ],
+  "requires_approval": [
+    "package.json",
+    "package-lock.json",
+    "sfpcl-lms/package.json",
+    "sfpcl-lms/package-lock.json",
+    "sfpcl-lms/tsconfig.json",
+    "sfpcl-lms/tsconfig.node.json",
+    "sfpcl-lms/vite.config.ts",
+    "sfpcl-lms/tailwind.config.js",
+    "sfpcl-lms/postcss.config.js",
+    "netlify.toml",
+    ".ralph/config.yaml",
+    ".ralph/permissions.json",
+    "scripts/**",
+    ".env.example"
+  ],
+  "forbidden": [
+    ".env",
+    ".env.*",
+    "docs/source/**",
+    ".git/**",
+    "secrets/**",
+    "credentials/**"
+  ]
+}

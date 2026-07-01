@@ -1,0 +1,125 @@
+agent:
+  default_tool: codex
+  allowed_tools:
+    - codex
+    - claude
+
+  codex:
+    default_profile: default
+    allow_model_override: true
+    allow_effort_override: true
+    allow_xhigh: false
+    fail_if_model_unavailable: true
+    record_settings_file: true
+    approval_modes_allowed:
+      - on-request
+      - untrusted
+    fallback:
+      enabled: false
+      order: []
+      downgrade_effort_on_fallback: false
+    profiles:
+      default:
+        model: gpt-5.5
+        reasoning_effort: medium
+        verbosity: medium
+        allowed_modes:
+          - normal_run
+        intended_use: Normal one-slice AFK implementation.
+      fast:
+        model: gpt-5.5
+        reasoning_effort: low
+        verbosity: low
+        allowed_modes:
+          - preflight_only
+          - docs_only
+          - normal_run
+        intended_use: Small docs edits, simple UI copy, and quick inspection.
+      economy:
+        model: gpt-5-codex-mini
+        reasoning_effort: medium
+        verbosity: low
+        allowed_modes:
+          - normal_run
+        intended_use: Lower-cost runs if available on the user's plan.
+      deep:
+        model: gpt-5.5
+        reasoning_effort: high
+        verbosity: medium
+        allowed_modes:
+          - bootstrap
+          - normal_run
+          - repair
+          - architecture_review
+        intended_use: Complex slices, API/database work, and difficult bugs.
+      repair:
+        model: gpt-5.5
+        reasoning_effort: high
+        verbosity: medium
+        allowed_modes:
+          - repair
+        intended_use: Diagnose failed runs and repeated gate failures.
+      architecture:
+        model: gpt-5.5
+        reasoning_effort: high
+        verbosity: high
+        allowed_modes:
+          - architecture_review
+        intended_use: Architecture review, ADRs, and refactor-slice planning.
+
+run:
+  default_iterations: 1
+  max_iterations: 3
+  max_retries: 2
+  require_clean_git: true
+  use_worktree: true
+  allow_no_worktree_override: false
+  stop_on_ambiguity: true
+  stop_on_high_risk: true
+  auto_commit: true
+  auto_merge: false
+  auto_deploy: false
+  architecture_review_every_completed_slices: 4
+
+limits:
+  max_changed_files: 12
+  max_lines_changed: 800
+  max_new_dependencies: 0
+  max_database_migrations: 1
+
+quality_gates:
+  install: false
+  build: true
+  typecheck: false
+  lint: false
+  unit_tests: false
+  integration_tests: false
+  e2e_tests: optional
+
+risk:
+  low_risk_auto_commit: true
+  medium_risk_auto_commit: true
+  high_risk_stop_required: true
+
+worktree:
+  enabled: true
+  path: .ralph/worktrees
+  cleanup_idle: true
+
+commands:
+  project_dir: sfpcl-lms
+  package_manager: auto
+  install: auto
+  build: auto
+  typecheck: auto
+  lint: auto
+  test: auto
+  integration_test: auto
+  e2e_test: auto
+
+docs:
+  source_readonly: true
+  update_handoff: true
+  update_progress: true
+  update_state: true
+  update_assumptions: true
