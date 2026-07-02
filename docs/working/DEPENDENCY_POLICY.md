@@ -6,11 +6,13 @@ Up to `limits.max_new_dependencies` (see `.ralph/config.yaml`) new packages may 
 
 Backend (add to `sfpcl_credit/requirements.txt`, pinned):
 - Django, djangorestframework, djangorestframework-simplejwt, PyJWT
+- django-cors-headers
 - psycopg[binary], python-dotenv, gunicorn, whitenoise
-- pytest, pytest-django
+- pytest, pytest-django, coverage
 
 Frontend (add to `sfpcl-lms/package.json`, dev dependencies unless noted):
 - vitest, @testing-library/react, @testing-library/jest-dom, jsdom
+- @playwright/test
 - eslint and @typescript-eslint packages (when the lint gate is introduced)
 
 ## Rules for any addition

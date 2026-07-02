@@ -158,6 +158,7 @@ Core requirements:
 - Prefer docs/working/digests/ over re-reading large docs/source files; if you extract requirements from a large source file, save the distilled version into the matching digest.
 - Stop only for the never-do list in DECISION_POLICY.md, forbidden/protected file edits, repeated gate failure, or diff limit violations.
 - In repair mode: first diagnose the most recent failure — read the newest .ralph/runs/*/ folder containing FAIL results, and inspect any leftover .ralph/worktrees/ from the failed attempt before starting fresh.
+- In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md and create or sharpen corrective slices for significant issues.
 
 Read in this order:
 1. AGENTS.md or CLAUDE.md

@@ -12,8 +12,10 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 3a | `002B2` Auth Hardening — PyJWT and Packaging | Epic 002 | 002B, | High | No | Yes | No | Yes |
 | 4 | `002C` Role and Permission Catalogue Seed | Epic 002 | 002B, | High | No | Yes | Yes | Yes |
 | 5 | `002D` Current User API with Permissions and Teams | Epic 002 | 002C, | High | No | Yes | Yes | Yes |
-| 6 | `002E` Protected Frontend Route Shell | Epic 002 | 002D, | Medium | Yes | Yes | No | Yes |
+| 5a | `002D2` Backend Dev Infrastructure (Env, DB, CORS) | Epic 002 | 002D, | Medium | No | Yes | Yes | Yes |
+| 6 | `002E` Protected Frontend Route Shell | Epic 002 | 002D2, | Medium | Yes | Yes | No | Yes |
 | 6a | `002EX` Early End-to-End Tracer Bullet | Epic 002 | 002E, | High | Yes | Yes | Yes | Yes |
+| 6b | `002EY` E2E and Visual Regression Harness | Epic 002 | 002EX, | Medium | Yes | No | No | Yes |
 | 7 | `002F` Role-Aware Sidebar Header Navigation | Epic 002 | 002E, | Medium | Yes | Yes | No | Yes |
 | 7a | `002FL` Frontend Lint Baseline (ESLint) | Epic 002 | 002F, | Medium | Yes | No | No | Yes |
 | 8 | `002G` Admin User and Role Management Shell | Epic 002 | 002F, | Medium | Yes | Yes | Yes | Yes |

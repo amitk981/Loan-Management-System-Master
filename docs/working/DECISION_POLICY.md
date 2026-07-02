@@ -20,7 +20,7 @@ The project owner is not a developer and has granted standing approval for auton
 Backend: Django + Django REST Framework, PostgreSQL in production (SQLite acceptable only for local tests), djangorestframework-simplejwt/PyJWT for tokens, pytest or Django test runner, coverage.py. Frontend: React + TypeScript + Vite, vitest + Testing Library, ESLint. Infrastructure: environment variables for secrets, pinned dependencies, migrations for every schema change. Prefer the standard, maintained, widely-documented tool over a clever or niche one; new dependencies follow `docs/working/DEPENDENCY_POLICY.md`.
 
 ## 4. Never do autonomously (hard-enforced; validation fails the run)
-- Modify protected files: `scripts/`, `.ralph/config.yaml`, `.ralph/permissions.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, `docs/working/HIGH_RISK_APPROVALS.md`, `docs/working/DECISION_POLICY.md`, `docs/working/FRONTEND_DESIGN_RULES.md`, or anything in `docs/source/`.
+- Modify protected files: `scripts/`, `.github/`, `.ralph/config.yaml`, `.ralph/permissions.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, `docs/working/HIGH_RISK_APPROVALS.md`, `docs/working/DECISION_POLICY.md`, `docs/working/FRONTEND_DESIGN_RULES.md`, or anything in `docs/source/`.
 - Weaken, skip, or reinterpret quality gates, risk rules, or this policy.
 - Delete or rewrite committed history; force-push.
 - Deploy anywhere, call paid external services, or send communications to real people.

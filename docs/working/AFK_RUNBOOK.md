@@ -4,7 +4,7 @@
 - `bootstrap`: create or verify Ralph scaffolding. Does not implement product features.
 - `normal`: pick one eligible vertical slice, create a worktree, run an agent, validate, save evidence, update state, and commit only passing work.
 - `repair`: repair the previous failed slice.
-- `architecture-review`: inspect architecture, create ADRs/refactor slices, and avoid broad production-code changes.
+- `architecture-review`: independent quality review, run automatically by the loop every `architecture_review_every_completed_slices` slices. The reviewer does NOT modify production code. It must: (1) read the diffs of slices merged since the last review; (2) critique test quality — real assertions, edge cases, not just coverage numbers; (3) spot-check doc fidelity against the slice's source references and digests; (4) check for duplication and architecture drift; (5) write findings to `docs/working/REVIEW_FINDINGS.md` (append, newest first) and create or sharpen corrective slices for anything significant; (6) record ADRs for durable decisions. This is the independent second pair of eyes on work where the same agent wrote both code and tests.
 
 ## Start Commands
 - Run the whole queue autonomously ("run ralph loop"): `./scripts/ralph-loop.sh`

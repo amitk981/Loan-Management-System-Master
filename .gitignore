@@ -29,6 +29,11 @@ __pycache__/
 .venv/
 .coverage
 htmlcov/
+sfpcl_credit/db.sqlite3
+
+# Playwright
+sfpcl-lms/test-results/
+sfpcl-lms/playwright-report/
 
 .DS_Store
 *.suo

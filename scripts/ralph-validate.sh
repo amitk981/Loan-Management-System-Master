@@ -161,6 +161,7 @@ guard_file="$run_dir/protected-paths-check.md"
 } > "$guard_file"
 protected_paths=(
   "scripts/"
+  ".github/"
   ".ralph/config.yaml"
   ".ralph/permissions.json"
   "AGENTS.md"
@@ -188,6 +189,30 @@ if (( protected_violations > 0 )); then
   failures=$((failures + protected_violations))
 else
   echo "- PASS: no protected paths were modified." >> "$guard_file"
+fi
+
+# No-op check: a normal run must actually change something outside Ralph's
+# own bookkeeping, otherwise the slice would be silently marked Complete
+# without any work having been done.
+if [[ "$mode" == "normal_run" ]]; then
+  noop_file="$run_dir/no-op-check-results.md"
+  agent_changes="$(printf '%s\n' "$changed_paths" | grep -v '^\.ralph/' | grep -v '^$' || true)"
+  if [[ -z "$agent_changes" ]]; then
+    {
+      echo "# No-Op Check Results"
+      echo
+      echo "FAIL: the agent produced no changes outside .ralph/ bookkeeping."
+      echo "A normal run cannot complete a slice with zero product/doc changes."
+    } > "$noop_file"
+    failures=$((failures + 1))
+  else
+    {
+      echo "# No-Op Check Results"
+      echo
+      echo "PASS: the run produced real changes:"
+      printf '%s\n' "$agent_changes" | sed 's/^/- /'
+    } > "$noop_file"
+  fi
 fi
 
 artifact_file="$run_dir/ralph-artifact-validation.md"
