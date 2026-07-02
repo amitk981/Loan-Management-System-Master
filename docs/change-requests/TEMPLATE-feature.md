@@ -1,7 +1,8 @@
 # <short title of the feature>
 
 ## Type
-feature
+<one of: feature | ui-change — use ui-change when you want the approved design itself changed: a label, colour, layout, or visual element>
+
 
 ## Severity
 <one of: High | Medium | Low — how important is this to the business>
@@ -16,7 +17,7 @@ feature
 <which screen(s) it lives on — existing screen changed, or a new screen composed from existing patterns>
 
 ## Source Document Reference
-<which docs/source file/section justifies this; if it is genuinely NEW scope not in the documents, write "new requirement — owner approved" — that phrase is required for new scope>
+<which docs/source file/section justifies this; if it is genuinely NEW scope not in the documents, write "new requirement — owner approved". For ui-change requests the phrase "owner approved" is REQUIRED here — you are amending your own approved design>
 
 ## Acceptance Criteria
 <how we will know it is done — observable behaviour, in plain words>

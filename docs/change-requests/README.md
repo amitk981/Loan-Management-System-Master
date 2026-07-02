@@ -4,7 +4,7 @@ Once all product slices are complete, this is the ONLY way changes enter the cod
 
 ## How to file a request (owner)
 
-1. Copy the right template: `TEMPLATE-bug.md` or `TEMPLATE-feature.md`.
+1. Copy the right template: `TEMPLATE-bug.md` for anything broken (frontend, backend, or cross-stack), or `TEMPLATE-feature.md` for new functionality (`feature`) and for changes to the approved design itself (`ui-change` — labels, colours, layout; requires the phrase "owner approved" in the Source Document Reference, because you are amending your own approved design).
 2. Save it as a new file in `inbox/` (any filename, e.g. `login-button-wrong-label.md`).
 3. Fill in every section. You can ask codex or Claude to help you fill it in — that is allowed and encouraged; the rule is only that the *file* must be complete.
 4. Run: `./scripts/ralph-intake.sh`

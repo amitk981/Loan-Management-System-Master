@@ -22,5 +22,8 @@ If `docs/source/` requires functionality that has no screen in the prototype, bu
 4. Wire it to the real backend API — no new mock data. Route it in the existing router and sidebar following the role rules.
 5. Update `PROTOTYPE_INVENTORY.md` (new screen) and `PROTOTYPE_GAP_REPORT.md` (gap closed) in the same run.
 
+## Owner-approved design amendments (the only exception)
+The owner may change the approved design itself — a label, colour, layout, or visual element — but only through a `ui-change` change request (`docs/change-requests/`, maintenance stage) whose Source Document Reference contains the phrase "owner approved". Intake enforces this mechanically. When implementing such a CR slice, change exactly what the request names and nothing else; every hard rule above still applies to everything the request does not name.
+
 ## States and evidence
 Follow `docs/working/VISUAL_ACCEPTANCE.md`: loading/empty/error/unauthorized/validation/success states using existing patterns (e.g., existing alert/empty styles), screenshots saved to the run's evidence folder. Screenshots must be visually indistinguishable from the prototype's design language.

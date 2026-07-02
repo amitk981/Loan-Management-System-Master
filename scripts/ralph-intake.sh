@@ -42,7 +42,7 @@ if (( allow_now == 0 )); then
 fi
 
 required_sections=("Type" "Severity" "Expected Behaviour" "Where It Appears" "Source Document Reference" "Acceptance Criteria")
-valid_types="bug-frontend bug-backend bug-cross-stack feature"
+valid_types="bug-frontend bug-backend bug-cross-stack ui-change feature"
 
 section_body() {
   # Print the body of "## $2" in file $1 (lines until the next heading).
@@ -79,15 +79,22 @@ for cr in "$inbox"/*.md; do
     errors+=("Type '$cr_type' is not one of: $valid_types.")
   fi
 
-  if [[ "$cr_type" == "feature" || "$cr_type" == bug-* && "$cr_type" != "" ]]; then
-    if [[ "$cr_type" == "feature" ]]; then
-      wr="$(section_body "$cr" "What Is Requested" | grep -v '^[[:space:]]*$' || true)"
-      { [[ -z "$wr" || "$wr" == \<* ]]; } && errors+=("Feature requests need a filled '## What Is Requested' section.")
-    else
-      wh="$(section_body "$cr" "What Is Happening" | grep -v '^[[:space:]]*$' || true)"
-      st="$(section_body "$cr" "Steps To Reproduce" | grep -v '^[[:space:]]*$' || true)"
-      { [[ -z "$wh" || "$wh" == \<* ]]; } && errors+=("Bug reports need a filled '## What Is Happening' section.")
-      { [[ -z "$st" || "$st" == \<* ]]; } && errors+=("Bug reports need a filled '## Steps To Reproduce' section.")
+  if [[ "$cr_type" == "feature" || "$cr_type" == "ui-change" ]]; then
+    wr="$(section_body "$cr" "What Is Requested" | grep -v '^[[:space:]]*$' || true)"
+    { [[ -z "$wr" || "$wr" == \<* ]]; } && errors+=("'$cr_type' requests need a filled '## What Is Requested' section.")
+  elif [[ "$cr_type" == bug-* ]]; then
+    wh="$(section_body "$cr" "What Is Happening" | grep -v '^[[:space:]]*$' || true)"
+    st="$(section_body "$cr" "Steps To Reproduce" | grep -v '^[[:space:]]*$' || true)"
+    { [[ -z "$wh" || "$wh" == \<* ]]; } && errors+=("Bug reports need a filled '## What Is Happening' section.")
+    { [[ -z "$st" || "$st" == \<* ]]; } && errors+=("Bug reports need a filled '## Steps To Reproduce' section.")
+  fi
+
+  # A ui-change deviates from the approved prototype design, so it must be
+  # explicitly owner-approved — otherwise FRONTEND_DESIGN_RULES forbids it.
+  if [[ "$cr_type" == "ui-change" ]]; then
+    sdr="$(section_body "$cr" "Source Document Reference" || true)"
+    if ! printf '%s' "$sdr" | grep -qi "owner approved"; then
+      errors+=("ui-change requests must contain the phrase 'owner approved' in '## Source Document Reference' — a UI change amends the approved design and needs your explicit sign-off in the file.")
     fi
   fi
 
@@ -111,7 +118,7 @@ for cr in "$inbox"/*.md; do
 
   severity="$(section_body "$cr" "Severity" | grep -v '^[[:space:]]*$' | head -1 | xargs || true)"
   risk="Medium"
-  [[ "$severity" == "Critical" || "$severity" == "High" || "$cr_type" == "feature" || "$cr_type" == "bug-cross-stack" ]] && risk="High"
+  [[ "$severity" == "Critical" || "$severity" == "High" || "$cr_type" == "feature" || "$cr_type" == "bug-cross-stack" || "$cr_type" == "ui-change" ]] && risk="High"
 
   {
     echo "# Slice ${next}: ${title}"
