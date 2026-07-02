@@ -20,7 +20,7 @@ Stakeholders can review the system through reports, exports, audit evidence, and
 
 ## Source References
 - `docs/source/implementation-roadmap.md` sections 17, 24, 25, 27, 32, 33
-- `docs/source/api-contracts.md` reporting, export, audit, dashboard sections
+- `docs/source/api-contracts.md` sections 40, 42, 43 (reporting, audit, dashboard)
 - `docs/source/deployment-ops.md`
 - `docs/source/security-privacy.md`
 - `docs/source/test-plan.md`

@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell (quality infrastructure)
+Epic file: `docs/epics/002-platform-auth-shell.md`
 
 ## Goal
 Introduce ESLint so frontend code quality is machine-enforced from here on, completing the gate set (typecheck and tests already exist).

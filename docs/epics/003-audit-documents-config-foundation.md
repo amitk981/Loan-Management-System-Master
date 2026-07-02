@@ -21,7 +21,7 @@ Future workflows can upload evidence, record immutable audit trails, use version
 ## Source References
 - `docs/source/implementation-roadmap.md` sections 10, 20.1, 20.2, 21.1, 22.1
 - `docs/source/data-model.md` document, configuration, communication, audit, and workflow event tables
-- `docs/source/api-contracts.md` sections 10, 26, 37, 39, 42, 43
+- `docs/source/api-contracts.md` sections 10, 26, 39, 41, 42, 43
 - `docs/source/component-spec.md`
 - `docs/source/design-system.md`
 - `docs/source/test-plan.md`

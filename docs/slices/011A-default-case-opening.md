@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 011: Default, Recovery, Closure, NOC, Archive, and Compliance
+Epic file: `docs/epics/011-default-recovery-closure-compliance.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.
@@ -17,7 +18,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 
 ## Source References
 - docs/source/implementation-roadmap.md section 16
-- docs/source/api-contracts.md default/closure/compliance/grievance sections
+- docs/source/api-contracts.md sections 35-38 (default/recovery, closure, compliance, grievance)
 - docs/source/data-model.md default/recovery/closure/compliance tables
 - docs/source/auth-permissions.md
 

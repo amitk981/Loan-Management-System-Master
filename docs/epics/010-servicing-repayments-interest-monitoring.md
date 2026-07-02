@@ -20,7 +20,7 @@ Accounts, Credit, CFO, and borrowers can see accurate loan servicing status, rep
 
 ## Source References
 - `docs/source/implementation-roadmap.md` section 15
-- `docs/source/api-contracts.md` repayment, interest, monitoring, report sections
+- `docs/source/api-contracts.md` sections 32, 33, 34 (repayment, interest, monitoring)
 - `docs/source/data-model.md` servicing, finance, monitoring tables
 - `docs/source/functional-spec.md`
 - `docs/source/test-plan.md`

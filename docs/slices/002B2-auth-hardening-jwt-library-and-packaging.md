@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell
+Epic file: `docs/epics/002-platform-auth-shell.md`
 
 ## Goal
 Remove the security debt created in slice 002B: the token signing in `sfpcl_credit/identity/views.py` was hand-implemented with HMAC because the dependency policy blocked libraries at the time. Replace it with the standard PyJWT library and move the secret out of source code.

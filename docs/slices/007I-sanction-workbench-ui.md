@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
+Epic file: `docs/epics/007-sanction-approval-workflow.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.

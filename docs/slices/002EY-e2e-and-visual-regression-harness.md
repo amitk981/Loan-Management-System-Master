@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell (quality infrastructure)
+Epic file: `docs/epics/002-platform-auth-shell.md`
 
 ## Goal
 Give the project a machine check for its two highest-value promises: user flows actually work end to end in a real browser, and screens stay visually identical to the approved prototype design.

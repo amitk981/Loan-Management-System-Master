@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
+Epic file: `docs/epics/006-eligibility-loan-limit-appraisal.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.

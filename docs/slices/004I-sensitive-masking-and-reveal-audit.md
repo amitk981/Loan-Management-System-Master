@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master
+Epic file: `docs/epics/004-member-kyc-master.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.

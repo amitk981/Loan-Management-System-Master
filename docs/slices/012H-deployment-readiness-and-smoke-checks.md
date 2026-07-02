@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 012: Reports, Exports, Hardening, Regression, and UAT Readiness
+Epic file: `docs/epics/012-reports-exports-hardening-uat.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.
@@ -17,10 +18,11 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 17, 24, 25, 27, 32-33
-- docs/source/api-contracts.md reporting/export/audit/dashboard sections
+- docs/source/api-contracts.md sections 40, 42-43 (reporting, audit, dashboard)
 - docs/source/deployment-ops.md
 - docs/source/security-privacy.md
 - docs/source/test-plan.md
+- docs/source/screen-spec.md section 12 (non-functional requirements: performance, accessibility, security)
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/reports/ReportsMIS.tsx
@@ -50,6 +52,7 @@ Record audit/workflow events for critical create/update/approval/access actions.
 
 ## Validation Rules
 Enforce source-doc business rules and block invalid state transitions.
+Verify screen-spec.md section 12 non-functional requirements as part of readiness: list endpoints paginated per api-contracts section 8, no unbounded queries on large tables, and performance smoke checks recorded in the run evidence.
 
 ## Test Cases
 Unit/service/API/permission tests plus frontend tests where UI is touched.

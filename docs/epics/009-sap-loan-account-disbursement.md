@@ -20,7 +20,8 @@ Finance can create loan accounts and release funds only after all sanction, docu
 
 ## Source References
 - `docs/source/implementation-roadmap.md` section 14
-- `docs/source/api-contracts.md` sections 33, 34
+- `docs/source/api-contracts.md` sections 29, 30, 31
+- `docs/source/integrations.md` (SAP and bank adapters, manual/adapter-first for MVP)
 - `docs/source/data-model.md` finance, SAP, disbursement, loan account tables
 - SOP PDFs under `docs/source/`
 - `docs/source/functional-spec.md`

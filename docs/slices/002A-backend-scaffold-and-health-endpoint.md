@@ -5,6 +5,7 @@ Complete
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell
+Epic file: `docs/epics/002-platform-auth-shell.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.

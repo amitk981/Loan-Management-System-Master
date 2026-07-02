@@ -5,6 +5,7 @@ Complete
 
 ## Parent Epic
 Epic 001: Ralph Bootstrap Verification
+Epic file: `docs/epics/001-ralph-bootstrap-verification.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.

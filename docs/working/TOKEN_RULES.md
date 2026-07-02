@@ -5,7 +5,7 @@
 - Use the existing frontend code in `sfpcl-lms/src/` as the visual and interaction reference for any frontend or full-stack slice.
 - Start with `docs/working/CONTEXT.md`.
 - Read `docs/working/HANDOFF.md` before choosing work.
-- Read only the selected slice file.
+- Read the selected slice file and the parent epic file its "Epic file:" line links — the epic carries the distilled scope, validation rules, and screen list for its slices.
 - Use `rg` before opening large files.
 - Check `docs/working/digests/` first; open a large `docs/source/` file only when the digest does not cover what the slice needs, and add what you extract to the digest afterwards.
 - Open source docs only when the selected slice references them.
