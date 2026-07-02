@@ -218,13 +218,16 @@ Result: In Progress
 Ralph run started for $slice_id.
 EOF
 
+agent_timeout="$(awk -F': *' '/^[[:space:]]*agent_timeout_seconds:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+
 "$repo_root/scripts/agent-adapters/$agent.sh" \
   RUN_ID="$run_id" \
   RUN_DIR="$run_dir" \
   WORKTREE_DIR="$worktree_dir" \
   PROMPT_FILE="$run_dir/prompt.md" \
   SELECTED_SLICE="$slice_id" \
-  MODE="$mode"
+  MODE="$mode" \
+  AGENT_TIMEOUT_SECONDS="${agent_timeout:-7200}"
 
 (cd "$worktree_dir" && git status --short > "$run_dir/changed-files.txt")
 

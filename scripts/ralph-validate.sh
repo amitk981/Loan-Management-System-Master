@@ -245,6 +245,62 @@ if [[ "$mode" == "normal_run" ]]; then
   fi
 fi
 
+# Artifact quality: the pre-created plan and risk assessment must have been
+# replaced with real content — existence alone proves nothing.
+aq_file="$run_dir/artifact-quality-check.md"
+{
+  echo "# Artifact Quality Check"
+  echo
+} > "$aq_file"
+if grep -qF "must replace this template" "$run_dir/execution-plan.md" 2>/dev/null; then
+  echo "- FAIL: execution-plan.md is still the unfilled template." >> "$aq_file"
+  failures=$((failures + 1))
+else
+  echo "- PASS: execution-plan.md was filled in." >> "$aq_file"
+fi
+if grep -qF "To be completed by the selected agent" "$run_dir/risk-assessment.md" 2>/dev/null; then
+  echo "- FAIL: risk-assessment.md is still the unfilled template." >> "$aq_file"
+  failures=$((failures + 1))
+else
+  echo "- PASS: risk-assessment.md was filled in." >> "$aq_file"
+fi
+
+# Diff limits: catch runaway rewrites (config limits, .ralph/ excluded).
+if [[ "$mode" == "normal_run" || "$mode" == "repair" ]]; then
+  max_files="$(awk -F': *' '/^[[:space:]]*max_changed_files:/ {print $2; exit}' "$config" | xargs || true)"
+  max_lines="$(awk -F': *' '/^[[:space:]]*max_lines_changed:/ {print $2; exit}' "$config" | xargs || true)"
+  max_files="${max_files:-30}"
+  max_lines="${max_lines:-2000}"
+
+  files_changed="$(printf '%s\n' "$changed_paths" | grep -v '^\.ralph/' | grep -cv '^$' || true)"
+  tracked_lines="$( (cd "$worktree_dir" && git diff --numstat HEAD -- . ':(exclude).ralph') | awk '{added=$1; deleted=$2; if (added != "-") total += added; if (deleted != "-") total += deleted} END {print total + 0}')"
+  untracked_lines=0
+  while IFS= read -r f; do
+    [[ -z "$f" || ! -f "$worktree_dir/$f" ]] && continue
+    untracked_lines=$((untracked_lines + $(wc -l < "$worktree_dir/$f" 2>/dev/null || echo 0)))
+  done < <( (cd "$worktree_dir" && git ls-files --others --exclude-standard) | grep -v '^\.ralph/' || true)
+  total_lines=$((tracked_lines + untracked_lines))
+
+  dl_file="$run_dir/diff-limits-results.md"
+  {
+    echo "# Diff Limits Results"
+    echo
+    echo "- Files changed (excluding .ralph/): $files_changed (limit $max_files)"
+    echo "- Lines changed (tracked + new files, excluding .ralph/): $total_lines (limit $max_lines)"
+  } > "$dl_file"
+  if (( files_changed > max_files )); then
+    echo "- FAIL: changed-file count exceeds limits.max_changed_files." >> "$dl_file"
+    failures=$((failures + 1))
+  fi
+  if (( total_lines > max_lines )); then
+    echo "- FAIL: changed-line count exceeds limits.max_lines_changed." >> "$dl_file"
+    failures=$((failures + 1))
+  fi
+  if (( files_changed <= max_files && total_lines <= max_lines )); then
+    echo "- PASS: within diff limits." >> "$dl_file"
+  fi
+fi
+
 artifact_file="$run_dir/ralph-artifact-validation.md"
 {
   echo "# Ralph Artifact Validation"

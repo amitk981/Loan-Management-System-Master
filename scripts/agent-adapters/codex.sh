@@ -50,4 +50,26 @@ args+=(-c "model_reasoning_effort=$CODEX_REASONING_EFFORT")
 args+=(-c "model_verbosity=$CODEX_VERBOSITY")
 args+=(--ask-for-approval "$CODEX_APPROVAL_MODE")
 
-codex "${args[@]}" $CODEX_ADDITIONAL_ARGS < "$PROMPT_FILE" 2>&1 | tee "$RUN_DIR/evidence/terminal-logs/codex.log"
+# Watchdog: a hung agent must fail the run (into the repair path), not
+# stall the loop forever. Pure bash — macOS has no GNU timeout.
+timeout_secs="${AGENT_TIMEOUT_SECONDS:-7200}"
+log="$RUN_DIR/evidence/terminal-logs/codex.log"
+
+codex "${args[@]}" $CODEX_ADDITIONAL_ARGS < "$PROMPT_FILE" > "$log" 2>&1 &
+agent_pid=$!
+(
+  sleep "$timeout_secs"
+  echo "WATCHDOG: agent exceeded ${timeout_secs}s; terminating." >> "$log"
+  kill -TERM "$agent_pid" 2>/dev/null || true
+  sleep 30
+  kill -KILL "$agent_pid" 2>/dev/null || true
+) &
+watchdog_pid=$!
+
+status=0
+wait "$agent_pid" || status=$?
+kill "$watchdog_pid" 2>/dev/null || true
+wait "$watchdog_pid" 2>/dev/null || true
+
+cat "$log"
+exit "$status"

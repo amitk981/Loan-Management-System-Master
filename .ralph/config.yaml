@@ -81,12 +81,16 @@ run:
   auto_merge: true
   auto_push: true
   push_remote: github-master
+  agent_timeout_seconds: 7200  # watchdog: a hung agent fails into the repair path
   auto_deploy: false
   architecture_review_every_completed_slices: 4
 
 limits:
-  max_changed_files: 12
-  max_lines_changed: 800
+  # Enforced by ralph-validate.sh (excluding .ralph/ bookkeeping). Sized so a
+  # legitimate vertical slice (models+views+tests+migrations+docs) fits, while
+  # a runaway broad rewrite fails.
+  max_changed_files: 30
+  max_lines_changed: 2000
   max_new_dependencies: 4
   max_database_migrations: 1
 
