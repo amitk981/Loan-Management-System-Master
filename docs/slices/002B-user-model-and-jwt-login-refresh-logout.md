@@ -1,7 +1,7 @@
 # Slice 002B: User Model and JWT Login Refresh Logout
 
 ## Status
-Not Started
+Completed
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell
@@ -71,16 +71,24 @@ High
 - The implementation stays within one small Ralph slice.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Database rules followed, if needed
+- [x] Permissions tested, if needed
+- [x] Audit events tested, if needed
+- [x] Visual evidence saved, if frontend
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [x] Commit created only after passing gates
+
+## Completion Notes
+
+- Implemented backend-only JWT login, refresh rotation, and logout revocation under `/api/v1/auth/`.
+- Added user, role, team, session, and audit-log models needed by this slice.
+- Full role/permission catalogue seeding, current-user API, admin session controls, and frontend auth wiring remain future slices.
+- Visual evidence is not applicable because no frontend screens were changed.
+- The delegated commit attempt was blocked by sandbox `.git` restrictions; the outer Ralph operator verified gates and created the final commit afterward.

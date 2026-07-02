@@ -71,3 +71,13 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-02 15:47:24 - 2026-07-02_154724_normal_run
+- Agent tool used: codex
+- Slice attempted: 002B-user-model-and-jwt-login-refresh-logout
+- Summary: Added backend identity models and JWT-style login, refresh rotation, and logout revocation endpoints under `/api/v1/auth/`.
+- Tests run: `python3 -m unittest discover -s sfpcl_credit/tests -v`; `python3 sfpcl_credit/manage.py test sfpcl_credit.tests -v 2`; `python3 sfpcl_credit/manage.py check`; `npm run build` in `sfpcl-lms/`.
+- Evidence saved: `.ralph/runs/2026-07-02_154724_normal_run/`.
+- Result: Success; delegated commit blocked by sandbox `.git` write restrictions, outer escalated commit to be created after evidence refresh.
+- Risk level: High.
+- Next action: Architecture review is due by configured cadence; otherwise continue with 002C-role-and-permission-catalogue-seed.

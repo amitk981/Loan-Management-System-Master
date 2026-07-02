@@ -13,6 +13,7 @@ ASGI_APPLICATION = "sfpcl_credit.config.asgi.application"
 
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
+    "sfpcl_credit.identity",
 ]
 
 MIDDLEWARE = []
@@ -27,3 +28,6 @@ DATABASES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 USE_TZ = True
 TIME_ZONE = "UTC"
+
+AUTH_ACCESS_TOKEN_MINUTES = 15
+AUTH_REFRESH_TOKEN_HOURS = 24
