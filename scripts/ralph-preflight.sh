@@ -73,7 +73,7 @@ note ""
 
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 && pass "Git repository detected." || fail "Not inside a git repository."
 
-for required in AGENTS.md .ralph/config.yaml .ralph/permissions.json .ralph/state.json docs/working/CONTEXT.md docs/working/AFK_RUNBOOK.md docs/working/TOKEN_RULES.md docs/working/HANDOFF.md docs/working/HIGH_RISK_APPROVALS.md docs/working/DECISION_POLICY.md; do
+for required in AGENTS.md .ralph/config.yaml .ralph/permissions.json .ralph/state.json docs/working/CONTEXT.md docs/working/AFK_RUNBOOK.md docs/working/TOKEN_RULES.md docs/working/HANDOFF.md docs/working/HIGH_RISK_APPROVALS.md docs/working/DECISION_POLICY.md docs/working/FRONTEND_DESIGN_RULES.md; do
   [[ -f "$required" ]] && pass "$required exists." || fail "$required is missing."
 done
 

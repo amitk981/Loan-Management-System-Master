@@ -168,6 +168,7 @@ protected_paths=(
   ".gitignore"
   "docs/working/HIGH_RISK_APPROVALS.md"
   "docs/working/DECISION_POLICY.md"
+  "docs/working/FRONTEND_DESIGN_RULES.md"
   "docs/source/"
 )
 changed_paths="$( (cd "$worktree_dir" && git status --porcelain) | sed -E 's/^.{3}//; s/.* -> //; s/^"//; s/"$//' )"

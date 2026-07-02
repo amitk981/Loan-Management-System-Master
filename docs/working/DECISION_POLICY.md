@@ -13,13 +13,14 @@ The project owner is not a developer and has granted standing approval for auton
 - All quality gates green: frontend typecheck/tests/build; backend check/tests/migrations-sync/coverage floor (see `.ralph/config.yaml`).
 - API contract changes are reflected in `docs/working/API_CONTRACTS.md` in the same run.
 - The review packet includes a traceability note: "the source doc says X (file §n), the code does X, verified by test Y" — written for a non-developer.
+- Frontend fidelity: `docs/working/FRONTEND_DESIGN_RULES.md` is binding — reuse the prototype's components and visual system; never introduce new styling or components. If the documents require functionality with no prototype screen, the slice must build that screen from existing patterns and stitch it to the backend; a backend with no reachable UI does not count as done.
 - No dead code, no commented-out blocks, no TODOs without a slice or ASSUMPTIONS entry that owns them.
 
 ## 3. Technology standards (the "better tools" defaults)
 Backend: Django + Django REST Framework, PostgreSQL in production (SQLite acceptable only for local tests), djangorestframework-simplejwt/PyJWT for tokens, pytest or Django test runner, coverage.py. Frontend: React + TypeScript + Vite, vitest + Testing Library, ESLint. Infrastructure: environment variables for secrets, pinned dependencies, migrations for every schema change. Prefer the standard, maintained, widely-documented tool over a clever or niche one; new dependencies follow `docs/working/DEPENDENCY_POLICY.md`.
 
 ## 4. Never do autonomously (hard-enforced; validation fails the run)
-- Modify protected files: `scripts/`, `.ralph/config.yaml`, `.ralph/permissions.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, `docs/working/HIGH_RISK_APPROVALS.md`, `docs/working/DECISION_POLICY.md`, or anything in `docs/source/`.
+- Modify protected files: `scripts/`, `.ralph/config.yaml`, `.ralph/permissions.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, `docs/working/HIGH_RISK_APPROVALS.md`, `docs/working/DECISION_POLICY.md`, `docs/working/FRONTEND_DESIGN_RULES.md`, or anything in `docs/source/`.
 - Weaken, skip, or reinterpret quality gates, risk rules, or this policy.
 - Delete or rewrite committed history; force-push.
 - Deploy anywhere, call paid external services, or send communications to real people.

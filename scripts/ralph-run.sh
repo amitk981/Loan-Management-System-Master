@@ -134,6 +134,7 @@ Core requirements:
 - Write execution-plan.md before coding.
 - Check permissions before editing files.
 - TDD is mandatory for backend and business logic: write the failing test first, then implement, and save red/green output to evidence/terminal-logs/.
+- Frontend changes must follow docs/working/FRONTEND_DESIGN_RULES.md exactly: reuse existing components and patterns; never introduce new styling, colours, typography, layouts, or components. If the documents require a screen the prototype lacks, building it from existing patterns and wiring it to the backend is part of the slice.
 - Run required quality gates.
 - Save evidence.
 - Save changed-files.txt.
@@ -157,8 +158,9 @@ Read in this order:
 7. .ralph/state.json
 8. docs/working/HANDOFF.md
 9. docs/working/DECISION_POLICY.md
-10. docs/slices/$slice_file
-11. The matching docs/working/digests/ file for this epic, if it exists
+10. docs/working/FRONTEND_DESIGN_RULES.md (mandatory before any frontend change)
+11. docs/slices/$slice_file
+12. The matching docs/working/digests/ file for this epic, if it exists
 
 Do not load all docs/source during a normal run unless the selected slice explicitly requires it.
 EOF
