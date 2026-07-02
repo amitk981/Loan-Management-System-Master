@@ -19,7 +19,8 @@
     "sfpcl-lms/tsconfig.node.json",
     "sfpcl-lms/vite.config.ts",
     "sfpcl-lms/tailwind.config.js",
-    "sfpcl-lms/postcss.config.js"
+    "sfpcl-lms/postcss.config.js",
+    "docs/change-requests/**"
   ],
   "requires_approval": [
     "package.json",

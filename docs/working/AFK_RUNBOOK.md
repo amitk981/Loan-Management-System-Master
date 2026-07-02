@@ -46,6 +46,14 @@ A failing gate fails the whole run; failing work is never committed, merged, or 
 ## Stopping Conditions
 Stop on missing required files, unsafe git state, active locks, protected/forbidden file edits, an owner veto (`[revoked]` in HIGH_RISK_APPROVALS.md), repeated gate failures, actions on the DECISION_POLICY never-do list, exceeded diff limits, or missing selected agent command. Ambiguity and high risk are NOT stopping conditions — they are handled by DECISION_POLICY.md and the standing approval.
 
+## Maintenance Stage (Change Requests)
+After the product backlog is finished, changes enter only through `docs/change-requests/` (see its README):
+1. The owner (with agent help) fills the strict bug/feature template into `inbox/`.
+2. `./scripts/ralph-intake.sh` validates it mechanically. Invalid → rejected with precise errors, nothing enters the pipeline, no code changes. Valid → converted to a `CR-NNN` slice; cross-stack bugs and features are High risk (veto-able as usual).
+3. The normal loop implements CR slices with all standard gates PLUS the impact-analysis gate: the run must map affected modules, blast radius, and per-module regression tests in `impact-analysis.md` before code changes; validation fails without it.
+4. Intake refuses new CRs while product slices remain (`--now` is the owner's emergency override).
+Agents must never implement chat-reported bugs directly — template first, always.
+
 ## Interrupted Runs and Recovery
 A run can die mid-flight (usage-limit exhaustion, crash, closed terminal) under either agent. Recovery is automatic and agent-agnostic:
 - `./scripts/ralph-loop.sh` runs `scripts/ralph-recover.sh` at startup: it salvages the dead run's artifacts into `.ralph/runs/<run-id>/`, removes the orphaned worktree, deletes its branch if it holds no unmerged commits (kept and reported otherwise), clears the lock, and the still-queued slice reruns automatically.

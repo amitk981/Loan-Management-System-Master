@@ -7,6 +7,7 @@ cd "$repo_root"
 run_id=""
 worktree_dir="$repo_root"
 mode="normal_run"
+slice_id=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -20,6 +21,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --mode)
       mode="${2:?--mode requires a value}"
+      shift 2
+      ;;
+    --slice)
+      slice_id="${2:?--slice requires a value}"
       shift 2
       ;;
     *)
@@ -170,6 +175,9 @@ protected_paths=(
   "docs/working/HIGH_RISK_APPROVALS.md"
   "docs/working/DECISION_POLICY.md"
   "docs/working/FRONTEND_DESIGN_RULES.md"
+  "docs/change-requests/TEMPLATE-bug.md"
+  "docs/change-requests/TEMPLATE-feature.md"
+  "docs/change-requests/README.md"
   "docs/source/"
 )
 changed_paths="$( (cd "$worktree_dir" && git status --porcelain) | sed -E 's/^.{3}//; s/.* -> //; s/^"//; s/"$//' )"
@@ -189,6 +197,28 @@ if (( protected_violations > 0 )); then
   failures=$((failures + protected_violations))
 else
   echo "- PASS: no protected paths were modified." >> "$guard_file"
+fi
+
+# Impact-analysis gate: change-request slices (CR-*) must map their blast
+# radius before any code change is accepted.
+if [[ "$mode" == "normal_run" && "$slice_id" == CR-* ]]; then
+  impact_file="$run_dir/impact-analysis.md"
+  ia_results="$run_dir/impact-analysis-check-results.md"
+  if [[ -s "$impact_file" ]] && grep -qi "blast radius\|affected" "$impact_file" && grep -qi "regression" "$impact_file"; then
+    {
+      echo "# Impact Analysis Check Results"
+      echo
+      echo "PASS: impact-analysis.md exists and covers affected modules and regression tests."
+    } > "$ia_results"
+  else
+    {
+      echo "# Impact Analysis Check Results"
+      echo
+      echo "FAIL: change-request slice $slice_id requires impact-analysis.md in the run folder,"
+      echo "covering affected modules (blast radius) and the regression tests to add per module."
+    } > "$ia_results"
+    failures=$((failures + 1))
+  fi
 fi
 
 # No-op check: a normal run must actually change something outside Ralph's
