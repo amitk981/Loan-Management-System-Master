@@ -31,7 +31,7 @@ const ComplianceDashboard: React.FC = () => {
   const [mlNextReview, setMlNextReview] = useState('2027-03-31');
 
   const complianceData = complianceRecords.map(rec => {
-    let status = rec.status;
+    let status: 'compliant' | 'warning' | 'breach' | 'pending' | 'overdue' = rec.status;
     if (new Date(rec.nextDueDate) < currentDate) {
       status = 'overdue';
     }

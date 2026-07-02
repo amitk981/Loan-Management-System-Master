@@ -3,7 +3,7 @@ import {
   ChevronLeft, ExternalLink, AlertOctagon, Clock, Eye, EyeOff,
   CheckCircle2, XCircle, AlertTriangle, User, Users, Shield,
   FileText, Lock, Download, Plus, MessageSquare, History,
-  ArrowRight, Banknote, Gavel, ClipboardList, BarChart2, Info
+  ArrowRight, Banknote, Gavel, ClipboardList, BarChart2, Info, Send
 } from 'lucide-react';
 import Tabs from '../../components/ui/Tabs';
 import StageStepper from '../../components/ui/StageStepper';

@@ -4,6 +4,12 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
 
+if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
+  echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
+  echo "Run Ralph from the main repository root so worktrees never nest." >&2
+  exit 1
+fi
+
 run_id=""
 mode="normal_run"
 agent="${AGENT_TOOL:-}"
@@ -67,7 +73,7 @@ note ""
 
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 && pass "Git repository detected." || fail "Not inside a git repository."
 
-for required in AGENTS.md .ralph/config.yaml .ralph/permissions.json .ralph/state.json docs/working/CONTEXT.md docs/working/AFK_RUNBOOK.md docs/working/TOKEN_RULES.md docs/working/HANDOFF.md; do
+for required in AGENTS.md .ralph/config.yaml .ralph/permissions.json .ralph/state.json docs/working/CONTEXT.md docs/working/AFK_RUNBOOK.md docs/working/TOKEN_RULES.md docs/working/HANDOFF.md docs/working/HIGH_RISK_APPROVALS.md; do
   [[ -f "$required" ]] && pass "$required exists." || fail "$required is missing."
 done
 

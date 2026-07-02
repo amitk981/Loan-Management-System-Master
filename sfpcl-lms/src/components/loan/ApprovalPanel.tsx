@@ -8,6 +8,7 @@ interface ApproverSlot {
   decision?: 'approved' | 'approved_with_conditions' | 'rejected' | 'clarification' | 'abstained' | 'pending';
   timestamp?: string;
   reason?: string;
+  comment?: string;
   evidence?: boolean;
 }
 
@@ -18,7 +19,7 @@ interface ApprovalPanelProps {
   isException?: boolean;
   isSpecialCase?: boolean;
   approvers: ApproverSlot[];
-  onDecision?: (decision: 'approved' | 'rejected', reason: string) => void;
+  onDecision?: (decision: 'approved' | 'rejected', reason: string, slotRole?: string) => void;
 }
 
 const decisionConfig = {
@@ -69,7 +70,7 @@ const ApprovalPanel: React.FC<ApprovalPanelProps> = ({
 
   const handleSubmit = () => {
     if (onDecision && isValid()) {
-      onDecision(decision === 'approved' || decision === 'approved_with_conditions' ? 'approved' : 'rejected', reason || conditions);
+      onDecision(decision === 'approved' || decision === 'approved_with_conditions' ? 'approved' : 'rejected', reason || conditions, mySlot?.role);
     }
     setShowModal(false);
     setReason('');

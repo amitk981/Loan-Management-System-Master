@@ -17,7 +17,8 @@ interface DocumentPackModalProps {
 }
 
 const DocumentPackModal: React.FC<DocumentPackModalProps> = ({ isOpen, onClose, app }) => {
-  const { role, can } = useRole();
+  const { currentUser, can } = useRole();
+  const role = currentUser.role;
 
   // Find actual documents for this app from mock data
   const appDocs = documents.filter(d => d.applicationId === app.id);
@@ -128,7 +129,7 @@ const DocumentPackModal: React.FC<DocumentPackModalProps> = ({ isOpen, onClose, 
   const missingCount = allRows.filter(r => r.status === 'Missing').length;
   const pendingReviewCount = allRows.filter(r => r.status === 'Pending Review').length;
 
-  const packStatus = missingCount > 0 || pendingReviewCount > 0 ? 'Incomplete' : 'Ready';
+  const packStatus = (missingCount > 0 || pendingReviewCount > 0 ? 'Incomplete' : 'Ready') as 'Ready' | 'Incomplete' | 'Missing';
 
   // Pack generation mocked metadata
   const generatedAt = new Date().toISOString();

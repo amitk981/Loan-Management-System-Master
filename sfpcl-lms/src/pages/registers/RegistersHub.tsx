@@ -488,7 +488,7 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                     psnDisplay = 'Not required';
                   }
 
-                  let displayStatus = sec.status;
+                  let displayStatus: string = sec.status;
                   const statusMap: Record<string, string> = {
                     held: 'Held in custody',
                     executed: 'Executed',
@@ -565,7 +565,7 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                   excType = 'High-value approval';
                   excDesc = `${excType}: ${authority}.`;
                 } else {
-                  let diff = app.requestedAmount - app.eligibleAmount;
+                  let diff = app.requestedAmount - (app.eligibleAmount ?? 0);
                   if (diff > 0) {
                     excDesc = `Limit breach: requested ${fmt(app.requestedAmount)} vs eligible ${fmt(app.eligibleAmount)}; excess ${fmt(diff)}.`;
                   } else {
@@ -704,7 +704,7 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
               let displayOwner = ownerMap[displayArea] || rec.owner;
               
               let isOverdue = new Date(rec.nextDueDate) < new Date();
-              let displayStatus = rec.status;
+              let displayStatus: string = rec.status;
               
               if (rec.status === 'compliant') displayStatus = 'Compliant';
               else if (rec.status === 'warning') displayStatus = 'Warning';

@@ -123,7 +123,7 @@ export interface LoanApplication {
   status: ApplicationStatus;
   documentationStatus: DocumentationStatus;
   disbursementStatus: DisbursementStatus;
-  eligibleAmount: number;
+  eligibleAmount?: number;
   shareholdingLimit: number;
   landBasedLimit: number;
   isException: boolean;
@@ -224,7 +224,7 @@ export interface AuditEvent {
   eventType: string;
   timestamp: string;
   actorName: string;
-  actorRole: Role;
+  actorRole: Role | 'system';
   previousState?: string;
   newState?: string;
   reason?: string;

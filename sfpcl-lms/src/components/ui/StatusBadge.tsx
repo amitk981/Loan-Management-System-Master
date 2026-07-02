@@ -12,6 +12,8 @@ interface StatusBadgeProps {
   family?: Family;
   size?: 'sm' | 'md' | 'lg';
   dot?: boolean;
+  /** Legacy hint used by some callers; styling is derived from `family` or `label`. */
+  type?: string;
 }
 
 const familyStyles: Record<Family, { bg: string; text: string; border: string }> = {

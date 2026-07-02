@@ -17,7 +17,7 @@ const AuditArchiveHub: React.FC = () => {
   const isAuditor = currentUser.role === 'auditor';
   const isAdmin = currentUser.role === 'admin';
   const canArchive = ['company_secretary', 'admin'].includes(currentUser.role);
-  const canExport = ['admin', 'company_secretary', 'cfo', 'compliance_team'].includes(currentUser.role) || (isAuditor && can('export'));
+  const canExport = ['admin', 'company_secretary', 'cfo', 'compliance_team'].includes(currentUser.role) || (isAuditor && can('export_registers'));
 
   return (
     <div className="p-6 space-y-6">
@@ -149,13 +149,13 @@ const AuditArchiveHub: React.FC = () => {
                           <button 
                             className="text-slate-600 hover:text-slate-800 font-medium text-xs px-2 py-1 rounded hover:bg-slate-100 transition-colors flex items-center gap-1"
                             onClick={() => {
-                              if (isAdmin && !can('view_loans')) {
+                              if (isAdmin && !can('view_loan_accounts')) {
                                 alert('You do not have permission to open this linked record.');
                               } else {
                                 // Mock navigation
                               }
                             }}
-                            title={isAdmin && !can('view_loans') ? "You do not have permission to open this linked record." : undefined}
+                            title={isAdmin && !can('view_loan_accounts') ? "You do not have permission to open this linked record." : undefined}
                           >
                             Open linked record <ExternalLink size={12} />
                           </button>

@@ -12,8 +12,9 @@ Core rules:
 - Save evidence before marking work complete.
 - Update state, progress, handoff, and slice status.
 - Commit only passing work when config allows it.
-- Continue autonomously through high-risk slices after the user's standing approval, while still recording risk and evidence.
-- Stop safely on ambiguity, unsafe git state, repeated failures, forbidden file edits, or diff limit violations.
+- High-risk slices run only when pre-approved in `docs/working/HIGH_RISK_APPROVALS.md`; never weaken risk rules, approval rules, or quality gates yourself.
+- Before finishing, sharpen the next 1-2 `Not Started` slice files with concrete requirements from source documents you already opened, and store distilled extracts in `docs/working/digests/`.
+- Stop safely on ambiguity, unsafe git state, repeated failures, unapproved high risk, forbidden file edits, or diff limit violations.
 
 Read in this order during normal runs:
 1. `docs/working/TOKEN_RULES.md`

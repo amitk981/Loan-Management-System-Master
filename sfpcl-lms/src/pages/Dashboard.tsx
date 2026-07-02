@@ -236,7 +236,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       ] as any[]
     : loanApplications.filter(a => {
     if ((a.tatDaysRemaining ?? 99) > 1) return false;
-    if (currentUser.role === 'deputy_manager_finance' || currentUser.role === 'compliance_team' || currentUser.role === 'company_secretary' || currentUser.role === 'sanction_committee' || currentUser.role === 'cfo' || currentUser.role === 'director' || currentUser.role === 'senior_manager_finance' || currentUser.role === 'cfc' || currentUser.role === 'accounts' || currentUser.role === 'sales_team') {
+    if (currentUser.role === 'deputy_manager_finance' || currentUser.role === 'compliance_team' || currentUser.role === 'company_secretary' || currentUser.role === 'sanction_committee' || currentUser.role === 'cfo' || currentUser.role === 'director' || currentUser.role === 'senior_manager_finance' || currentUser.role === 'cfc' || currentUser.role === 'accounts' || currentUser.role === 'sales_team_user') {
       return a.currentOwnerRole === currentUser.role;
     }
     return true; // auditor gets all exceptions for review
@@ -261,7 +261,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       ] as any[]
     : currentUser.role === 'auditor'
     ? loanApplications.slice(0, 4)
-    : (currentUser.role === 'credit_manager' || currentUser.role === 'deputy_manager_finance' || currentUser.role === 'compliance_team' || currentUser.role === 'company_secretary' || currentUser.role === 'sanction_committee' || currentUser.role === 'cfo' || currentUser.role === 'director' || currentUser.role === 'senior_manager_finance' || currentUser.role === 'cfc' || currentUser.role === 'accounts' || currentUser.role === 'sales_team')
+    : (currentUser.role === 'credit_manager' || currentUser.role === 'deputy_manager_finance' || currentUser.role === 'compliance_team' || currentUser.role === 'company_secretary' || currentUser.role === 'sanction_committee' || currentUser.role === 'cfo' || currentUser.role === 'director' || currentUser.role === 'senior_manager_finance' || currentUser.role === 'cfc' || currentUser.role === 'accounts' || currentUser.role === 'sales_team_user')
     ? loanApplications.filter(app => app.currentOwnerRole === currentUser.role)
     : loanApplications.slice(0, 4);
 
@@ -357,7 +357,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <p className="text-2xl font-bold text-orange-700 num leading-tight">3</p>
             <p className="text-xs text-orange-600">pending</p>
           </div>
-        ) : currentUser.role === 'sales_team' ? (
+        ) : currentUser.role === 'sales_team_user' ? (
           <div className="sm:text-right rounded-lg border border-sky-100 bg-sky-50 px-4 py-3 flex-shrink-0">
             <p className="text-xs text-sky-600 font-medium">Invoices pending</p>
             <p className="text-2xl font-bold text-sky-700 num leading-tight">18</p>
@@ -397,7 +397,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           title={
             currentUser.role === 'company_secretary'
               ? `${dashboardStats.openExceptions} exception${dashboardStats.openExceptions > 1 ? 's' : ''} awaiting CFO + Director approval.`
-              : currentUser.role === 'sales_team'
+              : currentUser.role === 'sales_team_user'
               ? `${dashboardStats.openExceptions} case${dashboardStats.openExceptions > 1 ? 's' : ''} blocked for approval.`
               : currentUser.role === 'admin'
               ? `${dashboardStats.openExceptions} approval exception${dashboardStats.openExceptions > 1 ? 's' : ''} visible in system.`
@@ -426,7 +426,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               ? "Payment authorisation is blocked until exception register is cleared."
               : currentUser.role === 'accounts'
               ? "Accounting and disbursement actions remain blocked until exception register is cleared."
-              : currentUser.role === 'sales_team'
+              : currentUser.role === 'sales_team_user'
               ? "No sales action until approval is complete."
               : currentUser.role === 'admin'
               ? "No administrator action required."
@@ -464,7 +464,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             ? `${urgentApps.length} payment authorisation${urgentApps.length > 1 ? 's' : ''} at TAT deadline`
             : currentUser.role === 'accounts'
             ? `${urgentApps.length} accounting item${urgentApps.length > 1 ? 's' : ''} at TAT deadline`
-            : currentUser.role === 'sales_team'
+            : currentUser.role === 'sales_team_user'
             ? `${urgentApps.length} invoice follow-up${urgentApps.length > 1 ? 's' : ''} at TAT deadline`
             : currentUser.role === 'auditor'
             ? `${urgentApps.length} TAT exception${urgentApps.length > 1 ? 's' : ''} available for review`
@@ -770,7 +770,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               </div>
             )}
           </div>
-        ) : currentUser.role === 'sales_team' ? (
+        ) : currentUser.role === 'sales_team_user' ? (
           <div className="card bg-white">
             <div className="flex items-center justify-between mb-4">
               <div>

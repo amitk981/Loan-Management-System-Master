@@ -220,7 +220,7 @@ const Borrower360: React.FC<Borrower360Props> = ({ memberId, onBack, onOpenAppli
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-sm">
                     {[
                       ['Requested', fmt(app.requestedAmount)],
-                      ['Eligible', fmt(app.eligibleAmount)],
+                      ['Eligible', fmt(app.eligibleAmount ?? 0)],
                       ['Purpose', app.purpose.replace(/_/g, ' ')],
                       ['TAT Days', `${app.tatDaysRemaining ?? '—'} days left`],
                     ].map(([k, v]) => (

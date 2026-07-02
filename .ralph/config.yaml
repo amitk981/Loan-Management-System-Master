@@ -76,31 +76,33 @@ run:
   use_worktree: true
   allow_no_worktree_override: false
   stop_on_ambiguity: true
-  stop_on_high_risk: false
+  stop_on_high_risk: true
   auto_commit: true
-  auto_merge: false
+  auto_merge: true
   auto_deploy: false
   architecture_review_every_completed_slices: 4
 
 limits:
   max_changed_files: 12
   max_lines_changed: 800
-  max_new_dependencies: 0
+  max_new_dependencies: 4
   max_database_migrations: 1
 
 quality_gates:
   install: false
   build: true
-  typecheck: false
+  typecheck: true
   lint: false
-  unit_tests: false
+  unit_tests: true
   integration_tests: false
   e2e_tests: optional
+  backend_check: true
+  backend_tests: true
 
 risk:
   low_risk_auto_commit: true
   medium_risk_auto_commit: true
-  high_risk_stop_required: false
+  high_risk_stop_required: true
 
 worktree:
   enabled: true
@@ -109,6 +111,7 @@ worktree:
 
 commands:
   project_dir: sfpcl-lms
+  backend_dir: sfpcl_credit
   package_manager: auto
   install: auto
   build: auto

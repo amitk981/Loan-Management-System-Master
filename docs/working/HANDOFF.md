@@ -1,27 +1,25 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-02_154724_normal_run
+2026-07-02-workflow-repair (manual repair session, not an AFK run)
 
 ## Current Status
-Run completed for 002B-user-model-and-jwt-login-refresh-logout.
+Workflow repaired and all completed work merged to `main`. Slices 002A (backend scaffold + health) and 002B (auth login/refresh/logout) are on `main`; stale worktrees and branches removed.
+
+Repair changes now in effect:
+- Ralph refuses to launch from inside a worktree (nesting bug fixed) and removes its lock on any exit (stale-lock bug fixed).
+- High-risk slices require an `[approved]` entry in `docs/working/HIGH_RISK_APPROVALS.md`; the orchestrator enforces this before starting the agent.
+- Successful runs auto-merge (fast-forward) into `main` and clean up their worktree.
+- Quality gates are enforced and real: frontend `typecheck`/`test`/`build` (59 type errors fixed; vitest added), backend `manage.py check` + tests. A failing gate now fails the run (previously only build counted).
+- Dependency policy allows pre-approved packages (see `docs/working/DEPENDENCY_POLICY.md`); backend has pinned `requirements.txt` and identity migrations.
+- New slices: `002B2` (replace hand-rolled JWT with PyJWT — pre-approved) and `002EX` (early end-to-end tracer bullet after 002E — NOT yet approved, review it when the queue reaches it).
+- Requirement digests live in `docs/working/digests/`; epic-002 digest is ready for 002C/002D.
 
 ## Current Slice
-None selected.
-
-## What Completed
-Backend auth foundation now supports:
-
-- `POST /api/v1/auth/login/` for active users only.
-- `POST /api/v1/auth/refresh/` with refresh-token rotation and replay rejection.
-- `POST /api/v1/auth/logout/` with session revocation.
-- User, role, team, user-session, and audit-log models for this auth slice.
-- Auth audit events for successful login, failed login, refresh, and logout.
-
-See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-02_152504_normal_run/.ralph/worktrees/2026-07-02_154724_normal_run/.ralph/runs/2026-07-02_154724_normal_run/.
+None selected. Next in queue: `002B2-auth-hardening-jwt-library-and-packaging` (High risk, pre-approved).
 
 ## Current Blocker
-No product blocker. The delegated agent could not write the git index from its sandbox, so the outer Ralph operator is expected to create the final commit after verifying gates and evidence.
+None.
 
 ## Next Recommended Action
-Architecture review is now due after four completed slices according to `.ralph/config.yaml`. If continuing implementation directly, review 002C-role-and-permission-catalogue-seed next.
+Run `./scripts/afk-dev.sh 1 --mode normal` from the repository root. It will select 002B2, verify its approval, run gates, and auto-merge on success.

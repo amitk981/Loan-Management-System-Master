@@ -7,6 +7,7 @@
 - Read `docs/working/HANDOFF.md` before choosing work.
 - Read only the selected slice file.
 - Use `rg` before opening large files.
+- Check `docs/working/digests/` first; open a large `docs/source/` file only when the digest does not cover what the slice needs, and add what you extract to the digest afterwards.
 - Open source docs only when the selected slice references them.
 - Keep slice files small.
 - Store long logs and evidence in `.ralph/runs/<run-id>/`.

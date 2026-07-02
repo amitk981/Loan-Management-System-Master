@@ -124,7 +124,7 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
             <div className="flex flex-col gap-1 mt-1">
               {exceptions.map(e => (
                 <div key={e.id}>
-                  • {e.applicationNumber}: {e.requestedAmount > e.eligibleAmount ? 'Exceeds eligible limit — CFO + 2 Directors + Exception Register.' : 'Above ₹5,00,000 — CFO + 2 Directors.'}
+                  • {e.applicationNumber}: {e.requestedAmount > (e.eligibleAmount ?? 0) ? 'Exceeds eligible limit — CFO + 2 Directors + Exception Register.' : 'Above ₹5,00,000 — CFO + 2 Directors.'}
                 </div>
               ))}
             </div>
@@ -220,7 +220,7 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
                   </div>
                   <div className="bg-slate-50 rounded-lg p-3">
                     <p className="text-xs text-slate-500">Eligible</p>
-                    <p className="text-base font-bold num text-slate-900">{fmt(app.eligibleAmount)}</p>
+                    <p className="text-base font-bold num text-slate-900">{fmt(app.eligibleAmount ?? 0)}</p>
                   </div>
                   <div className={`rounded-lg p-3 ${(app.riskRating as string) === 'high' ? 'bg-red-50' : app.riskRating === 'medium' ? 'bg-amber-50' : 'bg-green-50'}`}>
                     <p className="text-xs text-slate-500">Risk Rating</p>

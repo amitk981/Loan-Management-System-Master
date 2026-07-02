@@ -4,6 +4,12 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
 
+if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
+  echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
+  echo "Run Ralph from the main repository root so worktrees never nest." >&2
+  exit 1
+fi
+
 run_id=""
 mode="normal_run"
 agent="${AGENT_TOOL:-codex}"
@@ -69,9 +75,24 @@ EOF
   slice_id="${slice_file%.md}"
 fi
 
+if [[ "$mode" != "architecture_review" ]]; then
+  risk_level="$(awk '/^## Risk Level/ { getline; print; exit }' "docs/slices/$slice_file" | xargs || true)"
+  stop_on_high_risk="$(awk -F': *' '/^[[:space:]]*stop_on_high_risk:/ {print $2; exit}' .ralph/config.yaml | xargs || true)"
+  approvals_file="docs/working/HIGH_RISK_APPROVALS.md"
+  if [[ "$risk_level" == "High" && "$stop_on_high_risk" == "true" ]]; then
+    if ! grep -qF -- "[approved] $slice_id" "$approvals_file" 2>/dev/null; then
+      echo "Slice $slice_id is High risk and is not pre-approved in $approvals_file." >&2
+      echo "Add a line '- [approved] $slice_id | <date> | <reason>' to that file, then rerun." >&2
+      exit 3
+    fi
+    echo "High-risk slice $slice_id is pre-approved in $approvals_file; continuing."
+  fi
+fi
+
 mkdir -p "$repo_root/.ralph/locks"
 lock_file="$repo_root/.ralph/locks/$run_id.lock"
 echo "$run_id" > "$lock_file"
+trap 'rm -f "$lock_file"' EXIT
 
 worktree_dir="$repo_root"
 if (( no_worktree == 0 )); then
@@ -121,8 +142,10 @@ Core requirements:
 - Save review-packet.md.
 - Update state, progress, handoff, and slice status.
 - Commit only if gates pass and config allows commits.
-- Continue through high-risk slices under the user's standing approval, while recording risk and evidence.
-- Stop safely on ambiguity, forbidden file edits, repeated failure, or diff limit violations.
+- High-risk slices run only when pre-approved in docs/working/HIGH_RISK_APPROVALS.md; if the selected slice is High risk and not listed there, stop immediately.
+- Before finishing, sharpen the next 1-2 'Not Started' slice files with concrete requirements (fields, endpoints, validation rules, role rules) from the source documents you already opened.
+- Prefer docs/working/digests/ over re-reading large docs/source files; if you extract requirements from a large source file, save the distilled version into the matching digest.
+- Stop safely on ambiguity, unapproved high risk, forbidden file edits, repeated failure, or diff limit violations.
 
 Read in this order:
 1. AGENTS.md or CLAUDE.md
@@ -266,16 +289,34 @@ cat >> "$worktree_dir/.ralph/progress.md" <<EOF
 - Next action: Review packet.
 EOF
 
+committed=0
 if (( no_commit == 0 )); then
   (
     cd "$worktree_dir"
     git add .
     if git diff --cached --quiet; then
       echo "No changes to commit for $slice_id."
+      exit 10
     else
       git commit -m "chore(${slice_id}): complete Ralph AFK run"
     fi
-  )
+  ) && committed=1 || true
+fi
+
+if (( committed == 1 )) && (( no_worktree == 0 )); then
+  auto_merge="$(awk -F': *' '/^[[:space:]]*auto_merge:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+  if [[ "$auto_merge" == "true" ]]; then
+    if git -C "$repo_root" merge --ff-only "$branch_name"; then
+      git -C "$repo_root" worktree remove --force "$worktree_dir"
+      git -C "$repo_root" branch -d "$branch_name"
+      run_dir="$repo_root/.ralph/runs/$run_id"
+      echo "Merged $branch_name into main and removed the worktree."
+    else
+      echo "Auto-merge into main failed; branch $branch_name kept for manual review." >&2
+    fi
+  else
+    echo "auto_merge is disabled; review and merge branch $branch_name manually." >&2
+  fi
 fi
 
 rm -f "$lock_file"

@@ -14,7 +14,7 @@ const GrievancesHub: React.FC = () => {
   const canManageGrievance = ['company_secretary', 'credit_manager', 'credit_head', 'field_officer'].includes(currentUser.role);
   const isAuditor = currentUser.role === 'auditor';
   const isAdmin = currentUser.role === 'admin';
-  const canExport = ['admin', 'company_secretary', 'cfo', 'compliance_team'].includes(currentUser.role) || (isAuditor && can('export'));
+  const canExport = ['admin', 'company_secretary', 'cfo', 'compliance_team'].includes(currentUser.role) || (isAuditor && can('export_registers'));
 
   const overdueCount = grievances.filter(g => g.status === 'overdue').length;
   const recoveryCount = grievances.filter(g => g.category.toLowerCase().includes('recovery')).length;

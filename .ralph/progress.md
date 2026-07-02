@@ -81,3 +81,13 @@ Validation evidence added:
 - Result: Success; delegated commit blocked by sandbox `.git` write restrictions, outer escalated commit to be created after evidence refresh.
 - Risk level: High.
 - Next action: Architecture review is due by configured cadence; otherwise continue with 002C-role-and-permission-catalogue-seed.
+
+## 2026-07-02 18:00:00 - workflow-repair
+- Agent tool used: Claude Code (manual repair session)
+- Slice attempted: none (workflow repair)
+- Summary: Merged stranded 002A/002B worktree branches into main; removed nested worktrees and six stale ralph/* branches. Restored high-risk stop rules and added enforced per-slice approvals (docs/working/HIGH_RISK_APPROVALS.md). Fixed worktree-nesting and stale-lock bugs; added auto-merge-to-main after passing runs. Replaced zero-dependency policy with an approved allowlist; added backend requirements.txt and identity migrations. Made quality gates real: frontend typecheck (59 prototype type errors fixed, several dormant bugs among them), vitest test harness, backend check/tests wired into ralph-validate.sh; fixed validate.sh bug where enabled-gate failures were swallowed. Added slices 002B2 (PyJWT hardening) and 002EX (early tracer bullet); created docs/working/digests/ with epic-002 digest.
+- Tests run: backend `manage.py test` (10 pass) + `check`; frontend `tsc --noEmit` (0 errors), `vitest run` (5 pass), `vite build` (pass); `afk-dev.sh --dry-run` preflight (pass).
+- Evidence saved: this entry; gate outputs verified in session.
+- Result: Success
+- Risk level: Medium (guardrail/config changes, no product behavior changes except dormant-bug fixes noted in ASSUMPTIONS.md)
+- Next action: `./scripts/afk-dev.sh 1 --mode normal` to run 002B2.

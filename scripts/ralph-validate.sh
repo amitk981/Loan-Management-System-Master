@@ -78,10 +78,59 @@ else
   write_skipped build "disabled in .ralph/config.yaml"
 fi
 
-[[ "$(enabled install)" == "true" ]] && run_gate install "npm install" || write_skipped install "disabled in .ralph/config.yaml"
-[[ "$(enabled typecheck)" == "true" ]] && run_gate typecheck "npm run typecheck --if-present" || write_skipped typecheck "disabled or not configured"
-[[ "$(enabled lint)" == "true" ]] && run_gate lint "npm run lint --if-present" || write_skipped lint "disabled or not configured"
-[[ "$(enabled unit_tests)" == "true" ]] && run_gate test "npm test --if-present" || write_skipped test "disabled or not configured"
+if [[ "$(enabled install)" == "true" ]]; then
+  run_gate install "npm install" || failures=$((failures + 1))
+else
+  write_skipped install "disabled in .ralph/config.yaml"
+fi
+
+if [[ "$(enabled typecheck)" == "true" ]]; then
+  run_gate typecheck "npm run typecheck --if-present" || failures=$((failures + 1))
+else
+  write_skipped typecheck "disabled in .ralph/config.yaml"
+fi
+
+if [[ "$(enabled lint)" == "true" ]]; then
+  run_gate lint "npm run lint --if-present" || failures=$((failures + 1))
+else
+  write_skipped lint "disabled in .ralph/config.yaml"
+fi
+
+if [[ "$(enabled unit_tests)" == "true" ]]; then
+  run_gate test "npm test --if-present" || failures=$((failures + 1))
+else
+  write_skipped test "disabled in .ralph/config.yaml"
+fi
+
+backend_dir="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {print $2; exit}' "$config" | tr -d '"' | xargs || true)"
+run_backend_gate() {
+  local name="$1"
+  local command="$2"
+  local file="$run_dir/${name}-results.md"
+  {
+    echo "# $name Results"
+    echo
+    echo "Command: $command"
+    echo
+  } > "$file"
+  (cd "$worktree_dir" && bash -lc "$command") >> "$file" 2>&1
+}
+
+if [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
+  if [[ "$(enabled backend_check)" == "true" ]]; then
+    run_backend_gate backend-check "python3 $backend_dir/manage.py check" || failures=$((failures + 1))
+  else
+    write_skipped backend-check "disabled in .ralph/config.yaml"
+  fi
+  if [[ "$(enabled backend_tests)" == "true" ]]; then
+    run_backend_gate backend-test "python3 $backend_dir/manage.py test $backend_dir.tests -v 2" || failures=$((failures + 1))
+  else
+    write_skipped backend-test "disabled in .ralph/config.yaml"
+  fi
+else
+  write_skipped backend-check "no backend detected at ${backend_dir:-<unset>}/manage.py"
+  write_skipped backend-test "no backend detected at ${backend_dir:-<unset>}/manage.py"
+fi
 
 artifact_file="$run_dir/ralph-artifact-validation.md"
 {

@@ -153,8 +153,8 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
   const isAdmin = currentUser.role === 'admin';
   const canProceedToAppraisal = isAdmin || (activeMemberVerified && kycVerified && allowedToPrepareAppraisal);
   const recommendedAmountNumber = Number(recommendedAmount || 0);
-  const recommendedWithinLimit = app ? recommendedAmountNumber > 0 && recommendedAmountNumber <= app.eligibleAmount : false;
-  const requiresException = app?.isException || recommendation === 'exception' || (recommendedAmountNumber > 0 && app ? recommendedAmountNumber > app.eligibleAmount : false);
+  const recommendedWithinLimit = app ? recommendedAmountNumber > 0 && recommendedAmountNumber <= (app.eligibleAmount ?? 0) : false;
+  const requiresException = app?.isException || recommendation === 'exception' || (recommendedAmountNumber > 0 && app ? recommendedAmountNumber > (app.eligibleAmount ?? 0) : false);
   const canForwardToSanction = isAdmin || (noteText.trim().length > 10 &&
     riskRating &&
     riskRationale.trim().length > 5 &&
@@ -830,7 +830,7 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-4">
                       {[
                         ['Recommended', recommendedAmountNumber ? fmt(recommendedAmountNumber) : 'Pending'],
-                        ['Eligible', fmt(app.eligibleAmount)],
+                        ['Eligible', fmt(app.eligibleAmount ?? 0)],
                         ['Tenure', `${recommendedTenure || '—'} months`],
                         ['Route', requiresException ? 'Exception' : recommendation.replace('_', ' ')],
                       ].map(([label, value]) => (
@@ -956,7 +956,7 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {[
                         ['Recommended Amount', fmt(recommendedAmountNumber)],
-                        ['Eligible Amount', fmt(app.eligibleAmount)],
+                        ['Eligible Amount', fmt(app.eligibleAmount ?? 0)],
                         ['Recommended Tenure', `${recommendedTenure} months`],
                         ['Risk Rating', riskRating.replace('_', ' ')],
                         ['Recommendation', recommendation.replace('_', ' ')],
@@ -1113,7 +1113,7 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
                         <div className="flex justify-between"><span className="text-slate-500">Application</span><span className="font-semibold">{app.applicationNumber}</span></div>
                         <div className="flex justify-between"><span className="text-slate-500">Borrower</span><span className="font-semibold">{app.memberName}</span></div>
                         <div className="flex justify-between"><span className="text-slate-500">Requested</span><span className="font-semibold">{fmt(recommendedAmountNumber)}</span></div>
-                        <div className="flex justify-between"><span className="text-slate-500">Eligible Limit</span><span className="font-semibold">{fmt(app.eligibleAmount)}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">Eligible Limit</span><span className="font-semibold">{fmt(app.eligibleAmount ?? 0)}</span></div>
                         <div className="flex justify-between"><span className="text-slate-500">Exception Reason</span><span className="font-semibold text-violet-700">{creditManagerComment}</span></div>
                       </div>
                       <p className="text-xs text-violet-600 mb-4">An Exception Register entry will be logged and routed to CFO + 2 Directors for countersignature before sanction committee review proceeds.</p>

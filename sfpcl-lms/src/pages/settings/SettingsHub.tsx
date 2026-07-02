@@ -162,7 +162,7 @@ const SettingsHub: React.FC = () => {
                 </div>
               )}
               <div className="grid grid-cols-1 gap-4">
-                {section.fields.map(field => (
+                {section.fields.map((field: { label: string; value: string; type: string; note?: string; options?: string[] }) => (
                   <div key={field.label} className="flex items-start gap-4">
                     <label className="w-72 text-sm text-slate-700 pt-2.5 flex-shrink-0">{field.label}</label>
                     <div className="flex-1">

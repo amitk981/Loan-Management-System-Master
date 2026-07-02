@@ -34,7 +34,7 @@ const notifications = [
 
 interface HeaderProps {
   activePage?: string;
-  onNavigate?: (page: string) => void;
+  onNavigate?: (page: string, entityId?: string) => void;
   onSearch?: (query: string) => void;
   onLogout?: () => void;
 }

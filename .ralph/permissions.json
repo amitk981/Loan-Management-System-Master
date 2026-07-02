@@ -10,7 +10,9 @@
     ".ralph/state.json",
     ".ralph/runs/**",
     "AGENTS.md",
-    "CLAUDE.md"
+    "CLAUDE.md",
+    "sfpcl_credit/**",
+    "docs/epics/**"
   ],
   "requires_approval": [
     "package.json",

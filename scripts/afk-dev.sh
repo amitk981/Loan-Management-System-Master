@@ -26,6 +26,12 @@ EOF
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
 
+if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
+  echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
+  echo "Run Ralph from the main repository root so worktrees never nest." >&2
+  exit 1
+fi
+
 mode="normal"
 iterations=""
 selected_slice=""

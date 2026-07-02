@@ -14,25 +14,32 @@
 - Architecture review: `./scripts/afk-dev.sh --mode architecture-review`
 
 ## Normal Run Order
-1. Run preflight.
+1. Run preflight (refuses to run from inside a Ralph worktree).
 2. Confirm git state is safe.
 3. Choose one eligible slice.
-4. Create a run folder and prompt.
-5. Create an isolated worktree unless disabled by config.
-6. Start the selected agent through `scripts/agent-adapters/`.
-7. Validate gates and Ralph artifacts.
-8. Save changed files, risk assessment, review packet, and final summary.
-9. Update state, progress, handoff, and slice status.
-10. Commit only if gates pass and config allows it.
+4. If the slice is High risk, require an `[approved]` entry in `docs/working/HIGH_RISK_APPROVALS.md`; otherwise stop before starting the agent.
+5. Create a run folder and prompt.
+6. Create an isolated worktree unless disabled by config.
+7. Start the selected agent through `scripts/agent-adapters/`.
+8. Validate gates and Ralph artifacts.
+9. Save changed files, risk assessment, review packet, and final summary.
+10. Update state, progress, handoff, and slice status.
+11. Commit only if gates pass and config allows it.
+12. If `auto_merge` is enabled, fast-forward merge the run branch into main and remove the worktree; on merge failure the branch is kept for manual review.
+
+Note on agent approval mode: codex runs headless (`exec` mode, approval mode `never`) because nobody is at the terminal during AFK runs. The human safety control is the orchestrator-level high-risk gate plus quality gates and this runbook — not interactive prompts.
 
 ## Slice Selection
 Use `.ralph/state.json` first. If architecture review is due, run it unless explicitly overridden. If the previous run failed, prefer repair. Otherwise choose the lowest-numbered `Not Started` slice.
 
 ## Quality Gates
-Current repository gate is `npm run build` inside `sfpcl-lms/`. Lint, typecheck, and unit tests are documented gaps until scripts are added.
+Enforced by `scripts/ralph-validate.sh` on every run:
+- Frontend (`sfpcl-lms/`): `npm run build`, `npm run typecheck`, `npm test`.
+- Backend (`sfpcl_credit/`): `python3 sfpcl_credit/manage.py check` and `python3 sfpcl_credit/manage.py test sfpcl_credit.tests -v 2`.
+A failing gate fails the whole run; failing work is never committed or merged. ESLint is a documented gap until a lint setup is added.
 
 ## Stopping Conditions
-Continue through high-risk slices under the user's standing approval, while recording risk level and evidence. Stop on missing required files, unsafe git state, active locks, forbidden file edits, repeated gate failures, ambiguous requirements, exceeded diff limits, or missing selected agent command.
+Stop on missing required files, unsafe git state, active locks, forbidden file edits, High-risk slices without an `[approved]` entry in `docs/working/HIGH_RISK_APPROVALS.md`, repeated gate failures, ambiguous requirements, exceeded diff limits, or missing selected agent command.
 
 ## Evidence and Review
 Every run folder should contain prompt, plan, changed files, validation outputs, risk assessment, review packet, and final summary. Frontend/API/database slices require matching evidence.

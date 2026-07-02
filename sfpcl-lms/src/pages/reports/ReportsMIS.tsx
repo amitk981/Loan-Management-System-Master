@@ -14,7 +14,7 @@ const ReportsMIS: React.FC = () => {
   const { can } = useRole();
   const [activeTab, setActiveTab] = useState<ReportTab>('portfolio');
   const [reportPeriod, setReportPeriod] = useState('Q1 FY 2025–26');
-  const canExport = can('export_reports');
+  const canExport = can('export_registers');
 
   if (!can('view_reports')) {
     return (

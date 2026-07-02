@@ -2,14 +2,18 @@
 
 This index is the ordered Ralph implementation queue. Broad module concepts live in `docs/epics/`; these slice files are the actual AFK work units.
 
+Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slices marked "None (independent)" may be run out of order (via `--slice`) if the queue head is blocked. High-risk slices additionally require an entry in `docs/working/HIGH_RISK_APPROVALS.md` before an AFK run will start them.
+
 | Order | Slice | Parent Epic | Depends On | Risk | Frontend | Backend/API | Database | Tests |
 |---|---|---|---|---|---|---|---|---|
 | 1 | `001` Ralph Bootstrap Verification | Epic 001 | None, | Low | No | No | No | Yes |
 | 2 | `002A` Backend Scaffold and Health Endpoint | Epic 002 | 001, | Medium | No | Yes | Yes | Yes |
 | 3 | `002B` User Model and JWT Login Refresh Logout | Epic 002 | 002A, | High | No | Yes | Yes | Yes |
+| 3a | `002B2` Auth Hardening — PyJWT and Packaging | Epic 002 | 002B, | High | No | Yes | No | Yes |
 | 4 | `002C` Role and Permission Catalogue Seed | Epic 002 | 002B, | High | No | Yes | Yes | Yes |
 | 5 | `002D` Current User API with Permissions and Teams | Epic 002 | 002C, | High | No | Yes | Yes | Yes |
 | 6 | `002E` Protected Frontend Route Shell | Epic 002 | 002D, | Medium | Yes | Yes | No | Yes |
+| 6a | `002EX` Early End-to-End Tracer Bullet | Epic 002 | 002E, | High | Yes | Yes | Yes | Yes |
 | 7 | `002F` Role-Aware Sidebar Header Navigation | Epic 002 | 002E, | Medium | Yes | Yes | No | Yes |
 | 8 | `002G` Admin User and Role Management Shell | Epic 002 | 002F, | Medium | Yes | Yes | Yes | Yes |
 | 9 | `002H` State Machine and Transition Guard Foundation | Epic 002 | 002G, | Medium | No | Yes | Yes | Yes |
@@ -26,8 +30,8 @@ This index is the ordered Ralph implementation queue. Broad module concepts live
 | 20 | `003H` Dashboard Task UI Wiring | Epic 003 | 003G, | Medium | Yes | Yes | No | Yes |
 | 21 | `003I` Notification Adapter Shell | Epic 003 | 003H, | Medium | No | Yes | Yes | Yes |
 | 22 | `003J` Background Job Scheduling Foundation | Epic 003 | 003I, | Medium | No | Yes | Yes | Yes |
-| 23 | `003K` Prototype Visual Gap Report Update | Epic 003 | 003J, | Low | No | No | No | Yes |
-| 24 | `003L` Data Import and Migration Planning | Epic 003 | 003K, | Medium | No | No | No | Yes |
+| 23 | `003K` Prototype Visual Gap Report Update | Epic 003 | None (independent), | Low | No | No | No | Yes |
+| 24 | `003L` Data Import and Migration Planning | Epic 003 | None (independent), | Medium | No | No | No | Yes |
 | 25 | `004A` Member Directory API and UI | Epic 004 | 003L, | Medium | Yes | Yes | No | Yes |
 | 26 | `004B` Member Profile API and UI | Epic 004 | 004A, | Medium | Yes | Yes | No | Yes |
 | 27 | `004C` Individual Farmer and FPC Profile Details | Epic 004 | 004B, | Medium | No | Yes | Yes | Yes |

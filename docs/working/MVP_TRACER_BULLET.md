@@ -4,9 +4,10 @@
 
 The MVP tracer bullet proves the architecture connects end to end before the project deepens every module.
 
-## Slice
+## Slices
 
-`006X-mvp-end-to-end-happy-path.md`
+- `002EX-early-end-to-end-tracer-bullet.md` — runs right after login + protected shell (002E). Thin skeleton of the whole loan life cycle with minimal fields; proves frontend → API → database plumbing before any module is deepened.
+- `006X-mvp-end-to-end-happy-path.md` — the full-fidelity verification pass once member, application, eligibility, and sanction modules exist for real.
 
 ## Minimum Happy Path
 

@@ -437,7 +437,7 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
                             {app.isException && <span className="text-xs bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded">Exception</span>}
                           </div>
                           <p className="text-xs text-slate-500 mt-0.5">
-                            Requested: {fmt(app.requestedAmount)} · Eligible: {fmt(app.eligibleAmount)} · Submitted: {new Date(app.submittedAt).toLocaleDateString('en-IN')}
+                            Requested: {fmt(app.requestedAmount)} · Eligible: {fmt(app.eligibleAmount ?? 0)} · Submitted: {new Date(app.submittedAt).toLocaleDateString('en-IN')}
                           </p>
                         </div>
                         <StatusBadge label={app.status} size="sm" />
