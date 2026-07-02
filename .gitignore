@@ -27,6 +27,8 @@ sfpcl-lms/.claude/
 __pycache__/
 *.pyc
 .venv/
+.coverage
+htmlcov/
 
 .DS_Store
 *.suo

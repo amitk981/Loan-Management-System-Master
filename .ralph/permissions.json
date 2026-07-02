@@ -12,18 +12,18 @@
     "AGENTS.md",
     "CLAUDE.md",
     "sfpcl_credit/**",
-    "docs/epics/**"
-  ],
-  "requires_approval": [
-    "package.json",
-    "package-lock.json",
+    "docs/epics/**",
     "sfpcl-lms/package.json",
     "sfpcl-lms/package-lock.json",
     "sfpcl-lms/tsconfig.json",
     "sfpcl-lms/tsconfig.node.json",
     "sfpcl-lms/vite.config.ts",
     "sfpcl-lms/tailwind.config.js",
-    "sfpcl-lms/postcss.config.js",
+    "sfpcl-lms/postcss.config.js"
+  ],
+  "requires_approval": [
+    "package.json",
+    "package-lock.json",
     "netlify.toml",
     ".ralph/config.yaml",
     ".ralph/permissions.json",

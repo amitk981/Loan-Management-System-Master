@@ -75,10 +75,12 @@ run:
   require_clean_git: true
   use_worktree: true
   allow_no_worktree_override: false
-  stop_on_ambiguity: true
-  stop_on_high_risk: true
+  stop_on_ambiguity: false  # ambiguity handled by docs/working/DECISION_POLICY.md, not by stopping
+  stop_on_high_risk: false  # standing approval + veto model; see docs/working/HIGH_RISK_APPROVALS.md
   auto_commit: true
   auto_merge: true
+  auto_push: true
+  push_remote: github-master
   auto_deploy: false
   architecture_review_every_completed_slices: 4
 
@@ -98,11 +100,15 @@ quality_gates:
   e2e_tests: optional
   backend_check: true
   backend_tests: true
+  backend_migrations: true
+  backend_coverage: true
+  coverage_fail_under: 85
 
 risk:
   low_risk_auto_commit: true
   medium_risk_auto_commit: true
-  high_risk_stop_required: true
+  high_risk_auto_commit: true  # standing approval + veto model; protected paths + gates are the controls
+  high_risk_stop_required: false
 
 worktree:
   enabled: true

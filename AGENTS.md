@@ -2,7 +2,17 @@
 
 You are operating inside the Ralph AFK workflow.
 
-Core rules:
+## "run ralph loop"
+
+When the owner says "run ralph loop" (or similar), execute from the repository root:
+
+```
+./scripts/ralph-loop.sh
+```
+
+It runs the slice queue autonomously: one slice per iteration with full gates, auto-commit, auto-merge to main, and auto-push to GitHub; one repair attempt per failure; stops when the queue is empty, after repeated failures, or on an owner veto. Do not improvise a different loop.
+
+## Core rules
 - Do not rely on chat history.
 - Read repo files to understand current state.
 - Implement only one vertical slice per run.
@@ -12,9 +22,11 @@ Core rules:
 - Save evidence before marking work complete.
 - Update state, progress, handoff, and slice status.
 - Commit only passing work when config allows it.
-- High-risk slices run only when pre-approved in `docs/working/HIGH_RISK_APPROVALS.md`; never weaken risk rules, approval rules, or quality gates yourself.
+- TDD is mandatory for backend and business logic: failing test first, red/green evidence saved.
+- The owner has granted standing approval for autonomous runs (`docs/working/HIGH_RISK_APPROVALS.md`). Do not ask for approval; follow `docs/working/DECISION_POLICY.md` for every judgment call and record assumptions in `docs/working/ASSUMPTIONS.md`.
+- Never modify protected files (scripts/, .ralph/config.yaml, .ralph/permissions.json, AGENTS.md, CLAUDE.md, .gitignore, HIGH_RISK_APPROVALS.md, DECISION_POLICY.md, docs/source/) — validation fails the run if you do. Never weaken risk rules or quality gates.
 - Before finishing, sharpen the next 1-2 `Not Started` slice files with concrete requirements from source documents you already opened, and store distilled extracts in `docs/working/digests/`.
-- Stop safely on ambiguity, unsafe git state, repeated failures, unapproved high risk, forbidden file edits, or diff limit violations.
+- Stop only for the never-do list in DECISION_POLICY.md, unsafe git state, repeated failures, protected/forbidden file edits, an owner veto, or diff limit violations.
 
 Read in this order during normal runs:
 1. `docs/working/TOKEN_RULES.md`

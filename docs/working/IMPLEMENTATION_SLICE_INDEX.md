@@ -2,7 +2,7 @@
 
 This index is the ordered Ralph implementation queue. Broad module concepts live in `docs/epics/`; these slice files are the actual AFK work units.
 
-Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slices marked "None (independent)" may be run out of order (via `--slice`) if the queue head is blocked. High-risk slices additionally require an entry in `docs/working/HIGH_RISK_APPROVALS.md` before an AFK run will start them.
+Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slices marked "None (independent)" may be run out of order (via `--slice`) if the queue head is blocked. All slices, including High risk, run under the owner's standing approval unless marked `[revoked]` in `docs/working/HIGH_RISK_APPROVALS.md`.
 
 | Order | Slice | Parent Epic | Depends On | Risk | Frontend | Backend/API | Database | Tests |
 |---|---|---|---|---|---|---|---|---|
@@ -15,6 +15,7 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 6 | `002E` Protected Frontend Route Shell | Epic 002 | 002D, | Medium | Yes | Yes | No | Yes |
 | 6a | `002EX` Early End-to-End Tracer Bullet | Epic 002 | 002E, | High | Yes | Yes | Yes | Yes |
 | 7 | `002F` Role-Aware Sidebar Header Navigation | Epic 002 | 002E, | Medium | Yes | Yes | No | Yes |
+| 7a | `002FL` Frontend Lint Baseline (ESLint) | Epic 002 | 002F, | Medium | Yes | No | No | Yes |
 | 8 | `002G` Admin User and Role Management Shell | Epic 002 | 002F, | Medium | Yes | Yes | Yes | Yes |
 | 9 | `002H` State Machine and Transition Guard Foundation | Epic 002 | 002G, | Medium | No | Yes | Yes | Yes |
 | 10 | `002I` Object-Level Permission Test Harness | Epic 002 | 002H, | High | No | Yes | No | Yes |

@@ -1,25 +1,22 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-02-workflow-repair (manual repair session, not an AFK run)
+2026-07-02-autonomy-upgrade (manual owner session, not an AFK run)
 
 ## Current Status
-Workflow repaired and all completed work merged to `main`. Slices 002A (backend scaffold + health) and 002B (auth login/refresh/logout) are on `main`; stale worktrees and branches removed.
+The workflow now runs fully autonomously under the owner's standing approval (granted 2026-07-02, recorded in `docs/working/HIGH_RISK_APPROVALS.md`).
 
-Repair changes now in effect:
-- Ralph refuses to launch from inside a worktree (nesting bug fixed) and removes its lock on any exit (stale-lock bug fixed).
-- High-risk slices require an `[approved]` entry in `docs/working/HIGH_RISK_APPROVALS.md`; the orchestrator enforces this before starting the agent.
-- Successful runs auto-merge (fast-forward) into `main` and clean up their worktree.
-- Quality gates are enforced and real: frontend `typecheck`/`test`/`build` (59 type errors fixed; vitest added), backend `manage.py check` + tests. A failing gate now fails the run (previously only build counted).
-- Dependency policy allows pre-approved packages (see `docs/working/DEPENDENCY_POLICY.md`); backend has pinned `requirements.txt` and identity migrations.
-- New slices: `002B2` (replace hand-rolled JWT with PyJWT — pre-approved) and `002EX` (early end-to-end tracer bullet after 002E — NOT yet approved, review it when the queue reaches it).
-- Requirement digests live in `docs/working/digests/`; epic-002 digest is ready for 002C/002D.
+Operating model:
+- "run ralph loop" = `./scripts/ralph-loop.sh` — runs the queue slice by slice with full gates, auto-commit, auto-merge to main, auto-push to GitHub (`github-master`); one repair attempt per failure; stops on queue-empty, repeated failure, or owner veto.
+- No human approvals during runs. Judgment calls follow `docs/working/DECISION_POLICY.md`; assumptions are logged in `docs/working/ASSUMPTIONS.md`; business rules are never invented.
+- Hard-enforced controls (in scripts, not prompts): protected-paths check (agents cannot touch scripts/, config, AGENTS.md, policy files, docs/source), quality gates (frontend typecheck/tests/build; backend check/tests/migrations-sync/coverage ≥ 85%), TDD evidence required.
+- Owner's brake: add `- [revoked] <slice-id> | <date> | <reason>` to HIGH_RISK_APPROVALS.md.
 
 ## Current Slice
-None selected. Next in queue: `002B2-auth-hardening-jwt-library-and-packaging` (High risk, pre-approved).
+None selected. Next in queue: `002B2-auth-hardening-jwt-library-and-packaging`.
 
 ## Current Blocker
 None.
 
 ## Next Recommended Action
-Run `./scripts/afk-dev.sh 1 --mode normal` from the repository root. It will select 002B2, verify its approval, run gates, and auto-merge on success.
+`./scripts/ralph-loop.sh` from the repository root.

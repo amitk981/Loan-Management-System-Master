@@ -127,9 +127,66 @@ if [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
   else
     write_skipped backend-test "disabled in .ralph/config.yaml"
   fi
+  if [[ "$(enabled backend_migrations)" == "true" ]]; then
+    run_backend_gate backend-migrations "python3 $backend_dir/manage.py makemigrations --check --dry-run" || failures=$((failures + 1))
+  else
+    write_skipped backend-migrations "disabled in .ralph/config.yaml"
+  fi
+  if [[ "$(enabled backend_coverage)" == "true" ]]; then
+    coverage_floor="$(awk -F': *' '/^[[:space:]]*coverage_fail_under:/ {print $2; exit}' "$config" | xargs || true)"
+    coverage_floor="${coverage_floor:-85}"
+    if python3 -c "import coverage" >/dev/null 2>&1; then
+      run_backend_gate backend-coverage "python3 -m coverage run --source=$backend_dir $backend_dir/manage.py test $backend_dir.tests && python3 -m coverage report --fail-under=$coverage_floor" || failures=$((failures + 1))
+    else
+      {
+        echo "# backend-coverage Results"
+        echo
+        echo "FAIL: coverage gate is enabled but the coverage module is not installed (pip3 install -r $backend_dir/requirements-dev.txt)."
+      } > "$run_dir/backend-coverage-results.md"
+      failures=$((failures + 1))
+    fi
+  else
+    write_skipped backend-coverage "disabled in .ralph/config.yaml"
+  fi
 else
   write_skipped backend-check "no backend detected at ${backend_dir:-<unset>}/manage.py"
   write_skipped backend-test "no backend detected at ${backend_dir:-<unset>}/manage.py"
+fi
+
+# Protected paths: an agent run must never modify guardrail files.
+guard_file="$run_dir/protected-paths-check.md"
+{
+  echo "# Protected Paths Check"
+  echo
+} > "$guard_file"
+protected_paths=(
+  "scripts/"
+  ".ralph/config.yaml"
+  ".ralph/permissions.json"
+  "AGENTS.md"
+  "CLAUDE.md"
+  ".gitignore"
+  "docs/working/HIGH_RISK_APPROVALS.md"
+  "docs/working/DECISION_POLICY.md"
+  "docs/source/"
+)
+changed_paths="$( (cd "$worktree_dir" && git status --porcelain) | sed -E 's/^.{3}//; s/.* -> //; s/^"//; s/"$//' )"
+protected_violations=0
+while IFS= read -r changed; do
+  [[ -z "$changed" ]] && continue
+  for prot in "${protected_paths[@]}"; do
+    if [[ "$changed" == "$prot" || "$changed" == "$prot"* ]]; then
+      echo "- FAIL: protected path modified by this run: $changed" >> "$guard_file"
+      protected_violations=$((protected_violations + 1))
+    fi
+  done
+done <<< "$changed_paths"
+if (( protected_violations > 0 )); then
+  echo "" >> "$guard_file"
+  echo "Protected files may only be changed by the human owner outside Ralph runs." >> "$guard_file"
+  failures=$((failures + protected_violations))
+else
+  echo "- PASS: no protected paths were modified." >> "$guard_file"
 fi
 
 artifact_file="$run_dir/ralph-artifact-validation.md"

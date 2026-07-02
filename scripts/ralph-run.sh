@@ -77,15 +77,13 @@ fi
 
 if [[ "$mode" != "architecture_review" ]]; then
   risk_level="$(awk '/^## Risk Level/ { getline; print; exit }' "docs/slices/$slice_file" | xargs || true)"
-  stop_on_high_risk="$(awk -F': *' '/^[[:space:]]*stop_on_high_risk:/ {print $2; exit}' .ralph/config.yaml | xargs || true)"
   approvals_file="docs/working/HIGH_RISK_APPROVALS.md"
-  if [[ "$risk_level" == "High" && "$stop_on_high_risk" == "true" ]]; then
-    if ! grep -qF -- "[approved] $slice_id" "$approvals_file" 2>/dev/null; then
-      echo "Slice $slice_id is High risk and is not pre-approved in $approvals_file." >&2
-      echo "Add a line '- [approved] $slice_id | <date> | <reason>' to that file, then rerun." >&2
-      exit 3
-    fi
-    echo "High-risk slice $slice_id is pre-approved in $approvals_file; continuing."
+  if grep -qF -- "[revoked] $slice_id" "$approvals_file" 2>/dev/null; then
+    echo "Slice $slice_id has been vetoed by the owner in $approvals_file; refusing to run it." >&2
+    exit 3
+  fi
+  if [[ "$risk_level" == "High" ]]; then
+    echo "High-risk slice $slice_id proceeding under the owner's standing approval (see $approvals_file)."
   fi
 fi
 
@@ -132,9 +130,10 @@ Core requirements:
 - Implement only the selected vertical slice.
 - Read only the required context files first.
 - Do not modify docs/source.
+- Never modify protected files: scripts/, .ralph/config.yaml, .ralph/permissions.json, AGENTS.md, CLAUDE.md, .gitignore, docs/working/HIGH_RISK_APPROVALS.md, docs/working/DECISION_POLICY.md. Validation fails the run if you do.
 - Write execution-plan.md before coding.
 - Check permissions before editing files.
-- Use TDD where practical.
+- TDD is mandatory for backend and business logic: write the failing test first, then implement, and save red/green output to evidence/terminal-logs/.
 - Run required quality gates.
 - Save evidence.
 - Save changed-files.txt.
@@ -142,10 +141,11 @@ Core requirements:
 - Save review-packet.md.
 - Update state, progress, handoff, and slice status.
 - Commit only if gates pass and config allows commits.
-- High-risk slices run only when pre-approved in docs/working/HIGH_RISK_APPROVALS.md; if the selected slice is High risk and not listed there, stop immediately.
+- High-risk slices proceed under the owner's standing approval (docs/working/HIGH_RISK_APPROVALS.md); record risk honestly in risk-assessment.md. Never implement a slice marked [revoked] there.
+- When requirements are ambiguous, follow docs/working/DECISION_POLICY.md: choose the source-doc-compliant option, or the industry-standard default, record it in docs/working/ASSUMPTIONS.md, and continue. Do not stop to ask. Never invent business rules the documents do not state — stub them, record the open question, and continue.
 - Before finishing, sharpen the next 1-2 'Not Started' slice files with concrete requirements (fields, endpoints, validation rules, role rules) from the source documents you already opened.
 - Prefer docs/working/digests/ over re-reading large docs/source files; if you extract requirements from a large source file, save the distilled version into the matching digest.
-- Stop safely on ambiguity, unapproved high risk, forbidden file edits, repeated failure, or diff limit violations.
+- Stop only for the never-do list in DECISION_POLICY.md, forbidden/protected file edits, repeated gate failure, or diff limit violations.
 
 Read in this order:
 1. AGENTS.md or CLAUDE.md
@@ -156,7 +156,9 @@ Read in this order:
 6. .ralph/permissions.json
 7. .ralph/state.json
 8. docs/working/HANDOFF.md
-9. docs/slices/$slice_file
+9. docs/working/DECISION_POLICY.md
+10. docs/slices/$slice_file
+11. The matching docs/working/digests/ file for this epic, if it exists
 
 Do not load all docs/source during a normal run unless the selected slice explicitly requires it.
 EOF
@@ -303,6 +305,7 @@ if (( no_commit == 0 )); then
   ) && committed=1 || true
 fi
 
+merged=0
 if (( committed == 1 )) && (( no_worktree == 0 )); then
   auto_merge="$(awk -F': *' '/^[[:space:]]*auto_merge:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
   if [[ "$auto_merge" == "true" ]]; then
@@ -310,12 +313,25 @@ if (( committed == 1 )) && (( no_worktree == 0 )); then
       git -C "$repo_root" worktree remove --force "$worktree_dir"
       git -C "$repo_root" branch -d "$branch_name"
       run_dir="$repo_root/.ralph/runs/$run_id"
+      merged=1
       echo "Merged $branch_name into main and removed the worktree."
     else
       echo "Auto-merge into main failed; branch $branch_name kept for manual review." >&2
     fi
   else
     echo "auto_merge is disabled; review and merge branch $branch_name manually." >&2
+  fi
+fi
+
+if (( merged == 1 )); then
+  auto_push="$(awk -F': *' '/^[[:space:]]*auto_push:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+  push_remote="$(awk -F': *' '/^[[:space:]]*push_remote:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+  if [[ "$auto_push" == "true" && -n "$push_remote" ]]; then
+    if git -C "$repo_root" push "$push_remote" main; then
+      echo "Pushed main to $push_remote."
+    else
+      echo "WARN: push to $push_remote failed (non-fatal); push manually later." >&2
+    fi
   fi
 fi
 

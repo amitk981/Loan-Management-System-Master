@@ -91,3 +91,13 @@ Validation evidence added:
 - Result: Success
 - Risk level: Medium (guardrail/config changes, no product behavior changes except dormant-bug fixes noted in ASSUMPTIONS.md)
 - Next action: `./scripts/afk-dev.sh 1 --mode normal` to run 002B2.
+
+## 2026-07-02 18:40:00 - autonomy-upgrade
+- Agent tool used: Claude Code (manual owner session)
+- Slice attempted: none (automation upgrade)
+- Summary: Switched to standing-approval + veto autonomy model at the owner's explicit request. Added DECISION_POLICY.md (decision ladder, tech standards, never-do list) and rewrote HIGH_RISK_APPROVALS.md as standing approval + owner veto. Hard-enforced protected-paths check in ralph-validate.sh (agents can never modify scripts/config/policies/source docs — verified by self-test). New gates: makemigrations --check sync gate and coverage floor (fail_under 85, current 92%). TDD made mandatory in the run prompt. Added scripts/ralph-loop.sh ("run ralph loop"): full-queue autonomous loop with one repair attempt per failure, 3-failure stop, auto-push of merged work to github-master. Unblocked agent edits to frontend package/config files in permissions.json. Added slice 002FL (ESLint baseline).
+- Tests run: bash -n all scripts; preflight dry-run pass; live ralph-validate self-test — all 7 gates green, protected-paths tripwire correctly failed on owner-session changes.
+- Evidence saved: this entry; self-test outputs verified in session.
+- Result: Success
+- Risk level: Medium (governance model change, explicitly requested and recorded)
+- Next action: `./scripts/ralph-loop.sh`

@@ -1,25 +1,30 @@
-# High-Risk Slice Approvals
+# High-Risk Policy: Standing Approval + Veto
 
-Ralph refuses to start a slice whose `## Risk Level` is `High` unless that slice is listed here with an `[approved]` tag. This file is the human control point for unattended (AFK) runs: the owner reviews what a high-risk slice will touch, then grants approval for that one slice only.
+## Standing approval
 
-How to approve a slice, one line per slice:
+On 2026-07-02 the project owner (Amit) granted standing approval for autonomous AFK runs, including High-risk slices, stating: the automation "should take any decision within interest of the project… without taking my approval as I am not a developer" and must "work seamlessly without interruption".
+
+High-risk slices therefore run WITHOUT per-slice human approval. This is safe only because the compensating controls below are hard-enforced by scripts (not by trusting the agent):
+
+1. Protected files can never be modified by an agent — `scripts/ralph-validate.sh` fails the run if `scripts/`, `.ralph/config.yaml`, `.ralph/permissions.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, this file, `docs/working/DECISION_POLICY.md`, or `docs/source/` are touched. An agent can never again weaken its own guardrails.
+2. Every run must pass all quality gates (frontend typecheck/tests/build; backend check/tests/migrations-sync/coverage floor) or nothing is committed or merged.
+3. TDD evidence and an honest risk assessment are required artifacts for every run.
+4. Every merged slice is pushed to GitHub so the owner has a visible, reviewable trail.
+
+## Owner's veto (the brake)
+
+To block a slice from ever running autonomously, add one line:
 
 ```
-- [approved] <full-slice-id> | <date> | <one-line reason>
+- [revoked] <full-slice-id> | <date> | <reason>
 ```
 
-To withdraw an approval, change `[approved]` to `[revoked]`.
+Runs check this list before starting and refuse vetoed slices.
 
-Blanket approvals ("approve everything") are not allowed. Approving a slice here means: "I understand this slice touches security, money, or compliance logic, and I accept that it runs and auto-merges without me watching."
+## Vetoed slices
 
-## Approvals
+(none)
 
-- [approved] 002B2-auth-hardening-jwt-library-and-packaging | 2026-07-02 | Remediation slice: replaces hand-rolled JWT signing with the standard PyJWT library while keeping existing auth tests green. Seeded during the 2026-07-02 workflow repair; owner may revoke.
-- [approved] 002C-role-and-permission-catalogue-seed | 2026-07-02 | Seeds the role/permission catalogue from docs/source/auth-permissions.md; data seeding with tests, no external exposure. Seeded during the 2026-07-02 workflow repair; owner may revoke.
-- [approved] 002D-current-user-api-with-permissions-and-teams | 2026-07-02 | Read-only current-user API on top of the tested auth layer. Seeded during the 2026-07-02 workflow repair; owner may revoke.
+## History
 
-## Pending (not approved yet — Ralph will stop at these)
-
-- 002I-object-level-permission-test-harness
-- 002EX-early-end-to-end-tracer-bullet (review the plan when the queue reaches it)
-- All High-risk slices in epics 004, 006, 007, 008, 009, 010, 011, 012 (see docs/working/IMPLEMENTATION_SLICE_INDEX.md for the Risk column)
+- 2026-07-02: Per-slice approvals model replaced by standing approval + veto at the owner's explicit request. Previously seeded approvals (002B2, 002C, 002D) are superseded by the standing approval.
