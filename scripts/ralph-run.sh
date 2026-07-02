@@ -89,8 +89,18 @@ fi
 
 mkdir -p "$repo_root/.ralph/locks"
 lock_file="$repo_root/.ralph/locks/$run_id.lock"
-echo "$run_id" > "$lock_file"
-trap 'rm -f "$lock_file"' EXIT
+printf '%s\n%s\n' "$run_id" "$$" > "$lock_file"
+
+on_exit() {
+  local status=$?
+  rm -f "$lock_file"
+  if (( status != 0 )) && [[ "$run_dir" != "$main_run_dir" && -d "$run_dir" ]]; then
+    mkdir -p "$main_run_dir"
+    cp -R "$run_dir/." "$main_run_dir/" 2>/dev/null || true
+    echo "Run failed (exit $status); artifacts copied to $main_run_dir for diagnosis." >&2
+  fi
+}
+trap on_exit EXIT
 
 worktree_dir="$repo_root"
 if (( no_worktree == 0 )); then
@@ -147,6 +157,7 @@ Core requirements:
 - Before finishing, sharpen the next 1-2 'Not Started' slice files with concrete requirements (fields, endpoints, validation rules, role rules) from the source documents you already opened.
 - Prefer docs/working/digests/ over re-reading large docs/source files; if you extract requirements from a large source file, save the distilled version into the matching digest.
 - Stop only for the never-do list in DECISION_POLICY.md, forbidden/protected file edits, repeated gate failure, or diff limit violations.
+- In repair mode: first diagnose the most recent failure — read the newest .ralph/runs/*/ folder containing FAIL results, and inspect any leftover .ralph/worktrees/ from the failed attempt before starting fresh.
 
 Read in this order:
 1. AGENTS.md or CLAUDE.md
@@ -246,6 +257,9 @@ if "$mode" != "architecture_review":
     state["slices_completed_since_architecture_review"] = state.get("slices_completed_since_architecture_review", 0) + 1
     threshold = int("$arch_threshold")
     state["architecture_review_due"] = state["slices_completed_since_architecture_review"] >= threshold
+else:
+    state["slices_completed_since_architecture_review"] = 0
+    state["architecture_review_due"] = False
 path.write_text(json.dumps(state, indent=2) + "\n")
 
 slice_path = Path("$worktree_dir/docs/slices") / f"{slice_id}.md"

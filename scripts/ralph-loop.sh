@@ -27,6 +27,17 @@ for ((i = 1; i <= max_iterations; i++)); do
   echo "" | tee -a "$loop_log"
   echo "=== Ralph loop iteration $i/$max_iterations — $(date '+%Y-%m-%d %H:%M:%S') ===" | tee -a "$loop_log"
 
+  review_due="$(python3 -c "import json; print(json.load(open('.ralph/state.json')).get('architecture_review_due', False))" 2>/dev/null || echo False)"
+  if [[ "$review_due" == "True" ]]; then
+    echo "Architecture review is due; running it before the next slice." | tee -a "$loop_log"
+    review_output="$(CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode architecture-review 2>&1)"
+    review_status=$?
+    echo "$review_output" | tee -a "$loop_log"
+    if (( review_status != 0 )); then
+      echo "Architecture review failed (non-fatal); continuing with the queue." | tee -a "$loop_log"
+    fi
+  fi
+
   output="$(./scripts/afk-dev.sh 1 --mode normal 2>&1)"
   status=$?
   echo "$output" | tee -a "$loop_log"
@@ -45,7 +56,7 @@ for ((i = 1; i <= max_iterations; i++)); do
     total_failures=$((total_failures + 1))
     echo "Run failed (failure $total_failures/3). Attempting one repair run." | tee -a "$loop_log"
 
-    repair_output="$(./scripts/afk-dev.sh 1 --mode repair 2>&1)"
+    repair_output="$(CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair 2>&1)"
     repair_status=$?
     echo "$repair_output" | tee -a "$loop_log"
 

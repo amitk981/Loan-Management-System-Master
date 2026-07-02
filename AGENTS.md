@@ -28,6 +28,7 @@ It runs the slice queue autonomously: one slice per iteration with full gates, a
 - Frontend changes follow `docs/working/FRONTEND_DESIGN_RULES.md` exactly: reuse existing components/patterns, never introduce new styling; build missing screens from existing patterns when the documents require them.
 - Before finishing, sharpen the next 1-2 `Not Started` slice files with concrete requirements from source documents you already opened, and store distilled extracts in `docs/working/digests/`.
 - Stop only for the never-do list in DECISION_POLICY.md, unsafe git state, repeated failures, protected/forbidden file edits, an owner veto, or diff limit violations.
+- If a previous session was interrupted mid-run (leftover worktree, "In Progress" final summary), follow the Recovery section of `docs/working/AFK_RUNBOOK.md`: discard the unfinished worktree and rerun the slice; never salvage ungated work.
 
 Read in this order during normal runs:
 1. `docs/working/TOKEN_RULES.md`

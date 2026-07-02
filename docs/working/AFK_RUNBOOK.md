@@ -46,5 +46,11 @@ A failing gate fails the whole run; failing work is never committed, merged, or 
 ## Stopping Conditions
 Stop on missing required files, unsafe git state, active locks, protected/forbidden file edits, an owner veto (`[revoked]` in HIGH_RISK_APPROVALS.md), repeated gate failures, actions on the DECISION_POLICY never-do list, exceeded diff limits, or missing selected agent command. Ambiguity and high risk are NOT stopping conditions — they are handled by DECISION_POLICY.md and the standing approval.
 
+## Interrupted Runs and Recovery
+A run can die mid-flight (usage-limit exhaustion, crash, closed terminal). Recovery is designed to be boring:
+1. Preflight auto-removes stale locks whose owning process is dead; a surviving lock means a run is genuinely still active.
+2. A leftover `.ralph/worktrees/<run-id>` means gates never passed. Discard it (`git worktree remove --force <path>`; `git branch -D ralph/<run-id>_<slice-id>`) and rerun — the slice is still `Not Started`, so the queue picks it up again. Failed-run artifacts are auto-copied to `.ralph/runs/<run-id>/` for diagnosis.
+3. Never salvage partial work from an interrupted run; rerun the slice.
+
 ## Evidence and Review
 Every run folder should contain prompt, plan, changed files, validation outputs, risk assessment, review packet, and final summary. Frontend/API/database slices require matching evidence.

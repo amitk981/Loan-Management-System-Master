@@ -115,8 +115,16 @@ else
 fi
 
 mkdir -p .ralph/locks
+for lock in .ralph/locks/*.lock; do
+  [[ -f "$lock" ]] || continue
+  lock_pid="$(sed -n '2p' "$lock" 2>/dev/null || true)"
+  if [[ -z "$lock_pid" ]] || ! kill -0 "$lock_pid" 2>/dev/null; then
+    rm -f "$lock"
+    warn "Removed stale lock $(basename "$lock") — owning process is no longer running (previous session interrupted)."
+  fi
+done
 if find .ralph/locks -maxdepth 1 -type f -name '*.lock' | grep -q .; then
-  fail "Active Ralph lock exists. Run scripts/ralph-cleanup.sh --stale-locks if stale."
+  fail "Another Ralph run is active right now (live lock). Wait for it or stop it before starting a new run."
 else
   pass "No active Ralph locks."
 fi

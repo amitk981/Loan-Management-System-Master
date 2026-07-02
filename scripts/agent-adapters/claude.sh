@@ -15,7 +15,25 @@ if ! command -v claude >/dev/null 2>&1; then
   exit 1
 fi
 
+CLAUDE_MODEL="${CLAUDE_MODEL:-}"
+
 mkdir -p "$RUN_DIR/evidence/terminal-logs"
+
+cat > "$RUN_DIR/claude-settings.md" <<EOF
+# Claude Settings
+
+- AGENT_TOOL: claude
+- Surface: CLI headless (-p)
+- Requested model: ${CLAUDE_MODEL:-CLI default}
+- Permissions: bypassed (unattended AFK run inside isolated worktree under standing approval)
+- Config source: environment overrides
+EOF
+
 cd "$WORKTREE_DIR"
 
-claude < "$PROMPT_FILE" 2>&1 | tee "$RUN_DIR/evidence/terminal-logs/claude.log"
+args=(-p --dangerously-skip-permissions)
+if [[ -n "$CLAUDE_MODEL" ]]; then
+  args+=(--model "$CLAUDE_MODEL")
+fi
+
+claude "${args[@]}" < "$PROMPT_FILE" 2>&1 | tee "$RUN_DIR/evidence/terminal-logs/claude.log"
