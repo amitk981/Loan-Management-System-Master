@@ -159,6 +159,7 @@ Core requirements:
 - Stop only for the never-do list in DECISION_POLICY.md, forbidden/protected file edits, repeated gate failure, or diff limit violations.
 - In repair mode: first diagnose the most recent failure — read the newest .ralph/runs/*/ folder containing FAIL results, and inspect any leftover .ralph/worktrees/ from the failed attempt before starting fresh.
 - In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md and create or sharpen corrective slices for significant issues.
+- If you are Claude Code, use skills at the stages defined in docs/working/SKILL_REGISTRY.md (tdd during implementation, diagnosing-bugs in repair, code-review with the slice file as spec during architecture review). If a skill is unavailable, follow the baked-in rules; never stall on a missing skill.
 
 Read in this order:
 1. AGENTS.md or CLAUDE.md

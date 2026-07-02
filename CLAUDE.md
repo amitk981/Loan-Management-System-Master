@@ -5,7 +5,7 @@ This repository is agent-agnostic. `AGENTS.md` is the single source of truth for
 ## Running the automation with Claude
 - "run ralph loop" = `./scripts/ralph-loop.sh` from the repository root (codex drives by default).
 - To drive runs with Claude instead: `AGENT_TOOL=claude ./scripts/ralph-loop.sh` (uses `scripts/agent-adapters/claude.sh`, headless).
-- Skills (`/tdd`, `/diagnosing-bugs`, etc.) are optional accelerators used only at the stages listed in `docs/working/SKILL_REGISTRY.md`, and only if available in the session. The workflow must never depend on a skill existing.
+- Skills are optional accelerators used only at the stages listed in `docs/working/SKILL_REGISTRY.md` (the short version: `tdd` while implementing, `diagnosing-bugs` in repair, `code-review` with the slice file as spec during review runs, `research`/`domain-modeling` when building digests). The registry also lists skills deliberately excluded and why. The workflow must never depend on a skill existing.
 
 ## Recovering from an interrupted session (usage-limit exhaustion, crash, closed terminal)
 If any previous session — Claude or codex — stopped mid-run, recovery is automatic: the next `./scripts/ralph-loop.sh` (run by either agent) executes `scripts/ralph-recover.sh` at startup, which salvages the dead run's artifacts to `.ralph/runs/<run-id>/`, removes the orphaned worktree and lock, and the still-queued slice reruns cleanly. Nothing manual is needed — just run the loop again.
