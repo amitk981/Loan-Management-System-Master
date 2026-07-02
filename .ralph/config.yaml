@@ -12,6 +12,7 @@ agent:
     fail_if_model_unavailable: true
     record_settings_file: true
     approval_modes_allowed:
+      - never
       - on-request
       - untrusted
     fallback:
@@ -75,7 +76,7 @@ run:
   use_worktree: true
   allow_no_worktree_override: false
   stop_on_ambiguity: true
-  stop_on_high_risk: true
+  stop_on_high_risk: false
   auto_commit: true
   auto_merge: false
   auto_deploy: false
@@ -99,7 +100,7 @@ quality_gates:
 risk:
   low_risk_auto_commit: true
   medium_risk_auto_commit: true
-  high_risk_stop_required: true
+  high_risk_stop_required: false
 
 worktree:
   enabled: true

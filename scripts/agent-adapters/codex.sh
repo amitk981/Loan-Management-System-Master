@@ -18,8 +18,9 @@ fi
 CODEX_PROFILE="${CODEX_PROFILE:-default}"
 CODEX_REASONING_EFFORT="${CODEX_REASONING_EFFORT:-medium}"
 CODEX_VERBOSITY="${CODEX_VERBOSITY:-medium}"
-CODEX_APPROVAL_MODE="${CODEX_APPROVAL_MODE:-on-request}"
+CODEX_APPROVAL_MODE="${CODEX_APPROVAL_MODE:-never}"
 CODEX_MODEL="${CODEX_MODEL:-}"
+CODEX_ADDITIONAL_ARGS="${CODEX_ADDITIONAL_ARGS:-exec}"
 
 mkdir -p "$RUN_DIR/evidence/terminal-logs"
 
@@ -49,4 +50,4 @@ args+=(-c "model_reasoning_effort=$CODEX_REASONING_EFFORT")
 args+=(-c "model_verbosity=$CODEX_VERBOSITY")
 args+=(--ask-for-approval "$CODEX_APPROVAL_MODE")
 
-codex "${args[@]}" ${CODEX_ADDITIONAL_ARGS:-} < "$PROMPT_FILE" 2>&1 | tee "$RUN_DIR/evidence/terminal-logs/codex.log"
+codex "${args[@]}" $CODEX_ADDITIONAL_ARGS < "$PROMPT_FILE" 2>&1 | tee "$RUN_DIR/evidence/terminal-logs/codex.log"

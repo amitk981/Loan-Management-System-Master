@@ -120,7 +120,8 @@ Core requirements:
 - Save review-packet.md.
 - Update state, progress, handoff, and slice status.
 - Commit only if gates pass and config allows commits.
-- Stop safely on ambiguity, high risk, forbidden file edits, repeated failure, or diff limit violations.
+- Continue through high-risk slices under the user's standing approval, while recording risk and evidence.
+- Stop safely on ambiguity, forbidden file edits, repeated failure, or diff limit violations.
 
 Read in this order:
 1. AGENTS.md or CLAUDE.md

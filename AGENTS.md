@@ -12,7 +12,8 @@ Core rules:
 - Save evidence before marking work complete.
 - Update state, progress, handoff, and slice status.
 - Commit only passing work when config allows it.
-- Stop safely on ambiguity, unsafe git state, repeated failures, high risk, forbidden file edits, or diff limit violations.
+- Continue autonomously through high-risk slices after the user's standing approval, while still recording risk and evidence.
+- Stop safely on ambiguity, unsafe git state, repeated failures, forbidden file edits, or diff limit violations.
 
 Read in this order during normal runs:
 1. `docs/working/TOKEN_RULES.md`

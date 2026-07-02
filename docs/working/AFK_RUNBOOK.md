@@ -32,7 +32,7 @@ Use `.ralph/state.json` first. If architecture review is due, run it unless expl
 Current repository gate is `npm run build` inside `sfpcl-lms/`. Lint, typecheck, and unit tests are documented gaps until scripts are added.
 
 ## Stopping Conditions
-Stop on missing required files, unsafe git state, active locks, forbidden file edits, high risk, repeated gate failures, ambiguous requirements, exceeded diff limits, or missing selected agent command.
+Continue through high-risk slices under the user's standing approval, while recording risk level and evidence. Stop on missing required files, unsafe git state, active locks, forbidden file edits, repeated gate failures, ambiguous requirements, exceeded diff limits, or missing selected agent command.
 
 ## Evidence and Review
 Every run folder should contain prompt, plan, changed files, validation outputs, risk assessment, review packet, and final summary. Frontend/API/database slices require matching evidence.
