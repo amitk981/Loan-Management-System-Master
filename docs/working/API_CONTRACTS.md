@@ -6,6 +6,7 @@ This working file tracks implementation status and slice-level decisions. It mus
 
 | Contract Area | Status | Related Screens | Source Contract | Notes |
 |---|---|---|---|---|
+| Backend health endpoints | Implemented in slice 002A | None | `technical-architecture.md` R1 health checks; standard response envelope from `api-contracts.md` | `GET /api/v1/health/live/`, `/ready/`, and `/deep/` return `{ success, data, meta }`; ready/deep include database connectivity status. |
 | Authentication and current user | Draft from source | Login, dashboards, portal auth | `docs/source/api-contracts.md`, `auth-permissions.md` | No backend implemented yet. |
 | Members and KYC | Draft from source | Members, borrower profile, application intake | `data-model.md`, `api-contracts.md` | Prototype uses mock data. |
 | Loan applications | Draft from source | Applications, completeness | `api-contracts.md` | Needs real draft/submit/check endpoints. |

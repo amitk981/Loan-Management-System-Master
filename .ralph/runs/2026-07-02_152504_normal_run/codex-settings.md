@@ -1,0 +1,13 @@
+# Codex Settings
+
+- AGENT_TOOL: codex
+- Codex surface used: CLI
+- Codex profile: deep
+- Requested model: Codex CLI default
+- Actual model if known: unknown
+- Requested reasoning effort: high
+- Actual reasoning effort if known: unknown
+- Verbosity setting: medium
+- Approval mode: never
+- Fallback used: no
+- Config source: .ralph/config.yaml and environment overrides

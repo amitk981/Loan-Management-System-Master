@@ -1,0 +1,9 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002A-backend-scaffold-and-health-endpoint.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/DATABASE_RULES.md
+ M docs/working/HANDOFF.md
+?? .ralph/runs/2026-07-02_152504_normal_run/
+?? sfpcl_credit/

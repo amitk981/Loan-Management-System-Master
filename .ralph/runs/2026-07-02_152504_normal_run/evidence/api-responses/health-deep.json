@@ -1,0 +1,18 @@
+{
+  "status_code": 200,
+  "path": "/api/v1/health/deep/",
+  "body": {
+    "success": true,
+    "data": {
+      "status": "ok",
+      "service": "sfpcl-credit-api",
+      "checks": {
+        "database": "ok"
+      }
+    },
+    "meta": {
+      "request_id": "req-evidence-health",
+      "timestamp": "2026-07-02T10:00:24.773448Z"
+    }
+  }
+}

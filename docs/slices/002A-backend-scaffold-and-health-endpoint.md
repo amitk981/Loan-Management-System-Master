@@ -1,7 +1,7 @@
 # Slice 002A: Backend Scaffold and Health Endpoint
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell
@@ -71,16 +71,26 @@ Medium
 - The implementation stays within one small Ralph slice.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Database rules followed, if needed
+- [x] Permissions tested, if needed
+- [x] Audit events tested, if needed
+- [x] Visual evidence saved, if frontend
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [ ] Commit created only after passing gates (blocked: sandbox cannot write the worktree git index)
+
+## Implementation Notes
+- Added a minimal Django backend scaffold under `sfpcl_credit/`.
+- Implemented unauthenticated operational health endpoints:
+  - `GET /api/v1/health/live/`
+  - `GET /api/v1/health/ready/`
+  - `GET /api/v1/health/deep/`
+- Health endpoints use the standard API response envelope and include request ID/timestamp metadata.
+- Ready/deep checks verify database connectivity against the current in-memory development database setting.
+- No persistent models, migrations, protected business actions, frontend screens, or audit-producing workflows were introduced in this slice.

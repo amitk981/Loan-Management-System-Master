@@ -1,7 +1,7 @@
 # Database Rules
 
 ## Current Codebase
-No backend or database implementation exists in the repository yet.
+A minimal Django backend scaffold exists for health checks. No persistent database schema, models, or migrations have been introduced yet.
 
 ## Source Direction
 Source docs recommend PostgreSQL with a Django modular-monolith backend and service-layer business logic.
