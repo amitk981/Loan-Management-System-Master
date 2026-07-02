@@ -23,6 +23,10 @@ total_failures=0
 
 echo "Ralph loop starting (max $max_iterations iterations). Log: $loop_log"
 
+# Recover from any interrupted previous session (limit exhaustion, crash),
+# no matter which agent was driving it.
+./scripts/ralph-recover.sh 2>&1 | tee -a "$loop_log"
+
 for ((i = 1; i <= max_iterations; i++)); do
   echo "" | tee -a "$loop_log"
   echo "=== Ralph loop iteration $i/$max_iterations — $(date '+%Y-%m-%d %H:%M:%S') ===" | tee -a "$loop_log"
