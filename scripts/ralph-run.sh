@@ -69,6 +69,7 @@ EOF
   slice_id="${slice_file%.md}"
 fi
 
+mkdir -p "$repo_root/.ralph/locks"
 lock_file="$repo_root/.ralph/locks/$run_id.lock"
 echo "$run_id" > "$lock_file"
 

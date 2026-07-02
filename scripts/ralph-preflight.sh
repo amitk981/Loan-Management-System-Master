@@ -108,6 +108,7 @@ else
   find docs/slices -maxdepth 1 -type f -name '*.md' | grep -q . && pass "At least one slice file exists." || fail "No slice files found."
 fi
 
+mkdir -p .ralph/locks
 if find .ralph/locks -maxdepth 1 -type f -name '*.lock' | grep -q .; then
   fail "Active Ralph lock exists. Run scripts/ralph-cleanup.sh --stale-locks if stale."
 else
