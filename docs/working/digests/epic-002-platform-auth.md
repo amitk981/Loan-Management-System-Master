@@ -19,9 +19,21 @@ Source of truth: `docs/source/auth-permissions.md` (section numbers below), `doc
 - Auth behavior moved behind explicit module functions in `sfpcl_credit/identity/modules/`: `tokens.py` (encode/decode/hash/claims + `TokenError`) and `auth_service.py` (`authenticate_user`/`CredentialError`, `issue_login_tokens_and_session`, `validate_refresh_session`, `rotate_refresh_token`, `revoke_session_for_logout`, `validate_access_token`, `record_auth_event`, `auth_payload`). Views are now thin (parse → call module → translate errors). `views.py` re-exports `TokenError` and `decode_token` for backward-compatible imports.
 - All 002B/002B2 behavior preserved (verified by unchanged `test_auth_api.py` + new `test_auth_module.py`): PyJWT HS256, lifetimes, claims, refresh rotation, replay rejection, logout revocation, inactive-user rejection, audit events.
 
+## 002D done (2026-07-03)
+- Added `GET /api/v1/auth/me/` in `sfpcl_credit/identity/views.py` and `sfpcl_credit/config/urls.py`.
+- Current-user reads use `auth_service.current_user_payload_for_access_token()`, which calls the new session-bound `validate_access_session()`: access token must be signed, unexpired, type `access`, bound to an active `UserSession`, and owned by a user whose status can authenticate.
+- A-008 resolved for `/auth/me/`: logged-out/revoked sessions and suspended/inactive users cannot retrieve profile, permission, or action data. `validate_access_token()` remains the low-level stateless JWT decode helper.
+- Response data: `user_id`, `full_name`, `email`, `status`, `role_codes`, `team_codes`, sorted/de-duplicated `permissions`, and `available_actions`.
+- Effective permissions come from `Permission.objects.filter(role_permissions__role=user.primary_role)`. Inactive primary roles return `[]`; A-007 zero-link roles (`sales_team_user`, `it_head`, `management_viewer`) return `[]` until source docs define grants.
+- Auth errors use the shared envelope: missing bearer token `401 AUTH_REQUIRED`; expired access token `401 TOKEN_EXPIRED`; refresh/wrong-type, malformed, revoked-session, inactive-user, or unknown-session tokens `401 INVALID_TOKEN`.
+- Tests added in `test_auth_api.py` and `test_auth_module.py`: success envelope/meta, missing token, expired token, refresh misuse, inactive user, revoked session, permission sorting/empty cases, available actions, and thin-view service-boundary guardrail.
+- API examples saved in `.ralph/runs/2026-07-03_175127_normal_run/api-response-examples.md`.
+
 ## Next sharpened slices (updated 2026-07-03)
 - 002C, 002C2 DONE — see above.
-- 002D should add `GET /api/v1/auth/me/` calling `auth_service.validate_access_token(access_token)` from the `Authorization: Bearer <token>` header, returning user identity, role codes, team codes, effective permission codes (read from `RolePermission` seeded in 002C), and dashboard action availability. Decide A-008: keep access-token validation stateless or bind it to an active `UserSession` (invalidates on logout). Error shape uses `sfpcl_credit/api.error_response`; success uses `sfpcl_credit/api.success_response`.
+- 002D is DONE — see above.
+- 002D2 should keep the 002D `/auth/me/` contract stable while fixing dev infrastructure: env-driven settings, persistent dev SQLite DB, pinned `django-cors-headers`, CORS for `http://localhost:5173`, `CommonMiddleware`/`SecurityMiddleware`, migrated dev DB setup docs, and removal of duplicated backend test `schema_editor.create_model` helpers.
+- 002E should replace the staff demo auth shell with backend login → `/auth/me/` → protected shell state. Preserve the existing visual system exactly, keep borrower portal demo auth out of scope, and derive staff navigation/route visibility from backend canonical permissions through a documented mapping layer. Unknown permission mappings must go to `ASSUMPTIONS.md`, not invented grants.
 - Architecture review 2026-07-03_170432 found no source-fidelity defect in the 002C/002C2 production behavior, but found two follow-ups:
   - 002D evidence must save actual red/green `/auth/me/` test logs and API examples at paths referenced by the review packet. The two prior run packets referenced `evidence/terminal-logs/`, but those directories were absent from committed artifacts; root green gate logs existed.
   - 002D2 should remove duplicated backend test schema setup. Current tests repeat `django.setup()` + `schema_editor.create_model()` helpers in `test_auth_api.py`, `test_auth_module.py`, `test_api_envelope.py`, and `test_catalogue_seed.py`; after 002D2 they should rely on Django's migrated test database/shared test base.
@@ -41,6 +53,7 @@ Source of truth: `docs/source/auth-permissions.md` (section numbers below), `doc
 - Account lifecycle/status values: §7.1–7.3 (only active users may log in — already enforced/tested in 002B).
 - Session policy: §8.2. Sensitive re-auth flow: §6.5 (later slice).
 - Data model tables: §10.1–10.8 (`users`, `roles`, `permissions`, `role_permissions`, `teams`, `user_team_memberships`, `user_sessions`, `sensitive_access_logs`).
+- Source API contract §11.4 defines `/api/v1/auth/me/` as current user profile, roles, teams, and permissions. API conventions require `Authorization: Bearer <access_token>` for protected APIs and standard success/error envelopes with `meta.request_id`, `meta.timestamp`, and `meta.api_version`.
 
 ## For 002C2 — API Envelope and Auth Module Boundary
 - `docs/source/api-contracts.md` §6.1 says success envelopes include `success`, `data`, and `meta.request_id`, `meta.timestamp`, `meta.api_version`.

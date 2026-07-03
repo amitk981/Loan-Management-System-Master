@@ -23,12 +23,16 @@ The React app can actually talk to the backend in development, data survives bet
 4. `python3 sfpcl_credit/manage.py migrate` works against the dev database. Add a short "Dev Setup" note (migrate, runserver, npm run dev) at the top of `docs/working/API_CONTRACTS.md`.
 5. Replace the repeated `django.setup()` / `schema_editor.create_model()` / manual table-clear helpers currently duplicated in backend test files with a shared Django test base or `TestCase`/fixture pattern that relies on migrations. The backend suite must no longer manually create identity tables in each test module.
 6. No behaviour change to existing auth/health endpoints or their tests.
+7. Preserve the 002D `/api/v1/auth/me/` contract exactly while changing settings/test infrastructure: bearer access token, active session, active user, standard envelope with `meta.api_version`, `role_codes`, `team_codes`, sorted `permissions`, and `available_actions`.
+8. Add a dev smoke note or test evidence showing a migrated persistent dev DB can support the auth flow across separate requests: create/seed a user, login, then call `/api/v1/auth/me/` with the returned access token.
 
 ## Test Cases
 - Existing auth + health tests pass unchanged.
 - New test: response to a request with `Origin: http://localhost:5173` includes the CORS allow-origin header.
 - New test: settings read `SFPCL_SECRET_KEY` from the environment when set.
+- New test: settings read `SFPCL_ALLOWED_HOSTS` and `SFPCL_CORS_ORIGINS` as comma-separated lists.
 - New test or static assertion: backend tests no longer contain duplicated `schema_editor.create_model` setup in `test_auth_api.py`, `test_auth_module.py`, `test_api_envelope.py`, or `test_catalogue_seed.py`.
+- Regression test: `/api/v1/auth/me/` still rejects a logged-out/revoked session with `401 INVALID_TOKEN` after the settings/test-base refactor.
 - Existing catalogue/auth module tests still prove real behavior after the shared test base change: seed idempotency, refresh replay rejection, logout revocation, and shared response envelope.
 
 ## Out of Scope

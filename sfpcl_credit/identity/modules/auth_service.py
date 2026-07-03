@@ -14,7 +14,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
-from sfpcl_credit.identity.models import AuditLog, User, UserSession
+from sfpcl_credit.identity.models import AuditLog, Permission, User, UserSession
 from sfpcl_credit.identity.modules.tokens import (
     TokenError,
     access_claims,
@@ -133,6 +133,59 @@ def validate_access_token(access_token):
     expires. Returns the decoded claims; raises `TokenError` otherwise.
     """
     return decode_token(access_token, expected_type="access")
+
+
+def validate_access_session(access_token):
+    """Return the active session bound to `access_token` or raise `TokenError`.
+
+    `/auth/me/` needs current session state, not only stateless JWT validity:
+    logout/session revocation and user status changes must block profile,
+    permissions, and action availability.
+    """
+    claims = validate_access_token(access_token)
+    try:
+        session = UserSession.objects.select_related("user", "user__primary_role").get(
+            user_session_id=claims["session_id"]
+        )
+    except (KeyError, UserSession.DoesNotExist) as exc:
+        raise TokenError("INVALID_TOKEN", "Access session does not exist.") from exc
+
+    if str(session.user_id) != str(claims.get("user_id", "")):
+        raise TokenError("INVALID_TOKEN", "Access token user does not match session.")
+    if not session.is_active():
+        raise TokenError("INVALID_TOKEN", "Access session is not active.")
+    if not session.user.can_authenticate():
+        session.revoke("user_status_changed")
+        raise TokenError("INVALID_TOKEN", "User is not active.")
+    return session
+
+
+def effective_permission_codes(user):
+    if user.primary_role.status != "active":
+        return []
+    codes = Permission.objects.filter(
+        role_permissions__role=user.primary_role
+    ).values_list("permission_code", flat=True)
+    return sorted(set(codes))
+
+
+def current_user_payload(user):
+    permissions = effective_permission_codes(user)
+    return {
+        "user_id": str(user.user_id),
+        "full_name": user.full_name,
+        "email": user.email,
+        "status": user.status,
+        "role_codes": user.role_codes(),
+        "team_codes": user.team_codes(),
+        "permissions": permissions,
+        "available_actions": permissions,
+    }
+
+
+def current_user_payload_for_access_token(access_token):
+    session = validate_access_session(access_token)
+    return current_user_payload(session.user)
 
 
 def record_auth_event(request, action, user=None, session=None, outcome=None, email=None):

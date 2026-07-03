@@ -7,7 +7,7 @@ re-exported for backward-compatible imports.
 """
 
 from django.core.exceptions import ValidationError
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from sfpcl_credit.api import error_response, parse_json_body, success_response
 from sfpcl_credit.identity.modules import auth_service
@@ -31,6 +31,20 @@ def _missing_refresh_token_response(request, exc):
         str(exc),
         {"refresh_token": "This field is required."},
     )
+
+
+def _bearer_access_token(request):
+    authorization = request.headers.get("Authorization", "")
+    if not authorization:
+        return None, error_response(
+            request, 401, "AUTH_REQUIRED", "Bearer access token is required."
+        )
+    parts = authorization.split()
+    if len(parts) != 2 or parts[0].lower() != "bearer" or not parts[1]:
+        return None, error_response(
+            request, 401, "INVALID_TOKEN", "Authorization header must use Bearer token."
+        )
+    return parts[1], None
 
 
 @require_POST
@@ -103,3 +117,15 @@ def logout(request):
         request, "auth.logout.succeeded", user=session.user, session=session, outcome="success"
     )
     return success_response({"logged_out": True}, request)
+
+
+@require_GET
+def me(request):
+    access_token, response = _bearer_access_token(request)
+    if response is not None:
+        return response
+    try:
+        payload = auth_service.current_user_payload_for_access_token(access_token)
+    except TokenError as exc:
+        return error_response(request, 401, exc.code, exc.message)
+    return success_response(payload, request)

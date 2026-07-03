@@ -1,3 +1,4 @@
+import inspect
 import os
 import uuid
 
@@ -15,16 +16,28 @@ from django.db import connection
 
 from sfpcl_credit.identity.models import (
     AuditLog,
+    Permission,
     Role,
+    RolePermission,
     Team,
     User,
     UserSession,
     UserTeamMembership,
 )
+from sfpcl_credit.identity import views
 from sfpcl_credit.identity.modules import auth_service, tokens
 
 
-IDENTITY_MODELS = [Role, Team, User, UserTeamMembership, UserSession, AuditLog]
+IDENTITY_MODELS = [
+    Role,
+    Team,
+    Permission,
+    User,
+    UserTeamMembership,
+    UserSession,
+    RolePermission,
+    AuditLog,
+]
 
 
 def ensure_identity_tables():
@@ -41,9 +54,11 @@ class AuthModuleTests(SimpleTestCase):
     def setUp(self):
         ensure_identity_tables()
         AuditLog.objects.all().delete()
+        RolePermission.objects.all().delete()
         UserSession.objects.all().delete()
         UserTeamMembership.objects.all().delete()
         User.objects.all().delete()
+        Permission.objects.all().delete()
         Team.objects.all().delete()
         Role.objects.all().delete()
         self.factory = RequestFactory()
@@ -170,6 +185,100 @@ class AuthModuleTests(SimpleTestCase):
         )
         with self.assertRaises(tokens.TokenError):
             auth_service.validate_access_token(payload["refresh_token"])
+
+    def test_validate_access_session_rejects_revoked_session(self):
+        session, payload = auth_service.issue_login_tokens_and_session(
+            self.user, self._request()
+        )
+        session.revoke("logout")
+
+        with self.assertRaises(tokens.TokenError) as error:
+            auth_service.validate_access_session(payload["access_token"])
+
+        self.assertEqual(error.exception.code, "INVALID_TOKEN")
+
+    def test_validate_access_session_rejects_inactive_user_and_revokes_session(self):
+        session, payload = auth_service.issue_login_tokens_and_session(
+            self.user, self._request()
+        )
+        self.user.status = "suspended"
+        self.user.save(update_fields=["status"])
+
+        with self.assertRaises(tokens.TokenError) as error:
+            auth_service.validate_access_session(payload["access_token"])
+
+        self.assertEqual(error.exception.code, "INVALID_TOKEN")
+        session.refresh_from_db()
+        self.assertEqual(session.session_status, "revoked")
+        self.assertEqual(session.revoked_reason, "user_status_changed")
+
+    def test_effective_permission_codes_are_sorted_for_active_primary_role(self):
+        later = Permission.objects.create(
+            permission_code="credit.appraisal.review",
+            permission_name="Review appraisal",
+            module_name="credit",
+            risk_level="medium",
+        )
+        earlier = Permission.objects.create(
+            permission_code="approvals.case.create",
+            permission_name="Create approval case",
+            module_name="approvals",
+            risk_level="high",
+        )
+        RolePermission.objects.create(role=self.role, permission=later)
+        RolePermission.objects.create(role=self.role, permission=earlier)
+
+        self.assertEqual(
+            auth_service.effective_permission_codes(self.user),
+            ["approvals.case.create", "credit.appraisal.review"],
+        )
+
+    def test_effective_permission_codes_empty_for_inactive_role(self):
+        Permission.objects.create(
+            permission_code="credit.appraisal.review",
+            permission_name="Review appraisal",
+            module_name="credit",
+            risk_level="medium",
+        )
+        self.role.status = "inactive"
+        self.role.save(update_fields=["status"])
+
+        self.assertEqual(auth_service.effective_permission_codes(self.user), [])
+
+    def test_effective_permission_codes_empty_for_zero_link_role(self):
+        zero_link_role = Role.objects.create(
+            role_code="sales_team_user",
+            role_name="Sales Team User",
+            is_system_role=True,
+            status="active",
+        )
+        self.user.primary_role = zero_link_role
+        self.user.save(update_fields=["primary_role"])
+
+        self.assertEqual(auth_service.effective_permission_codes(self.user), [])
+
+    def test_current_user_payload_uses_effective_permissions_for_available_actions(self):
+        permission = Permission.objects.create(
+            permission_code="credit.appraisal.review",
+            permission_name="Review appraisal",
+            module_name="credit",
+            risk_level="medium",
+        )
+        RolePermission.objects.create(role=self.role, permission=permission)
+
+        payload = auth_service.current_user_payload(self.user)
+
+        self.assertEqual(payload["role_codes"], ["credit_manager"])
+        self.assertEqual(payload["permissions"], ["credit.appraisal.review"])
+        self.assertEqual(payload["available_actions"], ["credit.appraisal.review"])
+
+    def test_current_user_view_delegates_auth_orchestration_to_service_boundary(self):
+        view_source = inspect.getsource(views.me)
+        module_source = inspect.getsource(views)
+
+        self.assertIn("current_user_payload_for_access_token", view_source)
+        self.assertNotIn("UserSession", module_source)
+        self.assertNotIn("Permission", module_source)
 
     def test_record_auth_event_writes_audit_row(self):
         request = self._request()
