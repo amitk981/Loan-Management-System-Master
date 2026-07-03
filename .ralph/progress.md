@@ -101,3 +101,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: Medium (governance model change, explicitly requested and recorded)
 - Next action: `./scripts/ralph-loop.sh`
+
+## 2026-07-03 08:04:07 - 2026-07-03_080407_normal_run
+- Agent tool used: codex
+- Slice attempted: 002B2-auth-hardening-jwt-library-and-packaging
+- Summary: Replaced hand-rolled JWT signing/verification in `sfpcl_credit/identity/views.py` with PyJWT HS256, pinned `PyJWT==2.10.1`, and moved `SECRET_KEY` to `SFPCL_SECRET_KEY` with the prior local-dev fallback.
+- Tests run: backend check, backend tests, makemigrations check, backend coverage (93%, floor 85), frontend vitest, frontend typecheck, frontend build, PyJWT import check, and no-`hmac` acceptance check.
+- Evidence saved: `.ralph/runs/2026-07-03_080407_normal_run/`.
+- Result: Success
+- Risk level: High
+- Next action: Continue with `002C-role-and-permission-catalogue-seed`; 002C and 002D have been sharpened using `docs/working/digests/epic-002-platform-auth.md`.
+
+## 2026-07-03 08:15:04 - 2026-07-03_080407_normal_run
+- Agent tool used: codex
+- Slice attempted: 002B2-auth-hardening-jwt-library-and-packaging
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_080407_normal_run/.ralph/runs/2026-07-03_080407_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_080407_normal_run/.ralph/runs/2026-07-03_080407_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

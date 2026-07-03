@@ -1,3 +1,4 @@
 # Backend dependencies for sfpcl_credit (pinned).
 # Add new packages only per docs/working/DEPENDENCY_POLICY.md.
 Django==5.0.6
+PyJWT==2.10.1

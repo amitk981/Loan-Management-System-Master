@@ -2,11 +2,15 @@
 
 Source of truth: `docs/source/auth-permissions.md` (section numbers below), `docs/source/api-contracts.md` §11–12, 43–44, `docs/source/data-model.md` identity/access tables.
 
-## Already implemented (002A, 002B — merged to main 2026-07-02)
+## Already implemented (002A, 002B — merged to main 2026-07-02; 002B2 completed 2026-07-03)
 - Django backend `sfpcl_credit/` with health endpoints (`/live`, `/ready`, `/deep`).
 - Custom identity models: `User`, `Role`, `Team`, `UserSession`, `UserTeamMembership`, `AuditLog` (`sfpcl_credit/identity/models.py`).
 - `POST /api/v1/auth/login/`, `/refresh/`, `/logout/` with refresh rotation, replay rejection, revocation, auth audit events. Contracts in `docs/working/API_CONTRACTS.md`.
-- KNOWN DEBT: hand-rolled HMAC JWT — replaced by slice 002B2 (PyJWT).
+- JWT signing now uses PyJWT HS256 with `SECRET_KEY` read from `SFPCL_SECRET_KEY` and local-dev fallback. Refresh-session storage, rotation, replay rejection, and logout revocation behaviour were preserved.
+
+## Next sharpened slices (updated 2026-07-03)
+- 002C should seed canonical roles, teams, permissions, and role-permission links. Use the role catalogue, team types, module groups, and A-005 alias reconciliation notes below.
+- 002D should add `GET /api/v1/auth/me/` using PyJWT access-token validation, returning user identity, role codes, team codes, effective permission codes from 002C, and dashboard action availability.
 
 ## For 002C — Role and Permission Catalogue Seed
 - Permission naming convention: §11 (verbs in §11.1); full permission catalogue by module: §12.1–12.13 (auth/user-admin, members, KYC, applications, credit assessment, approvals, documentation, security, SAP/finance, monitoring/default, closure, compliance, reports/audit/config).

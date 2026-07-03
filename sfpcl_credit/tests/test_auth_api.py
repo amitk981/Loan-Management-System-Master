@@ -1,8 +1,16 @@
+import hashlib
 import os
+import subprocess
+import sys
+import uuid
+from pathlib import Path
 
 import django
+import jwt
+from django.conf import settings
 from django.db import connection
 from django.test import Client, SimpleTestCase
+from django.utils import timezone
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sfpcl_credit.config.settings")
@@ -16,6 +24,7 @@ from sfpcl_credit.identity.models import (
     UserSession,
     UserTeamMembership,
 )
+from sfpcl_credit.identity.views import TokenError, decode_token
 
 
 IDENTITY_MODELS = [Role, Team, User, UserTeamMembership, UserSession, AuditLog]
@@ -165,6 +174,57 @@ class AuthApiTests(SimpleTestCase):
         self.assertEqual(replay_response.status_code, 401)
         self.assertEqual(replay_response.json()["error"]["code"], "INVALID_TOKEN")
 
+    def test_refresh_token_signed_with_wrong_secret_is_rejected(self):
+        client = Client()
+        login_response = client.post(
+            "/api/v1/auth/login/",
+            data={
+                "email": "credit.manager@sfpcl.example",
+                "password": "CorrectHorse123!",
+            },
+            content_type="application/json",
+        )
+        refresh_token = login_response.json()["data"]["refresh_token"]
+        claims = jwt.decode(refresh_token, options={"verify_signature": False})
+        wrong_secret_token = jwt.encode(claims, "wrong-test-secret", algorithm="HS256")
+        session = UserSession.objects.get(user=self.user)
+        session.refresh_token_hash = hashlib.sha256(
+            wrong_secret_token.encode("utf-8")
+        ).hexdigest()
+        session.save(update_fields=["refresh_token_hash"])
+
+        response = client.post(
+            "/api/v1/auth/refresh/",
+            data={"refresh_token": wrong_secret_token},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["error"]["code"], "INVALID_TOKEN")
+
+    def test_expired_access_token_is_rejected(self):
+        expired_at = timezone.now() - timezone.timedelta(minutes=1)
+        token = jwt.encode(
+            {
+                "token_type": "access",
+                "user_id": str(self.user.user_id),
+                "session_id": str(uuid.uuid4()),
+                "email": self.user.email,
+                "role_codes": ["credit_manager"],
+                "team_codes": [],
+                "permissions_version": self.user.permissions_version(),
+                "iat": int((expired_at - timezone.timedelta(minutes=1)).timestamp()),
+                "exp": int(expired_at.timestamp()),
+            },
+            settings.SECRET_KEY,
+            algorithm="HS256",
+        )
+
+        with self.assertRaises(TokenError) as error:
+            decode_token(token, expected_type="access")
+
+        self.assertEqual(error.exception.code, "TOKEN_EXPIRED")
+
     def test_logout_revokes_session_and_blocks_future_refresh(self):
         login_response = Client().post(
             "/api/v1/auth/login/",
@@ -196,3 +256,29 @@ class AuthApiTests(SimpleTestCase):
         )
         self.assertEqual(refresh_response.status_code, 401)
         self.assertEqual(refresh_response.json()["error"]["code"], "INVALID_TOKEN")
+
+    def test_secret_key_comes_from_environment_with_dev_fallback(self):
+        env = os.environ.copy()
+        env["SFPCL_SECRET_KEY"] = "test-env-secret-key"
+        repo_root = Path(__file__).resolve().parents[2]
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                (
+                    "import os; "
+                    "os.environ.setdefault('DJANGO_SETTINGS_MODULE', "
+                    "'sfpcl_credit.config.settings'); "
+                    "from django.conf import settings; "
+                    "print(settings.SECRET_KEY)"
+                ),
+            ],
+            cwd=repo_root,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        self.assertEqual(result.stdout.strip(), "test-env-secret-key")

@@ -1,7 +1,7 @@
 # Slice 002B2: Auth Hardening — Replace Hand-Rolled JWT with PyJWT
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell
@@ -40,12 +40,12 @@ High
 - All gates pass (backend tests/check, frontend typecheck/tests/build).
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts confirmed unchanged
-- [ ] Tests/typecheck/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts confirmed unchanged
+- [x] Tests/typecheck/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

@@ -1,9 +1,10 @@
+import os
 from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 
-SECRET_KEY = "local-dev-only-sfpcl-credit"
+SECRET_KEY = os.environ.get("SFPCL_SECRET_KEY", "local-dev-only-sfpcl-credit")
 DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
