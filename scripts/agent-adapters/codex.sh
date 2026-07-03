@@ -53,6 +53,10 @@ args+=(--ask-for-approval "$CODEX_APPROVAL_MODE")
 # Watchdog: a hung agent must fail the run (into the repair path), not
 # stall the loop forever. Pure bash — macOS has no GNU timeout.
 timeout_secs="${AGENT_TIMEOUT_SECONDS:-7200}"
+if ! [[ "$timeout_secs" =~ ^[0-9]+$ ]]; then
+  echo "WARN: AGENT_TIMEOUT_SECONDS is not a number ('$timeout_secs'); using 7200." >&2
+  timeout_secs=7200
+fi
 log="$RUN_DIR/evidence/terminal-logs/codex.log"
 
 codex "${args[@]}" $CODEX_ADDITIONAL_ARGS < "$PROMPT_FILE" > "$log" 2>&1 &

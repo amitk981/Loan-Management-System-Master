@@ -39,16 +39,25 @@ run_dir="$worktree_dir/.ralph/runs/$run_id"
 mkdir -p "$run_dir"
 
 config="$worktree_dir/.ralph/config.yaml"
-project_dir="$(awk -F': *' '/^[[:space:]]*project_dir:/ {print $2; exit}' "$config" | tr -d '"' | xargs || true)"
+project_dir="$(awk -F': *' '/^[[:space:]]*project_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | tr -d '"' | xargs || true)"
 project_dir="${project_dir:-.}"
 project_path="$worktree_dir/$project_dir"
 
 venv_python="$repo_root/.ralph/venv/bin/python"
 [[ -x "$venv_python" ]] || venv_python="python3"
 
+# Gates must use the same node/npm that installed the worktree's node_modules
+# (the orchestrator's inherited PATH). A login shell can resolve a different
+# node — or the same universal binary under a different architecture (Rosetta
+# terminals) — and then native deps like rollup's platform package are missing.
+node_bin_dir=""
+if command -v npm >/dev/null 2>&1; then
+  node_bin_dir="$(cd "$(dirname "$(command -v npm)")" && pwd)"
+fi
+
 enabled() {
   local key="$1"
-  awk -F': *' -v key="$key" '$1 ~ "^[[:space:]]*" key "$" {print $2; exit}' "$config" | xargs
+  awk -F': *' -v key="$key" '$1 ~ "^[[:space:]]*" key "$" {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs
 }
 
 run_gate() {
@@ -64,6 +73,11 @@ run_gate() {
   if [[ ! -d "$project_path" ]]; then
     echo "Project directory not found: $project_path" >> "$file"
     return 1
+  fi
+  if [[ -n "$node_bin_dir" ]]; then
+    echo "Node PATH pin: $node_bin_dir" >> "$file"
+    echo >> "$file"
+    command="export PATH=\"$node_bin_dir:\$PATH\"; $command"
   fi
   (cd "$project_path" && bash -lc "$command") >> "$file" 2>&1
 }
@@ -110,7 +124,7 @@ else
   write_skipped test "disabled in .ralph/config.yaml"
 fi
 
-backend_dir="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {print $2; exit}' "$config" | tr -d '"' | xargs || true)"
+backend_dir="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | tr -d '"' | xargs || true)"
 run_backend_gate() {
   local name="$1"
   local command="$2"
@@ -141,7 +155,7 @@ if [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
     write_skipped backend-migrations "disabled in .ralph/config.yaml"
   fi
   if [[ "$(enabled backend_coverage)" == "true" ]]; then
-    coverage_floor="$(awk -F': *' '/^[[:space:]]*coverage_fail_under:/ {print $2; exit}' "$config" | xargs || true)"
+    coverage_floor="$(awk -F': *' '/^[[:space:]]*coverage_fail_under:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
     coverage_floor="${coverage_floor:-85}"
     if "$venv_python" -c "import coverage" >/dev/null 2>&1; then
       run_backend_gate backend-coverage "\"$venv_python\" -m coverage run --source=$backend_dir $backend_dir/manage.py test $backend_dir.tests && \"$venv_python\" -m coverage report --fail-under=$coverage_floor" || failures=$((failures + 1))
@@ -270,8 +284,8 @@ fi
 
 # Diff limits: catch runaway rewrites (config limits, .ralph/ excluded).
 if [[ "$mode" == "normal_run" || "$mode" == "repair" ]]; then
-  max_files="$(awk -F': *' '/^[[:space:]]*max_changed_files:/ {print $2; exit}' "$config" | xargs || true)"
-  max_lines="$(awk -F': *' '/^[[:space:]]*max_lines_changed:/ {print $2; exit}' "$config" | xargs || true)"
+  max_files="$(awk -F': *' '/^[[:space:]]*max_changed_files:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
+  max_lines="$(awk -F': *' '/^[[:space:]]*max_lines_changed:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
   max_files="${max_files:-30}"
   max_lines="${max_lines:-2000}"
 

@@ -31,7 +31,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-integration_branch="$(awk -F': *' '/^[[:space:]]*integration_branch:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+integration_branch="$(awk -F': *' '/^[[:space:]]*integration_branch:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
 integration_branch="${integration_branch:-staging}"
 current_branch="$(git symbolic-ref --short HEAD 2>/dev/null || echo detached)"
 if [[ "$current_branch" != "$integration_branch" ]]; then
@@ -126,9 +126,9 @@ fi
 
 mkdir -p "$run_dir/evidence/screenshots" "$run_dir/evidence/videos" "$run_dir/evidence/api-responses" "$run_dir/evidence/terminal-logs"
 
-backend_python="$(awk -F': *' '/^[[:space:]]*backend_python:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+backend_python="$(awk -F': *' '/^[[:space:]]*backend_python:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
 backend_python="${backend_python:-python3}"
-backend_dir_cfg="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | tr -d '"' | xargs || true)"
+backend_dir_cfg="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | tr -d '"' | xargs || true)"
 venv_dir="$repo_root/.ralph/venv"
 ensure_backend_env() {
   local req="$worktree_dir/${backend_dir_cfg}/requirements-dev.txt"
@@ -141,7 +141,7 @@ ensure_backend_env() {
     echo "WARN: backend dependency install failed (offline with new pins?); gates will surface any missing module." >&2
   fi
 }
-project_dir_cfg="$(awk -F': *' '/^[[:space:]]*project_dir:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | tr -d '"' | xargs || true)"
+project_dir_cfg="$(awk -F': *' '/^[[:space:]]*project_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | tr -d '"' | xargs || true)"
 ensure_frontend_env() {
   local fe_dir="$worktree_dir/${project_dir_cfg}"
   [[ -n "$project_dir_cfg" && -f "$fe_dir/package-lock.json" ]] || return 0
@@ -264,7 +264,7 @@ Result: In Progress
 Ralph run started for $slice_id.
 EOF
 
-agent_timeout="$(awk -F': *' '/^[[:space:]]*agent_timeout_seconds:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+agent_timeout="$(awk -F': *' '/^[[:space:]]*agent_timeout_seconds:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
 
 agent_rc=0
 "$repo_root/scripts/agent-adapters/$agent.sh" \
@@ -294,7 +294,7 @@ Result: Success
 Ralph run completed for $slice_id.
 EOF
 
-arch_threshold="$(awk -F': *' '/^[[:space:]]*architecture_review_every_completed_slices:/ {print $2; exit}' "$worktree_dir/.ralph/config.yaml" | xargs || true)"
+arch_threshold="$(awk -F': *' '/^[[:space:]]*architecture_review_every_completed_slices:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$worktree_dir/.ralph/config.yaml" | xargs || true)"
 arch_threshold="${arch_threshold:-4}"
 
 python3 - <<PY
@@ -382,7 +382,7 @@ fi
 
 merged=0
 if (( committed == 1 )) && (( no_worktree == 0 )); then
-  auto_merge="$(awk -F': *' '/^[[:space:]]*auto_merge:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+  auto_merge="$(awk -F': *' '/^[[:space:]]*auto_merge:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
   if [[ "$auto_merge" == "true" ]]; then
     if git -C "$repo_root" merge --ff-only "$branch_name"; then
       git -C "$repo_root" worktree remove --force "$worktree_dir"
@@ -399,8 +399,8 @@ if (( committed == 1 )) && (( no_worktree == 0 )); then
 fi
 
 if (( merged == 1 )); then
-  auto_push="$(awk -F': *' '/^[[:space:]]*auto_push:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
-  push_remote="$(awk -F': *' '/^[[:space:]]*push_remote:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+  auto_push="$(awk -F': *' '/^[[:space:]]*auto_push:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+  push_remote="$(awk -F': *' '/^[[:space:]]*push_remote:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
   if [[ "$auto_push" == "true" && -n "$push_remote" ]]; then
     if git -C "$repo_root" push "$push_remote" "$integration_branch"; then
       echo "Pushed $integration_branch to $push_remote."
