@@ -222,3 +222,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-03 18:07:55 - 2026-07-03_180755_normal_run
+- Agent tool used: codex
+- Slice attempted: 002D2-backend-dev-infrastructure
+- Summary: Added env-driven backend settings, persistent dev SQLite database path, pinned/configured `django-cors-headers`, standard Django middleware, migrated `TestCase` backend test infrastructure, infrastructure tests, API contract dev setup notes, and sharpened 002E/002EX.
+- Tests run: TDD red infrastructure tests saved; backend static settings evidence; `rg "schema_editor.create_model|ensure_.*tables" sfpcl_credit/tests` clean; backend `compileall` passed; frontend typecheck, vitest, and build passed. Backend runtime gates (`check`, tests, makemigrations check, coverage, migrate/dev DB smoke) were attempted with the required Ralph venv interpreter and blocked by `ModuleNotFoundError: No module named 'corsheaders'` because the newly pinned package is not installed in the offline venv.
+- Evidence saved: `.ralph/runs/2026-07-03_180755_normal_run/`.
+- Result: Complete with local dependency-install caveat per run prompt; orchestrator must install pinned requirements before independent backend validation.
+- Risk level: Medium.
+- Next action: Install pinned backend requirements through orchestrator, rerun backend gates, then continue with `002E-protected-frontend-route-shell`.
+
+## 2026-07-03 18:20:14 - 2026-07-03_180755_normal_run
+- Agent tool used: codex
+- Slice attempted: 002D2-backend-dev-infrastructure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_180755_normal_run/.ralph/runs/2026-07-03_180755_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_180755_normal_run/.ralph/runs/2026-07-03_180755_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

@@ -1,22 +1,6 @@
-import os
+from django.test import Client
 
-import django
-from django.test import Client, SimpleTestCase
-
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sfpcl_credit.config.settings")
-django.setup()
-
-from django.db import connection
-
-from sfpcl_credit.identity.models import (
-    AuditLog,
-    Role,
-    Team,
-    User,
-    UserSession,
-    UserTeamMembership,
-)
+from sfpcl_credit.tests.base import IdentityTestCase
 
 
 STANDARD_META_KEYS = {"request_id", "timestamp", "api_version"}
@@ -25,44 +9,9 @@ HEALTH_ENDPOINTS = [
     "/api/v1/health/ready/",
     "/api/v1/health/deep/",
 ]
-IDENTITY_MODELS = [Role, Team, User, UserTeamMembership, UserSession, AuditLog]
 
 
-def ensure_identity_tables():
-    existing_tables = set(connection.introspection.table_names())
-    with connection.schema_editor() as schema_editor:
-        for model in IDENTITY_MODELS:
-            if model._meta.db_table not in existing_tables:
-                schema_editor.create_model(model)
-
-
-class ApiEnvelopeTests(SimpleTestCase):
-    databases = {"default"}
-
-    def setUp(self):
-        ensure_identity_tables()
-        AuditLog.objects.all().delete()
-        UserSession.objects.all().delete()
-        UserTeamMembership.objects.all().delete()
-        User.objects.all().delete()
-        Team.objects.all().delete()
-        Role.objects.all().delete()
-        self.role = Role.objects.create(
-            role_code="credit_manager",
-            role_name="Credit Manager",
-            description="Credit workflow owner",
-            is_system_role=True,
-            status="active",
-        )
-        self.user = User.objects.create(
-            full_name="Credit Manager",
-            email="credit.manager@sfpcl.example",
-            status="active",
-            primary_role=self.role,
-        )
-        self.user.set_password("CorrectHorse123!")
-        self.user.save()
-
+class ApiEnvelopeTests(IdentityTestCase):
     def _login(self):
         return Client().post(
             "/api/v1/auth/login/",

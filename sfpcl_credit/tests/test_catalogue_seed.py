@@ -1,13 +1,5 @@
-import os
-
-import django
 from django.core.management import call_command
-from django.db import connection
-from django.test import SimpleTestCase
-
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sfpcl_credit.config.settings")
-django.setup()
+from django.test import TestCase
 
 from sfpcl_credit.identity.catalogue import (
     PERMISSIONS,
@@ -18,39 +10,12 @@ from sfpcl_credit.identity.catalogue import (
     seed_catalogue,
 )
 from sfpcl_credit.identity.models import (
-    AuditLog,
     Permission,
     Role,
     RolePermission,
     Team,
-    User,
-    UserSession,
-    UserTeamMembership,
 )
 
-
-# Create order respects foreign-key dependencies.
-CREATE_MODELS = [
-    Role,
-    Team,
-    Permission,
-    User,
-    UserTeamMembership,
-    UserSession,
-    RolePermission,
-    AuditLog,
-]
-# Delete order respects PROTECT/CASCADE relations.
-DELETE_MODELS = [
-    AuditLog,
-    RolePermission,
-    UserSession,
-    UserTeamMembership,
-    User,
-    Permission,
-    Role,
-    Team,
-]
 
 STANDARD_INTERNAL_ROLE_CODES = [
     "field_officer",
@@ -99,26 +64,7 @@ REPRESENTATIVE_PERMISSIONS_BY_GROUP = {
 }
 
 
-def ensure_catalogue_tables():
-    existing = set(connection.introspection.table_names())
-    with connection.schema_editor() as schema_editor:
-        for model in CREATE_MODELS:
-            if model._meta.db_table not in existing:
-                schema_editor.create_model(model)
-
-
-def clear_catalogue_tables():
-    for model in DELETE_MODELS:
-        model.objects.all().delete()
-
-
-class CatalogueSeedTests(SimpleTestCase):
-    databases = {"default"}
-
-    def setUp(self):
-        ensure_catalogue_tables()
-        clear_catalogue_tables()
-
+class CatalogueSeedTests(TestCase):
     def test_seed_creates_standard_role_and_team_codes(self):
         seed_catalogue()
 

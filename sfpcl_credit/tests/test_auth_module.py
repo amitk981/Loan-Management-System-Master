@@ -1,82 +1,26 @@
 import inspect
-import os
 import uuid
 
-import django
 import jwt
 from django.conf import settings
-from django.test import RequestFactory, SimpleTestCase
+from django.test import RequestFactory
 from django.utils import timezone
-
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sfpcl_credit.config.settings")
-django.setup()
-
-from django.db import connection
 
 from sfpcl_credit.identity.models import (
     AuditLog,
     Permission,
     Role,
     RolePermission,
-    Team,
-    User,
-    UserSession,
-    UserTeamMembership,
 )
 from sfpcl_credit.identity import views
 from sfpcl_credit.identity.modules import auth_service, tokens
+from sfpcl_credit.tests.base import IdentityTestCase
 
 
-IDENTITY_MODELS = [
-    Role,
-    Team,
-    Permission,
-    User,
-    UserTeamMembership,
-    UserSession,
-    RolePermission,
-    AuditLog,
-]
-
-
-def ensure_identity_tables():
-    existing_tables = set(connection.introspection.table_names())
-    with connection.schema_editor() as schema_editor:
-        for model in IDENTITY_MODELS:
-            if model._meta.db_table not in existing_tables:
-                schema_editor.create_model(model)
-
-
-class AuthModuleTests(SimpleTestCase):
-    databases = {"default"}
-
+class AuthModuleTests(IdentityTestCase):
     def setUp(self):
-        ensure_identity_tables()
-        AuditLog.objects.all().delete()
-        RolePermission.objects.all().delete()
-        UserSession.objects.all().delete()
-        UserTeamMembership.objects.all().delete()
-        User.objects.all().delete()
-        Permission.objects.all().delete()
-        Team.objects.all().delete()
-        Role.objects.all().delete()
+        super().setUp()
         self.factory = RequestFactory()
-        self.role = Role.objects.create(
-            role_code="credit_manager",
-            role_name="Credit Manager",
-            description="Credit workflow owner",
-            is_system_role=True,
-            status="active",
-        )
-        self.user = User.objects.create(
-            full_name="Credit Manager",
-            email="credit.manager@sfpcl.example",
-            status="active",
-            primary_role=self.role,
-        )
-        self.user.set_password("CorrectHorse123!")
-        self.user.save()
 
     def _request(self):
         return self.factory.post(

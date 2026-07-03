@@ -1,12 +1,6 @@
-import os
 from datetime import datetime
 
-import django
 from django.test import Client, SimpleTestCase
-
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sfpcl_credit.config.settings")
-django.setup()
 
 
 class HealthApiTests(SimpleTestCase):

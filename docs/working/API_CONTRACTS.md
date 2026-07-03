@@ -4,6 +4,21 @@ Source contract baseline: `docs/source/api-contracts.md`.
 
 This working file tracks implementation status and slice-level decisions. It must be updated whenever a slice changes frontend/backend assumptions.
 
+## Dev Setup
+
+Backend development uses environment-driven Django settings and a persistent local SQLite database at
+`sfpcl_credit/db.sqlite3`. After dependencies are installed from `sfpcl_credit/requirements-dev.txt`,
+run:
+
+```bash
+/Users/amitkallapa/Loan\ Management\ System\ Development/.ralph/venv/bin/python sfpcl_credit/manage.py migrate
+/Users/amitkallapa/Loan\ Management\ System\ Development/.ralph/venv/bin/python sfpcl_credit/manage.py runserver 127.0.0.1:8000
+cd sfpcl-lms && npm run dev
+```
+
+The React dev server origin `http://localhost:5173` is allowed by default for local CORS. Override
+with `SFPCL_CORS_ORIGINS` as a comma-separated list when needed.
+
 | Contract Area | Status | Related Screens | Source Contract | Notes |
 |---|---|---|---|---|
 | Backend health endpoints | Implemented in slice 002A; envelope unified in 002C2 | None | `technical-architecture.md` R1 health checks; standard response envelope from `api-contracts.md` §6.1 | `GET /api/v1/health/live/`, `/ready/`, and `/deep/` return `{ success, data, meta }` via the shared envelope helper; `meta` now includes `request_id`, `timestamp`, and `api_version: "v1"`. Ready/deep include database connectivity status. |

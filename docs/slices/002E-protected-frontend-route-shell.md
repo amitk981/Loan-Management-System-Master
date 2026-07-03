@@ -15,6 +15,7 @@ Staff users sign in through the real backend, the app shell loads the current ba
 
 ## Depends On
 - 002D
+- 002D2
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
@@ -37,6 +38,7 @@ Staff users sign in through the real backend, the app shell loads the current ba
 
 ## Frontend Scope
 - Add a small API client for the implemented auth endpoints: `POST /api/v1/auth/login/`, `POST /api/v1/auth/logout/`, and `GET /api/v1/auth/me/`.
+- Use the 002D2 development backend contract: API base URL defaults to `http://127.0.0.1:8000`, Vite runs on `http://localhost:5173`, and CORS must succeed without a frontend proxy for health/auth calls.
 - Replace `AppInner`'s local demo `isLoggedIn` + `handleLogin(role)` flow for staff with real email/password login, token storage, current-user loading, and logout.
 - Keep the existing visual design exactly. Reuse `LoginScreen`, `AppShell`, `AlertBanner`/existing alert styles, `Sidebar`, and `Header`; change labels/state wiring only.
 - Remove or gate the staff demo role selector behind an explicit development flag such as `import.meta.env.VITE_ENABLE_DEMO_AUTH === "true"`; production/default behavior must use the backend login API.
@@ -80,6 +82,7 @@ No new frontend audit event. Login/logout audit is already handled by backend en
 - Frontend test: navigation hides or blocks a route when the backend permission list does not include the mapped permission.
 - Frontend test: logout calls `/api/v1/auth/logout/` with the refresh token and returns to login.
 - Backend tests remain green; no backend behavior changes expected.
+- Integration smoke: with a migrated persistent dev DB, login and `/auth/me/` work across separate browser/API requests after a page reload.
 
 ## Visual Acceptance Criteria
 Screens must be visually indistinguishable from the prototype:
@@ -93,6 +96,7 @@ Screens must be visually indistinguishable from the prototype:
 - Backend check/tests/migrations/coverage logs to prove auth endpoints still pass.
 - Screenshots for the visual states above.
 - API interaction evidence showing login → me → logout in development.
+- CORS evidence for `GET /api/v1/health/live/` or auth from `Origin: http://localhost:5173`.
 
 ## Risk Level
 Medium

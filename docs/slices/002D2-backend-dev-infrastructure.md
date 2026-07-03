@@ -1,7 +1,7 @@
 # Slice 002D2: Backend Dev Infrastructure — Env Settings, Persistent DB, CORS, Test Base
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell (infrastructure)
@@ -48,12 +48,14 @@ Medium
 - All gates pass.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] Dependency pinned and recorded
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] Dependency pinned and recorded
 - [ ] Tests/typecheck/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates
+
+Note: frontend gates and backend static checks passed during `2026-07-03_180755_normal_run`; backend runtime gates were blocked locally because the newly pinned `django-cors-headers==4.4.0` package is not installed in the offline Ralph venv. Per the run prompt, the orchestrator installs pinned requirements before independent validation.
