@@ -11,6 +11,8 @@ from sfpcl_credit.identity.models import (
     Permission,
     Role,
     RolePermission,
+    Team,
+    UserTeamMembership,
 )
 from sfpcl_credit.identity import views
 from sfpcl_credit.identity.modules import auth_service, tokens
@@ -201,6 +203,55 @@ class AuthModuleTests(IdentityTestCase):
 
         self.assertEqual(auth_service.effective_permission_codes(self.user), [])
 
+    def test_role_payload_is_empty_for_inactive_primary_role(self):
+        self.role.status = "inactive"
+        self.role.save(update_fields=["status"])
+
+        self.assertEqual(auth_service.role_payload(self.user), [])
+
+    def test_team_payload_is_sorted_and_excludes_inactive_memberships_and_teams(self):
+        treasury = Team.objects.create(
+            team_code="treasury",
+            team_name="Treasury Team",
+            status="active",
+        )
+        credit = Team.objects.create(
+            team_code="credit_assessment",
+            team_name="Credit Assessment Team",
+            status="active",
+        )
+        inactive_team = Team.objects.create(
+            team_code="audit",
+            team_name="Audit Team",
+            status="inactive",
+        )
+        inactive_membership_team = Team.objects.create(
+            team_code="compliance",
+            team_name="Compliance Team",
+            status="active",
+        )
+        UserTeamMembership.objects.create(user=self.user, team=treasury, status="active")
+        UserTeamMembership.objects.create(user=self.user, team=credit, status="active")
+        UserTeamMembership.objects.create(
+            user=self.user, team=inactive_team, status="active"
+        )
+        UserTeamMembership.objects.create(
+            user=self.user,
+            team=inactive_membership_team,
+            status="inactive",
+        )
+
+        self.assertEqual(
+            auth_service.team_payload(self.user),
+            [
+                {
+                    "team_code": "credit_assessment",
+                    "team_name": "Credit Assessment Team",
+                },
+                {"team_code": "treasury", "team_name": "Treasury Team"},
+            ],
+        )
+
     def test_current_user_payload_uses_effective_permissions_for_available_actions(self):
         permission = Permission.objects.create(
             permission_code="credit.appraisal.review",
@@ -213,6 +264,10 @@ class AuthModuleTests(IdentityTestCase):
         payload = auth_service.current_user_payload(self.user)
 
         self.assertEqual(payload["role_codes"], ["credit_manager"])
+        self.assertEqual(
+            payload["roles"],
+            [{"role_code": "credit_manager", "role_name": "Credit Manager"}],
+        )
         self.assertEqual(payload["permissions"], ["credit.appraisal.review"])
         self.assertEqual(payload["available_actions"], ["credit.appraisal.review"])
 

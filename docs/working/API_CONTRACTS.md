@@ -48,9 +48,9 @@ Implemented endpoints:
 | `POST /api/v1/auth/login/` | `email`, `password` | bearer `access_token`, `refresh_token`, `expires_in`, user profile with role/team codes | Only `active` users receive tokens; invalid credentials and non-active users receive `401 INVALID_CREDENTIALS`; successful and failed attempts are audited. |
 | `POST /api/v1/auth/refresh/` | `refresh_token` | rotated bearer token payload | Refresh tokens are matched against `user_sessions.refresh_token_hash`; successful refresh rotates the token; replayed, revoked, expired, malformed, or status-invalid tokens return `401`. |
 | `POST /api/v1/auth/logout/` | `refresh_token` | `{ "logged_out": true }` | Logout revokes the matching session with reason `logout`; the same refresh token cannot be used again; logout is audited. |
-| `GET /api/v1/auth/me/` | `Authorization: Bearer <access_token>` | user identity (`user_id`, `full_name`, `email`, `status`), `role_codes`, `team_codes`, `permissions`, `available_actions` | Access token must be signed, unexpired, type `access`, and bound to an active `user_sessions` row for an active user. Missing token returns `401 AUTH_REQUIRED`; expired access tokens return `401 TOKEN_EXPIRED`; refresh/wrong-type, malformed, revoked-session, inactive-user, or unknown-session tokens return `401 INVALID_TOKEN`. |
+| `GET /api/v1/auth/me/` | `Authorization: Bearer <access_token>` | user identity (`user_id`, `full_name`, `email`, `mobile_number`, `status`), `roles`, `teams`, compatibility `role_codes`/`team_codes`, `permissions`, `available_actions` | Access token must be signed, unexpired, type `access`, and bound to an active `user_sessions` row for an active user. Missing token returns `401 AUTH_REQUIRED`; expired access tokens return `401 TOKEN_EXPIRED`; refresh/wrong-type, malformed, revoked-session, inactive-user, or unknown-session tokens return `401 INVALID_TOKEN`. |
 
-Full example responses for this slice are saved in `.ralph/runs/2026-07-02_154724_normal_run/api-response-examples.md`.
+Full 002D3 current-user example responses are saved in `.ralph/runs/2026-07-03_214932_normal_run/api-response-examples.md`.
 
 ## Shared response envelope (002C2)
 
@@ -63,7 +63,7 @@ module, and translate known errors. `auth_service.validate_access_session` is th
 validator used by `GET /api/v1/auth/me/`, resolving A-008 for current-user reads: a logged-out,
 revoked, expired-session, or inactive-user access token cannot retrieve profile or permission data.
 
-## Current user response (002D; source-fidelity correction queued in 002D3)
+## Current user response (002D3)
 
 `GET /api/v1/auth/me/`
 
@@ -81,7 +81,20 @@ Success data:
   "user_id": "uuid",
   "full_name": "Credit Manager",
   "email": "credit.manager@sfpcl.example",
+  "mobile_number": "+919999999999",
   "status": "active",
+  "roles": [
+    {
+      "role_code": "credit_manager",
+      "role_name": "Credit Manager"
+    }
+  ],
+  "teams": [
+    {
+      "team_code": "credit_assessment",
+      "team_name": "Credit Assessment"
+    }
+  ],
   "role_codes": ["credit_manager"],
   "team_codes": ["credit_assessment"],
   "permissions": ["approvals.case.create", "credit.appraisal.review"],
@@ -91,7 +104,9 @@ Success data:
 
 Rules:
 - `permissions` are sorted, de-duplicated `RolePermission.permission.permission_code` values for the user's active primary role.
-- Inactive primary roles return empty `role_codes` and empty `permissions`.
+- `roles` contains the active primary role as `{ role_code, role_name }`; inactive primary roles return empty `roles`, empty `role_codes`, and empty `permissions`.
+- `teams` contains active memberships to active teams as `{ team_code, team_name }`, sorted by `team_code`; inactive memberships and inactive teams are excluded.
+- `role_codes` and `team_codes` are additive compatibility fields derived from `roles` and `teams`.
 - Roles with no seeded permission links, including the A-007 `sales_team_user`, `it_head`, and `management_viewer` cases, return an empty permission list until source documents define grants.
 - `available_actions` currently mirrors effective permission codes; later workflow/object-level slices may narrow it per resource while backend enforcement remains authoritative.
-- Architecture review `2026-07-03_213704_architecture_review` found that the source `docs/source/api-contracts.md` §11.4 also expects `mobile_number`, `roles[{role_code, role_name}]`, and `teams[{team_code, team_name}]`. Corrective slice 002D3 must add those fields before 002E frontend route-shell wiring consumes `/auth/me/`.
+- 002D3 corrected the architecture-review gap by matching `docs/source/api-contracts.md` §11.4 before 002E frontend route-shell wiring consumes `/auth/me/`.

@@ -29,12 +29,19 @@ Source of truth: `docs/source/auth-permissions.md` (section numbers below), `doc
 - Tests added in `test_auth_api.py` and `test_auth_module.py`: success envelope/meta, missing token, expired token, refresh misuse, inactive user, revoked session, permission sorting/empty cases, available actions, and thin-view service-boundary guardrail.
 - API examples saved in `.ralph/runs/2026-07-03_175127_normal_run/api-response-examples.md`.
 
+## 002D3 done (2026-07-03)
+- Corrected `/api/v1/auth/me/` source fidelity before frontend shell wiring. The success `data` now includes `mobile_number`, `roles[{role_code, role_name}]`, and `teams[{team_code, team_name}]` in addition to the compatibility `role_codes`, `team_codes`, `permissions`, and `available_actions` fields.
+- `roles` is derived from the active primary role; inactive primary roles return `roles: []`, `role_codes: []`, and `permissions: []`.
+- `teams` is derived from active memberships to active teams and sorted by `team_code`; `team_codes` is derived from the same payload.
+- Security behavior from 002D is unchanged: session-bound bearer access validation, active-user enforcement, standard envelopes, and the existing `AUTH_REQUIRED`, `TOKEN_EXPIRED`, and `INVALID_TOKEN` cases remain covered by tests.
+- API examples saved in `.ralph/runs/2026-07-03_214932_normal_run/api-response-examples.md`.
+
 ## Next sharpened slices (updated 2026-07-03)
 - 002C, 002C2 DONE — see above.
 - 002D is DONE — see above.
-- 002D2 should keep the 002D `/auth/me/` contract stable while fixing dev infrastructure: env-driven settings, persistent dev SQLite DB, pinned `django-cors-headers`, CORS for `http://localhost:5173`, `CommonMiddleware`/`SecurityMiddleware`, migrated dev DB setup docs, and removal of duplicated backend test `schema_editor.create_model` helpers.
-- Architecture review 2026-07-03_213704 found a source-fidelity gap in 002D: `/auth/me/` currently returns `role_codes`/`team_codes`, but `docs/source/api-contracts.md` §11.4 expects current-user profile data plus `roles[{role_code, role_name}]` and `teams[{team_code, team_name}]`; it also shows `mobile_number`. Corrective slice 002D3 must enrich `/auth/me/` before frontend wiring depends on the reduced shape, while preserving session-bound validation and compatibility fields.
-- 002E should replace the staff demo auth shell with backend login → `/auth/me/` → protected shell state after 002D3. Preserve the existing visual system exactly, keep borrower portal demo auth out of scope, and derive staff navigation/route visibility from backend canonical permissions through a documented mapping layer. Unknown permission mappings must go to `ASSUMPTIONS.md`, not invented grants.
+- 002D2 is DONE.
+- 002D3 is DONE — `/auth/me/` now matches `docs/source/api-contracts.md` §11.4 while preserving 002D compatibility fields.
+- 002E should replace the staff demo auth shell with backend login → `/auth/me/` → protected shell state using the 002D3 data shape. Preserve the existing visual system exactly, keep borrower portal demo auth out of scope, display role/team names from `roles`/`teams`, keep `role_codes`/`team_codes` as compatibility data, and derive staff navigation/route visibility from backend canonical permissions through a documented mapping layer. Unknown permission mappings must go to `ASSUMPTIONS.md`, not invented grants.
 - Architecture review 2026-07-03_170432 found no source-fidelity defect in the 002C/002C2 production behavior, but found two follow-ups:
   - 002D evidence must save actual red/green `/auth/me/` test logs and API examples at paths referenced by the review packet. The two prior run packets referenced `evidence/terminal-logs/`, but those directories were absent from committed artifacts; root green gate logs existed.
   - 002D2 should remove duplicated backend test schema setup. Current tests repeat `django.setup()` + `schema_editor.create_model()` helpers in `test_auth_api.py`, `test_auth_module.py`, `test_api_envelope.py`, and `test_catalogue_seed.py`; after 002D2 they should rely on Django's migrated test database/shared test base.

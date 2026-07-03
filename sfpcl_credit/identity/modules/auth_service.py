@@ -169,15 +169,46 @@ def effective_permission_codes(user):
     return sorted(set(codes))
 
 
+def role_payload(user):
+    if user.primary_role.status != "active":
+        return []
+    return [
+        {
+            "role_code": user.primary_role.role_code,
+            "role_name": user.primary_role.role_name,
+        }
+    ]
+
+
+def team_payload(user):
+    memberships = (
+        user.team_memberships.filter(status="active", team__status="active")
+        .select_related("team")
+        .order_by("team__team_code")
+    )
+    return [
+        {
+            "team_code": membership.team.team_code,
+            "team_name": membership.team.team_name,
+        }
+        for membership in memberships
+    ]
+
+
 def current_user_payload(user):
     permissions = effective_permission_codes(user)
+    roles = role_payload(user)
+    teams = team_payload(user)
     return {
         "user_id": str(user.user_id),
         "full_name": user.full_name,
         "email": user.email,
+        "mobile_number": user.mobile_number,
         "status": user.status,
-        "role_codes": user.role_codes(),
-        "team_codes": user.team_codes(),
+        "roles": roles,
+        "teams": teams,
+        "role_codes": [role["role_code"] for role in roles],
+        "team_codes": [team["team_code"] for team in teams],
         "permissions": permissions,
         "available_actions": permissions,
     }

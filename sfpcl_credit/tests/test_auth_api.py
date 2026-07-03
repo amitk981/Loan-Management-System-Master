@@ -20,6 +20,8 @@ from sfpcl_credit.tests.base import IdentityTestCase
 
 class AuthApiTests(IdentityTestCase):
     def test_current_user_endpoint_returns_profile_permissions_and_actions(self):
+        self.user.mobile_number = "+919999999999"
+        self.user.save(update_fields=["mobile_number"])
         team = Team.objects.create(
             team_code="credit_assessment",
             team_name="Credit Assessment",
@@ -67,7 +69,21 @@ class AuthApiTests(IdentityTestCase):
         self.assertEqual(payload["data"]["user_id"], str(self.user.user_id))
         self.assertEqual(payload["data"]["full_name"], "Credit Manager")
         self.assertEqual(payload["data"]["email"], "credit.manager@sfpcl.example")
+        self.assertEqual(payload["data"]["mobile_number"], "+919999999999")
         self.assertEqual(payload["data"]["status"], "active")
+        self.assertEqual(
+            payload["data"]["roles"],
+            [{"role_code": "credit_manager", "role_name": "Credit Manager"}],
+        )
+        self.assertEqual(
+            payload["data"]["teams"],
+            [
+                {
+                    "team_code": "credit_assessment",
+                    "team_name": "Credit Assessment",
+                }
+            ],
+        )
         self.assertEqual(payload["data"]["role_codes"], ["credit_manager"])
         self.assertEqual(payload["data"]["team_codes"], ["credit_assessment"])
         self.assertEqual(
@@ -77,6 +93,17 @@ class AuthApiTests(IdentityTestCase):
         self.assertEqual(
             payload["data"]["available_actions"],
             ["approvals.case.create", "credit.appraisal.review"],
+        )
+        self.assertEqual(
+            payload["data"]["role_codes"],
+            [role["role_code"] for role in payload["data"]["roles"]],
+        )
+        self.assertEqual(
+            payload["data"]["team_codes"],
+            [team["team_code"] for team in payload["data"]["teams"]],
+        )
+        self.assertEqual(
+            payload["data"]["available_actions"], payload["data"]["permissions"]
         )
 
     def _login_tokens(self):
