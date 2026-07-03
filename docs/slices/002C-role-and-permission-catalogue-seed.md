@@ -45,7 +45,7 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Implement catalogue models and an idempotent seed command/service. No public admin API is required in this slice unless needed for verification.
+Implement catalogue models and an idempotent seed command/service. Keep seed behavior behind an explicit module or management-command boundary so reruns, tests, and later admin APIs do not duplicate catalogue logic. No public admin API is required in this slice unless needed for verification.
 
 ## Database/Model Impact
 Non-destructive model/migration changes for this capability, if needed.
@@ -67,6 +67,7 @@ Role codes, team codes, and permission codes are unique. Seed data must be deter
 - New test: seed command creates representative permission codes across each digest module group.
 - New test: rerunning the seed command is idempotent and does not duplicate catalogue rows.
 - New test: prototype alias reconciliation from A-005 is represented in canonical permission data or the assumption is updated as resolved/deferred.
+- New test: role-permission seed data is created through the same seed module/interface the command uses, not by duplicating setup logic inside the test.
 
 ## Visual Acceptance Criteria
 None.

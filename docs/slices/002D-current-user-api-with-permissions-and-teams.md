@@ -15,6 +15,7 @@ The frontend shell can stop relying on mock role state and render navigation/act
 
 ## Depends On
 - 002C
+- 002C2
 
 ## Concrete Requirements
 1. Add bearer-token authentication for access tokens issued by the existing login/refresh endpoints.
@@ -22,7 +23,8 @@ The frontend shell can stop relying on mock role state and render navigation/act
 3. Response data must include user identity (`user_id`, `full_name`, `email`, `status`), `role_codes`, `team_codes`, effective permission codes from 002C, and an `available_actions` object/list suitable for the dashboard shell.
 4. Reject missing, malformed, expired, wrong-type, or revoked-session access tokens with the existing standard error envelope and `401`.
 5. Preserve active-user-only access: suspended/inactive users must not receive current-user data, and their session should be treated consistently with refresh behavior.
-6. Do not add frontend wiring in this slice unless tests require a small fixture update; route-shell wiring remains 002E.
+6. Use the shared API response helper and auth module boundary from 002C2; do not add a third response helper or put token/session validation directly in the view.
+7. Do not add frontend wiring in this slice unless tests require a small fixture update; route-shell wiring remains 002E.
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
@@ -44,7 +46,7 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Implement access-token authentication helpers and the current-user endpoint only. Reuse the PyJWT decoder from 002B2 and catalogue data from 002C.
+Implement the current-user endpoint only. Reuse the auth/access-token validation module from 002C2 and catalogue data from 002C.
 
 ## Database/Model Impact
 Non-destructive model/migration changes for this capability, if needed.
@@ -67,6 +69,7 @@ Only active users with active sessions and valid access tokens can call `me`. To
 - New test: expired access token returns `401 TOKEN_EXPIRED`.
 - New test: refresh tokens cannot be used against `me`.
 - New test: inactive user or revoked session cannot retrieve current-user data.
+- New test: `me` uses the standard meta keys, including `api_version`, through the shared response helper.
 
 ## Visual Acceptance Criteria
 None.
