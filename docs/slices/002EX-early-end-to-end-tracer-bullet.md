@@ -1,7 +1,7 @@
 # Slice 002EX: Early End-to-End Tracer Bullet
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell (integration proof)
@@ -65,14 +65,14 @@ High
 - `docs/working/MVP_TRACER_BULLET.md` updated with what was proven and what was deferred.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated
-- [ ] Audit events tested
-- [ ] Visual evidence saved
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated
+- [x] Audit events tested
+- [x] Visual evidence saved
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

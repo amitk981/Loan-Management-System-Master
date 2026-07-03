@@ -179,6 +179,7 @@ const CANONICAL_TO_PROTOTYPE_PERMISSIONS: Record<string, Permission> = {
   'config.share_valuation.manage': 'manage_settings',
   'config.scale_of_finance.manage': 'manage_settings',
   'config.interest_rate.manage': 'manage_settings',
+  'tracer.lifecycle.run': 'run_tracer',
 };
 
 export const mapCanonicalPermissions = (canonicalPermissions: string[]): Permission[] => {

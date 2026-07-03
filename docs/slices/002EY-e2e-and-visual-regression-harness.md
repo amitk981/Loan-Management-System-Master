@@ -30,6 +30,9 @@ Design fidelity and working flows are verified automatically on every run that t
 10. Close the 002E visual-evidence gap from architecture review `2026-07-03_224536_architecture_review`: replace the prior HTML harness-only evidence with actual Playwright screenshots/baselines for login, authenticated dashboard, invalid login, missing/revoked auth, and tracer closed state.
 11. Add a browser assertion for the 002E2 role hardening: an unmapped or zero-permission backend role must not see auditor/admin/borrower-specific shell affordances and must not expose tracer navigation/actions.
 12. Close the additional 002E2 local visual-evidence limitation from run `2026-07-03_232853_normal_run`: the in-app Browser plugin reported `Browser is not available: iab`, so this slice must prove the neutral `backend_staff` dashboard/profile/header state with real Playwright screenshots instead of relying on plugin screenshots.
+13. Close the 002EX local visual-evidence limitation from run `2026-07-03_234219_normal_run`: both Django `runserver` on `127.0.0.1:8000` and Vite on `127.0.0.1:5173` failed with `EPERM`, so this slice must run in an environment where Playwright can bind web servers and save the actual closed-state tracer screenshot.
+14. E2E seed/setup must create a staff user with an explicitly active backend role and a `RolePermission` for `tracer.lifecycle.run`; `/auth/me/` must show `permissions` and `available_actions` containing exactly that tracer permission plus any other explicitly seeded test permissions.
+15. The tracer browser test must click the staff-shell `Tracer` navigation item, click `Run tracer`, and assert visible closed evidence for Member, Application, Sanction, Loan account, and Repayment rows. It must not call tracer APIs directly from the test except through UI setup/verification helpers.
 
 ## Test Cases
 - `npm run e2e` passes locally from a clean state.
@@ -37,6 +40,7 @@ Design fidelity and working flows are verified automatically on every run that t
 - `npm run e2e` fails if the staff login call is mocked or bypassed instead of hitting the dev Django server.
 - A missing/revoked session and a zero-permission role both land on the expected restricted UI without rendering protected tracer controls.
 - A zero-permission `it_head` or `management_viewer` login renders the neutral backend-staff dashboard state and no Settings shortcut in the profile menu unless canonical settings permissions are present.
+- The tracer closed-state screenshot is captured after the UI has completed all seven backend transitions and the visible loan-account row has status `Closed`.
 
 ## Out of Scope
 Cross-browser matrices, mobile-device emulation (member portal E2E arrives with 005G), CI wiring for E2E (local gate first; CI later when stable).

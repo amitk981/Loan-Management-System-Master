@@ -151,6 +151,13 @@ describe('backend current-user mapping', () => {
     ])).toEqual(['view_applications', 'create_application', 'view_loan_accounts', 'export_registers']);
   });
 
+  it('maps only the explicit tracer permission to the tracer workspace action', () => {
+    expect(mapCanonicalPermissions([
+      'tracer.lifecycle.run',
+      'unknown.future.tracer_permission',
+    ])).toEqual(['run_tracer']);
+  });
+
   it('keeps zero-permission roles restricted to unrestricted routes', () => {
     const user = mapBackendUserToFrontendUser({
       ...currentUserEnvelope.data,
@@ -179,6 +186,7 @@ describe('backend current-user mapping', () => {
     expect(user.roleCodes).toEqual(['it_head']);
     expect(user.teamName).toBe('IT');
     expect(mapCanonicalPermissions(user.permissions)).toEqual([]);
+    expect(user.availableActions).toEqual([]);
   });
 
   it('maps zero-permission Management Viewer to a neutral backend staff role without prototype permissions', () => {

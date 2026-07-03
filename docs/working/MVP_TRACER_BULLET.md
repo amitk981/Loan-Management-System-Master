@@ -38,6 +38,31 @@ The MVP tracer bullet proves the architecture connects end to end before the pro
 - Screenshots for the visible staff workflow states.
 - Risk assessment showing which controls are intentionally still deferred.
 
+## 002EX Result
+
+Slice `002EX-early-end-to-end-tracer-bullet` proved the first thin path end to end:
+
+1. Backend staff login through `POST /api/v1/auth/login/`.
+2. Session-bound `GET /api/v1/auth/me/` returning explicit `tracer.lifecycle.run`.
+3. Create member.
+4. Create loan application with a positive amount.
+5. Sanction application.
+6. Create loan account.
+7. Mark disbursed.
+8. Post one repayment.
+9. Close the loan.
+
+What was proven:
+- React route/action visibility can be driven by canonical backend permissions through the 002E/002E2 role bridge.
+- The API path persists data in the Django database and writes one audit log plus one workflow event per tracer transition.
+- Invalid state transitions, zero/invalid amounts, unauthenticated requests, revoked access sessions, and authenticated users without `tracer.lifecycle.run` are rejected before domain writes.
+
+What remains deferred:
+- Real member/KYC/application/appraisal/sanction/documentation/SAP/disbursement/repayment/interest/closure business rules.
+- Idempotency keys for financial actions beyond the in-test duplicate/state guards.
+- Object-level permissions and production approval authority.
+- Browser screenshot evidence in this sandbox; localhost binding failed with `EPERM`, so `002EY` must capture real Playwright screenshots/baselines.
+
 ## Source of Truth
 
 The tracer bullet must still respect `docs/source/`; it may use the minimum required records, but it must not invent business rules silently.

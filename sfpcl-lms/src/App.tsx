@@ -46,6 +46,7 @@ import ReportsMIS from './pages/reports/ReportsMIS';
 import GlobalSearchResults from './pages/search/GlobalSearchResults';
 import NotificationsCenter from './pages/notifications/NotificationsCenter';
 import MyProfile from './pages/profile/MyProfile';
+import TracerBullet from './pages/tracer/TracerBullet';
 
 export type Page =
   | 'dashboard' | 'tasks'
@@ -60,7 +61,7 @@ export type Page =
   | 'defaults' | 'closure'
   | 'compliance' | 'registers'
   | 'reports' | 'grievances'
-  | 'audit' | 'settings' | 'profile'
+  | 'audit' | 'settings' | 'profile' | 'tracer'
   | 'borrower';
 
 type AuthView = 'staff' | 'memberLogin' | 'memberActivation' | 'memberForgot';
@@ -92,6 +93,7 @@ const PAGE_PERMISSIONS: Partial<Record<Page, Permission>> = {
   grievances: 'view_compliance',
   audit: 'view_audit',
   settings: 'view_settings',
+  tracer: 'run_tracer',
   borrower: 'view_own_loan',
 };
 
@@ -345,6 +347,8 @@ const AppInner: React.FC = () => {
         return <SettingsHub />;
       case 'profile':
         return <MyProfile />;
+      case 'tracer':
+        return <TracerBullet onSessionExpired={handleLogout} />;
       default:
         return <Dashboard onNavigate={navigate} />;
     }

@@ -40,6 +40,7 @@ const allNavItems: NavItem[] = [
   { id: 'grievances',    label: 'Grievances',            icon: <MessageSquareWarning size={18} />, requiredPermission: 'view_compliance' },
   { id: 'audit',         label: 'Audit & Archive',       icon: <History size={18} />,         requiredPermission: 'view_audit' },
   { id: 'settings',      label: 'Settings',              icon: <Settings size={18} />,        requiredPermission: 'view_settings' },
+  { id: 'tracer',        label: 'Tracer',                icon: <ClipboardCheck size={18} />,  requiredPermission: 'run_tracer' },
 ];
 
 // Borrower portal nav

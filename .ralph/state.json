@@ -12,15 +12,16 @@
     "002D2-backend-dev-infrastructure",
     "002D3-current-user-contract-fidelity",
     "002E-protected-frontend-route-shell",
-    "002E2-frontend-role-bridge-hardening"
+    "002E2-frontend-role-bridge-hardening",
+    "002EX-early-end-to-end-tracer-bullet"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "f732df7",
-  "last_run_id": "2026-07-03_232853_normal_run",
+  "last_run_id": "2026-07-03_234219_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 2,
-  "architecture_review_due": false,
+  "slices_completed_since_architecture_review": 4,
+  "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null

@@ -15,6 +15,8 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 
 ## Depends On
 - 002E
+- 002E2
+- 002EX
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
@@ -33,10 +35,13 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 Relevant prototype screen area for this capability.
 
 ## Frontend Scope
-Small UI wiring for the named workflow, if applicable.
+- Verify and close any remaining sidebar/header affordances after 002E/002E2/002EX.
+- Navigation visibility must derive only from explicit prototype permissions mapped from backend canonical permissions.
+- `backend_staff`, `it_head`, `management_viewer`, unknown roles, and empty-permission sessions must see only unrestricted shell content and no Tracer, Settings, auditor/admin/borrower shortcuts, or action buttons.
+- `tracer.lifecycle.run` maps only to the Tracer navigation/action; it must not unlock member, finance, audit, report, or settings pages.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+No new backend capability unless a missing permission/action contract is discovered. If backend changes are needed, keep them to `/auth/me/` action availability or explicit permission seed/test setup and update `API_CONTRACTS.md`.
 
 ## Database/Model Impact
 None.
@@ -45,7 +50,7 @@ None.
 Create or update the API contract for this capability.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Apply the 002D3 `/auth/me/` contract (`roles`, `teams`, `permissions`, `available_actions`) and the 002E2 neutral-role rule. Unknown canonical permissions and unknown role codes grant no prototype UI access unless this slice maps them explicitly with tests and an `ASSUMPTIONS.md` entry.
 
 ## Audit Requirements
 Record audit/workflow events for critical create/update/approval/access actions.
@@ -54,7 +59,10 @@ Record audit/workflow events for critical create/update/approval/access actions.
 Enforce source-doc business rules and block invalid state transitions.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Frontend tests prove canonical permissions map to exactly the expected prototype permissions, including `tracer.lifecycle.run -> run_tracer`.
+- Empty-permission `credit_manager`, `it_head`, `management_viewer`, and unknown role-code responses do not expose protected sidebar items or header shortcuts.
+- A staff user with only `tracer.lifecycle.run` sees Tracer but not Applications, Members, Loan Accounts, Reports, Settings, or Audit.
+- Logout/revoked-session restore path returns to staff login before protected navigation is rendered.
 
 ## Visual Acceptance Criteria
 Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.

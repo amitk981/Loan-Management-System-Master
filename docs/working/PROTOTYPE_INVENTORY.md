@@ -20,6 +20,7 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
 - Servicing: `LoanAccount360`, `RepaymentsHub`, `InterestManagement`, `MonitoringDashboard`
 - Default/closure/compliance: `DefaultRecoveryHub`, `LoanClosureHub`, `ComplianceDashboard`, `GrievancesHub`, `AuditArchiveHub`, `RegistersHub`
 - Reports/tasks/search/profile/settings: `ReportsMIS`, `TaskInbox`, `GlobalSearchResults`, `NotificationsCenter`, `MyProfile`, `SettingsHub`
+- Dev/integration proof: `TracerBullet`
 - Borrower portal: `BorrowerPortal` and `src/pages/borrower/portal/**`
 
 ## Known Prototype Gaps

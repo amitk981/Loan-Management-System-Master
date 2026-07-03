@@ -93,7 +93,8 @@ export type Permission =
   | 'view_reports' | 'view_settings' | 'manage_settings'
   | 'view_audit' | 'manage_users'
   | 'view_own_loan'
-  | 'manage_interest' | 'manage_closure';
+  | 'manage_interest' | 'manage_closure'
+  | 'run_tracer';
 
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   field_officer: [

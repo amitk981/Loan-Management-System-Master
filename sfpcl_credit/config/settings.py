@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "django.contrib.contenttypes",
     "sfpcl_credit.identity",
+    "sfpcl_credit.tracer",
 ]
 
 MIDDLEWARE = [
