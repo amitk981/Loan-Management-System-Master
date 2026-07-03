@@ -26,6 +26,7 @@ const MyProfile: React.FC = () => {
       case 'auditor': return "Read-only audit access. No create, edit, approve, disburse or post actions.";
       case 'admin': return "System configuration and user access administration only. No business approval authority unless separately assigned.";
       case 'borrower': return "Own application, own documents, own loan account and own grievances only.";
+      case 'backend_staff': return "Backend staff role recognised. No prototype workspace permissions are assigned yet.";
       default: return "";
     }
   };

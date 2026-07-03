@@ -34,6 +34,7 @@ A logged-in staff user can create a member, create a loan application for them, 
 12. Add only the minimum permission bridge entries needed for the tracer screen, and record any unmapped canonical backend permissions in `docs/working/ASSUMPTIONS.md` instead of granting broad prototype permissions.
 13. Do not implement tracer UI on top of the 002E `auditor` fallback defect. The staff user used for tracer evidence must have an explicitly mapped backend role and explicit canonical permissions for tracer route/action visibility.
 14. Preserve the 002E2 hardening behavior: backend roles with empty permissions, including `it_head` or `management_viewer`, must not see tracer navigation, tracer action buttons, or auditor-shaped dashboard shortcuts.
+15. Use the post-002E2 neutral frontend role path in smoke/tests: `/auth/me` responses whose primary backend role is `it_head`, `management_viewer`, any external/future role, or an unknown role code map to frontend role `backend_staff`, preserve `roleName`/`roleCodes`, and receive only explicitly mapped prototype permissions from canonical backend permissions.
 
 ## Test Cases
 - One scripted end-to-end test (API level) walking the full path: create member → application → sanction → account → disbursement → repayment → closure.
@@ -42,6 +43,7 @@ A logged-in staff user can create a member, create a loan application for them, 
 - Auth regression: an authenticated tracer request with a revoked session access token returns `401 INVALID_TOKEN` using the standard envelope before any domain transition occurs.
 - Frontend regression: a staff session with an empty `/auth/me/` `permissions` list cannot see or run the tracer actions.
 - Frontend regression: an unmapped or zero-permission backend role does not inherit auditor/admin/borrower UI behavior while tracer permissions remain hidden.
+- Frontend regression: `backend_staff` sessions see only unrestricted shell content plus the neutral "No workspaces available" dashboard state; no tracer route/action appears unless explicit canonical tracer permissions are mapped in this slice.
 
 ## Evidence Required
 - API response samples for each transition.

@@ -93,9 +93,15 @@ const ROLE_CODE_TO_FRONTEND_ROLE: Record<string, Role> = {
   director: 'director',
   accounts_head: 'accounts',
   sales_team_user: 'sales_team_user',
+  it_head: 'backend_staff',
   internal_auditor: 'auditor',
   system_admin: 'admin',
+  management_viewer: 'backend_staff',
   borrower_portal_user: 'borrower',
+  nominee: 'backend_staff',
+  bank_user: 'backend_staff',
+  subsidiary_user: 'backend_staff',
+  external_auditor: 'backend_staff',
 };
 
 const CANONICAL_TO_PROTOTYPE_PERMISSIONS: Record<string, Permission> = {
@@ -197,7 +203,7 @@ export const mapBackendUserToFrontendUser = (user: BackendCurrentUser): Frontend
     email: user.email,
     mobileNumber: user.mobile_number,
     status: user.status,
-    role: mappedRole ?? 'auditor',
+    role: mappedRole ?? 'backend_staff',
     roleName: primaryRole?.role_name ?? 'Staff User',
     team: primaryTeam?.team_code,
     teamName: primaryTeam?.team_name,

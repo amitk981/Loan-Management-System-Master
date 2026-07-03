@@ -302,7 +302,9 @@ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLog
               </div>
               <div className="p-2 space-y-0.5">
                 <button onClick={() => { onNavigate?.('profile'); closeAll(); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">My Profile</button>
-                <button onClick={() => { onNavigate?.('settings'); closeAll(); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">Settings</button>
+                {can('view_settings') && (
+                  <button onClick={() => { onNavigate?.('settings'); closeAll(); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">Settings</button>
+                )}
                 <div className="h-px bg-slate-100 my-1" />
                 <button
                   onClick={onLogout}

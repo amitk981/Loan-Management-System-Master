@@ -69,6 +69,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   auditor:                'Auditor',
   admin:                  'Administrator',
   borrower:               'Borrower / Member',
+  backend_staff:          'Staff User',
 };
 
 interface RoleContextValue {
@@ -182,6 +183,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'view_settings', 'manage_settings', 'manage_users',
   ],
   borrower: ['view_own_loan'],
+  backend_staff: [],
 };
 
 const ROLE_USERS: Record<Role, User> = {
@@ -200,6 +202,7 @@ const ROLE_USERS: Record<Role, User> = {
   auditor:                makeDemoUser({ id: 'u11', name: 'Ramesh Iyer',      email: 'ramesh.iyer@sfpcl.in',     role: 'auditor',                team: 'audit' }),
   admin:                  makeDemoUser({ id: 'u12', name: 'Sneha Bhosale',    email: 'sneha.bhosale@sfpcl.in',   role: 'admin',                  team: 'it' }),
   borrower:               makeDemoUser({ id: 'b01', name: 'Ganesh Thorat',    email: 'ganesh.thorat@sfpcl.in',   role: 'borrower' }),
+  backend_staff:          makeDemoUser({ id: 'u14', name: 'Backend Staff',     email: 'backend.staff@sfpcl.in',   role: 'backend_staff' }),
 };
 
 const RoleContext = createContext<RoleContextValue | null>(null);

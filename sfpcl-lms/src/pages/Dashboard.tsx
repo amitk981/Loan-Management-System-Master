@@ -212,6 +212,20 @@ const AdminCards: React.FC<{ onNavigate: (p: Page) => void }> = ({ onNavigate })
   </div>
 );
 
+const BackendStaffCards: React.FC = () => (
+  <div className="card bg-white">
+    <div className="flex items-center gap-3">
+      <Shield size={18} className="text-slate-500 flex-shrink-0" />
+      <div>
+        <h2 className="section-title">No workspaces available</h2>
+        <p className="text-sm text-slate-500 mt-1">
+          This backend role is recognised, but no LMS workspace permissions are assigned yet.
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
 const DirectorCards: React.FC<{ onNavigate: (p: Page) => void }> = ({ onNavigate }) => (
   <div>
     <h2 className="section-title mb-3">Director — Sanction Committee</h2>
@@ -228,8 +242,11 @@ const DirectorCards: React.FC<{ onNavigate: (p: Page) => void }> = ({ onNavigate
 
 const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const { currentUser, can } = useRole();
+  const isNeutralBackendStaff = currentUser.role === 'backend_staff';
 
-  const urgentApps = currentUser.role === 'admin'
+  const urgentApps = isNeutralBackendStaff
+    ? []
+    : currentUser.role === 'admin'
     ? [
         { id: 'admin1', applicationNumber: 'Approval matrix change pending', memberName: 'Configuration' },
         { id: 'admin2', applicationNumber: 'Inactive user access review due', memberName: 'Security' }
@@ -239,7 +256,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     if (currentUser.role === 'deputy_manager_finance' || currentUser.role === 'compliance_team' || currentUser.role === 'company_secretary' || currentUser.role === 'sanction_committee' || currentUser.role === 'cfo' || currentUser.role === 'director' || currentUser.role === 'senior_manager_finance' || currentUser.role === 'cfc' || currentUser.role === 'accounts' || currentUser.role === 'sales_team_user') {
       return a.currentOwnerRole === currentUser.role;
     }
-    return true; // auditor gets all exceptions for review
+    return currentUser.role === 'auditor'; // auditor gets all exceptions for review
   });
   const overdueLoans = loanAccounts.filter(l => l.status === 'overdue' || l.status === 'grace_period');
   const docBlockers = loanApplications.filter(a =>
@@ -247,7 +264,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   );
   const greeting = new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening';
 
-  const myTasks = currentUser.role === 'admin'
+  const myTasks = isNeutralBackendStaff
+    ? []
+    : currentUser.role === 'admin'
     ? [
         { id: 'admin1', applicationNumber: 'SYS-001', memberName: 'Role permission review due', status: 'pending', loanAmount: 0 },
         { id: 'admin2', applicationNumber: 'SYS-002', memberName: 'Approval matrix update pending', status: 'pending', loanAmount: 0 }
@@ -263,7 +282,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     ? loanApplications.slice(0, 4)
     : (currentUser.role === 'credit_manager' || currentUser.role === 'deputy_manager_finance' || currentUser.role === 'compliance_team' || currentUser.role === 'company_secretary' || currentUser.role === 'sanction_committee' || currentUser.role === 'cfo' || currentUser.role === 'director' || currentUser.role === 'senior_manager_finance' || currentUser.role === 'cfc' || currentUser.role === 'accounts' || currentUser.role === 'sales_team_user')
     ? loanApplications.filter(app => app.currentOwnerRole === currentUser.role)
-    : loanApplications.slice(0, 4);
+    : [];
 
   const safeReadyToDisburseCount = loanApplications.filter(a => 
     a.documentationStatus === 'complete' && 
@@ -289,7 +308,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       case 'sales_team_user':    return <SalesTeamCards onNavigate={onNavigate} />;
       case 'auditor':            return <AuditorCards onNavigate={onNavigate} />;
       case 'admin':              return <AdminCards onNavigate={onNavigate} />;
-      default:                   return <CreditManagerCards onNavigate={onNavigate} readyToDisburse={safeReadyToDisburseCount} />;
+      default:                   return <BackendStaffCards />;
     }
   };
 
@@ -381,17 +400,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <p className="text-2xl font-bold text-slate-900 num leading-tight">8</p>
             <p className="text-xs text-slate-500">open items</p>
           </div>
-        ) : (
-          <div className="sm:text-right rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 flex-shrink-0">
-            <p className="text-xs text-slate-500">Section 186 utilisation</p>
-            <p className="text-2xl font-bold text-slate-900 num leading-tight">{dashboardStats.sectionUtilisation}%</p>
-            <p className="text-xs text-slate-500">of lending limit</p>
-          </div>
-        )}
+        ) : null}
       </div>
 
       {/* Alerts */}
-      {dashboardStats.openExceptions > 0 && (
+      {!isNeutralBackendStaff && dashboardStats.openExceptions > 0 && (
         <AlertBanner
           type="exception"
           title={
@@ -915,6 +928,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                   </div>
                 </button>
               ))}
+            </div>
+          </div>
+        ) : currentUser.role === 'backend_staff' ? (
+          <div className="card bg-white">
+            <div className="flex items-center justify-center py-8 text-slate-400 text-sm">
+              <CheckCircle2 size={16} className="mr-2 text-green-500" /> No permission-gated records available
             </div>
           </div>
         ) : (

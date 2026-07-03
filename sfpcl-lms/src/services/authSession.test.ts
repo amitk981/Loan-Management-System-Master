@@ -161,6 +161,40 @@ describe('backend current-user mapping', () => {
     expect(user.role).toBe('sales_team_user');
     expect(mapCanonicalPermissions(user.permissions)).toEqual([]);
   });
+
+  it('maps zero-permission IT Head to a neutral backend staff role without auditor/admin/borrower behavior', () => {
+    const user = mapBackendUserToFrontendUser({
+      ...currentUserEnvelope.data,
+      roles: [{ role_code: 'it_head', role_name: 'IT Head' }],
+      teams: [{ team_code: 'it', team_name: 'IT' }],
+      permissions: [],
+      available_actions: [],
+    });
+
+    expect(user.role).toBe('backend_staff');
+    expect(user.role).not.toBe('auditor');
+    expect(user.role).not.toBe('admin');
+    expect(user.role).not.toBe('borrower');
+    expect(user.roleName).toBe('IT Head');
+    expect(user.roleCodes).toEqual(['it_head']);
+    expect(user.teamName).toBe('IT');
+    expect(mapCanonicalPermissions(user.permissions)).toEqual([]);
+  });
+
+  it('maps zero-permission Management Viewer to a neutral backend staff role without prototype permissions', () => {
+    const user = mapBackendUserToFrontendUser({
+      ...currentUserEnvelope.data,
+      roles: [{ role_code: 'management_viewer', role_name: 'Management Viewer' }],
+      teams: [],
+      permissions: [],
+      available_actions: [],
+    });
+
+    expect(user.role).toBe('backend_staff');
+    expect(user.roleName).toBe('Management Viewer');
+    expect(user.roleCodes).toEqual(['management_viewer']);
+    expect(mapCanonicalPermissions(user.permissions)).toEqual([]);
+  });
 });
 
 function response(status: number, body: unknown): Response {

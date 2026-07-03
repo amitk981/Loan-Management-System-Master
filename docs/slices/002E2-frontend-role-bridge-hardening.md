@@ -1,7 +1,7 @@
 # Slice 002E2: Frontend Role Bridge Hardening
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell
@@ -62,14 +62,14 @@ Medium
 - All configured gates pass.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Permissions tested
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Permissions tested
+- [x] Visual evidence saved, if frontend
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

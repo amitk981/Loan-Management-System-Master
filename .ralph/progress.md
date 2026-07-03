@@ -1,6 +1,14 @@
 # Ralph Progress Log
 
-No AFK implementation slice has completed yet.
+## 2026-07-03 23:28:53 - 2026-07-03_232853_normal_run
+- Agent tool used: codex
+- Slice attempted: 002E2-frontend-role-bridge-hardening
+- Summary: Removed the unsafe frontend role fallback from backend-auth sessions. Backend roles without prototype equivalents now map to neutral `backend_staff` instead of `auditor`, while preserving backend role/team labels and role/team codes. Added explicit neutral handling for `it_head`, `management_viewer`, external/future seeded roles, and unknown role codes. Hardened dashboard/profile/header branches so zero-permission backend staff do not inherit auditor/admin/borrower affordances or Settings shortcuts.
+- Tests run: focused auth-session TDD red/green; frontend vitest 14/14; frontend typecheck; frontend build; backend check; backend tests 52/52; makemigrations check; backend coverage 97% (floor 85).
+- Evidence saved: `.ralph/runs/2026-07-03_232853_normal_run/`.
+- Result: Success. Screenshot capture was attempted through the in-app Browser plugin, but the Browser runtime was unavailable (`Browser is not available: iab`); limitation recorded and 002EY sharpened to close it with Playwright screenshots.
+- Risk level: Medium.
+- Next action: Run `002EX-early-end-to-end-tracer-bullet`, then `002EY-e2e-and-visual-regression-harness`.
 
 ## 2026-07-03 22:23:18 - 2026-07-03_222318_normal_run
 - Agent tool used: codex
@@ -321,6 +329,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_224536_architecture_review/.ralph/runs/2026-07-03_224536_architecture_review/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_224536_architecture_review/.ralph/runs/2026-07-03_224536_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-03 23:42:13 - 2026-07-03_232853_normal_run
+- Agent tool used: codex
+- Slice attempted: 002E2-frontend-role-bridge-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_232853_normal_run/.ralph/runs/2026-07-03_232853_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_232853_normal_run/.ralph/runs/2026-07-03_232853_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

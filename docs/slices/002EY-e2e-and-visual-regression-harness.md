@@ -29,12 +29,14 @@ Design fidelity and working flows are verified automatically on every run that t
 9. Add a negative browser check for revoked or missing auth: opening the app without a stored valid session shows the staff login and does not expose the tracer route.
 10. Close the 002E visual-evidence gap from architecture review `2026-07-03_224536_architecture_review`: replace the prior HTML harness-only evidence with actual Playwright screenshots/baselines for login, authenticated dashboard, invalid login, missing/revoked auth, and tracer closed state.
 11. Add a browser assertion for the 002E2 role hardening: an unmapped or zero-permission backend role must not see auditor/admin/borrower-specific shell affordances and must not expose tracer navigation/actions.
+12. Close the additional 002E2 local visual-evidence limitation from run `2026-07-03_232853_normal_run`: the in-app Browser plugin reported `Browser is not available: iab`, so this slice must prove the neutral `backend_staff` dashboard/profile/header state with real Playwright screenshots instead of relying on plugin screenshots.
 
 ## Test Cases
 - `npm run e2e` passes locally from a clean state.
 - Deleting a baseline and re-running regenerates it (documented in the run summary).
 - `npm run e2e` fails if the staff login call is mocked or bypassed instead of hitting the dev Django server.
 - A missing/revoked session and a zero-permission role both land on the expected restricted UI without rendering protected tracer controls.
+- A zero-permission `it_head` or `management_viewer` login renders the neutral backend-staff dashboard state and no Settings shortcut in the profile menu unless canonical settings permissions are present.
 
 ## Out of Scope
 Cross-browser matrices, mobile-device emulation (member portal E2E arrives with 005G), CI wiring for E2E (local gate first; CI later when stable).

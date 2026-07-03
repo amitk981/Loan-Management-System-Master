@@ -64,7 +64,7 @@ export type Role =
   | 'field_officer' | 'deputy_manager_finance' | 'credit_manager' | 'compliance_team'
   | 'company_secretary' | 'sanction_committee' | 'cfo' | 'director'
   | 'senior_manager_finance' | 'cfc' | 'accounts' | 'sales_team_user'
-  | 'auditor' | 'admin' | 'borrower';
+  | 'auditor' | 'admin' | 'borrower' | 'backend_staff';
 
 // ─── Entity interfaces ────────────────────────────────────────────────────
 
