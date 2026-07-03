@@ -81,6 +81,9 @@ run:
   auto_merge: true
   auto_push: true
   push_remote: github-master
+  # Agents integrate ONLY into this branch; the owner alone promotes staging -> main
+  # (see docs/working/RELEASE_PROMOTION.md). ralph-run.sh refuses to run on any other branch.
+  integration_branch: staging
   agent_timeout_seconds: 7200  # watchdog: a hung agent fails into the repair path
   auto_deploy: false
   architecture_review_every_completed_slices: 4

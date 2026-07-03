@@ -31,6 +31,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+integration_branch="$(awk -F': *' '/^[[:space:]]*integration_branch:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+integration_branch="${integration_branch:-staging}"
+current_branch="$(git symbolic-ref --short HEAD 2>/dev/null || echo detached)"
+if [[ "$current_branch" != "$integration_branch" ]]; then
+  echo "Refusing to run: repository is on '$current_branch' but agent work integrates only into '$integration_branch'." >&2
+  echo "Fix: git checkout $integration_branch   (only the owner promotes $integration_branch to main)." >&2
+  exit 1
+fi
+
 run_id="${run_id:-$(date '+%Y-%m-%d_%H%M%S')_$mode}"
 main_run_dir="$repo_root/.ralph/runs/$run_id"
 run_dir="$main_run_dir"
@@ -336,9 +345,9 @@ if (( committed == 1 )) && (( no_worktree == 0 )); then
       git -C "$repo_root" branch -d "$branch_name"
       run_dir="$repo_root/.ralph/runs/$run_id"
       merged=1
-      echo "Merged $branch_name into main and removed the worktree."
+      echo "Merged $branch_name into $integration_branch and removed the worktree."
     else
-      echo "Auto-merge into main failed; branch $branch_name kept for manual review." >&2
+      echo "Auto-merge into $integration_branch failed; branch $branch_name kept for manual review." >&2
     fi
   else
     echo "auto_merge is disabled; review and merge branch $branch_name manually." >&2
@@ -349,8 +358,8 @@ if (( merged == 1 )); then
   auto_push="$(awk -F': *' '/^[[:space:]]*auto_push:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
   push_remote="$(awk -F': *' '/^[[:space:]]*push_remote:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
   if [[ "$auto_push" == "true" && -n "$push_remote" ]]; then
-    if git -C "$repo_root" push "$push_remote" main; then
-      echo "Pushed main to $push_remote."
+    if git -C "$repo_root" push "$push_remote" "$integration_branch"; then
+      echo "Pushed $integration_branch to $push_remote."
     else
       echo "WARN: push to $push_remote failed (non-fatal); push manually later." >&2
     fi

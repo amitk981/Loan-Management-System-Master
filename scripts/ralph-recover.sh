@@ -13,6 +13,9 @@ if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   exit 1
 fi
 
+integration_branch="$(awk -F': *' '/^[[:space:]]*integration_branch:/ {print $2; exit}' ".ralph/config.yaml" | xargs || true)"
+integration_branch="${integration_branch:-staging}"
+
 recovered=0
 shopt -s nullglob
 for wt in .ralph/worktrees/*/; do
@@ -41,7 +44,7 @@ for wt in .ralph/worktrees/*/; do
 
   while IFS= read -r branch; do
     [[ -z "$branch" ]] && continue
-    ahead="$(git rev-list --count "main..$branch" 2>/dev/null || echo 0)"
+    ahead="$(git rev-list --count "${integration_branch}..$branch" 2>/dev/null || echo 1)"
     if [[ "$ahead" == "0" ]]; then
       git branch -D "$branch" >/dev/null 2>&1 && echo "  Deleted empty branch $branch."
     else
