@@ -8,8 +8,14 @@ Source of truth: `docs/source/auth-permissions.md` (section numbers below), `doc
 - `POST /api/v1/auth/login/`, `/refresh/`, `/logout/` with refresh rotation, replay rejection, revocation, auth audit events. Contracts in `docs/working/API_CONTRACTS.md`.
 - JWT signing now uses PyJWT HS256 with `SECRET_KEY` read from `SFPCL_SECRET_KEY` and local-dev fallback. Refresh-session storage, rotation, replay rejection, and logout revocation behaviour were preserved.
 
+## 002C done (2026-07-03)
+- Added `Permission` and `RolePermission` models (`sfpcl_credit/identity/models.py`, migration `0002`). Seed module `sfpcl_credit/identity/catalogue.py` + idempotent management command `seed_role_catalogue`.
+- Seeded on a fresh DB: 171 permissions (all §12.1-12.13), 20 roles (15 active internal + 5 inactive external/future), 8 teams, 134 role-permission links (§15 Key Permissions filtered to catalogue codes).
+- A-005 resolved for backend via `PROTOTYPE_PERMISSION_ALIASES` (`export`/`export_reports`→`reports.export`, `view_loans`→`finance.loan_account.read`). Frontend union re-wiring deferred to 002D/002E.
+- Gaps recorded in A-007: five §15 codes not in §12 are unseeded; `sales_team_user`/`it_head`/`management_viewer` have no permission links (avoiding invented grants). 002D should read effective permissions from `RolePermission`.
+
 ## Next sharpened slices (updated 2026-07-03)
-- 002C should seed canonical roles, teams, permissions, and role-permission links. Use the role catalogue, team types, module groups, and A-005 alias reconciliation notes below.
+- 002C DONE — see above.
 - Architecture review 2026-07-03 added corrective slice 002C2 before 002D. 002C2 should consolidate the duplicated API response helpers and move auth token/session/audit behavior behind explicit module functions before another auth endpoint lands.
 - 002D should add `GET /api/v1/auth/me/` using the 002C2 auth/access-token validation module, returning user identity, role codes, team codes, effective permission codes from 002C, and dashboard action availability.
 

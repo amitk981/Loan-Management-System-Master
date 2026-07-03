@@ -1,0 +1,15 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002C-role-and-permission-catalogue-seed.md
+ M docs/slices/002C2-standard-api-envelope-and-auth-service-boundary.md
+ M docs/slices/002D-current-user-api-with-permissions-and-teams.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-002-platform-auth.md
+ M sfpcl_credit/identity/models.py
+?? .ralph/runs/2026-07-03_113738_normal_run/
+?? sfpcl_credit/identity/catalogue.py
+?? sfpcl_credit/identity/management/
+?? sfpcl_credit/identity/migrations/0002_permission_rolepermission_and_more.py
+?? sfpcl_credit/tests/test_catalogue_seed.py

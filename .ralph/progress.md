@@ -141,3 +141,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-03 11:37:38 - 2026-07-03_113738_normal_run
+- Agent tool used: claude
+- Slice attempted: 002C-role-and-permission-catalogue-seed (High risk; standing approval)
+- Summary: Added backend `Permission` + `RolePermission` models (migration 0002), an idempotent seed module `sfpcl_credit/identity/catalogue.py`, and the `seed_role_catalogue` management command. Seeded 171 permissions, 20 roles (15 active internal + 5 inactive external/future), 8 teams, and 134 role-permission links transcribed from `docs/source/auth-permissions.md` §12/§13/§15/§4/§9. Resolved A-005 (prototype alias→canonical map); added A-007 for §15-only codes and roles with no documented permission set (not invented).
+- Tests run: backend check, full suite 19/19 (TDD red→green saved), makemigrations --check clean, coverage 94% (floor 85); frontend typecheck/tests 5/5/build all green.
+- Evidence saved: `.ralph/runs/2026-07-03_113738_normal_run/` (terminal-logs red/green/coverage, api-responses/seed-fresh-db.log).
+- Result: Success
+- Risk level: High (RBAC catalogue). Additive/non-destructive; fully reversible; no deps, no endpoint, no secrets.
+- Next action: Run `002C2-standard-api-envelope-and-auth-service-boundary`, then `002D`.
+
+## 2026-07-03 11:54:55 - 2026-07-03_113738_normal_run
+- Agent tool used: claude
+- Slice attempted: 002C-role-and-permission-catalogue-seed
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_113738_normal_run/.ralph/runs/2026-07-03_113738_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_113738_normal_run/.ralph/runs/2026-07-03_113738_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

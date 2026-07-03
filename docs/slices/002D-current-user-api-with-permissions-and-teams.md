@@ -20,7 +20,7 @@ The frontend shell can stop relying on mock role state and render navigation/act
 ## Concrete Requirements
 1. Add bearer-token authentication for access tokens issued by the existing login/refresh endpoints.
 2. Implement `GET /api/v1/auth/me/` with the standard `{ success, data, meta }` response envelope.
-3. Response data must include user identity (`user_id`, `full_name`, `email`, `status`), `role_codes`, `team_codes`, effective permission codes from 002C, and an `available_actions` object/list suitable for the dashboard shell.
+3. Response data must include user identity (`user_id`, `full_name`, `email`, `status`), `role_codes`, `team_codes`, effective permission codes from 002C, and an `available_actions` object/list suitable for the dashboard shell. Effective permissions = the `permission_code`s linked to the user's active `primary_role` via `RolePermission` (`sfpcl_credit/identity/models.py`, seeded by 002C's `catalogue.seed_catalogue`). Return `[]` when the role is inactive (mirror `User.role_codes()`), de-duplicate, and sort for determinism. Note (A-007): `sales_team_user`, `it_head`, and `management_viewer` currently seed with zero links, so `me` will return an empty permission list for them until A-007 is resolved — assert this explicitly rather than treating it as a bug.
 4. Reject missing, malformed, expired, wrong-type, or revoked-session access tokens with the existing standard error envelope and `401`.
 5. Preserve active-user-only access: suspended/inactive users must not receive current-user data, and their session should be treated consistently with refresh behavior.
 6. Use the shared API response helper and auth module boundary from 002C2; do not add a third response helper or put token/session validation directly in the view.

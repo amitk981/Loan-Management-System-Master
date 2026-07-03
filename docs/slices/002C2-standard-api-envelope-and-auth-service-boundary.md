@@ -30,6 +30,11 @@ Future API slices get consistent response contracts and auth behavior can be tes
 5. Keep Django views thin: parse HTTP input, call the auth/API modules, and translate known errors to standard responses.
 6. Preserve PyJWT HS256, token lifetimes, claims, refresh rotation, replay rejection, logout revocation, inactive-user rejection, and audit behavior from 002B2.
 
+### Concrete starting points (observed 2026-07-03 during 002C)
+- Current response helpers to unify: `success_response()` in `sfpcl_credit/ops.py` (health, **missing** `meta.api_version`) and `success_response()` in `sfpcl_credit/identity/views.py` (auth, already includes `api_version`). Put the single helper in a shared module (e.g. `sfpcl_credit/api.py` or `sfpcl_credit/identity/modules/responses.py`) and import it into both.
+- Gotcha: `sfpcl_credit/tests/test_auth_api.py` imports `from sfpcl_credit.identity.views import TokenError, decode_token`. When you move token/session logic into the new module, either re-export those names from `views` or update that import in the same slice so the existing suite stays green.
+- `settings.AUTH_ACCESS_TOKEN_MINUTES` / `AUTH_REFRESH_TOKEN_HOURS` already exist in `config/settings.py`; the access-token validator you add here is what 002D's `GET /auth/me/` will call.
+
 ## Source References
 - docs/source/api-contracts.md §6.1-6.4
 - docs/source/technical-architecture.md §10, §12, §13.1
