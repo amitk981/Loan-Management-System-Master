@@ -1,0 +1,8 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002D-current-user-api-with-permissions-and-teams.md
+ M docs/slices/002D2-backend-dev-infrastructure.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-002-platform-auth.md
+?? .ralph/runs/2026-07-03_170432_architecture_review/

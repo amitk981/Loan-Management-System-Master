@@ -77,12 +77,19 @@ Only active users with active sessions and valid access tokens can call `me`. To
 - New test: refresh tokens cannot be used against `me`.
 - New test: inactive user or revoked session cannot retrieve current-user data.
 - New test: `me` uses the standard meta keys, including `api_version`, through the shared response helper.
+- New module-level test: the permission-resolution function returns sorted, de-duplicated `RolePermission.permission.permission_code` values for the active primary role, and returns `[]` for inactive-role / A-007 zero-link roles.
+- New guardrail test or assertion: no `/auth/me/` view logic performs direct token/session/permission orchestration that belongs in the auth module boundary.
 
 ## Visual Acceptance Criteria
 None.
 
 ## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+TDD red/green evidence must be saved in committed run artifacts with paths that actually exist in the final review packet:
+- initial failing backend test output for `/api/v1/auth/me/`;
+- green full backend test output, backend check, migration check, and coverage;
+- frontend typecheck/tests/build output, even though no frontend files should change;
+- API response examples for success, missing token, expired token, refresh-token misuse, and revoked-session rejection.
+Screenshots are required only if frontend is touched.
 
 ## Risk Level
 High
