@@ -1,7 +1,7 @@
 # Slice 002C2: Standard API Envelope and Auth Service Boundary
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell
@@ -91,16 +91,16 @@ High
 - The implementation stays within one small Ralph slice.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written or updated (test_api_envelope.py, test_auth_module.py; existing suites unchanged and green)
+- [x] Code implemented (sfpcl_credit/api.py, identity/modules/tokens.py + auth_service.py; ops.py + views.py made thin)
+- [x] API contracts updated (API_CONTRACTS.md shared-envelope section; health envelope shows api_version)
+- [x] Database rules followed (no model/migration change; makemigrations --check clean)
+- [ ] Permissions tested (n/a — no new permissions)
+- [x] Audit events tested (record_auth_event covered by module test; login/refresh/logout audit preserved by test_auth_api.py)
+- [ ] Visual evidence saved (n/a — no frontend change)
+- [x] Tests/typecheck/build passed (backend 33/33, coverage 96%; frontend typecheck/5 tests/build) — lint gate disabled per config
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [ ] Commit created only after passing gates (orchestrator commits after independent validation)

@@ -6,7 +6,7 @@ This working file tracks implementation status and slice-level decisions. It mus
 
 | Contract Area | Status | Related Screens | Source Contract | Notes |
 |---|---|---|---|---|
-| Backend health endpoints | Implemented in slice 002A | None | `technical-architecture.md` R1 health checks; standard response envelope from `api-contracts.md` | `GET /api/v1/health/live/`, `/ready/`, and `/deep/` return `{ success, data, meta }`; ready/deep include database connectivity status. |
+| Backend health endpoints | Implemented in slice 002A; envelope unified in 002C2 | None | `technical-architecture.md` R1 health checks; standard response envelope from `api-contracts.md` §6.1 | `GET /api/v1/health/live/`, `/ready/`, and `/deep/` return `{ success, data, meta }` via the shared envelope helper; `meta` now includes `request_id`, `timestamp`, and `api_version: "v1"`. Ready/deep include database connectivity status. |
 | Authentication and current user | Partially implemented in slice 002B | Login, dashboards, portal auth | `docs/source/api-contracts.md`, `auth-permissions.md` | Implemented `POST /api/v1/auth/login/`, `/refresh/`, and `/logout/` with standard envelopes, active-user-only login, refresh rotation, session revocation, role/team token claims, and auth audit logs. `/api/v1/auth/me/`, password reset, change password, admin session controls, and full permission catalogue remain future slices. |
 | Role/permission/team catalogue | Seeded in slice 002C (no public API) | None directly | `auth-permissions.md` §12-15, §38 | Database/seed only — no endpoint added. Canonical `Permission`, `Role`, `Team`, `RolePermission` catalogue seeded idempotently via `python manage.py seed_role_catalogue` (`sfpcl_credit/identity/catalogue.py`). 002D's `/api/v1/auth/me/` will expose effective permissions from this data. |
 | Members and KYC | Draft from source | Members, borrower profile, application intake | `data-model.md`, `api-contracts.md` | Prototype uses mock data. |
@@ -35,3 +35,13 @@ Implemented endpoints:
 | `POST /api/v1/auth/logout/` | `refresh_token` | `{ "logged_out": true }` | Logout revokes the matching session with reason `logout`; the same refresh token cannot be used again; logout is audited. |
 
 Full example responses for this slice are saved in `.ralph/runs/2026-07-02_154724_normal_run/api-response-examples.md`.
+
+## Shared response envelope (002C2)
+
+Health and auth endpoints use one production envelope implementation in `sfpcl_credit/api.py`
+(`success_response`, `error_response`, `response_meta`). All success and error responses expose the
+same `meta` keys — `request_id`, `timestamp`, `api_version` — matching `docs/source/api-contracts.md`
+§6.1/§6.4. Auth token/session/audit behavior now lives behind explicit module functions in
+`sfpcl_credit/identity/modules/` (`tokens.py`, `auth_service.py`); views only parse HTTP, call the
+module, and translate known errors. `auth_service.validate_access_token` is the access-token
+validator that 002D's `GET /api/v1/auth/me/` will call (see A-008 for its stateless scope).

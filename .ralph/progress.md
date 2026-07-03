@@ -161,3 +161,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-03 11:55:01 - 2026-07-03_115501_normal_run
+- Agent tool used: claude
+- Slice attempted: 002C2-standard-api-envelope-and-auth-service-boundary (High risk; standing approval)
+- Summary: Corrected the two 2026-07-03_081509 architecture-review findings before 002D. (1) Consolidated the duplicated response envelope into one production helper `sfpcl_credit/api.py`; health responses now include `meta.api_version: "v1"`; removed the duplicate `success_response` from `ops.py` and `identity/views.py`. (2) Moved auth token/session/audit behavior behind explicit module functions in `sfpcl_credit/identity/modules/` (`tokens.py`, `auth_service.py`); `login`/`refresh`/`logout` views are now thin (parse → call module → translate errors). `views.py` re-exports `TokenError`/`decode_token` so `test_auth_api.py` stayed unmodified. All 002B/002B2 auth behavior preserved.
+- Tests run: backend check clean, makemigrations --check clean, full suite 33/33 (TDD red→green saved), coverage 96% (floor 85); frontend typecheck/5 tests/build all green. No new deps, no migrations.
+- Evidence saved: `.ralph/runs/2026-07-03_115501_normal_run/evidence/terminal-logs/` (backend-red, backend-green, frontend-gates).
+- Result: Success
+- Risk level: High (auth path). Refactor only; behavior-preserving; fully reversible; no deps, no schema, no secrets. Open item A-008 (stateless access-token validation) carried to 002D.
+- Next action: Run `002D-current-user-api-with-permissions-and-teams` (sharpened this run).
+
+## 2026-07-03 12:08:04 - 2026-07-03_115501_normal_run
+- Agent tool used: claude
+- Slice attempted: 002C2-standard-api-envelope-and-auth-service-boundary
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_115501_normal_run/.ralph/runs/2026-07-03_115501_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_115501_normal_run/.ralph/runs/2026-07-03_115501_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

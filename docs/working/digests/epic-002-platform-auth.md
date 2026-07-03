@@ -14,10 +14,14 @@ Source of truth: `docs/source/auth-permissions.md` (section numbers below), `doc
 - A-005 resolved for backend via `PROTOTYPE_PERMISSION_ALIASES` (`export`/`export_reports`→`reports.export`, `view_loans`→`finance.loan_account.read`). Frontend union re-wiring deferred to 002D/002E.
 - Gaps recorded in A-007: five §15 codes not in §12 are unseeded; `sales_team_user`/`it_head`/`management_viewer` have no permission links (avoiding invented grants). 002D should read effective permissions from `RolePermission`.
 
+## 002C2 done (2026-07-03)
+- Single production response envelope now lives in `sfpcl_credit/api.py` (`success_response`, `error_response`, `response_meta`, plus `parse_json_body`, `request_ip`, `request_user_agent`). Health responses gained the missing `meta.api_version: "v1"`; auth envelope unchanged. Duplicate `success_response` helpers removed from `ops.py` and `identity/views.py`.
+- Auth behavior moved behind explicit module functions in `sfpcl_credit/identity/modules/`: `tokens.py` (encode/decode/hash/claims + `TokenError`) and `auth_service.py` (`authenticate_user`/`CredentialError`, `issue_login_tokens_and_session`, `validate_refresh_session`, `rotate_refresh_token`, `revoke_session_for_logout`, `validate_access_token`, `record_auth_event`, `auth_payload`). Views are now thin (parse → call module → translate errors). `views.py` re-exports `TokenError` and `decode_token` for backward-compatible imports.
+- All 002B/002B2 behavior preserved (verified by unchanged `test_auth_api.py` + new `test_auth_module.py`): PyJWT HS256, lifetimes, claims, refresh rotation, replay rejection, logout revocation, inactive-user rejection, audit events.
+
 ## Next sharpened slices (updated 2026-07-03)
-- 002C DONE — see above.
-- Architecture review 2026-07-03 added corrective slice 002C2 before 002D. 002C2 should consolidate the duplicated API response helpers and move auth token/session/audit behavior behind explicit module functions before another auth endpoint lands.
-- 002D should add `GET /api/v1/auth/me/` using the 002C2 auth/access-token validation module, returning user identity, role codes, team codes, effective permission codes from 002C, and dashboard action availability.
+- 002C, 002C2 DONE — see above.
+- 002D should add `GET /api/v1/auth/me/` calling `auth_service.validate_access_token(access_token)` from the `Authorization: Bearer <token>` header, returning user identity, role codes, team codes, effective permission codes (read from `RolePermission` seeded in 002C), and dashboard action availability. Decide A-008: keep access-token validation stateless or bind it to an active `UserSession` (invalidates on logout). Error shape uses `sfpcl_credit/api.error_response`; success uses `sfpcl_credit/api.success_response`.
 
 ## For 002C — Role and Permission Catalogue Seed
 - Permission naming convention: §11 (verbs in §11.1); full permission catalogue by module: §12.1–12.13 (auth/user-admin, members, KYC, applications, credit assessment, approvals, documentation, security, SAP/finance, monitoring/default, closure, compliance, reports/audit/config).

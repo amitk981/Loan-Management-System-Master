@@ -1,0 +1,15 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002C2-standard-api-envelope-and-auth-service-boundary.md
+ M docs/slices/002D-current-user-api-with-permissions-and-teams.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-002-platform-auth.md
+ M sfpcl_credit/identity/views.py
+ M sfpcl_credit/ops.py
+?? .ralph/runs/2026-07-03_115501_normal_run/
+?? sfpcl_credit/api.py
+?? sfpcl_credit/identity/modules/
+?? sfpcl_credit/tests/test_api_envelope.py
+?? sfpcl_credit/tests/test_auth_module.py

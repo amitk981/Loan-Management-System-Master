@@ -26,6 +26,13 @@ The frontend shell can stop relying on mock role state and render navigation/act
 6. Use the shared API response helper and auth module boundary from 002C2; do not add a third response helper or put token/session validation directly in the view.
 7. Do not add frontend wiring in this slice unless tests require a small fixture update; route-shell wiring remains 002E.
 
+### Concrete starting points (observed 2026-07-03 after 002C2)
+- Access-token validation is ready: call `from sfpcl_credit.identity.modules import auth_service` then `claims = auth_service.validate_access_token(access_token)`. It decodes/verifies signature, expiry, and `token_type == "access"`, raising `tokens.TokenError` (`.code` in `TOKEN_EXPIRED` / `INVALID_TOKEN`) on failure. Extract the raw token from the `Authorization: Bearer <token>` header in the view (thin), and translate `TokenError` via `sfpcl_credit.api.error_response(request, 401, exc.code, exc.message)`.
+- A-008 is the open decision: `validate_access_token` is currently **stateless** (no session lookup), so a logged-out user's still-valid access token would pass. Requirement 5 ("revoked session cannot retrieve current-user data") means 002D should either extend `auth_service` with a session-bound validator (e.g. `validate_access_session(access_token)` that loads `UserSession` by `claims["session_id"]`, checks `is_active()` and `user.can_authenticate()`, mirroring `validate_refresh_session`) or add that check in a new `me` service function. Put the choice behind the auth module boundary, not in the view. Update A-008 to Resolved when done.
+- Effective permissions query: `Permission.objects.filter(role_permissions__role=user.primary_role).values_list("permission_code", flat=True)` — return `sorted(set(...))`, and `[]` when `user.primary_role.status != "active"` (mirror `User.role_codes()`). Models: `RolePermission.role`/`.permission` in `sfpcl_credit/identity/models.py`.
+- Envelope: success via `sfpcl_credit.api.success_response(data, request)`; meta keys `request_id`/`timestamp`/`api_version` come for free. Add a module-level test for the permission-resolution function (not just the HTTP view), consistent with 002C2's `test_auth_module.py`.
+- URL: add `path("api/v1/auth/me/", me, name="auth-me")` in `sfpcl_credit/config/urls.py`; the view is GET-only (`@require_GET`).
+
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
 - docs/source/technical-architecture.md sections 8-12, 17-18
