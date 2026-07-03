@@ -2,6 +2,31 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-03 21:37 - Architecture Review 2026-07-03_213704_architecture_review
+
+Reviewed commits since the prior architecture review:
+- `002D-current-user-api-with-permissions-and-teams` (`52b18da`)
+- `002D2-backend-dev-infrastructure` (`13f7dcb`)
+- Non-product Ralph workflow fixes also present in the diff window: `d758336`, `96a0d02`
+
+### Finding 1 - Medium - `/auth/me/` is secure and well tested, but its success shape is narrower than the source contract
+
+`002D` correctly added session-bound access validation: missing/expired/wrong-type/revoked/inactive-user cases are covered, the view delegates to `auth_service`, and the response uses the shared envelope. The source contract, however, shows current-user data with `mobile_number`, `roles[{role_code, role_name}]`, and `teams[{team_code, team_name}]` (`docs/source/api-contracts.md` §11.4). The implementation and examples expose only `role_codes` and `team_codes`, plus no `mobile_number`. That is workable for the immediate dashboard shell, but it would make 002E build frontend session state on a reduced contract instead of the documented profile/relationship shape.
+
+Corrective action: created `docs/slices/002D3-current-user-contract-fidelity.md` and sharpened `002E` to depend on it. 002D3 must enrich `/auth/me/` while preserving the 002D security behavior and compatibility fields.
+
+### Finding 2 - Pass - 002D2 removed the test-infrastructure drift and the installed gates now pass
+
+The previous architecture review found repeated manual `schema_editor.create_model` setup in backend tests. `002D2` moved auth/catalogue tests onto Django's migrated test database through `IdentityTestCase`, added a static guardrail against reintroducing the manual setup, configured persistent dev SQLite, env-driven settings, and restricted CORS for `http://localhost:5173`. The committed run artifacts show backend check, tests (50/50), migration check, coverage (96%, floor 85), frontend tests, typecheck, and build passing after the orchestrator installed pinned dependencies.
+
+Corrective action: none.
+
+### Finding 3 - Pass - Test quality is behavior-oriented, not coverage-only
+
+The reviewed tests assert real security and contract behavior: `/auth/me` success data, envelope meta, missing bearer token, expired access token, refresh-token misuse, revoked sessions after logout, suspended-user revocation, sorted permissions, zero-link roles, CORS headers, environment parsing, migration-backed test setup, and shared-envelope delegation. These are meaningful regression tests for the slice risks.
+
+Corrective action: none.
+
 ## 2026-07-03 17:04 - Architecture Review 2026-07-03_170432_architecture_review
 
 Reviewed slices / commits since the prior architecture review:

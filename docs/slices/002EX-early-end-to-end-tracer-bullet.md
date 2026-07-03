@@ -16,6 +16,7 @@ A logged-in staff user can create a member, create a loan application for them, 
 ## Depends On
 - 002E (login + protected frontend shell)
 - 002D2 (persistent dev DB and CORS-backed frontend/backend stitching)
+- 002D3 (source-fidelity `/auth/me/` profile, roles, teams, and permissions shape)
 
 ## Concrete Requirements
 1. Skeleton models with MINIMAL fields only (id, reference, status, amount, member link, timestamps): Member, LoanApplication, LoanAccount, Repayment. Later slices (004x, 005x, 009x, 010x) own the real field sets — do not anticipate them.

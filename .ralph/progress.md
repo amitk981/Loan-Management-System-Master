@@ -242,3 +242,24 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-03 21:37:04 - 2026-07-03_213704_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed `002D-current-user-api-with-permissions-and-teams` and `002D2-backend-dev-infrastructure` since the prior architecture review. Found one medium source-fidelity issue: `/api/v1/auth/me/` security/session behavior is correct and well tested, but the success payload is narrower than `docs/source/api-contracts.md` §11.4 because it lacks `mobile_number`, `roles[{role_code, role_name}]`, and `teams[{team_code, team_name}]`.
+- Corrective work: appended `docs/working/REVIEW_FINDINGS.md`; created `002D3-current-user-contract-fidelity`; sharpened `002E` and `002EX` to depend on the corrected `/auth/me` contract before frontend route-shell wiring.
+- Tests run: `git diff --check`; backend check; backend tests 50/50; makemigrations check; backend coverage 96% (floor 85); frontend vitest 5/5; frontend typecheck; frontend build.
+- Evidence saved: `.ralph/runs/2026-07-03_213704_architecture_review/`.
+- Result: Success.
+- Risk level: Low (architecture review/docs-only; no production code changed).
+- Next action: Run `002D3-current-user-contract-fidelity`, then `002E-protected-frontend-route-shell`.
+
+## 2026-07-03 21:49:26 - 2026-07-03_213704_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_213704_architecture_review/.ralph/runs/2026-07-03_213704_architecture_review/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_213704_architecture_review/.ralph/runs/2026-07-03_213704_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

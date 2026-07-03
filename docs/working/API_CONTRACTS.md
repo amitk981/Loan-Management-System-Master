@@ -63,7 +63,7 @@ module, and translate known errors. `auth_service.validate_access_session` is th
 validator used by `GET /api/v1/auth/me/`, resolving A-008 for current-user reads: a logged-out,
 revoked, expired-session, or inactive-user access token cannot retrieve profile or permission data.
 
-## Current user response (002D)
+## Current user response (002D; source-fidelity correction queued in 002D3)
 
 `GET /api/v1/auth/me/`
 
@@ -94,3 +94,4 @@ Rules:
 - Inactive primary roles return empty `role_codes` and empty `permissions`.
 - Roles with no seeded permission links, including the A-007 `sales_team_user`, `it_head`, and `management_viewer` cases, return an empty permission list until source documents define grants.
 - `available_actions` currently mirrors effective permission codes; later workflow/object-level slices may narrow it per resource while backend enforcement remains authoritative.
+- Architecture review `2026-07-03_213704_architecture_review` found that the source `docs/source/api-contracts.md` §11.4 also expects `mobile_number`, `roles[{role_code, role_name}]`, and `teams[{team_code, team_name}]`. Corrective slice 002D3 must add those fields before 002E frontend route-shell wiring consumes `/auth/me/`.

@@ -1,0 +1,10 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002E-protected-frontend-route-shell.md
+ M docs/slices/002EX-early-end-to-end-tracer-bullet.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-002-platform-auth.md
+?? .ralph/runs/2026-07-03_213704_architecture_review/
+?? docs/slices/002D3-current-user-contract-fidelity.md

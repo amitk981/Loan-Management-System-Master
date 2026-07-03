@@ -16,6 +16,7 @@ Staff users sign in through the real backend, the app shell loads the current ba
 ## Depends On
 - 002D
 - 002D2
+- 002D3
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
@@ -42,21 +43,21 @@ Staff users sign in through the real backend, the app shell loads the current ba
 - Replace `AppInner`'s local demo `isLoggedIn` + `handleLogin(role)` flow for staff with real email/password login, token storage, current-user loading, and logout.
 - Keep the existing visual design exactly. Reuse `LoginScreen`, `AppShell`, `AlertBanner`/existing alert styles, `Sidebar`, and `Header`; change labels/state wiring only.
 - Remove or gate the staff demo role selector behind an explicit development flag such as `import.meta.env.VITE_ENABLE_DEMO_AUTH === "true"`; production/default behavior must use the backend login API.
-- Update `RoleContext` so `currentUser`, `role_codes`, `team_codes`, `permissions`, and `can(...)` are derived from `/api/v1/auth/me/` for staff sessions. The existing prototype permission strings may remain as a mapping layer, but the backend canonical permission codes are the source of truth.
+- Update `RoleContext` so `currentUser`, role/team display data, `role_codes`, `team_codes`, `permissions`, and `can(...)` are derived from `/api/v1/auth/me/` for staff sessions. The existing prototype permission strings may remain as a mapping layer, but the backend canonical permission codes are the source of truth.
 - Add loading, invalid-credentials, expired/invalid-session, unauthorized, and logout states using existing patterns. No new colours, card styles, typography, or layouts.
 - Preserve borrower portal demo auth flow for now; member portal production auth is deferred to 005FA.
 
 ## Backend/API Scope
 No new backend endpoints. Use the already implemented auth API:
 - `POST /api/v1/auth/login/` returns bearer `access_token`, `refresh_token`, `expires_in`, and user profile.
-- `GET /api/v1/auth/me/` requires `Authorization: Bearer <access_token>` and returns `user_id`, `full_name`, `email`, `status`, `role_codes`, `team_codes`, sorted `permissions`, and `available_actions`.
+- `GET /api/v1/auth/me/` requires `Authorization: Bearer <access_token>` and, after 002D3, returns `user_id`, `full_name`, `email`, `mobile_number`, `status`, `roles[{role_code, role_name}]`, `teams[{team_code, team_name}]`, `role_codes`, `team_codes`, sorted `permissions`, and `available_actions`.
 - `POST /api/v1/auth/logout/` takes `refresh_token` and revokes the session.
 
 ## Database/Model Impact
 None.
 
 ## API Contracts
-Update `docs/working/API_CONTRACTS.md` only if the frontend needs an integration note. Do not change backend response shapes in this slice.
+Update `docs/working/API_CONTRACTS.md` only if the frontend needs an integration note. Do not change backend response shapes in this slice; 002D3 owns `/auth/me/` contract correction.
 
 ## Permissions
 Frontend hiding is convenience only. For staff shell navigation:
@@ -77,6 +78,7 @@ No new frontend audit event. Login/logout audit is already handled by backend en
 
 ## Test Cases
 - Frontend test: login form posts credentials to `/api/v1/auth/login/`, then calls `/api/v1/auth/me/`, then renders the dashboard shell with backend user name/role-derived state.
+- Frontend test: role/team display uses `/auth/me/` `roles`/`teams` objects when present, while permission checks use canonical `permissions`.
 - Frontend test: invalid login response displays the existing error state and does not render `AppShell`.
 - Frontend test: `/api/v1/auth/me/` `401 TOKEN_EXPIRED` or `INVALID_TOKEN` clears auth state and shows login.
 - Frontend test: navigation hides or blocks a route when the backend permission list does not include the mapped permission.
