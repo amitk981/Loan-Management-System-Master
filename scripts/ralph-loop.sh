@@ -38,6 +38,39 @@ progress_line() {
   echo "Progress: $completed of $total slices complete."
 }
 
+# Usage-limit fallback (agent.limit_fallback in .ralph/config.yaml): when the
+# active agent's usage limit is exhausted (adapters emit AGENT_LIMIT_EXHAUSTED),
+# switch to the other allowed agent and retry; when both are exhausted, stop
+# cleanly — every completed slice is already committed and pushed, and the
+# interrupted slice reruns on the next loop.
+default_tool="$(awk -F': *' '/^[[:space:]]*default_tool:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' .ralph/config.yaml | xargs || true)"
+active_tool="${AGENT_TOOL:-${default_tool:-codex}}"
+limit_fallback="$(awk -F': *' '/^[[:space:]]*limit_fallback:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' .ralph/config.yaml | xargs || true)"
+limit_fallback="${limit_fallback:-true}"
+exhausted_tools=""
+
+limit_exhausted() {
+  grep -q "AGENT_LIMIT_EXHAUSTED" "$last_out"
+}
+
+# Switches active_tool to the other agent, or exits 3 when no usable agent
+# remains (fallback disabled, other tool already exhausted, or not installed).
+switch_agent_or_stop() {
+  exhausted_tools="$exhausted_tools $active_tool"
+  local next="claude"
+  [[ "$active_tool" == "claude" ]] && next="codex"
+  if [[ "$limit_fallback" != "true" ]]; then
+    echo "Usage limit exhausted for $active_tool and agent.limit_fallback is disabled. Stopping; completed slices are committed — run './scripts/ralph-loop.sh' again after the limit resets." | tee -a "$loop_log"
+    exit 3
+  fi
+  if [[ " $exhausted_tools " == *" $next "* ]] || ! command -v "$next" >/dev/null 2>&1; then
+    echo "Usage limits exhausted for:$exhausted_tools — no agent left to switch to. Completed slices are committed; run './scripts/ralph-loop.sh' again after the limits reset." | tee -a "$loop_log"
+    exit 3
+  fi
+  active_tool="$next"
+  echo "Usage limit exhausted; switching agent to $active_tool and retrying." | tee -a "$loop_log"
+}
+
 echo "Ralph loop starting (max $max_iterations iterations). Log: $loop_log"
 
 # Recover from any interrupted previous session (limit exhaustion, crash),
@@ -48,18 +81,23 @@ for ((i = 1; i <= max_iterations; i++)); do
   echo "" | tee -a "$loop_log"
   echo "=== Ralph loop iteration $i/$max_iterations — $(date '+%Y-%m-%d %H:%M:%S') ===" | tee -a "$loop_log"
   progress_line | tee -a "$loop_log"
+  echo "Agent: $active_tool" | tee -a "$loop_log"
 
   review_due="$(python3 -c "import json; print(json.load(open('.ralph/state.json')).get('architecture_review_due', False))" 2>/dev/null || echo False)"
   if [[ "$review_due" == "True" ]]; then
     echo "Architecture review is due; running it before the next slice." | tee -a "$loop_log"
-    run_streamed env CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode architecture-review
+    run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode architecture-review
     review_status=$?
     if (( review_status != 0 )); then
+      if limit_exhausted; then
+        switch_agent_or_stop
+        continue
+      fi
       echo "Architecture review failed (non-fatal); continuing with the queue." | tee -a "$loop_log"
     fi
   fi
 
-  run_streamed ./scripts/afk-dev.sh 1 --mode normal
+  run_streamed env AGENT_TOOL="$active_tool" ./scripts/afk-dev.sh 1 --mode normal
   status=$?
 
   if grep -q "No eligible slice found" "$last_out"; then
@@ -72,12 +110,24 @@ for ((i = 1; i <= max_iterations; i++)); do
     exit 2
   fi
 
+  if (( status != 0 )) && limit_exhausted; then
+    switch_agent_or_stop
+    echo "The interrupted slice will rerun with $active_tool." | tee -a "$loop_log"
+    continue
+  fi
+
   if (( status != 0 )); then
     total_failures=$((total_failures + 1))
     echo "Run failed (failure $total_failures/3). Attempting one repair run." | tee -a "$loop_log"
 
-    run_streamed env CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair
+    run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair
     repair_status=$?
+    if (( repair_status != 0 )) && limit_exhausted; then
+      switch_agent_or_stop
+      echo "Retrying the repair run with $active_tool." | tee -a "$loop_log"
+      run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair
+      repair_status=$?
+    fi
 
     if (( repair_status != 0 )); then
       echo "Repair run also failed. Stopping the loop for human review — see $loop_log and the latest .ralph/runs/ folder." | tee -a "$loop_log"

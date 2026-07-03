@@ -10,7 +10,7 @@ When the owner says "run ralph loop" (or similar), execute from the repository r
 ./scripts/ralph-loop.sh
 ```
 
-It runs the slice queue autonomously: one slice per iteration with full gates, auto-commit, auto-merge to the `staging` integration branch, and auto-push of `staging` to GitHub; one repair attempt per failure; stops when the queue is empty, after repeated failures, or on an owner veto. Agents never commit to, merge into, or push `main` — the owner alone promotes `staging` to `main` via a GitHub pull request (see `docs/working/RELEASE_PROMOTION.md`). `ralph-run.sh` refuses to run unless `staging` is checked out. Do not improvise a different loop.
+It runs the slice queue autonomously: one slice per iteration with full gates, auto-commit, auto-merge to the `staging` integration branch, and auto-push of `staging` to GitHub; one repair attempt per failure; stops when the queue is empty, after repeated failures, or on an owner veto. If the active agent's usage limit is exhausted mid-loop (`agent.limit_fallback` in `.ralph/config.yaml`), the loop switches between codex and claude and retries the slice; when both agents are exhausted it stops cleanly — completed slices are already committed, and the queued slice reruns on the next loop. Agents never commit to, merge into, or push `main` — the owner alone promotes `staging` to `main` via a GitHub pull request (see `docs/working/RELEASE_PROMOTION.md`). `ralph-run.sh` refuses to run unless `staging` is checked out. Do not improvise a different loop.
 
 ## Core rules
 - Do not rely on chat history.

@@ -90,4 +90,16 @@ sleep 1
 kill "$tail_pid" 2>/dev/null || true
 wait "$tail_pid" 2>/dev/null || true
 
+# Flag usage-limit exhaustion so the loop can switch agents. Only a failed
+# agent whose final log lines name a usage/rate limit counts — a genuine
+# coding failure must keep following the normal repair path.
+if (( status != 0 )) && tail -n 40 "$log" | grep -qiE "usage limit|rate limit|limit (reached|exceeded)|quota (reached|exceeded)|too many requests"; then
+  echo "AGENT_LIMIT_EXHAUSTED: codex exited $status and its log tail names a usage limit."
+  {
+    echo "# Agent Limit Exhausted"
+    echo
+    echo "codex exited $status; the log tail names a usage/rate limit. See evidence/terminal-logs/codex.log."
+  } > "$RUN_DIR/agent-limit-exhausted.md"
+fi
+
 exit "$status"
