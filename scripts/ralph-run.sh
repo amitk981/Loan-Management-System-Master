@@ -141,7 +141,24 @@ ensure_backend_env() {
     echo "WARN: backend dependency install failed (offline with new pins?); gates will surface any missing module." >&2
   fi
 }
+project_dir_cfg="$(awk -F': *' '/^[[:space:]]*project_dir:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | tr -d '"' | xargs || true)"
+ensure_frontend_env() {
+  local fe_dir="$worktree_dir/${project_dir_cfg}"
+  [[ -n "$project_dir_cfg" && -f "$fe_dir/package-lock.json" ]] || return 0
+  if [[ ! -d "$fe_dir/node_modules" ]]; then
+    if ! (cd "$fe_dir" && npm ci --prefer-offline --no-audit --no-fund) \
+        >> "$run_dir/evidence/terminal-logs/orchestrator-frontend-deps.log" 2>&1; then
+      echo "WARN: frontend dependency install failed; gates will surface it." >&2
+    fi
+  else
+    if ! (cd "$fe_dir" && npm install --prefer-offline --no-audit --no-fund) \
+        >> "$run_dir/evidence/terminal-logs/orchestrator-frontend-deps.log" 2>&1; then
+      echo "WARN: frontend dependency sync failed; gates will surface it." >&2
+    fi
+  fi
+}
 ensure_backend_env
+ensure_frontend_env
 
 cat > "$run_dir/prompt.md" <<EOF
 You are running Ralph AFK mode.
@@ -171,6 +188,7 @@ Core requirements:
 - Check permissions before editing files.
 - TDD is mandatory for backend and business logic: write the failing test first, then implement, and save red/green output to evidence/terminal-logs/.
 - Backend Python interpreter: use "$venv_dir/bin/python" for every backend command (manage.py, tests, coverage). Never use bare python3 — it resolves to the wrong interpreter.
+- Frontend node_modules are pre-installed in the worktree by the orchestrator. Do not run npm install unless you add a new pinned package; if that install fails offline, note it in final-summary.md and finish — the orchestrator installs from the lockfile before validation.
 - Your sandbox has no network access: never run pip install. If a dependency you just pinned in requirements is not importable yet, still write the code, tests, and pin; note the missing module in final-summary.md and finish — the orchestrator installs pinned requirements before independent validation. That situation is expected, not a failure.
 - Frontend changes must follow docs/working/FRONTEND_DESIGN_RULES.md exactly: reuse existing components and patterns; never introduce new styling, colours, typography, layouts, or components. If the documents require a screen the prototype lacks, building it from existing patterns and wiring it to the backend is part of the slice.
 - Run required quality gates.
@@ -264,6 +282,7 @@ fi
 (cd "$worktree_dir" && git status --short > "$run_dir/changed-files.txt")
 
 ensure_backend_env
+ensure_frontend_env
 
 "$repo_root/scripts/ralph-validate.sh" --run-id "$run_id" --worktree "$worktree_dir" --mode "$mode" --slice "$slice_id"
 

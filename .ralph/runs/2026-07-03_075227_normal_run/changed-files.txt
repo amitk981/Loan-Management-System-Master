@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002B2-auth-hardening-jwt-library-and-packaging.md
+ M docs/slices/002C-role-and-permission-catalogue-seed.md
+ M docs/slices/002D-current-user-api-with-permissions-and-teams.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M sfpcl_credit/config/settings.py
+ M sfpcl_credit/identity/views.py
+ M sfpcl_credit/requirements.txt
+ M sfpcl_credit/tests/test_auth_api.py
+?? .ralph/runs/2026-07-03_075227_normal_run/
