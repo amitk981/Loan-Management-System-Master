@@ -21,7 +21,7 @@ It runs the slice queue autonomously: one slice per iteration with full gates, a
 - Run required tests, typecheck, lint, and build gates.
 - Save evidence before marking work complete.
 - Update state, progress, handoff, and slice status.
-- Commit only passing work when config allows it.
+- During runs, never invoke git commit/add/push yourself — the orchestrator validates independently and commits passing work after the agent finishes (agent sandboxes cannot write worktree git metadata).
 - TDD is mandatory for backend and business logic: failing test first, red/green evidence saved.
 - The owner has granted standing approval for autonomous runs (`docs/working/HIGH_RISK_APPROVALS.md`). Do not ask for approval; follow `docs/working/DECISION_POLICY.md` for every judgment call and record assumptions in `docs/working/ASSUMPTIONS.md`.
 - Never modify protected files (scripts/, .ralph/config.yaml, .ralph/permissions.json, AGENTS.md, CLAUDE.md, .gitignore, HIGH_RISK_APPROVALS.md, DECISION_POLICY.md, docs/source/) — validation fails the run if you do. Never weaken risk rules or quality gates.

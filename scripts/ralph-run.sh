@@ -160,7 +160,7 @@ Core requirements:
 - Save risk-assessment.md.
 - Save review-packet.md.
 - Update state, progress, handoff, and slice status.
-- Commit only if gates pass and config allows commits.
+- Never run git commit, git add, or git push: your sandbox cannot write the worktree's git metadata and the attempt will fail your run. The orchestrator independently validates and commits passing work after you finish.
 - High-risk slices proceed under the owner's standing approval (docs/working/HIGH_RISK_APPROVALS.md); record risk honestly in risk-assessment.md. Never implement a slice marked [revoked] there.
 - When requirements are ambiguous, follow docs/working/DECISION_POLICY.md: choose the source-doc-compliant option, or the industry-standard default, record it in docs/working/ASSUMPTIONS.md, and continue. Do not stop to ask. Never invent business rules the documents do not state — stub them, record the open question, and continue.
 - Before finishing, sharpen the next 1-2 'Not Started' slice files with concrete requirements (fields, endpoints, validation rules, role rules) from the source documents you already opened.
@@ -229,6 +229,7 @@ EOF
 
 agent_timeout="$(awk -F': *' '/^[[:space:]]*agent_timeout_seconds:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
 
+agent_rc=0
 "$repo_root/scripts/agent-adapters/$agent.sh" \
   RUN_ID="$run_id" \
   RUN_DIR="$run_dir" \
@@ -236,7 +237,10 @@ agent_timeout="$(awk -F': *' '/^[[:space:]]*agent_timeout_seconds:/ {print $2; e
   PROMPT_FILE="$run_dir/prompt.md" \
   SELECTED_SLICE="$slice_id" \
   MODE="$mode" \
-  AGENT_TIMEOUT_SECONDS="${agent_timeout:-7200}"
+  AGENT_TIMEOUT_SECONDS="${agent_timeout:-7200}" || agent_rc=$?
+if (( agent_rc != 0 )); then
+  echo "WARN: agent adapter exited $agent_rc; proceeding to independent validation — the gates decide pass or fail." >&2
+fi
 
 (cd "$worktree_dir" && git status --short > "$run_dir/changed-files.txt")
 

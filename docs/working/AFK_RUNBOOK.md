@@ -29,7 +29,7 @@ The owner granted standing approval for autonomous runs (2026-07-02). Agents nev
 9. Save changed files, risk assessment, review packet, and final summary.
 10. Update state, progress, handoff, and slice status.
 11. Commit only if gates pass and config allows it.
-12. If `auto_merge` is enabled, fast-forward merge the run branch into main and remove the worktree; on merge failure the branch is kept for manual review.
+12. If `auto_merge` is enabled, fast-forward merge the run branch into the `staging` integration branch and remove the worktree; on merge failure the branch is kept for manual review. The owner alone promotes staging to main (`docs/working/RELEASE_PROMOTION.md`).
 
 Note on agent approval mode: codex runs headless (`exec` mode, approval mode `never`) because nobody is at the terminal during AFK runs. The human safety control is the orchestrator-level high-risk gate plus quality gates and this runbook — not interactive prompts.
 
