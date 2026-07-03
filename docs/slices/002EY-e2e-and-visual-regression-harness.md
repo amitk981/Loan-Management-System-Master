@@ -23,10 +23,14 @@ Design fidelity and working flows are verified automatically on every run that t
 4. Visual regression baselines (`toHaveScreenshot`) for: Login screen, Dashboard, and the tracer screen. Baselines are committed; subsequent runs fail on unexpected pixel drift beyond Playwright's default threshold.
 5. Add script `"e2e": "playwright test"` to `sfpcl-lms/package.json`. Record in HANDOFF.md that the owner-side operator may flip `quality_gates.e2e_tests` from `optional` once the suite proves stable (config is protected).
 6. Follow `docs/working/FRONTEND_DESIGN_RULES.md` — this slice adds tests only; zero product UI changes.
+7. The login step must use the 002E production/default staff auth path (`POST /api/v1/auth/login/` followed by `GET /api/v1/auth/me/`). Do not enable `VITE_ENABLE_DEMO_AUTH` for the main E2E proof.
+8. Seed or create the E2E staff user through backend test/dev setup, not through frontend fixtures. The user must have a backend role whose canonical permissions expose the tracer route/actions.
+9. Add a negative browser check for revoked or missing auth: opening the app without a stored valid session shows the staff login and does not expose the tracer route.
 
 ## Test Cases
 - `npm run e2e` passes locally from a clean state.
 - Deleting a baseline and re-running regenerates it (documented in the run summary).
+- `npm run e2e` fails if the staff login call is mocked or bypassed instead of hitting the dev Django server.
 
 ## Out of Scope
 Cross-browser matrices, mobile-device emulation (member portal E2E arrives with 005G), CI wiring for E2E (local gate first; CI later when stable).

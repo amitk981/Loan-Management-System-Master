@@ -2,6 +2,16 @@
 
 No AFK implementation slice has completed yet.
 
+## 2026-07-03 22:23:18 - 2026-07-03_222318_normal_run
+- Agent tool used: codex
+- Slice attempted: 002E-protected-frontend-route-shell
+- Summary: Replaced staff demo auth by default with the real backend auth flow in the React shell: `POST /api/v1/auth/login/`, token storage, `GET /api/v1/auth/me/` before protected rendering, expired/invalid session clearing, and `POST /api/v1/auth/logout/`. Current-user role/team display now uses `/auth/me/` `roles`/`teams`, compatibility `role_codes`/`team_codes` are derived from those arrays, and existing route/sidebar checks use an explicit canonical-backend-permission to prototype-permission mapping. Demo staff role switching remains only behind `VITE_ENABLE_DEMO_AUTH === "true"`; borrower portal demo auth remains unchanged.
+- Tests run: targeted frontend TDD red/green for auth session service; frontend vitest 12/12; frontend typecheck; frontend build; backend check; backend tests 52/52; makemigrations check; backend coverage 97% (floor 85); API/CORS smoke via Django test client for health, login, `/auth/me/`, logout, and revoked-session `/auth/me/`.
+- Evidence saved: `.ralph/runs/2026-07-03_222318_normal_run/`.
+- Result: Success. Sandbox caveat: localhost dev servers were blocked by `EPERM` and Chrome headless exited 134 before screenshots; visual harness files and failure logs were saved.
+- Risk level: Medium.
+- Next action: Run `002EX-early-end-to-end-tracer-bullet`, then `002EY-e2e-and-visual-regression-harness`.
+
 ## Setup Notes
 - Ralph v2.1 scaffold created for this repository.
 - Current product code is a React/Vite prototype in `sfpcl-lms/`.
@@ -280,6 +290,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_214932_normal_run/.ralph/runs/2026-07-03_214932_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_214932_normal_run/.ralph/runs/2026-07-03_214932_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-03 22:45:31 - 2026-07-03_222318_normal_run
+- Agent tool used: codex
+- Slice attempted: 002E-protected-frontend-route-shell
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_222318_normal_run/.ralph/runs/2026-07-03_222318_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_222318_normal_run/.ralph/runs/2026-07-03_222318_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

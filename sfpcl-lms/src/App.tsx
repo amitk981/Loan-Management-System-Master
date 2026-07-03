@@ -1,8 +1,15 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Agentation } from 'agentation';
 import { Permission, RoleProvider, useRole } from './contexts/RoleContext';
 import { Role, LoanApplication } from './types';
 import { loanApplications as initialApplications } from './data/mockData';
+import {
+  AuthSessionError,
+  DEMO_AUTH_ENABLED,
+  loginAndLoadCurrentUser,
+  logoutSession,
+  restoreCurrentUserFromStoredSession,
+} from './services/authSession';
 import AppShell from './components/layout/AppShell';
 import LoginScreen from './pages/auth/LoginScreen';
 import BorrowerPortal from './pages/borrower/BorrowerPortal';
@@ -90,8 +97,11 @@ const PAGE_PERMISSIONS: Partial<Record<Page, Permission>> = {
 
 // Inner component so it can use useRole hook (inside RoleProvider)
 const AppInner: React.FC = () => {
-  const { currentUser, setRole, can } = useRole();
+  const { currentUser, setRole, setBackendUser, can } = useRole();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
+  const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
+  const [loginError, setLoginError] = useState('');
   const [page, setPage] = useState<Page>('dashboard');
   const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
@@ -104,25 +114,77 @@ const AppInner: React.FC = () => {
     setApplications(prev => prev.map(a => a.id === id ? { ...a, status: newStatus as LoanApplication['status'] } : a));
   }, []);
 
-  const handleLogin = (role: Role) => {
+  useEffect(() => {
+    let cancelled = false;
+
+    restoreCurrentUserFromStoredSession()
+      .then(user => {
+        if (cancelled) return;
+        if (user) {
+          setBackendUser(user);
+          setIsLoggedIn(true);
+          setPage('dashboard');
+        }
+      })
+      .catch(error => {
+        if (cancelled) return;
+        setLoginError(sessionErrorMessage(error));
+        setIsLoggedIn(false);
+      })
+      .finally(() => {
+        if (!cancelled) setIsSessionLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setBackendUser]);
+
+  const handleStaffLogin = async (credentials: { email: string; password: string }) => {
+    setIsSubmittingLogin(true);
+    setLoginError('');
+    try {
+      const backendUser = await loginAndLoadCurrentUser(credentials);
+      setBackendUser(backendUser);
+      setIsLoggedIn(true);
+      setPage('dashboard');
+      setBlockedPage(null);
+    } catch (error) {
+      setIsLoggedIn(false);
+      setLoginError(sessionErrorMessage(error));
+    } finally {
+      setIsSubmittingLogin(false);
+    }
+  };
+
+  const handleDemoLogin = (role: Role) => {
     setRole(role);
     setIsLoggedIn(true);
+    setLoginError('');
     // Route borrowers directly to their portal
     if (role === 'borrower') setPage('borrower');
     else setPage('dashboard');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (currentUser.isBackendSession) {
+      try {
+        await logoutSession();
+      } catch {
+        // Local session is cleared even if the network logout fails.
+      }
+    }
     setIsLoggedIn(false);
     setPage('dashboard');
     setAuthView('staff');
+    setLoginError('');
   };
 
   if (!isLoggedIn) {
     if (authView === 'memberLogin') {
       return (
         <MP00_Login
-          onLogin={() => handleLogin('borrower')}
+          onLogin={() => handleDemoLogin('borrower')}
           onNavigateToActivation={() => setAuthView('memberActivation')}
           onNavigateToForgot={() => setAuthView('memberForgot')}
           onBackToStaffLogin={() => setAuthView('staff')}
@@ -133,7 +195,7 @@ const AppInner: React.FC = () => {
       return (
         <MP01_Activation
           onBackToLogin={() => setAuthView('memberLogin')}
-          onActivate={() => handleLogin('borrower')}
+          onActivate={() => handleDemoLogin('borrower')}
         />
       );
     }
@@ -145,7 +207,17 @@ const AppInner: React.FC = () => {
         />
       );
     }
-    return <LoginScreen onLogin={handleLogin} onOpenMemberPortal={() => setAuthView('memberLogin')} />;
+    return (
+      <LoginScreen
+        onLogin={handleStaffLogin}
+        onDemoLogin={DEMO_AUTH_ENABLED ? handleDemoLogin : undefined}
+        onOpenMemberPortal={() => setAuthView('memberLogin')}
+        error={loginError}
+        isSubmitting={isSubmittingLogin}
+        isLoadingSession={isSessionLoading}
+        showDemoRoleSelector={DEMO_AUTH_ENABLED}
+      />
+    );
   }
 
   // Borrower gets their own portal layout (no sidebar/header chrome)
@@ -285,7 +357,7 @@ const AppInner: React.FC = () => {
       {blockedPage && (
         <div className="px-6 pt-6">
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            <p className="font-semibold">Access blocked for {currentUser.role.replace(/_/g, ' ')}</p>
+            <p className="font-semibold">Access blocked for {currentUser.roleName}</p>
             <p className="mt-0.5">
               The requested workspace ({blockedPage.replace(/\//g, ' / ')}) is hidden for this role and actions remain disabled unless the role has the required permission.
             </p>
@@ -295,6 +367,16 @@ const AppInner: React.FC = () => {
       {renderPage()}
     </AppShell>
   );
+};
+
+const sessionErrorMessage = (error: unknown): string => {
+  if (error instanceof AuthSessionError) {
+    if (error.code === 'INVALID_CREDENTIALS') return 'Invalid email or password.';
+    if (error.code === 'TOKEN_EXPIRED' || error.code === 'INVALID_TOKEN') return 'Your session expired. Please sign in again.';
+    if (error.code === 'AUTH_REQUIRED') return 'Please sign in to continue.';
+    return error.message;
+  }
+  return 'Unable to reach the authentication service. Please try again.';
 };
 
 const App: React.FC = () => (

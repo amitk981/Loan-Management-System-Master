@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Search, Bell, HelpCircle, ChevronDown, User, ChevronRight, LogOut, RefreshCw, FileText, UserRound, Banknote } from 'lucide-react';
-import { useRole, ROLE_LABELS } from '../../contexts/RoleContext';
+import { useRole } from '../../contexts/RoleContext';
 import { Role } from '../../types';
 import { loanAccounts, loanApplications, members } from '../../data/mockData';
+import { DEMO_AUTH_ENABLED } from '../../services/authSession';
 
 const normalize = (value: string | number | undefined) => String(value || '').toLowerCase();
 
@@ -186,53 +187,54 @@ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLog
         {/* Divider */}
         <div className="w-px h-6 bg-slate-200 mx-1" />
 
-        {/* Role switcher button */}
-        <div className="relative">
-          <button
-            onClick={() => { setShowRolePicker(!showRolePicker); setShowNotifications(false); setShowProfile(false); }}
-            className="h-10 flex items-center gap-1.5 text-xs font-semibold px-3 border border-slate-200 rounded-lg text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300 transition-colors"
-            title="Switch demo role"
-          >
-            <RefreshCw size={12} />
-            <span className="hidden sm:inline">Switch Role</span>
-          </button>
-          {showRolePicker && (
-            <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-xl shadow-slate-200/80 z-50 overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100">
-                <span className="text-sm font-semibold text-slate-900">Switch Demo Role</span>
-                <p className="text-xs text-slate-400 mt-0.5">Currently: <span className="text-green-700 font-medium">{ROLE_LABELS[currentUser.role]}</span></p>
-                <p className="text-xs text-amber-600 mt-1">Internal roles only. Borrower uses separate login.</p>
+        {DEMO_AUTH_ENABLED && (
+          <div className="relative">
+            <button
+              onClick={() => { setShowRolePicker(!showRolePicker); setShowNotifications(false); setShowProfile(false); }}
+              className="h-10 flex items-center gap-1.5 text-xs font-semibold px-3 border border-slate-200 rounded-lg text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300 transition-colors"
+              title="Switch demo role"
+            >
+              <RefreshCw size={12} />
+              <span className="hidden sm:inline">Switch Role</span>
+            </button>
+            {showRolePicker && (
+              <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-xl shadow-slate-200/80 z-50 overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-100">
+                  <span className="text-sm font-semibold text-slate-900">Switch Demo Role</span>
+                  <p className="text-xs text-slate-400 mt-0.5">Currently: <span className="text-green-700 font-medium">{currentUser.roleName}</span></p>
+                  <p className="text-xs text-amber-600 mt-1">Internal roles only. Borrower uses separate login.</p>
+                </div>
+                <div className="max-h-80 overflow-y-auto py-1">
+                  {(() => {
+                    let lastGroup = '';
+                    return ALL_ROLES.map(({ role, label, group }) => {
+                      const showGroup = group !== lastGroup;
+                      lastGroup = group || '';
+                      return (
+                        <React.Fragment key={role}>
+                          {showGroup && group && (
+                            <div className="px-4 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wide bg-slate-50 border-t border-slate-100 first:border-0">
+                              {group}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => { setRole(role); closeAll(); }}
+                            className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors hover:bg-slate-50 ${
+                              currentUser.role === role ? 'text-green-700 bg-green-50 font-medium' : 'text-slate-700'
+                            }`}
+                          >
+                            <span>{label}</span>
+                            {currentUser.role === role && <ChevronRight size={14} className="text-green-500" />}
+                          </button>
+                        </React.Fragment>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
-              <div className="max-h-80 overflow-y-auto py-1">
-                {(() => {
-                  let lastGroup = '';
-                  return ALL_ROLES.map(({ role, label, group }) => {
-                    const showGroup = group !== lastGroup;
-                    lastGroup = group || '';
-                    return (
-                      <React.Fragment key={role}>
-                        {showGroup && group && (
-                          <div className="px-4 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wide bg-slate-50 border-t border-slate-100 first:border-0">
-                            {group}
-                          </div>
-                        )}
-                        <button
-                          onClick={() => { setRole(role); closeAll(); }}
-                          className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors hover:bg-slate-50 ${
-                            currentUser.role === role ? 'text-green-700 bg-green-50 font-medium' : 'text-slate-700'
-                          }`}
-                        >
-                          <span>{label}</span>
-                          {currentUser.role === role && <ChevronRight size={14} className="text-green-500" />}
-                        </button>
-                      </React.Fragment>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Notifications */}
         <div className="relative">
@@ -284,17 +286,18 @@ const Header: React.FC<HeaderProps> = ({ activePage, onNavigate, onSearch, onLog
             <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
               <User size={16} className="text-green-700" />
             </div>
-            <div className="text-left hidden sm:block">
-              <div className="text-sm font-medium text-slate-900 leading-tight">{currentUser.name}</div>
-              <div className="text-xs text-slate-500 leading-tight">{ROLE_LABELS[currentUser.role]}</div>
-            </div>
+              <div className="text-left hidden sm:block">
+                <div className="text-sm font-medium text-slate-900 leading-tight">{currentUser.name}</div>
+                <div className="text-xs text-slate-500 leading-tight">{currentUser.roleName}</div>
+              </div>
             <ChevronDown size={14} className="text-slate-400" />
           </button>
           {showProfile && (
             <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-slate-200 rounded-lg shadow-xl shadow-slate-200/80 z-50 overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-100">
                 <div className="text-sm font-semibold text-slate-900">{currentUser.name}</div>
-                <div className="text-xs text-slate-500 mt-0.5">{ROLE_LABELS[currentUser.role]}</div>
+                <div className="text-xs text-slate-500 mt-0.5">{currentUser.roleName}</div>
+                {currentUser.teamName && <div className="text-xs text-slate-400">{currentUser.teamName}</div>}
                 <div className="text-xs text-slate-400">{currentUser.email}</div>
               </div>
               <div className="p-2 space-y-0.5">

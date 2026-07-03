@@ -300,7 +300,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-slate-900">{greeting}, {currentUser.name.split(' ')[0]}</h1>
           <p className="text-sm text-slate-500 mt-1">
-            SFPCL LMS · {ROLE_LABELS[currentUser.role]} · {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            SFPCL LMS · {currentUser.roleName} · {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
         {currentUser.role === 'credit_manager' ? (

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useRole, ROLE_LABELS } from '../../contexts/RoleContext';
+import { useRole } from '../../contexts/RoleContext';
 import { Role } from '../../types';
 import { Shield, ShieldAlert, MonitorSmartphone, Clock, LogOut, Key, Search, ChevronRight } from 'lucide-react';
 
@@ -60,7 +60,7 @@ const MyProfile: React.FC = () => {
               <h2 className="text-lg font-bold text-slate-900">{currentUser.name}</h2>
               <div className="mt-1 flex items-center gap-2">
                 <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full">
-                  {ROLE_LABELS[currentUser.role]}
+                  {currentUser.roleName}
                 </span>
                 <span className="text-xs font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
                   Active
@@ -165,7 +165,7 @@ const MyProfile: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1">Primary role</label>
-                  <div className="text-sm font-medium text-slate-900">{ROLE_LABELS[currentUser.role]}</div>
+                  <div className="text-sm font-medium text-slate-900">{currentUser.roleName}</div>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1">Additional roles</label>

@@ -28,18 +28,23 @@ A logged-in staff user can create a member, create a loan application for them, 
 7. The tracer must run as an authenticated staff user using the 002E session state. Do not bypass auth with fixture-only endpoints.
 8. Use the persistent development SQLite database from 002D2 for manual/dev smoke evidence, but keep automated backend tests on Django's migrated test database.
 9. The tracer UI must use the 002D3 `/auth/me/` session contract: display staff role/team names from `roles`/`teams`, use canonical `permissions`/`available_actions` for route/action visibility, and keep `role_codes`/`team_codes` only as compatibility data.
+10. The frontend tracer route must sit behind the 002E protected staff shell: no tracer UI renders until `POST /api/v1/auth/login/` succeeds and `GET /api/v1/auth/me/` succeeds with an active session-bound bearer token.
+11. Use 002E's local token/session storage and logout behavior unchanged. A revoked/logout session must send the user back to the staff login before any tracer action button is available.
+12. Add only the minimum permission bridge entries needed for the tracer screen, and record any unmapped canonical backend permissions in `docs/working/ASSUMPTIONS.md` instead of granting broad prototype permissions.
 
 ## Test Cases
 - One scripted end-to-end test (API level) walking the full path: create member → application → sanction → account → disbursement → repayment → closure.
 - Each transition rejects an out-of-order call (e.g., disburse before sanction).
 - Auth regression: an unauthenticated request to at least one tracer endpoint returns the standard `401` envelope and does not write domain/audit rows.
 - Auth regression: an authenticated tracer request with a revoked session access token returns `401 INVALID_TOKEN` using the standard envelope before any domain transition occurs.
+- Frontend regression: a staff session with an empty `/auth/me/` `permissions` list cannot see or run the tracer actions.
 
 ## Evidence Required
 - API response samples for each transition.
 - Screenshot of the tracer screen after closure.
 - Risk assessment listing which controls are intentionally deferred.
 - Dev smoke note showing data remains available after separate requests against `sfpcl_credit/db.sqlite3`.
+- Auth smoke note showing tracer evidence used the real 002E login → `/auth/me/` path, not the `VITE_ENABLE_DEMO_AUTH` fallback.
 
 ## Out of Scope
 Exception paths, documents, interest, reports, compliance trackers, member portal.

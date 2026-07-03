@@ -4,8 +4,13 @@ import { Role } from '../../types';
 import { ROLE_LABELS, ROLE_USERS } from '../../contexts/RoleContext';
 
 interface LoginScreenProps {
-  onLogin: (role: Role) => void;
+  onLogin: (credentials: { email: string; password: string }) => void | Promise<void>;
+  onDemoLogin?: (role: Role) => void;
   onOpenMemberPortal?: () => void;
+  error?: string;
+  isSubmitting?: boolean;
+  isLoadingSession?: boolean;
+  showDemoRoleSelector?: boolean;
 }
 
 const ALL_ROLES: Role[] = [
@@ -14,26 +19,35 @@ const ALL_ROLES: Role[] = [
   'senior_manager_finance', 'cfc', 'accounts', 'sales_team_user', 'auditor', 'admin', 'borrower',
 ];
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onOpenMemberPortal }) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({
+  onLogin,
+  onDemoLogin,
+  onOpenMemberPortal,
+  error: externalError = '',
+  isSubmitting = false,
+  isLoadingSession = false,
+  showDemoRoleSelector = false,
+}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
   const [demoRole, setDemoRole] = useState<Role>('credit_manager');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const activeError = externalError || error;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please enter your email and password.');
       return;
     }
-    // In demo mode, always succeed — role is set via dropdown
     setError('');
-    onLogin(demoRole);
+    await onLogin({ email, password });
   };
 
   const handleDemoLogin = (role: Role) => {
-    onLogin(role);
+    onDemoLogin?.(role);
   };
 
   return (
@@ -87,6 +101,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onOpenMemberPortal }
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Sign in to your account</h2>
           <p className="text-slate-500 text-sm mb-8">Authorised personnel only. All access is logged.</p>
 
+          {isLoadingSession && (
+            <div className="mb-5 flex items-center gap-2 text-amber-700 text-sm bg-amber-50 border border-amber-100 rounded-lg px-4 py-3">
+              <AlertCircle size={16} className="flex-shrink-0" />
+              Loading current staff session...
+            </div>
+          )}
+
           {onOpenMemberPortal && (
             <button
               type="button"
@@ -129,40 +150,53 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onOpenMemberPortal }
               </div>
             </div>
 
-            {/* Demo role selector */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                Demo role (select to preview as any user)
-              </label>
-              <select
-                value={demoRole}
-                onChange={e => setDemoRole(e.target.value as Role)}
-                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-              >
-                {ALL_ROLES.map(r => (
-                  <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                ))}
-              </select>
-              <p className="text-xs text-slate-400 mt-1">
-                Signing in as: <span className="font-medium text-slate-600">{ROLE_USERS[demoRole].name}</span> · {ROLE_USERS[demoRole].email}
-              </p>
-            </div>
+            {showDemoRoleSelector && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  Demo role (select to preview as any user)
+                </label>
+                <select
+                  value={demoRole}
+                  onChange={e => setDemoRole(e.target.value as Role)}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                >
+                  {ALL_ROLES.map(r => (
+                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-400 mt-1">
+                  Signing in as: <span className="font-medium text-slate-600">{ROLE_USERS[demoRole].name}</span> · {ROLE_USERS[demoRole].email}
+                </p>
+              </div>
+            )}
 
-            {error && (
+            {activeError && (
               <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 border border-red-100 rounded-lg px-4 py-3">
                 <AlertCircle size={16} className="flex-shrink-0" />
-                {error}
+                {activeError}
               </div>
             )}
 
             <button
               type="submit"
+              disabled={isSubmitting || isLoadingSession}
               className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 rounded-lg transition-colors"
             >
               <LogIn size={18} />
-              Sign in
+              {isSubmitting ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
+
+          {showDemoRoleSelector && onDemoLogin && (
+            <button
+              type="button"
+              onClick={() => handleDemoLogin(demoRole)}
+              className="w-full mt-3 flex items-center justify-center gap-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-semibold py-2.5 rounded-lg transition-colors"
+            >
+              <LogIn size={18} />
+              Continue with demo role
+            </button>
+          )}
 
 
 
