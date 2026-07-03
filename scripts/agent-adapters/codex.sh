@@ -61,19 +61,33 @@ log="$RUN_DIR/evidence/terminal-logs/codex.log"
 
 codex "${args[@]}" $CODEX_ADDITIONAL_ARGS < "$PROMPT_FILE" > "$log" 2>&1 &
 agent_pid=$!
+
+# Stream the agent's log to stdout while it runs so callers see live progress
+# instead of silence until the run ends.
+tail -n +1 -f "$log" &
+tail_pid=$!
+
+# The watchdog must be fully detached from stdout/stderr: an inherited pipe
+# keeps callers that use command substitution blocked on the sleep child even
+# after the agent finishes.
 (
   sleep "$timeout_secs"
   echo "WATCHDOG: agent exceeded ${timeout_secs}s; terminating." >> "$log"
   kill -TERM "$agent_pid" 2>/dev/null || true
   sleep 30
   kill -KILL "$agent_pid" 2>/dev/null || true
-) &
+) >/dev/null 2>&1 &
 watchdog_pid=$!
 
 status=0
 wait "$agent_pid" || status=$?
+# Kill the sleep child before its parent — once the parent dies the child
+# re-parents to init and pkill -P can no longer find it.
+pkill -P "$watchdog_pid" 2>/dev/null || true
 kill "$watchdog_pid" 2>/dev/null || true
 wait "$watchdog_pid" 2>/dev/null || true
+sleep 1
+kill "$tail_pid" 2>/dev/null || true
+wait "$tail_pid" 2>/dev/null || true
 
-cat "$log"
 exit "$status"

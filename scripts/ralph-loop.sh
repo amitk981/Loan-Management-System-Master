@@ -19,7 +19,24 @@ fi
 max_iterations="${1:-25}"
 mkdir -p .ralph/logs
 loop_log=".ralph/logs/loop-$(date '+%Y-%m-%d_%H%M%S').log"
+last_out=".ralph/logs/last-run-output.log"
 total_failures=0
+
+# Stream a run's output live to the terminal and the loop log instead of
+# buffering it in a command substitution: buffering shows a blank screen for
+# the entire run, and a straggler child holding the pipe hangs the loop.
+# $last_out keeps a copy of just this run for the marker greps below.
+run_streamed() {
+  "$@" 2>&1 | tee "$last_out" | tee -a "$loop_log"
+  return "${PIPESTATUS[0]}"
+}
+
+progress_line() {
+  local completed total
+  completed="$(python3 -c "import json; print(len(json.load(open('.ralph/state.json'))['completed_slices']))" 2>/dev/null || echo '?')"
+  total="$(ls docs/slices/*.md 2>/dev/null | wc -l | xargs)"
+  echo "Progress: $completed of $total slices complete."
+}
 
 echo "Ralph loop starting (max $max_iterations iterations). Log: $loop_log"
 
@@ -30,28 +47,27 @@ echo "Ralph loop starting (max $max_iterations iterations). Log: $loop_log"
 for ((i = 1; i <= max_iterations; i++)); do
   echo "" | tee -a "$loop_log"
   echo "=== Ralph loop iteration $i/$max_iterations — $(date '+%Y-%m-%d %H:%M:%S') ===" | tee -a "$loop_log"
+  progress_line | tee -a "$loop_log"
 
   review_due="$(python3 -c "import json; print(json.load(open('.ralph/state.json')).get('architecture_review_due', False))" 2>/dev/null || echo False)"
   if [[ "$review_due" == "True" ]]; then
     echo "Architecture review is due; running it before the next slice." | tee -a "$loop_log"
-    review_output="$(CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode architecture-review 2>&1)"
+    run_streamed env CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode architecture-review
     review_status=$?
-    echo "$review_output" | tee -a "$loop_log"
     if (( review_status != 0 )); then
       echo "Architecture review failed (non-fatal); continuing with the queue." | tee -a "$loop_log"
     fi
   fi
 
-  output="$(./scripts/afk-dev.sh 1 --mode normal 2>&1)"
+  run_streamed ./scripts/afk-dev.sh 1 --mode normal
   status=$?
-  echo "$output" | tee -a "$loop_log"
 
-  if echo "$output" | grep -q "No eligible slice found"; then
+  if grep -q "No eligible slice found" "$last_out"; then
     echo "Queue complete: no eligible slices remain. Ralph loop finished." | tee -a "$loop_log"
     exit 0
   fi
 
-  if echo "$output" | grep -q "has been vetoed by the owner"; then
+  if grep -q "has been vetoed by the owner" "$last_out"; then
     echo "Stopping: the next slice is vetoed. Remove the [revoked] line or run another slice with --slice." | tee -a "$loop_log"
     exit 2
   fi
@@ -60,9 +76,8 @@ for ((i = 1; i <= max_iterations; i++)); do
     total_failures=$((total_failures + 1))
     echo "Run failed (failure $total_failures/3). Attempting one repair run." | tee -a "$loop_log"
 
-    repair_output="$(CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair 2>&1)"
+    run_streamed env CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair
     repair_status=$?
-    echo "$repair_output" | tee -a "$loop_log"
 
     if (( repair_status != 0 )); then
       echo "Repair run also failed. Stopping the loop for human review — see $loop_log and the latest .ralph/runs/ folder." | tee -a "$loop_log"
