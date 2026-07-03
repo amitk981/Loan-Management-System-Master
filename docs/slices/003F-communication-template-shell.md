@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 003: Audit, Documents, Config, and Dashboard Foundation
+Epic file: `docs/epics/003-audit-documents-config-foundation.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.
@@ -17,7 +18,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
-- docs/source/api-contracts.md sections 26, 37, 39, 42-43
+- docs/source/api-contracts.md sections 26, 39, 41, 42-43
 - docs/source/data-model.md document/config/audit tables
 - docs/source/component-spec.md
 - docs/source/design-system.md

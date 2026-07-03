@@ -20,7 +20,7 @@ The platform supports controlled delinquency management, loan closure, statutory
 
 ## Source References
 - `docs/source/implementation-roadmap.md` section 16
-- `docs/source/api-contracts.md` default, closure, compliance, grievance sections
+- `docs/source/api-contracts.md` sections 35 through 38 (default/recovery, closure, compliance, grievance)
 - `docs/source/data-model.md` default/recovery/closure/compliance tables
 - `docs/source/auth-permissions.md`
 - SOP PDFs under `docs/source/`

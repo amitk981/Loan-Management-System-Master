@@ -4,7 +4,7 @@
 - `bootstrap`: create or verify Ralph scaffolding. Does not implement product features.
 - `normal`: pick one eligible vertical slice, create a worktree, run an agent, validate, save evidence, update state, and commit only passing work.
 - `repair`: repair the previous failed slice.
-- `architecture-review`: independent quality review, run automatically by the loop every `architecture_review_every_completed_slices` slices. The reviewer does NOT modify production code. It must: (1) read the diffs of slices merged since the last review; (2) critique test quality — real assertions, edge cases, not just coverage numbers; (3) spot-check doc fidelity against the slice's source references and digests; (4) check for duplication and architecture drift; (5) write findings to `docs/working/REVIEW_FINDINGS.md` (append, newest first) and create or sharpen corrective slices for anything significant; (6) record ADRs for durable decisions. This is the independent second pair of eyes on work where the same agent wrote both code and tests.
+- `architecture-review`: independent quality review, run automatically by the loop every `architecture_review_every_completed_slices` slices. The reviewer does NOT modify production code. It must: (1) read the diffs of slices merged since the last review; (2) critique test quality — real assertions, edge cases, not just coverage numbers; (3) spot-check doc fidelity against the slice's source references and digests; (4) check for duplication and architecture drift; (5) write findings to `docs/working/REVIEW_FINDINGS.md` (append, newest first) and create or sharpen corrective slices for anything significant; (6) record ADRs for durable decisions; (7) spot-check that the functional-spec requirement IDs (M##-FR-###) of each epic completed since the last review are implemented or explicitly deferred in ASSUMPTIONS.md. This is the independent second pair of eyes on work where the same agent wrote both code and tests.
 
 ## Start Commands
 - Run the whole queue autonomously ("run ralph loop"): `./scripts/ralph-loop.sh`
@@ -29,7 +29,7 @@ The owner granted standing approval for autonomous runs (2026-07-02). Agents nev
 9. Save changed files, risk assessment, review packet, and final summary.
 10. Update state, progress, handoff, and slice status.
 11. Commit only if gates pass and config allows it.
-12. If `auto_merge` is enabled, fast-forward merge the run branch into main and remove the worktree; on merge failure the branch is kept for manual review.
+12. If `auto_merge` is enabled, fast-forward merge the run branch into the `staging` integration branch and remove the worktree; on merge failure the branch is kept for manual review. The owner alone promotes staging to main (`docs/working/RELEASE_PROMOTION.md`).
 
 Note on agent approval mode: codex runs headless (`exec` mode, approval mode `never`) because nobody is at the terminal during AFK runs. The human safety control is the orchestrator-level high-risk gate plus quality gates and this runbook — not interactive prompts.
 
@@ -41,6 +41,7 @@ Enforced by `scripts/ralph-validate.sh` on every run:
 - Frontend (`sfpcl-lms/`): `npm run build`, `npm run typecheck`, `npm test` (vitest).
 - Backend (`sfpcl_credit/`): `manage.py check`, full test suite, `makemigrations --check` (models and migrations must stay in sync), and coverage with a hard floor (`coverage_fail_under` in `.ralph/config.yaml`, currently 85%; measured 92% on 2026-07-02 — raise the floor as coverage grows, never lower it).
 - Protected-paths check: the run fails if any guardrail file was modified.
+- Contract fidelity (checked in review, not by script): API-touching slices follow `docs/source/api-contracts.md` §3 (design principles), §6-8 (envelopes, errors, pagination) and §45 (idempotency for financial actions); model-touching slices follow `docs/source/data-model.md` §30 (indexing) and §34 (transactional integrity); backend module layout follows `docs/source/codebase-design.md`.
 A failing gate fails the whole run; failing work is never committed, merged, or pushed. ESLint arrives via slice 002FL, then flip `quality_gates.lint` to true.
 
 ## Stopping Conditions

@@ -101,3 +101,43 @@ Validation evidence added:
 - Result: Success
 - Risk level: Medium (governance model change, explicitly requested and recorded)
 - Next action: `./scripts/ralph-loop.sh`
+
+## 2026-07-03 08:04:07 - 2026-07-03_080407_normal_run
+- Agent tool used: codex
+- Slice attempted: 002B2-auth-hardening-jwt-library-and-packaging
+- Summary: Replaced hand-rolled JWT signing/verification in `sfpcl_credit/identity/views.py` with PyJWT HS256, pinned `PyJWT==2.10.1`, and moved `SECRET_KEY` to `SFPCL_SECRET_KEY` with the prior local-dev fallback.
+- Tests run: backend check, backend tests, makemigrations check, backend coverage (93%, floor 85), frontend vitest, frontend typecheck, frontend build, PyJWT import check, and no-`hmac` acceptance check.
+- Evidence saved: `.ralph/runs/2026-07-03_080407_normal_run/`.
+- Result: Success
+- Risk level: High
+- Next action: Continue with `002C-role-and-permission-catalogue-seed`; 002C and 002D have been sharpened using `docs/working/digests/epic-002-platform-auth.md`.
+
+## 2026-07-03 08:15:04 - 2026-07-03_080407_normal_run
+- Agent tool used: codex
+- Slice attempted: 002B2-auth-hardening-jwt-library-and-packaging
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_080407_normal_run/.ralph/runs/2026-07-03_080407_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_080407_normal_run/.ralph/runs/2026-07-03_080407_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-03 08:15:09 - 2026-07-03_081509_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed completed work through 002B2 as an independent architecture review. Appended findings to `docs/working/REVIEW_FINDINGS.md`, created corrective slice `002C2-standard-api-envelope-and-auth-service-boundary`, and sharpened 002C/002D.
+- Tests run: `git diff --check`, frontend typecheck/tests/build, backend check/tests/migrations/coverage.
+- Evidence saved: `.ralph/runs/2026-07-03_081509_architecture_review/`.
+- Result: Success
+- Risk level: Low (review/docs-only; no production code changed).
+- Next action: Continue with `002C-role-and-permission-catalogue-seed`, then `002C2-standard-api-envelope-and-auth-service-boundary` before `002D-current-user-api-with-permissions-and-teams`.
+
+## 2026-07-03 08:27:15 - 2026-07-03_081509_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_081509_architecture_review/.ralph/runs/2026-07-03_081509_architecture_review/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-03_081509_architecture_review/.ralph/runs/2026-07-03_081509_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

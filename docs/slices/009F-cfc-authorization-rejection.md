@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 009: SAP, Loan Account Creation, and Disbursement
+Epic file: `docs/epics/009-sap-loan-account-disbursement.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.
@@ -17,7 +18,8 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 
 ## Source References
 - docs/source/implementation-roadmap.md section 14
-- docs/source/api-contracts.md sections 33-34
+- docs/source/api-contracts.md sections 29-31
+- docs/source/integrations.md (SAP and bank adapter behaviour)
 - docs/source/data-model.md finance/SAP/disbursement tables
 - docs/source/functional-spec.md
 

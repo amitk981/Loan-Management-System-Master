@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 005: Loan Application Intake, Documents, Completeness, and Deficiencies
+Epic file: `docs/epics/005-application-intake-completeness.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.
@@ -13,7 +14,7 @@ Deliver this narrow capability as a small, testable Ralph implementation slice.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 005F
+- 005FB
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11

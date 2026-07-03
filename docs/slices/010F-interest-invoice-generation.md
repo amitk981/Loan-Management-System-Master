@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring
+Epic file: `docs/epics/010-servicing-repayments-interest-monitoring.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.
@@ -17,7 +18,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 
 ## Source References
 - docs/source/implementation-roadmap.md section 15
-- docs/source/api-contracts.md repayment/interest/monitoring sections
+- docs/source/api-contracts.md sections 32-34 (repayment, interest, monitoring)
 - docs/source/data-model.md servicing/monitoring tables
 - docs/source/test-plan.md
 

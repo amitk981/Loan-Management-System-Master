@@ -1,0 +1,9 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002C-role-and-permission-catalogue-seed.md
+ M docs/slices/002D-current-user-api-with-permissions-and-teams.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-002-platform-auth.md
+?? .ralph/runs/2026-07-03_081509_architecture_review/
+?? docs/slices/002C2-standard-api-envelope-and-auth-service-boundary.md

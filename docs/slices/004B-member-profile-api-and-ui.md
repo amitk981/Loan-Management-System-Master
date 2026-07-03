@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master
+Epic file: `docs/epics/004-member-kyc-master.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.
@@ -35,7 +36,7 @@ Small UI wiring for the named workflow, if applicable.
 Implement the named backend/API capability only.
 
 ## Database/Model Impact
-None.
+Non-destructive model/migration changes for the member profile detail fields this screen displays, if needed.
 
 ## API Contracts
 Create or update the API contract for this capability.

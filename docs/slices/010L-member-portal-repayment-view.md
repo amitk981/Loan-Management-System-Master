@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 010: Servicing, Repayments, Interest, and Monitoring
+Epic file: `docs/epics/010-servicing-repayments-interest-monitoring.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.
@@ -17,18 +18,22 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 
 ## Source References
 - docs/source/implementation-roadmap.md section 15
-- docs/source/api-contracts.md repayment/interest/monitoring sections
+- docs/source/api-contracts.md sections 32-34 (repayment, interest, monitoring)
 - docs/source/data-model.md servicing/monitoring tables
 - docs/source/test-plan.md
+- docs/source/screen-spec-member-portal.md screens MP15-MP18
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/loan-accounts/LoanAccount360.tsx
 - sfpcl-lms/src/pages/repayments/RepaymentsHub.tsx
 - sfpcl-lms/src/pages/interest/InterestManagement.tsx
 - sfpcl-lms/src/pages/monitoring/MonitoringDashboard.tsx
+- sfpcl-lms/src/pages/borrower/portal/loans/MP15_MyLoans.tsx
+- sfpcl-lms/src/pages/borrower/portal/loans/MP17_Repayments.tsx
+- sfpcl-lms/src/pages/borrower/portal/loans/MP18_DirectRepaymentInfo.tsx
 
 ## Screens Involved
-Relevant prototype screen area for this capability.
+Member portal: MP15 (My Loans), MP16 (Loan Account Detail), MP17 (Repayments), MP18 (Direct Repayment Information).
 
 ## Frontend Scope
 Small UI wiring for the named workflow, if applicable.

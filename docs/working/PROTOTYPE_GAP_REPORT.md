@@ -10,6 +10,7 @@ The prototype is useful as visual and workflow reference, not production truth.
 | Missing test infrastructure | Low confidence for future changes | `package.json` test script placeholder | First product slice should add focused test infrastructure or create a testing-enablement slice. |
 | Missing error/loading/empty states | User experience and API readiness risk | Many screens | Include state coverage in frontend/API slices. |
 | Financial and compliance rules in UI/mock form | High-risk drift from source docs | Appraisal, sanction, repayment, default | Move to backend/service layer with tests when backend exists. |
+| Prototype MP screen numbering diverges from `screen-spec-member-portal.md` | Risk of wiring a screen against the wrong spec section | `MP22_ProduceSupply.tsx` (spec MP22 = Grievance Detail & Tracking); `MP24_SupportGrievance.tsx` covers spec MP21+MP22 (spec MP24 = Help Guide) | Slices 005FB and 011NA name both the spec IDs and the prototype files explicitly; spec IDs are authoritative. |
 
 ## Major Conflict Policy
 If prototype behavior conflicts with `docs/source/`, source docs win. Record conflicts in `ASSUMPTIONS.md`, an ADR, or a slice blocker.

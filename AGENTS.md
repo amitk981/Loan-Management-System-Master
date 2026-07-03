@@ -10,7 +10,7 @@ When the owner says "run ralph loop" (or similar), execute from the repository r
 ./scripts/ralph-loop.sh
 ```
 
-It runs the slice queue autonomously: one slice per iteration with full gates, auto-commit, auto-merge to main, and auto-push to GitHub; one repair attempt per failure; stops when the queue is empty, after repeated failures, or on an owner veto. Do not improvise a different loop.
+It runs the slice queue autonomously: one slice per iteration with full gates, auto-commit, auto-merge to the `staging` integration branch, and auto-push of `staging` to GitHub; one repair attempt per failure; stops when the queue is empty, after repeated failures, or on an owner veto. Agents never commit to, merge into, or push `main` — the owner alone promotes `staging` to `main` via a GitHub pull request (see `docs/working/RELEASE_PROMOTION.md`). `ralph-run.sh` refuses to run unless `staging` is checked out. Do not improvise a different loop.
 
 ## Core rules
 - Do not rely on chat history.
@@ -21,7 +21,7 @@ It runs the slice queue autonomously: one slice per iteration with full gates, a
 - Run required tests, typecheck, lint, and build gates.
 - Save evidence before marking work complete.
 - Update state, progress, handoff, and slice status.
-- Commit only passing work when config allows it.
+- During runs, never invoke git commit/add/push yourself — the orchestrator validates independently and commits passing work after the agent finishes (agent sandboxes cannot write worktree git metadata).
 - TDD is mandatory for backend and business logic: failing test first, red/green evidence saved.
 - The owner has granted standing approval for autonomous runs (`docs/working/HIGH_RISK_APPROVALS.md`). Do not ask for approval; follow `docs/working/DECISION_POLICY.md` for every judgment call and record assumptions in `docs/working/ASSUMPTIONS.md`.
 - Never modify protected files (scripts/, .ralph/config.yaml, .ralph/permissions.json, AGENTS.md, CLAUDE.md, .gitignore, HIGH_RISK_APPROVALS.md, DECISION_POLICY.md, docs/source/) — validation fails the run if you do. Never weaken risk rules or quality gates.

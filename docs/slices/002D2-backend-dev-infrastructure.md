@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell (infrastructure)
+Epic file: `docs/epics/002-platform-auth-shell.md`
 
 ## Goal
 Remove the three landmines that would block frontend-backend stitching in 002E/002EX: in-memory database (no persistence between requests), hardcoded secret settings, and missing CORS (the Vite dev server cannot call the API at all today).

@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 005: Loan Application Intake, Documents, Completeness, and Deficiencies
+Epic file: `docs/epics/005-application-intake-completeness.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.

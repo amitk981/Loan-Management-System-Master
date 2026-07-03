@@ -1,0 +1,12 @@
+.ralph/progress.md
+.ralph/state.json
+docs/slices/002B2-auth-hardening-jwt-library-and-packaging.md
+docs/slices/002C-role-and-permission-catalogue-seed.md
+docs/slices/002D-current-user-api-with-permissions-and-teams.md
+docs/working/HANDOFF.md
+docs/working/digests/epic-002-platform-auth.md
+sfpcl_credit/config/settings.py
+sfpcl_credit/identity/views.py
+sfpcl_credit/requirements.txt
+sfpcl_credit/tests/test_auth_api.py
+.ralph/runs/2026-07-03_071656_repair/

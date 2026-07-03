@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell (integration proof)
+Epic file: `docs/epics/002-platform-auth-shell.md`
 
 ## Goal
 Prove the whole architecture connects — React frontend → API → Django service layer → database → back — by pushing ONE loan through a minimal skeleton of the full life cycle. This is deliberately thin: it validates the plumbing early so that structural problems surface now, not after 50 slices.

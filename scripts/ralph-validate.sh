@@ -43,6 +43,9 @@ project_dir="$(awk -F': *' '/^[[:space:]]*project_dir:/ {print $2; exit}' "$conf
 project_dir="${project_dir:-.}"
 project_path="$worktree_dir/$project_dir"
 
+venv_python="$repo_root/.ralph/venv/bin/python"
+[[ -x "$venv_python" ]] || venv_python="python3"
+
 enabled() {
   local key="$1"
   awk -F': *' -v key="$key" '$1 ~ "^[[:space:]]*" key "$" {print $2; exit}' "$config" | xargs
@@ -123,25 +126,25 @@ run_backend_gate() {
 
 if [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
   if [[ "$(enabled backend_check)" == "true" ]]; then
-    run_backend_gate backend-check "python3 $backend_dir/manage.py check" || failures=$((failures + 1))
+    run_backend_gate backend-check "\"$venv_python\" $backend_dir/manage.py check" || failures=$((failures + 1))
   else
     write_skipped backend-check "disabled in .ralph/config.yaml"
   fi
   if [[ "$(enabled backend_tests)" == "true" ]]; then
-    run_backend_gate backend-test "python3 $backend_dir/manage.py test $backend_dir.tests -v 2" || failures=$((failures + 1))
+    run_backend_gate backend-test "\"$venv_python\" $backend_dir/manage.py test $backend_dir.tests -v 2" || failures=$((failures + 1))
   else
     write_skipped backend-test "disabled in .ralph/config.yaml"
   fi
   if [[ "$(enabled backend_migrations)" == "true" ]]; then
-    run_backend_gate backend-migrations "python3 $backend_dir/manage.py makemigrations --check --dry-run" || failures=$((failures + 1))
+    run_backend_gate backend-migrations "\"$venv_python\" $backend_dir/manage.py makemigrations --check --dry-run" || failures=$((failures + 1))
   else
     write_skipped backend-migrations "disabled in .ralph/config.yaml"
   fi
   if [[ "$(enabled backend_coverage)" == "true" ]]; then
     coverage_floor="$(awk -F': *' '/^[[:space:]]*coverage_fail_under:/ {print $2; exit}' "$config" | xargs || true)"
     coverage_floor="${coverage_floor:-85}"
-    if python3 -c "import coverage" >/dev/null 2>&1; then
-      run_backend_gate backend-coverage "python3 -m coverage run --source=$backend_dir $backend_dir/manage.py test $backend_dir.tests && python3 -m coverage report --fail-under=$coverage_floor" || failures=$((failures + 1))
+    if "$venv_python" -c "import coverage" >/dev/null 2>&1; then
+      run_backend_gate backend-coverage "\"$venv_python\" -m coverage run --source=$backend_dir $backend_dir/manage.py test $backend_dir.tests && \"$venv_python\" -m coverage report --fail-under=$coverage_floor" || failures=$((failures + 1))
     else
       {
         echo "# backend-coverage Results"

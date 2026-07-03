@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 008: Documentation, Legal Documents, and Security Package
+Epic file: `docs/epics/008-documentation-security-package.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.
@@ -17,7 +18,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 
 ## Source References
 - docs/source/implementation-roadmap.md section 13
-- docs/source/api-contracts.md sections 26-32
+- docs/source/api-contracts.md sections 26-28
 - docs/source/data-model.md document/checklist/security tables
 - docs/source/Final SOP - Loan Disbursement V10 (1).pdf
 - docs/source/SFPCL_Loan Sanction- Doc & Disbursement-SOP_WhatsLoan-25052026.pdf

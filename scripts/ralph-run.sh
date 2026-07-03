@@ -31,6 +31,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+integration_branch="$(awk -F': *' '/^[[:space:]]*integration_branch:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+integration_branch="${integration_branch:-staging}"
+current_branch="$(git symbolic-ref --short HEAD 2>/dev/null || echo detached)"
+if [[ "$current_branch" != "$integration_branch" ]]; then
+  echo "Refusing to run: repository is on '$current_branch' but agent work integrates only into '$integration_branch'." >&2
+  echo "Fix: git checkout $integration_branch   (only the owner promotes $integration_branch to main)." >&2
+  exit 1
+fi
+
 run_id="${run_id:-$(date '+%Y-%m-%d_%H%M%S')_$mode}"
 main_run_dir="$repo_root/.ralph/runs/$run_id"
 run_dir="$main_run_dir"
@@ -117,6 +126,40 @@ fi
 
 mkdir -p "$run_dir/evidence/screenshots" "$run_dir/evidence/videos" "$run_dir/evidence/api-responses" "$run_dir/evidence/terminal-logs"
 
+backend_python="$(awk -F': *' '/^[[:space:]]*backend_python:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+backend_python="${backend_python:-python3}"
+backend_dir_cfg="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | tr -d '"' | xargs || true)"
+venv_dir="$repo_root/.ralph/venv"
+ensure_backend_env() {
+  local req="$worktree_dir/${backend_dir_cfg}/requirements-dev.txt"
+  [[ -n "$backend_dir_cfg" && -f "$req" ]] || return 0
+  if [[ ! -x "$venv_dir/bin/python" ]]; then
+    "$backend_python" -m venv "$venv_dir"
+  fi
+  if ! "$venv_dir/bin/python" -m pip install --quiet --disable-pip-version-check -r "$req" \
+      >> "$run_dir/evidence/terminal-logs/orchestrator-backend-deps.log" 2>&1; then
+    echo "WARN: backend dependency install failed (offline with new pins?); gates will surface any missing module." >&2
+  fi
+}
+project_dir_cfg="$(awk -F': *' '/^[[:space:]]*project_dir:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | tr -d '"' | xargs || true)"
+ensure_frontend_env() {
+  local fe_dir="$worktree_dir/${project_dir_cfg}"
+  [[ -n "$project_dir_cfg" && -f "$fe_dir/package-lock.json" ]] || return 0
+  if [[ ! -d "$fe_dir/node_modules" ]]; then
+    if ! (cd "$fe_dir" && npm ci --prefer-offline --no-audit --no-fund) \
+        >> "$run_dir/evidence/terminal-logs/orchestrator-frontend-deps.log" 2>&1; then
+      echo "WARN: frontend dependency install failed; gates will surface it." >&2
+    fi
+  else
+    if ! (cd "$fe_dir" && npm install --prefer-offline --no-audit --no-fund) \
+        >> "$run_dir/evidence/terminal-logs/orchestrator-frontend-deps.log" 2>&1; then
+      echo "WARN: frontend dependency sync failed; gates will surface it." >&2
+    fi
+  fi
+}
+ensure_backend_env
+ensure_frontend_env
+
 cat > "$run_dir/prompt.md" <<EOF
 You are running Ralph AFK mode.
 
@@ -144,6 +187,9 @@ Core requirements:
 - Write execution-plan.md before coding.
 - Check permissions before editing files.
 - TDD is mandatory for backend and business logic: write the failing test first, then implement, and save red/green output to evidence/terminal-logs/.
+- Backend Python interpreter: use "$venv_dir/bin/python" for every backend command (manage.py, tests, coverage). Never use bare python3 — it resolves to the wrong interpreter.
+- Frontend node_modules are pre-installed in the worktree by the orchestrator. Do not run npm install unless you add a new pinned package; if that install fails offline, note it in final-summary.md and finish — the orchestrator installs from the lockfile before validation.
+- Your sandbox has no network access: never run pip install. If a dependency you just pinned in requirements is not importable yet, still write the code, tests, and pin; note the missing module in final-summary.md and finish — the orchestrator installs pinned requirements before independent validation. That situation is expected, not a failure.
 - Frontend changes must follow docs/working/FRONTEND_DESIGN_RULES.md exactly: reuse existing components and patterns; never introduce new styling, colours, typography, layouts, or components. If the documents require a screen the prototype lacks, building it from existing patterns and wiring it to the backend is part of the slice.
 - Run required quality gates.
 - Save evidence.
@@ -151,7 +197,7 @@ Core requirements:
 - Save risk-assessment.md.
 - Save review-packet.md.
 - Update state, progress, handoff, and slice status.
-- Commit only if gates pass and config allows commits.
+- Never run git commit, git add, or git push: your sandbox cannot write the worktree's git metadata and the attempt will fail your run. The orchestrator independently validates and commits passing work after you finish.
 - High-risk slices proceed under the owner's standing approval (docs/working/HIGH_RISK_APPROVALS.md); record risk honestly in risk-assessment.md. Never implement a slice marked [revoked] there.
 - When requirements are ambiguous, follow docs/working/DECISION_POLICY.md: choose the source-doc-compliant option, or the industry-standard default, record it in docs/working/ASSUMPTIONS.md, and continue. Do not stop to ask. Never invent business rules the documents do not state — stub them, record the open question, and continue.
 - Before finishing, sharpen the next 1-2 'Not Started' slice files with concrete requirements (fields, endpoints, validation rules, role rules) from the source documents you already opened.
@@ -220,6 +266,7 @@ EOF
 
 agent_timeout="$(awk -F': *' '/^[[:space:]]*agent_timeout_seconds:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
 
+agent_rc=0
 "$repo_root/scripts/agent-adapters/$agent.sh" \
   RUN_ID="$run_id" \
   RUN_DIR="$run_dir" \
@@ -227,9 +274,15 @@ agent_timeout="$(awk -F': *' '/^[[:space:]]*agent_timeout_seconds:/ {print $2; e
   PROMPT_FILE="$run_dir/prompt.md" \
   SELECTED_SLICE="$slice_id" \
   MODE="$mode" \
-  AGENT_TIMEOUT_SECONDS="${agent_timeout:-7200}"
+  AGENT_TIMEOUT_SECONDS="${agent_timeout:-7200}" || agent_rc=$?
+if (( agent_rc != 0 )); then
+  echo "WARN: agent adapter exited $agent_rc; proceeding to independent validation — the gates decide pass or fail." >&2
+fi
 
 (cd "$worktree_dir" && git status --short > "$run_dir/changed-files.txt")
+
+ensure_backend_env
+ensure_frontend_env
 
 "$repo_root/scripts/ralph-validate.sh" --run-id "$run_id" --worktree "$worktree_dir" --mode "$mode" --slice "$slice_id"
 
@@ -336,9 +389,9 @@ if (( committed == 1 )) && (( no_worktree == 0 )); then
       git -C "$repo_root" branch -d "$branch_name"
       run_dir="$repo_root/.ralph/runs/$run_id"
       merged=1
-      echo "Merged $branch_name into main and removed the worktree."
+      echo "Merged $branch_name into $integration_branch and removed the worktree."
     else
-      echo "Auto-merge into main failed; branch $branch_name kept for manual review." >&2
+      echo "Auto-merge into $integration_branch failed; branch $branch_name kept for manual review." >&2
     fi
   else
     echo "auto_merge is disabled; review and merge branch $branch_name manually." >&2
@@ -349,8 +402,8 @@ if (( merged == 1 )); then
   auto_push="$(awk -F': *' '/^[[:space:]]*auto_push:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
   push_remote="$(awk -F': *' '/^[[:space:]]*push_remote:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
   if [[ "$auto_push" == "true" && -n "$push_remote" ]]; then
-    if git -C "$repo_root" push "$push_remote" main; then
-      echo "Pushed main to $push_remote."
+    if git -C "$repo_root" push "$push_remote" "$integration_branch"; then
+      echo "Pushed $integration_branch to $push_remote."
     else
       echo "WARN: push to $push_remote failed (non-fatal); push manually later." >&2
     fi

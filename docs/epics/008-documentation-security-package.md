@@ -20,7 +20,7 @@ Disbursement can only proceed when the full legal/security package is complete, 
 
 ## Source References
 - `docs/source/implementation-roadmap.md` section 13
-- `docs/source/api-contracts.md` sections 26 through 32
+- `docs/source/api-contracts.md` sections 26 through 28
 - `docs/source/data-model.md` document/checklist/security tables
 - SOP PDFs under `docs/source/`
 - `docs/source/screen-spec.md` documentation and security screens

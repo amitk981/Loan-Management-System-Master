@@ -5,6 +5,7 @@ Not Started
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell
+Epic file: `docs/epics/002-platform-auth-shell.md`
 
 ## Goal
 Deliver this narrow capability as a small, testable Ralph implementation slice.
@@ -21,6 +22,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - docs/source/auth-permissions.md
 - docs/source/api-contracts.md sections 11-12, 43-44
 - docs/source/data-model.md identity/access tables
+- docs/source/domain-model.md (state machine and lifecycle terminology)
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/auth/LoginScreen.tsx

@@ -2,11 +2,16 @@
 
 Source of truth: `docs/source/auth-permissions.md` (section numbers below), `docs/source/api-contracts.md` §11–12, 43–44, `docs/source/data-model.md` identity/access tables.
 
-## Already implemented (002A, 002B — merged to main 2026-07-02)
+## Already implemented (002A, 002B — merged to main 2026-07-02; 002B2 completed 2026-07-03)
 - Django backend `sfpcl_credit/` with health endpoints (`/live`, `/ready`, `/deep`).
 - Custom identity models: `User`, `Role`, `Team`, `UserSession`, `UserTeamMembership`, `AuditLog` (`sfpcl_credit/identity/models.py`).
 - `POST /api/v1/auth/login/`, `/refresh/`, `/logout/` with refresh rotation, replay rejection, revocation, auth audit events. Contracts in `docs/working/API_CONTRACTS.md`.
-- KNOWN DEBT: hand-rolled HMAC JWT — replaced by slice 002B2 (PyJWT).
+- JWT signing now uses PyJWT HS256 with `SECRET_KEY` read from `SFPCL_SECRET_KEY` and local-dev fallback. Refresh-session storage, rotation, replay rejection, and logout revocation behaviour were preserved.
+
+## Next sharpened slices (updated 2026-07-03)
+- 002C should seed canonical roles, teams, permissions, and role-permission links. Use the role catalogue, team types, module groups, and A-005 alias reconciliation notes below.
+- Architecture review 2026-07-03 added corrective slice 002C2 before 002D. 002C2 should consolidate the duplicated API response helpers and move auth token/session/audit behavior behind explicit module functions before another auth endpoint lands.
+- 002D should add `GET /api/v1/auth/me/` using the 002C2 auth/access-token validation module, returning user identity, role codes, team codes, effective permission codes from 002C, and dashboard action availability.
 
 ## For 002C — Role and Permission Catalogue Seed
 - Permission naming convention: §11 (verbs in §11.1); full permission catalogue by module: §12.1–12.13 (auth/user-admin, members, KYC, applications, credit assessment, approvals, documentation, security, SAP/finance, monitoring/default, closure, compliance, reports/audit/config).
@@ -21,6 +26,13 @@ Source of truth: `docs/source/auth-permissions.md` (section numbers below), `doc
 - Account lifecycle/status values: §7.1–7.3 (only active users may log in — already enforced/tested in 002B).
 - Session policy: §8.2. Sensitive re-auth flow: §6.5 (later slice).
 - Data model tables: §10.1–10.8 (`users`, `roles`, `permissions`, `role_permissions`, `teams`, `user_team_memberships`, `user_sessions`, `sensitive_access_logs`).
+
+## For 002C2 — API Envelope and Auth Module Boundary
+- `docs/source/api-contracts.md` §6.1 says success envelopes include `success`, `data`, and `meta.request_id`, `meta.timestamp`, `meta.api_version`.
+- Current code before 002C2 has two production success helpers: `sfpcl_credit/ops.py` for health (missing `api_version`) and `sfpcl_credit/identity/views.py` for auth (includes `api_version`).
+- `docs/source/technical-architecture.md` §13.1 says Django views should not contain complex workflow orchestration; multi-entity operations, permissions, calculations, and audit logs belong in explicit service classes/functions.
+- `docs/source/codebase-design.md` §6-7 says workflow/business logic should live behind explicit module interfaces and tests should exercise those interfaces, not scattered helpers.
+- Keep endpoint URLs and auth behavior unchanged: PyJWT HS256, token lifetimes, JWT claims, refresh rotation, replay rejection, logout revocation, inactive-user rejection, and auth audit events.
 
 ## Approval authority (needed from 007x onward, recorded for orientation)
 - Authority types §16.1; loan sanction authority §16.2 (≤ ₹5,00,000: CFO + 1 Director; above: CFO + 2 Directors — mirrored in prototype `ApprovalPanel.tsx`); disbursement authority §16.3; security authority §16.4.

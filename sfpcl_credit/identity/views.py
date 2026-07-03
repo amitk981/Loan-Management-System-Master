@@ -1,9 +1,9 @@
-import base64
 import hashlib
-import hmac
 import json
+import secrets
 import uuid
 
+import jwt
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
@@ -58,49 +58,30 @@ def parse_json_body(request):
     return data
 
 
-def b64encode(raw):
-    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
-
-
-def b64decode(raw):
-    return base64.urlsafe_b64decode((raw + "=" * (-len(raw) % 4)).encode("ascii"))
-
-
-def sign(message):
-    return hmac.new(
-        settings.SECRET_KEY.encode("utf-8"), message.encode("ascii"), hashlib.sha256
-    ).digest()
-
-
 def encode_token(claims):
-    header = b64encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode("utf-8"))
-    payload = b64encode(
-        json.dumps(claims, separators=(",", ":"), sort_keys=True).encode("utf-8")
-    )
-    message = f"{header}.{payload}"
-    return f"{message}.{b64encode(sign(message))}"
+    return jwt.encode(claims, settings.SECRET_KEY, algorithm="HS256")
 
 
 def decode_token(token, expected_type):
     try:
-        header, payload, signature = token.split(".")
-    except ValueError as exc:
-        raise TokenError("INVALID_TOKEN", "Token format is invalid.") from exc
-
-    message = f"{header}.{payload}"
-    if not hmac.compare_digest(signature, b64encode(sign(message))):
+        claims = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=["HS256"],
+            options={"require": ["exp"]},
+        )
+    except jwt.ExpiredSignatureError as exc:
+        code = "REFRESH_TOKEN_EXPIRED" if expected_type == "refresh" else "TOKEN_EXPIRED"
+        raise TokenError(code, "Token has expired.") from exc
+    except jwt.InvalidSignatureError as exc:
         raise TokenError("INVALID_TOKEN", "Token signature is invalid.")
-
-    try:
-        claims = json.loads(b64decode(payload))
-    except (ValueError, json.JSONDecodeError) as exc:
-        raise TokenError("INVALID_TOKEN", "Token payload is invalid.") from exc
+    except jwt.DecodeError as exc:
+        raise TokenError("INVALID_TOKEN", "Token format is invalid.") from exc
+    except jwt.InvalidTokenError as exc:
+        raise TokenError("INVALID_TOKEN", "Token is invalid.") from exc
 
     if claims.get("token_type") != expected_type:
         raise TokenError("INVALID_TOKEN", "Token type is invalid.")
-    if int(claims.get("exp", 0)) <= int(timezone.now().timestamp()):
-        code = "REFRESH_TOKEN_EXPIRED" if expected_type == "refresh" else "TOKEN_EXPIRED"
-        raise TokenError(code, "Token has expired.")
     return claims
 
 
@@ -194,7 +175,7 @@ def active_session_for_refresh(refresh_token):
 
     if not session.is_active():
         raise TokenError("INVALID_TOKEN", "Refresh session is not active.")
-    if not hmac.compare_digest(session.refresh_token_hash, hash_token(refresh_token)):
+    if not secrets.compare_digest(session.refresh_token_hash, hash_token(refresh_token)):
         raise TokenError("INVALID_TOKEN", "Refresh token has been rotated or revoked.")
     if not session.user.can_authenticate():
         session.revoke("user_status_changed")

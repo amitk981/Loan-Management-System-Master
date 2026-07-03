@@ -1,10 +1,11 @@
 # Slice 002B2: Auth Hardening — Replace Hand-Rolled JWT with PyJWT
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell
+Epic file: `docs/epics/002-platform-auth-shell.md`
 
 ## Goal
 Remove the security debt created in slice 002B: the token signing in `sfpcl_credit/identity/views.py` was hand-implemented with HMAC because the dependency policy blocked libraries at the time. Replace it with the standard PyJWT library and move the secret out of source code.
@@ -39,12 +40,12 @@ High
 - All gates pass (backend tests/check, frontend typecheck/tests/build).
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts confirmed unchanged
-- [ ] Tests/typecheck/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts confirmed unchanged
+- [x] Tests/typecheck/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates
