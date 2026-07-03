@@ -125,6 +125,9 @@ worktree:
 commands:
   project_dir: sfpcl-lms
   backend_dir: sfpcl_credit
+  # Base interpreter for the orchestrator-managed venv at .ralph/venv (agents have no
+  # network and must never pip install; the orchestrator installs pinned requirements).
+  backend_python: /usr/local/bin/python3.11
   package_manager: auto
   install: auto
   build: auto

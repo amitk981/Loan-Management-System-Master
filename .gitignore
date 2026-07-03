@@ -41,3 +41,4 @@ sfpcl-lms/playwright-report/
 *.njsproj
 *.sln
 *.sw?
+.ralph/venv/

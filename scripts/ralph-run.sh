@@ -126,6 +126,23 @@ fi
 
 mkdir -p "$run_dir/evidence/screenshots" "$run_dir/evidence/videos" "$run_dir/evidence/api-responses" "$run_dir/evidence/terminal-logs"
 
+backend_python="$(awk -F': *' '/^[[:space:]]*backend_python:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+backend_python="${backend_python:-python3}"
+backend_dir_cfg="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {print $2; exit}' "$repo_root/.ralph/config.yaml" | tr -d '"' | xargs || true)"
+venv_dir="$repo_root/.ralph/venv"
+ensure_backend_env() {
+  local req="$worktree_dir/${backend_dir_cfg}/requirements-dev.txt"
+  [[ -n "$backend_dir_cfg" && -f "$req" ]] || return 0
+  if [[ ! -x "$venv_dir/bin/python" ]]; then
+    "$backend_python" -m venv "$venv_dir"
+  fi
+  if ! "$venv_dir/bin/python" -m pip install --quiet --disable-pip-version-check -r "$req" \
+      >> "$run_dir/evidence/terminal-logs/orchestrator-backend-deps.log" 2>&1; then
+    echo "WARN: backend dependency install failed (offline with new pins?); gates will surface any missing module." >&2
+  fi
+}
+ensure_backend_env
+
 cat > "$run_dir/prompt.md" <<EOF
 You are running Ralph AFK mode.
 
@@ -153,6 +170,8 @@ Core requirements:
 - Write execution-plan.md before coding.
 - Check permissions before editing files.
 - TDD is mandatory for backend and business logic: write the failing test first, then implement, and save red/green output to evidence/terminal-logs/.
+- Backend Python interpreter: use "$venv_dir/bin/python" for every backend command (manage.py, tests, coverage). Never use bare python3 — it resolves to the wrong interpreter.
+- Your sandbox has no network access: never run pip install. If a dependency you just pinned in requirements is not importable yet, still write the code, tests, and pin; note the missing module in final-summary.md and finish — the orchestrator installs pinned requirements before independent validation. That situation is expected, not a failure.
 - Frontend changes must follow docs/working/FRONTEND_DESIGN_RULES.md exactly: reuse existing components and patterns; never introduce new styling, colours, typography, layouts, or components. If the documents require a screen the prototype lacks, building it from existing patterns and wiring it to the backend is part of the slice.
 - Run required quality gates.
 - Save evidence.
@@ -243,6 +262,8 @@ if (( agent_rc != 0 )); then
 fi
 
 (cd "$worktree_dir" && git status --short > "$run_dir/changed-files.txt")
+
+ensure_backend_env
 
 "$repo_root/scripts/ralph-validate.sh" --run-id "$run_id" --worktree "$worktree_dir" --mode "$mode" --slice "$slice_id"
 
