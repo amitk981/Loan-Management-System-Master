@@ -10,7 +10,7 @@ import {
 
 describe('role-aware staff navigation contract', () => {
   it('gates every staff sidebar item except Dashboard with its matching page permission', () => {
-    expect(allNavItems.length).toBe(23);
+    expect(allNavItems.length).toBe(24);
 
     allNavItems.forEach(item => {
       if (item.id === 'dashboard') {
@@ -114,6 +114,24 @@ describe('role-aware staff navigation contract', () => {
     expect(resolveNavigationAttempt('members', permission => prototypePermissions.includes(permission))).toEqual({
       page: 'dashboard',
       blockedPage: 'members',
+      allowed: false,
+    });
+  });
+
+  it('shows and guards Admin Users only through mapped manage_users permission', () => {
+    const prototypePermissions = mapCanonicalPermissions(['users.user.update']);
+    const visibleIds = visibleStaffNavItems(allNavItems, permission => prototypePermissions.includes(permission)).map(item => item.id);
+
+    expect(visibleIds).toEqual(['dashboard', 'admin-users']);
+    expect(PAGE_PERMISSIONS['admin-users']).toBe('manage_users');
+    expect(resolveNavigationAttempt('admin-users', permission => prototypePermissions.includes(permission))).toEqual({
+      page: 'admin-users',
+      blockedPage: null,
+      allowed: true,
+    });
+    expect(resolveNavigationAttempt('admin-users', () => false)).toEqual({
+      page: 'dashboard',
+      blockedPage: 'admin-users',
       allowed: false,
     });
   });

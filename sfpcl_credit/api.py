@@ -28,6 +28,17 @@ def success_response(data, request):
     return JsonResponse({"success": True, "data": data, "meta": response_meta(request)})
 
 
+def list_response(data, pagination, request):
+    return JsonResponse(
+        {
+            "success": True,
+            "data": data,
+            "pagination": pagination,
+            "meta": response_meta(request),
+        }
+    )
+
+
 def error_response(request, status, code, message, field_errors=None):
     return JsonResponse(
         {

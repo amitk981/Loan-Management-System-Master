@@ -13,7 +13,7 @@ export type Page =
   | 'defaults' | 'closure'
   | 'compliance' | 'registers'
   | 'reports' | 'grievances'
-  | 'audit' | 'settings' | 'profile' | 'tracer'
+  | 'audit' | 'settings' | 'admin-users' | 'profile' | 'tracer'
   | 'borrower';
 
 export const PAGE_PERMISSIONS: Partial<Record<Page, Permission>> = {
@@ -43,6 +43,7 @@ export const PAGE_PERMISSIONS: Partial<Record<Page, Permission>> = {
   grievances: 'view_compliance',
   audit: 'view_audit',
   settings: 'view_settings',
+  'admin-users': 'manage_users',
   tracer: 'run_tracer',
   borrower: 'view_own_loan',
 };

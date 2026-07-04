@@ -1,5 +1,15 @@
 # Ralph Progress Log
 
+## 2026-07-04 13:19:08 - 2026-07-04_131908_normal_run
+- Agent tool used: codex
+- Slice attempted: 002G-admin-user-and-role-management-shell
+- Summary: Added admin user-management over the existing identity catalogue. Backend routes under `/api/v1/admin/users/` provide paginated list/detail, role assignment to existing active roles, team add/remove against existing active teams, active/suspended status updates, audit rows for role/team/status changes, session revocation on suspension, and the A-014 last active `system_admin` lock-out guard. Frontend adds `AdminUsers`, a real API client, an `admin-users` route/nav item, and shared `PAGE_PERMISSIONS`/`visibleStaffNavItems` coverage behind mapped prototype `manage_users`.
+- Tests run: backend admin-user TDD red/green; frontend admin navigation TDD red/green; backend `manage.py check`; backend tests (70/70); `makemigrations --check --dry-run`; backend coverage 94% (floor 85); frontend `npm test` (26/26); `npm run lint`; `npm run typecheck`; `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-04_131908_normal_run/`, with terminal logs under `evidence/terminal-logs/` and admin API examples in `api-response-examples.md`.
+- Result: Success. Browser screenshot capture could not run because the in-app browser target was unavailable (`agent.browsers.list()` returned `[]`); limitation recorded in `visual-evidence.md`.
+- Risk level: Medium.
+- Next action: Run `002H-state-machine-and-transition-guard-foundation`, then `002I-object-level-permission-test-harness`.
+
 ## 2026-07-04 13:08:14 - 2026-07-04_130814_normal_run
 - Agent tool used: codex
 - Slice attempted: 002F2-navigation-render-regression-tests
@@ -489,6 +499,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_130814_normal_run/.ralph/runs/2026-07-04_130814_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_130814_normal_run/.ralph/runs/2026-07-04_130814_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-04 13:39:42 - 2026-07-04_131908_normal_run
+- Agent tool used: codex
+- Slice attempted: 002G-admin-user-and-role-management-shell
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_131908_normal_run/.ralph/runs/2026-07-04_131908_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_131908_normal_run/.ralph/runs/2026-07-04_131908_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

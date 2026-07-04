@@ -1,5 +1,6 @@
 from django.urls import path
 
+from sfpcl_credit.identity import admin_views
 from sfpcl_credit.identity.views import login, logout, me, refresh
 from sfpcl_credit.ops import deep_health, live_health, ready_health
 from sfpcl_credit.tracer import views as tracer_views
@@ -10,6 +11,32 @@ urlpatterns = [
     path("api/v1/auth/refresh/", refresh, name="auth-refresh"),
     path("api/v1/auth/logout/", logout, name="auth-logout"),
     path("api/v1/auth/me/", me, name="auth-me"),
+    path("api/v1/admin/users/", admin_views.user_list, name="admin-user-list"),
+    path(
+        "api/v1/admin/users/<uuid:user_id>/",
+        admin_views.user_detail,
+        name="admin-user-detail",
+    ),
+    path(
+        "api/v1/admin/users/<uuid:user_id>/roles/",
+        admin_views.assign_role,
+        name="admin-user-role-assign",
+    ),
+    path(
+        "api/v1/admin/users/<uuid:user_id>/teams/",
+        admin_views.add_team,
+        name="admin-user-team-add",
+    ),
+    path(
+        "api/v1/admin/users/<uuid:user_id>/teams/<str:team_code>/",
+        admin_views.remove_team,
+        name="admin-user-team-remove",
+    ),
+    path(
+        "api/v1/admin/users/<uuid:user_id>/status/",
+        admin_views.set_status,
+        name="admin-user-status-set",
+    ),
     path("api/v1/tracer/members/", tracer_views.create_member, name="tracer-member-create"),
     path(
         "api/v1/tracer/members/<uuid:member_id>/loan-applications/",

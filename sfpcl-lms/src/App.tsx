@@ -48,6 +48,7 @@ import GlobalSearchResults from './pages/search/GlobalSearchResults';
 import NotificationsCenter from './pages/notifications/NotificationsCenter';
 import MyProfile from './pages/profile/MyProfile';
 import TracerBullet from './pages/tracer/TracerBullet';
+import AdminUsers from './pages/admin/AdminUsers';
 
 export type { Page } from './services/navigationPermissions';
 
@@ -301,6 +302,8 @@ const AppInner: React.FC = () => {
         return <ReportsMIS />;
       case 'settings':
         return <SettingsHub />;
+      case 'admin-users':
+        return <AdminUsers />;
       case 'profile':
         return <MyProfile />;
       case 'tracer':

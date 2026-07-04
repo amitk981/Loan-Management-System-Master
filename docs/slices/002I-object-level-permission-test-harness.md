@@ -8,10 +8,10 @@ Epic 002: Platform Auth and Role Shell
 Epic file: `docs/epics/002-platform-auth-shell.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Add a narrow backend object-level permission harness that future member/application/loan slices can reuse in tests before real object-assignment tables arrive.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Future workflow APIs can prove "has module permission" is not enough: object/team assignment scope must be checked independently and denied with the standard envelope when the user is outside scope.
 
 ## Depends On
 - 002H
@@ -36,25 +36,42 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+1. Add a small domain-neutral permission helper module (for example under `sfpcl_credit/identity/modules/`) that evaluates an actor's access to an object using explicit inputs only: actor user id, actor team codes, required canonical permission code, object owner user id, object team code, and an optional `allow_global` flag.
+2. The helper must return an allow/deny result with a reason code; it must not query loan/member/application models and must not invent final business rules for future domains.
+3. Add a thin test-only fixture or service-level test harness around the helper; do not add public production endpoints solely for the harness.
+4. Reuse `auth_service.effective_permission_codes()` for the module-permission side, and `auth_service.team_payload()` / `User.team_codes()` shape for team membership inputs.
+5. Keep object access separate from 002H's workflow transition guard: 002H checks action/state/permission, while 002I checks whether the actor is allowed to touch the specific object after permission passes.
 
 ## Database/Model Impact
 None.
 
 ## API Contracts
-Create or update the API contract for this capability.
+No new public API endpoint expected. Update `docs/working/API_CONTRACTS.md` only if a shared internal error translation convention is documented.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Apply `docs/source/auth-permissions.md` object/team scope language:
+- Source says team/assignment scope limits users to relevant queue/team work.
+- If the actor lacks the required canonical permission, deny with `PERMISSION_DENIED`.
+- If the actor has the module permission but does not own the object, is not on the object's team, and no explicit global override is supplied, deny as object access denied.
+- Unknown access must default to deny and be recorded as approval-required, not auto-allowed.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+No audit rows required for the helper itself; future endpoints that call it remain responsible for auditing successful critical actions.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+Enforce source-doc access-control rules without adding domain business rules.
+- The helper accepts only explicit object-scope facts supplied by callers.
+- Missing object owner/team facts default to deny unless `allow_global` is true and the actor has the required permission.
+- The helper must make the deny reason test-visible (`missing_permission`, `owner_mismatch`, `team_mismatch`, or `scope_unknown`) so future endpoint tests can assert the correct error path.
 
 ## Test Cases
 Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Backend TDD: actor with required permission and object owner id matches -> allowed.
+- Backend TDD: actor with required permission and active team membership matching the object team -> allowed.
+- Backend TDD: actor without the required canonical permission -> denied as missing permission.
+- Backend TDD: actor with permission but mismatched owner/team -> denied as object access denied.
+- Backend TDD: unknown/missing object scope -> denied unless an explicit global override is passed.
+- Regression: this helper must not alter existing `/auth/me/`, admin user-management, or tracer permission behavior.
 
 ## Visual Acceptance Criteria
 None.
