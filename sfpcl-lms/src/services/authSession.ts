@@ -104,7 +104,7 @@ const ROLE_CODE_TO_FRONTEND_ROLE: Record<string, Role> = {
   external_auditor: 'backend_staff',
 };
 
-const CANONICAL_TO_PROTOTYPE_PERMISSIONS: Record<string, Permission> = {
+export const CANONICAL_TO_PROTOTYPE_PERMISSIONS: Record<string, Permission> = {
   'applications.loan_application.read': 'view_applications',
   'applications.loan_application.create': 'create_application',
   'applications.loan_application.update': 'edit_application',

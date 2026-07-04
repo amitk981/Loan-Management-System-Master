@@ -8,8 +8,9 @@ import {
 } from 'lucide-react';
 import { useRole } from '../../contexts/RoleContext';
 import { Permission } from '../../contexts/RoleContext';
+import type { Page } from '../../services/navigationPermissions';
 
-interface NavItem {
+export interface NavItem {
   id: string;
   label: string;
   icon: React.ReactNode;
@@ -17,7 +18,11 @@ interface NavItem {
   requiredPermission?: Permission;
 }
 
-const allNavItems: NavItem[] = [
+export interface StaffNavItem extends NavItem {
+  id: Page;
+}
+
+export const allNavItems: StaffNavItem[] = [
   { id: 'dashboard',     label: 'Dashboard',             icon: <LayoutDashboard size={18} /> },
   { id: 'tasks',         label: 'Task Inbox',            icon: <Inbox size={18} />,           badge: 5, requiredPermission: 'view_applications' },
   { id: 'applications',  label: 'Applications',          icon: <FileText size={18} />,        badge: 3, requiredPermission: 'view_applications' },

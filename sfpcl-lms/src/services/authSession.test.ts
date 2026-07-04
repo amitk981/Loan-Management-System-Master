@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  CANONICAL_TO_PROTOTYPE_PERMISSIONS,
   clearStoredAuthSession,
   loadStoredAuthSession,
   loginAndLoadCurrentUser,
@@ -158,6 +159,21 @@ describe('backend current-user mapping', () => {
     ])).toEqual(['run_tracer']);
   });
 
+  it('keeps tracer lifecycle mapping isolated from every non-tracer prototype permission', () => {
+    expect(CANONICAL_TO_PROTOTYPE_PERMISSIONS['tracer.lifecycle.run']).toBe('run_tracer');
+
+    const mappedTracerPermissions = mapCanonicalPermissions(['tracer.lifecycle.run']);
+
+    expect(mappedTracerPermissions).toEqual(['run_tracer']);
+    expect(mappedTracerPermissions).not.toContain('view_members');
+    expect(mappedTracerPermissions).not.toContain('view_applications');
+    expect(mappedTracerPermissions).not.toContain('view_loan_accounts');
+    expect(mappedTracerPermissions).not.toContain('view_reports');
+    expect(mappedTracerPermissions).not.toContain('view_settings');
+    expect(mappedTracerPermissions).not.toContain('view_audit');
+    expect(mappedTracerPermissions).not.toContain('manage_settings');
+  });
+
   it('keeps zero-permission roles restricted to unrestricted routes', () => {
     const user = mapBackendUserToFrontendUser({
       ...currentUserEnvelope.data,
@@ -202,6 +218,30 @@ describe('backend current-user mapping', () => {
     expect(user.roleName).toBe('Management Viewer');
     expect(user.roleCodes).toEqual(['management_viewer']);
     expect(mapCanonicalPermissions(user.permissions)).toEqual([]);
+  });
+
+  it('maps unknown and empty-role current-user responses to neutral backend staff without prototype permissions', () => {
+    const unknownRoleUser = mapBackendUserToFrontendUser({
+      ...currentUserEnvelope.data,
+      roles: [{ role_code: 'future_unknown_role', role_name: 'Future Unknown Role' }],
+      teams: [],
+      permissions: [],
+      available_actions: [],
+    });
+    const emptyRoleUser = mapBackendUserToFrontendUser({
+      ...currentUserEnvelope.data,
+      roles: [],
+      teams: [],
+      permissions: [],
+      available_actions: [],
+    });
+
+    expect(unknownRoleUser.role).toBe('backend_staff');
+    expect(unknownRoleUser.roleName).toBe('Future Unknown Role');
+    expect(mapCanonicalPermissions(unknownRoleUser.permissions)).toEqual([]);
+    expect(emptyRoleUser.role).toBe('backend_staff');
+    expect(emptyRoleUser.roleName).toBe('Staff User');
+    expect(mapCanonicalPermissions(emptyRoleUser.permissions)).toEqual([]);
   });
 });
 

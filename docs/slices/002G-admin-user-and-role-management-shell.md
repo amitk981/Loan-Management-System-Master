@@ -22,7 +22,10 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 3. Assignment endpoints that only bind existing catalogue rows (no free-text role/permission creation): assign/remove a `Role` (`role_permissions` are NOT edited here — the catalogue seed owns them), add/remove a `UserTeamMembership`, and set `status` (active/suspended) — each writing an `AuditLog` row (`actor_type="user"`, action like `admin.user.role_assigned` / `admin.user.status_changed`, old/new value JSON) exactly as the tracer and auth services already do.
 4. Every endpoint requires the `manage_users` canonical permission (seeded to `system_admin`); a session without it returns `403 PERMISSION_DENIED`; unauthenticated returns the standard `401`. Reuse the session-bound `validate_access_session` + `effective_permission_codes` gate from the auth/tracer views.
 5. Suspending a user must revoke that user's active `UserSession` rows so a suspended user cannot keep calling protected APIs (consistent with the 002D/A-008 active-session rule). Do not let an admin suspend or remove the last `system_admin` (lock-out guard) — record this guard's exact rule in `ASSUMPTIONS.md` if the source docs are silent.
-6. Frontend: wire the admin shell using existing prototype patterns only (`RoleContext`, existing table/list and status-badge components); no new styling. Gate the screen and its actions behind `manage_users`. A non-admin never sees the nav item or action buttons.
+6. Frontend: wire the admin shell using existing prototype patterns only (`RoleContext`, existing table/list and status-badge components); no new styling. Gate the screen and its actions behind explicit backend canonical permissions mapped through `authSession.ts` (no role-name checks).
+7. Navigation: add the admin user-management entry only for sessions whose canonical permissions map to `manage_users`; non-admin, zero-permission, and unknown-role sessions must not see the nav item or action buttons. Keep the existing Settings shortcut gated by `view_settings`.
+8. Route guard: add the new admin page to the same shared page-permission contract introduced in 002F (`navigationPermissions.ts`) and extend its tests so direct navigation without `manage_users` falls back to Dashboard with the access-blocked banner.
+9. Current-user compatibility: continue using `/auth/me/` `roles`, `teams`, `permissions`, and `available_actions`; do not introduce frontend grants for unmapped canonical permissions.
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
@@ -63,6 +66,8 @@ Enforce source-doc business rules and block invalid state transitions.
 
 ## Test Cases
 Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Backend TDD: unauthenticated `401`, missing `manage_users` `403`, list/detail success envelope, assignment success, audit-log write, session revocation when status becomes suspended, and lock-out guard for last `system_admin`.
+- Frontend TDD: system-admin user can reach the admin shell; non-admin/zero-permission/tracer-only users cannot see or navigate to it; role/team/status actions are hidden without `manage_users`.
 
 ## Visual Acceptance Criteria
 Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.

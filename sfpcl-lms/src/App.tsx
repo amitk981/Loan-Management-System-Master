@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Agentation } from 'agentation';
-import { Permission, RoleProvider, useRole } from './contexts/RoleContext';
+import { RoleProvider, useRole } from './contexts/RoleContext';
 import { Role, LoanApplication } from './types';
 import { loanApplications as initialApplications } from './data/mockData';
 import {
@@ -10,6 +10,7 @@ import {
   logoutSession,
   restoreCurrentUserFromStoredSession,
 } from './services/authSession';
+import { Page, resolveNavigationAttempt } from './services/navigationPermissions';
 import AppShell from './components/layout/AppShell';
 import LoginScreen from './pages/auth/LoginScreen';
 import BorrowerPortal from './pages/borrower/BorrowerPortal';
@@ -48,54 +49,9 @@ import NotificationsCenter from './pages/notifications/NotificationsCenter';
 import MyProfile from './pages/profile/MyProfile';
 import TracerBullet from './pages/tracer/TracerBullet';
 
-export type Page =
-  | 'dashboard' | 'tasks'
-  | 'search' | 'notifications'
-  | 'applications' | 'applications/new' | 'applications/detail' | 'completeness'
-  | 'members' | 'members/profile' | 'members/borrower360'
-  | 'appraisal' | 'sanction'
-  | 'documentation' | 'disbursement' | 'cfc'
-  | 'interest'
-  | 'loan-accounts' | 'loan-accounts/detail'
-  | 'repayments' | 'monitoring'
-  | 'defaults' | 'closure'
-  | 'compliance' | 'registers'
-  | 'reports' | 'grievances'
-  | 'audit' | 'settings' | 'profile' | 'tracer'
-  | 'borrower';
+export type { Page } from './services/navigationPermissions';
 
 type AuthView = 'staff' | 'memberLogin' | 'memberActivation' | 'memberForgot';
-
-const PAGE_PERMISSIONS: Partial<Record<Page, Permission>> = {
-  tasks: 'view_applications',
-  applications: 'view_applications',
-  'applications/new': 'create_application',
-  'applications/detail': 'view_applications',
-  completeness: 'do_completeness_check',
-  members: 'view_members',
-  'members/profile': 'view_members',
-  'members/borrower360': 'view_members',
-  appraisal: 'do_appraisal',
-  sanction: 'view_sanction',
-  documentation: 'view_documentation',
-  disbursement: 'initiate_disbursement',
-  cfc: 'authorise_disbursement',
-  interest: 'manage_interest',
-  'loan-accounts': 'view_loan_accounts',
-  'loan-accounts/detail': 'view_loan_accounts',
-  repayments: 'post_repayment',
-  monitoring: 'view_monitoring',
-  defaults: 'manage_defaults',
-  closure: 'manage_closure',
-  compliance: 'view_compliance',
-  registers: 'view_registers',
-  reports: 'view_reports',
-  grievances: 'view_compliance',
-  audit: 'view_audit',
-  settings: 'view_settings',
-  tracer: 'run_tracer',
-  borrower: 'view_own_loan',
-};
 
 // Inner component so it can use useRole hook (inside RoleProvider)
 const AppInner: React.FC = () => {
@@ -228,14 +184,14 @@ const AppInner: React.FC = () => {
   }
 
   const navigate = (target: Page, id?: string) => {
-    const requiredPermission = PAGE_PERMISSIONS[target];
-    if (requiredPermission && !can(requiredPermission)) {
-      setBlockedPage(target);
-      setPage('dashboard');
+    const attempt = resolveNavigationAttempt(target, can);
+    if (!attempt.allowed) {
+      setBlockedPage(attempt.blockedPage);
+      setPage(attempt.page);
       return;
     }
-    setBlockedPage(null);
-    setPage(target);
+    setBlockedPage(attempt.blockedPage);
+    setPage(attempt.page);
     if (
       ['applications/detail', 'completeness', 'appraisal', 'sanction', 'documentation', 'disbursement', 'cfc'].includes(target) && id
     ) {

@@ -1,5 +1,15 @@
 # Ralph Progress Log
 
+## 2026-07-04 08:05:00 - 2026-07-04_075626_normal_run
+- Agent tool used: codex
+- Slice attempted: 002F-role-aware-sidebar-header-navigation
+- Summary: Added a shared frontend staff-shell navigation permission contract (`navigationPermissions.ts`), wired `App.tsx` route guard through it, exported the existing `Sidebar` staff nav table for parity tests, and exported the canonical permission map for direct tracer isolation coverage. Extended unit tests for every protected nav item, blocked navigation fallback, tracer-only permission mapping, and unknown/empty-role neutral mapping. Extended the existing Playwright negative spec for zero-permission, tracer-only, and invalid stored-session restore behavior.
+- Tests run: targeted frontend TDD red/green; frontend vitest 23/23; frontend typecheck; frontend build; backend check; backend tests 64/64; makemigrations check; backend coverage 96% (floor 85). Playwright `auth-negative` was attempted with the required venv interpreter but could not start local web servers because this sandbox denies localhost binding (`EPERM`).
+- Evidence saved: `.ralph/runs/2026-07-04_075626_normal_run/`, including `api-response-examples.md`, `screenshot-results.md`, and logs under `evidence/terminal-logs/`.
+- Result: Success with local Playwright caveat.
+- Risk level: Medium.
+- Next action: Run `002FL-frontend-lint-baseline`, then `002G-admin-user-and-role-management-shell`.
+
 ## 2026-07-03 23:42:19 - 2026-07-03_234219_normal_run
 - Agent tool used: codex
 - Slice attempted: 002EX-early-end-to-end-tracer-bullet (High risk; standing approval)
@@ -389,6 +399,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_072505_normal_run/.ralph/runs/2026-07-04_072505_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_072505_normal_run/.ralph/runs/2026-07-04_072505_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-04 08:07:50 - 2026-07-04_075626_normal_run
+- Agent tool used: codex
+- Slice attempted: 002F-role-aware-sidebar-header-navigation
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_075626_normal_run/.ralph/runs/2026-07-04_075626_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_075626_normal_run/.ralph/runs/2026-07-04_075626_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
