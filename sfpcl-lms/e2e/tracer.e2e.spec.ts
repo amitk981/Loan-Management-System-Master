@@ -15,12 +15,13 @@ test.describe('staff tracer lifecycle (production auth path)', () => {
     await staffLogin(page, TRACER_EMAIL, E2E_PASSWORD);
 
     // Authenticated neutral backend-staff dashboard (002EY req 12): the tracer
-    // user's only affordance beyond Dashboard is the Tracer workspace.
-    await expect(page.getByRole('button', { name: 'Tracer' })).toBeVisible();
+    // user's only affordance beyond Dashboard is the Tracer workspace. exact: true
+    // because the profile button ("E2E Tracer Staff") also contains "Tracer".
+    await expect(page.getByRole('button', { name: 'Tracer', exact: true })).toBeVisible();
     await expect(page).toHaveScreenshot('dashboard.png', { fullPage: true });
 
     // Reach the tracer only through the shell nav — no direct API calls (req 15).
-    await page.getByRole('button', { name: 'Tracer' }).click();
+    await page.getByRole('button', { name: 'Tracer', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Tracer' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Run tracer' }).click();

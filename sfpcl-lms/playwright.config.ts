@@ -35,8 +35,11 @@ export default defineConfig({
   webServer: [
     {
       // Backend: migrate a fresh isolated DB, seed the role catalogue and the
-      // deterministic E2E staff users, then serve the real API.
+      // deterministic E2E staff users, then serve the real API. The DB file is
+      // deleted first so entity sequence numbers (MEM-000001, ...) are identical
+      // every run — screenshot baselines depend on that determinism.
       command:
+        `rm -f "${e2eDbPath}" && ` +
         `${manage} migrate --noinput && ` +
         `${manage} seed_role_catalogue && ` +
         `${manage} seed_e2e_users && ` +

@@ -74,7 +74,8 @@ test.describe('auth negatives and restricted staff UI', () => {
     await staffLogin(page, TRACER_EMAIL, E2E_PASSWORD);
 
     await expect(page.getByRole('button', { name: 'Dashboard' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Tracer' })).toBeVisible();
+    // exact: true because the profile button ("E2E Tracer Staff") also contains "Tracer".
+    await expect(page.getByRole('button', { name: 'Tracer', exact: true })).toBeVisible();
 
     for (const label of STAFF_NAV_LABELS.filter(label => label !== 'Tracer')) {
       await expect(page.getByRole('button', { name: label })).toHaveCount(0);
