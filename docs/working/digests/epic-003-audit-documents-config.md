@@ -16,6 +16,13 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
 - Current schema check during architecture review `2026-07-04_190302`: `identity.AuditLog.actor_user` is nullable. 003A should serialize no-actor/system rows as `actor: null` and test that path.
 - Require session-bound bearer auth and existing `audit.audit_log.read`; do not invent `reports.audit.read`.
 - No update/delete audit endpoints; preserve append-only behavior.
+- IMPLEMENTED 2026-07-04 (`2026-07-04_202830_repair`): `GET /api/v1/audit-logs/` delivered
+  via `identity/modules/audit_log.py` (service boundary) + `identity/audit_views.py` (thin
+  view). Item shape, `actor: null` for system rows, `old_value`/`new_value` mapping, filters
+  (`entity_type`/`entity_id`/`actor_user_id`), unknown-param and invalid-UUID → 400,
+  newest-first pagination, and the `audit.audit_log.read` gate are all test-covered
+  (`tests/test_audit_logs_api.py`, 12 tests). Contract in `API_CONTRACTS.md`; defaults in
+  ASSUMPTIONS A-017. This is the pattern 003B should mirror for workflow-events read.
 
 ## Sharpened 003B Requirements
 - `docs/source/api-contracts.md` §42.2 defines `GET /api/v1/workflow-events/?entity_type=loan_application&entity_id=uuid`; read access should use existing `audit.workflow_event.read`.

@@ -63,6 +63,27 @@ None for this slice, except updating frontend documentation or fixtures if requi
    §42.2 filters `entity_type` and `entity_id`, top-level pagination, and standard
    002J success/error contract helpers. Do not build dashboard/task UI in this slice.
 
+### Reference implementation (built in 003A — mirror it)
+The audit-log read endpoint delivered in 003A is the exact template for the optional
+workflow-event read endpoint:
+- Service boundary: `sfpcl_credit/identity/modules/audit_log.py` — `user_can_<x>_read(user)`
+  via `auth_service.effective_permission_codes`, a `serialize_<x>(row)` builder, and a
+  `paginated_<x>(query_params)` that rejects unknown query params (`400 VALIDATION_ERROR`),
+  validates UUID filters, orders newest-first (`-created_at`, `-<pk>` tiebreak), and returns
+  `(items, pagination)` using the same `page`/`page_size` (default 20, max 100) shape as
+  `admin_users.paginated_users`.
+- Thin view: `sfpcl_credit/identity/audit_views.py` — `require_GET`, local
+  `_authenticate_session` (401 `AUTH_REQUIRED`/`INVALID_TOKEN` via
+  `auth_service.validate_access_session`), permission gate (403 `PERMISSION_DENIED`),
+  `ValidationError` → 400, success via `sfpcl_credit.api.list_response`.
+- URL: register `api/v1/workflow-events/` in `sfpcl_credit/config/urls.py` next to
+  `api/v1/audit-logs/`.
+- The `audit.workflow_event.read` permission already exists in `catalogue.py` (line ~220,
+  granted to `internal_auditor`); use it directly — do not invent a new code.
+- NOTE the known duplication flagged in the 003A review packet: the thin
+  `_authenticate_session` bearer helper now lives in three view modules. If a shared HTTP
+  auth helper is extracted first, reuse it here instead of adding a fourth copy.
+
 ## Database/Model Impact
 Exactly one non-destructive migration is expected. It must handle the tracer drift
 explicitly so `migrate` succeeds on a clean database and on an existing database that has

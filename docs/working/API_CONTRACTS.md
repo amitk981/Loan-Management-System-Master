@@ -165,3 +165,60 @@ Rules:
 - `available_actions` currently mirrors effective permission codes; later workflow/object-level slices may narrow it per resource while backend enforcement remains authoritative.
 - 002D3 corrected the architecture-review gap by matching `docs/source/api-contracts.md` §11.4 before 002E frontend route-shell wiring consumes `/auth/me/`.
 - 002E maps canonical backend permission codes to the existing prototype `can(...)` permission names only for currently implemented UI affordances. Unmapped backend codes do not grant frontend visibility; backend enforcement remains authoritative and future slices should extend the mapping when they add screens/actions.
+
+## Audit log read (003A)
+
+`GET /api/v1/audit-logs/`
+
+Read-only, protected endpoint over the existing append-only `identity.AuditLog` model
+(`docs/source/api-contracts.md` §42.1). Serialization, filtering, and pagination live behind
+`sfpcl_credit/identity/modules/audit_log.py`; `sfpcl_credit/identity/audit_views.py` is a thin
+`require_GET` view. No update/delete endpoint exists; the read creates no audit row.
+
+Request headers:
+
+```http
+Authorization: Bearer <access_token>
+X-Request-ID: req-audit-list
+```
+
+Query parameters (all optional):
+- `entity_type` — free-text exact match on `AuditLog.entity_type`.
+- `entity_id` — UUID; invalid UUID returns `400 VALIDATION_ERROR` with `field_errors.entity_id`.
+- `actor_user_id` — UUID; invalid UUID returns `400 VALIDATION_ERROR` with `field_errors.actor_user_id`.
+- `page`, `page_size` — standard top-level pagination (default `page_size` 20, max 100).
+- Any other query parameter returns `400 VALIDATION_ERROR` with the unknown key in `field_errors`.
+
+Success (top-level `pagination` envelope, newest-first by `created_at`):
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "audit_log_id": "uuid",
+      "actor": { "user_id": "uuid", "full_name": "Ivy Auditor" },
+      "actor_type": "user",
+      "action": "loan_application.submitted",
+      "entity_type": "loan_application",
+      "entity_id": "uuid",
+      "old_value": { "application_status": "draft" },
+      "new_value": { "application_status": "submitted" },
+      "ip_address": "10.0.0.1",
+      "created_at": "2026-06-22T10:30:00Z"
+    }
+  ],
+  "pagination": { "page": 1, "page_size": 20, "total_count": 1, "total_pages": 1, "has_next": false, "has_previous": false },
+  "meta": { "request_id": "req-audit-list", "timestamp": "…Z", "api_version": "v1" }
+}
+```
+
+Rules:
+- Permission: `audit.audit_log.read` (002C catalogue; held by `internal_auditor` and
+  `chief_financial_controller`). No new permission code is invented; `reports.audit.read` is not used.
+- `actor` is `null` for system/no-actor rows (`AuditLog.actor_user` is nullable); the other item
+  fields (`actor_type`, `action`, `entity_type`, `entity_id`, `created_at`) remain populated.
+- `old_value`/`new_value` surface the stored `old_value_json`/`new_value_json` values; `user_agent`
+  is intentionally not exposed (not part of §42.1).
+- Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session → `401 INVALID_TOKEN`;
+  authenticated user without the audit-read permission → `403 PERMISSION_DENIED`.

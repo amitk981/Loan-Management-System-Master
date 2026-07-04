@@ -1,0 +1,27 @@
+All final gates pass. The repair run is complete. Here's the summary.
+
+## Repair complete: `003A-audit-log-foundation` ✅
+
+### Diagnosis of the prior failure
+Two earlier attempts failed:
+- **`202030` (codex)** — hit a usage limit before writing any code.
+- **`202151` (claude)** — wrote the service module and test file but **never wired a view or URL**, so all 12 endpoint tests returned `404` (`FAILED (failures=12, errors=1)`), and it left `risk-assessment.md` as the unfilled template (artifact-quality gate failed).
+
+My worktree was a clean slate, so I implemented fresh, completing the full path.
+
+### What I built (TDD: red → green)
+- **`sfpcl_credit/identity/modules/audit_log.py`** — service boundary: permission check, §42.1 serializer (`old_value_json`/`new_value_json` → `old_value`/`new_value`, `actor: null` for system rows), filter/UUID/unknown-param validation, newest-first pagination.
+- **`sfpcl_credit/identity/audit_views.py`** — thin `require_GET` view (401/403/400/200).
+- **`sfpcl_credit/config/urls.py`** — registered `GET /api/v1/audit-logs/`.
+- **`sfpcl_credit/tests/test_audit_logs_api.py`** — 12 tests covering the full slice test matrix.
+- Docs: API_CONTRACTS.md, ASSUMPTIONS A-017, slice status → Complete, HANDOFF, progress, state, and epic-003 digest. Also **sharpened 003B** with a concrete "mirror 003A" reference-implementation pointer.
+
+### Gates (all green)
+- Backend `check`: clean · `makemigrations --check`: No changes detected (no schema change)
+- Backend tests: **120/120**, coverage **96%** (floor 85)
+- Frontend: typecheck, lint, **26/26** tests, build
+- 12 files changed (limit 30), 0 new deps, 0 migrations, no protected files touched
+
+Evidence saved in `.ralph/runs/2026-07-04_202830_repair/` (`backend-red.txt`, `backend-green.txt`, `audit-logs-api-response.txt` with a real 200 + 400).
+
+One non-blocking note flagged for architecture review: the thin `_authenticate_session` bearer helper now appears in three view modules — a future refactor could extract one shared helper. The orchestrator will independently validate and commit this passing work. Next up: **`003B-workflow-event-foundation`**.

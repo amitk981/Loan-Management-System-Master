@@ -1,6 +1,6 @@
 from django.urls import path
 
-from sfpcl_credit.identity import admin_views
+from sfpcl_credit.identity import admin_views, audit_views
 from sfpcl_credit.identity.views import login, logout, me, refresh
 from sfpcl_credit.ops import deep_health, live_health, ready_health
 from sfpcl_credit.tracer import views as tracer_views
@@ -37,6 +37,7 @@ urlpatterns = [
         admin_views.set_status,
         name="admin-user-status-set",
     ),
+    path("api/v1/audit-logs/", audit_views.audit_log_list, name="audit-log-list"),
     path("api/v1/tracer/members/", tracer_views.create_member, name="tracer-member-create"),
     path(
         "api/v1/tracer/members/<uuid:member_id>/loan-applications/",

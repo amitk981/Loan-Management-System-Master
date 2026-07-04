@@ -1,0 +1,33 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 12 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: contenttypes, identity, tracer
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying tracer.0001_initial... OK
+System check identified no issues (0 silenced).
+test_actor_user_id_filter_returns_only_that_actors_rows (sfpcl_credit.tests.test_audit_logs_api.AuditLogsApiTests.test_actor_user_id_filter_returns_only_that_actors_rows) ... ok
+test_authorized_list_returns_item_shape_and_pagination_newest_first (sfpcl_credit.tests.test_audit_logs_api.AuditLogsApiTests.test_authorized_list_returns_item_shape_and_pagination_newest_first) ... ok
+test_empty_result_set_returns_success_empty_data_and_pagination (sfpcl_credit.tests.test_audit_logs_api.AuditLogsApiTests.test_empty_result_set_returns_success_empty_data_and_pagination) ... ok
+test_entity_type_and_entity_id_filter_returns_only_matching_rows (sfpcl_credit.tests.test_audit_logs_api.AuditLogsApiTests.test_entity_type_and_entity_id_filter_returns_only_matching_rows) ... ok
+test_invalid_uuid_filter_returns_validation_error_with_field_errors (sfpcl_credit.tests.test_audit_logs_api.AuditLogsApiTests.test_invalid_uuid_filter_returns_validation_error_with_field_errors) ... ok
+test_known_pagination_parameters_remain_allowed (sfpcl_credit.tests.test_audit_logs_api.AuditLogsApiTests.test_known_pagination_parameters_remain_allowed) ... ok
+test_malformed_bearer_returns_invalid_token (sfpcl_credit.tests.test_audit_logs_api.AuditLogsApiTests.test_malformed_bearer_returns_invalid_token) ... ok
+test_reading_audit_logs_creates_no_new_audit_row (sfpcl_credit.tests.test_audit_logs_api.AuditLogsApiTests.test_reading_audit_logs_creates_no_new_audit_row) ... ok
+test_system_row_without_actor_serializes_actor_null (sfpcl_credit.tests.test_audit_logs_api.AuditLogsApiTests.test_system_row_without_actor_serializes_actor_null) ... ok
+test_unauthenticated_request_returns_auth_required (sfpcl_credit.tests.test_audit_logs_api.AuditLogsApiTests.test_unauthenticated_request_returns_auth_required) ... ok
+test_unknown_query_parameter_returns_validation_error (sfpcl_credit.tests.test_audit_logs_api.AuditLogsApiTests.test_unknown_query_parameter_returns_validation_error) ... ok
+test_user_without_audit_permission_is_forbidden (sfpcl_credit.tests.test_audit_logs_api.AuditLogsApiTests.test_user_without_audit_permission_is_forbidden) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 3.665s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
