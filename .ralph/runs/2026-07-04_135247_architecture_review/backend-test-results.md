@@ -1,0 +1,108 @@
+# backend-test Results
+
+Command: "/Users/amitkallapa/Loan Management System Development/.ralph/venv/bin/python" sfpcl_credit/manage.py test sfpcl_credit.tests -v 2
+
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 75 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: contenttypes, identity, tracer
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying tracer.0001_initial... OK
+System check identified no issues (0 silenced).
+test_admin_can_assign_existing_role_add_and_remove_team_and_audit_changes (sfpcl_credit.tests.test_admin_users_api.AdminUsersApiTests.test_admin_can_assign_existing_role_add_and_remove_team_and_audit_changes) ... ok
+test_admin_user_list_and_detail_return_auth_me_role_team_shape_with_pagination (sfpcl_credit.tests.test_admin_users_api.AdminUsersApiTests.test_admin_user_list_and_detail_return_auth_me_role_team_shape_with_pagination) ... ok
+test_admin_user_list_requires_session_and_manage_users_permission (sfpcl_credit.tests.test_admin_users_api.AdminUsersApiTests.test_admin_user_list_requires_session_and_manage_users_permission) ... ok
+test_status_change_to_suspended_revokes_target_sessions_and_audits (sfpcl_credit.tests.test_admin_users_api.AdminUsersApiTests.test_status_change_to_suspended_revokes_target_sessions_and_audits) ... ok
+test_unknown_catalogue_values_and_last_system_admin_lockout_return_validation_errors (sfpcl_credit.tests.test_admin_users_api.AdminUsersApiTests.test_unknown_catalogue_values_and_last_system_admin_lockout_return_validation_errors) ... ok
+test_all_health_endpoints_include_api_version_v1 (sfpcl_credit.tests.test_api_envelope.ApiEnvelopeTests.test_all_health_endpoints_include_api_version_v1) ... ok
+test_error_envelope_uses_the_same_standard_meta_keys (sfpcl_credit.tests.test_api_envelope.ApiEnvelopeTests.test_error_envelope_uses_the_same_standard_meta_keys) ... ok
+test_health_and_auth_share_the_same_standard_meta_keys (sfpcl_credit.tests.test_api_envelope.ApiEnvelopeTests.test_health_and_auth_share_the_same_standard_meta_keys) ... ok
+test_shared_helper_is_the_single_production_envelope_source (sfpcl_credit.tests.test_api_envelope.ApiEnvelopeTests.test_shared_helper_is_the_single_production_envelope_source) ... ok
+test_active_user_can_login_and_receives_tokens (sfpcl_credit.tests.test_auth_api.AuthApiTests.test_active_user_can_login_and_receives_tokens) ... ok
+test_current_user_endpoint_returns_profile_permissions_and_actions (sfpcl_credit.tests.test_auth_api.AuthApiTests.test_current_user_endpoint_returns_profile_permissions_and_actions) ... ok
+test_current_user_rejects_expired_access_token (sfpcl_credit.tests.test_auth_api.AuthApiTests.test_current_user_rejects_expired_access_token) ... ok
+test_current_user_rejects_inactive_user (sfpcl_credit.tests.test_auth_api.AuthApiTests.test_current_user_rejects_inactive_user) ... ok
+test_current_user_rejects_refresh_token (sfpcl_credit.tests.test_auth_api.AuthApiTests.test_current_user_rejects_refresh_token) ... ok
+test_current_user_rejects_revoked_session (sfpcl_credit.tests.test_auth_api.AuthApiTests.test_current_user_rejects_revoked_session) ... ok
+test_current_user_requires_bearer_token (sfpcl_credit.tests.test_auth_api.AuthApiTests.test_current_user_requires_bearer_token) ... ok
+test_expired_access_token_is_rejected (sfpcl_credit.tests.test_auth_api.AuthApiTests.test_expired_access_token_is_rejected) ... ok
+test_inactive_user_cannot_login (sfpcl_credit.tests.test_auth_api.AuthApiTests.test_inactive_user_cannot_login) ... ok
+test_invalid_credentials_do_not_issue_tokens_and_are_audited (sfpcl_credit.tests.test_auth_api.AuthApiTests.test_invalid_credentials_do_not_issue_tokens_and_are_audited) ... ok
+test_logout_revokes_session_and_blocks_future_refresh (sfpcl_credit.tests.test_auth_api.AuthApiTests.test_logout_revokes_session_and_blocks_future_refresh) ... ok
+test_refresh_rotates_refresh_token_and_rejects_old_token (sfpcl_credit.tests.test_auth_api.AuthApiTests.test_refresh_rotates_refresh_token_and_rejects_old_token) ... ok
+test_refresh_token_signed_with_wrong_secret_is_rejected (sfpcl_credit.tests.test_auth_api.AuthApiTests.test_refresh_token_signed_with_wrong_secret_is_rejected) ... ok
+test_authenticate_user_rejects_inactive_user (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_authenticate_user_rejects_inactive_user) ... ok
+test_authenticate_user_rejects_wrong_password_as_invalid_credentials (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_authenticate_user_rejects_wrong_password_as_invalid_credentials) ... ok
+test_authenticate_user_returns_active_user (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_authenticate_user_returns_active_user) ... ok
+test_current_user_payload_uses_effective_permissions_for_available_actions (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_current_user_payload_uses_effective_permissions_for_available_actions) ... ok
+test_current_user_view_delegates_auth_orchestration_to_service_boundary (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_current_user_view_delegates_auth_orchestration_to_service_boundary) ... ok
+test_effective_permission_codes_are_sorted_for_active_primary_role (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_effective_permission_codes_are_sorted_for_active_primary_role) ... ok
+test_effective_permission_codes_empty_for_inactive_role (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_effective_permission_codes_empty_for_inactive_role) ... ok
+test_effective_permission_codes_empty_for_zero_link_role (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_effective_permission_codes_empty_for_zero_link_role) ... ok
+test_issue_login_tokens_and_session_creates_active_session_and_payload (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_issue_login_tokens_and_session_creates_active_session_and_payload) ... ok
+test_record_auth_event_writes_audit_row (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_record_auth_event_writes_audit_row) ... ok
+test_revoke_session_for_logout_blocks_future_refresh (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_revoke_session_for_logout_blocks_future_refresh) ... ok
+test_role_payload_is_empty_for_inactive_primary_role (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_role_payload_is_empty_for_inactive_primary_role) ... ok
+test_rotate_refresh_token_replaces_previous_token (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_rotate_refresh_token_replaces_previous_token) ... ok
+test_team_payload_is_sorted_and_excludes_inactive_memberships_and_teams (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_team_payload_is_sorted_and_excludes_inactive_memberships_and_teams) ... ok
+test_validate_access_session_rejects_inactive_user_and_revokes_session (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_validate_access_session_rejects_inactive_user_and_revokes_session) ... ok
+test_validate_access_session_rejects_revoked_session (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_validate_access_session_rejects_revoked_session) ... ok
+test_validate_access_token_rejects_expired_token (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_validate_access_token_rejects_expired_token) ... ok
+test_validate_access_token_rejects_wrong_token_type (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_validate_access_token_rejects_wrong_token_type) ... ok
+test_validate_refresh_session_rejects_access_token_type (sfpcl_credit.tests.test_auth_module.AuthModuleTests.test_validate_refresh_session_rejects_access_token_type) ... ok
+test_management_command_runs_seed_idempotently (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_management_command_runs_seed_idempotently) ... Catalogue seeded: 171 permissions, 20 roles, 8 teams, 134 role-permission links.
+Catalogue seeded: 171 permissions, 20 roles, 8 teams, 134 role-permission links.
+ok
+test_prototype_aliases_map_to_canonical_permissions (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_prototype_aliases_map_to_canonical_permissions) ... ok
+test_role_permission_links_use_catalogue_and_seed_interface (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_role_permission_links_use_catalogue_and_seed_interface) ... ok
+test_seed_creates_representative_permission_per_module_group (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_seed_creates_representative_permission_per_module_group) ... ok
+test_seed_creates_standard_role_and_team_codes (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_seed_creates_standard_role_and_team_codes) ... ok
+test_seed_is_idempotent (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_seed_is_idempotent) ... ok
+test_me_exposes_exactly_the_tracer_permission_for_the_tracer_user (sfpcl_credit.tests.test_seed_e2e_users.SeedE2eUsersTests.test_me_exposes_exactly_the_tracer_permission_for_the_tracer_user) ... E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+ok
+test_me_exposes_no_permissions_for_the_zero_permission_user (sfpcl_credit.tests.test_seed_e2e_users.SeedE2eUsersTests.test_me_exposes_no_permissions_for_the_zero_permission_user) ... E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+ok
+test_seed_creates_active_tracer_staff_with_single_tracer_permission (sfpcl_credit.tests.test_seed_e2e_users.SeedE2eUsersTests.test_seed_creates_active_tracer_staff_with_single_tracer_permission) ... E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+ok
+test_seed_creates_zero_permission_staff (sfpcl_credit.tests.test_seed_e2e_users.SeedE2eUsersTests.test_seed_creates_zero_permission_staff) ... E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+ok
+test_seed_is_idempotent (sfpcl_credit.tests.test_seed_e2e_users.SeedE2eUsersTests.test_seed_is_idempotent) ... E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+ok
+test_seed_refuses_without_explicit_e2e_guard (sfpcl_credit.tests.test_seed_e2e_users.SeedE2eUsersTests.test_seed_refuses_without_explicit_e2e_guard) ... ok
+test_authenticated_user_without_tracer_permission_cannot_write_domain_rows (sfpcl_credit.tests.test_tracer_api.TracerApiTests.test_authenticated_user_without_tracer_permission_cannot_write_domain_rows) ... ok
+test_full_tracer_lifecycle_persists_and_audits_every_transition (sfpcl_credit.tests.test_tracer_api.TracerApiTests.test_full_tracer_lifecycle_persists_and_audits_every_transition) ... ok
+test_positive_amounts_are_required (sfpcl_credit.tests.test_tracer_api.TracerApiTests.test_positive_amounts_are_required) ... ok
+test_revoked_access_token_is_rejected_before_domain_transition (sfpcl_credit.tests.test_tracer_api.TracerApiTests.test_revoked_access_token_is_rejected_before_domain_transition) ... ok
+test_transition_guard_rejects_creating_account_before_sanction (sfpcl_credit.tests.test_tracer_api.TracerApiTests.test_transition_guard_rejects_creating_account_before_sanction) ... ok
+test_transition_guards_reject_repeated_sanction_repayment_before_disbursement_and_close_before_repayment (sfpcl_credit.tests.test_tracer_api.TracerApiTests.test_transition_guards_reject_repeated_sanction_repayment_before_disbursement_and_close_before_repayment) ... ok
+test_unauthenticated_tracer_request_returns_standard_401_without_domain_rows (sfpcl_credit.tests.test_tracer_api.TracerApiTests.test_unauthenticated_tracer_request_returns_standard_401_without_domain_rows) ... ok
+test_allowed_hosts_are_read_as_comma_separated_environment_values (sfpcl_credit.tests.test_backend_infrastructure.BackendInfrastructureTests.test_allowed_hosts_are_read_as_comma_separated_environment_values) ... ok
+test_backend_tests_use_migrated_test_database_not_manual_schema_setup (sfpcl_credit.tests.test_backend_infrastructure.BackendInfrastructureTests.test_backend_tests_use_migrated_test_database_not_manual_schema_setup) ... ok
+test_cors_origins_are_read_as_comma_separated_environment_values (sfpcl_credit.tests.test_backend_infrastructure.BackendInfrastructureTests.test_cors_origins_are_read_as_comma_separated_environment_values) ... ok
+test_frontend_dev_origin_receives_cors_allow_origin_header (sfpcl_credit.tests.test_backend_infrastructure.BackendInfrastructureTests.test_frontend_dev_origin_receives_cors_allow_origin_header) ... ok
+test_secret_key_comes_from_environment_with_dev_fallback (sfpcl_credit.tests.test_backend_infrastructure.BackendInfrastructureTests.test_secret_key_comes_from_environment_with_dev_fallback) ... ok
+test_deep_health_endpoint_reports_dependency_status (sfpcl_credit.tests.test_health_api.HealthApiTests.test_deep_health_endpoint_reports_dependency_status) ... ok
+test_health_endpoints_include_request_id_when_provided (sfpcl_credit.tests.test_health_api.HealthApiTests.test_health_endpoints_include_request_id_when_provided) ... ok
+test_health_endpoints_only_accept_get (sfpcl_credit.tests.test_health_api.HealthApiTests.test_health_endpoints_only_accept_get) ... ok
+test_liveness_endpoint_returns_standard_success_envelope (sfpcl_credit.tests.test_health_api.HealthApiTests.test_liveness_endpoint_returns_standard_success_envelope) ... ok
+test_readiness_endpoint_checks_database_connectivity (sfpcl_credit.tests.test_health_api.HealthApiTests.test_readiness_endpoint_checks_database_connectivity) ... ok
+test_allowed_transition_returns_next_state_and_metadata (sfpcl_credit.tests.test_workflow_guard.WorkflowGuardTests.test_allowed_transition_returns_next_state_and_metadata) ... ok
+test_error_result_does_not_produce_no_op_transition (sfpcl_credit.tests.test_workflow_guard.WorkflowGuardTests.test_error_result_does_not_produce_no_op_transition) ... ok
+test_invalid_current_state_raises_typed_error (sfpcl_credit.tests.test_workflow_guard.WorkflowGuardTests.test_invalid_current_state_raises_typed_error) ... ok
+test_missing_permission_raises_typed_error_before_state_success (sfpcl_credit.tests.test_workflow_guard.WorkflowGuardTests.test_missing_permission_raises_typed_error_before_state_success) ... ok
+test_unknown_action_raises_typed_error (sfpcl_credit.tests.test_workflow_guard.WorkflowGuardTests.test_unknown_action_raises_typed_error) ... ok
+
+----------------------------------------------------------------------
+Ran 75 tests in 11.596s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

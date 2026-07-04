@@ -15,6 +15,7 @@ Future workflow APIs can prove "has module permission" is not enough: object/tea
 
 ## Depends On
 - 002H
+- 002G2
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
@@ -41,6 +42,7 @@ None for this slice, except updating frontend documentation or fixtures if requi
 3. Add a thin test-only fixture or service-level test harness around the helper; do not add public production endpoints solely for the harness.
 4. Reuse `auth_service.effective_permission_codes()` for the module-permission side, and `auth_service.team_payload()` / `User.team_codes()` shape for team membership inputs.
 5. Keep object access separate from 002H's workflow transition guard: 002H checks action/state/permission, while 002I checks whether the actor is allowed to touch the specific object after permission passes.
+6. Start only after 002G2 closes the admin action-permission granularity finding. This helper must accept the exact required canonical permission from the caller and must not collapse distinct permissions into a broad UI/prototype permission such as `manage_users`.
 
 ## Database/Model Impact
 None.
@@ -66,6 +68,7 @@ Enforce source-doc access-control rules without adding domain business rules.
 - Use the 002H boundary explicitly: call the object-scope helper after module permission is known and before future workflow transitions are executed. Do not make the object helper call `evaluate_transition()` or know workflow state names.
 - Treat `allow_global=True` as a caller-supplied fact only; the helper must not infer global rights from role names such as `system_admin`, `it_head`, or `credit_manager`.
 - Source trace to use in the review packet: `auth-permissions.md` §3/§3.1 says the backend enforces role, team/assignment, object-level, and workflow-state checks; `technical-architecture.md` §7.2 says permissions and services are separate backend layers; `api-contracts.md` §44 says frontend action availability is only UX and backend remains authoritative.
+- Regression trace from 002G2: canonical permission codes remain action-specific on the backend; object-scope checks must not use the frontend's coarse prototype permission names as authorization inputs.
 
 ## Test Cases
 Unit/service/API/permission tests plus frontend tests where UI is touched.

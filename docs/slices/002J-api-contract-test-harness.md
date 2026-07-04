@@ -15,6 +15,7 @@ Future API slices can prove contract fidelity consistently: every protected endp
 
 ## Depends On
 - 002I
+- 002G2
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
@@ -43,6 +44,7 @@ None for this slice, except updating frontend documentation or fixtures if requi
 5. Cover pagination metadata shape for list endpoints using the existing admin users list as the concrete current endpoint.
 6. Cover `available_actions` item shape from `api-contracts.md` §44 using an internal helper/sample, not a new public endpoint.
 7. Add regression tests proving existing auth/me, admin users, and tracer endpoints satisfy the helper without changing their public response bodies.
+8. Include an admin-users permission-denied fixture from 002G2: a partial user-admin role that lacks the action-specific permission must produce the same standard `403 PERMISSION_DENIED` envelope as fully unauthorized users.
 
 ## Database/Model Impact
 None.
@@ -67,6 +69,7 @@ No production audit rows are required for the harness itself. Regression tests m
 - Backend API regression: `/api/v1/auth/me/` success passes the success-envelope assertion.
 - Backend API regression: unauthenticated protected endpoint returns a helper-validated `401` error envelope.
 - Backend API regression: admin users without manage-user permission returns helper-validated `403 PERMISSION_DENIED`.
+- Backend API regression: admin user-management partial-permission denials from 002G2 return helper-validated `403 PERMISSION_DENIED` and do not leak a non-standard validation shape.
 - Backend API regression: tracer invalid state returns helper-validated `409 INVALID_STATE_TRANSITION`.
 - Backend API regression: admin users list passes pagination-shape assertions.
 - Backend helper unit: `available_actions` sample with `action_code`, `label`, `enabled`, `disabled_reason`, and `required_permission` passes; missing required fields fail.
