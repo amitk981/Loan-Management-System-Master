@@ -22,6 +22,10 @@ sfpcl-lms/.claude/
 .ralph/worktrees/
 .ralph/locks/*.lock
 .ralph/logs/*.log
+# Run evidence must survive into commits: without this exception the global
+# *.log rule above silently dropped every agent-saved evidence/terminal-logs/*.log,
+# which is why review packets kept referencing evidence paths that don't exist.
+!.ralph/runs/**/*.log
 
 # Python
 __pycache__/
@@ -30,6 +34,7 @@ __pycache__/
 .coverage
 htmlcov/
 sfpcl_credit/db.sqlite3
+sfpcl_credit/e2e.sqlite3
 
 # Playwright
 sfpcl-lms/test-results/

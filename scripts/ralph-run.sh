@@ -266,6 +266,12 @@ EOF
 
 agent_timeout="$(awk -F': *' '/^[[:space:]]*agent_timeout_seconds:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
 
+# The orchestrator is the single owner of the review-cadence counter. Capture
+# the pre-run value now, from the integration checkout the agent never touches:
+# agents also edit state.json inside the worktree, and trusting their copy
+# double-counted completed slices (reviews fired at 2x the configured cadence).
+pre_run_arch_count="$(python3 -c "import json; print(json.load(open('$repo_root/.ralph/state.json')).get('slices_completed_since_architecture_review', 0))" 2>/dev/null || echo 0)"
+
 agent_rc=0
 "$repo_root/scripts/agent-adapters/$agent.sh" \
   RUN_ID="$run_id" \
@@ -313,9 +319,13 @@ if "$mode" != "architecture_review" and slice_id not in state["completed_slices"
 state["failed_slices"] = [item for item in state["failed_slices"] if item != slice_id]
 state["blocked_slices"] = [item for item in state["blocked_slices"] if item != slice_id]
 if "$mode" != "architecture_review":
-    state["slices_completed_since_architecture_review"] = state.get("slices_completed_since_architecture_review", 0) + 1
+    # Recompute from the orchestrator's pre-run snapshot instead of the
+    # worktree value: agents may have incremented state.json themselves,
+    # which double-counted slices and fired reviews at 2x the cadence.
+    count = int("$pre_run_arch_count") + 1
     threshold = int("$arch_threshold")
-    state["architecture_review_due"] = state["slices_completed_since_architecture_review"] >= threshold
+    state["slices_completed_since_architecture_review"] = count
+    state["architecture_review_due"] = count >= threshold
 else:
     state["slices_completed_since_architecture_review"] = 0
     state["architecture_review_due"] = False
@@ -331,7 +341,12 @@ if slice_path.exists():
     slice_path.write_text("\n".join(lines) + "\n")
 PY
 
-cat > "$worktree_dir/docs/working/HANDOFF.md" <<EOF
+# Keep the agent's handoff when it wrote one this run — it carries context the
+# next run needs. The generic template below is only a fallback so the file
+# never goes silently stale, and it must reference the post-merge run path
+# (.ralph/runs/<id>), never the worktree path, which is deleted after merge.
+if ! git -C "$worktree_dir" status --porcelain -- docs/working/HANDOFF.md | grep -q .; then
+  cat > "$worktree_dir/docs/working/HANDOFF.md" <<EOF
 # Ralph Handoff
 
 ## Last Run
@@ -344,14 +359,15 @@ Run completed for $slice_id.
 None selected.
 
 ## What Completed
-See $run_dir/.
+See .ralph/runs/$run_id/ in the repository.
 
 ## Current Blocker
 None known.
 
 ## Next Recommended Action
-Review $run_dir/review-packet.md.
+Review .ralph/runs/$run_id/review-packet.md.
 EOF
+fi
 
 cat >> "$worktree_dir/.ralph/progress.md" <<EOF
 

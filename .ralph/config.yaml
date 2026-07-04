@@ -105,7 +105,7 @@ quality_gates:
   install: false
   build: true
   typecheck: true
-  lint: false
+  lint: true  # enabled 2026-07-04 after 002FL landed the ESLint baseline (owner action)
   unit_tests: true
   integration_tests: false
   e2e_tests: optional
