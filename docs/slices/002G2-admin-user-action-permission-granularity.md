@@ -1,7 +1,7 @@
 # Slice 002G2: Admin User Action Permission Granularity
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell
@@ -55,15 +55,15 @@ High
 - Permission-denied and success cases are covered by behavior tests and saved evidence.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written first
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Permissions tested
-- [ ] Audit/session side effects tested
-- [ ] Visual evidence saved, if frontend is touched
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written first (RED saved, then GREEN)
+- [x] Code implemented
+- [x] API contracts updated (`docs/working/API_CONTRACTS.md` admin row)
+- [x] Permissions tested (create/update/disable/read partial roles)
+- [x] Audit/session side effects tested (no AuditLog/session revoke on 403)
+- [ ] Visual evidence saved, if frontend is touched (N/A — no frontend change)
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [ ] Commit created only after passing gates (orchestrator responsibility)

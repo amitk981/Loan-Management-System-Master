@@ -1,0 +1,20 @@
+# 002G2 frontend gates (no frontend change; confirmed green)
+## typecheck
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+## lint
+> sfpcl-lms@1.0.0 lint
+> eslint src
+
+## test
+
+ Test Files  4 passed (4)
+      Tests  26 passed (26)
+   Start at  14:19:51
+   Duration  404ms (transform 226ms, setup 0ms, collect 376ms, tests 20ms, environment 0ms, prepare 242ms)
+
+## build
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.13s

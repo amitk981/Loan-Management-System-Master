@@ -9,16 +9,55 @@ from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.identity.models import AuditLog, Role, Team, User, UserSession, UserTeamMembership
 
 
+# Canonical user-admin permission codes (auth-permissions.md §12.1). Each is a
+# distinct risk-rated permission, so admin actions are gated action-by-action rather
+# than treating any single grant as full user-management authority.
+CREATE_USER_PERMISSION = "users.user.create"
+UPDATE_USER_PERMISSION = "users.user.update"
+DISABLE_USER_PERMISSION = "users.user.disable"
+READ_USER_PERMISSION = "users.user.read"
+
+# Any write user-admin grant. Retained as the frontend->prototype `manage_users`
+# mapping set and as the read fallback below.
 MANAGE_USERS_PERMISSION_CODES = {
-    "users.user.create",
-    "users.user.update",
-    "users.user.disable",
+    CREATE_USER_PERMISSION,
+    UPDATE_USER_PERMISSION,
+    DISABLE_USER_PERMISSION,
 }
+
+# List/detail read. §19 maps `/settings/users` to `users.user.read`, but the seeded
+# `system_admin` role holds create/update/disable and NOT `users.user.read`
+# (catalogue.py), so read also accepts any write user-admin grant to preserve current
+# access. Compatibility recorded in ASSUMPTIONS A-015.
+READ_USERS_PERMISSION_CODES = {READ_USER_PERMISSION} | MANAGE_USERS_PERMISSION_CODES
+
+# Role/team assignment changes are updates (§12.1 `users.user.update`).
+ASSIGNMENT_PERMISSION_CODES = {UPDATE_USER_PERMISSION}
+
+# Suspending a user is a disable action; restoring to active is an update.
+SUSPEND_PERMISSION_CODES = {DISABLE_USER_PERMISSION}
+RESTORE_PERMISSION_CODES = {UPDATE_USER_PERMISSION}
+
 ADMIN_SETTABLE_STATUSES = {"active", "suspended"}
 
 
-def has_manage_users_permission(user):
-    return bool(MANAGE_USERS_PERMISSION_CODES.intersection(auth_service.effective_permission_codes(user)))
+def user_has_action_permission(user, required_codes):
+    """True when the user holds at least one of the required canonical permissions."""
+    return bool(set(required_codes).intersection(auth_service.effective_permission_codes(user)))
+
+
+def status_permission_codes(status):
+    """Required permission codes for a set_status request.
+
+    Suspend requires disable; restore-to-active requires update. An unknown status
+    accepts either write grant so the service returns its `400 VALIDATION_ERROR` for
+    the bad value instead of masking it behind a `403`.
+    """
+    if status == "suspended":
+        return SUSPEND_PERMISSION_CODES
+    if status == "active":
+        return RESTORE_PERMISSION_CODES
+    return SUSPEND_PERMISSION_CODES | RESTORE_PERMISSION_CODES
 
 
 def admin_user_payload(user):
@@ -235,15 +274,18 @@ def validation_field_errors(exc):
 
 
 __all__ = [
+    "ASSIGNMENT_PERMISSION_CODES",
     "ObjectDoesNotExist",
+    "READ_USERS_PERMISSION_CODES",
     "ValidationError",
     "add_team",
     "admin_user_payload",
     "assign_role",
     "get_user",
-    "has_manage_users_permission",
     "paginated_users",
     "remove_team",
     "set_status",
+    "status_permission_codes",
+    "user_has_action_permission",
     "validation_field_errors",
 ]

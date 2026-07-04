@@ -44,6 +44,11 @@ None for this slice, except updating frontend documentation or fixtures if requi
 5. Keep object access separate from 002H's workflow transition guard: 002H checks action/state/permission, while 002I checks whether the actor is allowed to touch the specific object after permission passes.
 6. Start only after 002G2 closes the admin action-permission granularity finding. This helper must accept the exact required canonical permission from the caller and must not collapse distinct permissions into a broad UI/prototype permission such as `manage_users`.
 
+### Verified backend context (2026-07-04, from 002G2)
+- Reuse existing symbols (all confirmed present): `auth_service.effective_permission_codes(user)` returns the sorted canonical codes for the active primary role; `User.team_codes()` (`sfpcl_credit/identity/models.py:107`) returns the actor's active team codes; `auth_service.team_payload(user)` returns `[{team_code, team_name}]`.
+- Follow the 002G2 pattern for action-specific gating: `admin_users.user_has_action_permission(user, required_codes)` intersects a required-code set with `effective_permission_codes` — the object helper's module-permission side should behave the same way (accept an explicit required code, not a role name).
+- Error envelope: use `sfpcl_credit/api.error_response(request, 403, "PERMISSION_DENIED", ...)` for the missing-permission path if any thin test endpoint is added; the helper itself should return a typed result/reason code and let callers translate (mirrors `workflows/guard.py` typed errors from 002H).
+
 ## Database/Model Impact
 None.
 

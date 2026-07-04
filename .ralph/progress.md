@@ -1,5 +1,15 @@
 # Ralph Progress Log
 
+## 2026-07-04 14:09:00 - 2026-07-04_140900_normal_run
+- Agent tool used: claude
+- Slice attempted: 002G2-admin-user-action-permission-granularity
+- Summary: Action-aware admin user-management permission gating. Read/assignment/suspend/restore now require their specific canonical §12.1 permission; partial-permission writes fail closed with 403 (no audit, no session revoke). Removed dead has_manage_users_permission; A-015 records the read-gate compatibility fallback. No schema/frontend change.
+- Tests run: 79 backend tests pass (coverage 95%); frontend typecheck/lint/26 tests/build green. See .ralph/runs/2026-07-04_140900_normal_run/.
+- Evidence saved: .ralph/runs/2026-07-04_140900_normal_run/ (red/green + full-coverage backend logs, frontend gate log, partial-permission 403 API examples)
+- Result: Success
+- Risk level: High (authorization boundary change; see risk-assessment.md).
+- Next action: 002I-object-level-permission-test-harness, then 002J-api-contract-test-harness.
+
 ## 2026-07-04 13:52:47 - 2026-07-04_135247_architecture_review
 - Agent tool used: codex
 - Slice attempted: architecture-review
@@ -549,6 +559,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_135247_architecture_review/.ralph/runs/2026-07-04_135247_architecture_review/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_135247_architecture_review/.ralph/runs/2026-07-04_135247_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-04 14:26:14 - 2026-07-04_140900_normal_run
+- Agent tool used: claude
+- Slice attempted: 002G2-admin-user-action-permission-granularity
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_140900_normal_run/.ralph/runs/2026-07-04_140900_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_140900_normal_run/.ralph/runs/2026-07-04_140900_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

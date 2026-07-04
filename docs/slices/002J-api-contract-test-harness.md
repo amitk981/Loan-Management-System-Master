@@ -44,7 +44,14 @@ None for this slice, except updating frontend documentation or fixtures if requi
 5. Cover pagination metadata shape for list endpoints using the existing admin users list as the concrete current endpoint.
 6. Cover `available_actions` item shape from `api-contracts.md` §44 using an internal helper/sample, not a new public endpoint.
 7. Add regression tests proving existing auth/me, admin users, and tracer endpoints satisfy the helper without changing their public response bodies.
-8. Include an admin-users permission-denied fixture from 002G2: a partial user-admin role that lacks the action-specific permission must produce the same standard `403 PERMISSION_DENIED` envelope as fully unauthorized users.
+8. Include an admin-users permission-denied fixture from 002G2: a partial user-admin role that lacks the action-specific permission must produce the same standard `403 PERMISSION_DENIED` envelope as fully unauthorized users. Reuse `test_admin_users_api._partial_admin_headers(role_code, permission_codes)` (added in 002G2) as the fixture pattern for a single-permission role, e.g. `["users.user.create"]` calling a `users.user.update`-gated action.
+
+### Verified current envelope shapes (2026-07-04, from `sfpcl_credit/api.py`)
+Assert against the shapes the platform actually returns today; do not invent fields:
+- Success (`success_response`): `{ "success": true, "data": <obj>, "meta": {request_id, timestamp, api_version} }`. `meta.request_id` is `null` unless the request sent an `X-Request-ID` header.
+- List (`list_response`): adds a TOP-LEVEL `pagination` object (sibling of `data`, not inside `meta`) with keys `page, page_size, total_count, total_pages, has_next, has_previous`. Admin users list is the concrete endpoint.
+- Error (`error_response`): `{ "success": false, "error": {code, message, details, field_errors}, "meta": {...} }`. `details` defaults to `{}`; `field_errors` defaults to `{}` and carries per-field messages for `400 VALIDATION_ERROR` (e.g. admin `status`/`role_code`).
+- `available_actions`: the current `/auth/me/` payload returns `available_actions` as a FLAT list of canonical permission-code strings (equal to `permissions`), NOT objects. The §44 item shape (`action_code`, `label`, `enabled`, `disabled_reason`, `required_permission`) is the TARGET contract — assert it against an internal sample/helper only, and record in ASSUMPTIONS if the harness sample diverges from current `/auth/me/` output so a later slice reconciles `available_actions`.
 
 ## Database/Model Impact
 None.
