@@ -1,19 +1,19 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-04_125854_normal_run
+2026-07-04_130814_normal_run
 
 ## Current Status
-002EYA completed local seed-safety hardening. `seed_e2e_users` now refuses unless `SFPCL_DEBUG=true` and `SFPCL_ALLOW_E2E_SEED=true`, Playwright passes that flag only with isolated `SFPCL_DB_PATH`, and `playwright.config.ts` fails fast if `E2E_DJANGO_PYTHON` is unset instead of falling back to `python`.
+002F2 completed navigation render regression coverage. `Sidebar` now consumes `visibleStaffNavItems(allNavItems, can)` from `sfpcl-lms/src/services/navigationPermissions.ts`, and `navigationPermissions.test.ts` covers the actual staff-sidebar visibility path plus direct route guard behavior for every protected item, zero-permission backend sessions, unknown/empty-role backend sessions, and tracer-only sessions.
 
 ## Current Slice
 None selected.
 
 ## What Completed
-See .ralph/runs/2026-07-04_125854_normal_run/ in the repository. Six Playwright screenshot baselines are tracked under `sfpcl-lms/e2e/*-snapshots/`: login, dashboard, tracer closed state, missing-session login, invalid-login error, and zero-permission dashboard.
+See `.ralph/runs/2026-07-04_130814_normal_run/` in the repository. Red/green navigation test logs and all quality-gate logs are under `evidence/terminal-logs/`. The epic digest and next slices were sharpened so 002G must add admin user-management navigation through the same `allNavItems` / `PAGE_PERMISSIONS` / `visibleStaffNavItems` contract behind `manage_users`.
 
 ## Current Blocker
-Local `npm run e2e` with the required interpreter still cannot start the configured web server in this sandbox (`Operation not permitted`); evidence is saved at `.ralph/runs/2026-07-04_125854_normal_run/evidence/terminal-logs/e2e-green-or-blocked.log`. The fail-fast missing-interpreter behavior is verified at `e2e-missing-python-fail-fast.log`.
+None for 002F2. The known local Playwright web-server caveat from 002EYA remains: this sandbox may deny localhost binding with `Operation not permitted`, but 002F2 did not require an E2E run or visual change.
 
 ## Next Recommended Action
-Run `002F2-navigation-render-regression-tests`, then `002G-admin-user-and-role-management-shell`.
+Run `002G-admin-user-and-role-management-shell`, then `002H-state-machine-and-transition-guard-foundation`.

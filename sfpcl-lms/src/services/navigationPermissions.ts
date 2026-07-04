@@ -53,6 +53,15 @@ interface NavigationAttempt {
   allowed: boolean;
 }
 
+interface PermissionGatedNavItem {
+  requiredPermission?: Permission;
+}
+
+export const visibleStaffNavItems = <NavItem extends PermissionGatedNavItem>(
+  items: NavItem[],
+  canUsePermission: (permission: Permission) => boolean,
+): NavItem[] => items.filter(item => !item.requiredPermission || canUsePermission(item.requiredPermission));
+
 export const resolveNavigationAttempt = (
   target: Page,
   canUsePermission: (permission: Permission) => boolean,

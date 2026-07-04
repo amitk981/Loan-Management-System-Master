@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useRole } from '../../contexts/RoleContext';
 import { Permission } from '../../contexts/RoleContext';
-import type { Page } from '../../services/navigationPermissions';
+import { visibleStaffNavItems, type Page } from '../../services/navigationPermissions';
 
 export interface NavItem {
   id: string;
@@ -82,7 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
   const isBorrower = currentUser.role === 'borrower';
   const items = isBorrower
     ? borrowerNavItems
-    : allNavItems.filter(item => !item.requiredPermission || can(item.requiredPermission));
+    : visibleStaffNavItems(allNavItems, can);
 
   return (
     <aside className={`flex flex-col bg-white border-r border-slate-200 transition-all duration-200 ${collapsed ? 'w-16' : 'w-60'} flex-shrink-0 h-full`}>

@@ -1,0 +1,65 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/navigationPermissions.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_130814_normal_run/sfpcl-lms
+
+ ❯ src/services/navigationPermissions.test.ts (6 tests | 3 failed) 6ms
+   ✓ role-aware staff navigation contract > gates every staff sidebar item except Dashboard with its matching page permission 1ms
+   × role-aware staff navigation contract > hides every protected sidebar item when the user lacks its required permission 2ms
+     → visibleStaffNavItems is not a function
+   × role-aware staff navigation contract > uses the Sidebar visibility path to show only Dashboard for backend sessions with no prototype permissions 0ms
+     → visibleStaffNavItems is not a function
+   × role-aware staff navigation contract > uses the Sidebar visibility path to keep tracer-only backend sessions isolated to Dashboard and Tracer 0ms
+     → visibleStaffNavItems is not a function
+   ✓ role-aware staff navigation contract > blocks guarded page navigation and returns the dashboard blocked-banner target 1ms
+   ✓ role-aware staff navigation contract > allows guarded page navigation only when the mapped prototype permission is present 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/navigationPermissions.test.ts > role-aware staff navigation contract > hides every protected sidebar item when the user lacks its required permission
+TypeError: visibleStaffNavItems is not a function
+ ❯ src/services/navigationPermissions.test.ts:36:16
+     34| 
+     35|         expect(item.requiredPermission).toBeDefined();
+     36|         expect(visibleStaffNavItems(permission => permissionsWithoutTh…
+       |                ^
+     37|       });
+     38|   });
+ ❯ src/services/navigationPermissions.test.ts:29:8
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/services/navigationPermissions.test.ts > role-aware staff navigation contract > uses the Sidebar visibility path to show only Dashboard for backend sessions with no prototype permissions
+TypeError: visibleStaffNavItems is not a function
+ ❯ src/services/navigationPermissions.test.ts:77:14
+     75|       const prototypePermissions = mapCanonicalPermissions(user.permis…
+     76| 
+     77|       expect(visibleStaffNavItems(permission => prototypePermissions.i…
+       |              ^
+     78|       expect(resolveNavigationAttempt('applications', permission => pr…
+     79|         page: 'dashboard',
+ ❯ src/services/navigationPermissions.test.ts:74:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/services/navigationPermissions.test.ts > role-aware staff navigation contract > uses the Sidebar visibility path to keep tracer-only backend sessions isolated to Dashboard and Tracer
+TypeError: visibleStaffNavItems is not a function
+ ❯ src/services/navigationPermissions.test.ts:98:24
+     96|   it('uses the Sidebar visibility path to keep tracer-only backend ses…
+     97|     const prototypePermissions = mapCanonicalPermissions(['tracer.life…
+     98|     const visibleIds = visibleStaffNavItems(permission => prototypePer…
+       |                        ^
+     99| 
+    100|     expect(visibleIds).toEqual(['dashboard', 'tracer']);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 3 passed (6)
+   Start at  13:10:59
+   Duration  494ms (transform 101ms, setup 0ms, collect 160ms, tests 6ms, environment 0ms, prepare 34ms)
+

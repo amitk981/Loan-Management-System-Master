@@ -42,6 +42,7 @@ None for this slice, except updating frontend documentation or fixtures if requi
 3. Keep the module domain-neutral: do not encode loan eligibility, sanction authority, money amounts, or document completeness rules here.
 4. Migrate only the existing tracer service transition map to call the shared guard, preserving the current tracer URLs, envelopes, statuses, audit logs, workflow events, and tests.
 5. Reuse the existing standard error envelope translation for `401`, `403 PERMISSION_DENIED`, and `409 INVALID_STATE_TRANSITION`; do not add a frontend screen.
+6. Keep admin/RBAC concerns outside the workflow guard. After 002G, the shared transition guard should accept actor permissions as input and must not fetch users, roles, teams, sessions, or admin assignments itself.
 
 ## Database/Model Impact
 No schema change expected. If the guard needs durable metadata, stop at in-code definitions for this slice and record a follow-up rather than adding broad workflow tables.
@@ -66,6 +67,7 @@ Enforce source-doc business rules and block invalid state transitions.
 Unit/service/API/permission tests plus frontend tests where UI is touched.
 - Backend TDD: write failing unit tests for the shared guard before implementation.
 - Backend regression: existing tracer API tests continue to pass, plus at least one test proving invalid transitions produce the same `409 INVALID_STATE_TRANSITION` envelope after the shared guard is introduced.
+- RBAC boundary regression: prove missing `tracer.lifecycle.run` still returns `403 PERMISSION_DENIED` through the migrated tracer path, while invalid state with permission still returns `409 INVALID_STATE_TRANSITION`; do not conflate permission denial with workflow-state failure.
 
 ## Visual Acceptance Criteria
 None.

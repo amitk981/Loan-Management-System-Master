@@ -1,7 +1,7 @@
 # Slice 002F2: Navigation Render Regression Tests
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell
@@ -27,7 +27,7 @@ Created by architecture review `2026-07-04_085117_architecture_review`.
 4. Prove a zero-permission or unknown-role backend session sees only Dashboard and receives the existing access-blocked Dashboard fallback on direct guarded navigation.
 5. Keep `tracer.lifecycle.run -> run_tracer` isolated: it must unlock no non-tracer prototype permission.
 6. Do not add a new React testing/rendering dependency for this corrective slice unless it is already pinned before the run; prefer extracting a pure visibility helper consumed by `Sidebar` and covered by vitest.
-7. When 002G adds the admin user-management route, its nav item and direct route must join the same contract and be covered by these tests behind `manage_users`.
+7. When 002G adds the admin user-management route, its nav item and direct route must join the same contract and be covered by these tests behind `manage_users`. This slice sharpened `002G` with that requirement.
 8. Save actual red/green test logs under `.ralph/runs/<run-id>/evidence/terminal-logs/`; the review packet must not reference paths that are absent from the committed run artifacts.
 
 ## Source / Digest References
@@ -49,11 +49,11 @@ Medium
 - All frontend and backend gates remain green.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written first
-- [ ] Code implemented, if a helper extraction is needed
-- [ ] Tests/typecheck/lint/build/backend gates passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written first
+- [x] Code implemented, if a helper extraction is needed
+- [x] Tests/typecheck/lint/build/backend gates passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

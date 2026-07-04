@@ -31,6 +31,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 9. Current-user compatibility: continue using `/auth/me/` `roles`, `teams`, `permissions`, and `available_actions`; do not introduce frontend grants for unmapped canonical permissions.
 10. Save concrete API examples for list, detail, successful assignment, `401`, `403`, validation failure, and last-system-admin lock-out under the run folder, and reference those files from the review packet.
 11. If source documents remain silent on the exact last-system-admin rule, record the chosen guard in `docs/working/ASSUMPTIONS.md` before implementation; default to blocking any change that would leave zero active users with the `system_admin` primary role.
+12. Extend the 002F2 navigation contract rather than adding a parallel admin visibility path: the Admin user-management nav item must be in `allNavItems`, the page must be in `PAGE_PERMISSIONS`, `Sidebar` must expose it only through `visibleStaffNavItems(allNavItems, can)`, and regression tests must prove zero-permission, unknown-role, tracer-only, and users lacking `manage_users` cannot see or directly navigate to it.
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
@@ -76,6 +77,7 @@ Enforce source-doc business rules and block invalid state transitions.
 Unit/service/API/permission tests plus frontend tests where UI is touched.
 - Backend TDD: unauthenticated `401`, missing `manage_users` `403`, list/detail success envelope, assignment success, audit-log write, session revocation when status becomes suspended, and lock-out guard for last `system_admin`.
 - Frontend TDD: system-admin user can reach the admin shell; non-admin/zero-permission/tracer-only users cannot see or navigate to it; role/team/status actions are hidden without `manage_users`.
+- Navigation TDD: add a red/green assertion to `navigationPermissions.test.ts` that the new admin route is hidden and guarded without `manage_users`, and visible/allowed when canonical `users.user.create|update|disable` maps to prototype `manage_users`.
 - Contract evidence: saved API response examples match `docs/working/API_CONTRACTS.md` and the frontend consumes the same role/team serialization shape as `/auth/me/`.
 
 ## Visual Acceptance Criteria

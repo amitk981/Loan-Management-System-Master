@@ -1,5 +1,15 @@
 # Ralph Progress Log
 
+## 2026-07-04 13:08:14 - 2026-07-04_130814_normal_run
+- Agent tool used: codex
+- Slice attempted: 002F2-navigation-render-regression-tests
+- Summary: Replaced the shallow navigation visibility test gap with behavior-level coverage over the actual staff-sidebar path. Added `visibleStaffNavItems()` in `sfpcl-lms/src/services/navigationPermissions.ts`, wired `Sidebar` to consume it with `allNavItems`, and expanded vitest coverage for every protected staff nav item, zero-permission backend sessions, unknown/empty-role backend sessions, tracer-only sessions, and direct guarded navigation fallback.
+- Tests run: targeted navigation red/green; frontend `npm test` (25/25); `npm run typecheck`; `npm run lint`; `npm run build`; backend `manage.py check`; backend tests (65/65); `makemigrations --check --dry-run`; backend coverage 96% (floor 85).
+- Evidence saved: `.ralph/runs/2026-07-04_130814_normal_run/`, with terminal logs under `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `002G-admin-user-and-role-management-shell`, then `002H-state-machine-and-transition-guard-foundation`.
+
 ## 2026-07-04 13:10:00 - 2026-07-04_125854_normal_run
 - Agent tool used: codex
 - Slice attempted: 002EYA-e2e-baseline-and-seed-safety
@@ -469,6 +479,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_125854_normal_run/.ralph/runs/2026-07-04_125854_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_125854_normal_run/.ralph/runs/2026-07-04_125854_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-04 13:19:00 - 2026-07-04_130814_normal_run
+- Agent tool used: codex
+- Slice attempted: 002F2-navigation-render-regression-tests
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_130814_normal_run/.ralph/runs/2026-07-04_130814_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_130814_normal_run/.ralph/runs/2026-07-04_130814_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
