@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002K-seed-data-and-demo-users.md
+ M docs/slices/003A-audit-log-foundation.md
+ M docs/slices/003B-workflow-event-foundation.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-002-platform-auth.md
+ M docs/working/digests/epic-003-audit-documents-config.md
+?? .ralph/runs/2026-07-04_184602_normal_run/
+?? sfpcl_credit/identity/management/commands/seed_demo_users.py
+?? sfpcl_credit/tests/test_seed_demo_users.py

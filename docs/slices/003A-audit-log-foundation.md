@@ -53,6 +53,9 @@ None for this slice, except updating frontend documentation or fixtures if requi
    `old_value`/`new_value` in the API response.
 5. Keep writes append-only by service/API convention: this slice adds no update/delete
    endpoint for audit rows.
+6. Put serialization/filtering behind a small backend module interface rather than
+   embedding audit-query behavior directly in the Django view, matching the 002C2 service
+   boundary pattern.
 
 ## Database/Model Impact
 No schema change expected. If a missing index is discovered, add at most one
@@ -63,10 +66,11 @@ Update `docs/working/API_CONTRACTS.md` with the concrete `GET /api/v1/audit-logs
 contract, filter rules, permission rule, and example response.
 
 ## Permissions
-Require session-bound bearer auth and a canonical audit/report/admin permission already in
-the seeded catalogue, preferring `reports.audit.read` if present. If no exact source-backed
-permission code exists in the catalogue, record an assumption and use the narrowest
-existing read/audit permission; do not invent a new permission code in this slice.
+Require session-bound bearer auth and the existing canonical `audit.audit_log.read`
+permission from the 002C catalogue. `internal_auditor`, `chief_financial_controller`,
+and any future role with this permission may read the endpoint; users without it receive
+the standard `403 PERMISSION_DENIED`. Do not invent `reports.audit.read` or any new
+permission code in this slice.
 
 ## Audit Requirements
 The read endpoint itself does not create a new audit row unless source docs explicitly
@@ -86,11 +90,15 @@ audit rows exactly and must not mutate returned audit records.
   non-standard envelope, then passes with `401 AUTH_REQUIRED` using the 002J helper.
 - Backend API: authorized user can list seeded/auth-generated audit rows with §42.1 item
   fields and valid top-level pagination.
+- Backend API: use a seeded `internal_auditor` or targeted test role with
+  `audit.audit_log.read` for the positive permission path.
 - Backend API: `entity_type` + `entity_id` filters return only matching audit rows.
 - Backend API: `actor_user_id` filter returns only that actor's audit rows.
 - Backend API: user without the audit-read permission receives standard `403
   PERMISSION_DENIED`.
 - Backend API: invalid UUID filter returns `400 VALIDATION_ERROR` with field errors.
+- Backend API: unknown query parameters return `400 VALIDATION_ERROR`; known pagination
+  parameters remain allowed.
 
 ## Visual Acceptance Criteria
 None.

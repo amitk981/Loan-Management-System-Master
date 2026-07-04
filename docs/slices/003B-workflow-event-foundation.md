@@ -43,25 +43,59 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+1. Introduce the canonical workflow-event model/service boundary without colliding with
+   the existing tracer migration that already owns database table `workflow_events`.
+2. Prefer relocating ownership of the existing `workflow_events` table to the canonical
+   foundation app/model and repointing `sfpcl_credit/tracer/services.py::_record_event`
+   to that interface. If relocation is not migration-safe, rename the tracer copy to
+   `tracer_workflow_events` and create the canonical table fresh in the same slice.
+3. Add a small write interface such as `record_workflow_event(...)` that accepts explicit
+   actor, workflow, entity, from-state, to-state, action, and metadata facts. Do not embed
+   loan eligibility, sanction authority, document-completeness, or money rules here.
+4. If a read endpoint is included, keep it to `GET /api/v1/workflow-events/` with the
+   §42.2 filters `entity_type` and `entity_id`, top-level pagination, and standard
+   002J success/error contract helpers. Do not build dashboard/task UI in this slice.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
+Exactly one non-destructive migration is expected. It must handle the tracer drift
+explicitly so `migrate` succeeds on a clean database and on an existing database that has
+the 002EX tracer migration. Do not create a second `workflow_events` table with the same
+name.
 
 ## API Contracts
-Create or update the API contract for this capability.
+Update `docs/working/API_CONTRACTS.md` with the canonical workflow-event write/read
+contract chosen in this slice, including how the tracer proof now records events.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+For any read endpoint, require session-bound bearer auth plus existing
+`audit.workflow_event.read`. Do not invent a new workflow-event permission code. The
+write interface is internal service code called by guarded workflows; it should receive
+an already-authenticated actor from the caller.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+This slice owns workflow-event persistence, not audit-log writes. Preserve existing tracer
+`AuditLog` behavior exactly while migrating/repointing tracer workflow-event recording.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+- `makemigrations --check`, `migrate`, and all tracer lifecycle tests must remain green.
+- Existing tracer transitions still produce one workflow event per successful transition.
+- No duplicate table-name collision with `workflow_events`.
+- Missing/invalid auth and missing read permission, if a read endpoint is added, return
+  002J-validated `401`/`403` envelopes.
+- Invalid UUID filters, if a read endpoint is added, return `400 VALIDATION_ERROR`.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Backend TDD: migration/model ownership test or service test fails first against the
+  current tracer-owned shape, then passes after canonical ownership is established.
+- Backend service: `record_workflow_event(...)` persists the expected workflow/entity
+  facts and metadata without importing tracer domain models.
+- Backend regression: the existing tracer lifecycle still writes seven workflow events
+  and seven tracer audit rows.
+- Backend migration regression: clean `migrate` and `makemigrations --check --dry-run`
+  pass without attempting duplicate `workflow_events` creation.
+- Backend API, if read endpoint is included: authorized `audit.workflow_event.read` user
+  can list/filter events with top-level pagination; no-permission user receives
+  `403 PERMISSION_DENIED`.
 
 ## Visual Acceptance Criteria
 None.

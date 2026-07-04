@@ -1,5 +1,15 @@
 # Ralph Progress Log
 
+## 2026-07-04 18:58:18 - 2026-07-04_184602_normal_run
+- Agent tool used: codex
+- Slice attempted: 002K-seed-data-and-demo-users
+- Summary: Added guarded local/dev `seed_demo_users` management command. It refuses unless `SFPCL_DEBUG=true` and `SFPCL_ALLOW_DEMO_SEED=true`, calls the canonical catalogue seed, and idempotently creates/updates seven `demo.*@sfpcl.example` staff users for system admin, credit manager, compliance, treasury, internal auditor, tracer-only, and zero-permission smoke paths. Demo users authenticate only through real `/auth/login/` and `/auth/me`; no auth bypass, schema, frontend, or broad `manage_users` alias was added.
+- Tests run: backend TDD red/green for seed guard and behavior; backend `manage.py check`; backend tests (107/107); `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test` (26/26); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-04_184602_normal_run/`, with red/green and gate logs under `evidence/terminal-logs/` and demo login/current-user examples in `api-response-examples.md`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Architecture review is due by cadence before the next implementation slice. `003A-audit-log-foundation` and `003B-workflow-event-foundation` were sharpened from the existing Epic 003 digest.
+
 ## 2026-07-04 18:31:46 - 2026-07-04_183146_normal_run
 - Agent tool used: codex
 - Slice attempted: 002J-api-contract-test-harness
@@ -609,6 +619,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_183146_normal_run/.ralph/runs/2026-07-04_183146_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_183146_normal_run/.ralph/runs/2026-07-04_183146_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-04 19:02:52 - 2026-07-04_184602_normal_run
+- Agent tool used: codex
+- Slice attempted: 002K-seed-data-and-demo-users
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_184602_normal_run/.ralph/runs/2026-07-04_184602_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_184602_normal_run/.ralph/runs/2026-07-04_184602_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

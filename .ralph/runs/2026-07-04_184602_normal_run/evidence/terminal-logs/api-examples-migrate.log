@@ -1,0 +1,8 @@
+Operations to perform:
+  Apply all migrations: contenttypes, identity, tracer
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying tracer.0001_initial... OK
