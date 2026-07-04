@@ -51,6 +51,8 @@ None for this slice, except updating frontend documentation or fixtures if requi
    `entity_id`, `old_value`, `new_value`, `ip_address`, and `created_at`. If the current
    model field names are `old_value_json`/`new_value_json`, map them to the contract names
    `old_value`/`new_value` in the API response.
+   Current schema check: `identity.AuditLog.actor_user` is nullable, so serialize
+   system/no-actor rows as `actor: null` rather than failing or fabricating a user.
 5. Keep writes append-only by service/API convention: this slice adds no update/delete
    endpoint for audit rows.
 6. Put serialization/filtering behind a small backend module interface rather than
@@ -90,6 +92,8 @@ audit rows exactly and must not mutate returned audit records.
   non-standard envelope, then passes with `401 AUTH_REQUIRED` using the 002J helper.
 - Backend API: authorized user can list seeded/auth-generated audit rows with §42.1 item
   fields and valid top-level pagination.
+- Backend API: an `AuditLog` row with `actor_user=None` serializes with `actor: null` and
+  still includes `actor_type`, `action`, `entity_type`, `entity_id`, and `created_at`.
 - Backend API: use a seeded `internal_auditor` or targeted test role with
   `audit.audit_log.read` for the positive permission path.
 - Backend API: `entity_type` + `entity_id` filters return only matching audit rows.

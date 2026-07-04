@@ -30,6 +30,12 @@ Slice `002EX` already created a `WorkflowEvent` model whose `db_table = "workflo
 2. Rename the tracer copy's table to `tracer_workflow_events` in the same slice (so the tracer stays self-contained and disposable per A-011) and create the canonical `workflow_events` table fresh from `data-model.md §26`.
 Prefer option 1 unless the tracer is scheduled for removal first. Either way: `makemigrations --check` and `migrate` must both pass on a clean database, and the tracer lifecycle test must still be green afterward.
 
+Current schema check: the tracer model fields are `workflow_event_id`, `workflow_name`,
+`entity_type`, `entity_id`, `from_state`, `to_state`, `triggered_by_user`,
+`trigger_reason`, and `created_at`; `tracer.services.action_payload()` exposes
+`workflow_event_id` to API callers. Preserve that response field while moving event
+recording behind the canonical service.
+
 ## Prototype Reference
 - sfpcl-lms/src/pages/Dashboard.tsx
 - sfpcl-lms/src/pages/tasks/TaskInbox.tsx
@@ -89,6 +95,8 @@ This slice owns workflow-event persistence, not audit-log writes. Preserve exist
   current tracer-owned shape, then passes after canonical ownership is established.
 - Backend service: `record_workflow_event(...)` persists the expected workflow/entity
   facts and metadata without importing tracer domain models.
+- Backend regression: tracer action responses still include `workflow_event_id` after the
+  ownership reconciliation.
 - Backend regression: the existing tracer lifecycle still writes seven workflow events
   and seven tracer audit rows.
 - Backend migration regression: clean `migrate` and `makemigrations --check --dry-run`

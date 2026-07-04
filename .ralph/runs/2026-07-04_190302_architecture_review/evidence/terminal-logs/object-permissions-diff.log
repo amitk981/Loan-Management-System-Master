@@ -1,0 +1,265 @@
+diff --git a/sfpcl_credit/identity/modules/object_permissions.py b/sfpcl_credit/identity/modules/object_permissions.py
+new file mode 100644
+index 0000000..08c37f2
+--- /dev/null
++++ b/sfpcl_credit/identity/modules/object_permissions.py
+@@ -0,0 +1,89 @@
++from dataclasses import dataclass
++from typing import Iterable
++
++
++ACCESS_ALLOWED_OWNER = "allowed_owner"
++ACCESS_ALLOWED_TEAM = "allowed_team"
++ACCESS_ALLOWED_GLOBAL = "allowed_global"
++ACCESS_MISSING_PERMISSION = "missing_permission"
++ACCESS_OWNER_MISMATCH = "owner_mismatch"
++ACCESS_TEAM_MISMATCH = "team_mismatch"
++ACCESS_SCOPE_UNKNOWN = "scope_unknown"
++
++PERMISSION_DENIED = "PERMISSION_DENIED"
++OBJECT_ACCESS_DENIED = "OBJECT_ACCESS_DENIED"
++
++
++@dataclass(frozen=True)
++class ObjectAccessResult:
++    allowed: bool
++    reason: str
++    error_code: str | None = None
++    required_permission: str | None = None
++    approval_required: bool = False
++
++
++def evaluate_object_access(
++    *,
++    actor_user_id,
++    actor_team_codes: Iterable[str],
++    actor_permission_codes: Iterable[str],
++    required_permission: str,
++    object_owner_user_id=None,
++    object_team_code: str | None = None,
++    allow_global: bool = False,
++) -> ObjectAccessResult:
++    actor_permissions = set(actor_permission_codes)
++    actor_teams = set(actor_team_codes)
++
++    if required_permission not in actor_permissions:
++        return _deny(ACCESS_MISSING_PERMISSION, PERMISSION_DENIED, required_permission)
++
++    if allow_global:
++        return ObjectAccessResult(
++            True,
++            ACCESS_ALLOWED_GLOBAL,
++            required_permission=required_permission,
++        )
++
++    if object_owner_user_id is not None and str(object_owner_user_id) == str(actor_user_id):
++        return ObjectAccessResult(
++            True,
++            ACCESS_ALLOWED_OWNER,
++            required_permission=required_permission,
++        )
++
++    if object_team_code is not None and object_team_code in actor_teams:
++        return ObjectAccessResult(
++            True,
++            ACCESS_ALLOWED_TEAM,
++            required_permission=required_permission,
++        )
++
++    if object_owner_user_id is None and object_team_code is None:
++        return _deny(
++            ACCESS_SCOPE_UNKNOWN,
++            OBJECT_ACCESS_DENIED,
++            required_permission,
++            approval_required=True,
++        )
++
++    if object_owner_user_id is not None:
++        return _deny(ACCESS_OWNER_MISMATCH, OBJECT_ACCESS_DENIED, required_permission)
++
++    return _deny(ACCESS_TEAM_MISMATCH, OBJECT_ACCESS_DENIED, required_permission)
++
++
++def _deny(
++    reason: str,
++    error_code: str,
++    required_permission: str,
++    approval_required: bool = False,
++) -> ObjectAccessResult:
++    return ObjectAccessResult(
++        allowed=False,
++        reason=reason,
++        error_code=error_code,
++        required_permission=required_permission,
++        approval_required=approval_required,
++    )
+diff --git a/sfpcl_credit/tests/test_object_permissions.py b/sfpcl_credit/tests/test_object_permissions.py
+new file mode 100644
+index 0000000..2702e23
+--- /dev/null
++++ b/sfpcl_credit/tests/test_object_permissions.py
+@@ -0,0 +1,164 @@
++import uuid
++
++from django.test import SimpleTestCase
++
++from sfpcl_credit.identity.models import (
++    Permission,
++    RolePermission,
++    Team,
++    UserTeamMembership,
++)
++from sfpcl_credit.identity.modules import auth_service
++from sfpcl_credit.identity.modules import object_permissions
++from sfpcl_credit.tests.base import IdentityTestCase
++
++
++class ObjectPermissionHelperTests(SimpleTestCase):
++    def test_owner_with_required_permission_is_allowed(self):
++        actor_id = uuid.uuid4()
++
++        result = object_permissions.evaluate_object_access(
++            actor_user_id=actor_id,
++            actor_team_codes=[],
++            actor_permission_codes={"loan_application.read"},
++            required_permission="loan_application.read",
++            object_owner_user_id=actor_id,
++            object_team_code=None,
++        )
++
++        self.assertTrue(result.allowed)
++        self.assertEqual(result.reason, object_permissions.ACCESS_ALLOWED_OWNER)
++        self.assertEqual(result.error_code, None)
++
++    def test_team_member_with_required_permission_is_allowed(self):
++        result = object_permissions.evaluate_object_access(
++            actor_user_id=uuid.uuid4(),
++            actor_team_codes=["credit_assessment", "treasury"],
++            actor_permission_codes={"loan_application.read"},
++            required_permission="loan_application.read",
++            object_owner_user_id=uuid.uuid4(),
++            object_team_code="credit_assessment",
++        )
++
++        self.assertTrue(result.allowed)
++        self.assertEqual(result.reason, object_permissions.ACCESS_ALLOWED_TEAM)
++        self.assertEqual(result.error_code, None)
++
++    def test_missing_required_permission_is_denied_before_scope(self):
++        actor_id = uuid.uuid4()
++
++        result = object_permissions.evaluate_object_access(
++            actor_user_id=actor_id,
++            actor_team_codes=["credit_assessment"],
++            actor_permission_codes={"loan_application.update"},
++            required_permission="loan_application.read",
++            object_owner_user_id=actor_id,
++            object_team_code="credit_assessment",
++        )
++
++        self.assertFalse(result.allowed)
++        self.assertEqual(result.reason, object_permissions.ACCESS_MISSING_PERMISSION)
++        self.assertEqual(result.error_code, object_permissions.PERMISSION_DENIED)
++
++    def test_owner_mismatch_with_no_matching_team_is_denied(self):
++        result = object_permissions.evaluate_object_access(
++            actor_user_id=uuid.uuid4(),
++            actor_team_codes=[],
++            actor_permission_codes={"loan_application.read"},
++            required_permission="loan_application.read",
++            object_owner_user_id=uuid.uuid4(),
++            object_team_code=None,
++        )
++
++        self.assertFalse(result.allowed)
++        self.assertEqual(result.reason, object_permissions.ACCESS_OWNER_MISMATCH)
++        self.assertEqual(result.error_code, object_permissions.OBJECT_ACCESS_DENIED)
++
++    def test_team_mismatch_with_no_owner_fact_is_denied(self):
++        result = object_permissions.evaluate_object_access(
++            actor_user_id=uuid.uuid4(),
++            actor_team_codes=["treasury"],
++            actor_permission_codes={"loan_application.read"},
++            required_permission="loan_application.read",
++            object_owner_user_id=None,
++            object_team_code="credit_assessment",
++        )
++
++        self.assertFalse(result.allowed)
++        self.assertEqual(result.reason, object_permissions.ACCESS_TEAM_MISMATCH)
++        self.assertEqual(result.error_code, object_permissions.OBJECT_ACCESS_DENIED)
++
++    def test_unknown_scope_is_denied_without_explicit_global_override(self):
++        result = object_permissions.evaluate_object_access(
++            actor_user_id=uuid.uuid4(),
++            actor_team_codes=["credit_assessment"],
++            actor_permission_codes={"loan_application.read"},
++            required_permission="loan_application.read",
++            object_owner_user_id=None,
++            object_team_code=None,
++        )
++
++        self.assertFalse(result.allowed)
++        self.assertEqual(result.reason, object_permissions.ACCESS_SCOPE_UNKNOWN)
++        self.assertEqual(result.error_code, object_permissions.OBJECT_ACCESS_DENIED)
++        self.assertTrue(result.approval_required)
++
++    def test_explicit_global_override_allows_when_permission_is_present(self):
++        result = object_permissions.evaluate_object_access(
++            actor_user_id=uuid.uuid4(),
++            actor_team_codes=[],
++            actor_permission_codes={"loan_application.read"},
++            required_permission="loan_application.read",
++            object_owner_user_id=None,
++            object_team_code=None,
++            allow_global=True,
++        )
++
++        self.assertTrue(result.allowed)
++        self.assertEqual(result.reason, object_permissions.ACCESS_ALLOWED_GLOBAL)
++        self.assertEqual(result.error_code, None)
++        self.assertFalse(result.approval_required)
++
++    def test_global_override_does_not_bypass_missing_permission(self):
++        result = object_permissions.evaluate_object_access(
++            actor_user_id=uuid.uuid4(),
++            actor_team_codes=[],
++            actor_permission_codes=[],
++            required_permission="loan_application.read",
++            object_owner_user_id=None,
++            object_team_code=None,
++            allow_global=True,
++        )
++
++        self.assertFalse(result.allowed)
++        self.assertEqual(result.reason, object_permissions.ACCESS_MISSING_PERMISSION)
++        self.assertEqual(result.error_code, object_permissions.PERMISSION_DENIED)
++
++
++class ObjectPermissionHarnessIntegrationTests(IdentityTestCase):
++    def test_auth_service_permissions_and_user_team_codes_feed_object_access(self):
++        permission = Permission.objects.create(
++            permission_code="loan_application.read",
++            permission_name="Read loan application",
++            module_name="applications",
++            risk_level="medium",
++        )
++        RolePermission.objects.create(role=self.role, permission=permission)
++        team = Team.objects.create(
++            team_code="credit_assessment",
++            team_name="Credit Assessment",
++            status="active",
++        )
++        UserTeamMembership.objects.create(user=self.user, team=team, status="active")
++
++        result = object_permissions.evaluate_object_access(
++            actor_user_id=self.user.user_id,
++            actor_team_codes=self.user.team_codes(),
++            actor_permission_codes=auth_service.effective_permission_codes(self.user),
++            required_permission="loan_application.read",
++            object_owner_user_id=uuid.uuid4(),
++            object_team_code=auth_service.team_payload(self.user)[0]["team_code"],
++        )
++
++        self.assertTrue(result.allowed)
++        self.assertEqual(result.reason, object_permissions.ACCESS_ALLOWED_TEAM)

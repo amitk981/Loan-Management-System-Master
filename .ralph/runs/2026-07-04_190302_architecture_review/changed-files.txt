@@ -1,0 +1,9 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/003A-audit-log-foundation.md
+ M docs/slices/003B-workflow-event-foundation.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-003-audit-documents-config.md
+?? .ralph/runs/2026-07-04_190302_architecture_review/
+?? docs/slices/002K2-demo-tracer-permission-isolation.md

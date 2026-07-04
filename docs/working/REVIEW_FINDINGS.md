@@ -2,6 +2,38 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-04 19:03 - Architecture Review 2026-07-04_190302_architecture_review
+
+Reviewed commits since the prior architecture review (`7908071`):
+- `002G2-admin-user-action-permission-granularity` (`62f0ea9`)
+- `002I-object-level-permission-test-harness` (`383ec74`)
+- `002J-api-contract-test-harness` (`71087c2`)
+- `002K-seed-data-and-demo-users` (`7707942`)
+
+### Finding 1 - Medium - Demo tracer seeding grants the tracer permission to the shared Sales role
+
+`002K` correctly guards predictable demo credentials behind `SFPCL_DEBUG=true` and `SFPCL_ALLOW_DEMO_SEED=true`, uses the real `/auth/login/` and `/auth/me/` path, and keeps the zero-permission demo user neutral. The permission isolation for the tracer demo user is weaker than the slice implies, though: `seed_demo_users` defines `demo.tracer@sfpcl.example` with role `sales_team_user`, then `_ensure_tracer_permission()` creates/updates `tracer.lifecycle.run` and attaches it to the shared `sales_team_user` role (`sfpcl_credit/identity/management/commands/seed_demo_users.py:52`, `:112-122`). Because `/auth/me/` derives permissions from primary-role `RolePermission` rows, every local user with `sales_team_user` becomes tracer-capable after the demo seed runs. A-007 says `sales_team_user` has no source-defined grants, and A-011 says the tracer permission is a dev/test smoke exception. The current tests assert the demo tracer user has exactly the tracer permission, but they do not create a non-demo Sales user and prove that user remains neutral after seeding.
+
+Corrective action: created `docs/slices/002K2-demo-tracer-permission-isolation.md`. It must keep the guarded local/demo behavior but isolate tracer authority to the intended demo user/role path, with a failing-first regression proving a non-demo `sales_team_user` still gets `permissions: []` after seeding.
+
+### Finding 2 - Pass - 002G2 closes the prior admin permission boundary finding
+
+The reviewed diff replaces the broad `has_manage_users_permission()` check with action-specific backend gates. Tests cover create-only, update-only, disable-only, and read-only partial roles, plus negative side effects: forbidden writes produce `403 PERMISSION_DENIED` without audit rows or session revocation. A-015 clearly documents the read fallback needed because the seeded `system_admin` role has write user-admin grants but not `users.user.read`.
+
+Corrective action: none.
+
+### Finding 3 - Pass - 002I and 002J add narrow test infrastructure without production coupling
+
+`002I` adds a pure `evaluate_object_access(...)` helper that takes explicit actor/object facts, does not query future domain models, and returns typed allow/deny reasons including `scope_unknown` with `approval_required=True`. `002J` adds test-only API contract assertions under `sfpcl_credit/tests/` and regression coverage for existing auth/admin/tracer endpoints. Red/green logs exist in both run folders and the final full backend/frontend gates are green.
+
+Corrective action: none.
+
+### Finding 4 - Pass with queue sharpening - 003A/003B are ready to start after the corrective slice
+
+The next Epic 003 slices were already sharpened from the digest. This review added current-schema details: `003A` must serialize nullable `AuditLog.actor_user` rows as `actor: null`, and `003B` must preserve tracer `workflow_event_id` response behavior while reconciling the existing tracer-owned `workflow_events` table.
+
+Corrective action: no additional defect slice beyond `002K2`; `003A` and `003B` were sharpened.
+
 ## 2026-07-04 13:52 - Architecture Review 2026-07-04_135247_architecture_review
 
 Reviewed commits since the prior architecture review (`0939e01`):
