@@ -1,7 +1,7 @@
 # Slice 002FL: Frontend Lint Baseline (ESLint)
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell (quality infrastructure)
@@ -38,11 +38,11 @@ Medium
 - HANDOFF.md notes that the lint gate is ready to be enabled in config.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Config + script added
-- [ ] Violations fixed
-- [ ] Tests/typecheck/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated (lint gate flip requested)
-- [ ] State updated
+- [x] Execution plan written
+- [x] Config + script added
+- [x] Violations fixed
+- [x] Tests/typecheck/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated (lint gate flip requested)
+- [x] State updated
 - [ ] Commit created only after passing gates

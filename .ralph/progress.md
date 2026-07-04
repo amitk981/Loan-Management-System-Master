@@ -1,5 +1,15 @@
 # Ralph Progress Log
 
+## 2026-07-04 08:45:16 - 2026-07-04_082747_repair
+- Agent tool used: codex
+- Slice attempted: 002FL-frontend-lint-baseline (repair)
+- Summary: Added the frontend ESLint baseline for `sfpcl-lms/src`, pinned approved lint dev dependencies, added `npm run lint`, and created `sfpcl-lms/eslint.config.js`. Fixed lint-safe source issues: hook dependency arrays, one switch-case declaration scope, and `prefer-const` cleanup in the registers page. Preserved visual styling, labels, navigation/permission tables, and frontend behavior.
+- Tests run: `npm run lint`; `npm run typecheck`; `npm test` (23/23); `npm run build`; backend `manage.py check`; backend tests (64/64); `makemigrations --check --dry-run`; backend coverage 95% (floor 85); `git diff --check`; protected-path scan.
+- Evidence saved: `.ralph/runs/2026-07-04_082747_repair/`, including logs under `evidence/terminal-logs/`.
+- Result: Success. Normal npm registry install could not be used in the sandbox, so lint packages were installed from cached tarballs for local validation; package metadata remains portable exact semver pins.
+- Risk level: Medium.
+- Next action: Architecture review is due by cadence. Owner/operator should enable protected `.ralph/config.yaml` `quality_gates.lint: true` after orchestrator validation, then continue with `002G-admin-user-and-role-management-shell`.
+
 ## 2026-07-04 08:05:00 - 2026-07-04_075626_normal_run
 - Agent tool used: codex
 - Slice attempted: 002F-role-aware-sidebar-header-navigation
@@ -409,6 +419,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_075626_normal_run/.ralph/runs/2026-07-04_075626_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_075626_normal_run/.ralph/runs/2026-07-04_075626_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-04 08:51:11 - 2026-07-04_082747_repair
+- Agent tool used: codex
+- Slice attempted: 002FL-frontend-lint-baseline
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_082747_repair/.ralph/runs/2026-07-04_082747_repair/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_082747_repair/.ralph/runs/2026-07-04_082747_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

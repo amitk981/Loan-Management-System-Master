@@ -130,7 +130,7 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
         (first.status === 'appraisal_in_progress' || first.status === 'appraisal_pending') ? 'appraisal' : 'submitted'
       );
     }
-  }, []);
+  }, [appraisalQueue, selected]);
 
   useEffect(() => {
     setDecisionStatus(null);
@@ -144,7 +144,7 @@ const AppraisalWorkbench: React.FC<AppraisalWorkbenchProps> = ({ onOpenApplicati
       setBankObservation('6-month statement shows regular dairy receipts averaging ₹45,000/month. No bounce history.');
       setNoteText('Appraisal note summary:\n- Member seeks ₹3.5L for crop production.\n- Eligible limit is ₹64k based on 3.2 acres.\n- Exception recommended based on strong dairy income.');
     }
-  }, [app?.id]);
+  }, [app?.id, app?.isException, app?.requestedAmount, app?.status]);
 
   const isDMFinance = currentUser.role === 'deputy_manager_finance';
   const isCreditManager = currentUser.role === 'credit_manager';

@@ -104,7 +104,7 @@ const DisbursementHub: React.FC<DisbursementHubProps> = ({ onOpenApplication, in
       setPaymentMode('RTGS');
       setPaymentNarration('Disbursement for ' + app.applicationNumber);
     }
-  }, [app?.id]);
+  }, [app]);
 
   const auditLog = (action: string, reason?: string) => {
     console.log({

@@ -104,7 +104,7 @@ const CompletenessWorkbench: React.FC<CompletenessWorkbenchProps> = ({
     );
     setInternalComment(app.status === 'deficiency_raised' ? 'Borrower may resubmit after rectification.' : '');
     setOutcome(null);
-  }, [app?.id]);
+  }, [app]);
 
   const canAct = can('do_completeness_check') && currentUser.role === 'deputy_manager_finance';
   const reviewableItems = COMPLETENESS_ITEMS.filter(item => !(item.id === 'share_certificate' && app?.shareMode !== 'physical'));

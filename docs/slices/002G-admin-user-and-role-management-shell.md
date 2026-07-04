@@ -15,6 +15,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 
 ## Depends On
 - 002F
+- 002FL
 
 ## Concrete Requirements
 1. Read-only list endpoint `GET /api/v1/admin/users/` returning each user's `user_id`, `full_name`, `email`, `mobile_number` (masked per existing masking rules if applicable), `status`, `roles[{role_code, role_name}]`, and `teams[{team_code, team_name}]` in the standard envelope with pagination per `api-contracts.md` §7-8. Reuse the same role/team serialization shape already built for `/auth/me/` (002D3) — do not fork a second shape.
@@ -41,19 +42,19 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - sfpcl-lms/src/contexts/RoleContext.tsx
 
 ## Screens Involved
-Relevant prototype screen area for this capability.
+Admin user/role management shell reachable from the existing staff app shell only when the current backend session maps to `manage_users`.
 
 ## Frontend Scope
-Small UI wiring for the named workflow, if applicable.
+Add the admin user-management page using existing app-shell, table/list, status badge, alert, modal, and form-control patterns only. Show list, detail, role assignment, team membership, and active/suspended controls from backend data; include loading, empty, error, unauthorized, validation, and success states without new styling.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+Implement only the admin user catalogue read/assignment endpoints named above. Reuse the existing identity models, session-bound auth helper, standard envelope helper, and audit-log model; do not add free-text role, permission, or team creation.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
+Prefer no schema change. If a gap is found, keep it non-destructive and limited to existing identity/access needs; do not alter the seeded permission catalogue except through existing `Role`/`Permission` rows.
 
 ## API Contracts
-Create or update the API contract for this capability.
+Update `docs/working/API_CONTRACTS.md` with the admin user list/detail/assignment routes, pagination shape, success examples, and `401`/`403`/validation/lock-out errors.
 
 ## Permissions
 Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
@@ -63,6 +64,9 @@ Record audit/workflow events for critical create/update/approval/access actions.
 
 ## Validation Rules
 Enforce source-doc business rules and block invalid state transitions.
+- Assignments must reference existing active `Role`/`Team` rows by code or id; unknown values return a standard validation error.
+- Status changes are limited to active/suspended unless source documents explicitly define another admin-settable state.
+- The last active `system_admin` lock-out guard must be tested and recorded in `ASSUMPTIONS.md` if still source-doc-silent.
 
 ## Test Cases
 Unit/service/API/permission tests plus frontend tests where UI is touched.

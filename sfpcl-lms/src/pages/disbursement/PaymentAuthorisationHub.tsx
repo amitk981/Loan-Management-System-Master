@@ -66,7 +66,7 @@ const PaymentAuthorisationHub: React.FC<PaymentAuthorisationHubProps> = ({ onOpe
         setCfcBankEvidence(false);
       }
     }
-  }, [app?.id]);
+  }, [app]);
 
   const auditLog = (action: string, reason?: string) => {
     console.log({
