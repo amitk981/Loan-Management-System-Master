@@ -53,6 +53,12 @@ Assert against the shapes the platform actually returns today; do not invent fie
 - Error (`error_response`): `{ "success": false, "error": {code, message, details, field_errors}, "meta": {...} }`. `details` defaults to `{}`; `field_errors` defaults to `{}` and carries per-field messages for `400 VALIDATION_ERROR` (e.g. admin `status`/`role_code`).
 - `available_actions`: the current `/auth/me/` payload returns `available_actions` as a FLAT list of canonical permission-code strings (equal to `permissions`), NOT objects. The §44 item shape (`action_code`, `label`, `enabled`, `disabled_reason`, `required_permission`) is the TARGET contract — assert it against an internal sample/helper only, and record in ASSUMPTIONS if the harness sample diverges from current `/auth/me/` output so a later slice reconciles `available_actions`.
 
+### Verified permission-harness context (2026-07-04, from 002I)
+- `sfpcl_credit.identity.modules.object_permissions.evaluate_object_access(...)` is the reusable object-scope helper. It returns `ObjectAccessResult(allowed, reason, error_code, required_permission, approval_required)` and never queries domain models.
+- Missing module permission returns reason `missing_permission` and error code `PERMISSION_DENIED`.
+- Object-scope denials return error code `OBJECT_ACCESS_DENIED` with reason `owner_mismatch`, `team_mismatch`, or `scope_unknown`; `scope_unknown` also sets `approval_required=True`.
+- Future API slices should translate helper results into the standard error envelope asserted by this 002J harness. Do not add a public endpoint only to test 002I.
+
 ## Database/Model Impact
 None.
 

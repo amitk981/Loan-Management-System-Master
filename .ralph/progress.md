@@ -493,6 +493,16 @@ Validation evidence added:
 - Risk level: See risk assessment.
 - Next action: Review packet.
 
+## 2026-07-04 18:17:36 - 2026-07-04_181736_normal_run
+- Agent tool used: codex
+- Slice attempted: 002I-object-level-permission-test-harness
+- Summary: Added `sfpcl_credit.identity.modules.object_permissions` with a pure object-level permission helper and test harness. The helper evaluates explicit actor permissions/team codes against explicit object owner/team facts, returns typed allow/deny reason codes, denies unknown scope by default, and supports caller-supplied global override only after the required canonical permission is present. No endpoint, schema change, frontend change, dependency, or audit row was added.
+- Tests run: Backend targeted red/green logs saved under `.ralph/runs/2026-07-04_181736_normal_run/evidence/terminal-logs/`; backend check; backend tests 88/88; makemigrations check; backend coverage 95%; frontend typecheck; frontend lint; frontend vitest 26/26; frontend build.
+- Evidence saved: `.ralph/runs/2026-07-04_181736_normal_run/`
+- Result: Success
+- Risk level: High
+- Next action: Run `002J-api-contract-test-harness`, then `002K-seed-data-and-demo-users`.
+
 ## 2026-07-04 08:51:11 - 2026-07-04_082747_repair
 - Agent tool used: codex
 - Slice attempted: 002FL-frontend-lint-baseline
@@ -569,6 +579,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_140900_normal_run/.ralph/runs/2026-07-04_140900_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_140900_normal_run/.ralph/runs/2026-07-04_140900_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-04 18:31:38 - 2026-07-04_181736_normal_run
+- Agent tool used: codex
+- Slice attempted: 002I-object-level-permission-test-harness
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_181736_normal_run/.ralph/runs/2026-07-04_181736_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_181736_normal_run/.ralph/runs/2026-07-04_181736_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
