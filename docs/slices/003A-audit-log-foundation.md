@@ -8,10 +8,13 @@ Epic 003: Audit, Documents, Config, and Dashboard Foundation
 Epic file: `docs/epics/003-audit-documents-config-foundation.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Expose the existing append-only `AuditLog` records through a protected, paginated
+backend API so future workflow and document slices can render audit timelines without
+duplicating audit serialization.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Authorized staff can retrieve a consistent audit trail for an entity or actor, and future
+UI/API slices can rely on a standard audit response item shape.
 
 ## Depends On
 - 002K
@@ -36,25 +39,58 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+1. Add `GET /api/v1/audit-logs/` as a read-only protected endpoint over the existing
+   `identity.AuditLog` model. Do not create a new audit table in this slice.
+2. Support narrow filters from `api-contracts.md` §42.1: `entity_type`,
+   `entity_id`, and `actor_user_id`. Unknown filters should return `400 VALIDATION_ERROR`
+   through the standard error envelope.
+3. Return newest-first paginated results using the existing top-level `pagination`
+   contract and the 002J pagination helper in tests.
+4. Serialize each item with the §42.1 fields available today: `audit_log_id`,
+   `actor{user_id, full_name}` when present, `actor_type`, `action`, `entity_type`,
+   `entity_id`, `old_value`, `new_value`, `ip_address`, and `created_at`. If the current
+   model field names are `old_value_json`/`new_value_json`, map them to the contract names
+   `old_value`/`new_value` in the API response.
+5. Keep writes append-only by service/API convention: this slice adds no update/delete
+   endpoint for audit rows.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
+No schema change expected. If a missing index is discovered, add at most one
+non-destructive migration for query support; otherwise use the existing `AuditLog` model.
 
 ## API Contracts
-Create or update the API contract for this capability.
+Update `docs/working/API_CONTRACTS.md` with the concrete `GET /api/v1/audit-logs/`
+contract, filter rules, permission rule, and example response.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Require session-bound bearer auth and a canonical audit/report/admin permission already in
+the seeded catalogue, preferring `reports.audit.read` if present. If no exact source-backed
+permission code exists in the catalogue, record an assumption and use the narrowest
+existing read/audit permission; do not invent a new permission code in this slice.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+The read endpoint itself does not create a new audit row unless source docs explicitly
+require read-auditing for audit-log access. It must preserve existing auth/admin/tracer
+audit rows exactly and must not mutate returned audit records.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+- Missing bearer token returns 002J-validated `401 AUTH_REQUIRED`.
+- Invalid/revoked session returns 002J-validated `401 INVALID_TOKEN`.
+- Authenticated user without the selected audit-read permission returns 002J-validated
+  `403 PERMISSION_DENIED`.
+- Invalid UUID filters return `400 VALIDATION_ERROR` with `field_errors`.
+- Empty result sets return `success: true`, `data: []`, and valid pagination metadata.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Backend TDD: unauthenticated audit-log list fails first with missing endpoint or
+  non-standard envelope, then passes with `401 AUTH_REQUIRED` using the 002J helper.
+- Backend API: authorized user can list seeded/auth-generated audit rows with §42.1 item
+  fields and valid top-level pagination.
+- Backend API: `entity_type` + `entity_id` filters return only matching audit rows.
+- Backend API: `actor_user_id` filter returns only that actor's audit rows.
+- Backend API: user without the audit-read permission receives standard `403
+  PERMISSION_DENIED`.
+- Backend API: invalid UUID filter returns `400 VALIDATION_ERROR` with field errors.
 
 ## Visual Acceptance Criteria
 None.

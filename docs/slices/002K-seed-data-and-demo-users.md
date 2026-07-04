@@ -57,6 +57,12 @@ None for this slice, except updating frontend documentation or fixtures if requi
    `/api/v1/auth/me/` path; do not add demo-only auth bypasses.
 6. Preserve 002G2 action-specific admin permissions and 002I object-scope conventions.
    Demo users must not receive broad permission aliases such as `manage_users`.
+7. Use the 002J contract harness in backend regression tests for seeded-user
+   `/auth/me/` success envelopes, admin-user permission errors, and any list/pagination
+   responses touched by the command's verification path.
+8. Reuse the existing `seed_e2e_users` safety pattern but keep demo users separate from
+   E2E-only users: use a distinct explicit flag such as `SFPCL_ALLOW_DEMO_SEED=true`
+   and distinct demo email addresses so reruns cannot alter E2E fixtures.
 
 ## Database/Model Impact
 Non-destructive model/migration changes for this capability, if needed.
@@ -80,11 +86,16 @@ users must continue to create the existing auth audit rows.
 - Reruns are idempotent and do not create duplicate users or duplicate memberships.
 - Seeded users have active primary roles only when those roles already exist in the
   catalogue.
+- The command must call or require the existing role catalogue seed before assigning
+  users; if a required role/team is still absent, fail with a clear command error rather
+  than creating ad hoc catalogue rows.
 - Zero-permission demo user remains neutral in `/auth/me/` (`permissions: []`).
 - Tracer-only demo user receives only `tracer.lifecycle.run` and no admin/user-management
   permissions.
 - System administrator demo user preserves existing admin-shell access under 002G2
   action-specific rules.
+- Demo passwords must be predictable only in guarded local/dev mode and must not be
+  documented as production credentials.
 
 ## Test Cases
 - Backend TDD: command refuses without guard flags.
@@ -98,6 +109,10 @@ users must continue to create the existing auth audit rows.
   prototype-derived grants.
 - Backend regression: auth audit behavior still occurs through the existing login/logout
   path.
+- Backend regression: seeded create-only or read-only user-admin account receives the
+  standard 002J `403 PERMISSION_DENIED` envelope when calling an update-gated admin action.
+- Backend evidence: save `/auth/login/` + `/auth/me/` examples for system-admin,
+  tracer-only, and zero-permission demo users.
 
 ## Visual Acceptance Criteria
 None.

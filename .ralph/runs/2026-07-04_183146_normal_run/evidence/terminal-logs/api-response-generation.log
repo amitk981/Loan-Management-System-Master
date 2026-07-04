@@ -1,0 +1,5 @@
+Unauthorized: /api/v1/admin/users/
+Forbidden: /api/v1/admin/users/
+Forbidden: /api/v1/admin/users/8f69c45f-6276-4af9-bd73-da173cbfb9bc/roles/
+Conflict: /api/v1/tracer/loan-applications/336298f4-2888-455e-8ce7-48cfead1f343/loan-account/
+Unauthorized: /api/v1/auth/me/
