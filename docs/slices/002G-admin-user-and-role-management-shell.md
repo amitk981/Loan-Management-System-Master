@@ -14,7 +14,9 @@ Give a `system_admin` a read + assignment shell over the existing seeded identit
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
+- 002EYA
 - 002F
+- 002F2
 - 002FL
 
 ## Concrete Requirements
@@ -25,7 +27,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 5. Suspending a user must revoke that user's active `UserSession` rows so a suspended user cannot keep calling protected APIs (consistent with the 002D/A-008 active-session rule). Do not let an admin suspend or remove the last `system_admin` (lock-out guard) — record this guard's exact rule in `ASSUMPTIONS.md` if the source docs are silent.
 6. Frontend: wire the admin shell using existing prototype patterns only (`RoleContext`, existing table/list and status-badge components); no new styling. Gate the screen and its actions behind explicit backend canonical permissions mapped through `authSession.ts` (no role-name checks).
 7. Navigation: add the admin user-management entry only for sessions whose canonical permissions map to `manage_users`; non-admin, zero-permission, and unknown-role sessions must not see the nav item or action buttons. Keep the existing Settings shortcut gated by `view_settings`.
-8. Route guard: add the new admin page to the same shared page-permission contract introduced in 002F (`navigationPermissions.ts`) and extend its tests so direct navigation without `manage_users` falls back to Dashboard with the access-blocked banner.
+8. Route guard: add the new admin page to the same shared page-permission contract introduced in 002F/002F2 (`navigationPermissions.ts`) and extend its render/visibility tests so direct navigation without `manage_users` falls back to Dashboard with the access-blocked banner.
 9. Current-user compatibility: continue using `/auth/me/` `roles`, `teams`, `permissions`, and `available_actions`; do not introduce frontend grants for unmapped canonical permissions.
 
 ## Source References
