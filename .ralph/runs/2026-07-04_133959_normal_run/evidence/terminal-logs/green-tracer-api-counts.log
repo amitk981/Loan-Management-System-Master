@@ -1,0 +1,28 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 7 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: contenttypes, identity, tracer
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying tracer.0001_initial... OK
+System check identified no issues (0 silenced).
+test_authenticated_user_without_tracer_permission_cannot_write_domain_rows (sfpcl_credit.tests.test_tracer_api.TracerApiTests.test_authenticated_user_without_tracer_permission_cannot_write_domain_rows) ... ok
+test_full_tracer_lifecycle_persists_and_audits_every_transition (sfpcl_credit.tests.test_tracer_api.TracerApiTests.test_full_tracer_lifecycle_persists_and_audits_every_transition) ... ok
+test_positive_amounts_are_required (sfpcl_credit.tests.test_tracer_api.TracerApiTests.test_positive_amounts_are_required) ... ok
+test_revoked_access_token_is_rejected_before_domain_transition (sfpcl_credit.tests.test_tracer_api.TracerApiTests.test_revoked_access_token_is_rejected_before_domain_transition) ... ok
+test_transition_guard_rejects_creating_account_before_sanction (sfpcl_credit.tests.test_tracer_api.TracerApiTests.test_transition_guard_rejects_creating_account_before_sanction) ... ok
+test_transition_guards_reject_repeated_sanction_repayment_before_disbursement_and_close_before_repayment (sfpcl_credit.tests.test_tracer_api.TracerApiTests.test_transition_guards_reject_repeated_sanction_repayment_before_disbursement_and_close_before_repayment) ... ok
+test_unauthenticated_tracer_request_returns_standard_401_without_domain_rows (sfpcl_credit.tests.test_tracer_api.TracerApiTests.test_unauthenticated_tracer_request_returns_standard_401_without_domain_rows) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 4.949s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

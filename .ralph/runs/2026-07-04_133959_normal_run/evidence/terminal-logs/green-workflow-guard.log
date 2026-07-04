@@ -1,0 +1,13 @@
+Found 5 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_allowed_transition_returns_next_state_and_metadata (sfpcl_credit.tests.test_workflow_guard.WorkflowGuardTests.test_allowed_transition_returns_next_state_and_metadata) ... ok
+test_error_result_does_not_produce_no_op_transition (sfpcl_credit.tests.test_workflow_guard.WorkflowGuardTests.test_error_result_does_not_produce_no_op_transition) ... ok
+test_invalid_current_state_raises_typed_error (sfpcl_credit.tests.test_workflow_guard.WorkflowGuardTests.test_invalid_current_state_raises_typed_error) ... ok
+test_missing_permission_raises_typed_error_before_state_success (sfpcl_credit.tests.test_workflow_guard.WorkflowGuardTests.test_missing_permission_raises_typed_error_before_state_success) ... ok
+test_unknown_action_raises_typed_error (sfpcl_credit.tests.test_workflow_guard.WorkflowGuardTests.test_unknown_action_raises_typed_error) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.000s
+
+OK

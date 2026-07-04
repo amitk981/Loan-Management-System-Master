@@ -140,6 +140,8 @@ class TracerApiTests(IdentityTestCase):
             {"amount": "100000.00"},
             headers=headers,
         ).json()["data"]
+        workflow_events_before = WorkflowEvent.objects.count()
+        audit_logs_before = AuditLog.objects.filter(action__startswith="tracer.").count()
 
         response = self._post(
             f"/api/v1/tracer/loan-applications/{application['loan_application_id']}/loan-account/",
@@ -149,6 +151,11 @@ class TracerApiTests(IdentityTestCase):
         self.assertEqual(response.status_code, 409)
         self.assertEqual(response.json()["error"]["code"], "INVALID_STATE_TRANSITION")
         self.assertEqual(LoanAccount.objects.count(), 0)
+        self.assertEqual(WorkflowEvent.objects.count(), workflow_events_before)
+        self.assertEqual(
+            AuditLog.objects.filter(action__startswith="tracer.").count(),
+            audit_logs_before,
+        )
 
     def test_transition_guards_reject_repeated_sanction_repayment_before_disbursement_and_close_before_repayment(self):
         headers = self._auth_headers()
@@ -166,6 +173,8 @@ class TracerApiTests(IdentityTestCase):
             f"/api/v1/tracer/loan-applications/{application['loan_application_id']}/sanction/",
             headers=headers,
         )
+        workflow_events_before = WorkflowEvent.objects.count()
+        audit_logs_before = AuditLog.objects.filter(action__startswith="tracer.").count()
         repeated_sanction = self._post(
             f"/api/v1/tracer/loan-applications/{application['loan_application_id']}/sanction/",
             headers=headers,
@@ -193,6 +202,11 @@ class TracerApiTests(IdentityTestCase):
         self.assertEqual(early_closure.status_code, 409)
         self.assertEqual(Repayment.objects.count(), 0)
         self.assertEqual(LoanAccount.objects.get().status, "active")
+        self.assertEqual(WorkflowEvent.objects.count(), workflow_events_before + 2)
+        self.assertEqual(
+            AuditLog.objects.filter(action__startswith="tracer.").count(),
+            audit_logs_before + 2,
+        )
 
     def test_positive_amounts_are_required(self):
         member = self._post(

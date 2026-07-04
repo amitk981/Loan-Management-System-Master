@@ -13,9 +13,87 @@ from sfpcl_credit.tracer.models import (
     Repayment,
     WorkflowEvent,
 )
+from sfpcl_credit.workflows.guard import (
+    TransitionDefinition,
+    evaluate_transition,
+)
 
 
 TRACER_PERMISSION_CODE = "tracer.lifecycle.run"
+NEW_STATE = "__new__"
+
+TRACER_TRANSITIONS = (
+    TransitionDefinition(
+        entity_type="member",
+        action_code="create_member",
+        from_states=frozenset({NEW_STATE}),
+        to_state="active",
+        required_permission=TRACER_PERMISSION_CODE,
+        audit_action="tracer.member.created",
+        workflow_name="tracer",
+        workflow_label="Tracer member created",
+    ),
+    TransitionDefinition(
+        entity_type="loan_application",
+        action_code="create_application",
+        from_states=frozenset({NEW_STATE}),
+        to_state="draft",
+        required_permission=TRACER_PERMISSION_CODE,
+        audit_action="tracer.loan_application.created",
+        workflow_name="tracer",
+        workflow_label="Tracer loan application created",
+    ),
+    TransitionDefinition(
+        entity_type="loan_application",
+        action_code="sanction_application",
+        from_states=frozenset({"draft"}),
+        to_state="sanctioned",
+        required_permission=TRACER_PERMISSION_CODE,
+        audit_action="tracer.loan_application.sanctioned",
+        workflow_name="tracer",
+        workflow_label="Tracer loan application sanctioned",
+    ),
+    TransitionDefinition(
+        entity_type="loan_application",
+        action_code="create_loan_account",
+        from_states=frozenset({"sanctioned"}),
+        to_state="pending_disbursement",
+        required_permission=TRACER_PERMISSION_CODE,
+        audit_action="tracer.loan_account.created",
+        workflow_name="tracer",
+        workflow_label="Tracer loan account created",
+    ),
+    TransitionDefinition(
+        entity_type="loan_account",
+        action_code="mark_disbursed",
+        from_states=frozenset({"pending_disbursement"}),
+        to_state="active",
+        required_permission=TRACER_PERMISSION_CODE,
+        audit_action="tracer.loan_account.disbursed",
+        workflow_name="tracer",
+        workflow_label="Tracer loan account disbursed",
+    ),
+    TransitionDefinition(
+        entity_type="loan_account",
+        action_code="post_repayment",
+        from_states=frozenset({"active"}),
+        to_state="posted",
+        required_permission=TRACER_PERMISSION_CODE,
+        audit_action="tracer.repayment.posted",
+        workflow_name="tracer",
+        workflow_label="Tracer repayment posted",
+    ),
+    TransitionDefinition(
+        entity_type="loan_account",
+        action_code="close_loan",
+        from_states=frozenset({"active"}),
+        to_state="closed",
+        required_permission=TRACER_PERMISSION_CODE,
+        audit_action="tracer.loan_account.closed",
+        workflow_name="tracer",
+        workflow_label="Tracer loan account closed",
+    ),
+)
 
 
 class TransitionError(Exception):
@@ -32,34 +110,51 @@ def positive_amount(value):
     return amount.quantize(Decimal("0.01"))
 
 
-def create_member(user, request, display_name):
+def create_member(user, request, display_name, actor_permissions):
     name = str(display_name or "").strip()
     if not name:
         raise ValidationError("Member display name is required.")
+    transition = _evaluate_transition("create_member", NEW_STATE, actor_permissions)
     with transaction.atomic():
         member = Member.objects.create(
             reference=_next_reference(Member, "MEM", "member_id"),
             display_name=name,
-            status="active",
+            status=transition.next_state,
         )
-        event = _record_event("tracer", "member", member.member_id, None, member.status, user)
-        _record_audit(request, user, "tracer.member.created", "member", member.member_id, None, member_payload(member))
+        event = _record_event(
+            transition.definition.workflow_name,
+            transition.definition.entity_type,
+            member.member_id,
+            None,
+            member.status,
+            user,
+        )
+        _record_audit(
+            request,
+            user,
+            transition.definition.audit_action,
+            transition.definition.entity_type,
+            member.member_id,
+            None,
+            member_payload(member),
+        )
         return member, event
 
 
-def create_application(user, request, member_id, amount):
+def create_application(user, request, member_id, amount, actor_permissions):
     amount = positive_amount(amount)
+    transition = _evaluate_transition("create_application", NEW_STATE, actor_permissions)
     with transaction.atomic():
         member = Member.objects.select_for_update().get(member_id=member_id)
         application = LoanApplication.objects.create(
             reference=_next_reference(LoanApplication, "APP", "loan_application_id"),
             member=member,
-            status="draft",
+            status=transition.next_state,
             amount=amount,
         )
         event = _record_event(
-            "tracer",
-            "loan_application",
+            transition.definition.workflow_name,
+            transition.definition.entity_type,
             application.loan_application_id,
             None,
             application.status,
@@ -68,8 +163,8 @@ def create_application(user, request, member_id, amount):
         _record_audit(
             request,
             user,
-            "tracer.loan_application.created",
-            "loan_application",
+            transition.definition.audit_action,
+            transition.definition.entity_type,
             application.loan_application_id,
             None,
             application_payload(application),
@@ -77,19 +172,21 @@ def create_application(user, request, member_id, amount):
         return application, event
 
 
-def sanction_application(user, request, application_id):
+def sanction_application(user, request, application_id, actor_permissions):
     with transaction.atomic():
         application = LoanApplication.objects.select_for_update().get(
             loan_application_id=application_id
         )
-        _require_status(application.status, "draft")
-        previous = application.status
-        application.status = "sanctioned"
+        transition = _evaluate_transition(
+            "sanction_application", application.status, actor_permissions
+        )
+        previous = transition.previous_state
+        application.status = transition.next_state
         application.updated_at = timezone.now()
         application.save(update_fields=["status", "updated_at"])
         event = _record_event(
-            "tracer",
-            "loan_application",
+            transition.definition.workflow_name,
+            transition.definition.entity_type,
             application.loan_application_id,
             previous,
             application.status,
@@ -98,8 +195,8 @@ def sanction_application(user, request, application_id):
         _record_audit(
             request,
             user,
-            "tracer.loan_application.sanctioned",
-            "loan_application",
+            transition.definition.audit_action,
+            transition.definition.entity_type,
             application.loan_application_id,
             {"status": previous},
             application_payload(application),
@@ -107,23 +204,25 @@ def sanction_application(user, request, application_id):
         return application, previous, event
 
 
-def create_loan_account(user, request, application_id):
+def create_loan_account(user, request, application_id, actor_permissions):
     with transaction.atomic():
         application = (
             LoanApplication.objects.select_for_update()
             .select_related("member")
             .get(loan_application_id=application_id)
         )
-        _require_status(application.status, "sanctioned")
+        transition = _evaluate_transition(
+            "create_loan_account", application.status, actor_permissions
+        )
         account = LoanAccount.objects.create(
             reference=_next_reference(LoanAccount, "LAC", "loan_account_id"),
             member=application.member,
             application=application,
-            status="pending_disbursement",
+            status=transition.next_state,
             amount=application.amount,
         )
         event = _record_event(
-            "tracer",
+            transition.definition.workflow_name,
             "loan_account",
             account.loan_account_id,
             None,
@@ -133,7 +232,7 @@ def create_loan_account(user, request, application_id):
         _record_audit(
             request,
             user,
-            "tracer.loan_account.created",
+            transition.definition.audit_action,
             "loan_account",
             account.loan_account_id,
             None,
@@ -142,22 +241,27 @@ def create_loan_account(user, request, application_id):
         return account, event
 
 
-def mark_disbursed(user, request, account_id):
+def mark_disbursed(user, request, account_id, actor_permissions):
     with transaction.atomic():
         account = LoanAccount.objects.select_for_update().get(loan_account_id=account_id)
-        _require_status(account.status, "pending_disbursement")
-        previous = account.status
-        account.status = "active"
+        transition = _evaluate_transition("mark_disbursed", account.status, actor_permissions)
+        previous = transition.previous_state
+        account.status = transition.next_state
         account.updated_at = timezone.now()
         account.save(update_fields=["status", "updated_at"])
         event = _record_event(
-            "tracer", "loan_account", account.loan_account_id, previous, account.status, user
+            transition.definition.workflow_name,
+            transition.definition.entity_type,
+            account.loan_account_id,
+            previous,
+            account.status,
+            user,
         )
         _record_audit(
             request,
             user,
-            "tracer.loan_account.disbursed",
-            "loan_account",
+            transition.definition.audit_action,
+            transition.definition.entity_type,
             account.loan_account_id,
             {"status": previous},
             loan_account_payload(account),
@@ -165,19 +269,19 @@ def mark_disbursed(user, request, account_id):
         return account, previous, event
 
 
-def post_repayment(user, request, account_id, amount):
+def post_repayment(user, request, account_id, amount, actor_permissions):
     amount = positive_amount(amount)
     with transaction.atomic():
         account = LoanAccount.objects.select_for_update().get(loan_account_id=account_id)
-        _require_status(account.status, "active")
+        transition = _evaluate_transition("post_repayment", account.status, actor_permissions)
         repayment = Repayment.objects.create(
             reference=_next_reference(Repayment, "REP", "repayment_id"),
             loan_account=account,
             amount=amount,
-            status="posted",
+            status=transition.next_state,
         )
         event = _record_event(
-            "tracer",
+            transition.definition.workflow_name,
             "repayment",
             repayment.repayment_id,
             None,
@@ -187,7 +291,7 @@ def post_repayment(user, request, account_id, amount):
         _record_audit(
             request,
             user,
-            "tracer.repayment.posted",
+            transition.definition.audit_action,
             "repayment",
             repayment.repayment_id,
             None,
@@ -196,24 +300,29 @@ def post_repayment(user, request, account_id, amount):
         return repayment, event
 
 
-def close_loan(user, request, account_id):
+def close_loan(user, request, account_id, actor_permissions):
     with transaction.atomic():
         account = LoanAccount.objects.select_for_update().get(loan_account_id=account_id)
-        _require_status(account.status, "active")
+        transition = _evaluate_transition("close_loan", account.status, actor_permissions)
         if not account.repayments.exists():
             raise TransitionError("Loan account needs one posted repayment before closure.")
-        previous = account.status
-        account.status = "closed"
+        previous = transition.previous_state
+        account.status = transition.next_state
         account.updated_at = timezone.now()
         account.save(update_fields=["status", "updated_at"])
         event = _record_event(
-            "tracer", "loan_account", account.loan_account_id, previous, account.status, user
+            transition.definition.workflow_name,
+            transition.definition.entity_type,
+            account.loan_account_id,
+            previous,
+            account.status,
+            user,
         )
         _record_audit(
             request,
             user,
-            "tracer.loan_account.closed",
-            "loan_account",
+            transition.definition.audit_action,
+            transition.definition.entity_type,
             account.loan_account_id,
             {"status": previous},
             loan_account_payload(account),
@@ -272,9 +381,13 @@ def action_payload(entity_type, entity_id, previous_status, new_status, workflow
     }
 
 
-def _require_status(actual, expected):
-    if actual != expected:
-        raise TransitionError(f"Expected status {expected}, found {actual}.")
+def _evaluate_transition(action_code, current_state, actor_permissions):
+    return evaluate_transition(
+        current_state=current_state,
+        requested_action=action_code,
+        actor_permissions=actor_permissions,
+        transitions=TRACER_TRANSITIONS,
+    )
 
 
 def _next_reference(model, prefix, pk_name):

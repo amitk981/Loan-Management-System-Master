@@ -8,10 +8,10 @@ Epic 002: Platform Auth and Role Shell
 Epic file: `docs/epics/002-platform-auth-shell.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Add a narrow backend API contract test harness so future endpoint slices can assert the standard SFPCL response envelope, error shape, pagination metadata, and `available_actions` shape without duplicating ad hoc assertions.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Future API slices can prove contract fidelity consistently: every protected endpoint keeps the same `success`/`data`/`error`/`meta` conventions, and frontend code can rely on stable error and action-availability shapes.
 
 ## Depends On
 - 002I
@@ -36,25 +36,40 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+1. Add a test-only contract assertion helper module under `sfpcl_credit/tests/` or a shared testing utility path. It must not be imported by production views/services.
+2. Cover standard success envelopes: `success: true`, `data`, and `meta.request_id`, `meta.timestamp`, `meta.api_version == "v1"`.
+3. Cover standard error envelopes: `success: false`, `error.code`, `error.message`, and the same required `meta` keys.
+4. Cover common protected-endpoint errors already present in the platform: `401 AUTH_REQUIRED`/`INVALID_TOKEN`, `403 PERMISSION_DENIED`, and `409 INVALID_STATE_TRANSITION`.
+5. Cover pagination metadata shape for list endpoints using the existing admin users list as the concrete current endpoint.
+6. Cover `available_actions` item shape from `api-contracts.md` §44 using an internal helper/sample, not a new public endpoint.
+7. Add regression tests proving existing auth/me, admin users, and tracer endpoints satisfy the helper without changing their public response bodies.
 
 ## Database/Model Impact
 None.
 
 ## API Contracts
-Create or update the API contract for this capability.
+No new public API endpoint is expected. Update `docs/working/API_CONTRACTS.md` only if the run discovers a mismatch in existing documented envelope/error/action examples.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Use existing session-bound auth and seeded permissions only. The harness must assert permission-denied response shape, not introduce new permission codes or grant rules.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+No production audit rows are required for the harness itself. Regression tests may assert that existing tracer success paths still create audit/workflow rows, but the harness must not add new audited actions.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+- Helper assertions must fail with clear messages naming the missing contract field.
+- Do not relax endpoint behavior to satisfy the helper; if an endpoint is non-compliant, fix the endpoint or document a follow-up according to source contracts.
+- Keep the helper test-only and independent from Django model business rules.
+- Source trace to use in the review packet: `api-contracts.md` §6.1 for success envelopes (also captured in `docs/working/digests/epic-002-platform-auth.md`), §7.3 for `INVALID_STATE_TRANSITION`, §42 for audit/workflow response item conventions, §43 for dashboard response examples, and §44 for `available_actions`.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Backend TDD: write a failing helper test against a deliberately incomplete sample envelope, then implement the helper.
+- Backend API regression: `/api/v1/auth/me/` success passes the success-envelope assertion.
+- Backend API regression: unauthenticated protected endpoint returns a helper-validated `401` error envelope.
+- Backend API regression: admin users without manage-user permission returns helper-validated `403 PERMISSION_DENIED`.
+- Backend API regression: tracer invalid state returns helper-validated `409 INVALID_STATE_TRANSITION`.
+- Backend API regression: admin users list passes pagination-shape assertions.
+- Backend helper unit: `available_actions` sample with `action_code`, `label`, `enabled`, `disabled_reason`, and `required_permission` passes; missing required fields fail.
 
 ## Visual Acceptance Criteria
 None.

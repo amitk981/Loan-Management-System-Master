@@ -63,6 +63,9 @@ Enforce source-doc access-control rules without adding domain business rules.
 - The helper accepts only explicit object-scope facts supplied by callers.
 - Missing object owner/team facts default to deny unless `allow_global` is true and the actor has the required permission.
 - The helper must make the deny reason test-visible (`missing_permission`, `owner_mismatch`, `team_mismatch`, or `scope_unknown`) so future endpoint tests can assert the correct error path.
+- Use the 002H boundary explicitly: call the object-scope helper after module permission is known and before future workflow transitions are executed. Do not make the object helper call `evaluate_transition()` or know workflow state names.
+- Treat `allow_global=True` as a caller-supplied fact only; the helper must not infer global rights from role names such as `system_admin`, `it_head`, or `credit_manager`.
+- Source trace to use in the review packet: `auth-permissions.md` §3/§3.1 says the backend enforces role, team/assignment, object-level, and workflow-state checks; `technical-architecture.md` §7.2 says permissions and services are separate backend layers; `api-contracts.md` §44 says frontend action availability is only UX and backend remains authoritative.
 
 ## Test Cases
 Unit/service/API/permission tests plus frontend tests where UI is touched.
