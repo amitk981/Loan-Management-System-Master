@@ -4,9 +4,19 @@ import path from 'path';
 // This config lives in sfpcl-lms/. The Django backend is one level up.
 const repoRoot = path.resolve(__dirname, '..');
 
-// The operator's Python interpreter for the backend (use the project venv, see
-// e2e/README.md). Defaults to `python` on PATH.
-const djangoPython = process.env.E2E_DJANGO_PYTHON || 'python';
+const ralphWorktreeSegment = `${path.sep}.ralph${path.sep}worktrees${path.sep}`;
+const requiredDjangoPython = repoRoot.includes(ralphWorktreeSegment)
+  ? path.resolve(repoRoot, '..', '..', 'venv', 'bin', 'python')
+  : path.resolve(repoRoot, '.ralph', 'venv', 'bin', 'python');
+
+// The operator's Python interpreter for the backend must be explicit. Falling
+// back to python/python3 can target the wrong environment and seed the wrong DB.
+const djangoPython = process.env.E2E_DJANGO_PYTHON;
+if (!djangoPython) {
+  throw new Error(
+    `E2E_DJANGO_PYTHON is required. Set it to the Ralph venv interpreter, for example: ${requiredDjangoPython}`,
+  );
+}
 
 // Isolated sqlite DB for the E2E dev server so the suite never touches the
 // default local dev DB. settings.py honours SFPCL_DB_PATH.
@@ -51,6 +61,7 @@ export default defineConfig({
       env: {
         SFPCL_DB_PATH: e2eDbPath,
         SFPCL_DEBUG: 'true',
+        SFPCL_ALLOW_E2E_SEED: 'true',
       },
     },
     {

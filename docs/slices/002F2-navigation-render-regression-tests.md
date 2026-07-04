@@ -26,8 +26,9 @@ Created by architecture review `2026-07-04_085117_architecture_review`.
 3. Prove a tracer-only backend session sees only Dashboard and Tracer, not Applications, Members, Loan Accounts, Reports, Settings, Audit, or Admin user management.
 4. Prove a zero-permission or unknown-role backend session sees only Dashboard and receives the existing access-blocked Dashboard fallback on direct guarded navigation.
 5. Keep `tracer.lifecycle.run -> run_tracer` isolated: it must unlock no non-tracer prototype permission.
-6. When 002G adds the admin user-management route, its nav item and direct route must join the same contract and be covered by these tests behind `manage_users`.
-7. Save actual red/green test logs under `.ralph/runs/<run-id>/evidence/terminal-logs/`; the review packet must not reference paths that are absent from the committed run artifacts.
+6. Do not add a new React testing/rendering dependency for this corrective slice unless it is already pinned before the run; prefer extracting a pure visibility helper consumed by `Sidebar` and covered by vitest.
+7. When 002G adds the admin user-management route, its nav item and direct route must join the same contract and be covered by these tests behind `manage_users`.
+8. Save actual red/green test logs under `.ralph/runs/<run-id>/evidence/terminal-logs/`; the review packet must not reference paths that are absent from the committed run artifacts.
 
 ## Source / Digest References
 - `docs/working/digests/epic-002-platform-auth.md` entries for 002E2, 002F, and 002G.

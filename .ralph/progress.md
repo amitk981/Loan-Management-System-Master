@@ -1,5 +1,15 @@
 # Ralph Progress Log
 
+## 2026-07-04 13:10:00 - 2026-07-04_125854_normal_run
+- Agent tool used: codex
+- Slice attempted: 002EYA-e2e-baseline-and-seed-safety
+- Summary: Completed seed-safety hardening for deterministic Playwright users and tightened the E2E harness. `seed_e2e_users` now requires both `SFPCL_DEBUG=true` and `SFPCL_ALLOW_E2E_SEED=true`; Playwright passes that flag only with the isolated `SFPCL_DB_PATH` sqlite DB. `playwright.config.ts` now fails fast when `E2E_DJANGO_PYTHON` is unset instead of falling back to bare `python`. The E2E README documents the local-only seed data and required interpreter. Confirmed six tracked screenshot baselines under `sfpcl-lms/e2e/*-snapshots/`. Sharpened `002F2` and `002G` using the already-opened epic digest.
+- Tests run: backend seed guard red/green; backend `manage.py check`; backend tests (65/65); `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test` (23/23); `npm run build`; `npm run e2e` without `E2E_DJANGO_PYTHON` (expected fail-fast); `npm run e2e` with the Ralph venv interpreter (blocked by sandbox `EPERM` web-server startup).
+- Evidence saved: `.ralph/runs/2026-07-04_125854_normal_run/`, with terminal logs under `evidence/terminal-logs/`.
+- Result: Success with local E2E caveat: full Playwright web-server run remains blocked in this sandbox by `Operation not permitted`.
+- Risk level: Medium.
+- Next action: Run `002F2-navigation-render-regression-tests`, then `002G-admin-user-and-role-management-shell`.
+
 ## 2026-07-04 08:59:21 - 2026-07-04_085117_architecture_review
 - Agent tool used: codex
 - Slice attempted: architecture-review
@@ -449,6 +459,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_085117_architecture_review/.ralph/runs/2026-07-04_085117_architecture_review/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_085117_architecture_review/.ralph/runs/2026-07-04_085117_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-04 13:08:08 - 2026-07-04_125854_normal_run
+- Agent tool used: codex
+- Slice attempted: 002EYA-e2e-baseline-and-seed-safety
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_125854_normal_run/.ralph/runs/2026-07-04_125854_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_125854_normal_run/.ralph/runs/2026-07-04_125854_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

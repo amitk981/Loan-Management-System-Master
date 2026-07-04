@@ -1,4 +1,6 @@
-from django.core.management.base import BaseCommand
+import os
+
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from sfpcl_credit.identity.models import Permission, Role, RolePermission, User
@@ -22,11 +24,14 @@ ZERO_ROLE_CODE = "it_head"
 class Command(BaseCommand):
     help = (
         "Idempotently seed the deterministic staff users the Playwright E2E suite "
-        "logs in as: a tracer-only staff user and a zero-permission staff user."
+        "logs in as: a tracer-only staff user and a zero-permission staff user. "
+        "Refuses to run unless SFPCL_DEBUG=true and SFPCL_ALLOW_E2E_SEED=true."
     )
 
     @transaction.atomic
     def handle(self, *args, **options):
+        self._enforce_e2e_guard()
+
         tracer_permission, _ = Permission.objects.get_or_create(
             permission_code=TRACER_PERMISSION_CODE,
             defaults={
@@ -68,6 +73,20 @@ class Command(BaseCommand):
             f"permission {TRACER_PERMISSION_CODE}); "
             f"{zero_user.email} (role {zero_role.role_code}, no permissions)."
         )
+
+    @staticmethod
+    def _env_true(name):
+        return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+    @classmethod
+    def _enforce_e2e_guard(cls):
+        if not cls._env_true("SFPCL_DEBUG") or not cls._env_true(
+            "SFPCL_ALLOW_E2E_SEED"
+        ):
+            raise CommandError(
+                "seed_e2e_users is for isolated local Playwright databases only. "
+                "Set SFPCL_DEBUG=true and SFPCL_ALLOW_E2E_SEED=true to run it."
+            )
 
     @staticmethod
     def _ensure_role(role_code, *, role_name, description):

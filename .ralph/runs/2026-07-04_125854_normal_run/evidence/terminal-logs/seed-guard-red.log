@@ -1,0 +1,22 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+F
+======================================================================
+FAIL: test_seed_refuses_without_explicit_e2e_guard (sfpcl_credit.tests.test_seed_e2e_users.SeedE2eUsersTests.test_seed_refuses_without_explicit_e2e_guard)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_125854_normal_run/sfpcl_credit/tests/test_seed_e2e_users.py", line 19, in test_seed_refuses_without_explicit_e2e_guard
+    with self.assertRaisesMessage(CommandError, "SFPCL_ALLOW_E2E_SEED=true"):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: CommandError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.680s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,4 +1,7 @@
+from unittest.mock import patch
+
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import Client, TestCase
 
 from sfpcl_credit.identity.models import Permission, RolePermission, User
@@ -14,6 +17,13 @@ class SeedE2eUsersTests(TestCase):
     """The Playwright suite needs deterministic staff users created by backend
     dev/test setup (slice 002EY req 8, 9, 14), not by frontend fixtures."""
 
+    def test_seed_refuses_without_explicit_e2e_guard(self):
+        with self.assertRaisesMessage(CommandError, "SFPCL_ALLOW_E2E_SEED=true"):
+            call_command("seed_e2e_users")
+
+        self.assertFalse(User.objects.filter(email=TRACER_EMAIL).exists())
+        self.assertFalse(User.objects.filter(email=ZERO_EMAIL).exists())
+
     def _login_access_token(self, email):
         client = Client()
         response = client.post(
@@ -24,8 +34,15 @@ class SeedE2eUsersTests(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         return client, response.json()["data"]["access_token"]
 
+    def _seed_e2e_users(self):
+        with patch.dict(
+            "os.environ",
+            {"SFPCL_DEBUG": "true", "SFPCL_ALLOW_E2E_SEED": "true"},
+        ):
+            call_command("seed_e2e_users")
+
     def test_seed_creates_active_tracer_staff_with_single_tracer_permission(self):
-        call_command("seed_e2e_users")
+        self._seed_e2e_users()
 
         tracer_user = User.objects.get(email=TRACER_EMAIL)
         self.assertEqual(tracer_user.status, "active")
@@ -40,7 +57,7 @@ class SeedE2eUsersTests(TestCase):
         self.assertEqual(permission_codes, [TRACER_PERMISSION])
 
     def test_seed_creates_zero_permission_staff(self):
-        call_command("seed_e2e_users")
+        self._seed_e2e_users()
 
         zero_user = User.objects.get(email=ZERO_EMAIL)
         self.assertEqual(zero_user.status, "active")
@@ -50,8 +67,8 @@ class SeedE2eUsersTests(TestCase):
         )
 
     def test_seed_is_idempotent(self):
-        call_command("seed_e2e_users")
-        call_command("seed_e2e_users")
+        self._seed_e2e_users()
+        self._seed_e2e_users()
 
         self.assertEqual(User.objects.filter(email=TRACER_EMAIL).count(), 1)
         self.assertEqual(User.objects.filter(email=ZERO_EMAIL).count(), 1)
@@ -64,7 +81,7 @@ class SeedE2eUsersTests(TestCase):
         )
 
     def test_me_exposes_exactly_the_tracer_permission_for_the_tracer_user(self):
-        call_command("seed_e2e_users")
+        self._seed_e2e_users()
         client, access_token = self._login_access_token(TRACER_EMAIL)
 
         response = client.get(
@@ -77,7 +94,7 @@ class SeedE2eUsersTests(TestCase):
         self.assertEqual(data["available_actions"], [TRACER_PERMISSION])
 
     def test_me_exposes_no_permissions_for_the_zero_permission_user(self):
-        call_command("seed_e2e_users")
+        self._seed_e2e_users()
         client, access_token = self._login_access_token(ZERO_EMAIL)
 
         response = client.get(

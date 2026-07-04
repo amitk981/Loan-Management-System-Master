@@ -31,6 +31,11 @@ The web server seeds two deterministic users via the backend command
 
 Password for both (local only): `E2eTracer123!`.
 
+This is not production seed data. The command refuses to run unless both
+`SFPCL_DEBUG=true` and `SFPCL_ALLOW_E2E_SEED=true` are present. The Playwright
+config sets those flags only for the backend web server that uses the isolated
+`SFPCL_DB_PATH` sqlite database.
+
 ## One-time setup
 `@playwright/test` is a pinned dev dependency. Install it and the Chromium
 browser (both need network the AFK sandbox lacks — run this on the operator
@@ -44,9 +49,12 @@ npx playwright install chromium
 
 ## Running
 ```bash
-# From sfpcl-lms/. Point E2E_DJANGO_PYTHON at the project venv interpreter.
+# From sfpcl-lms/. Point E2E_DJANGO_PYTHON at the Ralph venv interpreter.
 E2E_DJANGO_PYTHON="../.ralph/venv/bin/python" npm run e2e
 ```
+
+`E2E_DJANGO_PYTHON` is required. The config fails fast if it is unset rather
+than falling back to `python` or `python3`.
 
 The config's `webServer` block starts both the Django dev server (on
 `127.0.0.1:8000`, against an isolated `sfpcl_credit/e2e.sqlite3` via
