@@ -4,9 +4,11 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
 
+from sfpcl_credit.identity.catalogue import seed_catalogue
 from sfpcl_credit.identity.models import (
     AuditLog,
     Permission,
+    Role,
     RolePermission,
     User,
     UserTeamMembership,
@@ -23,6 +25,7 @@ TRACER_EMAIL = "demo.tracer@sfpcl.example"
 ZERO_EMAIL = "demo.zero@sfpcl.example"
 DEMO_PASSWORD = "DemoStaff123!"
 TRACER_PERMISSION = "tracer.lifecycle.run"
+DEMO_TRACER_ROLE = "local_demo_tracer_user"
 DEMO_EMAILS = [
     SYSTEM_ADMIN_EMAIL,
     "demo.credit_manager@sfpcl.example",
@@ -95,7 +98,7 @@ class SeedDemoUsersTests(TestCase):
             users["demo.internal_auditor@sfpcl.example"].primary_role.role_code,
             "internal_auditor",
         )
-        self.assertEqual(users[TRACER_EMAIL].primary_role.role_code, "sales_team_user")
+        self.assertEqual(users[TRACER_EMAIL].primary_role.role_code, DEMO_TRACER_ROLE)
         self.assertEqual(users[ZERO_EMAIL].primary_role.role_code, "management_viewer")
         for user in users.values():
             self.assertEqual(user.status, "active")
@@ -147,12 +150,19 @@ class SeedDemoUsersTests(TestCase):
         admin = User.objects.get(email=SYSTEM_ADMIN_EMAIL)
         self.assertEqual(admin.status, "active")
         self.assertEqual(admin.team_codes(), ["it"])
+        self.assertEqual(Role.objects.filter(role_code=DEMO_TRACER_ROLE).count(), 1)
         self.assertEqual(
             RolePermission.objects.filter(
-                role__role_code="sales_team_user",
+                role__role_code=DEMO_TRACER_ROLE,
                 permission__permission_code=TRACER_PERMISSION,
             ).count(),
             1,
+        )
+        self.assertFalse(
+            RolePermission.objects.filter(
+                role__role_code="sales_team_user",
+                permission__permission_code=TRACER_PERMISSION,
+            ).exists()
         )
 
     def test_seeded_system_admin_logs_in_and_satisfies_auth_me_and_admin_list_contracts(self):
@@ -196,6 +206,46 @@ class SeedDemoUsersTests(TestCase):
         self.assertEqual(data["available_actions"], [TRACER_PERMISSION])
         self.assertNotIn("users.user.update", data["permissions"])
         self.assertNotIn("manage_users", data["permissions"])
+
+    def test_seed_keeps_non_demo_sales_team_user_permission_neutral(self):
+        seed_catalogue()
+        sales_role = Role.objects.get(role_code="sales_team_user")
+        stale_permission = Permission.objects.create(
+            permission_code=TRACER_PERMISSION,
+            permission_name="Run MVP tracer",
+            module_name="tracer",
+            risk_level=Permission.RISK_HIGH,
+        )
+        RolePermission.objects.create(role=sales_role, permission=stale_permission)
+        sales_user = User.objects.create(
+            email="sales.user@sfpcl.example",
+            full_name="Non Demo Sales User",
+            status=User.ACTIVE_STATUS,
+            primary_role=sales_role,
+        )
+        sales_user.set_password(DEMO_PASSWORD)
+        sales_user.save()
+
+        self._seed_demo_users()
+        access_token = self._login_access_token("sales.user@sfpcl.example")
+
+        response = self.client.get(
+            "/api/v1/auth/me/",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        assert_success_envelope(self, response.json())
+        data = response.json()["data"]
+        self.assertEqual(data["role_codes"], ["sales_team_user"])
+        self.assertEqual(data["permissions"], [])
+        self.assertEqual(data["available_actions"], [])
+        self.assertFalse(
+            RolePermission.objects.filter(
+                role=sales_role,
+                permission__permission_code=TRACER_PERMISSION,
+            ).exists()
+        )
 
     def test_seeded_zero_permission_user_has_neutral_auth_me_payload(self):
         self._seed_demo_users()

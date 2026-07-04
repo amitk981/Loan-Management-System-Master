@@ -15,6 +15,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 
 ## Depends On
 - 003A
+- 002K2
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
@@ -76,7 +77,10 @@ contract chosen in this slice, including how the tracer proof now records events
 For any read endpoint, require session-bound bearer auth plus existing
 `audit.workflow_event.read`. Do not invent a new workflow-event permission code. The
 write interface is internal service code called by guarded workflows; it should receive
-an already-authenticated actor from the caller.
+an already-authenticated actor from the caller. Do not broaden the 002K2
+`local_demo_tracer_user` role beyond `tracer.lifecycle.run`; any workflow-event read
+fixture must use `audit.workflow_event.read` on a targeted test role or source-backed
+future role.
 
 ## Audit Requirements
 This slice owns workflow-event persistence, not audit-log writes. Preserve existing tracer

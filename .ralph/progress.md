@@ -1,5 +1,15 @@
 # Ralph Progress Log
 
+## 2026-07-04 19:15:53 - 2026-07-04_191553_normal_run
+- Agent tool used: codex
+- Slice attempted: 002K2-demo-tracer-permission-isolation
+- Summary: Isolated the guarded demo tracer permission from the shared `sales_team_user` source-catalogue role. `seed_demo_users` now creates/updates local/dev-only role `local_demo_tracer_user`, grants it exactly `tracer.lifecycle.run`, assigns `demo.tracer@sfpcl.example` to that role, and removes stale `tracer.lifecycle.run` links from any other role. A non-demo Sales user remains neutral through real `/auth/login/` and `/auth/me/`, even if the database had the old stale Sales-role grant before rerunning the seed.
+- Tests run: backend TDD stale-grant red/green; focused demo seed tests (10/10); backend `manage.py check`; `makemigrations --check --dry-run`; backend tests (108/108); backend coverage 96% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test` (26/26); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-04_191553_normal_run/`, with red/green and gate logs under `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `003A-audit-log-foundation`; `003B-workflow-event-foundation` remains next after 003A.
+
 ## 2026-07-04 19:03:02 - 2026-07-04_190302_architecture_review
 - Agent tool used: codex
 - Slice attempted: architecture-review
@@ -649,6 +659,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_190302_architecture_review/.ralph/runs/2026-07-04_190302_architecture_review/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_190302_architecture_review/.ralph/runs/2026-07-04_190302_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-04 19:31:43 - 2026-07-04_191553_normal_run
+- Agent tool used: codex
+- Slice attempted: 002K2-demo-tracer-permission-isolation
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_191553_normal_run/.ralph/runs/2026-07-04_191553_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_191553_normal_run/.ralph/runs/2026-07-04_191553_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

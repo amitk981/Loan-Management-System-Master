@@ -1,38 +1,50 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-04_190302_architecture_review
+2026-07-04_191553_normal_run
 
 ## Current Status
-Architecture review completed for the four slices merged since prior review commit
-`7908071`: `002G2`, `002I`, `002J`, and `002K`. `002G2`, `002I`, and `002J` passed the
-review checks. One corrective finding was recorded for `002K`: `seed_demo_users` grants
-`tracer.lifecycle.run` through the shared `sales_team_user` role, so any local Sales user
-becomes tracer-capable after demo seeding. Corrective slice
-`002K2-demo-tracer-permission-isolation` was created and should run before Epic 003.
+Slice `002K2-demo-tracer-permission-isolation` completed successfully. The guarded
+`seed_demo_users` command now isolates the tracer smoke permission on local/dev-only role
+`local_demo_tracer_user` instead of the shared source-catalogue `sales_team_user` role.
+The command also removes stale `tracer.lifecycle.run` links from any non-demo role when
+rerun, so databases that previously ran the old 002K seed are repaired by rerunning the
+guarded seed.
 
 ## Current Slice
 None selected.
 
 ## What Completed
-See `.ralph/runs/2026-07-04_190302_architecture_review/`. Execution plan, risk
-assessment, review packet, changed files, review-window diff evidence, backend gate logs,
-frontend gate logs, and final summary are saved there. Gates: backend check clean,
-`makemigrations --check` clean, 107 backend tests pass, coverage 96%; frontend
-typecheck/lint/26 tests/build green; no production code or protected files touched.
+`demo.tracer@sfpcl.example` authenticates through the real `/auth/login/` and `/auth/me/`
+path and receives exactly `["tracer.lifecycle.run"]`. A non-demo active
+`sales_team_user` remains permission-neutral (`permissions: []`,
+`available_actions: []`) even if a stale Sales-role tracer grant existed before the seed
+rerun. `demo.zero@sfpcl.example` remains neutral with no team.
 
-`docs/working/REVIEW_FINDINGS.md` has a newest-first entry for this review.
-`docs/slices/002K2-demo-tracer-permission-isolation.md` owns the corrective work.
-`docs/slices/003A-audit-log-foundation.md`, `docs/slices/003B-workflow-event-foundation.md`,
-and `docs/working/digests/epic-003-audit-documents-config.md` were sharpened from current
-schema checks and existing digest extracts.
+Working docs were updated:
+- `docs/working/API_CONTRACTS.md` now documents `local_demo_tracer_user` as the narrow
+  local/demo exception.
+- `docs/working/ASSUMPTIONS.md` A-011 now records that shared source roles stay neutral.
+- `docs/working/digests/epic-002-platform-auth.md` records the 002K2 correction.
+- `docs/slices/003A-audit-log-foundation.md` and
+  `docs/slices/003B-workflow-event-foundation.md` were sharpened to avoid using the
+  local demo tracer role as an audit/workflow permission fixture.
+
+## Evidence
+See `.ralph/runs/2026-07-04_191553_normal_run/`.
+
+Gates passed:
+- Backend `manage.py check`
+- Backend `makemigrations --check --dry-run`
+- Backend tests: 108/108
+- Backend coverage: 96% (floor 85)
+- Frontend `npm run typecheck`
+- Frontend `npm run lint`
+- Frontend `npm test`: 26/26
+- Frontend `npm run build`
 
 ## Current Blocker
 None.
 
 ## Next Recommended Action
-Run `002K2-demo-tracer-permission-isolation` next. After that, continue with
-`003A-audit-log-foundation`. 003A should use existing `audit.audit_log.read`, the 002J
-contract harness, and must serialize nullable `AuditLog.actor_user` rows as `actor: null`.
-003B should reconcile the existing tracer-owned `workflow_events` table before adding
-canonical workflow-event ownership and preserve tracer `workflow_event_id` response data.
+Run `003A-audit-log-foundation` next. Then run `003B-workflow-event-foundation`.

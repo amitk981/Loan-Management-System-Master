@@ -18,6 +18,7 @@ UI/API slices can rely on a standard audit response item shape.
 
 ## Depends On
 - 002K
+- 002K2
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
@@ -72,7 +73,8 @@ Require session-bound bearer auth and the existing canonical `audit.audit_log.re
 permission from the 002C catalogue. `internal_auditor`, `chief_financial_controller`,
 and any future role with this permission may read the endpoint; users without it receive
 the standard `403 PERMISSION_DENIED`. Do not invent `reports.audit.read` or any new
-permission code in this slice.
+permission code in this slice. Do not use the 002K2 `local_demo_tracer_user` role as an
+audit-read fixture; it is local/dev-only and must retain exactly `tracer.lifecycle.run`.
 
 ## Audit Requirements
 The read endpoint itself does not create a new audit row unless source docs explicitly

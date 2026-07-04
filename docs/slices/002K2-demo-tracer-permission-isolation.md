@@ -1,7 +1,7 @@
 # Slice 002K2: Demo Tracer Permission Isolation
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell
@@ -37,6 +37,11 @@ Created by architecture review `2026-07-04_190302_architecture_review`.
 the shared `sales_team_user` role. Because `/auth/me/` derives permissions from
 `primary_role`, every local user with `sales_team_user` becomes tracer-capable after the
 demo seed runs, not only `demo.tracer@sfpcl.example`.
+
+## Resolution
+Implemented in run `2026-07-04_191553_normal_run`: the guarded seed now uses local/dev-only
+role `local_demo_tracer_user` for `demo.tracer@sfpcl.example`, removes stale tracer grants
+from other roles, and leaves non-demo `sales_team_user` sessions permission-neutral.
 
 ## Backend/API Scope
 1. Keep `seed_demo_users` guarded by both `SFPCL_DEBUG=true` and
@@ -86,13 +91,13 @@ Medium
 - Red/green TDD evidence and full backend/frontend gates are saved.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written first (RED saved, then GREEN)
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Permissions tested
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written first (RED saved, then GREEN)
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Permissions tested
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

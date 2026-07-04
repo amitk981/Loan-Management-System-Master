@@ -16,6 +16,7 @@ from sfpcl_credit.identity.models import (
 
 DEMO_PASSWORD = "DemoStaff123!"
 TRACER_PERMISSION_CODE = "tracer.lifecycle.run"
+DEMO_TRACER_ROLE_CODE = "local_demo_tracer_user"
 
 DEMO_USERS = [
     {
@@ -51,7 +52,7 @@ DEMO_USERS = [
     {
         "email": "demo.tracer@sfpcl.example",
         "full_name": "Demo Tracer User",
-        "role_code": "sales_team_user",
+        "role_code": DEMO_TRACER_ROLE_CODE,
         "team_codes": ["sales"],
         "exact_permission_codes": [TRACER_PERMISSION_CODE],
     },
@@ -118,8 +119,22 @@ class Command(BaseCommand):
                 "risk_level": Permission.RISK_HIGH,
             },
         )
-        tracer_role = Command._required_active_role("sales_team_user")
+        tracer_role, _created = Role.objects.update_or_create(
+            role_code=DEMO_TRACER_ROLE_CODE,
+            defaults={
+                "role_name": "Local Demo Tracer User",
+                "description": (
+                    "Local/dev-only role for the guarded demo tracer account. "
+                    "Not part of the source RBAC catalogue."
+                ),
+                "is_system_role": False,
+                "status": "active",
+            },
+        )
         RolePermission.objects.get_or_create(role=tracer_role, permission=permission)
+        RolePermission.objects.filter(permission=permission).exclude(
+            role=tracer_role
+        ).delete()
 
     @staticmethod
     def _required_active_role(role_code):
