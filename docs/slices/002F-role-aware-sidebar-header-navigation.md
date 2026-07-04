@@ -32,11 +32,42 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - sfpcl-lms/src/contexts/RoleContext.tsx
 
 ## Screens Involved
-Relevant prototype screen area for this capability.
+- Sidebar (`sfpcl-lms/src/components/layout/Sidebar.tsx`) — 22 staff nav items,
+  each gated by `requiredPermission` except `dashboard` (always shown).
+- Header (`sfpcl-lms/src/components/layout/Header.tsx`) — profile menu (My Profile
+  always; Settings only when `can('view_settings')`; Sign out), search results
+  gated by `can('view_members'|'view_applications'|'view_loan_accounts')`, and the
+  role-picker/notifications dropdowns.
+- Route guard (`sfpcl-lms/src/App.tsx` `PAGE_PERMISSIONS` + `navigate`) — blocked
+  pages fall back to the dashboard with the amber "Access blocked" banner.
+
+## Concrete Requirements
+1. Every `Sidebar` `requiredPermission` and every `App.tsx` `PAGE_PERMISSIONS`
+   entry must be reachable only when the mapped prototype permission is present;
+   add a frontend test that, for each nav item, a user lacking its
+   `requiredPermission` does not see it and cannot navigate to it (the guard sends
+   them to the dashboard with the blocked banner).
+2. The canonical→prototype map lives in
+   `sfpcl-lms/src/services/authSession.ts` (`CANONICAL_TO_PROTOTYPE_PERMISSIONS`);
+   assert `tracer.lifecycle.run → run_tracer` is the ONLY mapping that unlocks
+   Tracer, and that it unlocks nothing else (no members/finance/audit/reports/
+   settings items). This is already partly covered by
+   `authSession.test.ts` ("maps only the explicit tracer permission…") and the
+   002EY Playwright `auth-negative` spec — extend, do not duplicate.
+3. Neutral/zero-permission sessions (`backend_staff`, `it_head`,
+   `management_viewer`, unknown role codes, empty `permissions`) render only
+   `Dashboard` in the sidebar, no Settings shortcut in the profile menu, and no
+   auditor/admin/borrower affordances. Reuse the 002EY `e2e.zero@sfpcl.example`
+   seed for any browser assertion.
+4. The logout / revoked-session restore path (`App.tsx`
+   `restoreCurrentUserFromStoredSession` → `handleLogout`) must return to the
+   staff `LoginScreen` before any protected sidebar/header item renders.
+5. No design changes (FRONTEND_DESIGN_RULES.md): this slice only verifies and, if
+   a genuine gap is found, tightens visibility/role logic on existing components.
 
 ## Frontend Scope
-- Verify and close any remaining sidebar/header affordances after 002E/002E2/002EX.
-- Navigation visibility must derive only from explicit prototype permissions mapped from backend canonical permissions.
+- Verify and close any remaining sidebar/header affordances after 002E/002E2/002EX/002EY.
+- Navigation visibility must derive only from explicit prototype permissions mapped from backend canonical permissions (`can(permission)` in `RoleContext`, never role-name checks).
 - `backend_staff`, `it_head`, `management_viewer`, unknown roles, and empty-permission sessions must see only unrestricted shell content and no Tracer, Settings, auditor/admin/borrower shortcuts, or action buttons.
 - `tracer.lifecycle.run` maps only to the Tracer navigation/action; it must not unlock member, finance, audit, report, or settings pages.
 

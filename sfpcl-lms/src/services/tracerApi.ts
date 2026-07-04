@@ -62,13 +62,15 @@ export const runTracerLifecycle = async (): Promise<TracerRecord[]> => {
     `/api/v1/tracer/members/${member.member_id}/loan-applications/`,
     { amount: '400000.00' },
   );
-  await tracerRequest<ActionResponse>(
+  const sanction = await tracerRequest<ActionResponse>(
     `/api/v1/tracer/loan-applications/${application.loan_application_id}/sanction/`,
   );
   const account = await tracerRequest<AccountResponse>(
     `/api/v1/tracer/loan-applications/${application.loan_application_id}/loan-account/`,
   );
-  const disbursement = await tracerRequest<ActionResponse>(
+  // Disburse is a required state transition (pending_disbursement -> active) so
+  // the account can later close; its result is not surfaced as its own row.
+  await tracerRequest<ActionResponse>(
     `/api/v1/tracer/loan-accounts/${account.loan_account_id}/disburse/`,
   );
   const repayment = await tracerRequest<RepaymentResponse>(
@@ -84,13 +86,13 @@ export const runTracerLifecycle = async (): Promise<TracerRecord[]> => {
     {
       label: 'Application',
       reference: application.reference,
-      status: 'sanctioned',
+      status: sanction.new_status,
       amount: application.amount,
     },
     {
       label: 'Sanction',
       reference: application.reference,
-      status: disbursement ? 'recorded' : 'pending',
+      status: sanction.new_status,
     },
     {
       label: 'Loan account',

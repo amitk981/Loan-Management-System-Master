@@ -41,10 +41,12 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
 ]
 
+# SFPCL_DB_PATH lets a dev/E2E web server point at an isolated sqlite file
+# (e.g. the Playwright harness) without touching the default local dev DB.
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": os.environ.get("SFPCL_DB_PATH") or (BASE_DIR / "db.sqlite3"),
     }
 }
 
