@@ -8,7 +8,7 @@ Epic 003: Audit, Documents, Config, and Dashboard Foundation
 Epic file: `docs/epics/003-audit-documents-config-foundation.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Deliver the canonical workflow-event foundation (the `workflow_events` table and its write interface) as a small, testable Ralph implementation slice — AND reconcile the pre-existing tracer drift that already created a `workflow_events` table so there is no table-name collision.
 
 ## User Value
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
@@ -19,9 +19,16 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
 - docs/source/api-contracts.md sections 26, 39, 41, 42-43
-- docs/source/data-model.md document/config/audit tables
+- docs/source/data-model.md §26 workflow_events schema (authoritative for this slice), plus document/config/audit tables
 - docs/source/component-spec.md
 - docs/source/design-system.md
+- Architecture review finding: `2026-07-04_071340_architecture_review` Finding 1 (tracer squats on `workflow_events`)
+
+## Drift to reconcile (MANDATORY — from architecture review 2026-07-04)
+Slice `002EX` already created a `WorkflowEvent` model whose `db_table = "workflow_events"` lives in the throwaway `sfpcl_credit/tracer/` app (`sfpcl_credit/tracer/models.py`, migration `0001_initial`). That is the canonical table this slice owns. This slice MUST NOT run `CreateModel("workflow_events")` on top of it (migrate would fail with "table already exists"). Do exactly one of:
+1. Relocate the canonical `WorkflowEvent` model into this slice's owning app, base its schema on `data-model.md §26` (not the tracer's minimal fields), migrate the existing `workflow_events` table into the new owner without data loss, and repoint `sfpcl_credit/tracer/services.py::_record_event` at the canonical model; OR
+2. Rename the tracer copy's table to `tracer_workflow_events` in the same slice (so the tracer stays self-contained and disposable per A-011) and create the canonical `workflow_events` table fresh from `data-model.md §26`.
+Prefer option 1 unless the tracer is scheduled for removal first. Either way: `makemigrations --check` and `migrate` must both pass on a clean database, and the tracer lifecycle test must still be green afterward.
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/Dashboard.tsx

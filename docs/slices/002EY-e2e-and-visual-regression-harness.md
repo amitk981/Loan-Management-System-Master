@@ -33,6 +33,7 @@ Design fidelity and working flows are verified automatically on every run that t
 13. Close the 002EX local visual-evidence limitation from run `2026-07-03_234219_normal_run`: both Django `runserver` on `127.0.0.1:8000` and Vite on `127.0.0.1:5173` failed with `EPERM`, so this slice must run in an environment where Playwright can bind web servers and save the actual closed-state tracer screenshot.
 14. E2E seed/setup must create a staff user with an explicitly active backend role and a `RolePermission` for `tracer.lifecycle.run`; `/auth/me/` must show `permissions` and `available_actions` containing exactly that tracer permission plus any other explicitly seeded test permissions.
 15. The tracer browser test must click the staff-shell `Tracer` navigation item, click `Run tracer`, and assert visible closed evidence for Member, Application, Sanction, Loan account, and Repayment rows. It must not call tracer APIs directly from the test except through UI setup/verification helpers.
+16. Clean up the dead ternary flagged by architecture review `2026-07-04_071340_architecture_review` Finding 2: in `sfpcl-lms/src/services/tracerApi.ts`, the Sanction row uses `status: disbursement ? 'recorded' : 'pending'`, but `disbursement` is always a truthy resolved object, so the `'pending'` branch is unreachable dead code. Derive the Sanction row status from the sanction response instead, and let the new tracer browser assertion cover the corrected value.
 
 ## Test Cases
 - `npm run e2e` passes locally from a clean state.

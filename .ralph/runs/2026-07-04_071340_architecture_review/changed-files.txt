@@ -1,0 +1,8 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002EY-e2e-and-visual-regression-harness.md
+ M docs/slices/002G-admin-user-and-role-management-shell.md
+ M docs/slices/003B-workflow-event-foundation.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+?? .ralph/runs/2026-07-04_071340_architecture_review/
