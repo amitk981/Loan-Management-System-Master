@@ -2,32 +2,13 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.views.decorators.http import require_POST
 
 from sfpcl_credit.api import error_response, parse_json_body, success_response
-from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.identity.modules.tokens import TokenError
+from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.tracer import services
 from sfpcl_credit.workflows.guard import (
     InvalidStateTransition,
     MissingTransitionPermission,
     UnknownTransitionAction,
 )
-
-
-def _authenticated_user(request):
-    authorization = request.headers.get("Authorization", "")
-    if not authorization:
-        return None, None, error_response(
-            request, 401, "AUTH_REQUIRED", "Bearer access token is required."
-        )
-    parts = authorization.split()
-    if len(parts) != 2 or parts[0].lower() != "bearer" or not parts[1]:
-        return None, None, error_response(
-            request, 401, "INVALID_TOKEN", "Authorization header must use Bearer token."
-        )
-    try:
-        session = auth_service.validate_access_session(parts[1])
-    except TokenError as exc:
-        return None, None, error_response(request, 401, exc.code, exc.message)
-    return session.user, auth_service.effective_permission_codes(session.user), None
 
 
 def _json(request):
@@ -58,7 +39,7 @@ def _service_error(request, exc):
 
 @require_POST
 def create_member(request):
-    user, permissions, response = _authenticated_user(request)
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:
         return response
     data, response = _json(request)
@@ -82,7 +63,7 @@ def create_member(request):
 
 @require_POST
 def create_application(request, member_id):
-    user, permissions, response = _authenticated_user(request)
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:
         return response
     data, response = _json(request)
@@ -106,7 +87,7 @@ def create_application(request, member_id):
 
 @require_POST
 def sanction_application(request, application_id):
-    user, permissions, response = _authenticated_user(request)
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:
         return response
     try:
@@ -136,7 +117,7 @@ def sanction_application(request, application_id):
 
 @require_POST
 def create_loan_account(request, application_id):
-    user, permissions, response = _authenticated_user(request)
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:
         return response
     try:
@@ -157,7 +138,7 @@ def create_loan_account(request, application_id):
 
 @require_POST
 def mark_disbursed(request, account_id):
-    user, permissions, response = _authenticated_user(request)
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:
         return response
     try:
@@ -183,7 +164,7 @@ def mark_disbursed(request, account_id):
 
 @require_POST
 def post_repayment(request, account_id):
-    user, permissions, response = _authenticated_user(request)
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:
         return response
     data, response = _json(request)
@@ -207,7 +188,7 @@ def post_repayment(request, account_id):
 
 @require_POST
 def close_loan(request, account_id):
-    user, permissions, response = _authenticated_user(request)
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:
         return response
     try:

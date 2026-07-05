@@ -3,8 +3,10 @@ import os
 import uuid
 from dataclasses import dataclass
 from pathlib import Path, PurePath
+from urllib.parse import urlencode
 
 from django.conf import settings
+from django.utils import timezone
 
 
 LOCAL_STORAGE_PROVIDER = "local"
@@ -46,6 +48,18 @@ class LocalDocumentStorage:
             file_size_bytes=size,
             checksum_sha256=checksum.hexdigest(),
         )
+
+    def download_descriptor(self, document):
+        ttl_minutes = getattr(settings, "DOCUMENT_DOWNLOAD_URL_TTL_MINUTES", 15)
+        expires_at = timezone.now() + timezone.timedelta(minutes=ttl_minutes)
+        expires_value = expires_at.isoformat().replace("+00:00", "Z")
+        query = urlencode({"expires_at": expires_value})
+        return {
+            "download_url": (
+                f"/api/v1/local-document-files/{document.document_id}/download/?{query}"
+            ),
+            "expires_at": expires_value,
+        }
 
 
 def safe_file_name(raw_name):

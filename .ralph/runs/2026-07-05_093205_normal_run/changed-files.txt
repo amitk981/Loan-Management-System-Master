@@ -1,0 +1,21 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/003D-secure-document-download-with-audit.md
+ M docs/slices/003F-communication-template-shell.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-003-audit-documents-config.md
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/documents/services.py
+ M sfpcl_credit/documents/storage.py
+ M sfpcl_credit/documents/views.py
+ M sfpcl_credit/identity/admin_views.py
+ M sfpcl_credit/identity/audit_views.py
+ M sfpcl_credit/identity/views.py
+ M sfpcl_credit/tests/test_api_contract_harness.py
+ M sfpcl_credit/tests/test_document_files_api.py
+ M sfpcl_credit/tracer/views.py
+ M sfpcl_credit/workflows/event_views.py
+?? .ralph/runs/2026-07-05_093205_normal_run/
+?? sfpcl_credit/identity/modules/http_auth.py

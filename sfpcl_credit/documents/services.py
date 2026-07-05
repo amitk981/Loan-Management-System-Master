@@ -12,12 +12,18 @@ from sfpcl_credit.identity.modules import auth_service
 
 
 DOCUMENT_UPLOAD_PERMISSION = "documents.file.upload"
+DOCUMENT_DOWNLOAD_PERMISSION = "documents.file.download"
 DOCUMENT_UPLOAD_AUDIT_ACTION = "documents.file.uploaded"
+DOCUMENT_DOWNLOAD_AUDIT_ACTION = "documents.file.downloaded"
 ALLOWED_SENSITIVITY_LEVELS = DocumentFile.SENSITIVITY_LEVELS
 
 
 def user_can_upload_documents(user):
     return DOCUMENT_UPLOAD_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_download_documents(user):
+    return DOCUMENT_DOWNLOAD_PERMISSION in auth_service.effective_permission_codes(user)
 
 
 def upload_document_file(user, request, storage=None):
@@ -67,6 +73,33 @@ def upload_document_file(user, request, storage=None):
             user_agent=request_user_agent(request),
         )
     return serialize_document_file(document)
+
+
+def download_document_file(user, request, document_id, storage=None):
+    storage = storage or LocalDocumentStorage()
+    document = DocumentFile.objects.get(document_id=document_id)
+    descriptor = storage.download_descriptor(document)
+
+    AuditLog.objects.create(
+        actor_user=user,
+        actor_type="user",
+        action=DOCUMENT_DOWNLOAD_AUDIT_ACTION,
+        entity_type="document_file",
+        entity_id=document.document_id,
+        old_value_json=None,
+        new_value_json={
+            "document_id": str(document.document_id),
+            "file_name": document.file_name,
+            "mime_type": document.mime_type,
+            "file_size_bytes": document.file_size_bytes,
+            "storage_provider": document.storage_provider,
+            "sensitivity_level": document.sensitivity_level,
+            "expires_at": descriptor["expires_at"],
+        },
+        ip_address=request_ip(request),
+        user_agent=request_user_agent(request),
+    )
+    return descriptor
 
 
 def validate_upload_request(request):
@@ -127,9 +160,13 @@ def validation_field_errors(exc):
 
 
 __all__ = [
+    "DOCUMENT_DOWNLOAD_AUDIT_ACTION",
+    "DOCUMENT_DOWNLOAD_PERMISSION",
     "DOCUMENT_UPLOAD_AUDIT_ACTION",
     "DOCUMENT_UPLOAD_PERMISSION",
+    "download_document_file",
     "upload_document_file",
+    "user_can_download_documents",
     "user_can_upload_documents",
     "validation_field_errors",
 ]

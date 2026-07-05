@@ -1,5 +1,27 @@
 # Ralph Progress Log
 
+## 2026-07-05 09:32:05 - 2026-07-05_093205_normal_run
+- Agent tool used: codex
+- Slice attempted: 003D-secure-document-download-with-audit
+- Summary: Added protected `GET /api/v1/document-files/{document_id}/download/` over the 003C
+  `DocumentFile` model and local storage boundary. The endpoint requires session-bound Bearer auth
+  plus `documents.file.download`, returns a standard envelope with a 15-minute local descriptor
+  `{download_url, expires_at}`, and writes exactly one `documents.file.downloaded` audit row on
+  success. Failed auth, permission, and not-found requests do not write download audit rows or leak
+  storage metadata. Closed the architecture-review auth duplication finding by extracting shared
+  Bearer/session helpers and migrating admin, audit, workflow, document, tracer, and `/auth/me`
+  token parsing to that boundary.
+- Tests run: document download TDD red/green; targeted document/auth regression tests (26/26);
+  backend `manage.py check`; backend tests (144/144); `makemigrations --check --dry-run`;
+  backend coverage 97% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test`
+  (26/26); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-05_093205_normal_run/`, with red/green/gate logs under
+  `evidence/terminal-logs/` and document download API examples under `evidence/api-responses/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `003E-versioned-configuration-shell`; `003F-communication-template-shell` was
+  sharpened with content-template fields, endpoints, validation, audit, and permission-gap handling.
+
 ## 2026-07-05 08:58:52 - 2026-07-05_085852_normal_run
 - Agent tool used: codex
 - Slice attempted: 003C-document-metadata-and-storage-adapter
@@ -758,6 +780,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_091741_architecture_review/.ralph/runs/2026-07-05_091741_architecture_review/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_091741_architecture_review/.ralph/runs/2026-07-05_091741_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-05 09:51:02 - 2026-07-05_093205_normal_run
+- Agent tool used: codex
+- Slice attempted: 003D-secure-document-download-with-audit
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_093205_normal_run/.ralph/runs/2026-07-05_093205_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_093205_normal_run/.ralph/runs/2026-07-05_093205_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

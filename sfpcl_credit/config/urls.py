@@ -50,6 +50,11 @@ urlpatterns = [
         document_views.upload_document_file,
         name="document-file-upload",
     ),
+    path(
+        "api/v1/document-files/<uuid:document_id>/download/",
+        document_views.download_document_file,
+        name="document-file-download",
+    ),
     path("api/v1/tracer/members/", tracer_views.create_member, name="tracer-member-create"),
     path(
         "api/v1/tracer/members/<uuid:member_id>/loan-applications/",

@@ -45,7 +45,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Loan applications | Draft from source | Applications, completeness | `api-contracts.md` | Needs real draft/submit/check endpoints. |
 | Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
-| Documentation and securities | Document-file upload foundation implemented in 003C; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. Download, checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
+| Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
 | SAP and disbursement | Draft from source | Disbursement and CFC | SOP PDFs, `api-contracts.md` | Integration is manual/adapter-first for MVP. |
 | Loan account, repayment, interest | Draft from source | Loan account, repayments, interest | `data-model.md`, `api-contracts.md` | Financial calculations are high risk. |
 | Default, recovery, closure | Draft from source | Default, closure | `functional-spec.md`, `api-contracts.md` | Recovery approvals require audit evidence. |
@@ -296,8 +296,8 @@ Rules:
 Protected multipart upload endpoint matching `docs/source/api-contracts.md` §26.1 and
 `docs/source/data-model.md` §16.1. File bytes are stored outside the database through the local
 filesystem adapter (`storage_provider: "local"`); the `document_files` table stores metadata,
-storage key, uploader, sensitivity, upload timestamp, and SHA-256 checksum. No download endpoint or
-loan-document/checklist workflow is implemented in 003C.
+storage key, uploader, sensitivity, upload timestamp, and SHA-256 checksum. Loan-document/checklist
+workflow remains future scope.
 
 Request headers:
 
@@ -350,3 +350,54 @@ Rules:
   `sfpcl_credit/local-document-storage`; tests override this root with a temp directory. Production
   S3/DMS adapters are future work behind the same storage boundary.
 - Response examples are saved in `.ralph/runs/2026-07-05_085852_normal_run/evidence/api-responses/document-files-api-response.txt`.
+
+## Document file secure download descriptor (003D)
+
+`GET /api/v1/document-files/{document_id}/download/`
+
+Protected endpoint matching `docs/source/api-contracts.md` §26.2 response option A. It reuses the
+003C `document_files` metadata row and storage boundary; it does not stream raw bytes or create new
+document metadata tables.
+
+Request headers:
+
+```http
+Authorization: Bearer <access_token>
+X-Request-ID: req-document-download
+```
+
+Success data:
+
+```json
+{
+  "success": true,
+  "data": {
+    "download_url": "/api/v1/local-document-files/uuid/download/?expires_at=2026-07-05T04%3A30%3A00Z",
+    "expires_at": "2026-07-05T04:30:00Z"
+  },
+  "meta": { "request_id": "req-document-download", "timestamp": "...Z", "api_version": "v1" }
+}
+```
+
+Rules:
+- Permission: `documents.file.download` from the seeded source catalogue. The upload permission does
+  not grant download access.
+- The local adapter uses a deterministic, time-limited descriptor for MVP/dev tests because it cannot
+  create a true external signed URL. Default expiry is 15 minutes from issuance.
+- Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session →
+  `401 INVALID_TOKEN`; authenticated user without `documents.file.download` →
+  `403 PERMISSION_DENIED`.
+- Unknown `document_id` returns `404 NOT_FOUND` without file name, storage key, provider details, or
+  checksum information.
+- The response body contains only `download_url` and `expires_at`; it never exposes `storage_key`,
+  checksum, raw bytes, or upload audit metadata.
+- Successful descriptor issuance writes exactly one `AuditLog` row with action
+  `documents.file.downloaded`, `entity_type: "document_file"`, and `entity_id` equal to the
+  downloaded document. Audit `new_value` includes document id, file name, MIME type, file size,
+  storage provider, sensitivity level, and expiry timestamp; it deliberately omits storage key,
+  checksum, signed secrets, and raw bytes.
+- Failed auth, permission, and not-found requests do not write `documents.file.downloaded` audit rows.
+- Public, internal, confidential, and restricted documents currently follow the same
+  `documents.file.download` permission path until source docs define an implementable sensitivity
+  matrix.
+- Response examples are saved in `.ralph/runs/2026-07-05_093205_normal_run/evidence/api-responses/document-download-api-response.txt`.

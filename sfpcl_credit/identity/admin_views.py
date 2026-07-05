@@ -2,27 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.views.decorators.http import require_GET, require_http_methods
 
 from sfpcl_credit.api import error_response, list_response, parse_json_body, success_response
-from sfpcl_credit.identity.modules import admin_users, auth_service
-from sfpcl_credit.identity.modules.tokens import TokenError
-
-
-def _authenticate_session(request):
-    """Validate the bearer session only (401 cases); no permission enforcement."""
-    authorization = request.headers.get("Authorization", "")
-    if not authorization:
-        return None, error_response(
-            request, 401, "AUTH_REQUIRED", "Bearer access token is required."
-        )
-    parts = authorization.split()
-    if len(parts) != 2 or parts[0].lower() != "bearer" or not parts[1]:
-        return None, error_response(
-            request, 401, "INVALID_TOKEN", "Authorization header must use Bearer token."
-        )
-    try:
-        session = auth_service.validate_access_session(parts[1])
-    except TokenError as exc:
-        return None, error_response(request, 401, exc.code, exc.message)
-    return session.user, None
+from sfpcl_credit.identity.modules import admin_users, http_auth
 
 
 def _authorize(request, user, required_codes):
@@ -44,7 +24,7 @@ def _authenticated_admin(request, required_codes):
     this specific action (read/assignment/suspend/restore), so a partial user-admin
     role cannot perform actions it does not explicitly hold.
     """
-    user, response = _authenticate_session(request)
+    user, response = http_auth.authenticated_user(request)
     if response is not None:
         return None, response
     response = _authorize(request, user, required_codes)
@@ -144,7 +124,7 @@ def remove_team(request, user_id, team_code):
 
 @require_http_methods(["PATCH"])
 def set_status(request, user_id):
-    actor, response = _authenticate_session(request)
+    actor, response = http_auth.authenticated_user(request)
     if response is not None:
         return response
     data, response = _json(request)

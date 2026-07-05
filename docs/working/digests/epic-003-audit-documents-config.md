@@ -94,3 +94,44 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
   approval matrix, interest, charges, document-template/checklist rules, re-KYC, and compliance
   task frequencies; those should be explicitly deferred to their owning later slices unless 003E
   implements only neutral storage fields already in `loan_policy_configs`.
+
+## Communication Template Foundation Extracts
+- `docs/source/api-contracts.md` §39.1 defines content-template endpoints:
+  `GET /api/v1/content-templates/`, `POST /api/v1/content-templates/`, and
+  `PATCH /api/v1/content-templates/{content_template_id}/`. Create fields are
+  `template_code`, `template_name`, `template_type`, `language_code`, `audience`,
+  nullable `subject_template`, required `body_template`, `variables`, `approval_status`,
+  `template_version`, and `effective_from`.
+- `docs/source/data-model.md` §24.1 defines `content_templates` with UUID primary key,
+  unique `template_code`, indexed `template_type`, optional indexed `language_code`,
+  indexed `audience`, optional `subject_template`, required `body_template`, optional
+  `variables_json`, indexed `approval_status` (`draft` / `approved`), `template_version`,
+  required `effective_from`, and nullable `effective_to`.
+- `docs/source/functional-spec.md` M16-FR-004 says the system stores communication templates by
+  event; M18-FR-006 says it maintains notification templates. M16-FR-001 through M16-FR-003 and
+  M16-FR-005 through M16-FR-007 cover sending email/SMS/letters, delivery status, manual calls, and
+  attaching communications to borrower/loan records; defer those from 003F unless a later slice
+  explicitly scopes send/list communication records.
+- `docs/source/auth-permissions.md` risk table classifies content-template changes as Medium risk
+  owned by Communication / Compliance. The current permission catalogue gap from A-007 still applies:
+  source role details mention `communications.communication.create`, but no clean §12 catalogue code
+  for content-template read/manage has been seeded yet. 003F must not silently grant broad access;
+  it should either add a source-backed narrow permission with an assumption or defer write access
+  until the catalogue gap is resolved.
+
+## Sharpened 003F Requirements
+- Build only the content-template metadata/API shell. Do not send communications, retry delivery,
+  integrate SMTP/SMS, create notification center UI, or create borrower/loan communication records.
+- Add a `communications` backend app (or established local equivalent) with `ContentTemplate`
+  matching `data-model.md` §24.1. One non-destructive migration is expected.
+- Implement §39.1 list/create/patch APIs using the standard envelopes and pagination harness.
+- Validation defaults: `template_code`, `template_name`, `template_type`, `audience`,
+  `body_template`, `approval_status`, `template_version`, and `effective_from` are required;
+  `effective_to`, if supplied, must be on or after `effective_from`; `variables` must be a JSON
+  array of strings; `approval_status` is limited to `draft` or `approved`.
+- Audit create/update actions with stable action names such as `communications.content_template.created`
+  and `communications.content_template.updated`; audit metadata should include template identifiers,
+  type, audience, approval status, version, and effective dates, but not rendered borrower-specific
+  message content.
+- Because the source permission catalogue is incomplete for content-template management, 003F must
+  explicitly record its chosen permission handling in `ASSUMPTIONS.md` and test `401`/`403` behavior.

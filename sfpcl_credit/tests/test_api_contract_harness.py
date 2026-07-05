@@ -1,3 +1,5 @@
+import uuid
+
 from django.test import Client, TestCase
 
 from sfpcl_credit.identity.models import Permission, Role, RolePermission, User
@@ -200,6 +202,72 @@ class ApiContractEndpointRegressionTests(IdentityTestCase):
 
         self.assertEqual(response.status_code, 401)
         assert_error_envelope(self, response.json(), expected_code="INVALID_TOKEN")
+
+    def test_shared_auth_helper_preserves_missing_bearer_contract_for_refactored_views(self):
+        endpoints = [
+            ("get", "/api/v1/admin/users/"),
+            ("get", "/api/v1/audit-logs/"),
+            ("get", "/api/v1/workflow-events/"),
+            ("post", "/api/v1/document-files/"),
+            ("get", f"/api/v1/document-files/{uuid.uuid4()}/download/"),
+            ("post", "/api/v1/tracer/members/"),
+        ]
+
+        for method, url in endpoints:
+            with self.subTest(method=method, url=url):
+                response = getattr(self.client, method)(url)
+                self.assertEqual(response.status_code, 401)
+                assert_error_envelope(
+                    self, response.json(), expected_code="AUTH_REQUIRED"
+                )
+
+    def test_shared_auth_helper_preserves_malformed_bearer_contract_for_refactored_views(self):
+        endpoints = [
+            ("get", "/api/v1/admin/users/"),
+            ("get", "/api/v1/audit-logs/"),
+            ("get", "/api/v1/workflow-events/"),
+            ("post", "/api/v1/document-files/"),
+            ("get", f"/api/v1/document-files/{uuid.uuid4()}/download/"),
+            ("post", "/api/v1/tracer/members/"),
+        ]
+
+        for method, url in endpoints:
+            with self.subTest(method=method, url=url):
+                response = getattr(self.client, method)(
+                    url, headers={"Authorization": "Bearer"}
+                )
+                self.assertEqual(response.status_code, 401)
+                assert_error_envelope(
+                    self, response.json(), expected_code="INVALID_TOKEN"
+                )
+
+    def test_shared_auth_helper_preserves_revoked_session_contract_for_refactored_views(self):
+        access_token, refresh_token = self._access_token(
+            "credit.manager@sfpcl.example", "CorrectHorse123!"
+        )
+        logout = self.client.post(
+            "/api/v1/auth/logout/",
+            data={"refresh_token": refresh_token},
+            content_type="application/json",
+        )
+        self.assertEqual(logout.status_code, 200)
+        headers = {"Authorization": f"Bearer {access_token}"}
+        endpoints = [
+            ("get", "/api/v1/admin/users/"),
+            ("get", "/api/v1/audit-logs/"),
+            ("get", "/api/v1/workflow-events/"),
+            ("post", "/api/v1/document-files/"),
+            ("get", f"/api/v1/document-files/{uuid.uuid4()}/download/"),
+            ("post", "/api/v1/tracer/members/"),
+        ]
+
+        for method, url in endpoints:
+            with self.subTest(method=method, url=url):
+                response = getattr(self.client, method)(url, headers=headers)
+                self.assertEqual(response.status_code, 401)
+                assert_error_envelope(
+                    self, response.json(), expected_code="INVALID_TOKEN"
+                )
 
     def test_admin_users_without_permission_satisfies_permission_denied_contract(self):
         access_token, _refresh_token = self._access_token(
