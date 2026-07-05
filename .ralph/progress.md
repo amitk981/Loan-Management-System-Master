@@ -908,3 +908,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-05 20:57:00 - 2026-07-05_204654_normal_run
+- Agent tool used: claude
+- Slice attempted: 003G2-dashboard-internal-auditor-access-regression
+- Summary: Granted management_readonly to internal_auditor so the documented compliance-dashboard mapping is reachable (was returning 403). Added a dashboard-API regression and a _ROLE_CONTEXTS consistency invariant. TDD red->green.
+- Tests run: backend 172 passed (coverage 96%); frontend typecheck/lint/vitest(26)/build passed.
+- Evidence saved: .ralph/runs/2026-07-05_204654_normal_run/evidence/terminal-logs/ (backend-tests-red.log, backend-tests-green.log, plus full gates)
+- Result: Success
+- Risk level: Medium (single-role RBAC seed grant; no schema/migration/frontend).
+- Next action: 003H-dashboard-task-ui-wiring (003G2 dependency now satisfied).
+
+## 2026-07-05 20:58:37 - 2026-07-05_204654_normal_run
+- Agent tool used: claude
+- Slice attempted: 003G2-dashboard-internal-auditor-access-regression
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_204654_normal_run/.ralph/runs/2026-07-05_204654_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_204654_normal_run/.ralph/runs/2026-07-05_204654_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

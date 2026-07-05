@@ -448,6 +448,10 @@ ROLE_PERMISSIONS = {
         "documents.loan_document.read",
         "compliance.task.read",
         "compliance.evidence.review",
+        # A-023 maps internal_auditor to the "compliance" dashboard context; the
+        # dashboard endpoint gates on management_readonly, so the auditor needs it
+        # to reach the shell the mapping promises (003G2 regression).
+        "management_readonly",
     ],
     "system_admin": [
         "users.user.create",

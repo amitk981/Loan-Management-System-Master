@@ -175,6 +175,7 @@ class CatalogueSeedTests(TestCase):
             "senior_manager_finance",
             "chief_financial_controller",
             "accounts_head",
+            "internal_auditor",
             "management_viewer",
         }
         for role_code in role_codes:
@@ -185,6 +186,28 @@ class CatalogueSeedTests(TestCase):
                         role=role,
                         permission__permission_code="management_readonly",
                     ).exists()
+                )
+
+    def test_every_dashboard_context_role_can_read_dashboard(self):
+        # 003G2 regression: every role named in the dashboard role-context mapping
+        # must hold the management_readonly scope the dashboard endpoint gates on,
+        # otherwise the mapped role receives a 403 instead of its documented shell.
+        from sfpcl_credit.dashboard.services import _ROLE_CONTEXTS
+
+        seed_catalogue()
+
+        for role_code in _ROLE_CONTEXTS:
+            with self.subTest(role_code=role_code):
+                role = Role.objects.get(role_code=role_code)
+                self.assertTrue(
+                    RolePermission.objects.filter(
+                        role=role,
+                        permission__permission_code="management_readonly",
+                    ).exists(),
+                    msg=(
+                        f"{role_code} is mapped to a dashboard context but lacks "
+                        "management_readonly, so /api/v1/dashboard/ would return 403"
+                    ),
                 )
 
     def test_role_permission_links_use_catalogue_and_seed_interface(self):

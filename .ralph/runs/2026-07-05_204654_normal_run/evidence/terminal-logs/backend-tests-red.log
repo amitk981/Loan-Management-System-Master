@@ -1,0 +1,55 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 3 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: communications, configurations, contenttypes, documents, identity, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying communications.0001_initial... OK
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying documents.0001_initial... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_seeded_internal_auditor_receives_compliance_shell (sfpcl_credit.tests.test_dashboard_api.DashboardApiTests.test_seeded_internal_auditor_receives_compliance_shell) ... FAIL
+test_every_dashboard_context_role_can_read_dashboard (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_every_dashboard_context_role_can_read_dashboard) ... 
+  test_every_dashboard_context_role_can_read_dashboard (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_every_dashboard_context_role_can_read_dashboard) (role_code='internal_auditor') ... FAIL
+test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles) ... 
+  test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles) (role_code='internal_auditor') ... FAIL
+
+======================================================================
+FAIL: test_seeded_internal_auditor_receives_compliance_shell (sfpcl_credit.tests.test_dashboard_api.DashboardApiTests.test_seeded_internal_auditor_receives_compliance_shell)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_204654_normal_run/sfpcl_credit/tests/test_dashboard_api.py", line 207, in test_seeded_internal_auditor_receives_compliance_shell
+    self.assertEqual(response.status_code, 200)
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_every_dashboard_context_role_can_read_dashboard (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_every_dashboard_context_role_can_read_dashboard) (role_code='internal_auditor')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_204654_normal_run/sfpcl_credit/tests/test_catalogue_seed.py", line 202, in test_every_dashboard_context_role_can_read_dashboard
+    self.assertTrue(
+AssertionError: False is not true : internal_auditor is mapped to a dashboard context but lacks management_readonly, so /api/v1/dashboard/ would return 403
+
+======================================================================
+FAIL: test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles) (role_code='internal_auditor')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_204654_normal_run/sfpcl_credit/tests/test_catalogue_seed.py", line 184, in test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles
+    self.assertTrue(
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.654s
+
+FAILED (failures=3)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

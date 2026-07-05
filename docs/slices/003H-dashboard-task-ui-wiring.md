@@ -54,7 +54,15 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
    `entity_id`, `title`, `due_at` when tasks eventually exist. The current backend returns
    `tasks: []`.
 8. Cover all supported role contexts from 003G in frontend tests or fixtures:
-   `credit_manager`, `sanction_committee`, `compliance`, `treasury`, and `management`.
+   `credit_manager`, `sanction_committee`, `compliance`, `treasury`, and `management`. Seeded demo
+   accounts for manual/E2E checks (from `seed_demo_users`, password `DemoStaff123!`):
+   `demo.credit_manager@sfpcl.example` (`credit_manager`), `demo.compliance@sfpcl.example` and
+   `demo.internal_auditor@sfpcl.example` (both `compliance` context after 003G2),
+   `demo.treasury@sfpcl.example` (`treasury`), and `demo.zero@sfpcl.example` (`it_head`, no dashboard
+   permission -> expect `403`). Note: `demo.system_admin@sfpcl.example` also lacks `management_readonly`
+   and returns `403`; **no seeded demo account reaches the `management` context** (only
+   `management_viewer` maps there and it has no demo user), so cover `management` with a mocked API
+   fixture rather than a live demo login.
 
 ## Backend/API Scope
 No new backend behavior. 003H may only adjust frontend API client types or tests for the 003G

@@ -204,3 +204,9 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
   `management_readonly` is seeded and required for dashboard reads, rather than broad report/export
   permissions or an invented `dashboard.read`. Read-only access writes no audit row. The local/demo
   zero-permission user now uses `it_head`; `management_viewer` has `management_readonly`.
+- CORRECTED 2026-07-05 (`2026-07-05_204654_normal_run`, slice 003G2): the canonical catalogue seed
+  now grants `internal_auditor` the `management_readonly` dashboard scope. Previously the role was
+  mapped to the `compliance` dashboard context (A-023) but lacked the permission the endpoint gates
+  on, so a seeded internal auditor received `403` instead of the compliance shell. A consistency
+  regression asserts every role in `dashboard.services._ROLE_CONTEXTS` holds `management_readonly`
+  after `seed_catalogue()`, so this gap cannot recur. No contract, schema, or migration change.

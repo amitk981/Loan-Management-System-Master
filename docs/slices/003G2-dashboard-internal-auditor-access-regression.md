@@ -1,7 +1,7 @@
 # Slice 003G2: Dashboard Internal Auditor Access Regression
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 003: Audit, Documents, Config, and Dashboard Foundation
@@ -88,16 +88,16 @@ Medium
 - No production dashboard calculations or frontend UI changes are introduced.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed (unchanged — seed grant, contract stable)
+- [x] Database rules followed, if needed (seed data only; no schema/migration)
+- [x] Permissions tested, if needed
+- [x] Audit events tested, if needed (existing no-audit-row test remains green)
+- [ ] Visual evidence saved, if frontend (N/A — no frontend)
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [ ] Commit created only after passing gates (orchestrator commits; agent must not)

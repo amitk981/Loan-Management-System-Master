@@ -1,0 +1,29 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 3 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: communications, configurations, contenttypes, documents, identity, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying communications.0001_initial... OK
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying documents.0001_initial... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_seeded_internal_auditor_receives_compliance_shell (sfpcl_credit.tests.test_dashboard_api.DashboardApiTests.test_seeded_internal_auditor_receives_compliance_shell) ... ok
+test_every_dashboard_context_role_can_read_dashboard (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_every_dashboard_context_role_can_read_dashboard) ... ok
+test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.654s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

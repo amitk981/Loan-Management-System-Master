@@ -179,6 +179,40 @@ class DashboardApiTests(TestCase):
                 self.assertTrue(expected_codes.issubset({card["code"] for card in cards}))
                 self.assertTrue(all(card["count"] == 0 for card in cards))
 
+    def test_seeded_internal_auditor_receives_compliance_shell(self):
+        # 003G2 regression: the canonical catalogue seed must grant the
+        # internal_auditor the management_readonly dashboard scope so the
+        # documented internal_auditor -> "compliance" mapping is reachable
+        # instead of returning 403.
+        from sfpcl_credit.identity.catalogue import seed_catalogue
+
+        seed_catalogue()
+        auditor_role = Role.objects.get(role_code="internal_auditor")
+        auditor = User.objects.create(
+            full_name="Internal Auditor",
+            email="auditor.dashboard@sfpcl.example",
+            status="active",
+            primary_role=auditor_role,
+        )
+        auditor.set_password("AuditorPass123!")
+        auditor.save()
+
+        response = self.client.get(
+            DASHBOARD_URL,
+            headers=self._auth_headers(
+                email="auditor.dashboard@sfpcl.example", password="AuditorPass123!"
+            ),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        assert_success_envelope(self, payload)
+        self.assertEqual(payload["data"]["role_context"], "compliance")
+        self.assertEqual(payload["data"]["tasks"], [])
+        card_codes = {card["code"] for card in payload["data"]["cards"]}
+        self.assertIn("documents_pending_generation", card_codes)
+        self.assertIn("compliance_tasks_due", card_codes)
+
     def test_unauthenticated_request_returns_401(self):
         response = self.client.get(DASHBOARD_URL)
 
