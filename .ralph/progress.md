@@ -1,5 +1,26 @@
 # Ralph Progress Log
 
+## 2026-07-05 19:15:50 - 2026-07-05_191550_normal_run
+- Agent tool used: codex
+- Slice attempted: 003E-versioned-configuration-shell
+- Summary: Added the versioned loan-policy configuration foundation. New
+  `sfpcl_credit.configurations` app owns `loan_policy_configs` and `version_histories`, with
+  protected loan-policy list/create/patch/activate APIs and protected filtered version-history
+  reads. Mutations write `config.loan_policy.*` audit rows; activation writes a `VersionHistory`
+  row and requires `board_approval_reference` for M01-FR-015. A-021 records the source-silent
+  previous-active retirement rule. M01-FR-003 through M01-FR-014 remain deferred; no calculations
+  or broader config types were implemented.
+- Tests run: loan-policy list red/green; configuration API red/green; backend `manage.py check`;
+  backend tests (153/153); `makemigrations --check --dry-run`; backend coverage 96% (floor 85);
+  frontend `npm run typecheck`; `npm run lint`; `npm test` (26/26); `npm run build`;
+  `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-05_191550_normal_run/`, with red/green/gate logs under
+  `evidence/terminal-logs/` and loan-policy API examples under `evidence/api-responses/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `003F-communication-template-shell`; it was sharpened with response fields and
+  permission-boundary guidance from the existing Epic 003 digest.
+
 ## 2026-07-05 09:32:05 - 2026-07-05_093205_normal_run
 - Agent tool used: codex
 - Slice attempted: 003D-secure-document-download-with-audit
@@ -790,6 +811,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_093205_normal_run/.ralph/runs/2026-07-05_093205_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_093205_normal_run/.ralph/runs/2026-07-05_093205_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-05 19:39:11 - 2026-07-05_191550_normal_run
+- Agent tool used: codex
+- Slice attempted: 003E-versioned-configuration-shell
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_191550_normal_run/.ralph/runs/2026-07-05_191550_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_191550_normal_run/.ralph/runs/2026-07-05_191550_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

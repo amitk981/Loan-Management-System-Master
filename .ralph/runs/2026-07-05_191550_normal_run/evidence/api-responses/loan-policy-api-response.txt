@@ -1,0 +1,105 @@
+POST /api/v1/config/loan-policy/ -> 200
+{
+  "data": {
+    "approval_threshold_amount": "500000.00",
+    "board_approval_reference": "BOARD-REF-EVIDENCE",
+    "default_scale_of_finance_per_acre_amount": "20000.00",
+    "effective_from": "2026-04-01",
+    "effective_to": null,
+    "grace_period_months": 3,
+    "interest_benchmark": null,
+    "interest_rate_type": "floating",
+    "loan_policy_config_id": "11f359f8-bc2c-4d89-8fdc-ac661c8236ea",
+    "max_secured_loan_years": 7,
+    "min_secured_loan_months": 3,
+    "non_intentional_extension_months": 12,
+    "penal_interest_rate": null,
+    "per_share_cap_amount": "200.00",
+    "policy_name": "SFPCL Loan Policy Evidence",
+    "policy_version": "1.0-evidence",
+    "record_retention_years": 8,
+    "rekyc_frequency_months": 24,
+    "share_limit_percentage": "10.0000",
+    "short_term_duration_months": 12,
+    "status": "draft"
+  },
+  "meta": {
+    "api_version": "v1",
+    "request_id": "req-policy-evidence",
+    "timestamp": "2026-07-05T14:03:25.641535Z"
+  },
+  "success": true
+}
+
+POST /api/v1/config/loan-policy/{id}/activate/ -> 200
+{
+  "data": {
+    "approval_threshold_amount": "500000.00",
+    "board_approval_reference": "BOARD-REF-EVIDENCE",
+    "default_scale_of_finance_per_acre_amount": "20000.00",
+    "effective_from": "2026-04-01",
+    "effective_to": null,
+    "grace_period_months": 3,
+    "interest_benchmark": null,
+    "interest_rate_type": "floating",
+    "loan_policy_config_id": "11f359f8-bc2c-4d89-8fdc-ac661c8236ea",
+    "max_secured_loan_years": 7,
+    "min_secured_loan_months": 3,
+    "non_intentional_extension_months": 12,
+    "penal_interest_rate": null,
+    "per_share_cap_amount": "200.00",
+    "policy_name": "SFPCL Loan Policy Evidence",
+    "policy_version": "1.0-evidence",
+    "record_retention_years": 8,
+    "rekyc_frequency_months": 24,
+    "share_limit_percentage": "10.0000",
+    "short_term_duration_months": 12,
+    "status": "active"
+  },
+  "meta": {
+    "api_version": "v1",
+    "request_id": "req-policy-evidence",
+    "timestamp": "2026-07-05T14:03:25.645904Z"
+  },
+  "success": true
+}
+
+GET /api/v1/version-histories/?versioned_entity_type=loan_policy_config&versioned_entity_id={id} -> 200
+{
+  "data": [
+    {
+      "approver": {
+        "full_name": "Configuration Evidence",
+        "user_id": "e2acf125-1665-4868-a286-1f20dfe63f92"
+      },
+      "author": {
+        "full_name": "Configuration Evidence",
+        "user_id": "e2acf125-1665-4868-a286-1f20dfe63f92"
+      },
+      "board_approval_reference": "BOARD-REF-EVIDENCE",
+      "change_summary": "Activated loan policy version 1.0-evidence.",
+      "created_at": "2026-07-05T14:03:25.644593Z",
+      "effective_from": "2026-04-01",
+      "effective_to": null,
+      "reviewer": null,
+      "version_history_id": "04d6f256-ca5e-4aa8-bc32-c4db83cbcdf9",
+      "version_number": "1.0-evidence",
+      "versioned_entity_id": "11f359f8-bc2c-4d89-8fdc-ac661c8236ea",
+      "versioned_entity_type": "loan_policy_config"
+    }
+  ],
+  "meta": {
+    "api_version": "v1",
+    "request_id": "req-policy-evidence",
+    "timestamp": "2026-07-05T14:03:25.649243Z"
+  },
+  "pagination": {
+    "has_next": false,
+    "has_previous": false,
+    "page": 1,
+    "page_size": 20,
+    "total_count": 1,
+    "total_pages": 1
+  },
+  "success": true
+}

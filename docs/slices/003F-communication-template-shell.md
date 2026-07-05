@@ -55,6 +55,11 @@ None for this slice, except updating frontend documentation or fixtures if requi
 4. Trace M16-FR-004 (store communication templates by event) and M18-FR-006 (maintain
    notification templates) in the review packet. Explicitly defer M16-FR-001 through M16-FR-003
    and M16-FR-005 through M16-FR-007 unless a later slice scopes actual communication sends.
+5. Response items should expose only metadata fields:
+   `content_template_id`, `template_code`, `template_name`, `template_type`, `language_code`,
+   `audience`, `subject_template`, `body_template`, `variables`, `approval_status`,
+   `template_version`, `effective_from`, and `effective_to`. Do not add rendered preview text or
+   borrower/loan-specific merge output in this slice.
 
 ## Database/Model Impact
 One non-destructive migration is expected for `content_templates`.
@@ -70,6 +75,8 @@ Compliance, but the current seeded catalogue has no clean §12 content-template 
 (A-007 records adjacent communication permission gaps). Do not silently grant broad access.
 Before implementation, choose the narrowest source-backed permission handling, record it in
 `ASSUMPTIONS.md`, and test:
+- do not reuse `config.loan_policy.*`, `documents.template.*`, or broad communication-send
+  permissions unless the source extract supports it for content-template metadata;
 - missing/revoked bearer token returns `401`;
 - authenticated actor without the chosen permission returns `403`;
 - writes do not occur on `403`.

@@ -1,5 +1,6 @@
 from django.urls import path
 
+from sfpcl_credit.configurations import views as configuration_views
 from sfpcl_credit.documents import views as document_views
 from sfpcl_credit.identity import admin_views, audit_views
 from sfpcl_credit.identity.views import login, logout, me, refresh
@@ -44,6 +45,26 @@ urlpatterns = [
         "api/v1/workflow-events/",
         event_views.workflow_event_list,
         name="workflow-event-list",
+    ),
+    path(
+        "api/v1/config/loan-policy/",
+        configuration_views.loan_policy_collection,
+        name="loan-policy-config-list-create",
+    ),
+    path(
+        "api/v1/config/loan-policy/<uuid:loan_policy_config_id>/",
+        configuration_views.loan_policy_detail,
+        name="loan-policy-config-detail",
+    ),
+    path(
+        "api/v1/config/loan-policy/<uuid:loan_policy_config_id>/activate/",
+        configuration_views.loan_policy_activate,
+        name="loan-policy-config-activate",
+    ),
+    path(
+        "api/v1/version-histories/",
+        configuration_views.version_history_list,
+        name="version-history-list",
     ),
     path(
         "api/v1/document-files/",

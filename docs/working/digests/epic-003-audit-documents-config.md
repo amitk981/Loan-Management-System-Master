@@ -94,6 +94,15 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
   approval matrix, interest, charges, document-template/checklist rules, re-KYC, and compliance
   task frequencies; those should be explicitly deferred to their owning later slices unless 003E
   implements only neutral storage fields already in `loan_policy_configs`.
+- IMPLEMENTED 2026-07-05 (`2026-07-05_191550_normal_run`): `sfpcl_credit.configurations` now owns
+  `LoanPolicyConfig` (`loan_policy_configs`) and `VersionHistory` (`version_histories`) with one
+  non-destructive migration. Implemented protected `GET/POST/PATCH/activate` loan-policy endpoints
+  and protected `GET /api/v1/version-histories/`; list responses use standard pagination,
+  mutations write `config.loan_policy.*` audit rows, activation writes `VersionHistory`, and
+  activation requires `board_approval_reference` for M01-FR-015. A-021 records the source-silent
+  prior-active retirement rule. M01-FR-003 through M01-FR-014 remain deferred; no eligibility,
+  share valuation, scale-of-finance, approval matrix, interest, charge, document-template, re-KYC,
+  or compliance-frequency calculations were implemented.
 
 ## Communication Template Foundation Extracts
 - `docs/source/api-contracts.md` §39.1 defines content-template endpoints:

@@ -46,6 +46,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
 | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
+| Versioned configuration | Loan-policy shell implemented in 003E; calculations and broader config types remain draft | Settings/config shell | `api-contracts.md` §41.1, §42.3; `data-model.md` §25.1, §26.3; `functional-spec.md` M01-FR-001/M01-FR-002/M01-FR-015 | `loan_policy_configs` and `version_histories` are persisted. `GET/POST/PATCH/activate` loan-policy APIs and filtered version-history reads are protected, audited where mutating, and versioned on activation. M01-FR-003 through M01-FR-014 calculations/rules are explicitly deferred; only neutral source model fields are stored. |
 | SAP and disbursement | Draft from source | Disbursement and CFC | SOP PDFs, `api-contracts.md` | Integration is manual/adapter-first for MVP. |
 | Loan account, repayment, interest | Draft from source | Loan account, repayments, interest | `data-model.md`, `api-contracts.md` | Financial calculations are high risk. |
 | Default, recovery, closure | Draft from source | Default, closure | `functional-spec.md`, `api-contracts.md` | Recovery approvals require audit evidence. |
@@ -288,6 +289,82 @@ Rules:
 - Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session → `401 INVALID_TOKEN`;
   authenticated user without `audit.workflow_event.read` → `403 PERMISSION_DENIED`.
 - Response examples are saved in `.ralph/runs/2026-07-05_083910_normal_run/evidence/api-responses/workflow-events-api-response.txt`.
+
+## Versioned loan-policy configuration (003E)
+
+`GET /api/v1/config/loan-policy/`
+
+Protected read endpoint over `loan_policy_configs` (`docs/source/data-model.md` §25.1 and
+`docs/source/api-contracts.md` §41.1). Results use the standard top-level pagination envelope,
+ordered newest/effective-first by `effective_from` with `loan_policy_config_id` as a deterministic
+secondary key.
+
+Query parameters:
+- `page`, `page_size` — standard top-level pagination (default `page_size` 20, max 100).
+- Any other query parameter returns `400 VALIDATION_ERROR`.
+
+`POST /api/v1/config/loan-policy/`
+
+Creates a draft config. Request fields mirror the §41.1 request and §25.1 source columns:
+`policy_name`, `policy_version`, `effective_from`, nullable `effective_to`,
+duration/month/year settings, approval threshold/default scale/share/per-share/interest fields,
+re-KYC/retention/grace/extension settings, and nullable `board_approval_reference`. `status`
+defaults to `draft`; new configs cannot be created directly as `active` or `retired`.
+
+`PATCH /api/v1/config/loan-policy/{loan_policy_config_id}/`
+
+Updates draft configs only. Patching a non-draft config returns `409 INVALID_STATE_TRANSITION`.
+Unknown fields, invalid ISO dates, `effective_to` before `effective_from`, negative decimals,
+non-positive required integer settings, or unsupported status values return `400 VALIDATION_ERROR`
+with field errors.
+
+`POST /api/v1/config/loan-policy/{loan_policy_config_id}/activate/`
+
+Activates a draft config only when `board_approval_reference` is present, satisfying
+`functional-spec.md` M01-FR-015 for the shell. Missing approval evidence returns
+`400 VALIDATION_ERROR` with `field_errors.board_approval_reference`. Activation writes:
+- one `VersionHistory` row for `versioned_entity_type: "loan_policy_config"`;
+- one `AuditLog` row with action `config.loan_policy.activated`;
+- a state change to `active`.
+
+Per A-021, if another loan-policy config is already active, activation retires it and sets its
+`effective_to` to the day before the newly activated config's `effective_from`.
+
+Mutation audit actions:
+- create: `config.loan_policy.created`;
+- update: `config.loan_policy.updated`;
+- activate: `config.loan_policy.activated`.
+
+Permissions:
+- list/read requires `config.loan_policy.read`;
+- create/update/activate require `config.loan_policy.manage`;
+- missing bearer token returns `401 AUTH_REQUIRED`; authenticated users without the required
+  permission return `403 PERMISSION_DENIED` with no config/audit/version write.
+
+`GET /api/v1/version-histories/`
+
+Read-only, protected version-history endpoint matching `docs/source/api-contracts.md` §42.3 over
+`version_histories` (`docs/source/data-model.md` §26.3).
+
+Query parameters:
+- `versioned_entity_type` — optional exact match.
+- `versioned_entity_id` — optional UUID; invalid UUID returns `400 VALIDATION_ERROR`.
+- `page`, `page_size` — standard top-level pagination (default `page_size` 20, max 100).
+- Any other query parameter returns `400 VALIDATION_ERROR`.
+
+Response items include `version_history_id`, `versioned_entity_type`, `versioned_entity_id`,
+`version_number`, `change_summary`, nullable `author`/`reviewer`/`approver` user summaries,
+`board_approval_reference`, `effective_from`, nullable `effective_to`, and `created_at`.
+Permission: `audit.version_history.read`.
+
+Functional requirement trace:
+- M01-FR-001: one or more persisted loan product configurations are supported.
+- M01-FR-002: version/effective dates/Board reference are stored on the config; approval authority
+  for activation is captured through the `approver` user on `VersionHistory`.
+- M01-FR-015: activation is blocked without `board_approval_reference`.
+- M01-FR-003 through M01-FR-014 are deferred to later rule/config slices; 003E persists only neutral
+  source model fields and does not implement eligibility, share valuation, scale-of-finance,
+  approval matrix, interest, charges, document-template, re-KYC, or compliance calculations.
 
 ## Document file upload foundation (003C)
 

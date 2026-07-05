@@ -31,6 +31,7 @@ ASGI_APPLICATION = "sfpcl_credit.config.asgi.application"
 INSTALLED_APPS = [
     "corsheaders",
     "django.contrib.contenttypes",
+    "sfpcl_credit.configurations",
     "sfpcl_credit.documents",
     "sfpcl_credit.identity",
     "sfpcl_credit.tracer",
