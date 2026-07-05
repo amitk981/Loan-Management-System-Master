@@ -142,6 +142,24 @@ class CatalogueSeedTests(TestCase):
                 msg=f"alias {alias} maps to unknown canonical code {canonical_code}",
             )
 
+    def test_content_template_permissions_are_seeded_for_compliance_owner(self):
+        seed_catalogue()
+
+        codes = set(Permission.objects.values_list("permission_code", flat=True))
+        expected = {
+            "communications.content_template.read",
+            "communications.content_template.manage",
+        }
+        self.assertTrue(expected.issubset(codes))
+
+        compliance_role = Role.objects.get(role_code="compliance_team_member")
+        compliance_codes = set(
+            RolePermission.objects.filter(role=compliance_role).values_list(
+                "permission__permission_code", flat=True
+            )
+        )
+        self.assertTrue(expected.issubset(compliance_codes))
+
     def test_role_permission_links_use_catalogue_and_seed_interface(self):
         # Links must be produced by the shared seed interface, not rebuilt in the test.
         seed_catalogue()

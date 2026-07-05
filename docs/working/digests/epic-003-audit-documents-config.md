@@ -144,3 +144,34 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
   message content.
 - Because the source permission catalogue is incomplete for content-template management, 003F must
   explicitly record its chosen permission handling in `ASSUMPTIONS.md` and test `401`/`403` behavior.
+- IMPLEMENTED 2026-07-05 (`2026-07-05_193926_normal_run`): `sfpcl_credit.communications` now owns
+  `ContentTemplate` (`content_templates`) with one non-destructive migration. Implemented protected
+  `GET/POST/PATCH /api/v1/content-templates/` endpoints with metadata-only response fields,
+  standard pagination, validation for required fields, dates, variables, approval status, duplicate
+  template codes, and unknown ids. Create/update write `communications.content_template.*` audit rows
+  without rendered borrower/loan merge output. A-022 records the narrow permission assumption:
+  `communications.content_template.read` / `communications.content_template.manage`, seeded to the
+  existing Compliance owner role pending source catalogue confirmation. M16-FR-004 and M18-FR-006 are
+  traced; communication sending, delivery status, manual phone-call logging, borrower/loan
+  communication attachment, and notification UI remain deferred.
+
+## Dashboard and Task Foundation Extracts
+- `docs/source/api-contracts.md` §43.1 defines `GET /api/v1/dashboard/` as the role-based dashboard
+  endpoint. The example response for `credit_manager` returns `data.role_context`, `data.cards[]`
+  with `code`, `label`, `count`, and `link`, plus `data.tasks[]` with `task_type`, `entity_id`,
+  `title`, and `due_at`.
+- `docs/source/api-contracts.md` §43.2-§43.4 names future specialist dashboard endpoints:
+  `/api/v1/dashboard/sanction-committee/`, `/api/v1/dashboard/compliance/`, and
+  `/api/v1/dashboard/treasury/`.
+- `docs/source/functional-spec.md` §12.2 requires Credit Dashboard widgets for applications pending
+  completeness, deficiencies, appraisals due today, appraisals breaching two-day TAT, Credit Manager
+  review queue, rejected applications, outstanding-beyond-one-year loans, DPD buckets, reminder
+  queue, and default assessment queue.
+- `docs/source/functional-spec.md` §12.3-§12.6 lists specialist dashboard widgets for sanction
+  committee, compliance, treasury/finance, and CFO/management. 003G should avoid implementing
+  business calculations for not-yet-built modules; return zero-count shell cards/tasks where source
+  data tables are absent and record that as an assumption rather than inventing metrics.
+- `docs/source/auth-permissions.md` §19.1 defines `management_readonly` as a dashboard/summary access
+  scope; the seeded backend catalogue currently has report and compliance read permissions but no
+  exact `dashboard.read` permission code. 003G should choose the narrowest source-backed gate and
+  record any permission assumption in `ASSUMPTIONS.md`.

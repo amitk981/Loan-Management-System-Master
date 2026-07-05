@@ -47,6 +47,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
 | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
 | Versioned configuration | Loan-policy shell implemented in 003E; calculations and broader config types remain draft | Settings/config shell | `api-contracts.md` §41.1, §42.3; `data-model.md` §25.1, §26.3; `functional-spec.md` M01-FR-001/M01-FR-002/M01-FR-015 | `loan_policy_configs` and `version_histories` are persisted. `GET/POST/PATCH/activate` loan-policy APIs and filtered version-history reads are protected, audited where mutating, and versioned on activation. M01-FR-003 through M01-FR-014 calculations/rules are explicitly deferred; only neutral source model fields are stored. |
+| Communication templates | Content-template metadata shell implemented in 003F; send/list communications remain draft | None directly | `api-contracts.md` §39.1; `data-model.md` §24.1; `functional-spec.md` M16-FR-004/M18-FR-006 | `content_templates` is persisted. `GET/POST/PATCH /api/v1/content-templates/` is protected by narrow A-022 content-template permissions, returns metadata-only fields, validates dates/status/variables, and writes audit rows for create/update. Communication sending, delivery status, manual call logging, borrower/loan communication attachment, and notification center UI remain future slices. |
 | SAP and disbursement | Draft from source | Disbursement and CFC | SOP PDFs, `api-contracts.md` | Integration is manual/adapter-first for MVP. |
 | Loan account, repayment, interest | Draft from source | Loan account, repayments, interest | `data-model.md`, `api-contracts.md` | Financial calculations are high risk. |
 | Default, recovery, closure | Draft from source | Default, closure | `functional-spec.md`, `api-contracts.md` | Recovery approvals require audit evidence. |
@@ -478,3 +479,68 @@ Rules:
   `documents.file.download` permission path until source docs define an implementable sensitivity
   matrix.
 - Response examples are saved in `.ralph/runs/2026-07-05_093205_normal_run/evidence/api-responses/document-download-api-response.txt`.
+## Communication template shell (003F)
+
+`GET /api/v1/content-templates/`
+
+`POST /api/v1/content-templates/`
+
+`PATCH /api/v1/content-templates/{content_template_id}/`
+
+Metadata-only endpoints matching `docs/source/api-contracts.md` §39.1 and
+`docs/source/data-model.md` §24.1. This shell does not render templates with borrower/loan merge
+data and does not send communications.
+
+Request headers:
+
+```http
+Authorization: Bearer <access_token>
+X-Request-ID: req-content-template
+```
+
+Create request fields:
+- Required: `template_code`, `template_name`, `template_type`, `audience`, `body_template`,
+  `approval_status`, `template_version`, `effective_from`.
+- Optional: `language_code`, `subject_template`, `variables`, `effective_to`.
+- `variables` must be a JSON array of non-empty strings and is persisted to `variables_json`.
+- `approval_status` is limited to `draft` or `approved`.
+- `effective_from` and `effective_to` use ISO dates; `effective_to` must be on or after
+  `effective_from` when supplied.
+
+Success item fields:
+
+```json
+{
+  "content_template_id": "uuid",
+  "template_code": "loan_rejection_email_v1",
+  "template_name": "Loan Rejection Email",
+  "template_type": "email",
+  "language_code": "en",
+  "audience": "borrower",
+  "subject_template": "Loan Application {{application_reference_number}} - Rejection Note",
+  "body_template": "Dear {{borrower_name}}, your application has been rejected.",
+  "variables": ["application_reference_number", "borrower_name", "rejection_reason"],
+  "approval_status": "approved",
+  "template_version": "1.0",
+  "effective_from": "2026-04-01",
+  "effective_to": null
+}
+```
+
+Rules:
+- List responses use the standard top-level pagination envelope with `page` and `page_size`
+  query parameters only; unknown query parameters return `400 VALIDATION_ERROR`.
+- Missing bearer token returns `401 AUTH_REQUIRED`; revoked/invalid token returns the existing
+  auth `401`; authenticated users without content-template permission return `403 PERMISSION_DENIED`
+  before any database write.
+- Permission assumption A-022: read requires `communications.content_template.read` or
+  `communications.content_template.manage`; writes require `communications.content_template.manage`.
+  These narrow codes are used instead of `config.loan_policy.*`, `documents.template.*`, or
+  communication-send permissions.
+- Duplicate `template_code` returns `400 VALIDATION_ERROR` with `field_errors.template_code` and no
+  audit row.
+- Unknown `content_template_id` returns `404 NOT_FOUND`.
+- Create/update write `AuditLog` actions `communications.content_template.created` and
+  `communications.content_template.updated`. Audit metadata includes template id/code/name/type,
+  audience, approval status, version, variables, and effective dates, but no rendered borrower or
+  loan-specific merge output.

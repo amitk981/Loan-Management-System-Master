@@ -1,0 +1,34 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 8 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: communications, configurations, contenttypes, documents, identity, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying communications.0001_initial... OK
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying documents.0001_initial... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_authorized_list_returns_standard_pagination_and_metadata_fields (sfpcl_credit.tests.test_content_templates_api.ContentTemplateApiTests.test_authorized_list_returns_standard_pagination_and_metadata_fields) ... ok
+test_create_persists_variables_and_writes_metadata_only_audit (sfpcl_credit.tests.test_content_templates_api.ContentTemplateApiTests.test_create_persists_variables_and_writes_metadata_only_audit) ... ok
+test_create_validation_errors_do_not_write_rows_or_audit (sfpcl_credit.tests.test_content_templates_api.ContentTemplateApiTests.test_create_validation_errors_do_not_write_rows_or_audit) ... ok
+test_duplicate_template_code_returns_validation_error_without_audit (sfpcl_credit.tests.test_content_templates_api.ContentTemplateApiTests.test_duplicate_template_code_returns_validation_error_without_audit) ... ok
+test_patch_updates_template_and_writes_audit (sfpcl_credit.tests.test_content_templates_api.ContentTemplateApiTests.test_patch_updates_template_and_writes_audit) ... ok
+test_reader_cannot_write_and_manager_can_list (sfpcl_credit.tests.test_content_templates_api.ContentTemplateApiTests.test_reader_cannot_write_and_manager_can_list) ... ok
+test_unauthenticated_and_no_permission_requests_do_not_write (sfpcl_credit.tests.test_content_templates_api.ContentTemplateApiTests.test_unauthenticated_and_no_permission_requests_do_not_write) ... ok
+test_unknown_content_template_id_returns_standard_not_found (sfpcl_credit.tests.test_content_templates_api.ContentTemplateApiTests.test_unknown_content_template_id_returns_standard_not_found) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 11.188s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

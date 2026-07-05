@@ -135,6 +135,10 @@ PERMISSIONS = [
         "Senior Manager Finance disbursement signature",
         "critical",
     ),
+    # A-022: source classifies content templates as Communication / Compliance
+    # owned, but §12 omits exact content-template permission codes.
+    ("communications.content_template.read", "View content templates", "medium"),
+    ("communications.content_template.manage", "Manage content templates", "medium"),
     # §12.8 Security
     ("security.package.read", "View security package", "medium"),
     ("security.package.create", "Create / refresh security package", "high"),
@@ -344,6 +348,8 @@ ROLE_PERMISSIONS = {
         "documents.notary.record",
         "documents.checklist.read",
         "documents.checklist.update",
+        "communications.content_template.read",
+        "communications.content_template.manage",
         "security.package.create",
         "security.package.update",
     ],

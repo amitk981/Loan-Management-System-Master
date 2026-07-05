@@ -1,0 +1,22 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_content_templates_api (unittest.loader._FailedTest.test_content_templates_api) ... ERROR
+
+======================================================================
+ERROR: test_content_templates_api (unittest.loader._FailedTest.test_content_templates_api)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_content_templates_api
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_193926_normal_run/sfpcl_credit/tests/test_content_templates_api.py", line 5, in <module>
+    from sfpcl_credit.communications.models import ContentTemplate
+ModuleNotFoundError: No module named 'sfpcl_credit.communications'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

@@ -1,5 +1,27 @@
 # Ralph Progress Log
 
+## 2026-07-05 19:39:26 - 2026-07-05_193926_normal_run
+- Agent tool used: codex
+- Slice attempted: 003F-communication-template-shell
+- Summary: Added the content-template metadata/API foundation. New `sfpcl_credit.communications`
+  app owns `content_templates` with protected list/create/patch endpoints at
+  `/api/v1/content-templates/`. Responses expose metadata-only fields; create/patch validate
+  required fields, ISO dates, `draft`/`approved` status, JSON string-array variables, duplicate
+  template codes, and unknown ids. Mutations write `communications.content_template.*` audit rows
+  without rendered borrower/loan merge output. A-022 records the source-catalogue permission gap and
+  the narrow `communications.content_template.read/manage` handling. M16-FR-004 and M18-FR-006 are
+  traced; sending/delivery/manual-call/attachment/notification UI work remains deferred.
+- Tests run: content-template API red/green; targeted content-template + catalogue tests (15/15);
+  backend `manage.py check`; backend tests (162/162); `makemigrations --check --dry-run`; backend
+  coverage 96% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test` (26/26);
+  `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-05_193926_normal_run/`, with red/green/gate logs under
+  `evidence/terminal-logs/` and content-template API examples under `evidence/api-responses/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `003G-dashboard-task-summary-api`; `003G` and `003H` were sharpened with
+  concrete dashboard/task contract, role-context, permission, and UI wiring requirements.
+
 ## 2026-07-05 19:15:50 - 2026-07-05_191550_normal_run
 - Agent tool used: codex
 - Slice attempted: 003E-versioned-configuration-shell
@@ -821,6 +843,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_191550_normal_run/.ralph/runs/2026-07-05_191550_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_191550_normal_run/.ralph/runs/2026-07-05_191550_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-05 20:00:33 - 2026-07-05_193926_normal_run
+- Agent tool used: codex
+- Slice attempted: 003F-communication-template-shell
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_193926_normal_run/.ralph/runs/2026-07-05_193926_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_193926_normal_run/.ralph/runs/2026-07-05_193926_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

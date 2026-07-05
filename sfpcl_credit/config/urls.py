@@ -1,5 +1,6 @@
 from django.urls import path
 
+from sfpcl_credit.communications import views as communication_views
 from sfpcl_credit.configurations import views as configuration_views
 from sfpcl_credit.documents import views as document_views
 from sfpcl_credit.identity import admin_views, audit_views
@@ -65,6 +66,16 @@ urlpatterns = [
         "api/v1/version-histories/",
         configuration_views.version_history_list,
         name="version-history-list",
+    ),
+    path(
+        "api/v1/content-templates/",
+        communication_views.content_template_collection,
+        name="content-template-list-create",
+    ),
+    path(
+        "api/v1/content-templates/<uuid:content_template_id>/",
+        communication_views.content_template_detail,
+        name="content-template-detail",
     ),
     path(
         "api/v1/document-files/",
