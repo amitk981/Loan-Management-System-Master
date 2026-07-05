@@ -49,6 +49,12 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
    alert/empty patterns.
 6. Update `docs/working/PROTOTYPE_INVENTORY.md` and `docs/working/PROTOTYPE_GAP_REPORT.md` only if
    this wiring changes documented prototype coverage.
+7. Use the exact 003G response contract from `docs/working/API_CONTRACTS.md`: `data.role_context`,
+   `data.cards[]` with `code`, `label`, `count`, `link`, and `data.tasks[]` with `task_type`,
+   `entity_id`, `title`, `due_at` when tasks eventually exist. The current backend returns
+   `tasks: []`.
+8. Cover all supported role contexts from 003G in frontend tests or fixtures:
+   `credit_manager`, `sanction_committee`, `compliance`, `treasury`, and `management`.
 
 ## Backend/API Scope
 No new backend behavior. 003H may only adjust frontend API client types or tests for the 003G
@@ -82,6 +88,11 @@ return.
 - Frontend: network/server error renders existing error alert pattern.
 - Frontend: role-specific card labels/counts/links come from the API response, not hardcoded mock
   dashboard arrays.
+- Frontend: `management_readonly` may appear in `/auth/me` for dashboard-capable users, but the
+  dashboard screen must still rely on the API success/error result instead of frontend-only grants.
+- Frontend regression: `demo.zero@sfpcl.example` now uses role `it_head` as the neutral
+  zero-permission demo account; do not assume `management_viewer` has no backend permissions after
+  A-023.
 - Existing backend 003G tests remain green.
 
 ## Visual Acceptance Criteria

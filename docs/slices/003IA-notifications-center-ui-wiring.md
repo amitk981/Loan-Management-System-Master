@@ -16,6 +16,9 @@ Staff see their real pending alerts and notifications in the shell they already 
 ## Depends On
 - 003I
 
+Do not start 003IA until 003I has created the notification backend/API foundation. The current
+completed dashboard endpoint from 003G returns `tasks: []` only and is not a notification list API.
+
 ## Source References
 - docs/source/screen-spec.md section 5.8 (notification pattern) and screen S04
 - docs/source/api-contracts.md section 39 (communication APIs) and section 43 (dashboard APIs) for endpoint conventions
@@ -31,6 +34,9 @@ Staff see their real pending alerts and notifications in the shell they already 
 2. Frontend: replace mock notification data in `NotificationsCenter.tsx` with the real API, preserving the existing layout per `docs/working/FRONTEND_DESIGN_RULES.md` (no new styling or components).
 3. Frontend: wire `MyProfile.tsx` to the current-user API from 002D (read-only display; password/session management stays out of scope).
 4. Cover loading, empty, error, and unauthorized states using existing patterns.
+5. Keep dashboard task summaries separate from notifications: 003G/003H expose role dashboard
+   cards and an empty task shell, while 003I/003IA must own notification persistence, list, and
+   mark-read behavior.
 
 ## Test Cases
 - Notification list returns only the current user's notifications (object-level permission test).

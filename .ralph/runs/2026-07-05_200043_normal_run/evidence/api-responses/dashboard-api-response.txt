@@ -1,0 +1,74 @@
+{
+  "data": {
+    "cards": [
+      {
+        "code": "applications_pending_completeness",
+        "count": 0,
+        "label": "Applications pending completeness",
+        "link": "/applications?status=pending_completeness"
+      },
+      {
+        "code": "deficiencies_pending_resolution",
+        "count": 0,
+        "label": "Deficiencies pending resolution",
+        "link": "/applications/deficiencies"
+      },
+      {
+        "code": "appraisals_due_today",
+        "count": 0,
+        "label": "Appraisals due today",
+        "link": "/credit/appraisals?due=today"
+      },
+      {
+        "code": "appraisals_breaching_two_day_tat",
+        "count": 0,
+        "label": "Appraisals breaching two-day TAT",
+        "link": "/credit/appraisals?tat=breaching"
+      },
+      {
+        "code": "credit_manager_review_queue",
+        "count": 0,
+        "label": "Credit Manager review queue",
+        "link": "/credit/review-queue"
+      },
+      {
+        "code": "rejected_applications",
+        "count": 0,
+        "label": "Rejected applications",
+        "link": "/applications?status=rejected"
+      },
+      {
+        "code": "loans_outstanding_beyond_one_year",
+        "count": 0,
+        "label": "Loans outstanding beyond one year",
+        "link": "/monitoring/outstanding-beyond-one-year"
+      },
+      {
+        "code": "dpd_buckets",
+        "count": 0,
+        "label": "DPD buckets",
+        "link": "/monitoring/dpd"
+      },
+      {
+        "code": "reminder_queue",
+        "count": 0,
+        "label": "Reminder queue",
+        "link": "/monitoring/reminders"
+      },
+      {
+        "code": "default_assessment_queue",
+        "count": 0,
+        "label": "Default assessment queue",
+        "link": "/defaults/assessments"
+      }
+    ],
+    "role_context": "credit_manager",
+    "tasks": []
+  },
+  "meta": {
+    "api_version": "v1",
+    "request_id": "req-dashboard-evidence",
+    "timestamp": "2026-07-05T14:38:38.337950Z"
+  },
+  "success": true
+}

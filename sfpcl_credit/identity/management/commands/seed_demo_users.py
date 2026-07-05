@@ -59,7 +59,7 @@ DEMO_USERS = [
     {
         "email": "demo.zero@sfpcl.example",
         "full_name": "Demo Zero Permission User",
-        "role_code": "management_viewer",
+        "role_code": "it_head",
         "team_codes": [],
         "exact_permission_codes": [],
     },

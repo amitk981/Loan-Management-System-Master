@@ -220,6 +220,9 @@ PERMISSIONS = [
     ("reports.dpd.read", "View DPD report", "high"),
     ("reports.compliance.read", "View compliance dashboard", "high"),
     ("reports.export", "Export reports", "high"),
+    # A-023: source §19.1 names management_readonly as the dashboard/summary
+    # access scope; §12 does not define a narrower dashboard.read code.
+    ("management_readonly", "View dashboard summaries", "medium"),
     ("audit.audit_log.read", "View audit logs", "high"),
     ("audit.workflow_event.read", "View workflow events", "medium"),
     ("audit.version_history.read", "View version history", "medium"),
@@ -289,9 +292,10 @@ TEAMS = [
 # --- Role -> permission links -----------------------------------------------
 # auth-permissions §15.1-15.12 "Key Permissions". Only codes present in the §12
 # catalogue above are linked; §15 references that §12 omits are recorded in
-# ASSUMPTIONS A-007, not invented here. Roles without a §15 permission detail
-# (sales_team_user, it_head, management_viewer, and every external/future role)
-# are seeded with no links — assigning permissions would invent a business rule.
+# ASSUMPTIONS A-007, not invented here. A-023 adds the source-backed
+# management_readonly dashboard scope from §19.1. Roles without source-backed
+# permission detail (sales_team_user, it_head, and every external/future role)
+# are seeded with no links.
 ROLE_PERMISSIONS = {
     "field_officer": [
         "members.member.read",
@@ -338,6 +342,7 @@ ROLE_PERMISSIONS = {
         "defaults.non_payment_note.create",
         "closure.readiness.read",
         "closure.loan.close",
+        "management_readonly",
     ],
     "compliance_team_member": [
         "documents.loan_document.generate",
@@ -352,6 +357,7 @@ ROLE_PERMISSIONS = {
         "communications.content_template.manage",
         "security.package.create",
         "security.package.update",
+        "management_readonly",
     ],
     "company_secretary": [
         "documents.checklist.approve_cs",
@@ -374,6 +380,7 @@ ROLE_PERMISSIONS = {
         "compliance.evidence.submit",
         "compliance.money_lending_review.manage",
         "compliance.stamp_duty_review.manage",
+        "management_readonly",
     ],
     "senior_manager_finance": [
         "finance.sap_request.complete",
@@ -384,6 +391,7 @@ ROLE_PERMISSIONS = {
         "documents.checklist.sign_disbursement_complete",
         "documents.file.upload",
         "finance.loan_account.read",
+        "management_readonly",
     ],
     "chief_financial_controller": [
         "finance.disbursement.readiness",
@@ -392,6 +400,7 @@ ROLE_PERMISSIONS = {
         "finance.loan_account.read",
         "reports.portfolio.read",
         "audit.audit_log.read",
+        "management_readonly",
     ],
     "cfo": [
         "approvals.case.read",
@@ -407,6 +416,7 @@ ROLE_PERMISSIONS = {
         "compliance.evidence.review",
         "config.loan_policy.read",
         "recovery.decision.create",
+        "management_readonly",
     ],
     "director": [
         "approvals.case.read",
@@ -415,6 +425,7 @@ ROLE_PERMISSIONS = {
         "approvals.case.return",
         "approvals.sanction.read",
         "documents.loan_document.read",
+        "management_readonly",
     ],
     "accounts_head": [
         "finance.loan_account.read",
@@ -425,6 +436,7 @@ ROLE_PERMISSIONS = {
         "finance.accrual.bulk_generate",
         "reports.portfolio.read",
         "compliance.evidence.submit",
+        "management_readonly",
     ],
     "internal_auditor": [
         "audit.audit_log.read",
@@ -454,6 +466,9 @@ ROLE_PERMISSIONS = {
         "config.share_valuation.manage",
         "config.scale_of_finance.manage",
         "config.interest_rate.manage",
+    ],
+    "management_viewer": [
+        "management_readonly",
     ],
 }
 

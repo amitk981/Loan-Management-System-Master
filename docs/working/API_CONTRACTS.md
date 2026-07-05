@@ -163,7 +163,7 @@ Rules:
 - `roles` contains the active primary role as `{ role_code, role_name }`; inactive primary roles return empty `roles`, empty `role_codes`, and empty `permissions`.
 - `teams` contains active memberships to active teams as `{ team_code, team_name }`, sorted by `team_code`; inactive memberships and inactive teams are excluded.
 - `role_codes` and `team_codes` are additive compatibility fields derived from `roles` and `teams`.
-- Roles with no seeded production permission links, including the A-007 `sales_team_user`, `it_head`, and `management_viewer` cases, return an empty permission list until source documents define grants. The guarded local/demo `seed_demo_users` command keeps those shared source roles neutral; its narrow A-011 exception creates the local/dev-only `local_demo_tracer_user` role and grants that role exactly `tracer.lifecycle.run` for `demo.tracer@sfpcl.example`.
+- Roles with no seeded production permission links, including the A-007 `sales_team_user` and `it_head` cases, return an empty permission list until source documents define grants. A-023 gives `management_viewer` the source-backed `management_readonly` dashboard scope. The guarded local/demo `seed_demo_users` command keeps a neutral `demo.zero@sfpcl.example` user on `it_head`; its narrow A-011 exception creates the local/dev-only `local_demo_tracer_user` role and grants that role exactly `tracer.lifecycle.run` for `demo.tracer@sfpcl.example`.
 - `available_actions` currently mirrors effective permission codes; later workflow/object-level slices may narrow it per resource while backend enforcement remains authoritative.
 - 002D3 corrected the architecture-review gap by matching `docs/source/api-contracts.md` §11.4 before 002E frontend route-shell wiring consumes `/auth/me/`.
 - 002E maps canonical backend permission codes to the existing prototype `can(...)` permission names only for currently implemented UI affordances. Unmapped backend codes do not grant frontend visibility; backend enforcement remains authoritative and future slices should extend the mapping when they add screens/actions.
@@ -544,3 +544,57 @@ Rules:
   `communications.content_template.updated`. Audit metadata includes template id/code/name/type,
   audience, approval status, version, variables, and effective dates, but no rendered borrower or
   loan-specific merge output.
+
+## Dashboard task summary shell (003G)
+
+`GET /api/v1/dashboard/`
+
+Protected endpoint matching `docs/source/api-contracts.md` §43.1 for the role-based dashboard
+summary. Specialist dashboard endpoints from §43.2-§43.4 are deferred; this slice exposes only the
+single role-context shell.
+
+Request headers:
+
+```http
+Authorization: Bearer <access_token>
+X-Request-ID: req-dashboard
+```
+
+Success data:
+
+```json
+{
+  "role_context": "credit_manager",
+  "cards": [
+    {
+      "code": "applications_pending_completeness",
+      "label": "Applications pending completeness",
+      "count": 0,
+      "link": "/applications?status=pending_completeness"
+    }
+  ],
+  "tasks": []
+}
+```
+
+Rules:
+- No query parameters are supported. Any query parameter returns `400 VALIDATION_ERROR` with the
+  unknown parameter in `field_errors`.
+- Missing bearer token returns `401 AUTH_REQUIRED`; revoked/invalid token returns `401`; an
+  authenticated user without the dashboard scope returns `403 PERMISSION_DENIED`.
+- Permission assumption A-023: dashboard read requires `management_readonly`, the source §19.1
+  dashboard/summary scope. This is used instead of broad report/export permissions or an invented
+  `dashboard.read` code.
+- Role contexts currently returned from primary role:
+  `credit_manager`, `sanction_committee`, `compliance`, `treasury`, or `management`.
+- Cards use source-named shell codes from the §43.1 example and functional-spec §12.2-§12.6
+  dashboard widget lists. All `count` values are `0` because application, appraisal, sanction,
+  compliance, treasury, DPD, reminder, default, and management-report tables/calculations are not
+  implemented yet.
+- `tasks` is an empty list because no source-backed task persistence table exists yet.
+- The response returns only summary metadata fields: `role_context`, `cards[].code`,
+  `cards[].label`, `cards[].count`, `cards[].link`, and `tasks[]`. It does not return borrower,
+  member, loan-account, document, or other sensitive entity values.
+- Read-only dashboard access does not write `AuditLog` rows in this shell.
+- Response examples are saved in
+  `.ralph/runs/2026-07-05_200043_normal_run/evidence/api-responses/dashboard-api-response.txt`.

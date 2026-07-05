@@ -175,3 +175,12 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
   scope; the seeded backend catalogue currently has report and compliance read permissions but no
   exact `dashboard.read` permission code. 003G should choose the narrowest source-backed gate and
   record any permission assumption in `ASSUMPTIONS.md`.
+- IMPLEMENTED 2026-07-05 (`2026-07-05_200043_normal_run`): `GET /api/v1/dashboard/` now returns the
+  §43.1 role-context shell with `role_context`, zero-count `cards[]`, and empty `tasks[]`.
+  Supported contexts are `credit_manager`, `sanction_committee`, `compliance`, `treasury`, and
+  `management`. Counts remain zero and tasks remain empty because downstream application,
+  appraisal, sanction, compliance, treasury, DPD, reminder, default, and management-report
+  tables/calculations are not implemented yet. A-023 records the permission decision:
+  `management_readonly` is seeded and required for dashboard reads, rather than broad report/export
+  permissions or an invented `dashboard.read`. Read-only access writes no audit row. The local/demo
+  zero-permission user now uses `it_head`; `management_viewer` has `management_readonly`.

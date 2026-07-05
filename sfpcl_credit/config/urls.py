@@ -2,6 +2,7 @@ from django.urls import path
 
 from sfpcl_credit.communications import views as communication_views
 from sfpcl_credit.configurations import views as configuration_views
+from sfpcl_credit.dashboard import views as dashboard_views
 from sfpcl_credit.documents import views as document_views
 from sfpcl_credit.identity import admin_views, audit_views
 from sfpcl_credit.identity.views import login, logout, me, refresh
@@ -15,6 +16,7 @@ urlpatterns = [
     path("api/v1/auth/refresh/", refresh, name="auth-refresh"),
     path("api/v1/auth/logout/", logout, name="auth-logout"),
     path("api/v1/auth/me/", me, name="auth-me"),
+    path("api/v1/dashboard/", dashboard_views.dashboard_summary, name="dashboard-summary"),
     path("api/v1/admin/users/", admin_views.user_list, name="admin-user-list"),
     path(
         "api/v1/admin/users/<uuid:user_id>/",

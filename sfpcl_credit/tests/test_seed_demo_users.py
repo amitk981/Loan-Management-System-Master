@@ -99,7 +99,7 @@ class SeedDemoUsersTests(TestCase):
             "internal_auditor",
         )
         self.assertEqual(users[TRACER_EMAIL].primary_role.role_code, DEMO_TRACER_ROLE)
-        self.assertEqual(users[ZERO_EMAIL].primary_role.role_code, "management_viewer")
+        self.assertEqual(users[ZERO_EMAIL].primary_role.role_code, "it_head")
         for user in users.values():
             self.assertEqual(user.status, "active")
             self.assertEqual(user.primary_role.status, "active")
@@ -303,4 +303,4 @@ class SeedDemoUsersTests(TestCase):
         self.assertEqual(response.status_code, 403, response.content)
         assert_error_envelope(self, response.json(), "PERMISSION_DENIED")
         target.refresh_from_db()
-        self.assertEqual(target.primary_role.role_code, "management_viewer")
+        self.assertEqual(target.primary_role.role_code, "it_head")

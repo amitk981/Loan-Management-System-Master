@@ -160,6 +160,33 @@ class CatalogueSeedTests(TestCase):
         )
         self.assertTrue(expected.issubset(compliance_codes))
 
+    def test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles(self):
+        seed_catalogue()
+
+        self.assertTrue(
+            Permission.objects.filter(permission_code="management_readonly").exists()
+        )
+        role_codes = {
+            "credit_manager",
+            "cfo",
+            "director",
+            "compliance_team_member",
+            "company_secretary",
+            "senior_manager_finance",
+            "chief_financial_controller",
+            "accounts_head",
+            "management_viewer",
+        }
+        for role_code in role_codes:
+            with self.subTest(role_code=role_code):
+                role = Role.objects.get(role_code=role_code)
+                self.assertTrue(
+                    RolePermission.objects.filter(
+                        role=role,
+                        permission__permission_code="management_readonly",
+                    ).exists()
+                )
+
     def test_role_permission_links_use_catalogue_and_seed_interface(self):
         # Links must be produced by the shared seed interface, not rebuilt in the test.
         seed_catalogue()

@@ -1,57 +1,64 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-05_193926_normal_run
+2026-07-05_200043_normal_run
 
 ## Current Status
-Slice `003F-communication-template-shell` completed successfully.
+Slice `003G-dashboard-task-summary-api` completed successfully.
+
+Architecture review is due before the next implementation slice: `.ralph/state.json` now has
+`slices_completed_since_architecture_review: 4` and `architecture_review_due: true`.
 
 ## What Completed
-- Added `sfpcl_credit.communications` with:
-  - `ContentTemplate` mapped to `content_templates`.
-  - One non-destructive migration: `communications/migrations/0001_initial.py`.
-- Added protected content-template metadata APIs:
-  - `GET /api/v1/content-templates/`
-  - `POST /api/v1/content-templates/`
-  - `PATCH /api/v1/content-templates/{content_template_id}/`
-- Response items expose only metadata fields:
-  `content_template_id`, `template_code`, `template_name`, `template_type`, `language_code`,
-  `audience`, `subject_template`, `body_template`, `variables`, `approval_status`,
-  `template_version`, `effective_from`, and `effective_to`.
-- Validation covers required create fields, ISO dates, `effective_to >= effective_from`,
-  `variables` as a JSON array of non-empty strings, `approval_status` limited to `draft`/`approved`,
-  duplicate `template_code`, and unknown ids.
-- Permission gates:
-  - list/read: `communications.content_template.read` OR `communications.content_template.manage`
-  - create/update: `communications.content_template.manage`
-- A-022 records the source-catalogue gap and narrow permission handling. The catalogue seeds
-  `communications.content_template.read/manage` and grants them to `compliance_team_member` as the
-  current source-backed Compliance owner.
-- Mutating actions write `AuditLog` rows:
-  - `communications.content_template.created`
-  - `communications.content_template.updated`
-- Audit/response payloads deliberately exclude rendered borrower/loan-specific merge output.
-- M16-FR-004 and M18-FR-006 are traced. M16-FR-001 through M16-FR-003 and M16-FR-005 through
-  M16-FR-007 remain deferred: no email/SMS/letter sending, delivery status, manual phone-call
-  logging, borrower/loan communication attachment, delivery queues, adapters, or notification UI.
+- Added protected `GET /api/v1/dashboard/`.
+- Response shape:
+  - `data.role_context`
+  - `data.cards[]` with `code`, `label`, `count`, `link`
+  - `data.tasks[]`
+- Supported role contexts:
+  `credit_manager`, `sanction_committee`, `compliance`, `treasury`, and `management`.
+- Current shell behavior:
+  - all card counts are `0`;
+  - tasks are `[]`;
+  - no borrower/member/loan-account sensitive values are returned;
+  - no downstream loan/compliance/treasury/management calculations were invented.
+- Permission handling:
+  - endpoint requires session-bound bearer auth;
+  - read permission is `management_readonly` per A-023;
+  - missing/revoked tokens return `401`;
+  - authenticated users without `management_readonly` return `403`.
+- Validation:
+  - no query parameters are supported;
+  - any query parameter returns standard `400 VALIDATION_ERROR`.
+- Audit:
+  - dashboard reads do not write `AuditLog` rows.
+- Seed/catalogue update:
+  - `management_readonly` is seeded and granted to dashboard role contexts;
+  - `management_viewer` now has dashboard-summary access;
+  - the guarded local/demo zero-permission user moved to role `it_head`.
 
 ## Working Docs Updated
-- `docs/working/API_CONTRACTS.md`: content-template contract, validation, permissions, audit
-  behavior, and deferrals.
-- `docs/working/ASSUMPTIONS.md`: A-022 for content-template permission handling.
-- `docs/working/digests/epic-003-audit-documents-config.md`: 003F implementation note and new
-  dashboard/task extracts for 003G/003H.
-- `docs/slices/003F-communication-template-shell.md`: marked Complete.
-- `docs/slices/003G-dashboard-task-summary-api.md`: sharpened with concrete dashboard API fields,
-  role contexts, permission guidance, and tests.
-- `docs/slices/003H-dashboard-task-ui-wiring.md`: sharpened with concrete frontend API wiring,
-  states, screenshot requirements, and tests.
+- `docs/working/API_CONTRACTS.md`: dashboard endpoint contract, role contexts, zero-count shell,
+  permission assumption, audit behavior, and deferrals.
+- `docs/working/ASSUMPTIONS.md`: A-023 for dashboard permission/context handling and A-007
+  cross-reference correction.
+- `docs/working/digests/epic-003-audit-documents-config.md`: 003G implementation note for 003H.
+- `docs/working/digests/epic-002-platform-auth.md`: note that `management_viewer` is no longer the
+  demo zero-permission role after A-023.
+- `docs/slices/003G-dashboard-task-summary-api.md`: marked Complete.
+- `docs/slices/003H-dashboard-task-ui-wiring.md`: sharpened with exact 003G fields, contexts, and
+  permission behavior.
+- `docs/slices/003IA-notifications-center-ui-wiring.md`: sharpened to wait for 003I and keep
+  dashboard tasks separate from notifications.
 
 ## Evidence
-See `.ralph/runs/2026-07-05_193926_normal_run/`:
-- `evidence/terminal-logs/red-content-template-api-tests.log`
-- `evidence/terminal-logs/green-content-template-api-tests.log`
-- `evidence/terminal-logs/green-content-template-and-catalogue-tests.log`
+See `.ralph/runs/2026-07-05_200043_normal_run/`:
+- `execution-plan.md`
+- `evidence/terminal-logs/red-dashboard-api-tests.log`
+- `evidence/terminal-logs/red-dashboard-catalogue-test.log`
+- `evidence/terminal-logs/green-dashboard-api-tests.log`
+- `evidence/terminal-logs/green-dashboard-catalogue-test.log`
+- `evidence/terminal-logs/green-dashboard-seed-regression-tests.log`
 - `evidence/terminal-logs/backend-check.log`
 - `evidence/terminal-logs/backend-tests.log`
 - `evidence/terminal-logs/backend-makemigrations-check.log`
@@ -60,19 +67,18 @@ See `.ralph/runs/2026-07-05_193926_normal_run/`:
 - `evidence/terminal-logs/frontend-lint.log`
 - `evidence/terminal-logs/frontend-tests.log`
 - `evidence/terminal-logs/frontend-build.log`
-- `evidence/api-responses/content-template-api-response.txt`
+- `evidence/api-responses/dashboard-api-response.txt`
 
 ## Current Blocker
 None.
 
 ## Next Recommended Action
-Run `003G-dashboard-task-summary-api`.
+Run architecture review by cadence. After review, the next implementation slice is
+`003H-dashboard-task-ui-wiring`.
 
-Notes for `003G`:
-- Use the new "Dashboard and Task Foundation Extracts" section in the Epic 003 digest before opening
-  large source docs.
-- Build only `GET /api/v1/dashboard/` as a role-based summary shell.
-- Return source-named zero-count cards and empty tasks where underlying modules/tables do not exist;
-  do not invent loan/compliance/treasury calculations.
-- Resolve the dashboard permission gap explicitly in `ASSUMPTIONS.md`; do not silently reuse broad
-  report/export permissions unless the source extract supports the read scope.
+Notes for `003H`:
+- Use `docs/working/API_CONTRACTS.md` and the 003G digest note before opening large source docs.
+- Wire the existing dashboard UI to `/api/v1/dashboard/`; do not add new styling or components.
+- The backend currently returns `tasks: []`, so the frontend should use the existing empty-state
+  pattern.
+- Do not assume `management_viewer` is zero-permission; the neutral demo user is now `it_head`.
