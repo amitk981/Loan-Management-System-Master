@@ -56,3 +56,27 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
 - `docs/source/data-model.md` §16.3 links downstream `loan_documents.document_id` to generated or
   uploaded `document_files`, but 003C should not create `loan_documents`; keep 003C to generic
   document metadata + storage adapter.
+
+## Configuration Foundation Extracts
+- `docs/source/data-model.md` §25.1 defines `loan_policy_configs` with UUID PK,
+  `policy_name`, `policy_version`, effective date range, duration/month/year settings,
+  approval threshold, default scale of finance, share percentage, per-share cap, interest fields,
+  re-KYC/retention/grace/extension settings, nullable `board_approval_reference`, and indexed
+  `status` (`draft` / `active` / `retired`).
+- `docs/source/data-model.md` §26.3 defines `version_histories` with UUID PK,
+  `versioned_entity_type`, `versioned_entity_id`, `version_number`, `change_summary`,
+  nullable author/reviewer/approver user FKs, nullable `board_approval_reference`,
+  `effective_from`, nullable `effective_to`, and `created_at`.
+- `docs/source/api-contracts.md` §41.1 defines loan-policy config endpoints:
+  `GET /api/v1/config/loan-policy/`, `POST /api/v1/config/loan-policy/`,
+  `PATCH /api/v1/config/loan-policy/{loan_policy_config_id}/`, and
+  `POST /api/v1/config/loan-policy/{loan_policy_config_id}/activate/`, with the request fields
+  mirrored from `loan_policy_configs`.
+- `docs/source/api-contracts.md` §42.3 defines
+  `GET /api/v1/version-histories/?versioned_entity_type=loan_policy_config&versioned_entity_id=uuid`.
+- `docs/source/technical-architecture.md` §27 says major rule changes must be drafted, reviewed,
+  approved, capture board approval reference where required, be effective-dated, versioned, and
+  audit logged.
+- `docs/source/auth-permissions.md` §12.13 provides `config.loan_policy.read`,
+  `config.loan_policy.manage`, and `audit.version_history.read`; §31 says critical configuration
+  changes require reason, effective dates, historical availability, and activation audit logs.

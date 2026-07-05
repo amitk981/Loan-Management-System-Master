@@ -31,6 +31,7 @@ ASGI_APPLICATION = "sfpcl_credit.config.asgi.application"
 INSTALLED_APPS = [
     "corsheaders",
     "django.contrib.contenttypes",
+    "sfpcl_credit.documents",
     "sfpcl_credit.identity",
     "sfpcl_credit.tracer",
     "sfpcl_credit.workflows",
@@ -57,3 +58,7 @@ TIME_ZONE = "UTC"
 
 AUTH_ACCESS_TOKEN_MINUTES = 15
 AUTH_REFRESH_TOKEN_HOURS = 24
+
+DOCUMENT_STORAGE_ROOT = os.environ.get("SFPCL_DOCUMENT_STORAGE_ROOT") or (
+    BASE_DIR / "local-document-storage"
+)

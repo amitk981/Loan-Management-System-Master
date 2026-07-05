@@ -45,7 +45,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Loan applications | Draft from source | Applications, completeness | `api-contracts.md` | Needs real draft/submit/check endpoints. |
 | Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
-| Documentation and securities | Draft from source | Documentation hub | SOP PDFs, `api-contracts.md` | Must preserve disbursement blockers. |
+| Documentation and securities | Document-file upload foundation implemented in 003C; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. Download, checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
 | SAP and disbursement | Draft from source | Disbursement and CFC | SOP PDFs, `api-contracts.md` | Integration is manual/adapter-first for MVP. |
 | Loan account, repayment, interest | Draft from source | Loan account, repayments, interest | `data-model.md`, `api-contracts.md` | Financial calculations are high risk. |
 | Default, recovery, closure | Draft from source | Default, closure | `functional-spec.md`, `api-contracts.md` | Recovery approvals require audit evidence. |
@@ -288,3 +288,65 @@ Rules:
 - Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session → `401 INVALID_TOKEN`;
   authenticated user without `audit.workflow_event.read` → `403 PERMISSION_DENIED`.
 - Response examples are saved in `.ralph/runs/2026-07-05_083910_normal_run/evidence/api-responses/workflow-events-api-response.txt`.
+
+## Document file upload foundation (003C)
+
+`POST /api/v1/document-files/`
+
+Protected multipart upload endpoint matching `docs/source/api-contracts.md` §26.1 and
+`docs/source/data-model.md` §16.1. File bytes are stored outside the database through the local
+filesystem adapter (`storage_provider: "local"`); the `document_files` table stores metadata,
+storage key, uploader, sensitivity, upload timestamp, and SHA-256 checksum. No download endpoint or
+loan-document/checklist workflow is implemented in 003C.
+
+Request headers:
+
+```http
+Authorization: Bearer <access_token>
+Content-Type: multipart/form-data
+X-Request-ID: req-document-upload
+```
+
+Multipart fields:
+- `file` — required file binary.
+- `document_category` — required free-text category from the source vocabulary.
+- `sensitivity_level` — required; accepted values are `public`, `internal`, `confidential`,
+  `restricted`; input is case-normalized to lower case.
+- `related_entity_type` — optional free-text entity type, recorded only in the upload audit metadata
+  until downstream domain tables exist.
+- `related_entity_id` — optional UUID; invalid UUID returns `400 VALIDATION_ERROR` with
+  `field_errors.related_entity_id`.
+
+Success data:
+
+```json
+{
+  "success": true,
+  "data": {
+    "document_id": "uuid",
+    "file_name": "borrower-pan.pdf",
+    "mime_type": "application/pdf",
+    "file_size_bytes": 245600,
+    "sensitivity_level": "restricted",
+    "uploaded_at": "2026-06-22T10:30:00Z"
+  },
+  "meta": { "request_id": "req-document-upload", "timestamp": "...Z", "api_version": "v1" }
+}
+```
+
+Rules:
+- Permission: `documents.file.upload` from the seeded source catalogue.
+- Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session →
+  `401 INVALID_TOKEN`; authenticated user without `documents.file.upload` →
+  `403 PERMISSION_DENIED`.
+- Missing `file`, `document_category`, or `sensitivity_level` returns `400 VALIDATION_ERROR` with
+  field-level errors and no file, metadata, or audit write.
+- Invalid `sensitivity_level` or `related_entity_id` returns `400 VALIDATION_ERROR`.
+- Successful upload writes exactly one `AuditLog` row with action `documents.file.uploaded`,
+  `entity_type: "document_file"`, and `entity_id` equal to the new `document_id`. The audit
+  `new_value` includes metadata such as file name, storage provider/key, checksum, sensitivity,
+  category, and related entity facts; it never stores raw file bytes.
+- Local adapter root defaults to `SFPCL_DOCUMENT_STORAGE_ROOT` or
+  `sfpcl_credit/local-document-storage`; tests override this root with a temp directory. Production
+  S3/DMS adapters are future work behind the same storage boundary.
+- Response examples are saved in `.ralph/runs/2026-07-05_085852_normal_run/evidence/api-responses/document-files-api-response.txt`.

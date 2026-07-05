@@ -1,5 +1,6 @@
 from django.urls import path
 
+from sfpcl_credit.documents import views as document_views
 from sfpcl_credit.identity import admin_views, audit_views
 from sfpcl_credit.identity.views import login, logout, me, refresh
 from sfpcl_credit.ops import deep_health, live_health, ready_health
@@ -43,6 +44,11 @@ urlpatterns = [
         "api/v1/workflow-events/",
         event_views.workflow_event_list,
         name="workflow-event-list",
+    ),
+    path(
+        "api/v1/document-files/",
+        document_views.upload_document_file,
+        name="document-file-upload",
     ),
     path("api/v1/tracer/members/", tracer_views.create_member, name="tracer-member-create"),
     path(

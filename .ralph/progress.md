@@ -1,5 +1,22 @@
 # Ralph Progress Log
 
+## 2026-07-05 08:58:52 - 2026-07-05_085852_normal_run
+- Agent tool used: codex
+- Slice attempted: 003C-document-metadata-and-storage-adapter
+- Summary: Added generic document-file metadata and local filesystem storage foundation. New
+  `sfpcl_credit.documents` app owns `document_files`, writes uploaded bytes outside the database,
+  computes SHA-256 checksums, exposes protected multipart `POST /api/v1/document-files/`, and
+  audits successful uploads as `documents.file.uploaded` without raw bytes. Loan-document,
+  checklist, download, template, signature, stamp, and notarisation workflows remain out of scope.
+- Tests run: document upload TDD red/green; backend `manage.py check`; backend tests (134/134);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend
+  `npm run typecheck`; `npm run lint`; `npm test` (26/26); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-05_085852_normal_run/`, with red/green/gate logs under
+  `evidence/terminal-logs/` and document upload API examples under `evidence/api-responses/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Architecture review is due by cadence, then run `003D-secure-document-download-with-audit`.
+
 ## 2026-07-05 08:39:10 - 2026-07-05_083910_normal_run
 - Agent tool used: codex
 - Slice attempted: 003B-workflow-event-foundation
@@ -709,6 +726,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_083910_normal_run/.ralph/runs/2026-07-05_083910_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_083910_normal_run/.ralph/runs/2026-07-05_083910_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-05 09:17:22 - 2026-07-05_085852_normal_run
+- Agent tool used: codex
+- Slice attempted: 003C-document-metadata-and-storage-adapter
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_085852_normal_run/.ralph/runs/2026-07-05_085852_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_085852_normal_run/.ralph/runs/2026-07-05_085852_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

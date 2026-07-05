@@ -1,0 +1,52 @@
+Bad Request: /api/v1/document-files/
+Unauthorized: /api/v1/document-files/
+SUCCESS 200
+{
+  "data": {
+    "document_id": "283806b7-11a0-4ab2-935f-02cc2904d9b6",
+    "file_name": "borrower-pan.pdf",
+    "file_size_bytes": 19,
+    "mime_type": "application/pdf",
+    "sensitivity_level": "restricted",
+    "uploaded_at": "2026-07-05T03:39:47.490098Z"
+  },
+  "meta": {
+    "api_version": "v1",
+    "request_id": "req-document-upload-evidence",
+    "timestamp": "2026-07-05T03:39:47.491447Z"
+  },
+  "success": true
+}
+VALIDATION 400
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "details": {},
+    "field_errors": {
+      "file": "This field is required.",
+      "sensitivity_level": "This field is required."
+    },
+    "message": "Document upload failed validation."
+  },
+  "meta": {
+    "api_version": "v1",
+    "request_id": null,
+    "timestamp": "2026-07-05T03:39:47.492771Z"
+  },
+  "success": false
+}
+UNAUTHENTICATED 401
+{
+  "error": {
+    "code": "AUTH_REQUIRED",
+    "details": {},
+    "field_errors": {},
+    "message": "Bearer access token is required."
+  },
+  "meta": {
+    "api_version": "v1",
+    "request_id": null,
+    "timestamp": "2026-07-05T03:39:47.493143Z"
+  },
+  "success": false
+}
