@@ -2,6 +2,77 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-05 20:32 - Architecture Review 2026-07-05_202735_architecture_review
+
+Reviewed commits since the prior architecture review (`94c437e`):
+- `003D-secure-document-download-with-audit` (`4a3779f`)
+- `003E-versioned-configuration-shell` (`ccd41d4`)
+- `003F-communication-template-shell` (`117d2ff`)
+- `003G-dashboard-task-summary-api` (`05147c6`)
+
+### Finding 1 - Medium - Internal Auditor is mapped to a dashboard context but cannot pass the dashboard permission gate
+
+`003G` documents A-023 as mapping Internal Auditor to the compliance dashboard context, and the
+service code includes `"internal_auditor": "compliance"` in the role-context map
+(`sfpcl_credit/dashboard/services.py:8-18`). The endpoint also requires `management_readonly`, but
+the catalogue seed does not grant that permission to `internal_auditor`
+(`sfpcl_credit/identity/catalogue.py:441-451`). The catalogue regression that checks dashboard
+roles omits `internal_auditor` as well (`sfpcl_credit/tests/test_catalogue_seed.py:163-179`). The
+result is a role that the documented contract says should get a compliance dashboard shell, but a
+seeded Internal Auditor receives `403 PERMISSION_DENIED` before the mapping is reachable. This will
+surface immediately when `003H` wires the frontend dashboard to the API.
+
+Corrective action: created `docs/slices/003G2-dashboard-internal-auditor-access-regression.md` and
+made `003H-dashboard-task-ui-wiring` depend on it. The corrective slice must add a failing-first
+seeded-role regression and either grant `management_readonly` to `internal_auditor` or remove that
+role from the documented dashboard mapping and A-023.
+
+### Finding 2 - Pass - 003D closes the shared-auth duplication finding while preserving protected-view envelopes
+
+`003D` extracts the repeated session-bound bearer parsing into
+`sfpcl_credit.identity.modules.http_auth` and migrates admin, audit, workflow, document, tracer, and
+`/auth/me` call sites to the shared helper. The focused document/auth tests assert missing,
+malformed, and revoked bearer behavior across the migrated protected views, so the refactor
+materially closes the prior architecture-review finding without changing the standard `401`
+envelopes. The new download endpoint stays within the 003D scope: it returns the documented
+descriptor shape, gates on `documents.file.download`, writes exactly one success audit row, and
+avoids storage-key/checksum/raw-byte leakage.
+
+Corrective action: none.
+
+### Finding 3 - Pass - 003E and 003F are source-traced shells with real validation and side-effect assertions
+
+`003E` implements `loan_policy_configs`, `version_histories`, loan-policy list/create/patch/activate,
+and filtered version-history reads with tests for required source fields, approval-evidence blocking
+for M01-FR-015, active-policy retirement per A-021, audit rows, permission denials, invalid UUIDs,
+and deferred M01-FR-003 through M01-FR-014 calculations. `003F` implements the
+`content_templates` metadata shell with tests for metadata-only responses, variables persistence,
+date/status/duplicate-code validation, no rendered merge output, audit rows, and the A-022
+permission assumption. These are behavior assertions, not coverage padding, and the review packets
+trace the relevant source IDs.
+
+Corrective action: none.
+
+### Finding 4 - Pass with queue sharpening - Dashboard shell is intentionally zero-count; notification adapter slice is now concrete
+
+Aside from Finding 1, `003G` correctly avoids inventing downstream dashboard calculations: no model
+or migration was added, all supported card shells return zero counts, `tasks: []`, unknown query
+parameters return `400 VALIDATION_ERROR`, and read access writes no audit row. The tests cover the
+five role contexts, the standard envelope, `401`/`403`, and no sensitive borrower/member/loan-account
+values in the shell. This review sharpened `003I-notification-adapter-shell` from targeted source
+extracts for `communications` (§39.2-39.3, data-model §24.2, M16-FR-001 through M16-FR-007, and S04)
+so the next communication slice does not confuse dashboard task summaries with notification
+persistence.
+
+Functional-spec spot check: no full functional module is complete yet. `003E` explicitly implements
+the shell portions of M01-FR-001, M01-FR-002, and M01-FR-015 while deferring M01-FR-003 through
+M01-FR-014. `003F` implements the template-storage part of M16-FR-004 and M18-FR-006 while deferring
+delivery, delivery-status, phone-call, and borrower/loan communication-history requirements to
+003I and later slices. `003G` supports the §12.2-§12.6 dashboard shell only; no business metrics are
+claimed complete.
+
+Corrective action: no additional defect slice beyond `003G2`; sharpened `003I`.
+
 ## 2026-07-05 09:22 - Architecture Review 2026-07-05_091741_architecture_review
 
 Reviewed commits since the prior architecture review (`559b1b7`):

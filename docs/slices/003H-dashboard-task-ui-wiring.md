@@ -15,7 +15,7 @@ preserving the approved prototype layout and component patterns.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 003G
+- 003G2
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22

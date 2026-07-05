@@ -1,5 +1,25 @@
 # Ralph Progress Log
 
+## 2026-07-05 20:32:00 - 2026-07-05_202735_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed `003D`, `003E`, `003F`, and `003G` since prior architecture-review commit
+  `94c437e`. Appended findings to `docs/working/REVIEW_FINDINGS.md`. Found one Medium issue:
+  `internal_auditor` is documented/mapped to the compliance dashboard context but lacks the
+  `management_readonly` catalogue grant needed to reach `/api/v1/dashboard/`. Created corrective
+  slice `003G2-dashboard-internal-auditor-access-regression` and made `003H` depend on it.
+  Sharpened `003I-notification-adapter-shell` with communication/notification requirements from
+  targeted source extracts.
+- Tests run: backend `manage.py check`; backend tests (170/170); `makemigrations --check --dry-run`;
+  backend coverage 96% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test`
+  (26/26); `npm run build`; `git diff --check`; protected-path scan.
+- Evidence saved: `.ralph/runs/2026-07-05_202735_architecture_review/`, with gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Low (review/docs-only).
+- Next action: Run `003G2-dashboard-internal-auditor-access-regression`, then
+  `003H-dashboard-task-ui-wiring`.
+
 ## 2026-07-05 19:39:26 - 2026-07-05_193926_normal_run
 - Agent tool used: codex
 - Slice attempted: 003F-communication-template-shell
@@ -875,6 +895,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_200043_normal_run/.ralph/runs/2026-07-05_200043_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_200043_normal_run/.ralph/runs/2026-07-05_200043_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-05 20:44:43 - 2026-07-05_202735_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_202735_architecture_review/.ralph/runs/2026-07-05_202735_architecture_review/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_202735_architecture_review/.ralph/runs/2026-07-05_202735_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

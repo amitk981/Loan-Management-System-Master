@@ -155,6 +155,26 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
   traced; communication sending, delivery status, manual phone-call logging, borrower/loan
   communication attachment, and notification UI remain deferred.
 
+## Notification / Communication Adapter Extracts
+- `docs/source/api-contracts.md` §39.2 defines `POST /api/v1/communications/send/` with
+  `related_entity_type`, `related_entity_id`, `recipient_party_type`, `recipient_party_id`,
+  `recipient_address`, `channel`, `content_template_id`, and `merge_data`.
+- `docs/source/api-contracts.md` §39.3 defines
+  `GET /api/v1/communications/?related_entity_type=loan_application&related_entity_id=uuid`.
+- `docs/source/data-model.md` §24.2 defines `communications` with UUID PK, related entity fields,
+  recipient fields, `channel`, optional template FK, subject/body snapshots, optional sender,
+  indexed `sent_at`, indexed `delivery_status`, optional acknowledgement status, and optional
+  provider message id.
+- `docs/source/functional-spec.md` M16-FR-001 through M16-FR-007 require email, SMS, hard-copy
+  letter task generation, communication templates by event, delivery-status logging, manual phone
+  call reminder logging, and attachment of communications to borrower and loan records. The
+  notification matrix includes borrower and internal events across application, deficiency,
+  rejection, sanction, documentation, SAP, disbursement, rate revision, and interest invoice flows.
+- `docs/source/screen-spec.md` S04 centralises system alerts, borrower communications, internal
+  notifications, and compliance reminders with title, linked record, severity, timestamp, sender,
+  recipient, read/unread, and action button fields. `docs/source/content-spec.md` S04 names tabs
+  and display fields for the Notifications screen.
+
 ## Dashboard and Task Foundation Extracts
 - `docs/source/api-contracts.md` §43.1 defines `GET /api/v1/dashboard/` as the role-based dashboard
   endpoint. The example response for `credit_manager` returns `data.role_context`, `data.cards[]`
