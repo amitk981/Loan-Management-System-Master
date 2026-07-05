@@ -31,3 +31,28 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
 - Add a small internal `record_workflow_event(...)` interface that accepts explicit actor/workflow/entity/state/action/metadata facts and contains no loan eligibility, sanction authority, money, or document-completeness business rules.
 - Preserve tracer regressions: seven successful tracer transitions still write seven workflow events and seven `AuditLog` rows; `makemigrations --check`, clean `migrate`, and full backend tests must remain green.
 - Current tracer schema check during architecture review `2026-07-04_190302`: tracer `WorkflowEvent` fields are `workflow_event_id`, `workflow_name`, `entity_type`, `entity_id`, `from_state`, `to_state`, `triggered_by_user`, `trigger_reason`, and `created_at`; tracer API action payloads expose `workflow_event_id`. 003B should preserve that response field while moving persistence behind the canonical workflow-event service.
+- IMPLEMENTED 2026-07-05 (`2026-07-05_083910_normal_run`): canonical model ownership moved to
+  `sfpcl_credit.workflows.WorkflowEvent` with state-only migrations over the existing physical
+  `workflow_events` table. `record_workflow_event(...)` writes canonical rows; tracer lifecycle
+  writes through it and still returns `workflow_event_id`. `GET /api/v1/workflow-events/` is
+  protected by `audit.workflow_event.read`, supports `entity_type`/`entity_id` filters, standard
+  pagination, invalid UUID/unknown-param 400s, and newest-first ordering. Contract in
+  `API_CONTRACTS.md`; defaults in ASSUMPTIONS A-018.
+
+## Document Foundation Extracts
+- `docs/source/data-model.md` §16.1 defines `document_files` as the central file metadata table:
+  `document_id` UUID PK, `file_name`, optional `file_extension`, optional `mime_type`, optional
+  `file_size_bytes`, `storage_provider`, `storage_key`, optional `checksum_sha256`,
+  nullable `uploaded_by_user_id`, `uploaded_at`, indexed `sensitivity_level`, and optional
+  `retention_until_date`.
+- `docs/source/api-contracts.md` §26.1 defines `POST /api/v1/document-files/` multipart upload
+  with required `file`, `document_category`, `sensitivity_level`; optional `related_entity_type`
+  and `related_entity_id`; response data includes `document_id`, `file_name`, `mime_type`,
+  `file_size_bytes`, `sensitivity_level`, and `uploaded_at`.
+- `docs/source/api-contracts.md` §26.2 defines `GET /api/v1/document-files/{document_id}/download/`
+  with either signed URL response `{download_url, expires_at}` or native stream.
+- Existing digest audit extract from `technical-architecture.md` §17.4 says document upload,
+  download, and verification actions should be audit-logged.
+- `docs/source/data-model.md` §16.3 links downstream `loan_documents.document_id` to generated or
+  uploaded `document_files`, but 003C should not create `loan_documents`; keep 003C to generic
+  document metadata + storage adapter.

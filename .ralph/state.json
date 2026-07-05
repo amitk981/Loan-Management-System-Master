@@ -26,14 +26,15 @@
     "002J-api-contract-test-harness",
     "002K-seed-data-and-demo-users",
     "002K2-demo-tracer-permission-isolation",
-    "003A-audit-log-foundation"
+    "003A-audit-log-foundation",
+    "003B-workflow-event-foundation"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "7707942",
-  "last_run_id": "2026-07-04_202830_repair",
+  "last_run_id": "2026-07-05_083910_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 2,
+  "slices_completed_since_architecture_review": 3,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

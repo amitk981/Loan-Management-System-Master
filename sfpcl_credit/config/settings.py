@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "sfpcl_credit.identity",
     "sfpcl_credit.tracer",
+    "sfpcl_credit.workflows",
 ]
 
 MIDDLEWARE = [

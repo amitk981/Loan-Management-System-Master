@@ -9,8 +9,8 @@ from sfpcl_credit.tracer.models import (
     LoanApplication,
     Member,
     Repayment,
-    WorkflowEvent,
 )
+from sfpcl_credit.workflows.models import WorkflowEvent
 
 
 TRACER_PERMISSION = "tracer.lifecycle.run"

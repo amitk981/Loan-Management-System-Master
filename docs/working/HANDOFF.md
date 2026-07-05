@@ -1,53 +1,58 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-04_202830_repair (repair of 003A)
+2026-07-05_083910_normal_run
 
 ## Current Status
-Slice `003A-audit-log-foundation` completed successfully in repair mode. The two prior
-attempts failed: `2026-07-04_202030_normal_run` (codex) hit a usage limit before writing
-code; `2026-07-04_202151_normal_run` (claude) wrote the service module and tests but never
-wired a view or URL, so every endpoint test returned 404, and it left `risk-assessment.md`
-as the template. This run implemented the full path and all artifacts.
-
-## Current Slice
-None selected. Next: `003B-workflow-event-foundation`.
+Slice `003B-workflow-event-foundation` completed successfully.
 
 ## What Completed
-`GET /api/v1/audit-logs/` now exposes the existing append-only `identity.AuditLog` records:
-- Thin `require_GET` view `sfpcl_credit/identity/audit_views.py`; all query
-  parsing/validation/serialization/pagination behind
-  `sfpcl_credit/identity/modules/audit_log.py` (002C2 service-boundary pattern).
-- Gated by the existing canonical `audit.audit_log.read` permission (002C catalogue;
-  `internal_auditor`, `chief_financial_controller`). No new permission invented.
-- §42.1 item shape: `audit_log_id`, `actor{user_id, full_name}` or `null`, `actor_type`,
-  `action`, `entity_type`, `entity_id`, `old_value`, `new_value` (mapped from
-  `old_value_json`/`new_value_json`), `ip_address`, `created_at`. `user_agent` not exposed.
-- Filters `entity_type`, `entity_id`, `actor_user_id`; newest-first; top-level pagination.
-- 401 `AUTH_REQUIRED` / 401 `INVALID_TOKEN` / 403 `PERMISSION_DENIED`; invalid UUID and
-  unknown query params → 400 `VALIDATION_ERROR` with `field_errors`. Read creates no audit row.
-- No schema change, no migration; existing `AuditLog` model reused.
+Canonical workflow-event ownership now lives in `sfpcl_credit.workflows`:
+- `sfpcl_credit/workflows/models.py::WorkflowEvent` is the canonical model for the
+  existing physical `workflow_events` table from `docs/source/data-model.md` §26.2.
+- `workflows.0001_canonical_workflow_event` adds model state only; it does not create
+  a second `workflow_events` table. `tracer.0002_remove_tracer_workflowevent_state`
+  removes tracer model state only; it does not drop the table.
+- `sfpcl_credit/workflows/events.py::record_workflow_event(...)` is the internal write
+  interface. It accepts actor/workflow/entity/state/reason plus explicit `action_code`
+  and `metadata` boundary facts, but persists only §26.2 columns. A-018 records this
+  source-schema decision.
+- `GET /api/v1/workflow-events/` is implemented with session-bound bearer auth,
+  existing `audit.workflow_event.read`, `entity_type`/`entity_id` filters, newest-first
+  top-level pagination, unknown-param and invalid-UUID `400 VALIDATION_ERROR`, and
+  standard `401`/`403` envelopes.
+- Tracer lifecycle writes now call `record_workflow_event(...)`; tracer responses still
+  expose `workflow_event_id`; existing tracer audit behavior is preserved.
 
-Working docs updated: `docs/working/API_CONTRACTS.md` (endpoint contract),
-`docs/working/ASSUMPTIONS.md` A-017 (ordering tiebreak, page-size bounds, unknown-param
-strictness, `user_agent` omission).
+Working docs updated:
+- `docs/working/API_CONTRACTS.md` has the workflow-event write/read contract.
+- `docs/working/ASSUMPTIONS.md` A-018 records ordering/page-size/unknown-param defaults
+  and the action/metadata persistence decision.
+- `docs/working/digests/epic-003-audit-documents-config.md` records 003B completion and
+  distilled document metadata/download extracts for the next slices.
+- `docs/slices/003C-document-metadata-and-storage-adapter.md` and
+  `docs/slices/003D-secure-document-download-with-audit.md` were sharpened from the
+  source sections opened during 003B.
 
 ## Evidence
-See `.ralph/runs/2026-07-04_202830_repair/`:
-- `evidence/terminal-logs/backend-red.txt` (12 failing → 404 before wiring)
-- `evidence/terminal-logs/backend-green.txt` (12 passing after wiring)
-- `evidence/audit-logs-api-response.txt` (real 200 + 400 responses)
+See `.ralph/runs/2026-07-05_083910_normal_run/`:
+- `evidence/terminal-logs/backend-red.txt`: new workflow-event tests fail before service exists.
+- `evidence/terminal-logs/backend-green.txt`: workflow-event tests pass after implementation.
+- `evidence/terminal-logs/tracer-regression.txt`: tracer API regression passes.
+- `evidence/terminal-logs/clean-migrate.txt`: clean temp DB migration applies without duplicate table creation.
+- `evidence/api-responses/workflow-events-api-response.txt`: real 200, 403, and 400 examples.
 
 Gates passed:
-- Backend `manage.py check`; `makemigrations --check --dry-run` (No changes detected)
-- Backend tests: 120/120; coverage 96% (floor 85)
-- Frontend `npm run typecheck`; `npm run lint`; `npm test` 26/26; `npm run build`
+- Backend `manage.py check`
+- Backend tests: 128/128
+- Backend `makemigrations --check --dry-run`: no changes detected
+- Backend coverage: 96% (floor 85)
+- Frontend `npm run typecheck`, `npm run lint`, `npm test` 26/26, `npm run build`
 
 ## Current Blocker
 None.
 
 ## Next Recommended Action
-Run `003B-workflow-event-foundation`. Note the digest warning: the tracer app already owns
-`db_table = "workflow_events"` (002EX drift) — 003B must relocate/repoint rather than create
-a duplicate table. The `identity/modules/audit_log.py` serializer + `audit_views.py` thin-view
-pattern is the template to mirror for the workflow-events read endpoint.
+Run `003C-document-metadata-and-storage-adapter`. It is now sharpened to create the generic
+`document_files` metadata model and local storage adapter only. Keep 003C away from loan
+document/checklist/download flows; `003D` owns secure download with audit after 003C lands.

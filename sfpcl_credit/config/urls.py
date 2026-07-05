@@ -4,6 +4,7 @@ from sfpcl_credit.identity import admin_views, audit_views
 from sfpcl_credit.identity.views import login, logout, me, refresh
 from sfpcl_credit.ops import deep_health, live_health, ready_health
 from sfpcl_credit.tracer import views as tracer_views
+from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
@@ -38,6 +39,11 @@ urlpatterns = [
         name="admin-user-status-set",
     ),
     path("api/v1/audit-logs/", audit_views.audit_log_list, name="audit-log-list"),
+    path(
+        "api/v1/workflow-events/",
+        event_views.workflow_event_list,
+        name="workflow-event-list",
+    ),
     path("api/v1/tracer/members/", tracer_views.create_member, name="tracer-member-create"),
     path(
         "api/v1/tracer/members/<uuid:member_id>/loan-applications/",

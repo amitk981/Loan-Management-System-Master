@@ -1,5 +1,15 @@
 # Ralph Progress Log
 
+## 2026-07-05 08:39:10 - 2026-07-05_083910_normal_run
+- Agent tool used: codex
+- Slice attempted: 003B-workflow-event-foundation
+- Summary: Moved canonical workflow-event ownership to `sfpcl_credit.workflows.WorkflowEvent` while preserving the existing physical `workflow_events` table created by the tracer migration. Added state-only ownership migrations, `record_workflow_event(...)`, protected `GET /api/v1/workflow-events/`, and repointed tracer lifecycle event writes through the canonical service while preserving `workflow_event_id` responses and tracer audit behavior.
+- Tests run: workflow-event TDD red/green; tracer API regression (7/7); clean temp DB `migrate`; backend `manage.py check`; backend tests (128/128); `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test` (26/26); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-05_083910_normal_run/`, with red/green logs under `evidence/terminal-logs/` and workflow-events API examples under `evidence/api-responses/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `003C-document-metadata-and-storage-adapter`; `003D-secure-document-download-with-audit` has also been sharpened from the source sections opened in this run.
+
 ## 2026-07-04 19:15:53 - 2026-07-04_191553_normal_run
 - Agent tool used: codex
 - Slice attempted: 002K2-demo-tracer-permission-isolation
@@ -689,6 +699,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_202830_repair/.ralph/runs/2026-07-04_202830_repair/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_202830_repair/.ralph/runs/2026-07-04_202830_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-05 08:58:41 - 2026-07-05_083910_normal_run
+- Agent tool used: codex
+- Slice attempted: 003B-workflow-event-foundation
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_083910_normal_run/.ralph/runs/2026-07-05_083910_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_083910_normal_run/.ralph/runs/2026-07-05_083910_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

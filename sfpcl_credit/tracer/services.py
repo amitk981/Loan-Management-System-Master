@@ -11,8 +11,8 @@ from sfpcl_credit.tracer.models import (
     LoanApplication,
     Member,
     Repayment,
-    WorkflowEvent,
 )
+from sfpcl_credit.workflows.events import record_workflow_event
 from sfpcl_credit.workflows.guard import (
     TransitionDefinition,
     evaluate_transition,
@@ -400,13 +400,13 @@ def _next_reference(model, prefix, pk_name):
 
 
 def _record_event(workflow_name, entity_type, entity_id, from_state, to_state, user):
-    return WorkflowEvent.objects.create(
+    return record_workflow_event(
+        actor=user,
         workflow_name=workflow_name,
         entity_type=entity_type,
         entity_id=entity_id,
         from_state=from_state,
         to_state=to_state,
-        triggered_by_user=user,
     )
 
 

@@ -222,3 +222,69 @@ Rules:
   is intentionally not exposed (not part of §42.1).
 - Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session → `401 INVALID_TOKEN`;
   authenticated user without the audit-read permission → `403 PERMISSION_DENIED`.
+
+## Workflow event foundation (003B)
+
+`record_workflow_event(...)`
+
+Internal write interface over the canonical `workflows.WorkflowEvent` model and existing physical
+`workflow_events` table (`docs/source/data-model.md` §26.2). The physical table was first created by
+the 002EX tracer migration; 003B moves final Django model ownership to `sfpcl_credit.workflows`
+without dropping or recreating the table. The tracer proof now calls this service and still returns
+`workflow_event_id` in transition responses.
+
+Accepted facts:
+- `actor` — authenticated `User` or `None`, stored as `triggered_by_user`.
+- `workflow_name`, `entity_type`, `entity_id`, `from_state`, `to_state`, `trigger_reason`.
+- `action_code` and `metadata` may be passed by callers as explicit boundary facts, but they are not
+  persisted because §26.2 defines no action or metadata columns.
+
+`GET /api/v1/workflow-events/`
+
+Read-only, protected endpoint matching `docs/source/api-contracts.md` §42.2. Serialization,
+filtering, and pagination live behind `sfpcl_credit/workflows/events.py`;
+`sfpcl_credit/workflows/event_views.py` is a thin `require_GET` view. No update/delete endpoint
+exists.
+
+Request headers:
+
+```http
+Authorization: Bearer <access_token>
+X-Request-ID: req-workflow-list
+```
+
+Query parameters (all optional):
+- `entity_type` — free-text exact match on `WorkflowEvent.entity_type`.
+- `entity_id` — UUID; invalid UUID returns `400 VALIDATION_ERROR` with `field_errors.entity_id`.
+- `page`, `page_size` — standard top-level pagination (default `page_size` 20, max 100).
+- Any other query parameter returns `400 VALIDATION_ERROR` with the unknown key in `field_errors`.
+
+Success (top-level `pagination` envelope, newest-first by `created_at`):
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "workflow_event_id": "uuid",
+      "workflow_name": "application",
+      "entity_type": "loan_application",
+      "entity_id": "uuid",
+      "from_state": "draft",
+      "to_state": "submitted",
+      "triggered_by_user": { "user_id": "uuid", "full_name": "Ivy Auditor" },
+      "trigger_reason": "Application submitted for credit review",
+      "created_at": "2026-06-22T10:30:00Z"
+    }
+  ],
+  "pagination": { "page": 1, "page_size": 20, "total_count": 1, "total_pages": 1, "has_next": false, "has_previous": false },
+  "meta": { "request_id": "req-workflow-list", "timestamp": "...Z", "api_version": "v1" }
+}
+```
+
+Rules:
+- Permission: `audit.workflow_event.read` (002C catalogue). No new workflow-event permission code is invented.
+- `triggered_by_user` is `null` for system/no-actor rows.
+- Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session → `401 INVALID_TOKEN`;
+  authenticated user without `audit.workflow_event.read` → `403 PERMISSION_DENIED`.
+- Response examples are saved in `.ralph/runs/2026-07-05_083910_normal_run/evidence/api-responses/workflow-events-api-response.txt`.
