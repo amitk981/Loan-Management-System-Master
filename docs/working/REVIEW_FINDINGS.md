@@ -2,6 +2,73 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-05 09:22 - Architecture Review 2026-07-05_091741_architecture_review
+
+Reviewed commits since the prior architecture review (`559b1b7`):
+- `002K2-demo-tracer-permission-isolation` (`13fcbc4`)
+- `003A-audit-log-foundation` (`da589a1`)
+- `003B-workflow-event-foundation` (`a641466`)
+- `003C-document-metadata-and-storage-adapter` (`20b902b`)
+
+### Finding 1 - Medium - Protected backend views keep copying the same bearer-session parser
+
+The reviewed product behavior is correct, but the HTTP auth boundary is drifting. `003A`,
+`003B`, and `003C` each added a thin protected view with a local `_authenticate_session()`
+implementation that repeats the same header parsing, `AUTH_REQUIRED`, `INVALID_TOKEN`, and
+`auth_service.validate_access_session()` logic (`sfpcl_credit/identity/audit_views.py:18`,
+`sfpcl_credit/workflows/event_views.py:10`, `sfpcl_credit/documents/views.py:10`). The same
+pattern already exists in `admin_views`, `tracer/views.py`, and `identity/views.py`, so the next
+protected endpoint would make six or seven places to keep in sync. This has not produced a
+response-contract defect yet, and tests cover the 401 cases, but it is exactly the duplication
+003B warned about before adding another protected read view.
+
+Corrective action: sharpened `docs/slices/003D-secure-document-download-with-audit.md` to extract
+one shared session-bound Bearer helper before adding the download endpoint, migrate existing thin
+views to it where the helper shape fits, and add regression coverage proving the standard 401
+envelopes stay unchanged.
+
+### Finding 2 - Pass - 002K2 closes the demo tracer permission leak with behavior tests
+
+`seed_demo_users` now creates a local/dev-only `local_demo_tracer_user` role for
+`demo.tracer@sfpcl.example`, grants that role exactly `tracer.lifecycle.run`, and deletes stale
+tracer grants from every other role. The regression test creates a non-demo `sales_team_user`,
+seeds stale tracer authority, reruns the guarded demo seed, logs in through real `/auth/login/`,
+and proves `/auth/me/` returns `permissions: []` and `available_actions: []` for that non-demo
+Sales user. This directly closes the prior review finding and preserves A-007/A-011.
+
+Corrective action: none.
+
+### Finding 3 - Pass - 003A and 003B match the audit/workflow source contracts and use real assertions
+
+`003A` exposes the existing `identity.AuditLog` through `GET /api/v1/audit-logs/` without adding
+a second audit table, maps `old_value_json`/`new_value_json` to source contract names, serializes
+system rows as `actor: null`, rejects unknown filters, and proves the read endpoint does not write
+new audit rows. `003B` reconciles the tracer-owned `workflow_events` table through state-only
+migrations, moves canonical ownership to `sfpcl_credit.workflows`, preserves tracer
+`workflow_event_id` responses, and adds the protected workflow-event read endpoint. The tests
+assert item fields, ordering, filters, invalid UUIDs, permission denials, clean migration, and
+tracer lifecycle regression behavior rather than relying on coverage numbers alone.
+
+Corrective action: none beyond Finding 1's shared-auth cleanup.
+
+### Finding 4 - Pass with queue sharpening - 003C delivers the generic upload foundation; 003D/003E are sharper
+
+`003C` keeps the slice generic: one `document_files` migration, local storage bytes outside the
+database, SHA-256 checksum, `documents.file.upload` permission gate, validation for required
+multipart fields and source sensitivity values, and one `documents.file.uploaded` audit row without
+raw bytes. The tests also verify 401/403 paths create no document or upload-audit rows. No frontend
+code changed. This review added source extracts for document download permission/audit and
+functional-spec policy configuration IDs to `docs/working/digests/epic-003-audit-documents-config.md`,
+then sharpened `003D` and `003E` accordingly.
+
+Functional-spec spot check: no full functional epic was completed in this review window. The 002K2
+RBAC correction supports M18-FR-001; the 003A-C foundation work supports later document/audit/config
+modules but does not complete M01/M06/M17/M18 requirements by itself. `003E` now explicitly traces
+M01-FR-001, M01-FR-002, and M01-FR-015 and requires deferral of M01-FR-003 through M01-FR-014 rather
+than invented policy calculations.
+
+Corrective action: no new corrective slice; sharpened `003D` and `003E`.
+
 ## 2026-07-04 19:03 - Architecture Review 2026-07-04_190302_architecture_review
 
 Reviewed commits since the prior architecture review (`7908071`):

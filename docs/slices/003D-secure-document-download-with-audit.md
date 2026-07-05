@@ -46,6 +46,14 @@ None for this slice, except updating frontend documentation or fixtures if requi
    003C. Extend the 003C storage boundary if needed; do not create new document metadata tables.
 4. Do not implement loan-document checklist approvals, template generation, streaming binary
    downloads, or frontend document UI in this slice.
+5. Close the architecture-review `2026-07-05_091741_architecture_review` auth-duplication
+   finding before adding another protected view: extract the repeated session-bound Bearer
+   authentication helper into one shared backend HTTP/auth boundary and migrate the existing
+   protected thin views (`admin_views`, `audit_views`, `workflows/event_views`,
+   `documents/views`, and tracer views where the helper shape fits) plus the new download view
+   to use it without changing standard `401 AUTH_REQUIRED` / `401 INVALID_TOKEN` envelopes.
+   If tracer needs to keep returning effective permission codes, put that behavior behind the
+   shared helper instead of keeping a second parser.
 
 ## Database/Model Impact
 No schema change expected. If a short-lived download-token table is introduced, justify it in
@@ -59,7 +67,8 @@ window, auth/permission errors, not-found behavior, and audit action.
 Require session-bound bearer auth. Use the source-mapped `documents.file.download` permission
 from `docs/source/auth-permissions.md`; do not broaden the 003C upload permission into download
 permission. Keep sensitivity-specific object rules as an explicit ASSUMPTIONS entry until the
-source documents define the role/sensitivity matrix in implementable detail.
+source documents define the role/sensitivity matrix in implementable detail. Do not grant access
+from `documents.file.upload`; upload and download are separate source permissions.
 
 ## Audit Requirements
 Successful download-link creation must write one `AuditLog` row for document download/access:
@@ -80,6 +89,9 @@ only signed-link issuance, in which case document the chosen action in `API_CONT
 
 ## Test Cases
 - Backend TDD red/green: download endpoint fails before implementation.
+- Backend regression: shared authentication helper preserves existing missing/malformed/revoked
+  bearer-token behavior for audit logs, workflow events, document upload, admin users, tracer,
+  and the new download endpoint.
 - API: authorized user receives `{download_url, expires_at}` in the standard envelope.
 - API: `401`, `403`, and `404` envelopes are standard and do not create audit rows.
 - Audit regression: successful download-link creation writes exactly one audit row.

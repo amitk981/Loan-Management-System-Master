@@ -1,0 +1,8 @@
+ .ralph/progress.md                                 | 12 ++++
+ .ralph/state.json                                  |  8 +--
+ .../003D-secure-document-download-with-audit.md    | 14 +++-
+ docs/slices/003E-versioned-configuration-shell.md  | 14 ++++
+ docs/working/HANDOFF.md                            | 83 +++++++++++-----------
+ docs/working/REVIEW_FINDINGS.md                    | 67 +++++++++++++++++
+ .../digests/epic-003-audit-documents-config.md     | 14 ++++
+ 7 files changed, 167 insertions(+), 45 deletions(-)

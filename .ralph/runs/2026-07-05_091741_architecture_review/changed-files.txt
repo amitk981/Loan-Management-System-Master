@@ -1,0 +1,8 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/003D-secure-document-download-with-audit.md
+ M docs/slices/003E-versioned-configuration-shell.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-003-audit-documents-config.md
+?? .ralph/runs/2026-07-05_091741_architecture_review/

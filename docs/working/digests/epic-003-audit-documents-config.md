@@ -56,6 +56,11 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
 - `docs/source/data-model.md` §16.3 links downstream `loan_documents.document_id` to generated or
   uploaded `document_files`, but 003C should not create `loan_documents`; keep 003C to generic
   document metadata + storage adapter.
+- `docs/source/auth-permissions.md` endpoint map lists `POST /document-files/` under
+  `documents.file.upload` and `GET /document-files/{id}/download/` under
+  `documents.file.download` plus a sensitivity check. Restricted-file downloads should create a
+  `documents.file.downloaded` audit event, and source implementation details for the full
+  role/sensitivity matrix remain broader than 003D's generic download-link foundation.
 
 ## Configuration Foundation Extracts
 - `docs/source/data-model.md` §25.1 defines `loan_policy_configs` with UUID PK,
@@ -80,3 +85,12 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
 - `docs/source/auth-permissions.md` §12.13 provides `config.loan_policy.read`,
   `config.loan_policy.manage`, and `audit.version_history.read`; §31 says critical configuration
   changes require reason, effective dates, historical availability, and activation audit logs.
+- `docs/source/functional-spec.md` M01-FR-001 says the system maintains one or more loan product
+  configurations for SFPCL member lending. M01-FR-002 says each policy configuration stores
+  effective date, version, approval authority, and Board approval reference. M01-FR-015 says policy
+  activation must be blocked without required approval evidence.
+- 003E should trace M01-FR-001, M01-FR-002, and M01-FR-015 directly. Functional requirements
+  M01-FR-003 through M01-FR-014 cover eligibility parameters, share valuation, scale of finance,
+  approval matrix, interest, charges, document-template/checklist rules, re-KYC, and compliance
+  task frequencies; those should be explicitly deferred to their owning later slices unless 003E
+  implements only neutral storage fields already in `loan_policy_configs`.

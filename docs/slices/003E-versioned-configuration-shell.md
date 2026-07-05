@@ -22,6 +22,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - docs/source/implementation-roadmap.md sections 10, 20-22
 - docs/source/api-contracts.md sections 26, 39, 41, 42-43
 - docs/source/data-model.md document/config/audit tables
+- docs/source/functional-spec.md M01-FR-001, M01-FR-002, M01-FR-015
 - docs/source/component-spec.md
 - docs/source/design-system.md
 
@@ -58,6 +59,17 @@ None for this slice, except updating frontend documentation or fixtures if requi
    from `api-contracts.md` §42.3.
 5. Do not implement share valuation, scale of finance, interest-rate config, approval matrix,
    document template config, or calculations in this slice.
+6. Trace the functional-spec policy requirements explicitly:
+   - M01-FR-001: support one or more persisted loan product policy configurations.
+   - M01-FR-002: store version, effective dates, approval authority/role, and Board approval
+     reference/evidence fields available in the source model.
+   - M01-FR-015: block activation unless required approval evidence is present; at minimum require
+     `board_approval_reference` or record a source-backed assumption if the implementation uses a
+     different evidence field.
+   - M01-FR-003 through M01-FR-014 are not calculation/config-completeness scope for this shell;
+     explicitly defer them in the review packet or `ASSUMPTIONS.md` instead of partially inventing
+     eligibility, share valuation, scale-of-finance, interest, charge, document-template, re-KYC,
+     or compliance-frequency rules.
 
 ## Database/Model Impact
 One non-destructive migration is expected for `loan_policy_configs` and `version_histories`.
@@ -90,6 +102,8 @@ existing audit/version-history rows.
   explicitly documented otherwise.
 - Updating non-draft configs should return `409 INVALID_STATE_TRANSITION` or standard validation
   error; choose one consistently and document it.
+- Activation must fail when approval evidence required by M01-FR-015 is missing, with a standard
+  `400 VALIDATION_ERROR` or `409 INVALID_STATE_TRANSITION` chosen consistently and documented.
 
 ## Test Cases
 - Backend TDD red/green: loan-policy config API fails before model/service exists.
