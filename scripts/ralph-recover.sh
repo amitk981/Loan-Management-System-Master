@@ -13,7 +13,7 @@ if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   exit 1
 fi
 
-integration_branch="$(awk -F': *' '/^[[:space:]]*integration_branch:/ {print $2; exit}' ".ralph/config.yaml" | xargs || true)"
+integration_branch="$(awk -F': *' '/^[[:space:]]*integration_branch:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' ".ralph/config.yaml" | xargs || true)"
 integration_branch="${integration_branch:-staging}"
 
 recovered=0

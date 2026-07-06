@@ -1,0 +1,9 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002G-admin-user-and-role-management-shell.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-002-platform-auth.md
+?? .ralph/runs/2026-07-04_085117_architecture_review/
+?? docs/slices/002EYA-e2e-baseline-and-seed-safety.md
+?? docs/slices/002F2-navigation-render-regression-tests.md

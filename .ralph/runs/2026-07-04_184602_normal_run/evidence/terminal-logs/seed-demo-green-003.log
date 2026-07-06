@@ -1,0 +1,38 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 9 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: contenttypes, identity, tracer
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying tracer.0001_initial... OK
+System check identified no issues (0 silenced).
+test_guarded_seed_creates_expected_demo_users_and_active_memberships (sfpcl_credit.tests.test_seed_demo_users.SeedDemoUsersTests.test_guarded_seed_creates_expected_demo_users_and_active_memberships) ... Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+ok
+test_login_and_logout_use_existing_auth_audit_path (sfpcl_credit.tests.test_seed_demo_users.SeedDemoUsersTests.test_login_and_logout_use_existing_auth_audit_path) ... Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+ok
+test_read_only_demo_user_gets_standard_permission_denied_for_admin_update (sfpcl_credit.tests.test_seed_demo_users.SeedDemoUsersTests.test_read_only_demo_user_gets_standard_permission_denied_for_admin_update) ... Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+ok
+test_seed_is_idempotent_and_does_not_touch_e2e_users (sfpcl_credit.tests.test_seed_demo_users.SeedDemoUsersTests.test_seed_is_idempotent_and_does_not_touch_e2e_users) ... Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+ok
+test_seed_refuses_when_debug_is_true_but_demo_flag_is_missing (sfpcl_credit.tests.test_seed_demo_users.SeedDemoUsersTests.test_seed_refuses_when_debug_is_true_but_demo_flag_is_missing) ... ok
+test_seed_refuses_without_explicit_demo_guard (sfpcl_credit.tests.test_seed_demo_users.SeedDemoUsersTests.test_seed_refuses_without_explicit_demo_guard) ... ok
+test_seeded_system_admin_logs_in_and_satisfies_auth_me_and_admin_list_contracts (sfpcl_credit.tests.test_seed_demo_users.SeedDemoUsersTests.test_seeded_system_admin_logs_in_and_satisfies_auth_me_and_admin_list_contracts) ... Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+ok
+test_seeded_tracer_only_user_has_exact_tracer_permission (sfpcl_credit.tests.test_seed_demo_users.SeedDemoUsersTests.test_seeded_tracer_only_user_has_exact_tracer_permission) ... Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+ok
+test_seeded_zero_permission_user_has_neutral_auth_me_payload (sfpcl_credit.tests.test_seed_demo_users.SeedDemoUsersTests.test_seeded_zero_permission_user_has_neutral_auth_me_payload) ... Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 24.208s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

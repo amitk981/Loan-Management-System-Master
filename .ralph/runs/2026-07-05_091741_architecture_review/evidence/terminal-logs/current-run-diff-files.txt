@@ -1,0 +1,7 @@
+.ralph/progress.md
+.ralph/state.json
+docs/slices/003D-secure-document-download-with-audit.md
+docs/slices/003E-versioned-configuration-shell.md
+docs/working/HANDOFF.md
+docs/working/REVIEW_FINDINGS.md
+docs/working/digests/epic-003-audit-documents-config.md

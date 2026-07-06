@@ -3,6 +3,10 @@ agent:
   allowed_tools:
     - codex
     - claude
+  # When the active agent exhausts its usage limit mid-loop, the loop switches
+  # to the other allowed tool and retries the slice; when both are exhausted it
+  # stops cleanly (completed slices are already committed) for a later rerun.
+  limit_fallback: true
 
   codex:
     default_profile: default
@@ -101,7 +105,7 @@ quality_gates:
   install: false
   build: true
   typecheck: true
-  lint: false
+  lint: true  # enabled 2026-07-04 after 002FL landed the ESLint baseline (owner action)
   unit_tests: true
   integration_tests: false
   e2e_tests: optional

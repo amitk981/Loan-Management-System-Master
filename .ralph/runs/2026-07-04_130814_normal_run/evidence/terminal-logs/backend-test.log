@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 65 test(s).
+System check identified no issues (0 silenced).
+....................................Catalogue seeded: 171 permissions, 20 roles, 8 teams, 134 role-permission links.
+Catalogue seeded: 171 permissions, 20 roles, 8 teams, 134 role-permission links.
+......E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+...................
+----------------------------------------------------------------------
+Ran 65 tests in 29.084s
+
+OK
+Destroying test database for alias 'default'...

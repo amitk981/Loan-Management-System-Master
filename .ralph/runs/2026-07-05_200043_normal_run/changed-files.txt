@@ -1,0 +1,18 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/003G-dashboard-task-summary-api.md
+ M docs/slices/003H-dashboard-task-ui-wiring.md
+ M docs/slices/003IA-notifications-center-ui-wiring.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-002-platform-auth.md
+ M docs/working/digests/epic-003-audit-documents-config.md
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/identity/catalogue.py
+ M sfpcl_credit/identity/management/commands/seed_demo_users.py
+ M sfpcl_credit/tests/test_catalogue_seed.py
+ M sfpcl_credit/tests/test_seed_demo_users.py
+?? .ralph/runs/2026-07-05_200043_normal_run/
+?? sfpcl_credit/dashboard/
+?? sfpcl_credit/tests/test_dashboard_api.py

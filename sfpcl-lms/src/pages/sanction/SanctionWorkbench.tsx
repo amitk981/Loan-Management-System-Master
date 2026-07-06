@@ -70,7 +70,7 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
       : [decs['Director 1']?.decision];
     const dirsApproved = dirDecisions.every(d => d === 'approved');
     if (cfoApproved && dirsApproved) onUpdateStatus(app.id, 'sanctioned');
-  }, [slotDecisions, app?.id]);
+  }, [app, onUpdateStatus, slotDecisions]);
 
   const isDirectorRole = currentUser.role === 'director' || currentUser.role === 'admin';
   const isCFO = currentUser.role === 'cfo' || currentUser.role === 'admin';

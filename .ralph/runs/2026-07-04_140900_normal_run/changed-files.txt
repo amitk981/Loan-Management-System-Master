@@ -1,0 +1,13 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002G2-admin-user-action-permission-granularity.md
+ M docs/slices/002I-object-level-permission-test-harness.md
+ M docs/slices/002J-api-contract-test-harness.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-002-platform-auth.md
+ M sfpcl_credit/identity/admin_views.py
+ M sfpcl_credit/identity/modules/admin_users.py
+ M sfpcl_credit/tests/test_admin_users_api.py
+?? .ralph/runs/2026-07-04_140900_normal_run/

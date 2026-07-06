@@ -1,0 +1,13 @@
+ M docs/slices/002F-role-aware-sidebar-header-navigation.md
+ M docs/working/ASSUMPTIONS.md
+ M sfpcl-lms/package-lock.json
+ M sfpcl-lms/package.json
+ M sfpcl-lms/src/services/tracerApi.ts
+ M sfpcl-lms/vite.config.ts
+ M sfpcl_credit/config/settings.py
+?? .ralph/runs/2026-07-04_072505_normal_run/
+?? sfpcl-lms/e2e/
+?? sfpcl-lms/playwright.config.ts
+?? sfpcl-lms/src/services/tracerApi.test.ts
+?? sfpcl_credit/identity/management/commands/seed_e2e_users.py
+?? sfpcl_credit/tests/test_seed_e2e_users.py

@@ -20,6 +20,28 @@ class Role(models.Model):
         return self.role_code
 
 
+class Permission(models.Model):
+    RISK_LOW = "low"
+    RISK_MEDIUM = "medium"
+    RISK_HIGH = "high"
+    RISK_CRITICAL = "critical"
+    RISK_LEVELS = {RISK_LOW, RISK_MEDIUM, RISK_HIGH, RISK_CRITICAL}
+
+    permission_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    permission_code = models.CharField(max_length=120, unique=True)
+    permission_name = models.CharField(max_length=200)
+    module_name = models.CharField(max_length=80, db_index=True)
+    description = models.TextField(blank=True)
+    risk_level = models.CharField(max_length=20, default=RISK_MEDIUM, db_index=True)
+
+    class Meta:
+        db_table = "permissions"
+        ordering = ["permission_code"]
+
+    def __str__(self):
+        return self.permission_code
+
+
 class Team(models.Model):
     team_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     team_code = models.CharField(max_length=80, unique=True)
@@ -169,3 +191,34 @@ class AuditLog(models.Model):
     class Meta:
         db_table = "audit_logs"
         ordering = ["created_at"]
+
+
+class RolePermission(models.Model):
+    role_permission_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    role = models.ForeignKey(
+        Role, on_delete=models.CASCADE, related_name="role_permissions"
+    )
+    permission = models.ForeignKey(
+        Permission, on_delete=models.PROTECT, related_name="role_permissions"
+    )
+    granted_by_user = models.ForeignKey(
+        User,
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="granted_role_permissions",
+    )
+    granted_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "role_permissions"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["role", "permission"], name="unique_role_permission"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.role_id}:{self.permission_id}"

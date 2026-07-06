@@ -1,0 +1,14 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/003C-document-metadata-and-storage-adapter.md
+ M docs/slices/003D-secure-document-download-with-audit.md
+ M docs/slices/003E-versioned-configuration-shell.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-003-audit-documents-config.md
+ M sfpcl_credit/config/settings.py
+ M sfpcl_credit/config/urls.py
+?? .ralph/runs/2026-07-05_085852_normal_run/
+?? sfpcl_credit/documents/
+?? sfpcl_credit/tests/test_document_files_api.py

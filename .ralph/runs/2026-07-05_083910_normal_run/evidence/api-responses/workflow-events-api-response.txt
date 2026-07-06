@@ -1,0 +1,72 @@
+Forbidden: /api/v1/workflow-events/
+Bad Request: /api/v1/workflow-events/
+GET /api/v1/workflow-events/?entity_type=loan_application&entity_id=<uuid>
+200
+{
+  "data": [
+    {
+      "created_at": "2026-07-05T03:16:17.549640Z",
+      "entity_id": "c76bf0b1-cf58-4ee9-aea2-e28769c0ef90",
+      "entity_type": "loan_application",
+      "from_state": "draft",
+      "to_state": "submitted",
+      "trigger_reason": "Application submitted for credit review",
+      "triggered_by_user": {
+        "full_name": "Ivy Auditor",
+        "user_id": "2641424b-4763-4743-ac35-8fa6a4d52651"
+      },
+      "workflow_event_id": "b59363f4-b06c-4cd1-965c-f71100e083c8",
+      "workflow_name": "application"
+    }
+  ],
+  "meta": {
+    "api_version": "v1",
+    "request_id": "req-workflow-example",
+    "timestamp": "2026-07-05T03:16:17.911148Z"
+  },
+  "pagination": {
+    "has_next": false,
+    "has_previous": false,
+    "page": 1,
+    "page_size": 20,
+    "total_count": 1,
+    "total_pages": 1
+  },
+  "success": true
+}
+
+GET /api/v1/workflow-events/ without audit.workflow_event.read
+403
+{
+  "error": {
+    "code": "PERMISSION_DENIED",
+    "details": {},
+    "field_errors": {},
+    "message": "You do not have permission to read workflow events."
+  },
+  "meta": {
+    "api_version": "v1",
+    "request_id": null,
+    "timestamp": "2026-07-05T03:16:18.254107Z"
+  },
+  "success": false
+}
+
+GET /api/v1/workflow-events/?entity_id=not-a-uuid
+400
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "details": {},
+    "field_errors": {
+      "entity_id": "Must be a valid UUID."
+    },
+    "message": "Workflow event query failed validation."
+  },
+  "meta": {
+    "api_version": "v1",
+    "request_id": null,
+    "timestamp": "2026-07-05T03:16:18.255291Z"
+  },
+  "success": false
+}

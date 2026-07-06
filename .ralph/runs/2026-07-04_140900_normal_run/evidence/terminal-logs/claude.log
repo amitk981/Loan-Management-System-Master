@@ -1,0 +1,27 @@
+All checks pass. `git diff --check` clean, 12 tracked files (limit 30), 372 lines (limit 2000), no protected files touched, no schema/dependency changes.
+
+## Run complete — 002G2 Admin User Action Permission Granularity ✅
+
+**What the slice fixed:** The admin user-management API (built in 002G) treated *any one* of `users.user.create/update/disable` as full user-management authority. `auth-permissions.md` §12.1 defines those as four distinct, risk-rated permissions, so a future limited role could suspend users or reassign roles/teams with an unrelated grant.
+
+**What I changed (backend only, TDD):**
+- Split session authentication (`401`) from authorization (`403`) in `admin_views.py`, and gave each action its own required permission set in `admin_users.py`:
+  - **List/detail read** → `users.user.read` OR any write user-admin permission
+  - **Role assignment / team add/remove** → `users.user.update`
+  - **Suspend** → `users.user.disable`; **restore to active** → `users.user.update` (`set_status` authorises *after* reading the target status)
+- Forbidden partial-permission writes now fail closed with `403 PERMISSION_DENIED` **before any mutation** — no `AuditLog` row, no session revocation.
+- Removed the now-dead `has_manage_users_permission` helper (no-dead-code rule).
+
+**Key judgement call (A-015):** The seeded `system_admin` role holds create/update/disable but **not** `users.user.read`, so a strict read-only gate would lock out the platform's only user-admin. Read accepts the write permissions as a documented compatibility fallback — no invented seed grant. Recorded in ASSUMPTIONS.md.
+
+**Gates (all green):**
+- Backend: `check` clean, `makemigrations --check` clean (no schema change), **79 tests pass, coverage 95%** (floor 85%)
+- Frontend (unchanged, confirmed): typecheck, lint, 26 tests, build
+
+**Evidence saved** to `.ralph/runs/2026-07-04_140900_normal_run/`: red/green + full-coverage backend logs, frontend gate log, and partial-permission `403` API examples.
+
+**Also updated:** API_CONTRACTS.md, the epic-002 digest, slice status → Complete, state.json, HANDOFF.md, progress.md — and sharpened the next two slices (002I, 002J) with verified backend symbol names and the actual current envelope shapes.
+
+**Next recommended:** `002I-object-level-permission-test-harness`, then `002J-api-contract-test-harness`. Architecture review is not yet due (1 of 4).
+
+The orchestrator will independently validate and commit this passing work.

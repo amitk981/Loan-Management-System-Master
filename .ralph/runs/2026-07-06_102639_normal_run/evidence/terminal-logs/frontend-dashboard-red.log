@@ -1,0 +1,32 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/Dashboard.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_102639_normal_run/sfpcl-lms
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/Dashboard.test.tsx [ src/pages/Dashboard.test.tsx ]
+Error: Cannot find module '../services/dashboardApi' imported from '/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_102639_normal_run/sfpcl-lms/src/pages/Dashboard.test.tsx'
+ ❯ src/pages/Dashboard.test.tsx:5:31
+      4| import {
+      5|   DashboardSummaryView,
+      6|   type DashboardSummary,
+       |       ^
+      7| } from './Dashboard';
+      8| import { fetchDashboardSummary } from '../services/dashboardApi';
+
+Caused by: Error: Failed to load url ../services/dashboardApi (resolved id: ../services/dashboardApi) in /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_102639_normal_run/sfpcl-lms/src/pages/Dashboard.test.tsx. Does the file exist?
+ ❯ loadAndTransform ../../../../../Loan%20Management%20System%20Development/.ralph/worktrees/2026-07-06_102639_normal_run/sfpcl-lms/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51969:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  10:30:47
+   Duration  764ms (transform 171ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 40ms)
+

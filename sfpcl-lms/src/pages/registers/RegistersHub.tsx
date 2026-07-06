@@ -53,9 +53,9 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
   const processedLoans = loanAccounts.map(l => {
     const due = new Date(l.repaymentDueDate);
     const diffDays = Math.floor((new Date().getTime() - due.getTime()) / (1000 * 3600 * 24));
-    let calcDpd = l.status === 'closed' ? null : Math.max(0, diffDays);
+    const calcDpd = l.status === 'closed' ? null : Math.max(0, diffDays);
     let displayStatus = l.status;
-    let outstanding = l.status === 'closed' ? 0 : l.outstandingPrincipal;
+    const outstanding = l.status === 'closed' ? 0 : l.outstandingPrincipal;
     
     if (l.status === 'closed') {
       displayStatus = 'closed';
@@ -307,8 +307,8 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                   const typeMap: Record<string, string> = { individual: 'Individual', fpc: 'FPC', producer_institution: 'Producer Institution' };
                   const purposeMap: Record<string, string> = { crop_production: 'Crop production', agriculture_activity: 'Agriculture activity', allied_activity: 'Allied activity' };
                   
-                  let displayType = typeMap[app.memberType] || app.memberType;
-                  let displayPurpose = purposeMap[app.purpose] || app.purpose;
+                  const displayType = typeMap[app.memberType] || app.memberType;
+                  const displayPurpose = purposeMap[app.purpose] || app.purpose;
                   
                   let displayStatus = getApplicationStatusLabel(app);
                   if (['sanctioned', 'documentation_in_progress', 'documentation_deficiency_raised'].includes(app.status) && app.currentOwnerRole === 'compliance_team') {
@@ -392,7 +392,7 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {sanctionDecisions.map(app => {
-                  let authority = app.requestedAmount > 500000 ? 'CFO + 2 Directors' : 'CFO + 1 Director';
+                  const authority = app.requestedAmount > 500000 ? 'CFO + 2 Directors' : 'CFO + 1 Director';
                   
                   let exceptionDisplay = 'None';
                   if (app.isException) {
@@ -410,7 +410,7 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                     formattedDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(app.sanctionedAt));
                   }
 
-                  let decisionBadgeColor = app.sanctionDecision === 'approved' ? 'bg-green-100 text-green-700' : app.sanctionDecision === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700';
+                  const decisionBadgeColor = app.sanctionDecision === 'approved' ? 'bg-green-100 text-green-700' : app.sanctionDecision === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700';
 
                   return (
                   <tr key={app.id} className="hover:bg-slate-50">
@@ -466,10 +466,10 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
               <tbody className="divide-y divide-slate-100">
                 {securities.map(sec => {
                   const typeMap: Record<string, string> = { sh4: 'SH-4', poa: 'PoA', cdsl_pledge: 'CDSL pledge', blank_cheque: 'Blank cheque', loan_agreement: 'Loan agreement' };
-                  let displayType = typeMap[sec.securityType] || sec.securityType.replace('_', ' ');
+                  const displayType = typeMap[sec.securityType] || sec.securityType.replace('_', ' ');
 
                   const appObj = loanApplications.find(a => a.id === sec.applicationId);
-                  let displayApp = appObj ? appObj.applicationNumber : sec.applicationId;
+                  const displayApp = appObj ? appObj.applicationNumber : sec.applicationId;
 
                   let stampDisplay = sec.stampDutyStatus === 'complete' ? 'Complete' : sec.stampDutyStatus === 'pending' ? 'Pending' : '—';
                   let notarisedDisplay = sec.notarisationStatus === 'complete' ? 'Complete' : sec.notarisationStatus === 'pending' ? 'Pending' : '—';
@@ -559,13 +559,13 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
               {exceptions.map(app => {
                 let excType = 'Limit breach';
                 let excDesc = ``;
-                let authority = 'CFO + 2 Directors required';
+                const authority = 'CFO + 2 Directors required';
                 
                 if (app.requestedAmount === app.eligibleAmount && app.requestedAmount > 500000) {
                   excType = 'High-value approval';
                   excDesc = `${excType}: ${authority}.`;
                 } else {
-                  let diff = app.requestedAmount - (app.eligibleAmount ?? 0);
+                  const diff = app.requestedAmount - (app.eligibleAmount ?? 0);
                   if (diff > 0) {
                     excDesc = `Limit breach: requested ${fmt(app.requestedAmount)} vs eligible ${fmt(app.eligibleAmount)}; excess ${fmt(diff)}.`;
                   } else {
@@ -573,8 +573,8 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                   }
                 }
 
-                let excStatus = app.sanctionDecision === 'approved' ? 'Approved' : 'Open';
-                let formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(app.applicationDate));
+                const excStatus = app.sanctionDecision === 'approved' ? 'Approved' : 'Open';
+                const formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(app.applicationDate));
 
                 return (
                   <div key={app.id} className="p-4 bg-violet-50/50 hover:bg-violet-50/80 transition-colors">
@@ -630,7 +630,7 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                   if (displayName === 'Green Valley F P C') displayName = 'Green Valley FPC';
 
                   const typeMap: Record<string, string> = { individual: 'Individual', fpc: 'FPC', producer_institution: 'Producer Institution' };
-                  let displayType = typeMap[m.memberType] || m.memberType;
+                  const displayType = typeMap[m.memberType] || m.memberType;
 
                   const kycMap: Record<string, string> = {
                     verified: 'Verified',
@@ -638,16 +638,16 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                     kyc_expired: 'KYC expired',
                     pending: 'Pending'
                   };
-                  let displayKyc = kycMap[m.kycStatus] || m.kycStatus;
+                  const displayKyc = kycMap[m.kycStatus] || m.kycStatus;
 
                   const statusMap: Record<string, string> = {
                     active: 'Active',
                     inactive: 'Inactive',
                     under_review: 'Under review'
                   };
-                  let displayStatus = statusMap[m.activeStatus] || m.activeStatus;
+                  const displayStatus = statusMap[m.activeStatus] || m.activeStatus;
                   
-                  let formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(m.registeredOn));
+                  const formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(m.registeredOn));
 
                   return (
                     <tr key={m.id} className="hover:bg-slate-50">
@@ -690,7 +690,7 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                 'Stamp duty & notarisation': 'Stamp duty & notarisation',
                 'Money-lending exemption': 'Money-lending law exemption review'
               };
-              let displayArea = areaMap[rec.area] || rec.area;
+              const displayArea = areaMap[rec.area] || rec.area;
 
               const ownerMap: Record<string, string> = {
                 'Producer Company lending — members only': 'Company Secretary',
@@ -701,9 +701,9 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                 'Stamp duty & notarisation': 'Company Secretary',
                 'Money-lending law exemption review': 'Company Secretary'
               };
-              let displayOwner = ownerMap[displayArea] || rec.owner;
+              const displayOwner = ownerMap[displayArea] || rec.owner;
               
-              let isOverdue = new Date(rec.nextDueDate) < new Date();
+              const isOverdue = new Date(rec.nextDueDate) < new Date();
               let displayStatus: string = rec.status;
               
               if (rec.status === 'compliant') displayStatus = 'Compliant';
@@ -715,14 +715,14 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                  displayStatus = rec.status;
               }
               
-              let statusColor = displayStatus === 'Compliant' ? 'bg-green-100 text-green-700' :
+              const statusColor = displayStatus === 'Compliant' ? 'bg-green-100 text-green-700' :
                                 displayStatus === 'Warning' ? 'bg-amber-100 text-amber-700' :
                                 displayStatus === 'Overdue' ? 'bg-red-100 text-red-700' :
                                 'bg-slate-100 text-slate-700';
                                 
-              let formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(rec.nextDueDate));
+              const formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(rec.nextDueDate));
               
-              let evidenceText = rec.evidenceCount === 1 ? '1 evidence record' : `${rec.evidenceCount} evidence records`;
+              const evidenceText = rec.evidenceCount === 1 ? '1 evidence record' : `${rec.evidenceCount} evidence records`;
               
               return (
               <div key={rec.id} className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors">
@@ -769,7 +769,7 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
               <tbody className="divide-y divide-slate-100">
                 {stampDutyRecords.map((row, i) => {
                   
-                  let amtDisplay = typeof row.stampDutyAmt === 'number' ? fmt(row.stampDutyAmt) : row.stampDutyAmt;
+                  const amtDisplay = typeof row.stampDutyAmt === 'number' ? fmt(row.stampDutyAmt) : row.stampDutyAmt;
                   
                   let dateDisplay = '—';
                   if (row.paidOn === 'pending') {
@@ -778,8 +778,8 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                     dateDisplay = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(row.paidOn));
                   }
                   
-                  let challanDisplay = row.challanNo === 'pending' ? 'Pending' : (row.challanNo || '—');
-                  let custodianDisplay = row.custodian === 'not_assigned' ? 'Not assigned' : (row.custodian || '—');
+                  const challanDisplay = row.challanNo === 'pending' ? 'Pending' : (row.challanNo || '—');
+                  const custodianDisplay = row.custodian === 'not_assigned' ? 'Not assigned' : (row.custodian || '—');
                   
                   let notDisplay = null;
                   if (row.notarised === 'not_required') {
@@ -792,7 +792,7 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                     notDisplay = <span className="text-xs text-amber-600 font-medium">Pending notarisation</span>;
                   }
 
-                  let statusDisplay = row.status === 'paid' && row.notarised === false ? 'pending_notarisation' : row.status;
+                  const statusDisplay = row.status === 'paid' && row.notarised === false ? 'pending_notarisation' : row.status;
 
                   return (
                     <tr key={i} className={`hover:bg-slate-50 ${row.status === 'pending' ? 'bg-amber-50/30' : ''}`}>
@@ -901,7 +901,7 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                       director: 'Director',
                       system: 'System'
                     };
-                    let displayRole = roleMap[ev.actorRole] || ev.actorRole.replace(/_/g, ' ');
+                    const displayRole = roleMap[ev.actorRole] || ev.actorRole.replace(/_/g, ' ');
 
                     let displayEntityId = ev.entityId;
                     const matchedApp = loanApplications.find(a => a.id === ev.entityId);
@@ -952,8 +952,8 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                       recovery_action_approved: 'Recovery action approved',
                       closure_review: 'Closure review'
                     };
-                    let displayPrev = ev.previousState ? (stateMap[ev.previousState] || ev.previousState) : null;
-                    let displayNew = ev.newState ? (stateMap[ev.newState] || ev.newState) : null;
+                    const displayPrev = ev.previousState ? (stateMap[ev.previousState] || ev.previousState) : null;
+                    const displayNew = ev.newState ? (stateMap[ev.newState] || ev.newState) : null;
 
                     return (
                       <tr key={ev.id} className="hover:bg-slate-50">
@@ -1028,12 +1028,12 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
                     escalated: 'Escalated'
                   };
 
-                  let statusText = statusMap[displayStatus] || displayStatus;
+                  const statusText = statusMap[displayStatus] || displayStatus;
 
                   const dtFormat = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-                  let raisedFmt = dtFormat.format(raisedDate);
-                  let slaFmt = dtFormat.format(slaDate);
-                  let resolvedFmt = g.resolved ? dtFormat.format(new Date(g.resolved)) : '—';
+                  const raisedFmt = dtFormat.format(raisedDate);
+                  const slaFmt = dtFormat.format(slaDate);
+                  const resolvedFmt = g.resolved ? dtFormat.format(new Date(g.resolved)) : '—';
                   
                   const statusColor = statusText === 'Resolved' ? 'bg-green-100 text-green-700' :
                                       statusText === 'Overdue' || statusText === 'Escalated' ? 'bg-red-100 text-red-700' :

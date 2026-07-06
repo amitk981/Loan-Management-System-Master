@@ -1,0 +1,11 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002I-object-level-permission-test-harness.md
+ M docs/slices/002J-api-contract-test-harness.md
+ M docs/slices/002K-seed-data-and-demo-users.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-002-platform-auth.md
+?? .ralph/runs/2026-07-04_181736_normal_run/
+?? docs/working/digests/epic-003-audit-documents-config.md
+?? sfpcl_credit/identity/modules/object_permissions.py
+?? sfpcl_credit/tests/test_object_permissions.py

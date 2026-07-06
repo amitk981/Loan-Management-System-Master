@@ -1,0 +1,71 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 2 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: contenttypes, identity, tracer
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying tracer.0001_initial... OK
+System check identified no issues (0 silenced).
+test_seed_refuses_when_debug_is_true_but_demo_flag_is_missing (sfpcl_credit.tests.test_seed_demo_users.SeedDemoUsersTests.test_seed_refuses_when_debug_is_true_but_demo_flag_is_missing) ... FAIL
+test_seed_refuses_without_explicit_demo_guard (sfpcl_credit.tests.test_seed_demo_users.SeedDemoUsersTests.test_seed_refuses_without_explicit_demo_guard) ... FAIL
+
+======================================================================
+FAIL: test_seed_refuses_when_debug_is_true_but_demo_flag_is_missing (sfpcl_credit.tests.test_seed_demo_users.SeedDemoUsersTests.test_seed_refuses_when_debug_is_true_but_demo_flag_is_missing)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 110, in call_command
+    app_name = get_commands()[command_name]
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'seed_demo_users'
+
+During handling of the above exception, another exception occurred:
+
+django.core.management.base.CommandError: Unknown command: 'seed_demo_users'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_184602_normal_run/sfpcl_credit/tests/test_seed_demo_users.py", line 25, in test_seed_refuses_when_debug_is_true_but_demo_flag_is_missing
+    with self.assertRaisesMessage(CommandError, "SFPCL_ALLOW_DEMO_SEED=true"):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 742, in _assert_raises_or_warns_cm
+    self.assertIn(expected_message, str(getattr(cm, cm_attr)))
+AssertionError: 'SFPCL_ALLOW_DEMO_SEED=true' not found in "Unknown command: 'seed_demo_users'"
+
+======================================================================
+FAIL: test_seed_refuses_without_explicit_demo_guard (sfpcl_credit.tests.test_seed_demo_users.SeedDemoUsersTests.test_seed_refuses_without_explicit_demo_guard)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 110, in call_command
+    app_name = get_commands()[command_name]
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'seed_demo_users'
+
+During handling of the above exception, another exception occurred:
+
+django.core.management.base.CommandError: Unknown command: 'seed_demo_users'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_184602_normal_run/sfpcl_credit/tests/test_seed_demo_users.py", line 18, in test_seed_refuses_without_explicit_demo_guard
+    with self.assertRaisesMessage(CommandError, "SFPCL_ALLOW_DEMO_SEED=true"):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 742, in _assert_raises_or_warns_cm
+    self.assertIn(expected_message, str(getattr(cm, cm_attr)))
+AssertionError: 'SFPCL_ALLOW_DEMO_SEED=true' not found in "Unknown command: 'seed_demo_users'"
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.004s
+
+FAILED (failures=2)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

@@ -1,0 +1,56 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/notifications/NotificationsCenter.test.tsx src/pages/profile/MyProfile.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_164949_normal_run/sfpcl-lms
+
+ ❯ src/pages/profile/MyProfile.test.tsx (1 test | 1 failed) 5ms
+   × MyProfileView > renders backend current-user identity, role, team, status, mobile, and permission codes read-only 5ms
+     → Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/notifications/NotificationsCenter.test.tsx [ src/pages/notifications/NotificationsCenter.test.tsx ]
+Error: Cannot find module '../../services/notificationsApi' imported from '/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_164949_normal_run/sfpcl-lms/src/pages/notifications/NotificationsCenter.test.tsx'
+ ❯ src/pages/notifications/NotificationsCenter.test.tsx:4:31
+      3| import { afterEach, beforeEach, describe, expect, it, vi } from 'vites…
+      4| import {
+      5|   fetchNotifications,
+       |                      ^
+      6|   markNotificationRead,
+      7|   type NotificationListItem,
+
+Caused by: Error: Failed to load url ../../services/notificationsApi (resolved id: ../../services/notificationsApi) in /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_164949_normal_run/sfpcl-lms/src/pages/notifications/NotificationsCenter.test.tsx. Does the file exist?
+ ❯ loadAndTransform ../../../../../Loan%20Management%20System%20Development/.ralph/worktrees/2026-07-06_164949_normal_run/sfpcl-lms/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51969:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/profile/MyProfile.test.tsx > MyProfileView > renders backend current-user identity, role, team, status, mobile, and permission codes read-only
+Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+ ❯ renderElement node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6119:15
+ ❯ retryNode node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6428:21
+ ❯ performWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:7435:17
+ ❯ startWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8270:7
+ ❯ renderToStringImpl node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8380:7
+ ❯ Proxy.process.env.NODE_ENV.exports.renderToStaticMarkup node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:9861:14
+ ❯ src/pages/profile/MyProfile.test.tsx:9:18
+      7| describe('MyProfileView', () => {
+      8|   it('renders backend current-user identity, role, team, status, mobil…
+      9|     const html = renderToStaticMarkup(<MyProfileView currentUser={back…
+       |                  ^
+     10| 
+     11|     expect(html).toContain('Credit Manager');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  1 failed (1)
+   Start at  16:58:18
+   Duration  446ms (transform 120ms, setup 0ms, collect 191ms, tests 5ms, environment 0ms, prepare 86ms)
+

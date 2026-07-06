@@ -8,8 +8,9 @@ import {
 } from 'lucide-react';
 import { useRole } from '../../contexts/RoleContext';
 import { Permission } from '../../contexts/RoleContext';
+import { visibleStaffNavItems, type Page } from '../../services/navigationPermissions';
 
-interface NavItem {
+export interface NavItem {
   id: string;
   label: string;
   icon: React.ReactNode;
@@ -17,7 +18,11 @@ interface NavItem {
   requiredPermission?: Permission;
 }
 
-const allNavItems: NavItem[] = [
+export interface StaffNavItem extends NavItem {
+  id: Page;
+}
+
+export const allNavItems: StaffNavItem[] = [
   { id: 'dashboard',     label: 'Dashboard',             icon: <LayoutDashboard size={18} /> },
   { id: 'tasks',         label: 'Task Inbox',            icon: <Inbox size={18} />,           badge: 5, requiredPermission: 'view_applications' },
   { id: 'applications',  label: 'Applications',          icon: <FileText size={18} />,        badge: 3, requiredPermission: 'view_applications' },
@@ -40,6 +45,8 @@ const allNavItems: NavItem[] = [
   { id: 'grievances',    label: 'Grievances',            icon: <MessageSquareWarning size={18} />, requiredPermission: 'view_compliance' },
   { id: 'audit',         label: 'Audit & Archive',       icon: <History size={18} />,         requiredPermission: 'view_audit' },
   { id: 'settings',      label: 'Settings',              icon: <Settings size={18} />,        requiredPermission: 'view_settings' },
+  { id: 'admin-users',   label: 'Admin Users',           icon: <Users size={18} />,           requiredPermission: 'manage_users' },
+  { id: 'tracer',        label: 'Tracer',                icon: <ClipboardCheck size={18} />,  requiredPermission: 'run_tracer' },
 ];
 
 // Borrower portal nav
@@ -76,7 +83,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
   const isBorrower = currentUser.role === 'borrower';
   const items = isBorrower
     ? borrowerNavItems
-    : allNavItems.filter(item => !item.requiredPermission || can(item.requiredPermission));
+    : visibleStaffNavItems(allNavItems, can);
 
   return (
     <aside className={`flex flex-col bg-white border-r border-slate-200 transition-all duration-200 ${collapsed ? 'w-16' : 'w-60'} flex-shrink-0 h-full`}>

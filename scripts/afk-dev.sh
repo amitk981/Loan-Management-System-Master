@@ -107,7 +107,7 @@ fi
 
 yaml_value() {
   local key="$1"
-  awk -F': *' -v key="$key" '$1 ~ "^[[:space:]]*" key "$" {print $2; exit}' "$config" | tr -d '"' | xargs
+  awk -F': *' -v key="$key" '$1 ~ "^[[:space:]]*" key "$" {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | tr -d '"' | xargs
 }
 
 default_iterations="$(yaml_value default_iterations)"

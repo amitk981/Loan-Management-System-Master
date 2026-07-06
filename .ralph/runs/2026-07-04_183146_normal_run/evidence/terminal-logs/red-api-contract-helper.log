@@ -1,0 +1,30 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 1 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: contenttypes, identity, tracer
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying tracer.0001_initial... OK
+System check identified no issues (0 silenced).
+test_success_envelope_reports_missing_meta_field (sfpcl_credit.tests.test_api_contract_harness.ApiContractHarnessUnitTests.test_success_envelope_reports_missing_meta_field) ... FAIL
+
+======================================================================
+FAIL: test_success_envelope_reports_missing_meta_field (sfpcl_credit.tests.test_api_contract_harness.ApiContractHarnessUnitTests.test_success_envelope_reports_missing_meta_field)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_183146_normal_run/sfpcl_credit/tests/test_api_contract_harness.py", line 14, in test_success_envelope_reports_missing_meta_field
+    with self.assertRaisesRegex(AssertionError, "meta.timestamp"):
+AssertionError: AssertionError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

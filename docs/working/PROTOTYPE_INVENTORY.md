@@ -19,12 +19,13 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
 - Documentation and disbursement: `DocumentationHub`, `DisbursementHub`, `PaymentAuthorisationHub`
 - Servicing: `LoanAccount360`, `RepaymentsHub`, `InterestManagement`, `MonitoringDashboard`
 - Default/closure/compliance: `DefaultRecoveryHub`, `LoanClosureHub`, `ComplianceDashboard`, `GrievancesHub`, `AuditArchiveHub`, `RegistersHub`
-- Reports/tasks/search/profile/settings: `ReportsMIS`, `TaskInbox`, `GlobalSearchResults`, `NotificationsCenter`, `MyProfile`, `SettingsHub`
+- Reports/tasks/search/profile/settings/admin: `ReportsMIS`, `TaskInbox`, `GlobalSearchResults`, `NotificationsCenter`, `MyProfile`, `SettingsHub`, `AdminUsers`
+- Dev/integration proof: `TracerBullet`
 - Borrower portal: `BorrowerPortal` and `src/pages/borrower/portal/**`
 
 ## Known Prototype Gaps
 - Uses mock data instead of APIs.
 - Loading, empty, error, retry, and unauthorized states are uneven.
-- No real persistence or backend validation.
-- No production authentication.
-- Current package lacks lint, typecheck, and real test scripts.
+- Real backend/API wiring exists for auth/current-user, the dev Tracer screen, Admin User Management,
+  Dashboard summary cards/tasks, staff Notifications Center, and staff My Profile; the remaining
+  production module screens still use mock data.

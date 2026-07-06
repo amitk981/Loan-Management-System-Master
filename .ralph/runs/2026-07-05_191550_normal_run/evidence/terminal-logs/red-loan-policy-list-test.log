@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_authorized_list_returns_standard_pagination_and_policy_fields (sfpcl_credit.tests.test_configurations_api.LoanPolicyConfigApiTests.test_authorized_list_returns_standard_pagination_and_policy_fields)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_191550_normal_run/sfpcl_credit/tests/test_configurations_api.py", line 58, in test_authorized_list_returns_standard_pagination_and_policy_fields
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 0.691s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

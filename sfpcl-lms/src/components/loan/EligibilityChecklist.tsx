@@ -47,7 +47,7 @@ const EligibilityChecklist: React.FC<EligibilityChecklistProps> = ({ onComplete 
 
   useEffect(() => {
     onComplete?.(!hasBlocking && pass === total);
-  }, []);
+  }, [hasBlocking, onComplete, pass, total]);
 
   return (
     <div className="space-y-4">

@@ -1,0 +1,62 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 9 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: contenttypes, identity, tracer
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying tracer.0001_initial... OK
+System check identified no issues (0 silenced).
+test_admin_can_assign_existing_role_add_and_remove_team_and_audit_changes (tests.test_admin_users_api.AdminUsersApiTests.test_admin_can_assign_existing_role_add_and_remove_team_and_audit_changes) ... ok
+test_admin_user_list_and_detail_return_auth_me_role_team_shape_with_pagination (tests.test_admin_users_api.AdminUsersApiTests.test_admin_user_list_and_detail_return_auth_me_role_team_shape_with_pagination) ... ok
+test_admin_user_list_requires_session_and_manage_users_permission (tests.test_admin_users_api.AdminUsersApiTests.test_admin_user_list_requires_session_and_manage_users_permission) ... ok
+test_create_only_role_cannot_assign_roles_teams_or_suspend (tests.test_admin_users_api.AdminUsersApiTests.test_create_only_role_cannot_assign_roles_teams_or_suspend) ... FAIL
+test_disable_only_role_can_suspend_but_cannot_assign (tests.test_admin_users_api.AdminUsersApiTests.test_disable_only_role_can_suspend_but_cannot_assign) ... FAIL
+test_read_only_user_admin_can_list_but_cannot_write (tests.test_admin_users_api.AdminUsersApiTests.test_read_only_user_admin_can_list_but_cannot_write) ... FAIL
+test_status_change_to_suspended_revokes_target_sessions_and_audits (tests.test_admin_users_api.AdminUsersApiTests.test_status_change_to_suspended_revokes_target_sessions_and_audits) ... ok
+test_unknown_catalogue_values_and_last_system_admin_lockout_return_validation_errors (tests.test_admin_users_api.AdminUsersApiTests.test_unknown_catalogue_values_and_last_system_admin_lockout_return_validation_errors) ... ok
+test_update_only_role_can_assign_but_cannot_suspend (tests.test_admin_users_api.AdminUsersApiTests.test_update_only_role_can_assign_but_cannot_suspend) ... FAIL
+
+======================================================================
+FAIL: test_create_only_role_cannot_assign_roles_teams_or_suspend (tests.test_admin_users_api.AdminUsersApiTests.test_create_only_role_cannot_assign_roles_teams_or_suspend)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_140900_normal_run/sfpcl_credit/tests/test_admin_users_api.py", line 276, in test_create_only_role_cannot_assign_roles_teams_or_suspend
+    self.assertEqual(assign.status_code, 403)
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_disable_only_role_can_suspend_but_cannot_assign (tests.test_admin_users_api.AdminUsersApiTests.test_disable_only_role_can_suspend_but_cannot_assign)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_140900_normal_run/sfpcl_credit/tests/test_admin_users_api.py", line 376, in test_disable_only_role_can_suspend_but_cannot_assign
+    self.assertEqual(assign.status_code, 403)
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_read_only_user_admin_can_list_but_cannot_write (tests.test_admin_users_api.AdminUsersApiTests.test_read_only_user_admin_can_list_but_cannot_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_140900_normal_run/sfpcl_credit/tests/test_admin_users_api.py", line 420, in test_read_only_user_admin_can_list_but_cannot_write
+    self.assertEqual(listed.status_code, 200)
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_update_only_role_can_assign_but_cannot_suspend (tests.test_admin_users_api.AdminUsersApiTests.test_update_only_role_can_assign_but_cannot_suspend)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_140900_normal_run/sfpcl_credit/tests/test_admin_users_api.py", line 354, in test_update_only_role_can_assign_but_cannot_suspend
+    self.assertEqual(suspend.status_code, 403)
+AssertionError: 200 != 403
+
+----------------------------------------------------------------------
+Ran 9 tests in 4.959s
+
+FAILED (failures=4)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

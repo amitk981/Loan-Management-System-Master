@@ -1,0 +1,149 @@
+{
+  "send_success": {
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/communications/send/",
+      "headers": {
+        "Authorization": "Bearer <access-token>",
+        "X-Request-ID": "req-communication-send"
+      },
+      "body": {
+        "related_entity_type": "loan_application",
+        "related_entity_id": "00000000-0000-4000-8000-000000000001",
+        "recipient_party_type": "borrower",
+        "recipient_party_id": "00000000-0000-4000-8000-000000000002",
+        "recipient_address": "borrower@sfpcl.example",
+        "channel": "email",
+        "content_template_id": "00000000-0000-4000-8000-000000000003",
+        "merge_data": {
+          "application_reference_number": "LA-2026-0001",
+          "borrower_name": "Ananya Rao"
+        }
+      }
+    },
+    "response": {
+      "success": true,
+      "data": {
+        "communication_id": "00000000-0000-4000-8000-000000000004",
+        "related_entity_type": "loan_application",
+        "related_entity_id": "00000000-0000-4000-8000-000000000001",
+        "recipient_party_type": "borrower",
+        "recipient_party_id": "00000000-0000-4000-8000-000000000002",
+        "recipient_address": "borrower@sfpcl.example",
+        "channel": "email",
+        "content_template_id": "00000000-0000-4000-8000-000000000003",
+        "subject_snapshot": "Sanction LA-2026-0001",
+        "body_snapshot": "Dear Ananya Rao, your loan LA-2026-0001 is sanctioned.",
+        "sent_by_user_id": "00000000-0000-4000-8000-000000000005",
+        "sent_at": null,
+        "delivery_status": "pending",
+        "acknowledgement_status": null,
+        "external_message_id": null
+      },
+      "meta": {
+        "request_id": "req-communication-send",
+        "timestamp": "2026-07-06T00:00:00Z",
+        "api_version": "v1"
+      }
+    }
+  },
+  "list_success": {
+    "request": {
+      "method": "GET",
+      "path": "/api/v1/communications/?related_entity_type=loan_application&related_entity_id=00000000-0000-4000-8000-000000000001",
+      "headers": {
+        "Authorization": "Bearer <access-token>",
+        "X-Request-ID": "req-communication-list"
+      }
+    },
+    "response": {
+      "success": true,
+      "data": [
+        {
+          "communication_id": "00000000-0000-4000-8000-000000000004",
+          "related_entity_type": "loan_application",
+          "related_entity_id": "00000000-0000-4000-8000-000000000001",
+          "recipient_party_type": "borrower",
+          "recipient_party_id": "00000000-0000-4000-8000-000000000002",
+          "recipient_address": "borrower@sfpcl.example",
+          "channel": "email",
+          "content_template_id": "00000000-0000-4000-8000-000000000003",
+          "subject_snapshot": "Sanction LA-2026-0001",
+          "body_snapshot": "Dear Ananya Rao, your loan LA-2026-0001 is sanctioned.",
+          "sent_by_user_id": "00000000-0000-4000-8000-000000000005",
+          "sent_at": null,
+          "delivery_status": "pending",
+          "acknowledgement_status": null,
+          "external_message_id": null
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "page_size": 20,
+        "total_count": 1,
+        "total_pages": 1,
+        "has_next": false,
+        "has_previous": false
+      },
+      "meta": {
+        "request_id": "req-communication-list",
+        "timestamp": "2026-07-06T00:00:00Z",
+        "api_version": "v1"
+      }
+    }
+  },
+  "unauthenticated": {
+    "response_status": 401,
+    "response": {
+      "success": false,
+      "error": {
+        "code": "AUTH_REQUIRED",
+        "message": "Authentication credentials were not provided.",
+        "details": {},
+        "field_errors": {}
+      },
+      "meta": {
+        "request_id": null,
+        "timestamp": "2026-07-06T00:00:00Z",
+        "api_version": "v1"
+      }
+    }
+  },
+  "forbidden": {
+    "response_status": 403,
+    "response": {
+      "success": false,
+      "error": {
+        "code": "PERMISSION_DENIED",
+        "message": "You do not have permission to send communications.",
+        "details": {},
+        "field_errors": {}
+      },
+      "meta": {
+        "request_id": null,
+        "timestamp": "2026-07-06T00:00:00Z",
+        "api_version": "v1"
+      }
+    }
+  },
+  "validation_failure": {
+    "response_status": 400,
+    "response": {
+      "success": false,
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Communication failed validation.",
+        "details": {},
+        "field_errors": {
+          "channel": "Must be one of courier, email, phone, sms.",
+          "related_entity_id": "Must be a valid UUID."
+        }
+      },
+      "meta": {
+        "request_id": null,
+        "timestamp": "2026-07-06T00:00:00Z",
+        "api_version": "v1"
+      }
+    }
+  }
+}

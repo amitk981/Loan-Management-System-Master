@@ -1,0 +1,23 @@
+Slice **003G2-dashboard-internal-auditor-access-regression** is complete and all gates are green.
+
+## What was wrong
+The 003G dashboard mapped `internal_auditor → "compliance"` in `dashboard.services._ROLE_CONTEXTS`, and the endpoint gates access on the `management_readonly` permission — but the catalogue seed never granted `internal_auditor` that permission. So once the dashboard UI is API-backed, a seeded internal auditor would have gotten a **403** instead of the compliance dashboard the docs promise.
+
+## The fix (TDD, source-backed)
+1. **Red** — added two failing regressions: a dashboard-API test (seeded internal auditor → expected `200` + `role_context: "compliance"`, got `403`) and a catalogue-consistency test asserting *every* role in `_ROLE_CONTEXTS` holds `management_readonly`. Saved to `backend-tests-red.log`.
+2. **Green** — granted `management_readonly` to `internal_auditor` in `identity/catalogue.ROLE_PERMISSIONS`. This realises the mapping A-023 and `auth-permissions.md` §19.1 already document (chose the slice's first option — grant, not remove). Saved to `backend-tests-green.log`.
+
+The new consistency invariant ties the seed to `_ROLE_CONTEXTS`, so this class of gap now fails the build — the check 003G missed.
+
+## Gates
+- Backend: `check` clean, **172 tests pass**, `makemigrations --check` no changes, coverage **96%** (floor 85%).
+- Frontend: typecheck, lint, vitest (26), build — all pass (no frontend code touched).
+- Diff: 5 code/doc files (+ run bookkeeping), no new deps, no migrations, protected-path scan clean.
+
+## Scope discipline
+No dashboard calculations, specialist endpoints, task persistence, frontend wiring, or new permission codes — seed grant only. Contract unchanged, so `API_CONTRACTS.md` untouched.
+
+## Artifacts & bookkeeping
+Execution plan, changed-files, risk-assessment, review-packet, final-summary, and red/green + full gate logs written to `.ralph/runs/2026-07-05_204654_normal_run/`. State, progress, HANDOFF, and slice status updated. Sharpened the next slice **003H** with the verified demo-account→role-context map and the caveat that no demo account reaches the `management` context (use a mocked fixture there).
+
+I did **not** commit — per the workflow the orchestrator independently validates and commits passing work. Next queued slice: **003H-dashboard-task-ui-wiring** (its 003G2 dependency is now satisfied).

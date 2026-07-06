@@ -1,0 +1,73 @@
+Creating test database for alias 'default'...
+Found 9 test(s).
+System check identified no issues (0 silenced).
+FF.FFFFFF
+======================================================================
+FAIL: test_activate_requires_evidence_permission_and_writes_version_history_and_audit (sfpcl_credit.tests.test_configurations_api.LoanPolicyConfigApiTests.test_activate_requires_evidence_permission_and_writes_version_history_and_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_191550_normal_run/sfpcl_credit/tests/test_configurations_api.py", line 324, in test_activate_requires_evidence_permission_and_writes_version_history_and_audit
+    self.assertEqual(forbidden.status_code, 403)
+AssertionError: 404 != 403
+
+======================================================================
+FAIL: test_activate_without_board_approval_reference_returns_validation_error (sfpcl_credit.tests.test_configurations_api.LoanPolicyConfigApiTests.test_activate_without_board_approval_reference_returns_validation_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_191550_normal_run/sfpcl_credit/tests/test_configurations_api.py", line 364, in test_activate_without_board_approval_reference_returns_validation_error
+    self.assertEqual(response.status_code, 400)
+AssertionError: 404 != 400
+
+======================================================================
+FAIL: test_create_draft_policy_persists_source_fields_and_writes_audit (sfpcl_credit.tests.test_configurations_api.LoanPolicyConfigApiTests.test_create_draft_policy_persists_source_fields_and_writes_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_191550_normal_run/sfpcl_credit/tests/test_configurations_api.py", line 235, in test_create_draft_policy_persists_source_fields_and_writes_audit
+    self.assertEqual(response.status_code, 200)
+AssertionError: 405 != 200
+
+======================================================================
+FAIL: test_patch_draft_policy_updates_fields_and_writes_audit (sfpcl_credit.tests.test_configurations_api.LoanPolicyConfigApiTests.test_patch_draft_policy_updates_fields_and_writes_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_191550_normal_run/sfpcl_credit/tests/test_configurations_api.py", line 270, in test_patch_draft_policy_updates_fields_and_writes_audit
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+======================================================================
+FAIL: test_patch_rejects_invalid_dates_decimals_status_and_non_draft_state (sfpcl_credit.tests.test_configurations_api.LoanPolicyConfigApiTests.test_patch_rejects_invalid_dates_decimals_status_and_non_draft_state)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_191550_normal_run/sfpcl_credit/tests/test_configurations_api.py", line 291, in test_patch_rejects_invalid_dates_decimals_status_and_non_draft_state
+    self.assertEqual(response.status_code, 400)
+AssertionError: 404 != 400
+
+======================================================================
+FAIL: test_unauthenticated_and_no_permission_requests_do_not_write_audit (sfpcl_credit.tests.test_configurations_api.LoanPolicyConfigApiTests.test_unauthenticated_and_no_permission_requests_do_not_write_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_191550_normal_run/sfpcl_credit/tests/test_configurations_api.py", line 446, in test_unauthenticated_and_no_permission_requests_do_not_write_audit
+    self.assertEqual(forbidden.status_code, 403)
+AssertionError: 405 != 403
+
+======================================================================
+FAIL: test_version_history_invalid_uuid_returns_validation_error (sfpcl_credit.tests.test_configurations_api.LoanPolicyConfigApiTests.test_version_history_invalid_uuid_returns_validation_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_191550_normal_run/sfpcl_credit/tests/test_configurations_api.py", line 430, in test_version_history_invalid_uuid_returns_validation_error
+    self.assertEqual(response.status_code, 400)
+AssertionError: 404 != 400
+
+======================================================================
+FAIL: test_version_history_list_filters_and_requires_permission (sfpcl_credit.tests.test_configurations_api.LoanPolicyConfigApiTests.test_version_history_list_filters_and_requires_permission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_191550_normal_run/sfpcl_credit/tests/test_configurations_api.py", line 398, in test_version_history_list_filters_and_requires_permission
+    self.assertEqual(forbidden.status_code, 403)
+AssertionError: 404 != 403
+
+----------------------------------------------------------------------
+Ran 9 tests in 12.307s
+
+FAILED (failures=8)
+Destroying test database for alias 'default'...

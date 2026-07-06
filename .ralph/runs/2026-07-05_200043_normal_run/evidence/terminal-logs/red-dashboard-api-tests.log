@@ -1,0 +1,49 @@
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+FFFFF
+======================================================================
+FAIL: test_credit_manager_receives_source_named_zero_count_shell (sfpcl_credit.tests.test_dashboard_api.DashboardApiTests.test_credit_manager_receives_source_named_zero_count_shell)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_200043_normal_run/sfpcl_credit/tests/test_dashboard_api.py", line 78, in test_credit_manager_receives_source_named_zero_count_shell
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+======================================================================
+FAIL: test_dashboard_read_does_not_create_audit_row (sfpcl_credit.tests.test_dashboard_api.DashboardApiTests.test_dashboard_read_does_not_create_audit_row)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_200043_normal_run/sfpcl_credit/tests/test_dashboard_api.py", line 156, in test_dashboard_read_does_not_create_audit_row
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+======================================================================
+FAIL: test_unauthenticated_request_returns_401 (sfpcl_credit.tests.test_dashboard_api.DashboardApiTests.test_unauthenticated_request_returns_401)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_200043_normal_run/sfpcl_credit/tests/test_dashboard_api.py", line 123, in test_unauthenticated_request_returns_401
+    self.assertEqual(response.status_code, 401)
+AssertionError: 404 != 401
+
+======================================================================
+FAIL: test_unknown_query_parameter_returns_validation_error (sfpcl_credit.tests.test_dashboard_api.DashboardApiTests.test_unknown_query_parameter_returns_validation_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_200043_normal_run/sfpcl_credit/tests/test_dashboard_api.py", line 143, in test_unknown_query_parameter_returns_validation_error
+    self.assertEqual(response.status_code, 400)
+AssertionError: 404 != 400
+
+======================================================================
+FAIL: test_user_without_dashboard_permission_is_forbidden (sfpcl_credit.tests.test_dashboard_api.DashboardApiTests.test_user_without_dashboard_permission_is_forbidden)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_200043_normal_run/sfpcl_credit/tests/test_dashboard_api.py", line 134, in test_user_without_dashboard_permission_is_forbidden
+    self.assertEqual(response.status_code, 403)
+AssertionError: 404 != 403
+
+----------------------------------------------------------------------
+Ran 5 tests in 4.728s
+
+FAILED (failures=5)
+Destroying test database for alias 'default'...

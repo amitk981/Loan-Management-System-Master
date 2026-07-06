@@ -1,28 +1,24 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Bell, CheckCircle2, Clock, FileWarning, ShieldAlert } from 'lucide-react';
 import StatusBadge from '../../components/ui/StatusBadge';
-import { loanApplications, loanAccounts } from '../../data/mockData';
 import { useRole } from '../../contexts/RoleContext';
 import type { Page } from '../../App';
+import {
+  AuthSessionError,
+} from '../../services/authSession';
+import {
+  fetchNotifications,
+  markNotificationRead,
+  type NotificationListItem,
+  type NotificationSeverity,
+} from '../../services/notificationsApi';
 
 interface NotificationsCenterProps {
   onNavigate: (page: Page, id?: string) => void;
 }
 
-type NotificationSeverity = 'urgent' | 'warning' | 'info';
-
-interface InternalNotification {
-  id: string;
-  severity: NotificationSeverity;
-  title: string;
-  message: string;
-  owner: string;
-  age: string;
-  status: string;
-  route: Page;
-  entityId?: string;
-  source: string;
-}
+type NotificationFilter = NotificationSeverity | 'all';
+type NotificationStatus = 'loading' | 'success' | 'forbidden' | 'unauthorized' | 'error';
 
 const severityIcon: Record<NotificationSeverity, React.ReactNode> = {
   urgent: <ShieldAlert size={16} className="text-red-600" />,
@@ -31,77 +27,93 @@ const severityIcon: Record<NotificationSeverity, React.ReactNode> = {
 };
 
 const NotificationsCenter: React.FC<NotificationsCenterProps> = ({ onNavigate }) => {
-  const { currentUser, can } = useRole();
-  const [filter, setFilter] = useState<NotificationSeverity | 'all'>('all');
+  const { currentUser } = useRole();
+  const [filter, setFilter] = useState<NotificationFilter>('all');
+  const [status, setStatus] = useState<NotificationStatus>('loading');
+  const [message, setMessage] = useState('');
+  const [notifications, setNotifications] = useState<NotificationListItem[]>([]);
 
-  const notifications = useMemo<InternalNotification[]>(() => {
-    const tatItems = can('view_applications') ? loanApplications
-      .filter(app => (app.tatDaysRemaining ?? 99) <= 1)
-      .map(app => ({
-        id: `tat-${app.id}`,
-        severity: 'urgent' as const,
-        title: `${app.applicationNumber} TAT requires action`,
-        message: `${app.memberName} is at or near TAT breach. Current owner: ${app.currentOwner}.`,
-        owner: app.currentOwner,
-        age: app.tatDaysRemaining === 0 ? 'Due today' : `${app.tatDaysRemaining} day left`,
-        status: app.status,
-        route: 'applications/detail' as Page,
-        entityId: app.id,
-        source: 'Application SLA',
-      })) : [];
+  useEffect(() => {
+    let cancelled = false;
+    setStatus('loading');
+    setMessage('');
 
-    const sanctionItems = can('view_sanction') ? loanApplications
-      .filter(app => ['pending_sanction_committee_approval', 'pending_sanction', 'under_sanction_review', 'clarification_requested'].includes(app.status) || app.isException)
-      .map(app => ({
-        id: `sanction-${app.id}`,
-        severity: app.isException ? 'urgent' as const : 'warning' as const,
-        title: `${app.applicationNumber} sanction decision pending`,
-        message: app.isException
-          ? `${app.exceptionReason || 'Exception case'}; approval matrix and conflict checks required.`
-          : `${app.memberName} awaits sanction committee decision.`,
-        owner: app.currentOwner,
-        age: 'Open',
-        status: app.isException ? 'exception' : app.status,
-        route: 'sanction' as Page,
-        entityId: app.id,
-        source: 'Sanction Workbench',
-      })) : [];
+    fetchNotifications()
+      .then(result => {
+        if (cancelled) return;
+        setNotifications(result.items);
+        setStatus('success');
+      })
+      .catch(error => {
+        if (cancelled) return;
+        const next = notificationErrorState(error);
+        setStatus(next.status);
+        setMessage(next.message);
+        setNotifications([]);
+      });
 
-    const documentationItems = can('view_documentation') ? loanApplications
-      .filter(app => ['sanctioned', 'documentation_in_progress', 'documentation_deficiency_raised', 'pending_final_checklist_approvals'].includes(app.status) && app.documentationStatus !== 'complete')
-      .map(app => ({
-        id: `doc-${app.id}`,
-        severity: 'warning' as const,
-        title: `${app.applicationNumber} documentation blocker`,
-        message: `${app.documentationStatus.replace(/_/g, ' ')} blocks SAP and disbursement.`,
-        owner: app.currentOwner,
-        age: 'Pending',
-        status: app.documentationStatus,
-        route: 'documentation' as Page,
-        entityId: app.id,
-        source: 'Documentation Gate',
-      })) : [];
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-    const monitoringItems = (can('view_monitoring') || can('manage_defaults')) ? loanAccounts
-      .filter(loan => loan.dpd > 0)
-      .map(loan => ({
-        id: `loan-${loan.id}`,
-        severity: loan.dpd > 90 ? 'urgent' as const : 'warning' as const,
-        title: `${loan.accountNumber} is overdue`,
-        message: `${loan.memberName} is ${loan.dpd} DPD with outstanding principal Rs.${loan.outstandingPrincipal.toLocaleString('en-IN')}.`,
-        owner: loan.dpd > 90 ? 'CFO / Recovery approval' : 'Credit monitoring',
-        age: `${loan.dpd} DPD`,
-        status: loan.status,
-        route: loan.dpd > 90 ? 'defaults' as Page : 'loan-accounts/detail' as Page,
-        entityId: loan.id,
-        source: 'Monitoring SOP',
-      })) : [];
+  const handleMarkRead = async (notification: NotificationListItem) => {
+    try {
+      const updated = await markNotificationRead(
+        notification.notification_id,
+        notification.read_state_version,
+      );
+      setNotifications(prev => prev.map(item =>
+        item.notification_id === updated.notification_id ? updated : item,
+      ));
+    } catch (error) {
+      const next = notificationErrorState(error);
+      setStatus(next.status);
+      setMessage(next.message);
+    }
+  };
 
-    return [...tatItems, ...sanctionItems, ...documentationItems, ...monitoringItems];
-  }, [can]);
+  return (
+    <NotificationsCenterView
+      status={status}
+      message={message}
+      notifications={notifications}
+      filter={filter}
+      onFilterChange={setFilter}
+      onNavigate={onNavigate}
+      onMarkRead={handleMarkRead}
+      currentUserName={currentUser.name}
+    />
+  );
+};
 
-  const visibleNotifications = notifications.filter(item => filter === 'all' || item.severity === filter);
+interface NotificationsCenterViewProps {
+  status: NotificationStatus;
+  message?: string;
+  notifications: NotificationListItem[];
+  filter: NotificationFilter;
+  onFilterChange: (filter: NotificationFilter) => void;
+  onNavigate: (page: Page, id?: string) => void;
+  onMarkRead: (notification: NotificationListItem) => void;
+  currentUserName: string;
+}
+
+export const NotificationsCenterView: React.FC<NotificationsCenterViewProps> = ({
+  status,
+  message,
+  notifications,
+  filter,
+  onFilterChange,
+  onNavigate,
+  onMarkRead,
+  currentUserName,
+}) => {
+  const visibleNotifications = useMemo(
+    () => notifications.filter(item => filter === 'all' || item.severity === filter),
+    [filter, notifications],
+  );
   const urgentCount = notifications.filter(item => item.severity === 'urgent').length;
+  const unreadCount = notifications.filter(item => !item.read).length;
 
   return (
     <div className="p-6 space-y-5">
@@ -109,13 +121,17 @@ const NotificationsCenter: React.FC<NotificationsCenterProps> = ({ onNavigate })
         <div>
           <h1 className="text-xl font-bold text-slate-900">Notifications and Alerts Center</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Role-aware operational alerts for {currentUser.name}; alerts are limited to modules available to this role.
+            Current-user notifications for {currentUserName}; dashboard task summaries remain separate.
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:w-80">
+        <div className="grid grid-cols-3 gap-3 sm:w-[30rem]">
           <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3">
             <p className="text-xs text-red-600">Urgent</p>
             <p className="text-2xl font-bold text-red-700 num">{urgentCount}</p>
+          </div>
+          <div className="rounded-lg border border-amber-100 bg-amber-50 px-4 py-3">
+            <p className="text-xs text-amber-600">Unread</p>
+            <p className="text-2xl font-bold text-amber-700 num">{unreadCount}</p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
             <p className="text-xs text-slate-500">Total</p>
@@ -127,9 +143,13 @@ const NotificationsCenter: React.FC<NotificationsCenterProps> = ({ onNavigate })
       <div className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 text-sm text-slate-600">
           <CheckCircle2 size={16} className="text-green-600" />
-          Each alert links to its owning workspace and keeps audit/source context visible.
+          Notifications are scoped to direct, role, and team recipients from the backend inbox.
         </div>
-        <select value={filter} onChange={e => setFilter(e.target.value as NotificationSeverity | 'all')} className="field-select sm:w-44">
+        <select
+          value={filter}
+          onChange={e => onFilterChange(e.target.value as NotificationFilter)}
+          className="field-select sm:w-44"
+        >
           <option value="all">All severities</option>
           <option value="urgent">Urgent</option>
           <option value="warning">Warning</option>
@@ -140,21 +160,25 @@ const NotificationsCenter: React.FC<NotificationsCenterProps> = ({ onNavigate })
       <div className="card p-0 overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100 bg-slate-50">
           <h2 className="text-sm font-semibold text-slate-900">Alert Queue</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Reason, owner, source and next action are shown for audit context.</p>
+          <p className="text-xs text-slate-500 mt-0.5">Title, linked record, severity, timestamp, sender, recipient and read state.</p>
         </div>
 
-        {visibleNotifications.length === 0 ? (
-          <div className="py-12 text-center">
-            <Bell size={28} className="mx-auto text-slate-300 mb-3" />
-            <p className="text-sm font-semibold text-slate-700">No alerts for this filter</p>
-          </div>
+        {status === 'loading' ? (
+          <NotificationMessage icon={<Clock size={28} />} title="Loading notifications" />
+        ) : status !== 'success' ? (
+          <NotificationMessage
+            icon={<Bell size={28} />}
+            title="Notifications unavailable"
+            message={message || 'Notifications could not be loaded.'}
+          />
+        ) : visibleNotifications.length === 0 ? (
+          <NotificationMessage icon={<Bell size={28} />} title="No notifications for this filter" />
         ) : (
           <div className="divide-y divide-slate-100">
             {visibleNotifications.map(item => (
-              <button
-                key={item.id}
-                onClick={() => onNavigate(item.route, item.entityId)}
-                className={`w-full p-4 text-left transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-500 ${
+              <div
+                key={item.notification_id}
+                className={`w-full p-4 text-left ${
                   item.severity === 'urgent' ? 'bg-red-50/40' : ''
                 }`}
               >
@@ -166,34 +190,112 @@ const NotificationsCenter: React.FC<NotificationsCenterProps> = ({ onNavigate })
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold text-slate-900">{item.title}</p>
-                        <StatusBadge label={item.status} size="sm" />
+                        <StatusBadge label={item.read ? 'Read' : 'Unread'} size="sm" />
+                        <StatusBadge label={item.category} size="sm" />
                       </div>
                       <p className="text-sm text-slate-600 mt-1">{item.message}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2 lg:w-[430px]">
-                    <div className="rounded-lg bg-white/80 border border-slate-100 px-3 py-2">
-                      <p className="text-[11px] text-slate-400">Owner</p>
-                      <p className="text-xs font-medium text-slate-700 truncate">{item.owner}</p>
-                    </div>
-                    <div className="rounded-lg bg-white/80 border border-slate-100 px-3 py-2">
-                      <p className="text-[11px] text-slate-400">Age</p>
-                      <p className="text-xs font-medium text-slate-700 flex items-center gap-1"><Clock size={11} /> {item.age}</p>
-                    </div>
-                    <div className="rounded-lg bg-white/80 border border-slate-100 px-3 py-2">
-                      <p className="text-[11px] text-slate-400">Source</p>
-                      <p className="text-xs font-medium text-slate-700 truncate">{item.source}</p>
-                    </div>
+                    <InfoTile label="Sender" value={item.sender?.full_name || 'System'} />
+                    <InfoTile label="Time" value={formatDateTime(item.created_at)} />
+                    <InfoTile label="Recipient" value={recipientLabel(item)} />
                   </div>
-                  <ArrowRight size={16} className="hidden lg:block text-slate-300 flex-shrink-0" />
+                  <div className="flex items-center gap-2 lg:w-48 lg:justify-end">
+                    {!item.read && (
+                      <button
+                        type="button"
+                        onClick={() => onMarkRead(item)}
+                        className="btn-secondary text-xs px-3 py-2"
+                      >
+                        Mark as read
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => navigateNotification(item, onNavigate)}
+                      className="btn-secondary text-xs px-3 py-2 flex items-center gap-1"
+                    >
+                      {item.action_label || 'Open related record'}
+                      <ArrowRight size={14} />
+                    </button>
+                  </div>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
       </div>
     </div>
   );
+};
+
+const NotificationMessage: React.FC<{
+  icon: React.ReactNode;
+  title: string;
+  message?: string;
+}> = ({ icon, title, message }) => (
+  <div className="py-12 text-center">
+    <div className="mx-auto text-slate-300 mb-3 flex justify-center">{icon}</div>
+    <p className="text-sm font-semibold text-slate-700">{title}</p>
+    {message && <p className="text-sm text-slate-500 mt-1">{message}</p>}
+  </div>
+);
+
+const InfoTile: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="rounded-lg bg-white/80 border border-slate-100 px-3 py-2">
+    <p className="text-[11px] text-slate-400">{label}</p>
+    <p className="text-xs font-medium text-slate-700 truncate">{value}</p>
+  </div>
+);
+
+const navigateNotification = (
+  notification: NotificationListItem,
+  onNavigate: (page: Page, id?: string) => void,
+) => {
+  const page = pageFromActionUrl(notification.action_url);
+  onNavigate(page, notification.related_entity_id ?? undefined);
+};
+
+const pageFromActionUrl = (actionUrl: string | null): Page => {
+  if (actionUrl?.startsWith('/applications')) return 'applications/detail';
+  if (actionUrl?.startsWith('/loan-accounts')) return 'loan-accounts/detail';
+  if (actionUrl?.startsWith('/documentation')) return 'documentation';
+  if (actionUrl?.startsWith('/compliance')) return 'compliance';
+  return 'notifications';
+};
+
+const recipientLabel = (notification: NotificationListItem): string => {
+  if (notification.recipient.type === 'user') return notification.recipient.full_name || 'User';
+  if (notification.recipient.type === 'role') return notification.recipient.role_code || 'Role';
+  if (notification.recipient.type === 'team') return notification.recipient.team_code || 'Team';
+  return 'Recipient';
+};
+
+const formatDateTime = (value: string): string => {
+  if (!value) return 'Not recorded';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const notificationErrorState = (error: unknown): { status: NotificationStatus; message: string } => {
+  if (error instanceof AuthSessionError) {
+    if (error.status === 401) {
+      return { status: 'unauthorized', message: 'Please sign in to view notifications.' };
+    }
+    if (error.status === 403) {
+      return { status: 'forbidden', message: error.message };
+    }
+    return { status: 'error', message: error.message };
+  }
+  return { status: 'error', message: 'Notifications could not be loaded.' };
 };
 
 export default NotificationsCenter;

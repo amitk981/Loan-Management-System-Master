@@ -1,0 +1,12 @@
+{
+  "data": {
+    "download_url": "/api/v1/local-document-files/7b2e37e8-27b9-4f89-806b-2c8a47625f41/download/?expires_at=2026-07-05T04%3A29%3A43.644604Z",
+    "expires_at": "2026-07-05T04:29:43.644604Z"
+  },
+  "meta": {
+    "api_version": "v1",
+    "request_id": "req-doc-download-example",
+    "timestamp": "2026-07-05T04:14:43.645016Z"
+  },
+  "success": true
+}

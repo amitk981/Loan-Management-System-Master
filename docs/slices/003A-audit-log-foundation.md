@@ -1,20 +1,24 @@
 # Slice 003A: Audit Log Foundation
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 003: Audit, Documents, Config, and Dashboard Foundation
 Epic file: `docs/epics/003-audit-documents-config-foundation.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Expose the existing append-only `AuditLog` records through a protected, paginated
+backend API so future workflow and document slices can render audit timelines without
+duplicating audit serialization.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Authorized staff can retrieve a consistent audit trail for an entity or actor, and future
+UI/API slices can rely on a standard audit response item shape.
 
 ## Depends On
 - 002K
+- 002K2
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
@@ -36,25 +40,71 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+1. Add `GET /api/v1/audit-logs/` as a read-only protected endpoint over the existing
+   `identity.AuditLog` model. Do not create a new audit table in this slice.
+2. Support narrow filters from `api-contracts.md` §42.1: `entity_type`,
+   `entity_id`, and `actor_user_id`. Unknown filters should return `400 VALIDATION_ERROR`
+   through the standard error envelope.
+3. Return newest-first paginated results using the existing top-level `pagination`
+   contract and the 002J pagination helper in tests.
+4. Serialize each item with the §42.1 fields available today: `audit_log_id`,
+   `actor{user_id, full_name}` when present, `actor_type`, `action`, `entity_type`,
+   `entity_id`, `old_value`, `new_value`, `ip_address`, and `created_at`. If the current
+   model field names are `old_value_json`/`new_value_json`, map them to the contract names
+   `old_value`/`new_value` in the API response.
+   Current schema check: `identity.AuditLog.actor_user` is nullable, so serialize
+   system/no-actor rows as `actor: null` rather than failing or fabricating a user.
+5. Keep writes append-only by service/API convention: this slice adds no update/delete
+   endpoint for audit rows.
+6. Put serialization/filtering behind a small backend module interface rather than
+   embedding audit-query behavior directly in the Django view, matching the 002C2 service
+   boundary pattern.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
+No schema change expected. If a missing index is discovered, add at most one
+non-destructive migration for query support; otherwise use the existing `AuditLog` model.
 
 ## API Contracts
-Create or update the API contract for this capability.
+Update `docs/working/API_CONTRACTS.md` with the concrete `GET /api/v1/audit-logs/`
+contract, filter rules, permission rule, and example response.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Require session-bound bearer auth and the existing canonical `audit.audit_log.read`
+permission from the 002C catalogue. `internal_auditor`, `chief_financial_controller`,
+and any future role with this permission may read the endpoint; users without it receive
+the standard `403 PERMISSION_DENIED`. Do not invent `reports.audit.read` or any new
+permission code in this slice. Do not use the 002K2 `local_demo_tracer_user` role as an
+audit-read fixture; it is local/dev-only and must retain exactly `tracer.lifecycle.run`.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+The read endpoint itself does not create a new audit row unless source docs explicitly
+require read-auditing for audit-log access. It must preserve existing auth/admin/tracer
+audit rows exactly and must not mutate returned audit records.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+- Missing bearer token returns 002J-validated `401 AUTH_REQUIRED`.
+- Invalid/revoked session returns 002J-validated `401 INVALID_TOKEN`.
+- Authenticated user without the selected audit-read permission returns 002J-validated
+  `403 PERMISSION_DENIED`.
+- Invalid UUID filters return `400 VALIDATION_ERROR` with `field_errors`.
+- Empty result sets return `success: true`, `data: []`, and valid pagination metadata.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Backend TDD: unauthenticated audit-log list fails first with missing endpoint or
+  non-standard envelope, then passes with `401 AUTH_REQUIRED` using the 002J helper.
+- Backend API: authorized user can list seeded/auth-generated audit rows with §42.1 item
+  fields and valid top-level pagination.
+- Backend API: an `AuditLog` row with `actor_user=None` serializes with `actor: null` and
+  still includes `actor_type`, `action`, `entity_type`, `entity_id`, and `created_at`.
+- Backend API: use a seeded `internal_auditor` or targeted test role with
+  `audit.audit_log.read` for the positive permission path.
+- Backend API: `entity_type` + `entity_id` filters return only matching audit rows.
+- Backend API: `actor_user_id` filter returns only that actor's audit rows.
+- Backend API: user without the audit-read permission receives standard `403
+  PERMISSION_DENIED`.
+- Backend API: invalid UUID filter returns `400 VALIDATION_ERROR` with field errors.
+- Backend API: unknown query parameters return `400 VALIDATION_ERROR`; known pagination
+  parameters remain allowed.
 
 ## Visual Acceptance Criteria
 None.
@@ -72,16 +122,16 @@ Medium
 - The implementation stays within one small Ralph slice.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Database rules followed, if needed (no schema change; existing model reused)
+- [x] Permissions tested, if needed
+- [x] Audit events tested, if needed (read creates no audit row; append-only preserved)
+- [ ] Visual evidence saved, if frontend (N/A — no frontend change)
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [ ] Commit created only after passing gates (orchestrator commits after independent validation)

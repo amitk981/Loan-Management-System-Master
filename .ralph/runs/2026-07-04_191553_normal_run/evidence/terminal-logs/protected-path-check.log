@@ -1,0 +1,14 @@
+# Protected Path Check
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002K2-demo-tracer-permission-isolation.md
+ M docs/slices/003A-audit-log-foundation.md
+ M docs/slices/003B-workflow-event-foundation.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-002-platform-auth.md
+ M sfpcl_credit/identity/management/commands/seed_demo_users.py
+ M sfpcl_credit/tests/test_seed_demo_users.py
+?? .ralph/runs/2026-07-04_191553_normal_run/
+PASS: no protected paths modified.

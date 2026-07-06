@@ -19,7 +19,57 @@ fi
 max_iterations="${1:-25}"
 mkdir -p .ralph/logs
 loop_log=".ralph/logs/loop-$(date '+%Y-%m-%d_%H%M%S').log"
+last_out=".ralph/logs/last-run-output.log"
 total_failures=0
+
+# Stream a run's output live to the terminal and the loop log instead of
+# buffering it in a command substitution: buffering shows a blank screen for
+# the entire run, and a straggler child holding the pipe hangs the loop.
+# $last_out keeps a copy of just this run for the marker greps below.
+run_streamed() {
+  "$@" 2>&1 | tee "$last_out" | tee -a "$loop_log"
+  return "${PIPESTATUS[0]}"
+}
+
+progress_line() {
+  local completed total
+  completed="$(python3 -c "import json; print(len(json.load(open('.ralph/state.json'))['completed_slices']))" 2>/dev/null || echo '?')"
+  total="$(ls docs/slices/*.md 2>/dev/null | wc -l | xargs)"
+  echo "Progress: $completed of $total slices complete."
+}
+
+# Usage-limit fallback (agent.limit_fallback in .ralph/config.yaml): when the
+# active agent's usage limit is exhausted (adapters emit AGENT_LIMIT_EXHAUSTED),
+# switch to the other allowed agent and retry; when both are exhausted, stop
+# cleanly — every completed slice is already committed and pushed, and the
+# interrupted slice reruns on the next loop.
+default_tool="$(awk -F': *' '/^[[:space:]]*default_tool:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' .ralph/config.yaml | xargs || true)"
+active_tool="${AGENT_TOOL:-${default_tool:-codex}}"
+limit_fallback="$(awk -F': *' '/^[[:space:]]*limit_fallback:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' .ralph/config.yaml | xargs || true)"
+limit_fallback="${limit_fallback:-true}"
+exhausted_tools=""
+
+limit_exhausted() {
+  grep -q "AGENT_LIMIT_EXHAUSTED" "$last_out"
+}
+
+# Switches active_tool to the other agent, or exits 3 when no usable agent
+# remains (fallback disabled, other tool already exhausted, or not installed).
+switch_agent_or_stop() {
+  exhausted_tools="$exhausted_tools $active_tool"
+  local next="claude"
+  [[ "$active_tool" == "claude" ]] && next="codex"
+  if [[ "$limit_fallback" != "true" ]]; then
+    echo "Usage limit exhausted for $active_tool and agent.limit_fallback is disabled. Stopping; completed slices are committed — run './scripts/ralph-loop.sh' again after the limit resets." | tee -a "$loop_log"
+    exit 3
+  fi
+  if [[ " $exhausted_tools " == *" $next "* ]] || ! command -v "$next" >/dev/null 2>&1; then
+    echo "Usage limits exhausted for:$exhausted_tools — no agent left to switch to. Completed slices are committed; run './scripts/ralph-loop.sh' again after the limits reset." | tee -a "$loop_log"
+    exit 3
+  fi
+  active_tool="$next"
+  echo "Usage limit exhausted; switching agent to $active_tool and retrying." | tee -a "$loop_log"
+}
 
 echo "Ralph loop starting (max $max_iterations iterations). Log: $loop_log"
 
@@ -30,39 +80,54 @@ echo "Ralph loop starting (max $max_iterations iterations). Log: $loop_log"
 for ((i = 1; i <= max_iterations; i++)); do
   echo "" | tee -a "$loop_log"
   echo "=== Ralph loop iteration $i/$max_iterations — $(date '+%Y-%m-%d %H:%M:%S') ===" | tee -a "$loop_log"
+  progress_line | tee -a "$loop_log"
+  echo "Agent: $active_tool" | tee -a "$loop_log"
 
   review_due="$(python3 -c "import json; print(json.load(open('.ralph/state.json')).get('architecture_review_due', False))" 2>/dev/null || echo False)"
   if [[ "$review_due" == "True" ]]; then
     echo "Architecture review is due; running it before the next slice." | tee -a "$loop_log"
-    review_output="$(CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode architecture-review 2>&1)"
+    run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode architecture-review
     review_status=$?
-    echo "$review_output" | tee -a "$loop_log"
     if (( review_status != 0 )); then
+      if limit_exhausted; then
+        switch_agent_or_stop
+        continue
+      fi
       echo "Architecture review failed (non-fatal); continuing with the queue." | tee -a "$loop_log"
     fi
   fi
 
-  output="$(./scripts/afk-dev.sh 1 --mode normal 2>&1)"
+  run_streamed env AGENT_TOOL="$active_tool" ./scripts/afk-dev.sh 1 --mode normal
   status=$?
-  echo "$output" | tee -a "$loop_log"
 
-  if echo "$output" | grep -q "No eligible slice found"; then
+  if grep -q "No eligible slice found" "$last_out"; then
     echo "Queue complete: no eligible slices remain. Ralph loop finished." | tee -a "$loop_log"
     exit 0
   fi
 
-  if echo "$output" | grep -q "has been vetoed by the owner"; then
+  if grep -q "has been vetoed by the owner" "$last_out"; then
     echo "Stopping: the next slice is vetoed. Remove the [revoked] line or run another slice with --slice." | tee -a "$loop_log"
     exit 2
+  fi
+
+  if (( status != 0 )) && limit_exhausted; then
+    switch_agent_or_stop
+    echo "The interrupted slice will rerun with $active_tool." | tee -a "$loop_log"
+    continue
   fi
 
   if (( status != 0 )); then
     total_failures=$((total_failures + 1))
     echo "Run failed (failure $total_failures/3). Attempting one repair run." | tee -a "$loop_log"
 
-    repair_output="$(CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair 2>&1)"
+    run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair
     repair_status=$?
-    echo "$repair_output" | tee -a "$loop_log"
+    if (( repair_status != 0 )) && limit_exhausted; then
+      switch_agent_or_stop
+      echo "Retrying the repair run with $active_tool." | tee -a "$loop_log"
+      run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair
+      repair_status=$?
+    fi
 
     if (( repair_status != 0 )); then
       echo "Repair run also failed. Stopping the loop for human review — see $loop_log and the latest .ralph/runs/ folder." | tee -a "$loop_log"

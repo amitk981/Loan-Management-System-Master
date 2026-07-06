@@ -1,0 +1,23 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/services/navigationPermissions.test.ts
+
+
+ RUN  v3.2.6 /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-04_131908_normal_run/sfpcl-lms
+
+ ❯ src/services/navigationPermissions.test.ts (7 tests | 2 failed) 9ms
+   × role-aware staff navigation contract > gates every staff sidebar item except Dashboard with its matching page permission 4ms
+     → expected 23 to be 24 // Object.is equality
+   ✓ role-aware staff navigation contract > hides every protected sidebar item when the user lacks its required permission 2ms
+   ✓ role-aware staff navigation contract > uses the Sidebar visibility path to show only Dashboard for backend sessions with no prototype permissions 0ms
+   ✓ role-aware staff navigation contract > uses the Sidebar visibility path to keep tracer-only backend sessions isolated to Dashboard and Tracer 1ms
+   × role-aware staff navigation contract > shows and guards Admin Users only through mapped manage_users permission 1ms
+     → expected [ 'dashboard' ] to deeply equal [ 'dashboard', 'admin-users' ]
+   ✓ role-aware staff navigation contract > blocks guarded page navigation and returns the dashboard blocked-banner target 0ms
+   ✓ role-aware staff navigation contract > allows guarded page navigation only when the mapped prototype permission is present 0ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed (7)
+   Start at  13:25:43
+   Duration  442ms (transform 75ms, setup 0ms, collect 131ms, tests 9ms, environment 0ms, prepare 36ms)
+

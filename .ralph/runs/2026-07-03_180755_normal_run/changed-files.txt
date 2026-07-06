@@ -1,0 +1,19 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002D2-backend-dev-infrastructure.md
+ M docs/slices/002E-protected-frontend-route-shell.md
+ M docs/slices/002EX-early-end-to-end-tracer-bullet.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-002-platform-auth.md
+ M sfpcl_credit/config/settings.py
+ M sfpcl_credit/requirements.txt
+ M sfpcl_credit/tests/test_api_envelope.py
+ M sfpcl_credit/tests/test_auth_api.py
+ M sfpcl_credit/tests/test_auth_module.py
+ M sfpcl_credit/tests/test_catalogue_seed.py
+ M sfpcl_credit/tests/test_health_api.py
+?? .ralph/runs/2026-07-03_180755_normal_run/
+?? sfpcl_credit/tests/base.py
+?? sfpcl_credit/tests/test_backend_infrastructure.py

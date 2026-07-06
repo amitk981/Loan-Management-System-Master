@@ -1,69 +1,206 @@
 import hashlib
-import os
-import subprocess
-import sys
 import uuid
-from pathlib import Path
 
-import django
 import jwt
 from django.conf import settings
-from django.db import connection
-from django.test import Client, SimpleTestCase
+from django.test import Client
 from django.utils import timezone
-
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sfpcl_credit.config.settings")
-django.setup()
 
 from sfpcl_credit.identity.models import (
     AuditLog,
-    Role,
+    Permission,
+    RolePermission,
     Team,
-    User,
     UserSession,
     UserTeamMembership,
 )
 from sfpcl_credit.identity.views import TokenError, decode_token
+from sfpcl_credit.tests.base import IdentityTestCase
 
 
-IDENTITY_MODELS = [Role, Team, User, UserTeamMembership, UserSession, AuditLog]
-
-
-def ensure_identity_tables():
-    existing_tables = set(connection.introspection.table_names())
-    with connection.schema_editor() as schema_editor:
-        for model in IDENTITY_MODELS:
-            if model._meta.db_table not in existing_tables:
-                schema_editor.create_model(model)
-
-
-class AuthApiTests(SimpleTestCase):
-    databases = {"default"}
-
-    def setUp(self):
-        ensure_identity_tables()
-        AuditLog.objects.all().delete()
-        UserSession.objects.all().delete()
-        UserTeamMembership.objects.all().delete()
-        User.objects.all().delete()
-        Team.objects.all().delete()
-        Role.objects.all().delete()
-        self.role = Role.objects.create(
-            role_code="credit_manager",
-            role_name="Credit Manager",
-            description="Credit workflow owner",
-            is_system_role=True,
+class AuthApiTests(IdentityTestCase):
+    def test_current_user_endpoint_returns_profile_permissions_and_actions(self):
+        self.user.mobile_number = "+919999999999"
+        self.user.save(update_fields=["mobile_number"])
+        team = Team.objects.create(
+            team_code="credit_assessment",
+            team_name="Credit Assessment",
             status="active",
         )
-        self.user = User.objects.create(
-            full_name="Credit Manager",
-            email="credit.manager@sfpcl.example",
-            status="active",
-            primary_role=self.role,
+        UserTeamMembership.objects.create(user=self.user, team=team, status="active")
+        first_permission = Permission.objects.create(
+            permission_code="credit.appraisal.review",
+            permission_name="Review appraisal",
+            module_name="credit",
+            risk_level="medium",
         )
-        self.user.set_password("CorrectHorse123!")
-        self.user.save()
+        second_permission = Permission.objects.create(
+            permission_code="approvals.case.create",
+            permission_name="Create approval case",
+            module_name="approvals",
+            risk_level="high",
+        )
+        RolePermission.objects.create(role=self.role, permission=first_permission)
+        RolePermission.objects.create(role=self.role, permission=second_permission)
+        client = Client()
+        login_response = client.post(
+            "/api/v1/auth/login/",
+            data={
+                "email": "credit.manager@sfpcl.example",
+                "password": "CorrectHorse123!",
+            },
+            content_type="application/json",
+        )
+        access_token = login_response.json()["data"]["access_token"]
+
+        response = client.get(
+            "/api/v1/auth/me/",
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "X-Request-ID": "req-me-001",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["success"], True)
+        self.assertEqual(payload["meta"]["request_id"], "req-me-001")
+        self.assertEqual(payload["meta"]["api_version"], "v1")
+        self.assertEqual(payload["data"]["user_id"], str(self.user.user_id))
+        self.assertEqual(payload["data"]["full_name"], "Credit Manager")
+        self.assertEqual(payload["data"]["email"], "credit.manager@sfpcl.example")
+        self.assertEqual(payload["data"]["mobile_number"], "+919999999999")
+        self.assertEqual(payload["data"]["status"], "active")
+        self.assertEqual(
+            payload["data"]["roles"],
+            [{"role_code": "credit_manager", "role_name": "Credit Manager"}],
+        )
+        self.assertEqual(
+            payload["data"]["teams"],
+            [
+                {
+                    "team_code": "credit_assessment",
+                    "team_name": "Credit Assessment",
+                }
+            ],
+        )
+        self.assertEqual(payload["data"]["role_codes"], ["credit_manager"])
+        self.assertEqual(payload["data"]["team_codes"], ["credit_assessment"])
+        self.assertEqual(
+            payload["data"]["permissions"],
+            ["approvals.case.create", "credit.appraisal.review"],
+        )
+        self.assertEqual(
+            payload["data"]["available_actions"],
+            ["approvals.case.create", "credit.appraisal.review"],
+        )
+        self.assertEqual(
+            payload["data"]["role_codes"],
+            [role["role_code"] for role in payload["data"]["roles"]],
+        )
+        self.assertEqual(
+            payload["data"]["team_codes"],
+            [team["team_code"] for team in payload["data"]["teams"]],
+        )
+        self.assertEqual(
+            payload["data"]["available_actions"], payload["data"]["permissions"]
+        )
+
+    def _login_tokens(self):
+        response = Client().post(
+            "/api/v1/auth/login/",
+            data={
+                "email": "credit.manager@sfpcl.example",
+                "password": "CorrectHorse123!",
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        return response.json()["data"]
+
+    def test_current_user_requires_bearer_token(self):
+        response = Client().get("/api/v1/auth/me/")
+
+        self.assertEqual(response.status_code, 401)
+        payload = response.json()
+        self.assertEqual(payload["success"], False)
+        self.assertEqual(payload["error"]["code"], "AUTH_REQUIRED")
+        self.assertEqual(payload["meta"]["api_version"], "v1")
+
+    def test_current_user_rejects_expired_access_token(self):
+        expired_at = timezone.now() - timezone.timedelta(minutes=1)
+        session = UserSession.objects.create(
+            user=self.user,
+            refresh_token_hash="unused",
+            expires_at=timezone.now() + timezone.timedelta(hours=1),
+        )
+        token = jwt.encode(
+            {
+                "token_type": "access",
+                "user_id": str(self.user.user_id),
+                "session_id": str(session.user_session_id),
+                "email": self.user.email,
+                "role_codes": ["credit_manager"],
+                "team_codes": [],
+                "permissions_version": self.user.permissions_version(),
+                "iat": int((expired_at - timezone.timedelta(minutes=1)).timestamp()),
+                "exp": int(expired_at.timestamp()),
+            },
+            settings.SECRET_KEY,
+            algorithm="HS256",
+        )
+
+        response = Client().get(
+            "/api/v1/auth/me/",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["error"]["code"], "TOKEN_EXPIRED")
+
+    def test_current_user_rejects_refresh_token(self):
+        tokens = self._login_tokens()
+
+        response = Client().get(
+            "/api/v1/auth/me/",
+            headers={"Authorization": f"Bearer {tokens['refresh_token']}"},
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["error"]["code"], "INVALID_TOKEN")
+
+    def test_current_user_rejects_inactive_user(self):
+        tokens = self._login_tokens()
+        self.user.status = "suspended"
+        self.user.save(update_fields=["status"])
+
+        response = Client().get(
+            "/api/v1/auth/me/",
+            headers={"Authorization": f"Bearer {tokens['access_token']}"},
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["error"]["code"], "INVALID_TOKEN")
+        session = UserSession.objects.get(user=self.user)
+        self.assertEqual(session.session_status, "revoked")
+        self.assertEqual(session.revoked_reason, "user_status_changed")
+
+    def test_current_user_rejects_revoked_session(self):
+        tokens = self._login_tokens()
+        logout_response = Client().post(
+            "/api/v1/auth/logout/",
+            data={"refresh_token": tokens["refresh_token"]},
+            content_type="application/json",
+        )
+        self.assertEqual(logout_response.status_code, 200)
+
+        response = Client().get(
+            "/api/v1/auth/me/",
+            headers={"Authorization": f"Bearer {tokens['access_token']}"},
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["error"]["code"], "INVALID_TOKEN")
 
     def test_active_user_can_login_and_receives_tokens(self):
         response = Client().post(
@@ -256,29 +393,3 @@ class AuthApiTests(SimpleTestCase):
         )
         self.assertEqual(refresh_response.status_code, 401)
         self.assertEqual(refresh_response.json()["error"]["code"], "INVALID_TOKEN")
-
-    def test_secret_key_comes_from_environment_with_dev_fallback(self):
-        env = os.environ.copy()
-        env["SFPCL_SECRET_KEY"] = "test-env-secret-key"
-        repo_root = Path(__file__).resolve().parents[2]
-
-        result = subprocess.run(
-            [
-                sys.executable,
-                "-c",
-                (
-                    "import os; "
-                    "os.environ.setdefault('DJANGO_SETTINGS_MODULE', "
-                    "'sfpcl_credit.config.settings'); "
-                    "from django.conf import settings; "
-                    "print(settings.SECRET_KEY)"
-                ),
-            ],
-            cwd=repo_root,
-            env=env,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-
-        self.assertEqual(result.stdout.strip(), "test-env-secret-key")

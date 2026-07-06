@@ -1,0 +1,26 @@
+{
+  "success": {
+    "success": true,
+    "data": {
+      "role_context": "credit_manager",
+      "cards": [
+        {
+          "code": "applications_pending_completeness",
+          "label": "Applications pending completeness",
+          "count": 0,
+          "link": "/applications?status=pending_completeness"
+        }
+      ],
+      "tasks": []
+    },
+    "meta": { "api_version": "v1" }
+  },
+  "forbidden": {
+    "success": false,
+    "error": {
+      "code": "PERMISSION_DENIED",
+      "message": "You do not have permission to read dashboard summaries."
+    },
+    "meta": { "api_version": "v1" }
+  }
+}

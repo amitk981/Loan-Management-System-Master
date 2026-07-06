@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-05_200043_normal_run/sfpcl_credit/tests/test_catalogue_seed.py", line 166, in test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles
+    self.assertTrue(
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.120s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,0 +1,17 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002E-protected-frontend-route-shell.md
+ M docs/slices/002EX-early-end-to-end-tracer-bullet.md
+ M docs/slices/002EY-e2e-and-visual-regression-harness.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-002-platform-auth.md
+ M sfpcl-lms/src/App.tsx
+ M sfpcl-lms/src/components/layout/Header.tsx
+ M sfpcl-lms/src/contexts/RoleContext.tsx
+ M sfpcl-lms/src/pages/Dashboard.tsx
+ M sfpcl-lms/src/pages/auth/LoginScreen.tsx
+ M sfpcl-lms/src/pages/profile/MyProfile.tsx
+?? .ralph/runs/2026-07-03_222318_normal_run/
+?? sfpcl-lms/src/services/

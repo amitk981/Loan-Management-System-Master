@@ -1,23 +1,10 @@
 from django.db import connections
-from django.http import JsonResponse
-from django.utils import timezone
 from django.views.decorators.http import require_GET
+
+from sfpcl_credit.api import success_response
 
 
 SERVICE_NAME = "sfpcl-credit-api"
-
-
-def success_response(data, request):
-    return JsonResponse(
-        {
-            "success": True,
-            "data": data,
-            "meta": {
-                "request_id": request.headers.get("X-Request-ID"),
-                "timestamp": timezone.now().isoformat().replace("+00:00", "Z"),
-            },
-        }
-    )
 
 
 def database_check():

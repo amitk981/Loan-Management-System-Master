@@ -467,7 +467,7 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
                         case 'nominee_kyc':
                         case 'land_712':
                         case 'crop_plan':
-                        case 'bank_statement':
+                        case 'bank_statement': {
                           const requiredDocs = item.id === 'borrower_kyc' ? ['pan', 'aadhaar'] :
                                                item.id === 'nominee_kyc' ? ['nominee_pan', 'nominee_aadhaar'] :
                                                item.id === 'land_712' ? ['land_712'] :
@@ -487,6 +487,7 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
                             </div>
                           );
                           break;
+                        }
                       }
                     }
 

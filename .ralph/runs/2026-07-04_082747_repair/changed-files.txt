@@ -1,0 +1,19 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002FL-frontend-lint-baseline.md
+ M docs/slices/002G-admin-user-and-role-management-shell.md
+ M docs/slices/002H-state-machine-and-transition-guard-foundation.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-002-platform-auth.md
+ M sfpcl-lms/package-lock.json
+ M sfpcl-lms/package.json
+ M sfpcl-lms/src/components/loan/EligibilityChecklist.tsx
+ M sfpcl-lms/src/pages/applications/ApplicationDetail.tsx
+ M sfpcl-lms/src/pages/applications/CompletenessWorkbench.tsx
+ M sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx
+ M sfpcl-lms/src/pages/disbursement/DisbursementHub.tsx
+ M sfpcl-lms/src/pages/disbursement/PaymentAuthorisationHub.tsx
+ M sfpcl-lms/src/pages/registers/RegistersHub.tsx
+ M sfpcl-lms/src/pages/sanction/SanctionWorkbench.tsx
+?? .ralph/runs/2026-07-04_082747_repair/
+?? sfpcl-lms/eslint.config.js

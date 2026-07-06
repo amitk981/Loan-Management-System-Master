@@ -1,25 +1,27 @@
 # Slice 003H: Dashboard Task UI Wiring
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 003: Audit, Documents, Config, and Dashboard Foundation
 Epic file: `docs/epics/003-audit-documents-config-foundation.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Wire the existing staff dashboard UI to the 003G `GET /api/v1/dashboard/` backend summary while
+preserving the approved prototype layout and component patterns.
 
 ## User Value
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 003G
+- 003G2
 
 ## Source References
 - docs/source/implementation-roadmap.md sections 10, 20-22
-- docs/source/api-contracts.md sections 26, 39, 41, 42-43
+- docs/source/api-contracts.md section 43
 - docs/source/data-model.md document/config/audit tables
+- docs/source/functional-spec.md sections 12.2-12.6
 - docs/source/component-spec.md
 - docs/source/design-system.md
 
@@ -30,34 +32,81 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - sfpcl-lms/src/components/loan/DocumentPackModal.tsx
 
 ## Screens Involved
-Relevant prototype screen area for this capability.
+- Dashboard
+- Task inbox only if it already consumes dashboard/task summary data through existing patterns
 
 ## Frontend Scope
-Small UI wiring for the named workflow, if applicable.
+1. Replace the Dashboard mock summary/task data path with the 003G `/api/v1/dashboard/` API.
+2. Reuse existing dashboard layout, metric/card/list patterns, spacing, colours, typography, badges,
+   shell, and auth session helpers. Do not introduce new styling or new components.
+3. Render the API card fields (`code`, `label`, `count`, `link`) through the existing prototype card
+   pattern. Preserve existing route links where they already exist; if a source link points to a
+   not-yet-implemented route, keep it non-destructive and visibly disabled only using existing
+   patterns.
+4. Render API tasks (`task_type`, `entity_id`, `title`, `due_at`) through an existing task/list
+   pattern. For the 003G empty task shell, show the existing empty state pattern.
+5. Implement loading, error, unauthorized/permission-denied, empty, and success states using existing
+   alert/empty patterns.
+6. Update `docs/working/PROTOTYPE_INVENTORY.md` and `docs/working/PROTOTYPE_GAP_REPORT.md` only if
+   this wiring changes documented prototype coverage.
+7. Use the exact 003G response contract from `docs/working/API_CONTRACTS.md`: `data.role_context`,
+   `data.cards[]` with `code`, `label`, `count`, `link`, and `data.tasks[]` with `task_type`,
+   `entity_id`, `title`, `due_at` when tasks eventually exist. The current backend returns
+   `tasks: []`.
+8. Cover all supported role contexts from 003G in frontend tests or fixtures:
+   `credit_manager`, `sanction_committee`, `compliance`, `treasury`, and `management`. Seeded demo
+   accounts for manual/E2E checks (from `seed_demo_users`, password `DemoStaff123!`):
+   `demo.credit_manager@sfpcl.example` (`credit_manager`), `demo.compliance@sfpcl.example` and
+   `demo.internal_auditor@sfpcl.example` (both `compliance` context after 003G2),
+   `demo.treasury@sfpcl.example` (`treasury`), and `demo.zero@sfpcl.example` (`it_head`, no dashboard
+   permission -> expect `403`). Note: `demo.system_admin@sfpcl.example` also lacks `management_readonly`
+   and returns `403`; **no seeded demo account reaches the `management` context** (only
+   `management_viewer` maps there and it has no demo user), so cover `management` with a mocked API
+   fixture rather than a live demo login.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+No new backend behavior. 003H may only adjust frontend API client types or tests for the 003G
+contract.
 
 ## Database/Model Impact
 None.
 
 ## API Contracts
-Create or update the API contract for this capability.
+Do not change the 003G backend contract unless a frontend test exposes a mismatch. If changed,
+update `docs/working/API_CONTRACTS.md` in the same run.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Frontend visibility is advisory. Use the authenticated session and API response/error status as the
+source of truth; do not invent frontend-only dashboard permissions. Unauthorized and forbidden
+responses must render existing auth/error patterns and must not show stale mock data.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+None in frontend. Do not add client-side audit side effects.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+No new business validation in the frontend. Treat malformed/empty API data defensively without
+crashing, and avoid displaying borrower/member/loan-specific sensitive data that the API does not
+return.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Frontend TDD: dashboard renders loading then success cards from a mocked `/dashboard/` API response.
+- Frontend: empty `tasks` array renders the existing empty state pattern.
+- Frontend: `401`/`403` API responses render the existing auth/error state and do not render mock
+  dashboard data.
+- Frontend: network/server error renders existing error alert pattern.
+- Frontend: role-specific card labels/counts/links come from the API response, not hardcoded mock
+  dashboard arrays.
+- Frontend: `management_readonly` may appear in `/auth/me` for dashboard-capable users, but the
+  dashboard screen must still rely on the API success/error result instead of frontend-only grants.
+- Frontend regression: `demo.zero@sfpcl.example` now uses role `it_head` as the neutral
+  zero-permission demo account; do not assume `management_viewer` has no backend permissions after
+  A-023.
+- Existing backend 003G tests remain green.
 
 ## Visual Acceptance Criteria
-Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.
+Screenshots are required for Dashboard loading/empty-or-success/error/unauthorized states. They must
+match the existing prototype patterns exactly: no colour, typography, spacing, card, table, queue,
+or layout changes.
 
 ## Evidence Required
 Test output, API response examples, and screenshots when frontend is touched.
@@ -72,16 +121,16 @@ Medium
 - The implementation stays within one small Ralph slice.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Database rules followed, if needed
+- [x] Permissions tested, if needed
+- [x] Audit events tested, if needed
+- [x] Visual evidence saved, if frontend
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

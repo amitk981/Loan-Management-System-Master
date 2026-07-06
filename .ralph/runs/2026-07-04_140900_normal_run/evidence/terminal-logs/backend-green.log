@@ -1,0 +1,30 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 9 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: contenttypes, identity, tracer
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying tracer.0001_initial... OK
+System check identified no issues (0 silenced).
+test_admin_can_assign_existing_role_add_and_remove_team_and_audit_changes (tests.test_admin_users_api.AdminUsersApiTests.test_admin_can_assign_existing_role_add_and_remove_team_and_audit_changes) ... ok
+test_admin_user_list_and_detail_return_auth_me_role_team_shape_with_pagination (tests.test_admin_users_api.AdminUsersApiTests.test_admin_user_list_and_detail_return_auth_me_role_team_shape_with_pagination) ... ok
+test_admin_user_list_requires_session_and_manage_users_permission (tests.test_admin_users_api.AdminUsersApiTests.test_admin_user_list_requires_session_and_manage_users_permission) ... ok
+test_create_only_role_cannot_assign_roles_teams_or_suspend (tests.test_admin_users_api.AdminUsersApiTests.test_create_only_role_cannot_assign_roles_teams_or_suspend) ... ok
+test_disable_only_role_can_suspend_but_cannot_assign (tests.test_admin_users_api.AdminUsersApiTests.test_disable_only_role_can_suspend_but_cannot_assign) ... ok
+test_read_only_user_admin_can_list_but_cannot_write (tests.test_admin_users_api.AdminUsersApiTests.test_read_only_user_admin_can_list_but_cannot_write) ... ok
+test_status_change_to_suspended_revokes_target_sessions_and_audits (tests.test_admin_users_api.AdminUsersApiTests.test_status_change_to_suspended_revokes_target_sessions_and_audits) ... ok
+test_unknown_catalogue_values_and_last_system_admin_lockout_return_validation_errors (tests.test_admin_users_api.AdminUsersApiTests.test_unknown_catalogue_values_and_last_system_admin_lockout_return_validation_errors) ... ok
+test_update_only_role_can_assign_but_cannot_suspend (tests.test_admin_users_api.AdminUsersApiTests.test_update_only_role_can_assign_but_cannot_suspend) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 4.716s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

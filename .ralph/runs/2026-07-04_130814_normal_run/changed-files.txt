@@ -1,0 +1,11 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/002F2-navigation-render-regression-tests.md
+ M docs/slices/002G-admin-user-and-role-management-shell.md
+ M docs/slices/002H-state-machine-and-transition-guard-foundation.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-002-platform-auth.md
+ M sfpcl-lms/src/components/layout/Sidebar.tsx
+ M sfpcl-lms/src/services/navigationPermissions.test.ts
+ M sfpcl-lms/src/services/navigationPermissions.ts
+?? .ralph/runs/2026-07-04_130814_normal_run/

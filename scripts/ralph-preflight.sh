@@ -92,7 +92,7 @@ else
   done
 fi
 
-default_tool="$(awk -F': *' '/^[[:space:]]*default_tool:/ {print $2; exit}' "$config" | tr -d '"' | xargs || true)"
+default_tool="$(awk -F': *' '/^[[:space:]]*default_tool:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | tr -d '"' | xargs || true)"
 agent="${agent:-$default_tool}"
 if [[ -z "$agent" ]]; then
   fail "No selected agent and no agent.default_tool configured."
@@ -129,7 +129,7 @@ else
   pass "No active Ralph locks."
 fi
 
-project_dir="$(awk -F': *' '/^[[:space:]]*project_dir:/ {print $2; exit}' "$config" | tr -d '"' | xargs || true)"
+project_dir="$(awk -F': *' '/^[[:space:]]*project_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | tr -d '"' | xargs || true)"
 project_dir="${project_dir:-.}"
 if [[ -f "$project_dir/package-lock.json" ]]; then
   pm="npm"
@@ -157,7 +157,7 @@ else
 fi
 
 if [[ "$mode" != "bootstrap" ]]; then
-  require_clean="$(awk -F': *' '/^[[:space:]]*require_clean_git:/ {print $2; exit}' "$config" | xargs || true)"
+  require_clean="$(awk -F': *' '/^[[:space:]]*require_clean_git:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | xargs || true)"
   if [[ "$require_clean" == "true" && "$dry_run" == 0 ]]; then
     status_before="$(git status --porcelain --untracked-files=no || true)"
     if [[ -n "$status_before" ]]; then
