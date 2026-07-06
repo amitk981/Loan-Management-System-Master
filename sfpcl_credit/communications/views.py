@@ -82,3 +82,54 @@ def content_template_detail(request, content_template_id):
             services.validation_field_errors(exc),
         )
     return success_response(data, request)
+
+
+@require_http_methods(["GET"])
+def communication_collection(request):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if not services.user_can_read_communications(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read communications.",
+        )
+    try:
+        data, pagination = services.paginated_communications(request.GET)
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Communication query failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return list_response(data, pagination, request)
+
+
+@require_http_methods(["POST"])
+def communication_send(request):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if not services.user_can_send_communications(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to send communications.",
+        )
+    try:
+        payload = parse_json_body(request)
+        data = services.send_communication(user, request, payload)
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Communication failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return success_response(data, request)

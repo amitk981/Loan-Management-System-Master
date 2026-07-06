@@ -47,7 +47,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
 | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
 | Versioned configuration | Loan-policy shell implemented in 003E; calculations and broader config types remain draft | Settings/config shell | `api-contracts.md` §41.1, §42.3; `data-model.md` §25.1, §26.3; `functional-spec.md` M01-FR-001/M01-FR-002/M01-FR-015 | `loan_policy_configs` and `version_histories` are persisted. `GET/POST/PATCH/activate` loan-policy APIs and filtered version-history reads are protected, audited where mutating, and versioned on activation. M01-FR-003 through M01-FR-014 calculations/rules are explicitly deferred; only neutral source model fields are stored. |
-| Communication templates | Content-template metadata shell implemented in 003F; send/list communications remain draft | None directly | `api-contracts.md` §39.1; `data-model.md` §24.1; `functional-spec.md` M16-FR-004/M18-FR-006 | `content_templates` is persisted. `GET/POST/PATCH /api/v1/content-templates/` is protected by narrow A-022 content-template permissions, returns metadata-only fields, validates dates/status/variables, and writes audit rows for create/update. Communication sending, delivery status, manual call logging, borrower/loan communication attachment, and notification center UI remain future slices. |
+| Communication templates and communication history | Content-template metadata shell implemented in 003F; communication send/list shell implemented in 003I; real delivery and notification-center UI remain draft | None directly | `api-contracts.md` §39.1-§39.3; `data-model.md` §24.1-§24.2; `functional-spec.md` M16-FR-001-M16-FR-007/M18-FR-006 | `content_templates` and `communications` are persisted. `GET/POST/PATCH /api/v1/content-templates/` is protected by narrow A-022 content-template permissions. `POST /api/v1/communications/send/` renders approved/effective template snapshots, persists a pending communication record, and audits metadata only; `GET /api/v1/communications/` lists records for a supplied related entity with standard pagination. No real email/SMS/courier/phone provider is called yet. |
 | SAP and disbursement | Draft from source | Disbursement and CFC | SOP PDFs, `api-contracts.md` | Integration is manual/adapter-first for MVP. |
 | Loan account, repayment, interest | Draft from source | Loan account, repayments, interest | `data-model.md`, `api-contracts.md` | Financial calculations are high risk. |
 | Default, recovery, closure | Draft from source | Default, closure | `functional-spec.md`, `api-contracts.md` | Recovery approvals require audit evidence. |
@@ -544,6 +544,75 @@ Rules:
   `communications.content_template.updated`. Audit metadata includes template id/code/name/type,
   audience, approval status, version, variables, and effective dates, but no rendered borrower or
   loan-specific merge output.
+
+## Communication adapter shell (003I)
+
+`POST /api/v1/communications/send/`
+
+`GET /api/v1/communications/?related_entity_type=loan_application&related_entity_id=uuid`
+
+Protected endpoints matching `docs/source/api-contracts.md` §39.2-§39.3 and
+`docs/source/data-model.md` §24.2. The send endpoint is a no-provider shell: it validates and
+renders snapshots from an approved/effective `ContentTemplate`, persists one `communications` row,
+and leaves delivery pending. It does not send email, SMS, courier letters, phone calls, or in-app
+notifications.
+
+Send request fields:
+- Required: `related_entity_type`, `related_entity_id`, `recipient_party_type`, `channel`,
+  `content_template_id`, `merge_data`.
+- Optional: `recipient_party_id`, `recipient_address`.
+- `related_entity_id`, `recipient_party_id`, and `content_template_id` must be UUIDs when supplied.
+- `channel` is limited to `email`, `sms`, `phone`, or `courier`.
+- `content_template_id` must reference an `approved` template whose `effective_from`/`effective_to`
+  window includes the server's current local date.
+- Per A-025, `merge_data` must exactly match `ContentTemplate.variables_json`; missing or extra keys
+  return `400 VALIDATION_ERROR` before any communication or audit write.
+
+Success data:
+
+```json
+{
+  "communication_id": "uuid",
+  "related_entity_type": "loan_application",
+  "related_entity_id": "uuid",
+  "recipient_party_type": "borrower",
+  "recipient_party_id": "uuid",
+  "recipient_address": "borrower@sfpcl.example",
+  "channel": "email",
+  "content_template_id": "uuid",
+  "subject_snapshot": "Sanction LA-2026-0001",
+  "body_snapshot": "Dear Ananya Rao, your loan LA-2026-0001 is sanctioned.",
+  "sent_by_user_id": "uuid",
+  "sent_at": null,
+  "delivery_status": "pending",
+  "acknowledgement_status": null,
+  "external_message_id": null
+}
+```
+
+List query parameters:
+- Required: `related_entity_type`, `related_entity_id`.
+- Optional: `page`, `page_size` using standard top-level pagination.
+- Unknown query parameters or invalid UUIDs return `400 VALIDATION_ERROR`.
+
+Rules:
+- Missing bearer token returns `401 AUTH_REQUIRED`; revoked/invalid token returns the existing auth
+  `401`; authenticated users without the relevant communication permission return
+  `403 PERMISSION_DENIED` before any write.
+- Permission assumption A-025: list/read requires `communications.communication.read` or
+  `communications.communication.send`; send requires `communications.communication.send`. These
+  narrow codes are used instead of broad report, document-template, or config permissions.
+- Successful send writes exactly one `AuditLog` row with action
+  `communications.communication.created`, `entity_type: "communication"`, and `entity_id` equal to
+  the new communication id. Audit metadata includes related entity, recipient party, address,
+  channel, template id, sender id, and delivery status. It deliberately omits `subject_snapshot`,
+  `body_snapshot`, `merge_data`, provider credentials, and external secrets.
+- M16-FR-001 through M16-FR-007 are partially traced only: this shell supports communication
+  metadata/snapshot creation, template usage, delivery-status storage, and generic attachment to a
+  related entity. Real email/SMS/letter delivery, manual phone-call reminder workflows, provider
+  acknowledgement updates, and notification-center read/unread/action states remain deferred.
+- Response examples are saved in
+  `.ralph/runs/2026-07-06_105004_normal_run/evidence/api-examples/communications-api-examples.json`.
 
 ## Dashboard task summary shell (003G)
 

@@ -174,6 +174,20 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
   notifications, and compliance reminders with title, linked record, severity, timestamp, sender,
   recipient, read/unread, and action button fields. `docs/source/content-spec.md` S04 names tabs
   and display fields for the Notifications screen.
+- IMPLEMENTED 2026-07-06 (`2026-07-06_105004_normal_run`, slice 003I):
+  `sfpcl_credit.communications` now owns `Communication` (`communications`) with one
+  non-destructive migration over source §24.2 fields. `POST /api/v1/communications/send/` is a
+  protected no-provider shell: it validates §39.2 fields, requires an approved/effective
+  `ContentTemplate`, exactly matches `merge_data` to declared template variables, renders
+  `subject_snapshot`/`body_snapshot`, persists `delivery_status: pending`, leaves `sent_at` and
+  `external_message_id` null, and writes one metadata-only
+  `communications.communication.created` audit row. `GET /api/v1/communications/` requires
+  `related_entity_type` and UUID `related_entity_id`, rejects unknown query parameters, and returns
+  standard pagination. A-025 records the narrow permission assumption:
+  `communications.communication.read` / `communications.communication.send`, seeded to the existing
+  Compliance owner role pending source catalogue confirmation. Real email/SMS/courier/phone
+  delivery, provider acknowledgements, manual phone-call reminder workflows, and S04 read/unread
+  notification-center state remain deferred to later slices.
 
 ## Dashboard and Task Foundation Extracts
 - `docs/source/api-contracts.md` §43.1 defines `GET /api/v1/dashboard/` as the role-based dashboard

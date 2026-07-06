@@ -139,6 +139,10 @@ PERMISSIONS = [
     # owned, but §12 omits exact content-template permission codes.
     ("communications.content_template.read", "View content templates", "medium"),
     ("communications.content_template.manage", "Manage content templates", "medium"),
+    # A-025: source defines communication send/list APIs and role details mention
+    # communication creation, but §12 omits exact communication permission codes.
+    ("communications.communication.read", "View communication history", "medium"),
+    ("communications.communication.send", "Create communication snapshots", "medium"),
     # §12.8 Security
     ("security.package.read", "View security package", "medium"),
     ("security.package.create", "Create / refresh security package", "high"),
@@ -355,6 +359,8 @@ ROLE_PERMISSIONS = {
         "documents.checklist.update",
         "communications.content_template.read",
         "communications.content_template.manage",
+        "communications.communication.read",
+        "communications.communication.send",
         "security.package.create",
         "security.package.update",
         "management_readonly",

@@ -160,6 +160,24 @@ class CatalogueSeedTests(TestCase):
         )
         self.assertTrue(expected.issubset(compliance_codes))
 
+    def test_communication_permissions_are_seeded_for_compliance_owner(self):
+        seed_catalogue()
+
+        codes = set(Permission.objects.values_list("permission_code", flat=True))
+        expected = {
+            "communications.communication.read",
+            "communications.communication.send",
+        }
+        self.assertTrue(expected.issubset(codes))
+
+        compliance_role = Role.objects.get(role_code="compliance_team_member")
+        compliance_codes = set(
+            RolePermission.objects.filter(role=compliance_role).values_list(
+                "permission__permission_code", flat=True
+            )
+        )
+        self.assertTrue(expected.issubset(compliance_codes))
+
     def test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles(self):
         seed_catalogue()
 

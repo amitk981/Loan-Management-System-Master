@@ -1,5 +1,27 @@
 # Ralph Progress Log
 
+## 2026-07-06 10:50:04 - 2026-07-06_105004_normal_run
+- Agent tool used: codex
+- Slice attempted: 003I-notification-adapter-shell
+- Summary: Added the communication adapter shell. `sfpcl_credit.communications` now owns
+  `Communication` (`communications`) with source §24.2 fields. `POST /api/v1/communications/send/`
+  validates source §39.2 fields, requires an approved/effective `ContentTemplate`, exactly matches
+  `merge_data` to declared variables, renders subject/body snapshots, persists
+  `delivery_status: pending`, and writes a metadata-only `communications.communication.created`
+  audit row. `GET /api/v1/communications/` lists communication rows by related entity with standard
+  pagination and strict query validation. A-025 records the narrow communication permission and
+  merge-key assumptions.
+- Tests run: communications API red/green; focused communications + catalogue tests (15/15);
+  backend `manage.py check`; backend tests (178/178); `makemigrations --check --dry-run`; backend
+  coverage 96% (floor 85); frontend `npm test` (39/39); `npm run typecheck`; `npm run lint`;
+  `npm run build`; `git diff --check`; protected-path scan.
+- Evidence saved: `.ralph/runs/2026-07-06_105004_normal_run/`, with red/green/gate logs under
+  `evidence/terminal-logs/` and communication API examples under `evidence/api-examples/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `003IA-notifications-center-ui-wiring`; it was sharpened to avoid treating
+  003I communication history as a current-user notification inbox with read/unread state.
+
 ## 2026-07-06 10:26:39 - 2026-07-06_102639_normal_run
 - Agent tool used: codex
 - Slice attempted: 003H-dashboard-task-ui-wiring
@@ -955,6 +977,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_102639_normal_run/.ralph/runs/2026-07-06_102639_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_102639_normal_run/.ralph/runs/2026-07-06_102639_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-06 11:11:09 - 2026-07-06_105004_normal_run
+- Agent tool used: codex
+- Slice attempted: 003I-notification-adapter-shell
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_105004_normal_run/.ralph/runs/2026-07-06_105004_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_105004_normal_run/.ralph/runs/2026-07-06_105004_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

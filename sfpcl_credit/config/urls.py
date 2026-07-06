@@ -80,6 +80,16 @@ urlpatterns = [
         name="content-template-detail",
     ),
     path(
+        "api/v1/communications/",
+        communication_views.communication_collection,
+        name="communication-list",
+    ),
+    path(
+        "api/v1/communications/send/",
+        communication_views.communication_send,
+        name="communication-send",
+    ),
+    path(
         "api/v1/document-files/",
         document_views.upload_document_file,
         name="document-file-upload",
