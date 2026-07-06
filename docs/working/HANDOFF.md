@@ -1,45 +1,40 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-06_164949_normal_run
+2026-07-06_183803_architecture_review
 
 ## Current Status
-Slice `003IA-notifications-center-ui-wiring` completed successfully. Architecture review is now due
-by cadence (`slices_completed_since_architecture_review: 4`).
+Architecture review completed successfully after `003IA-notifications-center-ui-wiring`.
+`architecture_review_due` is now false and `slices_completed_since_architecture_review` is reset to
+0. A corrective slice was created before scheduler work continues:
+`003IA2-notification-mark-read-stale-write-hardening`.
 
 ## What Completed
-- Added `sfpcl_credit.communications.Notification` with migration `0003_notification`.
-- Added protected current-user inbox APIs:
-  - `GET /api/v1/notifications/`
-  - `POST /api/v1/notifications/{notification_id}/mark-read/`
-- List scope covers direct user, active primary role, and active team recipients. Other users' rows
-  are excluded; inaccessible mark-read returns `404`.
-- Mark-read requires `read_state_version`, returns `409 STALE_WRITE`, persists read state, and
-  audits `communications.notification.marked_read`.
-- `POST /api/v1/communications/send/` now creates a staff notification when addressed to a backend
-  user recipient (`user`, `staff_user`, or `internal_user`).
-- Added narrow permission `communications.notification.read`; seeded it to active internal roles
-  with existing source-backed permission sets while preserving deliberately permission-neutral
-  `it_head` and `sales_team_user`.
-- Staff `NotificationsCenter` now uses the backend notification API and no longer derives rows from
-  mock applications/loans.
-- Staff `MyProfile` is read-only and displays identity, role/team codes, status, mobile, email,
-  permissions, and available actions from the current backend user loaded via `/api/v1/auth/me/`.
-- Updated contracts/assumptions (A-026), Epic 003 digest, prototype inventory/gap report, and
-  sharpened `003J`/`003K`.
+- Reviewed commits `8bd2b69`, `2cbb4c9`, `21e4f1a`, and `4dd909d` since the prior architecture
+  review commit `8ea30ec`.
+- Appended findings to `docs/working/REVIEW_FINDINGS.md`.
+- Found one Medium issue: notification mark-read stale-write checking is not atomic because the
+  version comparison occurs before the transaction that saves read state.
+- Created `docs/slices/003IA2-notification-mark-read-stale-write-hardening.md` with a required
+  failing-first same-version retry/concurrency regression and atomic update/lock requirement.
+- Sharpened `003J-background-job-scheduling-foundation` to depend on `003IA2`, keep scheduler logic
+  out of `sfpcl_credit.communications.services`, and prove enqueue idempotency.
 
 ## Evidence
-See `.ralph/runs/2026-07-06_164949_normal_run/` for plan, changed files, risk/review/final summary,
-red/green logs, gate logs, API example, and visual evidence notes. Browser screenshots were blocked
-by sandbox localhost/browser/renderer restrictions; exact failures are logged.
+See `.ralph/runs/2026-07-06_183803_architecture_review/` for plan, changed files,
+risk/review/final summary, and full gate logs. Gates run: backend check, backend tests,
+makemigrations check, backend coverage report with 85% floor, frontend typecheck, lint, tests, and
+build.
 
 ## Current Blocker
-None for the implemented slice. The next loop should run architecture review before more normal
-slices because cadence is due.
+None. The next eligible normal slice is the corrective `003IA2` created by this architecture review.
 
 ## Notes For Next Slice
-- `003J` and `003K` were sharpened. `003J` must not merge scheduler jobs with dashboard tasks, S04
-  notifications, or communication history.
+- Run `003IA2` before `003J`.
+- `003IA2` must make notification mark-read stale-write enforcement atomic and preserve current
+  `401`/`403`/`404`/`409` response behavior and one-audit-row-per-success semantics.
+- `003J` remains a scheduler metadata shell. It must not merge scheduler jobs with dashboard tasks,
+  S04 notifications, or communication history.
 - Dashboard remains role cards plus `tasks: []`; notifications are under `/api/v1/notifications/`.
 - Borrower/member-portal notifications remain out of scope for Epic 003; later member-portal slices
   own that path.

@@ -2,6 +2,60 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-06 18:42 - Architecture Review 2026-07-06_183803_architecture_review
+
+Reviewed commits since the prior architecture review (`8ea30ec`):
+- `003G2-dashboard-internal-auditor-access-regression` (`8bd2b69`)
+- `003H-dashboard-task-ui-wiring` (`2cbb4c9`)
+- `003I-notification-adapter-shell` (`21e4f1a`)
+- `003IA-notifications-center-ui-wiring` (`4dd909d`)
+
+### Finding 1 - Medium - Notification mark-read stale-write protection is not atomic
+
+`003IA` documents the mark-read contract as optimistic concurrency: clients submit
+`read_state_version`; mismatches return `409 STALE_WRITE`; a successful mark-read increments the
+version and writes one audit row (`docs/working/API_CONTRACTS.md:643-661`). The implementation
+checks the version on an unlocked model instance before entering the transaction that saves the read
+state (`sfpcl_credit/communications/services.py:356-372`). Two concurrent requests carrying the
+same version can both pass the check before either save, then both save/audit as successful updates.
+The current backend test proves an obviously stale version returns `409`, but it does not prove
+same-version retries or races cannot duplicate the success/audit path
+(`sfpcl_credit/tests/test_notifications_api.py:197-228`). This weakens the S04 read/unread audit
+trail just as later scheduler/reminder slices may create more notification traffic.
+
+Corrective action: created
+`docs/slices/003IA2-notification-mark-read-stale-write-hardening.md` and made `003J` depend on it.
+The corrective slice must add a failing-first same-version retry/concurrency regression and enforce
+the version check atomically using either row locking or a conditional update scoped to the current
+recipient.
+
+### Finding 2 - Pass - Dashboard and communication/notification slices preserve source boundaries
+
+`003G2` closes the previous internal-auditor dashboard finding with a seeded-role regression and a
+catalogue invariant. `003H` removes mock dashboard summaries, keeps `/api/v1/dashboard/` separate
+from notifications, and tests success, empty task, role-context, `401`/`403`, server, and network
+states without substituting mock data. `003I` implements source §24.2 communication metadata and
+§39.2-§39.3 send/list shells with real validation, metadata-only audit assertions, no provider
+delivery, and explicit M16 deferrals. `003IA` correctly adds a notification-specific inbox rather
+than overloading generic communication history, scopes list/mark-read by direct user, active role,
+and active team, and keeps dashboard tasks separate.
+
+Corrective action: none beyond Finding 1.
+
+### Finding 3 - Pass with queue sharpening - Epic 003 source traceability remains explicit
+
+The reviewed run packets contain concrete red/green logs and full gate evidence. Functional-spec
+spot check: the dashboard work implements only the §12.2-§12.6 zero-count role-context shell and
+defers real metrics/tasks; `003I` supports template snapshot creation and delivery-status storage
+while deferring real email/SMS/courier/phone delivery, manual call logging, borrower/member portal
+notifications, and downstream event generation; `003IA` supports staff S04 current-user inbox state
+only and records A-026 for notification permissions and role/team generation gaps. This review
+created the corrective `003IA2` slice and sharpened `003J` so scheduler work stays in its own module
+boundary and does not expand `communications.services` or generate dashboard tasks/notification rows
+inside the scheduler shell.
+
+Corrective action: sharpened `003J-background-job-scheduling-foundation`; no ADR needed.
+
 ## 2026-07-05 20:32 - Architecture Review 2026-07-05_202735_architecture_review
 
 Reviewed commits since the prior architecture review (`94c437e`):
