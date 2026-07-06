@@ -106,6 +106,17 @@ rendered borrower message bodies in audit metadata unless source docs later requ
 - Security: response and audit do not expose provider credentials, external secrets, or raw
   borrower-specific rendered bodies beyond the intended API response fields.
 
+## Queue Sharpening Notes
+- 003H now owns only the dashboard role-summary endpoint and still expects `tasks: []`; do not reuse
+  `/api/v1/dashboard/` as a notification list or communication history endpoint.
+- Keep 003I backend-only unless a failing contract test proves the existing frontend needs a fixture
+  adjustment. The Notifications Center UI replacement remains 003IA.
+- If `ContentTemplate.variables_json` contains variables not supplied in `merge_data`, fail the send
+  shell before persisting `Communication` or `AuditLog`. If `merge_data` contains extra keys, choose
+  one deterministic behavior, record it in `ASSUMPTIONS.md`, and test it.
+- Save API examples for `POST /api/v1/communications/send/`, `GET /api/v1/communications/`, `401`,
+  `403`, and validation failure in the run evidence folder.
+
 ## Visual Acceptance Criteria
 None.
 

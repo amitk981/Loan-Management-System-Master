@@ -1,51 +1,51 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-05_204654_normal_run
+2026-07-06_102639_normal_run
 
 ## Current Status
-Slice `003G2-dashboard-internal-auditor-access-regression` completed successfully. The 003G
-catalogue/dashboard mismatch for `internal_auditor` is fixed: the role now holds `management_readonly`,
-so `GET /api/v1/dashboard/` returns its documented `role_context: "compliance"` shell instead of `403`.
+Slice `003H-dashboard-task-ui-wiring` completed successfully. The staff Dashboard page now consumes
+`GET /api/v1/dashboard/` instead of mock dashboard summary/task data.
 
 ## What Completed
-- Diagnosed: `dashboard.services._ROLE_CONTEXTS` maps `internal_auditor -> "compliance"` and the
-  endpoint gates on `management_readonly`, but `identity/catalogue.ROLE_PERMISSIONS` never granted it.
-- TDD red-first: added a dashboard-API regression (seeded internal auditor -> `200` + compliance shell)
-  and a `_ROLE_CONTEXTS` consistency invariant; both failed (`403` / missing permission), then passed
-  after the fix. Red/green logs saved.
-- Fix (source-backed by A-023 / `auth-permissions.md` §19.1): added `management_readonly` to the
-  `internal_auditor` seed links. No contract, schema, or migration change.
-- Consistency test now ties the seed to `_ROLE_CONTEXTS` so this class of gap fails the build in future.
-
-## Working Docs Updated
-- `docs/working/ASSUMPTIONS.md`: A-023 clarified that the internal_auditor grant is now realised
-  (no decision reversal).
-- `docs/working/digests/epic-003-audit-documents-config.md`: appended a 003G2 correction note.
-- `docs/slices/003G2-...md`: Status -> Complete, checklist ticked.
-- `.ralph/state.json`, `.ralph/progress.md`: updated.
+- Added `sfpcl-lms/src/services/dashboardApi.ts` for the 003G dashboard contract using the stored
+  bearer session.
+- Reworked `sfpcl-lms/src/pages/Dashboard.tsx` to render API `role_context`, `cards[]`, and
+  `tasks[]` through existing `KPICard`, alert, card, and task-list patterns.
+- Covered loading, success/empty tasks, populated future tasks, `401`, `403`, server errors, network
+  failures, and all supported role contexts in frontend tests.
+- Recorded A-024: backend dashboard links are source-style URLs; the frontend maps known URL
+  families to existing prototype routes and leaves unknown future links inactive until destination
+  filters/screens exist.
+- Updated the dashboard contract note and Epic 003 digest with 003H behavior.
+- Sharpened `003I-notification-adapter-shell` and `003IA-notifications-center-ui-wiring` from the
+  already-opened Epic 003 communication/notification digest.
 
 ## Evidence
-See `.ralph/runs/2026-07-05_204654_normal_run/`:
-- `execution-plan.md`, `changed-files.txt`, `risk-assessment.md`, `review-packet.md`, `final-summary.md`
-- `evidence/terminal-logs/backend-tests-red.log` (3 failing) and `backend-tests-green.log` (3 passing)
-- `evidence/terminal-logs/backend-check.log`, `backend-tests.log`, `backend-makemigrations-check.log`,
-  `backend-coverage.log`
-- `evidence/terminal-logs/frontend-typecheck.log`, `frontend-lint.log`, `frontend-tests.log`,
-  `frontend-build.log`
-- `evidence/terminal-logs/git-diff-check.log`, `protected-path-scan.log`
+See `.ralph/runs/2026-07-06_102639_normal_run/`:
+- `execution-plan.md`, `changed-files.txt`, `risk-assessment.md`, `review-packet.md`,
+  `final-summary.md`
+- Red/green logs:
+  `evidence/terminal-logs/frontend-dashboard-red.log`,
+  `frontend-dashboard-green-final.log`
+- Gate logs:
+  `frontend-tests.log`, `frontend-typecheck.log`, `frontend-lint.log`, `frontend-build.log`,
+  `backend-check.log`, `backend-tests.log`, `backend-makemigrations-check.log`,
+  `backend-coverage.log`, `git-diff-check.log`, `protected-path-scan.log`
+- Visual evidence:
+  `evidence/screenshots/dashboard-loading.png`,
+  `dashboard-success-empty.png`,
+  `dashboard-error.png`,
+  `dashboard-unauthorized.png`
 
 ## Current Blocker
 None.
 
-## Next Recommended Action
-Run `003H-dashboard-task-ui-wiring`. Its 003G2 dependency is satisfied.
-
-Notes for `003H`:
-- Use `docs/working/API_CONTRACTS.md` and the 003G/003G2 digest notes before opening large source docs.
-- Wire the existing dashboard UI (`sfpcl-lms/src/pages/Dashboard.tsx`) to `GET /api/v1/dashboard/`;
-  no new styling or components (FRONTEND_DESIGN_RULES).
-- Backend returns `role_context`, zero-count `cards[]`, and `tasks: []`; use the existing empty-state
-  pattern for tasks and render the source-named cards with their counts (all `0` today) and links.
-- Roles reaching the dashboard now include `internal_auditor` (compliance context). The neutral
-  zero-permission demo user is `it_head`; do not assume `management_viewer` is zero-permission.
+## Notes For Next Slice
+- Next queued slice is `003I-notification-adapter-shell`.
+- Do not reuse `/api/v1/dashboard/` as a notification or communication-history endpoint. 003H still
+  expects dashboard `tasks: []`; communication persistence/listing belongs to 003I, and
+  Notifications Center UI wiring belongs to 003IA.
+- The sandbox blocks local server binding (`Vite listen EPERM`) and browser launch (`Chromium
+  mach_port_rendezvous Permission denied`), so 003H visual evidence was generated as static PNGs
+  from the same dashboard state definitions after normal browser capture failed.

@@ -37,11 +37,24 @@ completed dashboard endpoint from 003G returns `tasks: []` only and is not a not
 5. Keep dashboard task summaries separate from notifications: 003G/003H expose role dashboard
    cards and an empty task shell, while 003I/003IA must own notification persistence, list, and
    mark-read behavior.
+6. Use the existing authenticated session helpers and API-envelope error handling style from
+   `authSession.ts`, `tracerApi.ts`, and the 003H `dashboardApi.ts` client. Do not add a second
+   token store or a frontend-only notification permission.
+7. Notification list rows should display only source-backed S04/communication fields supplied by the
+   backend (title/subject, linked record, severity/status, timestamp, sender/recipient where
+   available, read/unread state, and action link when available). Do not fabricate borrower/member
+   financial details that the API does not return.
+8. `MyProfile.tsx` should remain read-only and derive identity, role/team names, backend role/team
+   codes, status, mobile, and email from `/api/v1/auth/me/`; password reset, session management,
+   preferences, and profile editing remain out of scope unless a later slice adds source-backed
+   endpoints.
 
 ## Test Cases
 - Notification list returns only the current user's notifications (object-level permission test).
 - Mark-read is persisted and audited where required.
-- Frontend states: populated, empty, error.
+- Frontend states: loading, populated, empty, `401`/`403`, and network/server error without showing
+  stale mock notifications.
+- Frontend: My Profile renders the current backend user rather than prototype role fixtures.
 
 ## Out of Scope
 Real email/SMS delivery (adapter stays shell), member-portal notifications (slice 011NA), reminder generation (010J).

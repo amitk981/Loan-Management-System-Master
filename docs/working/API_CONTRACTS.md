@@ -598,3 +598,9 @@ Rules:
 - Read-only dashboard access does not write `AuditLog` rows in this shell.
 - Response examples are saved in
   `.ralph/runs/2026-07-05_200043_normal_run/evidence/api-responses/dashboard-api-response.txt`.
+- Frontend wiring implemented in 003H (`2026-07-06_102639_normal_run`): the staff Dashboard page
+  now calls this endpoint with the stored bearer session, renders `cards[]` through the existing
+  KPI-card pattern, renders `tasks[]` through the existing task-queue pattern, and uses existing
+  alert/empty patterns for loading, empty, `401`, `403`, and server/network errors. Frontend link
+  translation follows A-024; unknown future links are left inactive instead of creating new routes
+  in this dashboard slice.

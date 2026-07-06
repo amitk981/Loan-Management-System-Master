@@ -210,3 +210,11 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
   on, so a seeded internal auditor received `403` instead of the compliance shell. A consistency
   regression asserts every role in `dashboard.services._ROLE_CONTEXTS` holds `management_readonly`
   after `seed_catalogue()`, so this gap cannot recur. No contract, schema, or migration change.
+- IMPLEMENTED 2026-07-06 (`2026-07-06_102639_normal_run`, slice 003H): the staff Dashboard UI now
+  consumes `GET /api/v1/dashboard/` instead of mock dashboard summaries/tasks. It renders
+  `role_context`, API `cards[]`, and API `tasks[]` through existing `KPICard`, card, alert, and
+  task-list patterns; `tasks: []` uses the existing "No pending tasks for your role" empty state.
+  `401`/`403`/server/network failures render existing error alerts and do not show stale mock
+  dashboard data. A-024 records the temporary frontend mapping from backend source-style
+  `cards[].link` URLs to existing prototype route keys while filtered destination screens remain
+  future work.
