@@ -610,9 +610,63 @@ Rules:
 - M16-FR-001 through M16-FR-007 are partially traced only: this shell supports communication
   metadata/snapshot creation, template usage, delivery-status storage, and generic attachment to a
   related entity. Real email/SMS/letter delivery, manual phone-call reminder workflows, provider
-  acknowledgement updates, and notification-center read/unread/action states remain deferred.
+  acknowledgement updates remain deferred. Current-user notification-center read/unread/action state
+  is implemented separately by 003IA under `GET /api/v1/notifications/`.
 - Response examples are saved in
   `.ralph/runs/2026-07-06_105004_normal_run/evidence/api-examples/communications-api-examples.json`.
+
+## Notification inbox APIs (003IA)
+
+`GET /api/v1/notifications/`
+
+Protected current-user inbox endpoint for S04. It is intentionally separate from
+`GET /api/v1/communications/`, which remains related-entity communication history.
+
+Query parameters:
+- Optional: `page`, `page_size` using standard top-level pagination.
+- Optional: `read_status` (`all`, `read`, `unread`; default `all`).
+- Optional: `severity` (`info`, `warning`, `urgent`).
+- Optional: `category`.
+- Unknown query parameters return `400 VALIDATION_ERROR`.
+
+Success data items include:
+- `notification_id`, optional `communication_id`, `notification_type`, `category`, `severity`,
+  `title`, `message`;
+- optional linked record fields `related_entity_type`, `related_entity_id`, `action_label`,
+  `action_url`;
+- `sender`, `recipient`, `read`, `read_at`, `read_by_user_id`, `read_state_version`, and
+  `created_at`.
+
+Response examples are saved in
+`.ralph/runs/2026-07-06_164949_normal_run/evidence/api-responses/notifications-api-example.json`.
+
+`POST /api/v1/notifications/{notification_id}/mark-read/`
+
+Request:
+
+```json
+{ "read_state_version": 1 }
+```
+
+Rules:
+- Missing bearer token returns `401 AUTH_REQUIRED`; revoked/invalid token returns the existing auth
+  `401`; authenticated users without `communications.notification.read` return
+  `403 PERMISSION_DENIED`.
+- List and mark-read are scoped to notifications addressed directly to the current user, to the
+  current user's active primary role code, or to one of the current user's active team codes.
+  Other users' notifications are excluded from list results and return `404 NOT_FOUND` on mark-read.
+- `read_state_version` is required on mark-read. If the submitted version does not match the
+  persisted notification version, the endpoint returns `409 STALE_WRITE`.
+- Successful mark-read persists `read_at`, `read_by_user_id`, increments `read_state_version`, and
+  writes one `AuditLog` row with action `communications.notification.marked_read`.
+- 003IA also creates a notification row when `POST /api/v1/communications/send/` addresses a staff
+  recipient using `recipient_party_type` of `user`, `staff_user`, or `internal_user` and a
+  `recipient_party_id` matching a backend user. Borrower/member communications and provider
+  delivery remain outside this inbox.
+- Permission assumption A-026: `communications.notification.read` is the narrow S04 permission and
+  is seeded to active internal roles with existing source-backed permission sets. The deliberately
+  permission-neutral `it_head` and `sales_team_user` demo/source roles remain ungranted pending
+  source confirmation.
 
 ## Dashboard task summary shell (003G)
 

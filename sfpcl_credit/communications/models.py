@@ -76,3 +76,70 @@ class Communication(models.Model):
         indexes = [
             models.Index(fields=["related_entity_type", "related_entity_id"]),
         ]
+
+
+class Notification(models.Model):
+    SEVERITY_INFO = "info"
+    SEVERITY_WARNING = "warning"
+    SEVERITY_URGENT = "urgent"
+    SEVERITIES = {SEVERITY_INFO, SEVERITY_WARNING, SEVERITY_URGENT}
+
+    notification_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    communication = models.ForeignKey(
+        Communication,
+        on_delete=models.SET_NULL,
+        related_name="notifications",
+        blank=True,
+        null=True,
+    )
+    notification_type = models.CharField(max_length=80, db_index=True)
+    category = models.CharField(max_length=80, db_index=True)
+    severity = models.CharField(max_length=20, default=SEVERITY_INFO, db_index=True)
+    title = models.CharField(max_length=255)
+    message = models.TextField(blank=True)
+    related_entity_type = models.CharField(max_length=80, blank=True)
+    related_entity_id = models.UUIDField(blank=True, null=True, db_index=True)
+    action_label = models.CharField(max_length=80, blank=True)
+    action_url = models.CharField(max_length=255, blank=True)
+    sender_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="sent_notifications",
+        blank=True,
+        null=True,
+    )
+    recipient_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.CASCADE,
+        related_name="notifications",
+        blank=True,
+        null=True,
+    )
+    recipient_role_code = models.CharField(max_length=80, blank=True, db_index=True)
+    recipient_team_code = models.CharField(max_length=80, blank=True, db_index=True)
+    read_at = models.DateTimeField(blank=True, null=True)
+    read_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="read_notifications",
+        blank=True,
+        null=True,
+    )
+    read_state_version = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "notifications"
+        ordering = ["-created_at", "-notification_id"]
+        indexes = [
+            models.Index(fields=["recipient_user", "read_at"]),
+            models.Index(fields=["recipient_role_code", "read_at"]),
+            models.Index(fields=["recipient_team_code", "read_at"]),
+        ]
+
+    @property
+    def read(self):
+        return self.read_at is not None

@@ -133,3 +133,65 @@ def communication_send(request):
             services.validation_field_errors(exc),
         )
     return success_response(data, request)
+
+
+@require_http_methods(["GET"])
+def notification_collection(request):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if not services.user_can_read_notifications(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read notifications.",
+        )
+    try:
+        data, pagination = services.paginated_notifications(user, request.GET)
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Notification query failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return list_response(data, pagination, request)
+
+
+@require_http_methods(["POST"])
+def notification_mark_read(request, notification_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if not services.user_can_read_notifications(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read notifications.",
+        )
+    try:
+        payload = parse_json_body(request)
+        data = services.mark_notification_read(user, request, notification_id, payload)
+    except services.StaleWriteError:
+        return error_response(
+            request,
+            409,
+            "STALE_WRITE",
+            "Notification read state changed. Refresh and try again.",
+        )
+    except ObjectDoesNotExist:
+        return error_response(
+            request, 404, "NOT_FOUND", "Requested notification was not found."
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Notification read update failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return success_response(data, request)

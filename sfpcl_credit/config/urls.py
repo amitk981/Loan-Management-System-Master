@@ -90,6 +90,16 @@ urlpatterns = [
         name="communication-send",
     ),
     path(
+        "api/v1/notifications/",
+        communication_views.notification_collection,
+        name="notification-list",
+    ),
+    path(
+        "api/v1/notifications/<uuid:notification_id>/mark-read/",
+        communication_views.notification_mark_read,
+        name="notification-mark-read",
+    ),
+    path(
         "api/v1/document-files/",
         document_views.upload_document_file,
         name="document-file-upload",

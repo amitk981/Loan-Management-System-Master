@@ -188,6 +188,20 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
   Compliance owner role pending source catalogue confirmation. Real email/SMS/courier/phone
   delivery, provider acknowledgements, manual phone-call reminder workflows, and S04 read/unread
   notification-center state remain deferred to later slices.
+- IMPLEMENTED 2026-07-06 (`2026-07-06_164949_normal_run`, slice 003IA):
+  `sfpcl_credit.communications` now owns `Notification` (`notifications`) as a narrow S04
+  current-user inbox boundary separate from communication history. `GET /api/v1/notifications/`
+  lists only rows addressed to the authenticated user, their active primary role, or active teams,
+  with standard pagination, `read_status`/`severity`/`category` filters, strict unknown-parameter
+  validation, and no communication body/recipient-address leakage beyond notification fields.
+  `POST /api/v1/notifications/{notification_id}/mark-read/` requires `read_state_version`, returns
+  `409 STALE_WRITE` on stale versions, persists read state, and audits
+  `communications.notification.marked_read`. `POST /api/v1/communications/send/` now creates a
+  staff inbox notification when addressed to a backend user recipient. A-026 records the narrow
+  `communications.notification.read` permission assumption, seeded to active internal roles with
+  existing source-backed permission sets while preserving deliberately permission-neutral
+  `it_head`/`sales_team_user` roles. The staff Notifications Center uses this API; My Profile is
+  read-only from `/api/v1/auth/me/`.
 
 ## Dashboard and Task Foundation Extracts
 - `docs/source/api-contracts.md` §43.1 defines `GET /api/v1/dashboard/` as the role-based dashboard

@@ -1,0 +1,20 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_notifications_api (unittest.loader._FailedTest.test_notifications_api)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_notifications_api
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_164949_normal_run/sfpcl_credit/tests/test_notifications_api.py", line 5, in <module>
+    from sfpcl_credit.communications.models import Communication, ContentTemplate, Notification
+ImportError: cannot import name 'Notification' from 'sfpcl_credit.communications.models' (/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_164949_normal_run/sfpcl_credit/communications/models.py)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

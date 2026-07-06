@@ -143,6 +143,9 @@ PERMISSIONS = [
     # communication creation, but §12 omits exact communication permission codes.
     ("communications.communication.read", "View communication history", "medium"),
     ("communications.communication.send", "Create communication snapshots", "medium"),
+    # A-026: S04 is an all-internal-user in-app inbox, but §12 omits a narrow
+    # notification permission code.
+    ("communications.notification.read", "View own notifications", "medium"),
     # §12.8 Security
     ("security.package.read", "View security package", "medium"),
     ("security.package.create", "Create / refresh security package", "high"),
@@ -481,6 +484,14 @@ ROLE_PERMISSIONS = {
         "management_readonly",
     ],
 }
+
+_NOTIFICATION_ROLE_EXCLUSIONS = {"it_head", "sales_team_user"}
+for _role_code, *_ in INTERNAL_ROLES:
+    if _role_code in _NOTIFICATION_ROLE_EXCLUSIONS:
+        continue
+    ROLE_PERMISSIONS.setdefault(_role_code, [])
+    if "communications.notification.read" not in ROLE_PERMISSIONS[_role_code]:
+        ROLE_PERMISSIONS[_role_code].append("communications.notification.read")
 
 
 # --- Prototype alias reconciliation (ASSUMPTIONS A-005) ----------------------

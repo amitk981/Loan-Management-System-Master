@@ -4,12 +4,13 @@ import uuid
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from sfpcl_credit.api import request_ip, request_user_agent
-from sfpcl_credit.communications.models import Communication, ContentTemplate
-from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.communications.models import Communication, ContentTemplate, Notification
+from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.identity.modules import auth_service
 
 
@@ -17,11 +18,14 @@ CONTENT_TEMPLATE_READ_PERMISSION = "communications.content_template.read"
 CONTENT_TEMPLATE_MANAGE_PERMISSION = "communications.content_template.manage"
 COMMUNICATION_READ_PERMISSION = "communications.communication.read"
 COMMUNICATION_SEND_PERMISSION = "communications.communication.send"
+NOTIFICATION_READ_PERMISSION = "communications.notification.read"
 CONTENT_TEMPLATE_ENTITY_TYPE = "content_template"
 COMMUNICATION_ENTITY_TYPE = "communication"
+NOTIFICATION_ENTITY_TYPE = "notification"
 CONTENT_TEMPLATE_CREATED_ACTION = "communications.content_template.created"
 CONTENT_TEMPLATE_UPDATED_ACTION = "communications.content_template.updated"
 COMMUNICATION_CREATED_ACTION = "communications.communication.created"
+NOTIFICATION_MARKED_READ_ACTION = "communications.notification.marked_read"
 
 _DEFAULT_PAGE_SIZE = 20
 _MAX_PAGE_SIZE = 100
@@ -91,7 +95,16 @@ _COMMUNICATION_LIST_PARAMS = {
     "page",
     "page_size",
 }
+_NOTIFICATION_LIST_PARAMS = {"page", "page_size", "read_status", "severity", "category"}
+_READ_STATUSES = {"all", "read", "unread"}
+_USER_RECIPIENT_TYPES = {"user", "staff_user", "internal_user"}
+_ROLE_RECIPIENT_TYPES = {"role", "role_code"}
+_TEAM_RECIPIENT_TYPES = {"team", "team_code"}
 _TEMPLATE_VARIABLE_RE = re.compile(r"{{\s*([A-Za-z0-9_]+)\s*}}")
+
+
+class StaleWriteError(Exception):
+    pass
 
 
 def user_can_read_content_templates(user):
@@ -118,6 +131,10 @@ def user_can_read_communications(user):
 
 def user_can_send_communications(user):
     return COMMUNICATION_SEND_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_read_notifications(user):
+    return NOTIFICATION_READ_PERMISSION in auth_service.effective_permission_codes(user)
 
 
 def serialize_content_template(row):
@@ -162,6 +179,40 @@ def serialize_communication(row):
     }
 
 
+def serialize_notification(row):
+    return {
+        "notification_id": str(row.notification_id),
+        "communication_id": (
+            str(row.communication_id) if row.communication_id else None
+        ),
+        "notification_type": row.notification_type,
+        "category": row.category,
+        "severity": row.severity,
+        "title": row.title,
+        "message": row.message,
+        "related_entity_type": row.related_entity_type or None,
+        "related_entity_id": (
+            str(row.related_entity_id) if row.related_entity_id else None
+        ),
+        "action_label": row.action_label or None,
+        "action_url": row.action_url or None,
+        "sender": (
+            {
+                "user_id": str(row.sender_user.user_id),
+                "full_name": row.sender_user.full_name,
+            }
+            if row.sender_user_id
+            else None
+        ),
+        "recipient": _serialized_notification_recipient(row),
+        "read": row.read,
+        "read_at": row.read_at.isoformat() if row.read_at else None,
+        "read_by_user_id": str(row.read_by_user_id) if row.read_by_user_id else None,
+        "read_state_version": row.read_state_version,
+        "created_at": row.created_at.isoformat(),
+    }
+
+
 def paginated_content_templates(query_params):
     unknown = set(query_params.keys()) - _PAGINATION_PARAMS
     if unknown:
@@ -180,6 +231,40 @@ def paginated_content_templates(query_params):
     offset = (page - 1) * page_size
     items = [
         serialize_content_template(row) for row in queryset[offset : offset + page_size]
+    ]
+    return items, {
+        "page": page,
+        "page_size": page_size,
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_previous": page > 1,
+    }
+
+
+def paginated_notifications(user, query_params):
+    filters = _validate_notification_list_query(query_params)
+    queryset = _notification_queryset_for_user(user)
+    if filters["read_status"] == "read":
+        queryset = queryset.filter(read_at__isnull=False)
+    elif filters["read_status"] == "unread":
+        queryset = queryset.filter(read_at__isnull=True)
+    if filters["severity"]:
+        queryset = queryset.filter(severity=filters["severity"])
+    if filters["category"]:
+        queryset = queryset.filter(category=filters["category"])
+    queryset = queryset.select_related("sender_user", "recipient_user", "communication")
+    page = _positive_int(query_params.get("page"), 1)
+    page_size = min(
+        _positive_int(query_params.get("page_size"), _DEFAULT_PAGE_SIZE),
+        _MAX_PAGE_SIZE,
+    )
+    total_count = queryset.count()
+    total_pages = ceil(total_count / page_size) if total_count else 1
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+    items = [
+        serialize_notification(row) for row in queryset[offset : offset + page_size]
     ]
     return items, {
         "page": page,
@@ -263,8 +348,41 @@ def send_communication(user, request, payload):
             sent_by_user=user,
             delivery_status=Communication.DELIVERY_PENDING,
         )
+        _create_notification_from_communication(row)
         _record_communication_audit(user=user, request=request, row=row)
     return serialize_communication(row)
+
+
+def mark_notification_read(user, request, notification_id, payload):
+    row = _notification_queryset_for_user(user).get(notification_id=notification_id)
+    expected_version = _clean_read_state_version(payload)
+    if expected_version != row.read_state_version:
+        raise StaleWriteError()
+    old_value = {
+        "read": row.read,
+        "read_at": row.read_at.isoformat() if row.read_at else None,
+        "read_by_user_id": str(row.read_by_user_id) if row.read_by_user_id else None,
+        "read_state_version": row.read_state_version,
+    }
+    if not row.read:
+        row.read_at = timezone.now()
+        row.read_by_user = user
+        row.read_state_version += 1
+        with transaction.atomic():
+            row.save(update_fields=["read_at", "read_by_user", "read_state_version", "updated_at"])
+            _record_notification_marked_read_audit(
+                user=user,
+                request=request,
+                row=row,
+                old_value=old_value,
+                new_value={
+                    "read": row.read,
+                    "read_at": row.read_at.isoformat(),
+                    "read_by_user_id": str(row.read_by_user_id),
+                    "read_state_version": row.read_state_version,
+                },
+            )
+    return serialize_notification(row)
 
 
 def update_content_template(user, request, content_template_id, payload):
@@ -421,6 +539,135 @@ def _record_communication_audit(*, user, request, row):
         ip_address=request_ip(request),
         user_agent=request_user_agent(request),
     )
+
+
+def _record_notification_marked_read_audit(*, user, request, row, old_value, new_value):
+    AuditLog.objects.create(
+        actor_user=user,
+        actor_type="user",
+        action=NOTIFICATION_MARKED_READ_ACTION,
+        entity_type=NOTIFICATION_ENTITY_TYPE,
+        entity_id=row.notification_id,
+        old_value_json=old_value,
+        new_value_json=new_value,
+        ip_address=request_ip(request),
+        user_agent=request_user_agent(request),
+    )
+
+
+def _notification_queryset_for_user(user):
+    return Notification.objects.filter(
+        Q(recipient_user=user)
+        | Q(recipient_role_code__in=user.role_codes())
+        | Q(recipient_team_code__in=user.team_codes())
+    ).order_by("-created_at", "-notification_id")
+
+
+def _serialized_notification_recipient(row):
+    if row.recipient_user_id:
+        return {
+            "type": "user",
+            "user_id": str(row.recipient_user_id),
+            "full_name": row.recipient_user.full_name,
+        }
+    if row.recipient_role_code:
+        return {"type": "role", "role_code": row.recipient_role_code}
+    if row.recipient_team_code:
+        return {"type": "team", "team_code": row.recipient_team_code}
+    return {"type": "unknown"}
+
+
+def _create_notification_from_communication(row):
+    recipient = _notification_recipient(row)
+    if recipient is None:
+        return None
+    return Notification.objects.create(
+        communication=row,
+        notification_type=_notification_type_for(row.related_entity_type),
+        category=_notification_category_for(row.related_entity_type),
+        severity=Notification.SEVERITY_INFO,
+        title=row.subject_snapshot or "Communication notification",
+        message=row.body_snapshot,
+        related_entity_type=row.related_entity_type,
+        related_entity_id=row.related_entity_id,
+        action_label="Open related record",
+        action_url=_action_url_for(row.related_entity_type),
+        sender_user=row.sent_by_user,
+        **recipient,
+    )
+
+
+def _notification_recipient(row):
+    party_type = row.recipient_party_type.strip().lower()
+    if party_type in _USER_RECIPIENT_TYPES and row.recipient_party_id:
+        try:
+            return {"recipient_user": User.objects.get(user_id=row.recipient_party_id)}
+        except User.DoesNotExist:
+            return None
+    if party_type in _ROLE_RECIPIENT_TYPES and row.recipient_address:
+        return {"recipient_role_code": row.recipient_address.strip()}
+    if party_type in _TEAM_RECIPIENT_TYPES and row.recipient_address:
+        return {"recipient_team_code": row.recipient_address.strip()}
+    return None
+
+
+def _notification_type_for(related_entity_type):
+    if related_entity_type == "loan_application":
+        return "application"
+    return related_entity_type or "system"
+
+
+def _notification_category_for(related_entity_type):
+    categories = {
+        "loan_application": "Application",
+        "loan_account": "Repayment",
+        "document": "Documents",
+        "compliance_task": "Compliance",
+    }
+    return categories.get(related_entity_type, "System")
+
+
+def _action_url_for(related_entity_type):
+    urls = {
+        "loan_application": "/applications/detail",
+        "loan_account": "/loan-accounts/detail",
+        "document": "/documentation",
+        "compliance_task": "/compliance",
+    }
+    return urls.get(related_entity_type, "/notifications")
+
+
+def _validate_notification_list_query(query_params):
+    field_errors = {}
+    unknown = set(query_params.keys()) - _NOTIFICATION_LIST_PARAMS
+    for field in sorted(unknown):
+        field_errors[field] = "Unknown query parameter."
+    read_status = str(query_params.get("read_status", "all")).strip().lower()
+    if read_status not in _READ_STATUSES:
+        field_errors["read_status"] = "Must be one of all, read, unread."
+    severity = _clean_optional_string(query_params.get("severity"))
+    if severity and severity not in Notification.SEVERITIES:
+        field_errors["severity"] = "Must be one of info, urgent, warning."
+    category = _clean_optional_string(query_params.get("category"))
+    if field_errors:
+        raise ValidationError(field_errors)
+    return {
+        "read_status": read_status,
+        "severity": severity,
+        "category": category,
+    }
+
+
+def _clean_read_state_version(payload):
+    if set(payload.keys()) - {"read_state_version"}:
+        raise ValidationError({"read_state_version": "Only read_state_version is allowed."})
+    try:
+        version = int(payload.get("read_state_version"))
+    except (TypeError, ValueError):
+        raise ValidationError({"read_state_version": "This field is required."}) from None
+    if version < 1:
+        raise ValidationError({"read_state_version": "Must be a positive integer."})
+    return version
 
 
 def _validate_communication_list_query(query_params):

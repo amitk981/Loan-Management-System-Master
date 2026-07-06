@@ -8,7 +8,9 @@ Epic 003: Audit, Documents, Config, and Dashboard Foundation
 Epic file: `docs/epics/003-audit-documents-config-foundation.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Review and update the prototype inventory/gap documentation after Epic 003 dashboard,
+communication, notification, and profile wiring so future UI slices know which screens are
+API-backed and which still use mock data.
 
 ## User Value
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
@@ -22,10 +24,14 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - docs/source/data-model.md document/config/audit tables
 - docs/source/component-spec.md
 - docs/source/design-system.md
+- docs/source/screen-spec.md section 5.8 and S04
+- docs/source/content-spec.md S04
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/Dashboard.tsx
 - sfpcl-lms/src/pages/tasks/TaskInbox.tsx
+- sfpcl-lms/src/pages/notifications/NotificationsCenter.tsx
+- sfpcl-lms/src/pages/profile/MyProfile.tsx
 - sfpcl-lms/src/components/loan/AuditTimeline.tsx
 - sfpcl-lms/src/components/loan/DocumentPackModal.tsx
 
@@ -33,7 +39,13 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 None directly.
 
 ## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
+Docs-only unless a test fixture needs a label-only correction. Do not redesign screens or add new
+styling. Verify the inventory/gap report reflects that:
+- Dashboard is API-backed by `/api/v1/dashboard/`.
+- Notifications Center is API-backed by `/api/v1/notifications/` and mark-read.
+- My Profile is read-only from `/api/v1/auth/me/`.
+- Task Inbox remains a prototype/mock shell unless 003J or a later source-backed task slice changes
+  that.
 
 ## Backend/API Scope
 None for this slice, except reading existing contracts for validation.
@@ -54,13 +66,16 @@ Record audit/workflow events for critical create/update/approval/access actions.
 Enforce source-doc business rules and block invalid state transitions.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+Run documentation/protected-path checks plus the standard frontend/backend gates. If no code is
+touched, no new unit tests are required beyond proving existing gates still pass.
 
 ## Visual Acceptance Criteria
-None.
+If screenshots are refreshed, use the existing visual patterns only. This slice should document
+visual coverage gaps, not change the design system.
 
 ## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+Updated `PROTOTYPE_INVENTORY.md` / `PROTOTYPE_GAP_REPORT.md`, gate logs, and any refreshed visual
+evidence. If browser screenshots are unavailable due sandbox/tooling, record the exact blocker.
 
 ## Risk Level
 Low

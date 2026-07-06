@@ -26,4 +26,6 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
 ## Known Prototype Gaps
 - Uses mock data instead of APIs.
 - Loading, empty, error, retry, and unauthorized states are uneven.
-- Real backend/API wiring exists for auth/current-user, the dev Tracer screen, and Admin User Management; the remaining production module screens still use mock data.
+- Real backend/API wiring exists for auth/current-user, the dev Tracer screen, Admin User Management,
+  Dashboard summary cards/tasks, staff Notifications Center, and staff My Profile; the remaining
+  production module screens still use mock data.
