@@ -43,6 +43,9 @@ Docs-only unless a test fixture needs a label-only correction. Do not redesign s
 styling. Verify the inventory/gap report reflects that:
 - Dashboard is API-backed by `/api/v1/dashboard/`.
 - Notifications Center is API-backed by `/api/v1/notifications/` and mark-read.
+- Mark-read is backend-hardened by 003IA2: the UI should keep sending the current
+  `read_state_version`, surface the existing refresh/error pattern for `409 STALE_WRITE`, and avoid
+  adding any new styling or local mock fallback.
 - My Profile is read-only from `/api/v1/auth/me/`.
 - Task Inbox remains a prototype/mock shell unless 003J or a later source-backed task slice changes
   that.
@@ -68,6 +71,8 @@ Enforce source-doc business rules and block invalid state transitions.
 ## Test Cases
 Run documentation/protected-path checks plus the standard frontend/backend gates. If no code is
 touched, no new unit tests are required beyond proving existing gates still pass.
+- If inventory/gap text mentions notification read/unread behavior, cite the implemented
+  `/api/v1/notifications/` and mark-read contract rather than the older communication-history API.
 
 ## Visual Acceptance Criteria
 If screenshots are refreshed, use the existing visual patterns only. This slice should document

@@ -1,5 +1,27 @@
 # Ralph Progress Log
 
+## 2026-07-06 18:54:59 - 2026-07-06_185459_normal_run
+- Agent tool used: codex
+- Slice attempted: 003IA2-notification-mark-read-stale-write-hardening
+- Summary: Hardened notification mark-read stale-write enforcement. The endpoint now validates the
+  submitted `read_state_version`, locks and refetches the current-user scoped notification inside
+  one `transaction.atomic()` block, compares the persisted version under that lock, then mutates
+  read state and writes the `communications.notification.marked_read` audit row in the same atomic
+  operation. Same-version retries after a persisted success now return `409 STALE_WRITE`, preserve
+  the stored read metadata/version, and create no second audit row. No schema/API/frontend contract
+  change.
+- Tests run: failing-first same-version stale retry regression; focused notification API tests
+  (6/6); backend `manage.py check`; backend tests (184/184); `makemigrations --check --dry-run`;
+  backend coverage 96% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test`
+  (46/46); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-06_185459_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `003J-background-job-scheduling-foundation`; it is sharpened to keep scheduler
+  state out of `communications.services`, avoid dashboard task/notification generation, and leave
+  003IA2 mark-read semantics unchanged.
+
 ## 2026-07-06 16:49:49 - 2026-07-06_164949_normal_run
 
 ## 2026-07-06 10:50:04 - 2026-07-06_105004_normal_run
@@ -1021,6 +1043,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_183803_architecture_review/.ralph/runs/2026-07-06_183803_architecture_review/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_183803_architecture_review/.ralph/runs/2026-07-06_183803_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-06 19:13:15 - 2026-07-06_185459_normal_run
+- Agent tool used: codex
+- Slice attempted: 003IA2-notification-mark-read-stale-write-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_185459_normal_run/.ralph/runs/2026-07-06_185459_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_185459_normal_run/.ralph/runs/2026-07-06_185459_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

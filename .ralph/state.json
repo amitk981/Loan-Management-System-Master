@@ -36,14 +36,15 @@
     "003G2-dashboard-internal-auditor-access-regression",
     "003H-dashboard-task-ui-wiring",
     "003I-notification-adapter-shell",
-    "003IA-notifications-center-ui-wiring"
+    "003IA-notifications-center-ui-wiring",
+    "003IA2-notification-mark-read-stale-write-hardening"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "4dd909d",
-  "last_run_id": "2026-07-06_183803_architecture_review",
+  "last_run_id": "2026-07-06_185459_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
+  "slices_completed_since_architecture_review": 1,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

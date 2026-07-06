@@ -1,40 +1,57 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-06_183803_architecture_review
+2026-07-06_185459_normal_run
 
 ## Current Status
-Architecture review completed successfully after `003IA-notifications-center-ui-wiring`.
-`architecture_review_due` is now false and `slices_completed_since_architecture_review` is reset to
-0. A corrective slice was created before scheduler work continues:
-`003IA2-notification-mark-read-stale-write-hardening`.
+Slice `003IA2-notification-mark-read-stale-write-hardening` completed successfully. Architecture
+review is not due yet; `.ralph/state.json` now has `slices_completed_since_architecture_review: 1`.
 
 ## What Completed
-- Reviewed commits `8bd2b69`, `2cbb4c9`, `21e4f1a`, and `4dd909d` since the prior architecture
-  review commit `8ea30ec`.
-- Appended findings to `docs/working/REVIEW_FINDINGS.md`.
-- Found one Medium issue: notification mark-read stale-write checking is not atomic because the
-  version comparison occurs before the transaction that saves read state.
-- Created `docs/slices/003IA2-notification-mark-read-stale-write-hardening.md` with a required
-  failing-first same-version retry/concurrency regression and atomic update/lock requirement.
-- Sharpened `003J-background-job-scheduling-foundation` to depend on `003IA2`, keep scheduler logic
-  out of `sfpcl_credit.communications.services`, and prove enqueue idempotency.
+- Hardened `POST /api/v1/notifications/{notification_id}/mark-read/`.
+- The service now parses `read_state_version`, opens one `transaction.atomic()` block, locks and
+  refetches the current-user scoped notification with `select_for_update()`, compares the persisted
+  version under that lock, then saves read state and writes the
+  `communications.notification.marked_read` audit row in the same atomic operation.
+- Added a failing-first regression proving a same-version retry after a persisted success returns
+  `409 STALE_WRITE`, leaves `read_at`, `read_by_user`, and `read_state_version` unchanged, and does
+  not create a second audit row.
+- No schema, API contract, permission, frontend, communication-history, or dashboard behavior
+  changed.
+- Updated the Epic 003 digest with the 003IA2 implementation note.
+- Sharpened `003J-background-job-scheduling-foundation` and
+  `003K-prototype-visual-gap-report-update` using already-opened notification/dashboard contract
+  context.
 
 ## Evidence
-See `.ralph/runs/2026-07-06_183803_architecture_review/` for plan, changed files,
-risk/review/final summary, and full gate logs. Gates run: backend check, backend tests,
-makemigrations check, backend coverage report with 85% floor, frontend typecheck, lint, tests, and
-build.
+See `.ralph/runs/2026-07-06_185459_normal_run/`.
+
+Key logs under `evidence/terminal-logs/`:
+- `red-notification-mark-read-stale-retry.log`
+- `green-notification-mark-read-stale-retry-after-cleanup.log`
+- `green-notifications-api.log`
+- `backend-check.log`
+- `backend-tests.log`
+- `backend-makemigrations-check.log`
+- `backend-coverage.log`
+- `frontend-typecheck.log`
+- `frontend-lint.log`
+- `frontend-tests.log`
+- `frontend-build.log`
+
+Gate result: backend tests 184/184, backend coverage 96% with 85% floor, frontend tests 46/46,
+frontend typecheck/lint/build passed.
 
 ## Current Blocker
-None. The next eligible normal slice is the corrective `003IA2` created by this architecture review.
+None.
 
 ## Notes For Next Slice
-- Run `003IA2` before `003J`.
-- `003IA2` must make notification mark-read stale-write enforcement atomic and preserve current
-  `401`/`403`/`404`/`409` response behavior and one-audit-row-per-success semantics.
-- `003J` remains a scheduler metadata shell. It must not merge scheduler jobs with dashboard tasks,
-  S04 notifications, or communication history.
-- Dashboard remains role cards plus `tasks: []`; notifications are under `/api/v1/notifications/`.
-- Borrower/member-portal notifications remain out of scope for Epic 003; later member-portal slices
-  own that path.
+- Next eligible slice is `003J-background-job-scheduling-foundation`.
+- Keep scheduler state and transition/idempotency logic in its own backend module/app boundary; do
+  not add it to `sfpcl_credit.communications.services`.
+- `003J` should not create dashboard tasks, notification inbox rows, or mark-read audit rows.
+- Preserve 003IA2 mark-read semantics: stale retries return `409 STALE_WRITE` and successful
+  unread-to-read transitions write exactly one `communications.notification.marked_read` audit row.
+- `003K` remains docs/prototype-inventory work after `003J`; it should document that Dashboard,
+  Notifications Center, and My Profile are API-backed while Task Inbox remains a prototype/mock
+  shell unless 003J or a later source-backed task slice changes that.

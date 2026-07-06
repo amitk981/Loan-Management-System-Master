@@ -202,6 +202,13 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
   existing source-backed permission sets while preserving deliberately permission-neutral
   `it_head`/`sales_team_user` roles. The staff Notifications Center uses this API; My Profile is
   read-only from `/api/v1/auth/me/`.
+- HARDENED 2026-07-06 (`2026-07-06_185459_normal_run`, slice 003IA2):
+  `POST /api/v1/notifications/{notification_id}/mark-read/` now performs the current-user scoped
+  lookup, `read_state_version` comparison, read-state mutation, and
+  `communications.notification.marked_read` audit write inside one atomic row-lock operation.
+  Same-version retries after a persisted success return `409 STALE_WRITE`, leave the stored
+  `read_at`/`read_by_user`/version unchanged, and do not write a second audit row. No schema,
+  response-shape, permission, dashboard, communication-history, or frontend contract change.
 
 ## Dashboard and Task Foundation Extracts
 - `docs/source/api-contracts.md` §43.1 defines `GET /api/v1/dashboard/` as the role-based dashboard

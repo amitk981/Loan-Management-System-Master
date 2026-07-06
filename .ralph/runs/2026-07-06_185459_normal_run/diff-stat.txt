@@ -1,0 +1,10 @@
+ .ralph/progress.md                                 | 22 +++++++
+ .ralph/state.json                                  |  7 ++-
+ ...notification-mark-read-stale-write-hardening.md | 26 ++++----
+ .../003J-background-job-scheduling-foundation.md   |  9 +++
+ .../003K-prototype-visual-gap-report-update.md     |  5 ++
+ docs/working/HANDOFF.md                            | 71 ++++++++++++++--------
+ .../digests/epic-003-audit-documents-config.md     |  7 +++
+ sfpcl_credit/communications/services.py            | 53 +++++++++++-----
+ sfpcl_credit/tests/test_notifications_api.py       | 63 +++++++++++++++++++
+ 9 files changed, 204 insertions(+), 59 deletions(-)
