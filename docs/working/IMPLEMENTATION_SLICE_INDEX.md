@@ -138,6 +138,8 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 113 | `012D` Audit Explorer | Epic 012 | 012C, | Medium | No | Yes | Yes | Yes |
 | 113a | `012DA` Reports, Exports, and Audit Explorer Frontend Wiring | Epic 012 | 012D, | Medium | Yes | Yes | No | Yes |
 | 114 | `012E` Operational Dashboard Hardening | Epic 012 | 012D, | Medium | Yes | Yes | Yes | Yes |
+| 114a | `012EA` Workflow Task Engine and Task Inbox APIs | Epic 012 | 012E, | Medium | No | Yes | Yes | Yes |
+| 114b | `012EB` Task Inbox Frontend Wiring | Epic 012 | 012EA, | Medium | Yes | Yes | No | Yes |
 | 115 | `012F` Security Privacy Regression Checks | Epic 012 | 012E, | High | No | Yes | No | Yes |
 | 116 | `012G` Critical E2E UAT Smoke Scenarios | Epic 012 | 012F, | Medium | No | Yes | No | Yes |
 | 117 | `012H` Deployment Readiness and Smoke Checks | Epic 012 | 012G, | Medium | No | Yes | No | Yes |
