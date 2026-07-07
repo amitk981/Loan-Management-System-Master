@@ -6,6 +6,7 @@ from sfpcl_credit.dashboard import views as dashboard_views
 from sfpcl_credit.documents import views as document_views
 from sfpcl_credit.identity import admin_views, audit_views
 from sfpcl_credit.identity.views import login, logout, me, refresh
+from sfpcl_credit.members import views as member_views
 from sfpcl_credit.ops import deep_health, live_health, ready_health
 from sfpcl_credit.tracer import views as tracer_views
 from sfpcl_credit.workflows import event_views
@@ -99,6 +100,7 @@ urlpatterns = [
         communication_views.notification_mark_read,
         name="notification-mark-read",
     ),
+    path("api/v1/members/", member_views.member_collection, name="member-list"),
     path(
         "api/v1/document-files/",
         document_views.upload_document_file,

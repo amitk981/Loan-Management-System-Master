@@ -1,5 +1,27 @@
 # Ralph Progress Log
 
+## 2026-07-07 21:26:19 - 2026-07-07_212619_normal_run
+- Agent tool used: codex
+- Slice attempted: 004A-member-directory-api-and-ui
+- Summary: Implemented the source §13.1 read-only member directory. Added `sfpcl_credit.members`
+  with a narrow `Member` model/migration, protected `GET /api/v1/members/` with standard
+  pagination/filter validation, `members.member.read` gating, masked mobile numbers, and no
+  PAN/Aadhaar response fields. Wired `MemberDirectory` to the backend API through
+  `memberDirectoryApi`, removed the backend-wired `mockData` dependency, and dropped mock-only
+  current exposure, supply-year, and Borrower 360 UI from the directory path. Updated contracts,
+  assumptions, prototype docs, Epic 004 digest, and sharpened 004B/004C.
+- Tests run: backend TDD red/green for member directory; frontend red/green for member directory;
+  backend `manage.py check`; backend tests (194/194); `makemigrations --check --dry-run`; backend
+  coverage 96% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test` (51/51);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-07_212619_normal_run/`, with gate logs under
+  `evidence/terminal-logs/`, API examples in `api-response-examples.md`, and static member-directory
+  visual artifacts under `evidence/screenshots/member-directory-html/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `004B-member-profile-api-and-ui`, reusing `sfpcl_credit.members` and keeping it
+  masked-detail-only unless §13.5 reveal is fully implemented.
+
 ## 2026-07-07 21:08:24 - 2026-07-07_210824_architecture_review
 - Agent tool used: codex
 - Slice attempted: architecture-review
@@ -1173,6 +1195,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_210824_architecture_review/.ralph/runs/2026-07-07_210824_architecture_review/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_210824_architecture_review/.ralph/runs/2026-07-07_210824_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-07 21:56:29 - 2026-07-07_212619_normal_run
+- Agent tool used: codex
+- Slice attempted: 004A-member-directory-api-and-ui
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_212619_normal_run/.ralph/runs/2026-07-07_212619_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_212619_normal_run/.ralph/runs/2026-07-07_212619_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

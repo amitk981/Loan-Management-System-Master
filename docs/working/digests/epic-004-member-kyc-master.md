@@ -14,6 +14,13 @@ before implementation.
 - The same excerpt shows `mobile_number` masked in the example. 004A should preserve masking and
   avoid exposing sensitive identifiers through the directory response unless the full source pass
   confirms role-specific reveal rules.
+- 004A source pass confirmed `auth-permissions.md` §12.2 and §25.1 use `members.member.read` for
+  listing members; `/members` route guard also maps to `members.member.read`. Directory reads are
+  scope-limited in source language, but no exact object-scope rule exists yet, so 004A blocks users
+  without the permission and does not expose all records to unauthenticated/unauthorised users.
+- `api-contracts.md` §6.2 and §7 require standard list pagination and `VALIDATION_ERROR` envelopes.
+  004A validates only §13.1 query parameters: `search`, `member_type`, `membership_status`,
+  `kyc_status`, `default_status`, `page`, and `page_size`; unknown parameters return 400.
 - Sharpened 004A as a read-only, paginated member-directory endpoint/UI wiring slice. It should not
   implement member create/update, KYC verification, nominee, witness, share certificate, demat,
   landholding, crop plan, loan application, or borrower 360 behavior.

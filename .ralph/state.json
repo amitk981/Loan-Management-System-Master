@@ -40,14 +40,15 @@
     "003IA2-notification-mark-read-stale-write-hardening",
     "003J-background-job-scheduling-foundation",
     "003K-prototype-visual-gap-report-update",
-    "003L-data-import-and-migration-planning"
+    "003L-data-import-and-migration-planning",
+    "004A-member-directory-api-and-ui"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "51f4b18",
-  "last_run_id": "2026-07-07_210824_architecture_review",
+  "last_run_id": "2026-07-07_212619_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
+  "slices_completed_since_architecture_review": 1,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

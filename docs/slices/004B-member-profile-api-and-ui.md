@@ -48,6 +48,12 @@ type, legal name, folio number, membership/KYC/default status, masked `pan` and 
 with `can_view_full`, registered address, type-specific profile shell fields, and
 `available_actions[]`.
 
+004A delivered the `sfpcl_credit.members` app, `Member` model, `members.member.read` permission
+gate, and read-only list serialization. Reuse that app/service boundary and add detail-only fields
+or serializers there rather than creating a second member module. `GET /api/v1/members/{member_id}/`
+must not include unmasked `pan_encrypted`, `aadhaar_encrypted`, `pan_hash`, or `aadhaar_hash`; the
+response should expose only masked objects such as `{masked, can_view_full}` per §13.3.
+
 Do not implement member create/update, nominee APIs, shareholding mutations, active-member
 calculation, land/crop APIs, KYC profile/document upload or verification, loan application start,
 Borrower 360, communications history, or audit timeline wiring in 004B unless the slice is
@@ -82,6 +88,10 @@ reveal is deferred, include a review-packet note that 004B exposes masked values
 Validate member UUID/path parameters and return standard errors. Do not invent eligibility,
 active-member, KYC approval, default, nominee, witness, shareholding, land/crop, or loan-application
 business rules in 004B. PAN/Aadhaar in responses must stay masked by default.
+
+Use `404 NOT_FOUND` for a valid UUID that does not identify a non-deleted member. Invalid path UUIDs
+may be handled by Django routing if the route uses `<uuid:member_id>`. Detail reads require
+`members.member.read`; do not reuse dashboard/report/document/import permissions.
 
 ## Test Cases
 TDD backend tests first: authenticated detail success, masked `pan`/`aadhaar` shape,
