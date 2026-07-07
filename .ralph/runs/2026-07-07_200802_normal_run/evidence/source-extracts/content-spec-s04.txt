@@ -1,0 +1,39 @@
+## S04 — Notifications and Alerts Center
+
+### Page Title
+
+`Notifications`
+
+### Tabs
+
+- All
+- Action Required
+- Approvals
+- Documents
+- Repayments
+- Defaults
+- Compliance
+- System
+
+### Notification Fields
+
+- Notification type
+- Application No.
+- Borrower
+- Message
+- Date and time
+- Priority
+- Read status
+- Related task
+
+### Bulk Actions
+
+- Mark as Read
+- Mark as Unread
+- Open Related Record
+
+---
+
+## S05 — Member Directory
+
+### Page Title

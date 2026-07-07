@@ -1,5 +1,26 @@
 # Ralph Progress Log
 
+## 2026-07-07 20:20:23 - 2026-07-07_200802_normal_run
+- Agent tool used: codex
+- Slice attempted: 003K-prototype-visual-gap-report-update
+- Summary: Updated prototype inventory and gap documentation after Epic 003 dashboard,
+  notification, profile, and scheduler work. Dashboard is now recorded as API-backed by
+  `GET /api/v1/dashboard/`; Notifications Center as API-backed by `/api/v1/notifications/` plus
+  versioned mark-read; My Profile as read-only from `/api/v1/auth/me/`; and Task Inbox,
+  `AuditTimeline`, and `DocumentPackModal` as still prototype/mock for their current UI paths. The
+  docs explicitly state that 003J `scheduled_jobs` is internal metadata only, not a task inbox,
+  dashboard task generator, notification generator, or scheduler UI.
+- Tests run: backend `manage.py check`; backend tests (189/189);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend `npm run
+  typecheck`; `npm run lint`; `npm test` (46/46); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-07_200802_normal_run/`, with gate logs under
+  `evidence/terminal-logs/` and source excerpts under `evidence/source-extracts/`.
+- Result: Success.
+- Risk level: Low.
+- Next action: Run `003L-data-import-and-migration-planning`; it is sharpened to stay docs/planning
+  only, avoid staging/import tooling, and preserve 003K's distinction between API-backed staff
+  screens and remaining prototype/mock shells.
+
 ## 2026-07-07 16:27:20 - 2026-07-07_161444_normal_run
 - Agent tool used: codex
 - Slice attempted: 003J-background-job-scheduling-foundation
@@ -1083,6 +1104,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_161444_normal_run/.ralph/runs/2026-07-07_161444_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_161444_normal_run/.ralph/runs/2026-07-07_161444_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-07 20:25:32 - 2026-07-07_200802_normal_run
+- Agent tool used: codex
+- Slice attempted: 003K-prototype-visual-gap-report-update
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_200802_normal_run/.ralph/runs/2026-07-07_200802_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_200802_normal_run/.ralph/runs/2026-07-07_200802_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

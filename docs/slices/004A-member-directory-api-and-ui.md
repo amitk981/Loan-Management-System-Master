@@ -18,7 +18,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11
-- docs/source/api-contracts.md sections 13-18
+- docs/source/api-contracts.md sections 13-18, especially §13.1 `GET /api/v1/members/`
 - docs/source/data-model.md member/KYC/shareholding tables
 - docs/source/screen-spec.md member screens
 
@@ -27,31 +27,56 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - sfpcl-lms/src/data/mockData.ts
 
 ## Screens Involved
-Relevant prototype screen area for this capability.
+Member Directory / member list area.
 
 ## Frontend Scope
-Small UI wiring for the named workflow, if applicable.
+Wire the existing Member Directory prototype pattern to the backend list API. Reuse existing table,
+filter/search, card, loading, empty, error, and unauthorized patterns; do not introduce new styling.
+Show only list fields returned by the backend contract until a later detail/profile slice owns
+deeper member/KYC/shareholding panels.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+Implement `GET /api/v1/members/?search=&member_type=&membership_status=&kyc_status=&default_status=&page=1&page_size=20`
+as the narrow directory read API. Return standard paginated envelopes. The source §13.1 response
+item includes `member_id`, `member_number`, `member_type`, `legal_name`, `display_name`,
+`folio_number`, `membership_status`, `kyc_status`, `rekyc_due_date`, `default_status`,
+`mobile_number`, `email`, `share_summary{number_of_shares, holding_mode, available_share_count}`,
+and `active_member_status{status, verified_at}`.
+
+Do not implement create/update member profile, nominee, witness, KYC verification, share
+certificate, demat, landholding, crop plan, loan application, or borrower 360 behavior in 004A.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for the member master fields this directory lists (name, member number, type, village/location, status), if needed.
+Non-destructive model/migration changes for the member directory fields needed by §13.1 only, if
+models do not already exist. Keep share/active-member nested values as explicit shell data or
+well-named nullable fields unless the source-backed member/shareholding tables are implemented in
+the same narrow path.
 
 ## API Contracts
-Create or update the API contract for this capability.
+Create or update the API contract for the member list endpoint, including supported filters,
+standard pagination, unknown-parameter handling, and masked sensitive fields. Do not add mutation
+contracts in this slice.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Apply role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access
+as approval-required. Directory results must be permission-filtered or blocked rather than exposing
+all members to every authenticated user.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+Read-only list access should not create workflow events. If the implementation exposes sensitive
+unmasked fields or export-style access, it must audit that reveal/export action; otherwise record
+the read/no-audit decision in the review packet.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+Validate query parameters and enum filters. Do not invent eligibility, KYC approval, active-member,
+default, or share-availability business rules; leave those to later slices unless directly stated by
+the source docs opened during 004A.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+TDD backend tests first: authenticated list success, pagination envelope, supported filter behavior,
+unknown/invalid filter rejection, and unauthorized/forbidden access. Frontend tests should cover
+loading, API success rows, empty state, error state, and no fallback to `mockData` for the wired
+directory path.
 
 ## Visual Acceptance Criteria
 Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.

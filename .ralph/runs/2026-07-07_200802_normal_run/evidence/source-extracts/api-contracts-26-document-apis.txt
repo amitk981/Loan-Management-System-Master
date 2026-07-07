@@ -1,0 +1,68 @@
+# 26. Document APIs
+
+## 26.1 Upload File
+
+```http
+POST /api/v1/document-files/
+Content-Type: multipart/form-data
+```
+
+### Multipart Fields
+
+| Field | Required | Description |
+|---|---:|---|
+| `file` | Yes | File binary |
+| `document_category` | Yes | KYC / legal / security / finance |
+| `sensitivity_level` | Yes | internal / confidential / restricted |
+| `related_entity_type` | Optional | application / loan / compliance |
+| `related_entity_id` | Optional | Related ID |
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "document_id": "uuid",
+    "file_name": "borrower-pan.pdf",
+    "mime_type": "application/pdf",
+    "file_size_bytes": 245600,
+    "sensitivity_level": "restricted",
+    "uploaded_at": "2026-06-22T10:30:00Z"
+  }
+}
+```
+
+## 26.2 Download File
+
+```http
+GET /api/v1/document-files/{document_id}/download/
+```
+
+### Response Option A: Signed URL
+
+```json
+{
+  "success": true,
+  "data": {
+    "download_url": "https://signed-url",
+    "expires_at": "2026-06-22T10:40:00Z"
+  }
+}
+```
+
+### Response Option B: Stream
+
+Native file stream.
+
+## 26.3 Document Templates
+
+```http
+GET /api/v1/document-templates/
+POST /api/v1/document-templates/
+PATCH /api/v1/document-templates/{document_template_id}/
+```
+
+### Create Template Request
+
+```json

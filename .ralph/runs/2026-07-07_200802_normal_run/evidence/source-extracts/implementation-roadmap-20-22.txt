@@ -1,0 +1,229 @@
+# 20. Technical Implementation Sequencing
+
+## 20.1 Django App Structure
+
+Recommended app sequence:
+
+| App | Build Phase |
+|---|---|
+| `accounts` | R1 |
+| `rbac` | R1 |
+| `audit` | R1 |
+| `documents` | R1/R4 |
+| `configurations` | R1 |
+| `members` | R2 |
+| `kyc` | R2 |
+| `applications` | R2 |
+| `credit` | R2 |
+| `approvals` | R3 |
+| `legal_documents` | R4 |
+| `security_instruments` | R4 |
+| `sap_workflow` | R5 |
+| `loans` | R5 |
+| `disbursements` | R5 |
+| `repayments` | R6 |
+| `interest` | R6 |
+| `monitoring` | R6 |
+| `defaults` | R7 |
+| `recovery` | R7 |
+| `closure` | R7 |
+| `compliance` | R7 |
+| `communications` | R1/R2/R6 |
+| `reports` | R6/R8 |
+| `integrations` | R1/R5 onward |
+| `ops` | R8 |
+
+## 20.2 Service Layer Sequence
+
+| Service | Build Phase |
+|---|---|
+| Permission service | R1 |
+| Object access service | R1 |
+| Audit service | R1 |
+| Document storage service | R1 |
+| Configuration service | R1 |
+| Active member service | R2 |
+| Eligibility service | R2 |
+| Loan limit service | R2 |
+| Appraisal service | R2 |
+| Approval matrix service | R3 |
+| Sanction decision service | R3 |
+| Document generation service | R4 |
+| Checklist service | R4 |
+| Security package service | R4 |
+| SAP request service | R5 |
+| Loan account service | R5 |
+| Disbursement readiness service | R5 |
+| Disbursement service | R5 |
+| Repayment allocation service | R6 |
+| Interest accrual service | R6 |
+| DPD service | R6 |
+| Default service | R7 |
+| Recovery service | R7 |
+| Closure service | R7 |
+| Compliance calculation service | R7 |
+| Reporting service | R8 |
+
+## 20.3 Frontend Module Sequence
+
+| Module | Build Phase |
+|---|---|
+| App shell and login | R1 |
+| Design system components | R1 |
+| Admin/user management | R1 |
+| Member directory/profile | R2 |
+| Application screens | R2 |
+| Credit assessment screens | R2 |
+| Approval workbench | R3 |
+| Documentation workspace | R4 |
+| Security package screens | R4 |
+| SAP and disbursement screens | R5 |
+| Loan account 360 | R5/R6 |
+| Repayment and interest screens | R6 |
+| Monitoring dashboards | R6 |
+| Default/recovery screens | R7 |
+| Closure screens | R7 |
+| Compliance screens | R7 |
+| Reports centre | R8 |
+| Audit explorer | R8 |
+
+---
+
+# 21. Data Model Implementation Sequencing
+
+## 21.1 Foundation Tables
+
+Build first:
+
+- Users.
+- Roles.
+- Permissions.
+- Teams.
+- User-team memberships.
+- User sessions.
+- Audit logs.
+- Workflow events.
+- Document files.
+- Configuration versions.
+- Communication templates.
+- Integration providers.
+
+## 21.2 Business Master Tables
+
+Build next:
+
+- Members.
+- Individual member profiles.
+- Producer institution profiles.
+- Nominees.
+- Witnesses.
+- Shareholdings.
+- Share certificates.
+- Demat accounts.
+- Land holdings.
+- Crop plans.
+- KYC profiles.
+- KYC documents.
+
+## 21.3 Origination and Credit Tables
+
+- Loan applications.
+- Application documents.
+- Deficiencies.
+- Eligibility assessments.
+- Active member status.
+- Loan limit assessments.
+- Appraisal notes.
+- Risk assessments.
+- Rejection notes.
+
+## 21.4 Approval and Documentation Tables
+
+- Approval matrix rules.
+- Approval cases.
+- Approval actions.
+- Sanction decisions.
+- Exception records.
+- General meeting approval records.
+- Loan documents.
+- Signature records.
+- Stamp duty records.
+- Notarisation records.
+- Document checklists.
+- Checklist items.
+- Checklist approvals.
+
+## 21.5 Security and Finance Tables
+
+- Security packages.
+- Power of attorney records.
+- SH-4 records.
+- CDSL pledge records.
+- Blank-dated cheques.
+- Cancelled cheques.
+- Custody events.
+- SAP customer profile requests.
+- SAP customer codes.
+- Loan accounts.
+- Disbursements.
+- Bank transfer records.
+
+## 21.6 Servicing, Default and Compliance Tables
+
+- Repayments.
+- Repayment allocations.
+- Bank statement lines.
+- Interest invoices.
+- Accrual entries.
+- Interest capitalisations.
+- DPD statuses.
+- Reminders.
+- Quarterly MIS reports.
+- Default cases.
+- Default assessments.
+- Extensions.
+- Non-payment notes.
+- Recovery decisions.
+- Recovery actions.
+- Loan closures.
+- NOC records.
+- Security returns.
+- Archive records.
+- Compliance controls.
+- Compliance tasks.
+- Compliance evidence.
+- Section 186 trackers.
+- NBFC tests.
+- Money-lending reviews.
+- Grievances.
+
+---
+
+# 22. API Implementation Sequencing
+
+## 22.1 API Groups by Phase
+
+| Phase | API Groups |
+|---|---|
+| R1 | Auth, users, roles, permissions, documents, audit, config |
+| R2 | Members, KYC, nominees, shareholding, land, crop, applications, eligibility, loan limit, appraisal |
+| R3 | Approval matrix, approval cases, approval actions, sanction, registers, exceptions |
+| R4 | Loan documents, signatures, stamps, notarisation, checklist, security package |
+| R5 | SAP request, loan account, disbursement readiness, disbursement |
+| R6 | Repayments, allocations, interest, accruals, capitalisation, DPD, reminders, MIS |
+| R7 | Default, recovery, closure, compliance, grievance |
+| R8 | Reports, exports, audit explorer, operational dashboards |
+
+## 22.2 API Contract Governance
+
+Every API should have:
+
+- Endpoint path.
+- Request schema.
+- Response schema.
+- Permissions.
+- Object access rules.
+- Workflow guards.
+- Validation errors.
+- Audit events.
+- Idempotency if relevant.

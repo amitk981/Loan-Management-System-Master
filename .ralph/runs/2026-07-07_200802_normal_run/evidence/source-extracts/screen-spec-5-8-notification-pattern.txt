@@ -1,0 +1,50 @@
+## 5.8 Notification Pattern
+
+Notifications should be generated for:
+
+- Application reference generated.
+- Deficiency identified.
+- Rejection note issued.
+- Appraisal submitted to Sanction Committee.
+- Sanction approved / rejected.
+- Documentation pending.
+- Signature mismatch detected.
+- SAP customer code request sent.
+- SAP customer code created.
+- Payment initiated.
+- Payment approved and disbursed.
+- Repayment received.
+- Interest invoice generated.
+- Interest unpaid after 30 April and capitalised.
+- Loan overdue.
+- Grace period started.
+- Extension note required.
+- Non-payment note sent to Sanction Committee.
+- Recovery action approved.
+- Loan fully repaid.
+- NOC issued.
+- SH-4 / cheque returned.
+
+Notification channels to support:
+
+- In-app notification.
+- Email.
+- SMS, where borrower-facing.
+- Hard-copy letter tracking, where required by SOP.
+
+---
+
+## 6. Role and Permission Matrix at Screen Level
+
+| Role | View | Create | Edit | Approve | Reject | Upload Docs | Disburse | Compliance Admin |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Borrower / Member | Own application only | Limited self-application if enabled | Own draft only | No | No | Own documents if portal enabled | No | No |
+| Deputy Manager - Finance | Assigned applications | Yes | Application and appraisal draft | No | No | Yes | No | No |
+| Credit Manager | Applications, appraisal, loan register | Yes | Eligibility, appraisal, rejection notes, monitoring notes | Review / recommend | Yes at credit assessment stage | Yes | No | Limited |
+| Compliance Team Member | Documentation workspace | Document records | Documentation fields | No | Document rejection only | Yes | No | Limited |
+| Company Secretary | Documentation, compliance, registers | Compliance records | Legal document status, stamp duty, security custody | Documentation approval | Documentation blocker | Yes | No | Yes |
+| Sanction Committee Member | Sanction cases | No | Comments only | Yes | Yes | No | No | No |
+| CFO | Approvals, MIS, compliance | No | Comments, exception decisions | Yes | Yes | No | No | Yes |
+| Senior Manager - Finance | SAP and disbursement | SAP request / finance task | Finance status, disbursement initiation | Checklist signature after disbursement | Block disbursement | Finance docs | Initiate | No |
+| Chief Financial Controller | Payment approvals | No | Payment comments | Final bank transfer approval | Reject / return payment | No | Authorise | No |
+| Accounts Team | Loan accounts, repayments, invoices | Repayment and invoice records | Ledger entries | No | No | Payment evidence | No | No |

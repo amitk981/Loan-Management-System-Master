@@ -1,0 +1,11 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/003K-prototype-visual-gap-report-update.md
+ M docs/slices/003L-data-import-and-migration-planning.md
+ M docs/slices/004A-member-directory-api-and-ui.md
+ M docs/working/HANDOFF.md
+ M docs/working/PROTOTYPE_GAP_REPORT.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M docs/working/digests/epic-003-audit-documents-config.md
+?? .ralph/runs/2026-07-07_200802_normal_run/
+?? docs/working/digests/epic-004-member-kyc-master.md

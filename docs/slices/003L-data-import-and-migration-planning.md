@@ -51,6 +51,14 @@ under `docs/working/` that maps:
   financial data in tests.
 - How `scheduled_jobs` from 003J may be used later to track async import batches or export jobs,
   while this slice must not enqueue real jobs or add workers.
+- Current prototype/API status from 003K: Dashboard, Notifications Center, and My Profile are
+  API-backed; Task Inbox, AuditTimeline, and DocumentPackModal remain mock/prototype shells. The
+  migration plan must not claim that task inbox data, dashboard task generation, document pack
+  generation, or audit timeline UI wiring exists yet.
+- Import plan outputs should separate existing foundation tables from future business tables:
+  existing foundations can be mapped to concrete implemented models/APIs, while future member,
+  application, loan, repayment, default, closure, compliance, and report tables should be listed as
+  target areas only until their owning slices create schema and contracts.
 
 ## Database/Model Impact
 None. Do not add import staging tables in 003L; create follow-up implementation slices if the plan
@@ -77,7 +85,9 @@ fields.
 
 ## Test Cases
 Docs/protected-path checks plus standard gates. If planning creates structured examples, include
-test-safe synthetic rows only and verify no real personal or financial data is committed.
+test-safe synthetic rows only and verify no real personal or financial data is committed. Include a
+manual traceability note in the review packet that 003J `scheduled_jobs` is metadata-only and that
+003K still classifies Task Inbox as prototype/mock.
 
 ## Visual Acceptance Criteria
 None.

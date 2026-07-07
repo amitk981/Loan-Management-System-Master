@@ -1,7 +1,7 @@
 # Slice 003K: Prototype Visual Gap Report Update
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 003: Audit, Documents, Config, and Dashboard Foundation
@@ -96,17 +96,32 @@ Low
 - Permissions and audit expectations are tested when applicable.
 - The implementation stays within one small Ralph slice.
 
+## Completion Notes
+- Implemented 2026-07-07 in run `2026-07-07_200802_normal_run`.
+- Updated `docs/working/PROTOTYPE_INVENTORY.md` and
+  `docs/working/PROTOTYPE_GAP_REPORT.md` to distinguish API-backed staff screens from remaining
+  mock/prototype shells.
+- Recorded Dashboard as API-backed by `GET /api/v1/dashboard/`, Notifications Center as API-backed
+  by `/api/v1/notifications/` plus versioned mark-read, and My Profile as read-only from
+  `/api/v1/auth/me/`.
+- Recorded Task Inbox, `AuditTimeline`, and `DocumentPackModal` as still prototype/mock for their
+  current UI paths.
+- Recorded that 003J `scheduled_jobs` is internal scheduler metadata only and did not add task
+  inbox, dashboard task generation, notification generation rules, or scheduler UI.
+- Sharpened `003L-data-import-and-migration-planning` and
+  `004A-member-directory-api-and-ui` using source/digest context opened during this run.
+
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Database rules followed, if needed
+- [x] Permissions tested, if needed
+- [x] Audit events tested, if needed
+- [x] Visual evidence saved, if frontend
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

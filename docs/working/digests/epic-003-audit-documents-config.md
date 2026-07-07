@@ -272,3 +272,28 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
   queued→running→succeeded/failed transitions. No public endpoint, Celery/Redis worker, dashboard
   task generation, notification creation, communication-send change, reminder business rule, or
   report generation was added. A-027 records the local metadata-shell assumption.
+
+## Prototype Visual Gap Extracts
+- `docs/source/api-contracts.md` §43.1 defines `GET /api/v1/dashboard/` with `role_context`,
+  `cards[]`, and `tasks[]`; §43.2-§43.4 reserve specialist dashboard endpoints for later work.
+- `docs/source/screen-spec.md` S01 expects the dashboard to show role-specific tasks, metrics,
+  blockers, alerts, and recent activity, with empty states such as "No pending tasks for your role."
+- `docs/source/screen-spec.md` S03 defines Task Inbox as assigned/user-role actionable work items
+  with filters, reassignment/comment/block/export actions, and due/SLA metadata. No task inbox API
+  has been implemented yet.
+- `docs/source/screen-spec.md` §5.8 and S04 plus `docs/source/content-spec.md` S04 define
+  notifications/alerts with linked record, severity/priority, timestamp, sender/recipient,
+  read/unread status, related task, and mark-read style actions.
+- `docs/source/api-contracts.md` §39.1-§39.3 define content templates and communication history,
+  while the implemented staff inbox uses the separate `/api/v1/notifications/` boundary added by
+  003IA/003IA2 for current-user notifications and versioned mark-read.
+- `docs/source/api-contracts.md` §26, §41, and §42 define generic document file,
+  loan-policy/version-history, audit-log, and workflow-event APIs. Prototype `DocumentPackModal`
+  and `AuditTimeline` remain mock-data components until dedicated UI wiring slices connect them to
+  these APIs.
+- `docs/source/implementation-roadmap.md` §20-§22 sequences audit, document, configuration,
+  communication, dashboard, and task foundations before later business modules; §30.2 names
+  Redis/Celery as a technical dependency for notifications, jobs, and reports.
+- 003K updated `PROTOTYPE_INVENTORY.md` and `PROTOTYPE_GAP_REPORT.md` to record that Dashboard,
+  Notifications Center, and My Profile are API-backed; Task Inbox remains prototype/mock; and 003J
+  `scheduled_jobs` is internal scheduler metadata only, not a frontend-visible task queue.

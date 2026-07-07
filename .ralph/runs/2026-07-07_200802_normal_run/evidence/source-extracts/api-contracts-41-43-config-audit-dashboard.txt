@@ -1,0 +1,181 @@
+# 41. Configuration APIs
+
+## 41.1 Loan Policy Config
+
+```http
+GET /api/v1/config/loan-policy/
+POST /api/v1/config/loan-policy/
+PATCH /api/v1/config/loan-policy/{loan_policy_config_id}/
+POST /api/v1/config/loan-policy/{loan_policy_config_id}/activate/
+```
+
+### Request
+
+```json
+{
+  "policy_name": "SFPCL Loan Policy",
+  "policy_version": "1.0",
+  "effective_from": "2026-04-01",
+  "short_term_duration_months": 12,
+  "min_secured_loan_months": 3,
+  "max_secured_loan_years": 7,
+  "approval_threshold_amount": "500000.00",
+  "default_scale_of_finance_per_acre_amount": "20000.00",
+  "share_limit_percentage": "10.0000",
+  "per_share_cap_amount": "200.00",
+  "interest_rate_type": "floating",
+  "interest_benchmark": null,
+  "penal_interest_rate": null,
+  "rekyc_frequency_months": 24,
+  "record_retention_years": 8,
+  "grace_period_months": 3,
+  "non_intentional_extension_months": 12,
+  "board_approval_reference": "BOARD-REF-001"
+}
+```
+
+## 41.2 Share Valuation Config
+
+```http
+GET /api/v1/config/share-valuations/
+POST /api/v1/config/share-valuations/
+PATCH /api/v1/config/share-valuations/{share_valuation_id}/
+POST /api/v1/config/share-valuations/{share_valuation_id}/approve/
+```
+
+## 41.3 Scale of Finance Config
+
+```http
+GET /api/v1/config/scale-of-finance/
+POST /api/v1/config/scale-of-finance/
+```
+
+## 41.4 Interest Rate Config
+
+```http
+GET /api/v1/config/interest-rates/
+POST /api/v1/config/interest-rates/
+POST /api/v1/config/interest-rates/{interest_rate_config_id}/activate/
+```
+
+---
+
+# 42. Audit and Workflow APIs
+
+## 42.1 Audit Logs
+
+```http
+GET /api/v1/audit-logs/?entity_type=loan_application&entity_id=uuid
+```
+
+### Response Item
+
+```json
+{
+  "audit_log_id": "uuid",
+  "actor": {
+    "user_id": "uuid",
+    "full_name": "Credit Manager"
+  },
+  "actor_type": "user",
+  "action": "loan_application.submitted",
+  "entity_type": "loan_application",
+  "entity_id": "uuid",
+  "old_value": {
+    "application_status": "draft"
+  },
+  "new_value": {
+    "application_status": "submitted"
+  },
+  "ip_address": "10.0.0.1",
+  "created_at": "2026-06-22T10:30:00Z"
+}
+```
+
+## 42.2 Workflow Events
+
+```http
+GET /api/v1/workflow-events/?entity_type=loan_application&entity_id=uuid
+```
+
+## 42.3 Version History
+
+```http
+GET /api/v1/version-histories/?versioned_entity_type=loan_policy_config&versioned_entity_id=uuid
+```
+
+---
+
+# 43. Dashboard APIs
+
+## 43.1 Role-Based Dashboard
+
+```http
+GET /api/v1/dashboard/
+```
+
+### Response for Credit Manager
+
+```json
+{
+  "success": true,
+  "data": {
+    "role_context": "credit_manager",
+    "cards": [
+      {
+        "code": "applications_pending_completeness",
+        "label": "Applications Pending Completeness",
+        "count": 12,
+        "link": "/applications?status=completeness_check_pending"
+      },
+      {
+        "code": "appraisals_due_today",
+        "label": "Appraisals Due Today",
+        "count": 4,
+        "link": "/applications?tat=due_today"
+      },
+      {
+        "code": "loans_outstanding_beyond_one_year",
+        "label": "Outstanding Beyond One Year",
+        "count": 18,
+        "link": "/loans?outstanding_beyond_one_year=true"
+      }
+    ],
+    "tasks": [
+      {
+        "task_type": "review_appraisal",
+        "entity_id": "uuid",
+        "title": "Review appraisal for LO00000025",
+        "due_at": "2026-06-24T10:30:00Z"
+      }
+    ]
+  }
+}
+```
+
+## 43.2 Sanction Committee Dashboard
+
+```http
+GET /api/v1/dashboard/sanction-committee/
+```
+
+## 43.3 Compliance Dashboard
+
+```http
+GET /api/v1/dashboard/compliance/
+```
+
+## 43.4 Treasury Dashboard
+
+```http
+GET /api/v1/dashboard/treasury/
+```
+
+---
+
+# 44. Frontend Action Availability Contract
+
+Every detail endpoint should optionally return `available_actions`.
+
+Example:
+
