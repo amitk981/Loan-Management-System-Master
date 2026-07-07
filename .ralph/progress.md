@@ -1,5 +1,25 @@
 # Ralph Progress Log
 
+## 2026-07-07 16:27:20 - 2026-07-07_161444_normal_run
+- Agent tool used: codex
+- Slice attempted: 003J-background-job-scheduling-foundation
+- Summary: Added a dedicated internal scheduler foundation. `sfpcl_credit.scheduler` now owns
+  `ScheduledJob` (`scheduled_jobs`) with source-neutral metadata and a service boundary for
+  idempotent enqueue plus legal queued/running/succeeded/failed transitions. No public endpoint,
+  Celery/Redis worker, dashboard task creation, notification generation, communication-send change,
+  reminder cadence, report generation, or provider call was added.
+- Tests run: failing-first scheduler service import/test; focused scheduler service tests (5/5);
+  focused notification API regression (6/6); backend `manage.py check`; backend tests (189/189);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend `npm run
+  typecheck`; `npm run lint`; `npm test` (46/46); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-07_161444_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `003K-prototype-visual-gap-report-update`; it is sharpened to document that
+  Dashboard, Notifications Center, and My Profile are API-backed while Task Inbox and scheduler UI
+  remain unimplemented/prototype-only.
+
 ## 2026-07-06 18:54:59 - 2026-07-06_185459_normal_run
 - Agent tool used: codex
 - Slice attempted: 003IA2-notification-mark-read-stale-write-hardening
@@ -1053,6 +1073,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_185459_normal_run/.ralph/runs/2026-07-06_185459_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_185459_normal_run/.ralph/runs/2026-07-06_185459_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-07 16:32:51 - 2026-07-07_161444_normal_run
+- Agent tool used: codex
+- Slice attempted: 003J-background-job-scheduling-foundation
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_161444_normal_run/.ralph/runs/2026-07-07_161444_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_161444_normal_run/.ralph/runs/2026-07-07_161444_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

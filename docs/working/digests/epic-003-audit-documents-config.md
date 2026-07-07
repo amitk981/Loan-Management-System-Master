@@ -253,3 +253,22 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
   dashboard data. A-024 records the temporary frontend mapping from backend source-style
   `cards[].link` URLs to existing prototype route keys while filtered destination screens remain
   future work.
+
+## Background Job Scheduling Extracts
+- `docs/source/implementation-roadmap.md` §10.3 names Background jobs as an R1 backend story, with
+  Celery setup and a basic test task as the broader roadmap item.
+- `docs/source/implementation-roadmap.md` §30.2 names Redis/Celery as a technical dependency for
+  notifications, jobs, and reports, but 003J intentionally avoided adding that dependency because
+  the slice only permits a local metadata shell unless already pinned/importable.
+- `docs/source/implementation-roadmap.md` §31.1 identifies silent background-job failure as a
+  compliance/finance risk and calls for job run records and alerts as mitigation.
+- `docs/source/api-contracts.md` §40.7-§40.8 shows future report export jobs returning queued and
+  completed status, but 003J did not add report-export endpoints.
+- IMPLEMENTED 2026-07-07 (`2026-07-07_161444_normal_run`, slice 003J):
+  `sfpcl_credit.scheduler` now owns `ScheduledJob` (`scheduled_jobs`) as an internal metadata table
+  with source-neutral fields: `job_id`, `job_type`, `status`, `due_at`, started/completed
+  timestamps, optional related entity type/id, idempotency key, attempts, last error summary, and
+  created/updated timestamps. `scheduler.services` exposes idempotent enqueue plus
+  queued→running→succeeded/failed transitions. No public endpoint, Celery/Redis worker, dashboard
+  task generation, notification creation, communication-send change, reminder business rule, or
+  report generation was added. A-027 records the local metadata-shell assumption.

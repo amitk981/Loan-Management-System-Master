@@ -8,7 +8,9 @@ Epic 003: Audit, Documents, Config, and Dashboard Foundation
 Epic file: `docs/epics/003-audit-documents-config-foundation.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Create a source-backed data import and migration planning artifact for future member, loan,
+document, audit/config, communication, and reporting data loads without importing real data or
+writing migration tooling yet.
 
 ## User Value
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
@@ -36,31 +38,53 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-None for this slice, except reading existing contracts for validation.
+Docs/planning only unless a validation fixture is required. Produce a migration planning document
+under `docs/working/` that maps:
+- Source system/data-area candidates from the already implemented foundations: users/roles/teams,
+  document file metadata, audit logs/workflow events, loan policy configs/version histories,
+  content templates, communications, notifications, dashboard shells, and scheduled job metadata.
+- Future high-volume/business tables called out by source docs: members/KYC/shareholding,
+  applications/appraisals/approvals, loan accounts/repayments/interest/DPD/reminders/MIS,
+  securities, compliance trackers, reports/export jobs.
+- Required import controls: dry-run mode, row-level validation, idempotency/natural keys, error
+  summaries, auditability, rollback/retry plan, sensitive-data masking, and no real personal or
+  financial data in tests.
+- How `scheduled_jobs` from 003J may be used later to track async import batches or export jobs,
+  while this slice must not enqueue real jobs or add workers.
 
 ## Database/Model Impact
-None.
+None. Do not add import staging tables in 003L; create follow-up implementation slices if the plan
+identifies required tables.
 
 ## API Contracts
 None, unless this planning/test slice discovers a contract gap to document.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Planning must identify that future import execution is administrative/high-control work. If exact
+source permission codes are absent, record the gap in `ASSUMPTIONS.md`; do not reuse communication,
+dashboard, or report-export permissions for import administration.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+Planning must require audit records for import batch start, validation failure summary, commit,
+rollback/cancel, and sensitive data reveal/export during migration review. Do not log raw file
+payloads or full sensitive values.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+Planning must list validation categories rather than inventing business rules: UUID/business-key
+dedupe, required fields, reference integrity, status enum mapping, date/timezone normalization,
+money precision, document checksum/storage-key presence, and permissioned handling of sensitive
+fields.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+Docs/protected-path checks plus standard gates. If planning creates structured examples, include
+test-safe synthetic rows only and verify no real personal or financial data is committed.
 
 ## Visual Acceptance Criteria
 None.
 
 ## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+Updated migration planning artifact, gate logs, changed-files list, and review packet. No API
+response examples or screenshots are required unless code/frontend is touched.
 
 ## Risk Level
 Medium

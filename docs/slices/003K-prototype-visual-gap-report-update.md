@@ -49,6 +49,9 @@ styling. Verify the inventory/gap report reflects that:
 - My Profile is read-only from `/api/v1/auth/me/`.
 - Task Inbox remains a prototype/mock shell unless 003J or a later source-backed task slice changes
   that.
+- 003J added only an internal scheduler metadata/service foundation. It did not add a task inbox
+  endpoint, dashboard task generation, notification generation business rules, or frontend-visible
+  scheduler UI.
 
 ## Backend/API Scope
 None for this slice, except reading existing contracts for validation.
@@ -73,6 +76,8 @@ Run documentation/protected-path checks plus the standard frontend/backend gates
 touched, no new unit tests are required beyond proving existing gates still pass.
 - If inventory/gap text mentions notification read/unread behavior, cite the implemented
   `/api/v1/notifications/` and mark-read contract rather than the older communication-history API.
+- If inventory/gap text mentions async jobs, state that `scheduled_jobs` is backend metadata only
+  and not an operational queue screen yet.
 
 ## Visual Acceptance Criteria
 If screenshots are refreshed, use the existing visual patterns only. This slice should document

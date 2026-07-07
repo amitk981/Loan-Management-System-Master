@@ -1,7 +1,7 @@
 # Slice 003J: Background Job Scheduling Foundation
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 003: Audit, Documents, Config, and Dashboard Foundation
@@ -105,17 +105,27 @@ Medium
 - Permissions and audit expectations are tested when applicable.
 - The implementation stays within one small Ralph slice.
 
+## Completion Notes
+- Implemented 2026-07-07 in run `2026-07-07_161444_normal_run`.
+- Added dedicated backend app `sfpcl_credit.scheduler` with `ScheduledJob` metadata table
+  (`scheduled_jobs`) and a service boundary for idempotent enqueue plus running/succeeded/failed
+  transitions.
+- No public scheduler API endpoint, worker, Celery/Redis dependency, provider call, dashboard task
+  creation, notification inbox row creation, or communication-send behavior was added.
+- Scheduler shell tests cover enqueue idempotency, duplicate-key handling, valid/invalid status
+  transitions, and isolation from notification read-state audit rows.
+
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Database rules followed, if needed
+- [x] Permissions tested, if needed
+- [x] Audit events tested, if needed
+- [x] Visual evidence saved, if frontend
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

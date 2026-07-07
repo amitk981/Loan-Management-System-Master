@@ -1,35 +1,36 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-06_185459_normal_run
+2026-07-07_161444_normal_run
 
 ## Current Status
-Slice `003IA2-notification-mark-read-stale-write-hardening` completed successfully. Architecture
-review is not due yet; `.ralph/state.json` now has `slices_completed_since_architecture_review: 1`.
+Slice `003J-background-job-scheduling-foundation` completed successfully. Architecture review is
+not due yet; `.ralph/state.json` now has `slices_completed_since_architecture_review: 2`.
 
 ## What Completed
-- Hardened `POST /api/v1/notifications/{notification_id}/mark-read/`.
-- The service now parses `read_state_version`, opens one `transaction.atomic()` block, locks and
-  refetches the current-user scoped notification with `select_for_update()`, compares the persisted
-  version under that lock, then saves read state and writes the
-  `communications.notification.marked_read` audit row in the same atomic operation.
-- Added a failing-first regression proving a same-version retry after a persisted success returns
-  `409 STALE_WRITE`, leaves `read_at`, `read_by_user`, and `read_state_version` unchanged, and does
-  not create a second audit row.
-- No schema, API contract, permission, frontend, communication-history, or dashboard behavior
-  changed.
-- Updated the Epic 003 digest with the 003IA2 implementation note.
-- Sharpened `003J-background-job-scheduling-foundation` and
-  `003K-prototype-visual-gap-report-update` using already-opened notification/dashboard contract
-  context.
+- Added dedicated backend app `sfpcl_credit.scheduler`.
+- Added `ScheduledJob` model/table `scheduled_jobs` with source-neutral job metadata:
+  `job_id`, `job_type`, `status`, `due_at`, started/completed timestamps, optional related entity
+  type/id, idempotency key, attempts, last error summary, and timestamps.
+- Added `scheduler.services` with idempotent enqueue and legal transitions:
+  `queued -> running -> succeeded` or `queued -> running -> failed`.
+- Tests cover enqueue idempotency, duplicate-key handling, legal/illegal transitions, and proof
+  that the scheduler shell does not create notification rows or `communications.notification.marked_read`
+  audit rows.
+- No Celery/Redis, worker, public endpoint, scheduler admin permission, dashboard task generation,
+  notification generation, reminder cadence, report generation, or provider call was added.
+- A-027 records the local metadata-shell assumption; the Epic 003 digest records the 003J source
+  trace and implementation note.
+- Sharpened `003K-prototype-visual-gap-report-update` and
+  `003L-data-import-and-migration-planning` using already-opened Epic 003/source context.
 
 ## Evidence
-See `.ralph/runs/2026-07-06_185459_normal_run/`.
+See `.ralph/runs/2026-07-07_161444_normal_run/`.
 
 Key logs under `evidence/terminal-logs/`:
-- `red-notification-mark-read-stale-retry.log`
-- `green-notification-mark-read-stale-retry-after-cleanup.log`
-- `green-notifications-api.log`
+- `red-scheduler-services.log`
+- `green-scheduler-services.log`
+- `green-notifications-api-regression.log`
 - `backend-check.log`
 - `backend-tests.log`
 - `backend-makemigrations-check.log`
@@ -39,19 +40,18 @@ Key logs under `evidence/terminal-logs/`:
 - `frontend-tests.log`
 - `frontend-build.log`
 
-Gate result: backend tests 184/184, backend coverage 96% with 85% floor, frontend tests 46/46,
+Gate result: backend tests 189/189, backend coverage 96% with 85% floor, frontend tests 46/46,
 frontend typecheck/lint/build passed.
 
 ## Current Blocker
 None.
 
 ## Notes For Next Slice
-- Next eligible slice is `003J-background-job-scheduling-foundation`.
-- Keep scheduler state and transition/idempotency logic in its own backend module/app boundary; do
-  not add it to `sfpcl_credit.communications.services`.
-- `003J` should not create dashboard tasks, notification inbox rows, or mark-read audit rows.
-- Preserve 003IA2 mark-read semantics: stale retries return `409 STALE_WRITE` and successful
-  unread-to-read transitions write exactly one `communications.notification.marked_read` audit row.
-- `003K` remains docs/prototype-inventory work after `003J`; it should document that Dashboard,
+- Next eligible slice is `003K-prototype-visual-gap-report-update`.
+- `003K` should stay docs/prototype-inventory work. It should document that Dashboard,
   Notifications Center, and My Profile are API-backed while Task Inbox remains a prototype/mock
-  shell unless 003J or a later source-backed task slice changes that.
+  shell.
+- Because 003J added only internal scheduler metadata, `003K` should not claim that Task Inbox,
+  dashboard tasks, notification generation, or scheduler UI are implemented.
+- `003L` has been sharpened into docs/planning work for data import/migration controls; it should
+  not add staging tables or import tooling unless a later implementation slice scopes that work.

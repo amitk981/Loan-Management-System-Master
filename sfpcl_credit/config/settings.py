@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "sfpcl_credit.configurations",
     "sfpcl_credit.documents",
     "sfpcl_credit.identity",
+    "sfpcl_credit.scheduler",
     "sfpcl_credit.tracer",
     "sfpcl_credit.workflows",
 ]
