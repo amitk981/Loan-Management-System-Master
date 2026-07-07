@@ -297,3 +297,41 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
 - 003K updated `PROTOTYPE_INVENTORY.md` and `PROTOTYPE_GAP_REPORT.md` to record that Dashboard,
   Notifications Center, and My Profile are API-backed; Task Inbox remains prototype/mock; and 003J
   `scheduled_jobs` is internal scheduler metadata only, not a frontend-visible task queue.
+
+## Data Import and Migration Planning Extracts
+- `docs/source/implementation-roadmap.md` §26 says the migration decision before R8 must cover
+  existing member records, shareholdings, existing loans, SAP customer codes, repayment history,
+  interest balances, existing documents, security custody records, and compliance evidence.
+- `implementation-roadmap.md` §26.2 sequences migration discovery, field mapping, data-quality
+  assessment, two trial migrations, UAT migration, dress rehearsal, final migration, and
+  post-migration reconciliation.
+- `implementation-roadmap.md` §26.3 acceptance criteria require member/shareholding correctness,
+  SAP-code links, loan-balance reconciliation with source/SAP, document links to the right
+  application/loan/member, security custody migration or historical exceptions, missing KYC/document
+  exceptions, migration batch/audit records, and business signoff.
+- `docs/source/data-model.md` §31.1 lists likely source data: Excel Loan Register, member/shareholder
+  records, physical KYC files, SAP customer master, SAP accounting entries, physical loan files, and
+  manual sanction records.
+- `data-model.md` §31.2 requires preserving original loan references, generating new system IDs
+  while retaining legacy references, marking records with `migration_batch_id`, storing scanned
+  documents in document storage, capturing missing documents as deficiencies or historical
+  exceptions, validating balances against SAP before go-live, mapping physical custody locations, and
+  marking records with `migrated_flag` where appropriate.
+- `data-model.md` §31.3 recommends `legacy_reference_number`, `migration_batch_id`,
+  `migrated_flag`, `migrated_at`, and `migration_notes` on major tables where needed, but 003L did
+  not add those columns because owning business schemas do not exist yet.
+- `data-model.md` §28-§29 provide validation and privacy categories for import planning:
+  referential integrity, workflow gates, data quality, encrypted sensitive columns, hash columns, and
+  masking rules for PAN, Aadhaar, bank accounts, cheque numbers, BO accounts, and KYC documents.
+- `data-model.md` §34.1 names multi-table operations that must be atomic in future implementation
+  slices, including application submission, sanction approval, checklist approval, disbursement,
+  repayment allocation, interest capitalisation, default opening, and loan closure.
+- `api-contracts.md` §40.7-§40.8 define future report export job contracts, while §45 defines
+  idempotency for critical financial actions. 003L applies the same planning principle to import
+  batch retries but does not create import or report-export endpoints.
+- IMPLEMENTED 2026-07-07 (`2026-07-07_205029_normal_run`, slice 003L): added
+  `docs/working/DATA_IMPORT_MIGRATION_PLAN.md` as a planning-only artifact. It separates existing
+  foundation tables from future business target areas, requires dry-run, row-level validation,
+  idempotency/natural keys, audit summaries, rollback/retry planning, reconciliation, masking, and
+  synthetic test data only. A-028 records the source permission gap for import administration. No
+  staging tables, commands, APIs, workers, scheduled jobs, UI, or real data loads were added.

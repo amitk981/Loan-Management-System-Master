@@ -21,6 +21,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - docs/source/api-contracts.md sections 13-18, especially §13.1 `GET /api/v1/members/`
 - docs/source/data-model.md member/KYC/shareholding tables
 - docs/source/screen-spec.md member screens
+- docs/working/digests/epic-004-member-kyc-master.md
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/members/*
@@ -35,6 +36,12 @@ filter/search, card, loading, empty, error, and unauthorized patterns; do not in
 Show only list fields returned by the backend contract until a later detail/profile slice owns
 deeper member/KYC/shareholding panels.
 
+Use the existing `sfpcl-lms/src/pages/members/MemberDirectory.tsx` table/card patterns. Remove the
+backend-wired directory path's dependency on `mockData`; do not keep mock-only exposure totals,
+supply-year values, land/crop filters, open-loan counts, or Borrower 360 links unless backed by the
+new API response. Preserve masked contact display from §13.1 (`mobile_number` masked in the source
+example).
+
 ## Backend/API Scope
 Implement `GET /api/v1/members/?search=&member_type=&membership_status=&kyc_status=&default_status=&page=1&page_size=20`
 as the narrow directory read API. Return standard paginated envelopes. The source §13.1 response
@@ -45,12 +52,19 @@ and `active_member_status{status, verified_at}`.
 
 Do not implement create/update member profile, nominee, witness, KYC verification, share
 certificate, demat, landholding, crop plan, loan application, or borrower 360 behavior in 004A.
+Do not implement sensitive-field reveal in 004A; §13.5 is owned by a later masking/reveal slice.
 
 ## Database/Model Impact
 Non-destructive model/migration changes for the member directory fields needed by §13.1 only, if
 models do not already exist. Keep share/active-member nested values as explicit shell data or
 well-named nullable fields unless the source-backed member/shareholding tables are implemented in
 the same narrow path.
+
+If adding a model in 004A, include the source §10.1 directory fields required for §13.1 and the
+minimum safe nested summary fields for `share_summary`/`active_member_status`; leave full
+shareholding, active-member calculation, KYC documents, bank accounts, land/crop, and profile-detail
+tables to their owning slices. PAN/Aadhaar must not be stored in plaintext test fixtures; use
+synthetic encrypted/hash placeholder values only if fields are required by the schema.
 
 ## API Contracts
 Create or update the API contract for the member list endpoint, including supported filters,
@@ -62,6 +76,10 @@ Apply role and object-access rules from `docs/source/auth-permissions.md`; class
 as approval-required. Directory results must be permission-filtered or blocked rather than exposing
 all members to every authenticated user.
 
+If the source permission catalogue lacks an exact member-directory read code, choose the narrowest
+source-backed member/profile read permission available, record the assumption, and test `401`/`403`.
+Do not reuse dashboard, report-export, document-download, or import-administration permissions.
+
 ## Audit Requirements
 Read-only list access should not create workflow events. If the implementation exposes sensitive
 unmasked fields or export-style access, it must audit that reveal/export action; otherwise record
@@ -72,11 +90,19 @@ Validate query parameters and enum filters. Do not invent eligibility, KYC appro
 default, or share-availability business rules; leave those to later slices unless directly stated by
 the source docs opened during 004A.
 
+Reject unknown query parameters with the standard `400 VALIDATION_ERROR` pattern used by existing
+list APIs. Validate only the supported §13.1 filters: `search`, `member_type`,
+`membership_status`, `kyc_status`, `default_status`, `page`, and `page_size`.
+
 ## Test Cases
 TDD backend tests first: authenticated list success, pagination envelope, supported filter behavior,
 unknown/invalid filter rejection, and unauthorized/forbidden access. Frontend tests should cover
 loading, API success rows, empty state, error state, and no fallback to `mockData` for the wired
 directory path.
+
+Add at least one regression asserting sensitive identifiers such as PAN/Aadhaar are absent from the
+directory response and that `mobile_number` is masked or test-safe. Save API response examples using
+synthetic member data only.
 
 ## Visual Acceptance Criteria
 Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.

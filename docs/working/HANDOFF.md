@@ -1,33 +1,40 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-07_200802_normal_run
+2026-07-07_205029_normal_run
 
 ## Current Status
-Slice `003K-prototype-visual-gap-report-update` completed successfully. Architecture review is not
-due yet; `.ralph/state.json` now has `slices_completed_since_architecture_review: 3`.
+Slice `003L-data-import-and-migration-planning` completed successfully. Architecture review is now
+due by cadence: `.ralph/state.json` has `slices_completed_since_architecture_review: 4` and
+`architecture_review_due: true`.
 
 ## What Completed
-- Updated `docs/working/PROTOTYPE_INVENTORY.md` with an API-backed staff screen matrix.
-- Updated `docs/working/PROTOTYPE_GAP_REPORT.md` so current gaps distinguish partial backend
-  implementation, remaining mock prototype screens, and closed staff dashboard/notification/profile
-  paths.
-- Recorded Dashboard as API-backed by `GET /api/v1/dashboard/`, with zero-count cards and empty
-  `tasks[]` until downstream business data exists.
-- Recorded Notifications Center as API-backed by `/api/v1/notifications/` plus versioned
-  mark-read; `409 STALE_WRITE` remains the expected stale-read refresh/error path.
-- Recorded My Profile as read-only from `/api/v1/auth/me/`.
-- Recorded Task Inbox, `AuditTimeline`, and `DocumentPackModal` as still prototype/mock for their
-  current UI paths.
-- Recorded that 003J `scheduled_jobs` is internal scheduler metadata only and not a task inbox,
-  scheduler UI, dashboard task generator, or notification generator.
-- Added Epic 003 prototype visual-gap extracts to `docs/working/digests/epic-003-audit-documents-config.md`.
-- Added an initial Epic 004 digest from the already-opened member-list API excerpt and sharpened
-  `004A-member-directory-api-and-ui`. The 004A run must still read its full Epic 004/source context.
-- Sharpened `003L-data-import-and-migration-planning` with the 003K prototype/API status.
+- Added `docs/working/DATA_IMPORT_MIGRATION_PLAN.md` as a source-backed planning artifact for future
+  migration/import work.
+- Mapped existing implemented foundations separately from future business target areas:
+  users/roles/teams, document files, audit/workflow events, loan-policy/version history, content
+  templates, communications, notifications, dashboard shell, and scheduled-job metadata are current
+  foundations; members/KYC/shareholding, applications, loans, repayments, securities, compliance,
+  reports/exports, default/recovery/closure, and migration-specific batch metadata remain future
+  target areas until owning slices create schema/contracts.
+- Recorded required future import controls: dry-run, row-level validation, idempotency/natural keys,
+  rollback/cancel or correction planning, retry categories, reconciliation, sensitive-data masking,
+  audit summaries, and synthetic test data only.
+- Preserved 003K status: Dashboard, Notifications Center, and My Profile are API-backed; Task Inbox,
+  `AuditTimeline`, and `DocumentPackModal` remain mock/prototype shells.
+- Preserved 003J boundary: `scheduled_jobs` may later track import/export batch metadata, but no
+  worker, import queue, report export endpoint, dashboard task generation, notification generation,
+  or scheduler UI exists yet.
+- Added A-028 for the source permission gap: future import execution needs dedicated
+  import-administration permissions and must not reuse communication, dashboard, notification,
+  document-download, or report-export permissions.
+- Updated the Epic 003 digest with migration-planning extracts and the Epic 004 digest with concrete
+  member directory/profile/masking extracts opened while sharpening the next slices.
+- Sharpened `004A-member-directory-api-and-ui` and `004B-member-profile-api-and-ui` so they stay
+  source-backed, masked, and narrow.
 
 ## Evidence
-See `.ralph/runs/2026-07-07_200802_normal_run/`.
+See `.ralph/runs/2026-07-07_205029_normal_run/`.
 
 Key logs under `evidence/terminal-logs/`:
 - `backend-check.log`
@@ -43,19 +50,20 @@ Key logs under `evidence/terminal-logs/`:
 Gate result: backend tests 189/189, backend coverage 96% with 85% floor, frontend tests 46/46,
 frontend typecheck/lint/build passed, and `git diff --check` passed.
 
-TDD red/green: not applicable because 003K was docs-only with no backend, business-logic, or
-production frontend behavior change.
+TDD red/green: not applicable because 003L was docs/planning only with no backend, business-logic,
+API, database, or production frontend behavior change.
 
 ## Current Blocker
 None.
 
-## Notes For Next Slice
-- Next eligible slice is `003L-data-import-and-migration-planning`.
-- `003L` should stay docs/planning only. It should not add import staging tables, import commands,
-  workers, queued jobs, or real data loads.
-- `003L` should use 003K's current status: Dashboard/Notifications/My Profile are API-backed, while
-  Task Inbox, AuditTimeline, and DocumentPackModal remain mock/prototype shells.
-- `003L` may describe how 003J `scheduled_jobs` could later track import batches or export jobs,
-  but it must not enqueue real jobs or claim a worker exists.
-- After 003L, `004A-member-directory-api-and-ui` has an initial digest, but its run must read the
-  full Epic 004 source references before implementation.
+## Notes For Next Run
+- Architecture review is due before the next implementation slice.
+- After architecture review, next implementation slice should be `004A-member-directory-api-and-ui`.
+- `004A` must still read its full Epic 004/source context during its own run. The digest now includes
+  useful extracts, but the digest is not a substitute for the required 004A source pass.
+- `004A` should implement only the read-only member directory API/UI path from §13.1. It should not
+  implement member create/update, profile detail, sensitive reveal, KYC verification, nominee,
+  witness, share certificate, demat, land/crop, loan application, Borrower 360, or eligibility
+  behavior.
+- `004B` is sharpened as masked member profile detail only; sensitive reveal must either be fully
+  permissioned/reasoned/audited per §13.5 or explicitly deferred.

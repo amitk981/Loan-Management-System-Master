@@ -1,0 +1,10 @@
+ .ralph/progress.md                                 | 20 ++++++
+ .ralph/state.json                                  |  9 +--
+ .../003L-data-import-and-migration-planning.md     | 26 ++++----
+ docs/slices/004A-member-directory-api-and-ui.md    | 26 ++++++++
+ docs/slices/004B-member-profile-api-and-ui.md      | 56 +++++++++++++---
+ docs/working/ASSUMPTIONS.md                        |  1 +
+ docs/working/HANDOFF.md                            | 74 ++++++++++++----------
+ .../digests/epic-003-audit-documents-config.md     | 38 +++++++++++
+ docs/working/digests/epic-004-member-kyc-master.md | 40 ++++++++++++
+ 9 files changed, 231 insertions(+), 59 deletions(-)
