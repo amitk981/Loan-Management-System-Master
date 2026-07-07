@@ -1,0 +1,7 @@
+ .ralph/progress.md                              | 19 +++++++
+ .ralph/state.json                               |  8 +--
+ docs/slices/004A-member-directory-api-and-ui.md |  8 ++-
+ docs/slices/004B-member-profile-api-and-ui.md   |  7 ++-
+ docs/working/HANDOFF.md                         | 67 +++++++++++------------
+ docs/working/REVIEW_FINDINGS.md                 | 70 +++++++++++++++++++++++++
+ 6 files changed, 137 insertions(+), 42 deletions(-)

@@ -1,0 +1,6 @@
+.ralph/progress.md
+.ralph/state.json
+docs/slices/004A-member-directory-api-and-ui.md
+docs/slices/004B-member-profile-api-and-ui.md
+docs/working/HANDOFF.md
+docs/working/REVIEW_FINDINGS.md

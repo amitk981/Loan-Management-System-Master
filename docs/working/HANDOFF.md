@@ -1,40 +1,35 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-07_205029_normal_run
+2026-07-07_210824_architecture_review
 
 ## Current Status
-Slice `003L-data-import-and-migration-planning` completed successfully. Architecture review is now
-due by cadence: `.ralph/state.json` has `slices_completed_since_architecture_review: 4` and
-`architecture_review_due: true`.
+Architecture review completed successfully. `.ralph/state.json` now has
+`slices_completed_since_architecture_review: 0` and `architecture_review_due: false`.
 
 ## What Completed
-- Added `docs/working/DATA_IMPORT_MIGRATION_PLAN.md` as a source-backed planning artifact for future
-  migration/import work.
-- Mapped existing implemented foundations separately from future business target areas:
-  users/roles/teams, document files, audit/workflow events, loan-policy/version history, content
-  templates, communications, notifications, dashboard shell, and scheduled-job metadata are current
-  foundations; members/KYC/shareholding, applications, loans, repayments, securities, compliance,
-  reports/exports, default/recovery/closure, and migration-specific batch metadata remain future
-  target areas until owning slices create schema/contracts.
-- Recorded required future import controls: dry-run, row-level validation, idempotency/natural keys,
-  rollback/cancel or correction planning, retry categories, reconciliation, sensitive-data masking,
-  audit summaries, and synthetic test data only.
-- Preserved 003K status: Dashboard, Notifications Center, and My Profile are API-backed; Task Inbox,
-  `AuditTimeline`, and `DocumentPackModal` remain mock/prototype shells.
-- Preserved 003J boundary: `scheduled_jobs` may later track import/export batch metadata, but no
-  worker, import queue, report export endpoint, dashboard task generation, notification generation,
-  or scheduler UI exists yet.
-- Added A-028 for the source permission gap: future import execution needs dedicated
-  import-administration permissions and must not reuse communication, dashboard, notification,
-  document-download, or report-export permissions.
-- Updated the Epic 003 digest with migration-planning extracts and the Epic 004 digest with concrete
-  member directory/profile/masking extracts opened while sharpening the next slices.
-- Sharpened `004A-member-directory-api-and-ui` and `004B-member-profile-api-and-ui` so they stay
-  source-backed, masked, and narrow.
+- Reviewed commits since architecture review `e26ed12`:
+  `003IA2-notification-mark-read-stale-write-hardening`,
+  `003J-background-job-scheduling-foundation`, `003K-prototype-visual-gap-report-update`,
+  `003L-data-import-and-migration-planning`, plus in-range planning commit `dded5c4`.
+- Appended findings to `docs/working/REVIEW_FINDINGS.md`.
+- Found no blocking architecture defect and no significant issue requiring a corrective slice.
+- Recorded one Low test-quality cleanup note: the 003IA2 notification stale-write regression still
+  carries a now-unused mock hook from the previous code path, although the production implementation
+  now locks/refetches inside one transaction and the persisted stale-version assertions are valid.
+- Confirmed `003J` kept scheduler state in `sfpcl_credit.scheduler` and did not add public scheduler
+  APIs, workers, dashboard task generation, notification generation, communication coupling, or
+  business timing rules.
+- Confirmed `003K` and `003L` preserve source boundaries: Dashboard, Notifications Center, and My
+  Profile are API-backed; Task Inbox, `AuditTimeline`, and `DocumentPackModal` remain
+  prototype/mock; data import remains planning-only and cannot borrow adjacent permissions.
+- Confirmed the in-range Task Inbox planning commit closes the S03 ownership gap by adding deferred
+  `012EA`/`012EB` slices after workflow modules exist.
+- Sharpened `004A-member-directory-api-and-ui` and `004B-member-profile-api-and-ui` with no-mock
+  frontend regression requirements and explicit screenshot evidence expectations.
 
 ## Evidence
-See `.ralph/runs/2026-07-07_205029_normal_run/`.
+See `.ralph/runs/2026-07-07_210824_architecture_review/`.
 
 Key logs under `evidence/terminal-logs/`:
 - `backend-check.log`
@@ -47,23 +42,23 @@ Key logs under `evidence/terminal-logs/`:
 - `frontend-build.log`
 - `git-diff-check.log`
 
-Gate result: backend tests 189/189, backend coverage 96% with 85% floor, frontend tests 46/46,
-frontend typecheck/lint/build passed, and `git diff --check` passed.
+Gate result: backend checks/tests/migration check/coverage passed, frontend typecheck/lint/tests/build
+passed, and `git diff --check` passed. See the run review packet for exact counts.
 
-TDD red/green: not applicable because 003L was docs/planning only with no backend, business-logic,
-API, database, or production frontend behavior change.
+TDD red/green: not applicable for the architecture-review slice because it made no production
+backend, business-logic, API, database, or frontend behavior changes.
 
 ## Current Blocker
 None.
 
 ## Notes For Next Run
-- Architecture review is due before the next implementation slice.
-- After architecture review, next implementation slice should be `004A-member-directory-api-and-ui`.
+- Next implementation slice should be `004A-member-directory-api-and-ui`.
 - `004A` must still read its full Epic 004/source context during its own run. The digest now includes
   useful extracts, but the digest is not a substitute for the required 004A source pass.
 - `004A` should implement only the read-only member directory API/UI path from §13.1. It should not
   implement member create/update, profile detail, sensitive reveal, KYC verification, nominee,
   witness, share certificate, demat, land/crop, loan application, Borrower 360, or eligibility
-  behavior.
+  behavior. It must test that the API-backed directory does not fall back to `mockData`.
 - `004B` is sharpened as masked member profile detail only; sensitive reveal must either be fully
-  permissioned/reasoned/audited per §13.5 or explicitly deferred.
+  permissioned/reasoned/audited per §13.5 or explicitly deferred. Backend-wired profile tabs must
+  render API data or empty/deferred states only, not synthetic mock rows.

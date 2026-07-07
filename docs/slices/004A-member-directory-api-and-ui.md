@@ -104,11 +104,17 @@ Add at least one regression asserting sensitive identifiers such as PAN/Aadhaar 
 directory response and that `mobile_number` is masked or test-safe. Save API response examples using
 synthetic member data only.
 
+Add a frontend regression that the API-backed directory renders rows from `GET /api/v1/members/`
+and does not import or render `sfpcl-lms/src/data/mockData.ts` member-directory fixtures on the
+wired path.
+
 ## Visual Acceptance Criteria
 Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.
 
 ## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+Test output, API response examples, and screenshots when frontend is touched. For 004A, save at
+least the populated directory, empty directory, API error, and unauthorized/forbidden state using
+existing visual patterns.
 
 ## Risk Level
 Medium

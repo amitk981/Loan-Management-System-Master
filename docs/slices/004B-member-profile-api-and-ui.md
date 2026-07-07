@@ -90,12 +90,17 @@ success, empty/deferred tabs, error, unauthorized/forbidden, masked sensitive di
 fallback to `mockData` on the wired profile path. Add reveal tests only if §13.5 is implemented in
 this slice.
 
+Add a frontend regression that backend-wired profile tabs render API data or existing empty states
+only; they must not render synthetic loan, KYC, land/crop, nominee, communication, or audit rows
+from `sfpcl-lms/src/data/mockData.ts` unless a later slice implements the matching backend path.
+
 ## Visual Acceptance Criteria
 Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.
 
 ## Evidence Required
 Test output, API response examples with synthetic member data, and screenshots when frontend is
-touched. Screenshots must use existing profile layout and masked identifiers.
+touched. Screenshots must use existing profile layout and masked identifiers, including populated
+overview, deferred/empty tab, API error, and unauthorized/forbidden states.
 
 ## Risk Level
 Medium
