@@ -407,7 +407,11 @@ if (( committed == 1 )) && (( no_worktree == 0 )); then
       merged=1
       echo "Merged $branch_name into $integration_branch and removed the worktree."
     else
-      echo "Auto-merge into $integration_branch failed; branch $branch_name kept for manual review." >&2
+      # A failed ff-only merge means staging moved during the run. Exiting 0 here
+      # made the loop rerun the slice from scratch (silent duplicate work) while
+      # the finished branch sat stranded. Fail loudly instead; the loop stops.
+      echo "MERGE_FAILED: auto-merge into $integration_branch failed; branch $branch_name kept with the completed work." >&2
+      exit 4
     fi
   else
     echo "auto_merge is disabled; review and merge branch $branch_name manually." >&2

@@ -194,6 +194,8 @@ protected_paths=(
   "docs/working/FRONTEND_DESIGN_RULES.md"
   "docs/change-requests/TEMPLATE-bug.md"
   "docs/change-requests/TEMPLATE-feature.md"
+  "docs/change-requests/TEMPLATE-slice.md"
+  "docs/change-requests/TEMPLATE-epic.md"
   "docs/change-requests/README.md"
   "docs/source/"
 )
