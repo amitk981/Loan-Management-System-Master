@@ -28,7 +28,7 @@ Future workflows can upload evidence, record immutable audit trails, use version
 
 ## Screens Involved
 - Dashboard
-- Task inbox
+- Task inbox (S03 implementation deliberately deferred — owned by Epic 012 slices `012EA`/`012EB`, owner decision 2026-07-07, because task generation needs workflow states from Epics 005-011; this epic delivers only the dashboard task-summary shell, 003G/003H)
 - Notifications
 - Settings/config shell
 - Audit timeline/explorer shell

@@ -1,5 +1,148 @@
 # Ralph Progress Log
 
+## 2026-07-08 09:41:46 - 2026-07-08_094146_repair
+- Agent tool used: codex
+- Slice attempted: 004B-member-profile-api-and-ui
+- Summary: Repaired the previous 004B failure by keeping the implementation under Ralph's diff
+  limit. Added masked read-only `GET /api/v1/members/{member_id}/` using the existing members
+  module, with profile shell tables, `members.member.read` gating, `404` for unknown/soft-deleted
+  members, masked PAN/Aadhaar objects, registered address, profile shell fields, and
+  `available_actions[]`. Rewired `MemberProfile` to the backend API with no `mockData` fallback and
+  existing empty states for deferred tabs.
+- Tests run: backend profile TDD red/green; frontend profile TDD red/green; backend `manage.py
+  check`; backend tests (198/198); `makemigrations --check --dry-run`; backend coverage 96% (floor
+  85); frontend `npm run typecheck`; `npm run lint`; `npm test` (58/58); `npm run build`; `git diff
+  --check`; diff-limit check (19 files, 1724 lines).
+- Evidence saved: `.ralph/runs/2026-07-08_094146_repair/`, with API examples, terminal logs, and
+  static member-profile visual HTML under `evidence/screenshots/member-profile-html/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `004C-individual-farmer-and-fpc-profile-details`.
+
+## 2026-07-07 21:26:19 - 2026-07-07_212619_normal_run
+- Agent tool used: codex
+- Slice attempted: 004A-member-directory-api-and-ui
+- Summary: Implemented the source §13.1 read-only member directory. Added `sfpcl_credit.members`
+  with a narrow `Member` model/migration, protected `GET /api/v1/members/` with standard
+  pagination/filter validation, `members.member.read` gating, masked mobile numbers, and no
+  PAN/Aadhaar response fields. Wired `MemberDirectory` to the backend API through
+  `memberDirectoryApi`, removed the backend-wired `mockData` dependency, and dropped mock-only
+  current exposure, supply-year, and Borrower 360 UI from the directory path. Updated contracts,
+  assumptions, prototype docs, Epic 004 digest, and sharpened 004B/004C.
+- Tests run: backend TDD red/green for member directory; frontend red/green for member directory;
+  backend `manage.py check`; backend tests (194/194); `makemigrations --check --dry-run`; backend
+  coverage 96% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test` (51/51);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-07_212619_normal_run/`, with gate logs under
+  `evidence/terminal-logs/`, API examples in `api-response-examples.md`, and static member-directory
+  visual artifacts under `evidence/screenshots/member-directory-html/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `004B-member-profile-api-and-ui`, reusing `sfpcl_credit.members` and keeping it
+  masked-detail-only unless §13.5 reveal is fully implemented.
+
+## 2026-07-07 21:08:24 - 2026-07-07_210824_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed commits since architecture review `e26ed12`: `003IA2`, `003J`, `003K`,
+  `003L`, plus in-range planning commit `dded5c4` for Task Inbox ownership. Appended findings to
+  `docs/working/REVIEW_FINDINGS.md`. Found no blocking architecture defects and no significant
+  issue requiring a corrective slice. Recorded one Low test-quality cleanup note: the 003IA2
+  notification stale-write regression still carries an unused mock hook from the pre-fix code path,
+  while the production implementation itself is now atomic. Confirmed scheduler, prototype gap, and
+  import planning boundaries stay source-aligned.
+- Tests run: backend `manage.py check`; backend tests; `makemigrations --check --dry-run`;
+  backend coverage; frontend `npm run typecheck`; `npm run lint`; `npm test`; `npm run build`;
+  `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-07_210824_architecture_review/`, with gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Low (review/docs-only).
+- Next action: Run `004A-member-directory-api-and-ui`.
+
+## 2026-07-07 21:12:00 - 2026-07-07_205029_normal_run
+- Agent tool used: codex
+- Slice attempted: 003L-data-import-and-migration-planning
+- Summary: Added `docs/working/DATA_IMPORT_MIGRATION_PLAN.md` as a source-backed planning artifact
+  for future data import and migration work. The plan separates current implemented foundations
+  from future business target areas, requires dry-run/row-level validation/idempotency/retry and
+  rollback planning/reconciliation/masking/audit summaries, and keeps test examples synthetic only.
+  It explicitly preserves the 003K prototype/API status and the 003J scheduled-job metadata-only
+  boundary. Added A-028 for the future import-administration permission gap and updated Epic 003 and
+  Epic 004 digests. Sharpened `004A` and `004B` with concrete member directory/profile/masking
+  constraints from targeted source extracts.
+- Tests run: backend `manage.py check`; backend tests (189/189);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend `npm run
+  typecheck`; `npm run lint`; `npm test` (46/46); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-07_205029_normal_run/`, with gate logs under
+  `evidence/terminal-logs/` and source-extract summary under `evidence/source-extracts/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run architecture review by cadence before implementing `004A-member-directory-api-and-ui`.
+
+## 2026-07-07 20:20:23 - 2026-07-07_200802_normal_run
+- Agent tool used: codex
+- Slice attempted: 003K-prototype-visual-gap-report-update
+- Summary: Updated prototype inventory and gap documentation after Epic 003 dashboard,
+  notification, profile, and scheduler work. Dashboard is now recorded as API-backed by
+  `GET /api/v1/dashboard/`; Notifications Center as API-backed by `/api/v1/notifications/` plus
+  versioned mark-read; My Profile as read-only from `/api/v1/auth/me/`; and Task Inbox,
+  `AuditTimeline`, and `DocumentPackModal` as still prototype/mock for their current UI paths. The
+  docs explicitly state that 003J `scheduled_jobs` is internal metadata only, not a task inbox,
+  dashboard task generator, notification generator, or scheduler UI.
+- Tests run: backend `manage.py check`; backend tests (189/189);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend `npm run
+  typecheck`; `npm run lint`; `npm test` (46/46); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-07_200802_normal_run/`, with gate logs under
+  `evidence/terminal-logs/` and source excerpts under `evidence/source-extracts/`.
+- Result: Success.
+- Risk level: Low.
+- Next action: Run `003L-data-import-and-migration-planning`; it is sharpened to stay docs/planning
+  only, avoid staging/import tooling, and preserve 003K's distinction between API-backed staff
+  screens and remaining prototype/mock shells.
+
+## 2026-07-07 16:27:20 - 2026-07-07_161444_normal_run
+- Agent tool used: codex
+- Slice attempted: 003J-background-job-scheduling-foundation
+- Summary: Added a dedicated internal scheduler foundation. `sfpcl_credit.scheduler` now owns
+  `ScheduledJob` (`scheduled_jobs`) with source-neutral metadata and a service boundary for
+  idempotent enqueue plus legal queued/running/succeeded/failed transitions. No public endpoint,
+  Celery/Redis worker, dashboard task creation, notification generation, communication-send change,
+  reminder cadence, report generation, or provider call was added.
+- Tests run: failing-first scheduler service import/test; focused scheduler service tests (5/5);
+  focused notification API regression (6/6); backend `manage.py check`; backend tests (189/189);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend `npm run
+  typecheck`; `npm run lint`; `npm test` (46/46); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-07_161444_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `003K-prototype-visual-gap-report-update`; it is sharpened to document that
+  Dashboard, Notifications Center, and My Profile are API-backed while Task Inbox and scheduler UI
+  remain unimplemented/prototype-only.
+
+## 2026-07-06 18:54:59 - 2026-07-06_185459_normal_run
+- Agent tool used: codex
+- Slice attempted: 003IA2-notification-mark-read-stale-write-hardening
+- Summary: Hardened notification mark-read stale-write enforcement. The endpoint now validates the
+  submitted `read_state_version`, locks and refetches the current-user scoped notification inside
+  one `transaction.atomic()` block, compares the persisted version under that lock, then mutates
+  read state and writes the `communications.notification.marked_read` audit row in the same atomic
+  operation. Same-version retries after a persisted success now return `409 STALE_WRITE`, preserve
+  the stored read metadata/version, and create no second audit row. No schema/API/frontend contract
+  change.
+- Tests run: failing-first same-version stale retry regression; focused notification API tests
+  (6/6); backend `manage.py check`; backend tests (184/184); `makemigrations --check --dry-run`;
+  backend coverage 96% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test`
+  (46/46); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-06_185459_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `003J-background-job-scheduling-foundation`; it is sharpened to keep scheduler
+  state out of `communications.services`, avoid dashboard task/notification generation, and leave
+  003IA2 mark-read semantics unchanged.
+
 ## 2026-07-06 16:49:49 - 2026-07-06_164949_normal_run
 
 ## 2026-07-06 10:50:04 - 2026-07-06_105004_normal_run
@@ -999,6 +1142,98 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_164949_normal_run/.ralph/runs/2026-07-06_164949_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_164949_normal_run/.ralph/runs/2026-07-06_164949_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-06 18:42:00 - 2026-07-06_183803_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed `003G2`, `003H`, `003I`, and `003IA` since architecture-review commit
+  `8ea30ec`; found one Medium stale-write atomicity issue in notification mark-read, created
+  `003IA2-notification-mark-read-stale-write-hardening`, and sharpened `003J` to depend on it.
+- Tests run: backend check/tests/migrations/coverage and frontend typecheck/lint/tests/build.
+- Evidence saved: .ralph/runs/2026-07-06_183803_architecture_review/
+- Result: Success
+- Risk level: Low (review/docs-only; no production code modified).
+- Next action: Run `003IA2-notification-mark-read-stale-write-hardening`.
+
+## 2026-07-06 18:54:53 - 2026-07-06_183803_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_183803_architecture_review/.ralph/runs/2026-07-06_183803_architecture_review/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_183803_architecture_review/.ralph/runs/2026-07-06_183803_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-06 19:13:15 - 2026-07-06_185459_normal_run
+- Agent tool used: codex
+- Slice attempted: 003IA2-notification-mark-read-stale-write-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_185459_normal_run/.ralph/runs/2026-07-06_185459_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-06_185459_normal_run/.ralph/runs/2026-07-06_185459_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-07 16:32:51 - 2026-07-07_161444_normal_run
+- Agent tool used: codex
+- Slice attempted: 003J-background-job-scheduling-foundation
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_161444_normal_run/.ralph/runs/2026-07-07_161444_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_161444_normal_run/.ralph/runs/2026-07-07_161444_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-07 20:25:32 - 2026-07-07_200802_normal_run
+- Agent tool used: codex
+- Slice attempted: 003K-prototype-visual-gap-report-update
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_200802_normal_run/.ralph/runs/2026-07-07_200802_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_200802_normal_run/.ralph/runs/2026-07-07_200802_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-07 21:08:15 - 2026-07-07_205029_normal_run
+- Agent tool used: codex
+- Slice attempted: 003L-data-import-and-migration-planning
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_205029_normal_run/.ralph/runs/2026-07-07_205029_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_205029_normal_run/.ralph/runs/2026-07-07_205029_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-07 21:26:13 - 2026-07-07_210824_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_210824_architecture_review/.ralph/runs/2026-07-07_210824_architecture_review/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_210824_architecture_review/.ralph/runs/2026-07-07_210824_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-07 21:56:29 - 2026-07-07_212619_normal_run
+- Agent tool used: codex
+- Slice attempted: 004A-member-directory-api-and-ui
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_212619_normal_run/.ralph/runs/2026-07-07_212619_normal_run/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_212619_normal_run/.ralph/runs/2026-07-07_212619_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-08 10:11:23 - 2026-07-08_094146_repair
+- Agent tool used: codex
+- Slice attempted: 004B-member-profile-api-and-ui
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-08_094146_repair/.ralph/runs/2026-07-08_094146_repair/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-08_094146_repair/.ralph/runs/2026-07-08_094146_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

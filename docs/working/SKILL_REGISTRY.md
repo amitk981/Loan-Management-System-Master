@@ -16,6 +16,16 @@ Skills are **Claude Code accelerators only** — codex cannot invoke them. That 
 | Owner sessions: merge conflicts | `resolving-merge-conflicts` | Only if an auto-merge fails and a branch needs manual merging. |
 | Re-planning sessions only | `grill-with-docs`, `to-issues`, `to-prd`, `triage`, `handoff` | The backlog already exists (120+ slices), so these run only if the plan itself is being reworked in an interactive session with the owner. |
 
+## Maintenance stage (post-development)
+
+Once all product slices are Complete, the same skills carry over to change-request
+work — stage mapping and the owner's operating rhythm live in
+`docs/working/MAINTENANCE_STAGE_PLAN.md` §7. Summary: `tdd` and `diagnosing-bugs`
+during CR implementation/repair runs, built-in `/code-review` for owner batch review,
+`grill-with-docs` + `domain-modeling` when a big CR is split into an epic,
+`research` for new external integrations. No new skills are required for maintenance;
+the pipeline itself is `ralph-intake.sh` + the loop, not a skill.
+
 ## Deliberately NOT used (decided 2026-07-02)
 
 | Skill | Why excluded |

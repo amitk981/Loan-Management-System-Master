@@ -110,6 +110,12 @@ for ((i = 1; i <= max_iterations; i++)); do
     exit 2
   fi
 
+  if grep -q "MERGE_FAILED" "$last_out"; then
+    echo "Stopping: a completed run could not merge into staging (staging moved during the run)." | tee -a "$loop_log"
+    echo "The finished work is kept on its ralph/* branch — ask an agent in a chat session to merge it, then rerun the loop. Do not rerun the slice." | tee -a "$loop_log"
+    exit 1
+  fi
+
   if (( status != 0 )) && limit_exhausted; then
     switch_agent_or_stop
     echo "The interrupted slice will rerun with $active_tool." | tee -a "$loop_log"

@@ -202,6 +202,13 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
   existing source-backed permission sets while preserving deliberately permission-neutral
   `it_head`/`sales_team_user` roles. The staff Notifications Center uses this API; My Profile is
   read-only from `/api/v1/auth/me/`.
+- HARDENED 2026-07-06 (`2026-07-06_185459_normal_run`, slice 003IA2):
+  `POST /api/v1/notifications/{notification_id}/mark-read/` now performs the current-user scoped
+  lookup, `read_state_version` comparison, read-state mutation, and
+  `communications.notification.marked_read` audit write inside one atomic row-lock operation.
+  Same-version retries after a persisted success return `409 STALE_WRITE`, leave the stored
+  `read_at`/`read_by_user`/version unchanged, and do not write a second audit row. No schema,
+  response-shape, permission, dashboard, communication-history, or frontend contract change.
 
 ## Dashboard and Task Foundation Extracts
 - `docs/source/api-contracts.md` §43.1 defines `GET /api/v1/dashboard/` as the role-based dashboard
@@ -246,3 +253,85 @@ Source extracts opened during 002I queue sharpening. `docs/source/` remains auth
   dashboard data. A-024 records the temporary frontend mapping from backend source-style
   `cards[].link` URLs to existing prototype route keys while filtered destination screens remain
   future work.
+
+## Background Job Scheduling Extracts
+- `docs/source/implementation-roadmap.md` §10.3 names Background jobs as an R1 backend story, with
+  Celery setup and a basic test task as the broader roadmap item.
+- `docs/source/implementation-roadmap.md` §30.2 names Redis/Celery as a technical dependency for
+  notifications, jobs, and reports, but 003J intentionally avoided adding that dependency because
+  the slice only permits a local metadata shell unless already pinned/importable.
+- `docs/source/implementation-roadmap.md` §31.1 identifies silent background-job failure as a
+  compliance/finance risk and calls for job run records and alerts as mitigation.
+- `docs/source/api-contracts.md` §40.7-§40.8 shows future report export jobs returning queued and
+  completed status, but 003J did not add report-export endpoints.
+- IMPLEMENTED 2026-07-07 (`2026-07-07_161444_normal_run`, slice 003J):
+  `sfpcl_credit.scheduler` now owns `ScheduledJob` (`scheduled_jobs`) as an internal metadata table
+  with source-neutral fields: `job_id`, `job_type`, `status`, `due_at`, started/completed
+  timestamps, optional related entity type/id, idempotency key, attempts, last error summary, and
+  created/updated timestamps. `scheduler.services` exposes idempotent enqueue plus
+  queued→running→succeeded/failed transitions. No public endpoint, Celery/Redis worker, dashboard
+  task generation, notification creation, communication-send change, reminder business rule, or
+  report generation was added. A-027 records the local metadata-shell assumption.
+
+## Prototype Visual Gap Extracts
+- `docs/source/api-contracts.md` §43.1 defines `GET /api/v1/dashboard/` with `role_context`,
+  `cards[]`, and `tasks[]`; §43.2-§43.4 reserve specialist dashboard endpoints for later work.
+- `docs/source/screen-spec.md` S01 expects the dashboard to show role-specific tasks, metrics,
+  blockers, alerts, and recent activity, with empty states such as "No pending tasks for your role."
+- `docs/source/screen-spec.md` S03 defines Task Inbox as assigned/user-role actionable work items
+  with filters, reassignment/comment/block/export actions, and due/SLA metadata. No task inbox API
+  has been implemented yet.
+- `docs/source/screen-spec.md` §5.8 and S04 plus `docs/source/content-spec.md` S04 define
+  notifications/alerts with linked record, severity/priority, timestamp, sender/recipient,
+  read/unread status, related task, and mark-read style actions.
+- `docs/source/api-contracts.md` §39.1-§39.3 define content templates and communication history,
+  while the implemented staff inbox uses the separate `/api/v1/notifications/` boundary added by
+  003IA/003IA2 for current-user notifications and versioned mark-read.
+- `docs/source/api-contracts.md` §26, §41, and §42 define generic document file,
+  loan-policy/version-history, audit-log, and workflow-event APIs. Prototype `DocumentPackModal`
+  and `AuditTimeline` remain mock-data components until dedicated UI wiring slices connect them to
+  these APIs.
+- `docs/source/implementation-roadmap.md` §20-§22 sequences audit, document, configuration,
+  communication, dashboard, and task foundations before later business modules; §30.2 names
+  Redis/Celery as a technical dependency for notifications, jobs, and reports.
+- 003K updated `PROTOTYPE_INVENTORY.md` and `PROTOTYPE_GAP_REPORT.md` to record that Dashboard,
+  Notifications Center, and My Profile are API-backed; Task Inbox remains prototype/mock; and 003J
+  `scheduled_jobs` is internal scheduler metadata only, not a frontend-visible task queue.
+
+## Data Import and Migration Planning Extracts
+- `docs/source/implementation-roadmap.md` §26 says the migration decision before R8 must cover
+  existing member records, shareholdings, existing loans, SAP customer codes, repayment history,
+  interest balances, existing documents, security custody records, and compliance evidence.
+- `implementation-roadmap.md` §26.2 sequences migration discovery, field mapping, data-quality
+  assessment, two trial migrations, UAT migration, dress rehearsal, final migration, and
+  post-migration reconciliation.
+- `implementation-roadmap.md` §26.3 acceptance criteria require member/shareholding correctness,
+  SAP-code links, loan-balance reconciliation with source/SAP, document links to the right
+  application/loan/member, security custody migration or historical exceptions, missing KYC/document
+  exceptions, migration batch/audit records, and business signoff.
+- `docs/source/data-model.md` §31.1 lists likely source data: Excel Loan Register, member/shareholder
+  records, physical KYC files, SAP customer master, SAP accounting entries, physical loan files, and
+  manual sanction records.
+- `data-model.md` §31.2 requires preserving original loan references, generating new system IDs
+  while retaining legacy references, marking records with `migration_batch_id`, storing scanned
+  documents in document storage, capturing missing documents as deficiencies or historical
+  exceptions, validating balances against SAP before go-live, mapping physical custody locations, and
+  marking records with `migrated_flag` where appropriate.
+- `data-model.md` §31.3 recommends `legacy_reference_number`, `migration_batch_id`,
+  `migrated_flag`, `migrated_at`, and `migration_notes` on major tables where needed, but 003L did
+  not add those columns because owning business schemas do not exist yet.
+- `data-model.md` §28-§29 provide validation and privacy categories for import planning:
+  referential integrity, workflow gates, data quality, encrypted sensitive columns, hash columns, and
+  masking rules for PAN, Aadhaar, bank accounts, cheque numbers, BO accounts, and KYC documents.
+- `data-model.md` §34.1 names multi-table operations that must be atomic in future implementation
+  slices, including application submission, sanction approval, checklist approval, disbursement,
+  repayment allocation, interest capitalisation, default opening, and loan closure.
+- `api-contracts.md` §40.7-§40.8 define future report export job contracts, while §45 defines
+  idempotency for critical financial actions. 003L applies the same planning principle to import
+  batch retries but does not create import or report-export endpoints.
+- IMPLEMENTED 2026-07-07 (`2026-07-07_205029_normal_run`, slice 003L): added
+  `docs/working/DATA_IMPORT_MIGRATION_PLAN.md` as a planning-only artifact. It separates existing
+  foundation tables from future business target areas, requires dry-run, row-level validation,
+  idempotency/natural keys, audit summaries, rollback/retry planning, reconciliation, masking, and
+  synthetic test data only. A-028 records the source permission gap for import administration. No
+  staging tables, commands, APIs, workers, scheduled jobs, UI, or real data loads were added.

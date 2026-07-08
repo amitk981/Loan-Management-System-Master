@@ -1,0 +1,7 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/003J-background-job-scheduling-foundation.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+?? .ralph/runs/2026-07-06_183803_architecture_review/
+?? docs/slices/003IA2-notification-mark-read-stale-write-hardening.md

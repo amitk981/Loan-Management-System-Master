@@ -1,0 +1,41 @@
+# 30. Dependency Map
+
+## 30.1 Business Dependencies
+
+| Dependency | Required For |
+|---|---|
+| Final loan limit rule | R2 loan limit calculator |
+| Active member data availability | R2 eligibility |
+| Share valuation data | R2 calculator |
+| Scale of finance amount | R2 calculator |
+| Approval committee membership | R3 approvals |
+| Director/relative policy | R3 conflicts |
+| Legal document templates | R4 documents |
+| Stamp duty requirements | R4 checklist |
+| SAP process owner | R5 SAP workflow |
+| Bank source account details | R5 disbursement |
+| Interest rate policy | R6 interest |
+| Subsidiary deduction process | R6 repayment |
+| Recovery approval authority | R7 recovery |
+| Archive locations | R7 closure |
+| Compliance owners | R7 compliance |
+| UAT users | R8 UAT |
+
+## 30.2 Technical Dependencies
+
+| Dependency | Required For |
+|---|---|
+| Object storage | R1 documents and all later stages |
+| Email provider | R2 notifications and documents |
+| SMS provider | R6 reminders |
+| Redis/Celery | Notifications, jobs, reports |
+| PostgreSQL backups | Production readiness |
+| CI/CD pipeline | All releases |
+| JWT secret management | R1 auth |
+| Encryption key management | Sensitive data |
+| PDF generation stack | R4 document generation |
+| File preview/download | R4 documentation |
+| Monitoring stack | R8 operations |
+| OpenAPI/schema tooling | API governance |
+
+---

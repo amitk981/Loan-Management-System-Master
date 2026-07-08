@@ -1,0 +1,7 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/004A-member-directory-api-and-ui.md
+ M docs/slices/004B-member-profile-api-and-ui.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+?? .ralph/runs/2026-07-07_210824_architecture_review/

@@ -2,6 +2,130 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-07 21:08 - Architecture Review 2026-07-07_210824_architecture_review
+
+Reviewed commits since the prior architecture review (`e26ed12`):
+- `003IA2-notification-mark-read-stale-write-hardening` (`a1734ce`)
+- `003J-background-job-scheduling-foundation` (`cdf1e71`)
+- `003K-prototype-visual-gap-report-update` (`c0e93e5`)
+- `003L-data-import-and-migration-planning` (`51f4b18`)
+
+Also reviewed in-range planning commit `dded5c4` (`docs(re-planning): add Task Inbox slices
+012EA/012EB to close S03 ownership gap`) because it changed the queue and Epic 003/012 ownership
+notes between reviewed slice commits.
+
+### Finding 1 - Low - Notification stale-write regression carries a now-unused mock hook
+
+`003IA2` fixes the prior Medium finding in the production path: `mark_notification_read()` now
+validates `read_state_version`, refetches and locks the current-user scoped notification inside one
+transaction, then saves read state and writes the audit row in that same atomic block
+(`sfpcl_credit/communications/services.py:356-390`). The red/green evidence is real: the new
+persisted stale-version regression fails on the previous implementation and passes after the row-lock
+change. However, the test still patches `_notification_queryset_for_user()` with a
+`_StaleNotificationQuerySet` even though the fixed implementation now calls
+`_locked_notification_queryset_for_user()` instead (`sfpcl_credit/tests/test_notifications_api.py:233-283`).
+That mock was useful for the failing pre-fix code path but is no longer exercising anything in the
+green implementation. The assertions still prove persisted stale writes return `409` and do not
+create a second audit row, so this is a test clarity issue rather than a product defect.
+
+Corrective action: no standalone corrective slice. The next notification-touching slice should
+remove the dead mock/helper or replace it with a clearer persistence-focused regression; no
+production behavior change is required.
+
+### Finding 2 - Pass - Scheduler foundation stays inside the intended module boundary
+
+`003J` adds a dedicated `sfpcl_credit.scheduler` app and `scheduled_jobs` metadata table, with
+idempotent enqueue and legal queued/running/succeeded/failed transitions in
+`sfpcl_credit/scheduler/services.py`. The tests assert duplicate idempotency keys reuse an existing
+job, invalid transitions raise `ValidationError`, and scheduler enqueue does not generate
+notifications or `communications.notification.marked_read` audit rows
+(`sfpcl_credit/tests/test_scheduler_services.py:16-107`). The implementation does not add a public
+API, Celery/Redis dependency, worker, dashboard task generation, notification generation,
+communication-send coupling, reminder business rules, or report generation. A-027 records the
+source-silent metadata-shell assumption.
+
+Corrective action: none.
+
+### Finding 3 - Pass - Prototype gap and import planning docs preserve source boundaries
+
+`003K` correctly records the current UI/API status: Dashboard, Notifications Center, and My Profile
+are API-backed; Task Inbox, `AuditTimeline`, and `DocumentPackModal` remain prototype/mock; and
+`scheduled_jobs` is internal metadata, not a frontend task queue or scheduler UI. `003L` adds
+`DATA_IMPORT_MIGRATION_PLAN.md` as a planning-only artifact and explicitly avoids staging tables,
+commands, APIs, workers, UI, scheduled jobs, real source data, or business schema changes. It
+separates implemented foundation tables from future target areas and records A-028 so import
+execution cannot borrow communication, dashboard, notification, document-download, or report-export
+permissions.
+
+Corrective action: none.
+
+### Finding 4 - Pass with queue sharpening - Task Inbox ownership and Epic 004 handoff are clearer
+
+The in-range planning commit `dded5c4` closes a real ownership gap by adding `012EA`/`012EB` as the
+deferred Task Inbox/S03 implementation path and cross-referencing that Epic 003 delivered only the
+dashboard shell, not task generation. This review also sharpened `004A-member-directory-api-and-ui`
+and `004B-member-profile-api-and-ui` with no-mock frontend regression requirements and screenshot
+evidence expectations, using the Epic 004 digest extracts already opened in the prior run. Functional
+requirement spot check: no new full functional module was completed in this review window; scheduler,
+visual inventory, and migration planning are foundation/planning work, and notification read-state
+hardening preserves the existing S04 staff-inbox contract.
+
+Corrective action: no corrective slice or ADR needed.
+
+## 2026-07-06 18:42 - Architecture Review 2026-07-06_183803_architecture_review
+
+Reviewed commits since the prior architecture review (`8ea30ec`):
+- `003G2-dashboard-internal-auditor-access-regression` (`8bd2b69`)
+- `003H-dashboard-task-ui-wiring` (`2cbb4c9`)
+- `003I-notification-adapter-shell` (`21e4f1a`)
+- `003IA-notifications-center-ui-wiring` (`4dd909d`)
+
+### Finding 1 - Medium - Notification mark-read stale-write protection is not atomic
+
+`003IA` documents the mark-read contract as optimistic concurrency: clients submit
+`read_state_version`; mismatches return `409 STALE_WRITE`; a successful mark-read increments the
+version and writes one audit row (`docs/working/API_CONTRACTS.md:643-661`). The implementation
+checks the version on an unlocked model instance before entering the transaction that saves the read
+state (`sfpcl_credit/communications/services.py:356-372`). Two concurrent requests carrying the
+same version can both pass the check before either save, then both save/audit as successful updates.
+The current backend test proves an obviously stale version returns `409`, but it does not prove
+same-version retries or races cannot duplicate the success/audit path
+(`sfpcl_credit/tests/test_notifications_api.py:197-228`). This weakens the S04 read/unread audit
+trail just as later scheduler/reminder slices may create more notification traffic.
+
+Corrective action: created
+`docs/slices/003IA2-notification-mark-read-stale-write-hardening.md` and made `003J` depend on it.
+The corrective slice must add a failing-first same-version retry/concurrency regression and enforce
+the version check atomically using either row locking or a conditional update scoped to the current
+recipient.
+
+### Finding 2 - Pass - Dashboard and communication/notification slices preserve source boundaries
+
+`003G2` closes the previous internal-auditor dashboard finding with a seeded-role regression and a
+catalogue invariant. `003H` removes mock dashboard summaries, keeps `/api/v1/dashboard/` separate
+from notifications, and tests success, empty task, role-context, `401`/`403`, server, and network
+states without substituting mock data. `003I` implements source §24.2 communication metadata and
+§39.2-§39.3 send/list shells with real validation, metadata-only audit assertions, no provider
+delivery, and explicit M16 deferrals. `003IA` correctly adds a notification-specific inbox rather
+than overloading generic communication history, scopes list/mark-read by direct user, active role,
+and active team, and keeps dashboard tasks separate.
+
+Corrective action: none beyond Finding 1.
+
+### Finding 3 - Pass with queue sharpening - Epic 003 source traceability remains explicit
+
+The reviewed run packets contain concrete red/green logs and full gate evidence. Functional-spec
+spot check: the dashboard work implements only the §12.2-§12.6 zero-count role-context shell and
+defers real metrics/tasks; `003I` supports template snapshot creation and delivery-status storage
+while deferring real email/SMS/courier/phone delivery, manual call logging, borrower/member portal
+notifications, and downstream event generation; `003IA` supports staff S04 current-user inbox state
+only and records A-026 for notification permissions and role/team generation gaps. This review
+created the corrective `003IA2` slice and sharpened `003J` so scheduler work stays in its own module
+boundary and does not expand `communications.services` or generate dashboard tasks/notification rows
+inside the scheduler shell.
+
+Corrective action: sharpened `003J-background-job-scheduling-foundation`; no ADR needed.
+
 ## 2026-07-05 20:32 - Architecture Review 2026-07-05_202735_architecture_review
 
 Reviewed commits since the prior architecture review (`94c437e`):

@@ -1,0 +1,34 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 6 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: communications, configurations, contenttypes, documents, identity, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying documents.0001_initial... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_current_user_lists_only_direct_role_and_team_notifications (sfpcl_credit.tests.test_notifications_api.NotificationApiTests.test_current_user_lists_only_direct_role_and_team_notifications) ... ok
+test_list_rejects_unknown_query_parameters_and_filters_by_read_status (sfpcl_credit.tests.test_notifications_api.NotificationApiTests.test_list_rejects_unknown_query_parameters_and_filters_by_read_status) ... ok
+test_mark_read_persists_and_audits_with_stale_write_protection (sfpcl_credit.tests.test_notifications_api.NotificationApiTests.test_mark_read_persists_and_audits_with_stale_write_protection) ... ok
+test_mark_read_same_version_retry_after_persisted_success_is_rejected (sfpcl_credit.tests.test_notifications_api.NotificationApiTests.test_mark_read_same_version_retry_after_persisted_success_is_rejected) ... ok
+test_send_communication_creates_staff_notification_for_user_recipient (sfpcl_credit.tests.test_notifications_api.NotificationApiTests.test_send_communication_creates_staff_notification_for_user_recipient) ... ok
+test_unauthenticated_forbidden_and_wrong_recipient_mark_read_are_blocked (sfpcl_credit.tests.test_notifications_api.NotificationApiTests.test_unauthenticated_forbidden_and_wrong_recipient_mark_read_are_blocked) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 9.977s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

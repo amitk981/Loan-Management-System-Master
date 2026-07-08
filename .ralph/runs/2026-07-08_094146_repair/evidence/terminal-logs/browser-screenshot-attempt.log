@@ -1,0 +1,8 @@
+In-app browser screenshot attempt:
+
+- Browser plugin initialized.
+- Requested browser `iab` was unavailable in this run context.
+- Browser troubleshooting guidance said to report the unavailable requested browser plainly rather
+  than switch to an unrelated browser backend.
+- Static visual HTML evidence rendered from the real `MemberProfileView` is saved under
+  `evidence/screenshots/member-profile-html/`.

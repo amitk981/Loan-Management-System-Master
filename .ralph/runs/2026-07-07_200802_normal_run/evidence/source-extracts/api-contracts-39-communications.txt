@@ -1,0 +1,82 @@
+# 39. Communication APIs
+
+## 39.1 Content Templates
+
+```http
+GET /api/v1/content-templates/
+POST /api/v1/content-templates/
+PATCH /api/v1/content-templates/{content_template_id}/
+```
+
+### Create Request
+
+```json
+{
+  "template_code": "loan_rejection_email_v1",
+  "template_name": "Loan Rejection Email",
+  "template_type": "email",
+  "language_code": "en",
+  "audience": "borrower",
+  "subject_template": "Loan Application {{application_reference_number}} - Rejection Note",
+  "body_template": "Dear {{borrower_name}}, your application has been rejected for the following reason: {{rejection_reason}}.",
+  "variables": [
+    "application_reference_number",
+    "borrower_name",
+    "rejection_reason"
+  ],
+  "approval_status": "approved",
+  "template_version": "1.0",
+  "effective_from": "2026-04-01"
+}
+```
+
+## 39.2 Send Communication
+
+```http
+POST /api/v1/communications/send/
+```
+
+### Request
+
+```json
+{
+  "related_entity_type": "loan_application",
+  "related_entity_id": "uuid",
+  "recipient_party_type": "borrower",
+  "recipient_party_id": "uuid",
+  "recipient_address": "borrower@example.com",
+  "channel": "email",
+  "content_template_id": "uuid",
+  "merge_data": {
+    "application_reference_number": "LO00000025",
+    "borrower_name": "Ramesh Patil",
+    "rejection_reason": "Eligibility criteria not met."
+  }
+}
+```
+
+## 39.3 List Communications
+
+```http
+GET /api/v1/communications/?related_entity_type=loan_application&related_entity_id=uuid
+```
+
+---
+
+# 40. Reporting APIs
+
+## 40.1 Application Pipeline Report
+
+```http
+GET /api/v1/reports/application-pipeline/?from_date=2026-04-01&to_date=2026-06-30&status=&stage=
+```
+
+## 40.2 Documentation Readiness Report
+
+```http
+GET /api/v1/reports/documentation-readiness/?status=pending
+```
+
+## 40.3 Disbursement Pending Report
+
+```http

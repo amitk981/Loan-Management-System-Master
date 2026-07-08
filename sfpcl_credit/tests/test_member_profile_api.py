@@ -1,0 +1,165 @@
+import uuid
+
+from django.test import Client, TestCase
+
+from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
+from sfpcl_credit.members.models import IndividualMemberProfile, Member
+from sfpcl_credit.tests.api_contracts import (
+    assert_available_actions_shape,
+    assert_error_envelope,
+    assert_success_envelope,
+)
+from sfpcl_credit.workflows.models import WorkflowEvent
+
+
+MEMBER_READ_PERMISSION = "members.member.read"
+APPLICATION_CREATE_PERMISSION = "applications.loan_application.create"
+
+
+class MemberProfileApiTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        member_read = Permission.objects.create(
+            permission_code=MEMBER_READ_PERMISSION,
+            permission_name="View member list / details",
+            module_name="members",
+            risk_level="medium",
+        )
+        app_create = Permission.objects.create(
+            permission_code=APPLICATION_CREATE_PERMISSION,
+            permission_name="Create loan application",
+            module_name="applications",
+            risk_level="high",
+        )
+        self.reader = self._user("reader@sfpcl.example", "ReaderPass123!", member_read, app_create)
+        self.plain = self._user("plain@sfpcl.example", "PlainPass123!")
+        self.member = Member.objects.create(
+            member_number="MEM-00125",
+            member_type="individual_farmer",
+            legal_name="Ramesh Patil",
+            display_name="Ramesh Patil",
+            folio_number="FOL-456",
+            membership_start_date="2021-04-01",
+            membership_status="active",
+            pan_encrypted="ABCDE1234F",
+            pan_hash="hash-pan",
+            aadhaar_encrypted="123456789012",
+            aadhaar_hash="hash-aadhaar",
+            registered_address_line1="Village Road",
+            registered_address_line2="Near Market",
+            registered_village_city="Nashik",
+            registered_district="Nashik",
+            registered_state="Maharashtra",
+            registered_pincode="422001",
+            mobile_number="9876547890",
+            email="ramesh@example.com",
+            kyc_status="verified",
+            rekyc_due_date="2027-06-22",
+            default_status="no_default",
+            number_of_shares=100,
+            holding_mode="physical",
+            available_share_count=100,
+            active_member_status="active",
+        )
+        IndividualMemberProfile.objects.create(
+            member=self.member,
+            land_area_under_cultivation_acres="5.00",
+            primary_crop="grapes",
+            services_availed_flag=True,
+        )
+        self.deleted = Member.objects.create(
+            member_type="individual_farmer",
+            legal_name="Deleted Member",
+            display_name="Deleted Member",
+            folio_number="FOL-999",
+            membership_status="inactive",
+            pan_encrypted="ABCDE9999F",
+            pan_hash="hash-deleted-pan",
+            kyc_status="missing",
+            default_status="no_default",
+            is_deleted=True,
+        )
+
+    def _user(self, email, password, *permissions):
+        role = Role.objects.create(
+            role_code=email.split("@")[0],
+            role_name=email,
+            is_system_role=True,
+            status="active",
+        )
+        for permission in permissions:
+            RolePermission.objects.create(role=role, permission=permission)
+        user = User.objects.create(full_name=email, email=email, status="active", primary_role=role)
+        user.set_password(password)
+        user.save()
+        return user
+
+    def _token(self, email="reader@sfpcl.example", password="ReaderPass123!"):
+        response = self.client.post(
+            "/api/v1/auth/login/",
+            data={"email": email, "password": password},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        return response.json()["data"]["access_token"]
+
+    def _headers(self):
+        return {"Authorization": f"Bearer {self._token()}"}
+
+    def _plain_headers(self):
+        return {"Authorization": f"Bearer {self._token('plain@sfpcl.example', 'PlainPass123!')}"}
+
+    def _url(self, member_id):
+        return f"/api/v1/members/{member_id}/"
+
+    def test_authenticated_user_can_retrieve_masked_member_profile_detail(self):
+        response = self.client.get(
+            self._url(self.member.member_id),
+            headers={**self._headers(), "X-Request-ID": "req-member-detail"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        assert_success_envelope(self, payload)
+        self.assertEqual(payload["meta"]["request_id"], "req-member-detail")
+        data = payload["data"]
+        self.assertEqual(data["member_id"], str(self.member.member_id))
+        self.assertEqual(data["member_number"], "MEM-00125")
+        self.assertEqual(data["folio_number"], "FOL-456")
+        self.assertEqual(data["membership_status"], "active")
+        self.assertEqual(data["kyc_status"], "verified")
+        self.assertEqual(data["default_status"], "no_default")
+        self.assertEqual(data["pan"], {"masked": "******234F", "can_view_full": False})
+        self.assertEqual(data["aadhaar"], {"masked": "********9012", "can_view_full": False})
+        self.assertEqual(data["registered_address"]["line1"], "Village Road")
+        self.assertEqual(data["individual_profile"]["primary_crop"], "grapes")
+        self.assertIsNone(data["producer_institution_profile"])
+        assert_available_actions_shape(self, data["available_actions"])
+        self.assertEqual(data["available_actions"][0]["action_code"], "create_loan_application")
+        self.assertTrue(data["available_actions"][0]["enabled"])
+        serialized = str(data).lower()
+        for forbidden in ("pan_encrypted", "aadhaar_encrypted", "pan_hash", "aadhaar_hash", "abcde1234f", "123456789012"):
+            self.assertNotIn(forbidden, serialized)
+
+    def test_member_profile_returns_not_found_for_unknown_or_deleted_member(self):
+        for member_id in (uuid.uuid4(), self.deleted.member_id):
+            response = self.client.get(self._url(member_id), headers=self._headers())
+            self.assertEqual(response.status_code, 404)
+            assert_error_envelope(self, response.json(), "NOT_FOUND")
+
+    def test_member_profile_requires_authentication_and_member_read_permission(self):
+        unauthenticated = self.client.get(self._url(self.member.member_id))
+        self.assertEqual(unauthenticated.status_code, 401)
+        assert_error_envelope(self, unauthenticated.json(), "AUTH_REQUIRED")
+
+        forbidden = self.client.get(self._url(self.member.member_id), headers=self._plain_headers())
+        self.assertEqual(forbidden.status_code, 403)
+        assert_error_envelope(self, forbidden.json(), "PERMISSION_DENIED")
+
+    def test_masked_profile_read_does_not_create_audit_or_workflow_events(self):
+        response = self.client.get(self._url(self.member.member_id), headers=self._headers())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(AuditLog.objects.count(), 1)
+        self.assertEqual(AuditLog.objects.first().action, "auth.login.succeeded")
+        self.assertEqual(WorkflowEvent.objects.count(), 0)

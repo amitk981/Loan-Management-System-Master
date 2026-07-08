@@ -1,7 +1,7 @@
 # Slice 002B: User Model and JWT Login Refresh Logout
 
 ## Status
-Completed
+Complete
 
 ## Parent Epic
 Epic 002: Platform Auth and Role Shell

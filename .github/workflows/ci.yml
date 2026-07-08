@@ -20,6 +20,7 @@ jobs:
           cache-dependency-path: sfpcl-lms/package-lock.json
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run lint
       - run: npm test
       - run: npm run build
       # Report-only until the Node 20 / Vite upgrade clears the esbuild dev-server

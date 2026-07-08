@@ -31,6 +31,7 @@ Stakeholders can review the system through reports, exports, audit evidence, and
 - Audit Log Explorer
 - Dashboard variants
 - Settings/export controls
+- Task Inbox (S03) — deferred from Epic 003, owned here by `012EA`/`012EB` (owner decision 2026-07-07) as a UAT-critical gap
 - Any UAT-critical frontend gaps discovered in earlier slices
 
 ## Prototype Reference
@@ -38,6 +39,7 @@ Stakeholders can review the system through reports, exports, audit evidence, and
 - `RegistersHub.tsx`
 - `Dashboard.tsx`
 - `SettingsHub.tsx`
+- `TaskInbox.tsx`
 
 ## Frontend Scope
 - Wire reports, exports, audit explorer, and operational dashboards to APIs.

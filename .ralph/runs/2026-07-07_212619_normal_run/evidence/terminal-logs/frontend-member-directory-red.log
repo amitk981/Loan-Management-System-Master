@@ -1,0 +1,32 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run MemberDirectory.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_212619_normal_run/sfpcl-lms
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/members/MemberDirectory.test.tsx [ src/pages/members/MemberDirectory.test.tsx ]
+Error: Cannot find module '../../services/memberDirectoryApi' imported from '/Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_212619_normal_run/sfpcl-lms/src/pages/members/MemberDirectory.test.tsx'
+ ❯ src/pages/members/MemberDirectory.test.tsx:5:31
+      3| import { afterEach, beforeEach, describe, expect, it, vi } from 'vites…
+      4| import { clearStoredAuthSession, storedAuthSession } from '../../servi…
+      5| import { fetchMemberDirectory, type MemberDirectoryItem } from '../../…
+       |                               ^
+      6| import { MemberDirectoryView } from './MemberDirectory';
+      7| 
+
+Caused by: Error: Failed to load url ../../services/memberDirectoryApi (resolved id: ../../services/memberDirectoryApi) in /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_212619_normal_run/sfpcl-lms/src/pages/members/MemberDirectory.test.tsx. Does the file exist?
+ ❯ loadAndTransform ../../../../../Loan%20Management%20System%20Development/.ralph/worktrees/2026-07-07_212619_normal_run/sfpcl-lms/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51969:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  21:34:51
+   Duration  543ms (transform 50ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 40ms)
+

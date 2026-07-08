@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/003J-background-job-scheduling-foundation.md
+ M docs/slices/003K-prototype-visual-gap-report-update.md
+ M docs/slices/003L-data-import-and-migration-planning.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-003-audit-documents-config.md
+ M sfpcl_credit/config/settings.py
+?? .ralph/runs/2026-07-07_161444_normal_run/
+?? sfpcl_credit/scheduler/
+?? sfpcl_credit/tests/test_scheduler_services.py

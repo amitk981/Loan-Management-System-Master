@@ -1,7 +1,10 @@
 import uuid
+from unittest import mock
 
 from django.test import Client, TestCase
+from django.utils import timezone
 
+from sfpcl_credit.communications import services
 from sfpcl_credit.communications.models import ContentTemplate, Notification
 from sfpcl_credit.identity.models import (
     AuditLog,
@@ -227,6 +230,58 @@ class NotificationApiTests(TestCase):
         self.assertEqual(audit.old_value_json["read"], False)
         self.assertEqual(audit.new_value_json["read"], True)
 
+    def test_mark_read_same_version_retry_after_persisted_success_is_rejected(self):
+        notification = self._create_notification()
+        attempted_version = notification.read_state_version
+        already_read_at = timezone.now()
+        Notification.objects.filter(notification_id=notification.notification_id).update(
+            read_at=already_read_at,
+            read_by_user=self.user,
+            read_state_version=attempted_version + 1,
+        )
+        AuditLog.objects.create(
+            actor_user=self.user,
+            actor_type="user",
+            action="communications.notification.marked_read",
+            entity_type="notification",
+            entity_id=notification.notification_id,
+            old_value_json={
+                "read": False,
+                "read_at": None,
+                "read_by_user_id": None,
+                "read_state_version": attempted_version,
+            },
+            new_value_json={
+                "read": True,
+                "read_at": already_read_at.isoformat(),
+                "read_by_user_id": str(self.user.user_id),
+                "read_state_version": attempted_version + 1,
+            },
+        )
+
+        with mock.patch.object(
+            services,
+            "_notification_queryset_for_user",
+            return_value=_StaleNotificationQuerySet(notification),
+        ):
+            response = self.client.post(
+                f"{NOTIFICATIONS_URL}{notification.notification_id}/mark-read/",
+                data={"read_state_version": attempted_version},
+                content_type="application/json",
+                headers=self._auth_headers(),
+            )
+
+        self.assertEqual(response.status_code, 409)
+        assert_error_envelope(self, response.json(), "STALE_WRITE")
+        notification.refresh_from_db()
+        self.assertEqual(notification.read_state_version, attempted_version + 1)
+        self.assertEqual(notification.read_at, already_read_at)
+        self.assertEqual(notification.read_by_user, self.user)
+        marked_read_audits = AuditLog.objects.filter(
+            action="communications.notification.marked_read"
+        )
+        self.assertEqual(marked_read_audits.count(), 1)
+
     def test_list_rejects_unknown_query_parameters_and_filters_by_read_status(self):
         read = self._create_notification(title="Read notice", read_by_user=self.user)
         read.read_at = "2026-07-06T10:00:00Z"
@@ -276,3 +331,11 @@ class NotificationApiTests(TestCase):
             AuditLog.objects.filter(action="communications.notification.marked_read").count(),
             0,
         )
+
+
+class _StaleNotificationQuerySet:
+    def __init__(self, row):
+        self.row = row
+
+    def get(self, **kwargs):
+        return self.row

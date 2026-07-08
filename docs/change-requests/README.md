@@ -2,6 +2,14 @@
 
 Once all product slices are complete, this is the ONLY way changes enter the codebase. Bugs and feature requests written in chat are never implemented directly — they must become a validated change request first. If a request does not follow the template, **nothing in the code changes**.
 
+## Before you file — three quick checks
+
+1. **Bug or intended?** If unsure, ask the agent in chat first — it checks the behaviour against `docs/source/` and `docs/working/ASSUMPTIONS.md`. If it turns out intended but you want it different, file it as `ui-change`/`feature` instead of a bug. Costs a minute, prevents a wasted slice.
+2. **Is the *data* wrong rather than the software?** A misspelled member name is not a change request — fix it through the admin screens. If no screen can edit that field, the *missing screen* is the change request. Full path: `docs/working/MAINTENANCE_STAGE_PLAN.md` §4.1.
+3. **Is it the automation itself misbehaving (loop, gates, scripts)?** Not a change request — the CR pipeline is for the product. Raise workflow problems in an owner chat session instead.
+
+Can't reproduce a bug reliably? File it anyway with whatever you know — the run may legitimately deliver added logging as its first outcome, with the real fix as a follow-up CR once the logs catch it.
+
 ## How to file a request (owner)
 
 1. Copy the right template: `TEMPLATE-bug.md` for anything broken (frontend, backend, or cross-stack), or `TEMPLATE-feature.md` for new functionality (`feature`) and for changes to the approved design itself (`ui-change` — labels, colours, layout; requires the phrase "owner approved" in the Source Document Reference, because you are amending your own approved design).
@@ -17,6 +25,23 @@ Once all product slices are complete, this is the ONLY way changes enter the cod
 ## The impact-analysis gate (why cross-stack bugs are safe)
 
 Before a CR run may change any code, it must write `impact-analysis.md` in its run folder, covering: which backend models/endpoints and frontend screens are affected, which OTHER modules consume those pieces (the blast radius), which existing tests cover them, and which regression tests will be added in each affected module. **Validation fails the run if this file is missing** — so a frontend bug with backend consequences (or the reverse) always gets its full impact mapped before the first line of code changes.
+
+## When a change is bigger than one slice (epics)
+
+Most change requests fit in a single `CR-NNN` slice and need nothing beyond the flow above. But occasionally a request describes a whole new capability that cannot be done in one narrow run. For that case this folder carries two extra templates:
+
+- `TEMPLATE-slice.md` — the standard format for a full implementation slice (mirrors the real files in `docs/slices/`).
+- `TEMPLATE-epic.md` — the standard format for a parent epic (mirrors the real files in `docs/epics/`).
+
+The flow stays honest and auditable:
+
+1. File the change request normally (feature template) and run intake — the audit record in `accepted/` and the `CR-NNN` slice are still created.
+2. If the accepted request is clearly too big for one run, the owner (with agent help in chat — allowed and encouraged) breaks it down: create one epic from `TEMPLATE-epic.md` in `docs/epics/`, and its child slices from `TEMPLATE-slice.md` in `docs/slices/`, each pointing back to the accepted change request under `## Origin`.
+3. Register every new slice as a row in `docs/working/IMPLEMENTATION_SLICE_INDEX.md`.
+4. Edit the superseded `CR-NNN` slice's `## Status` from `Not Started` to `Superseded — see Epic <NNN>` so the loop skips it but the trail remains.
+5. Run the loop as usual — it picks up the new slices by filename order, with all normal gates.
+
+Two rules the templates already encode, worth repeating: the `## Status` and `## Risk Level` section names are parsed by the run scripts and must not be renamed, and the loop only runs slices whose Status is exactly `Not Started`.
 
 ## Stage rule
 

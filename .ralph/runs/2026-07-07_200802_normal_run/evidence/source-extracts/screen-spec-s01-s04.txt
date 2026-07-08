@@ -1,0 +1,255 @@
+## S01 — Role-Based Dashboard
+
+### Purpose
+
+Provide a single landing page showing the current workload, stage distribution, risks, exceptions, approvals and compliance alerts for the logged-in user.
+
+### Core Components
+
+1. Welcome header.
+2. Role-specific task cards.
+3. Lifecycle funnel.
+4. Overdue and TAT alerts.
+5. Approval queue.
+6. Documentation blockers.
+7. Disbursement blockers.
+8. Portfolio monitoring summary.
+9. Compliance alerts.
+10. Recent activity.
+
+### Common Dashboard Metrics
+
+| Metric | Description |
+|---|---|
+| New applications received | Count of submitted applications pending completeness check. |
+| Applications incomplete | Count of applications returned for deficiencies. |
+| Appraisals pending | Count requiring Loan Appraisal Note preparation or review. |
+| Sanctions pending | Count waiting for Sanction Committee decision. |
+| Documentation pending | Count approved but not documentation-complete. |
+| SAP setup pending | Count waiting for SAP customer code request or confirmation. |
+| Disbursement pending | Count documentation-complete but not yet paid. |
+| Active loans | Count of disbursed loans not closed. |
+| Overdue loans | Count with missed scheduled repayment. |
+| Loans in grace period | Count within three-month extension after missed repayment. |
+| Loans in extension | Count granted one-year non-intentional default extension. |
+| Closure pending | Count fully repaid but NOC / security return pending. |
+
+### Role-Specific Cards
+
+#### Credit Manager Dashboard
+
+- Applications awaiting review.
+- Appraisals nearing 2-day TAT breach.
+- Ineligible applications requiring rejection note.
+- Loans exceeding eligible limits.
+- Quarterly DPD status.
+- Reminder calls / SMS due.
+- Re-KYC due cases.
+
+#### Company Secretary Dashboard
+
+- Documentation files pending preparation.
+- Stamp duty pending.
+- PoA notarisation pending.
+- SH-4 custody pending.
+- CDSL pledge pending.
+- NOC pending.
+- Security return pending.
+- Compliance review alerts.
+
+#### Sanction Committee Dashboard
+
+- Cases awaiting approval.
+- Cases above ₹5 lakh requiring CFO + two Directors.
+- Cases exceeding permissible loan limit.
+- Director / relative borrower cases.
+- Rejected cases pending communication.
+
+#### Senior Manager - Finance Dashboard
+
+- SAP code requests pending.
+- SAP confirmation pending.
+- Disbursement readiness review pending.
+- Payment initiation pending.
+- Failed bank transfers.
+
+#### Chief Financial Controller Dashboard
+
+- Bank transfers awaiting authorisation.
+- High-value payments.
+- Returned payment requests.
+
+#### CFO Dashboard
+
+- Portfolio outstanding.
+- Loans by DPD bucket.
+- Exceptions by type.
+- Section 186 utilisation.
+- NBFC principal business test ratios.
+- Quarterly MIS readiness.
+- Loans above ₹5 lakh.
+- Recovery action approvals.
+
+### Actions
+
+- Open task.
+- Filter dashboard by date range, role, status and loan amount.
+- Export dashboard summary.
+- Open exception list.
+- Open overdue list.
+
+### Empty States
+
+- “No pending tasks for your role.”
+- “No compliance alerts.”
+- “No overdue loans in the selected period.”
+
+---
+
+## S02 — Global Search Results
+
+### Purpose
+
+Allow authorised users to find members, applications, loan accounts, documents and registers quickly.
+
+### Search Inputs
+
+Search should support:
+
+- Borrower name.
+- FPC name.
+- Application reference number.
+- Loan account number.
+- Folio number.
+- Number of shares.
+- PAN.
+- Aadhaar last four digits.
+- Mobile number.
+- Email.
+- SAP Customer Code.
+- Cheque number.
+- CDSL Pledge Sequence Number.
+- SH-4 reference.
+- Bank account last four digits.
+
+### Result Grouping
+
+Results should be grouped by:
+
+1. Members.
+2. Loan Applications.
+3. Loan Accounts.
+4. Documents.
+5. Repayments.
+6. Compliance records.
+7. Audit logs, for authorised users.
+
+### Result Card Fields
+
+| Field | Description |
+|---|---|
+| Title | Borrower name / application / loan account |
+| Identifier | Application number, folio number, SAP code |
+| Status | Current stage and risk status |
+| Amount | Requested / sanctioned / outstanding amount if applicable |
+| Owner | Current workflow owner |
+| Last updated | Date and user |
+| Quick action | Open, view documents, view loan account |
+
+### Permissions
+
+Search results must be permission-filtered. A user should not see records outside their authorised role scope.
+
+---
+
+## S03 — Task Inbox
+
+### Purpose
+
+Provide each user with a list of actionable items assigned to them or their role.
+
+### Columns
+
+| Column | Description |
+|---|---|
+| Task ID | System-generated task reference |
+| Task type | Completeness check, appraisal, sanction, document verification, SAP setup, disbursement, repayment posting, default review |
+| Application / Loan ID | Linked record |
+| Borrower | Borrower name |
+| Amount | Requested / sanctioned / outstanding amount |
+| Priority | Normal, High, Critical |
+| SLA / TAT | Remaining time or overdue days |
+| Current status | Stage state |
+| Assigned to | User / role |
+| Created date | Task creation date |
+| Due date | System calculated |
+| Action | Open task |
+
+### Filters
+
+- Task type.
+- Due today.
+- Overdue.
+- Borrower type.
+- Amount threshold.
+- Special case.
+- Exception required.
+- Assigned to me.
+- Assigned to my team.
+
+### Actions
+
+- Open.
+- Reassign, where permitted.
+- Add comment.
+- Mark blocked.
+- Export.
+
+---
+
+## S04 — Notifications and Alerts Center
+
+### Purpose
+
+Centralise system alerts, borrower communications, internal notifications and compliance reminders.
+
+### Notification Categories
+
+| Category | Examples |
+|---|---|
+| Application | Application submitted, incomplete, reference generated |
+| Appraisal | TAT breach warning, appraisal submitted |
+| Sanction | Approval pending, approved, rejected |
+| Documentation | Signature pending, stamp pending, mismatch found |
+| Disbursement | SAP pending, payment initiated, disbursed |
+| Repayment | Repayment received, interest invoice generated |
+| Monitoring | Overdue, DPD bucket change, reminder due |
+| Default | Grace period started, extension note due, recovery approval required |
+| Compliance | Section 186 threshold, NBFC test warning, re-KYC due |
+
+### Fields
+
+- Notification title.
+- Linked record.
+- Severity.
+- Timestamp.
+- Sender / system.
+- Recipient.
+- Read / unread.
+- Action button.
+
+### Actions
+
+- Mark as read.
+- Open linked record.
+- Snooze reminder.
+- Dismiss, where permitted.
+
+---
+
+## S05 — Member Directory
+
+### Purpose
+
+Provide a searchable list of SFPCL members who may be eligible borrowers.
+

@@ -354,22 +354,33 @@ def send_communication(user, request, payload):
 
 
 def mark_notification_read(user, request, notification_id, payload):
-    row = _notification_queryset_for_user(user).get(notification_id=notification_id)
     expected_version = _clean_read_state_version(payload)
-    if expected_version != row.read_state_version:
-        raise StaleWriteError()
-    old_value = {
-        "read": row.read,
-        "read_at": row.read_at.isoformat() if row.read_at else None,
-        "read_by_user_id": str(row.read_by_user_id) if row.read_by_user_id else None,
-        "read_state_version": row.read_state_version,
-    }
-    if not row.read:
-        row.read_at = timezone.now()
-        row.read_by_user = user
-        row.read_state_version += 1
-        with transaction.atomic():
-            row.save(update_fields=["read_at", "read_by_user", "read_state_version", "updated_at"])
+    with transaction.atomic():
+        row = (
+            _locked_notification_queryset_for_user(user)
+            .select_related("sender_user", "recipient_user", "communication")
+            .get(notification_id=notification_id)
+        )
+        if expected_version != row.read_state_version:
+            raise StaleWriteError()
+        old_value = {
+            "read": row.read,
+            "read_at": row.read_at.isoformat() if row.read_at else None,
+            "read_by_user_id": str(row.read_by_user_id) if row.read_by_user_id else None,
+            "read_state_version": row.read_state_version,
+        }
+        if not row.read:
+            row.read_at = timezone.now()
+            row.read_by_user = user
+            row.read_state_version += 1
+            row.save(
+                update_fields=[
+                    "read_at",
+                    "read_by_user",
+                    "read_state_version",
+                    "updated_at",
+                ]
+            )
             _record_notification_marked_read_audit(
                 user=user,
                 request=request,
@@ -556,11 +567,21 @@ def _record_notification_marked_read_audit(*, user, request, row, old_value, new
 
 
 def _notification_queryset_for_user(user):
+    return _base_notification_queryset_for_user(user).order_by(
+        "-created_at", "-notification_id"
+    )
+
+
+def _locked_notification_queryset_for_user(user):
+    return _base_notification_queryset_for_user(user).select_for_update()
+
+
+def _base_notification_queryset_for_user(user):
     return Notification.objects.filter(
         Q(recipient_user=user)
         | Q(recipient_role_code__in=user.role_codes())
         | Q(recipient_team_code__in=user.team_codes())
-    ).order_by("-created_at", "-notification_id")
+    )
 
 
 def _serialized_notification_recipient(row):

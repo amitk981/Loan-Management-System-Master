@@ -1,0 +1,20 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/004B-member-profile-api-and-ui.md
+ M docs/slices/004C-individual-farmer-and-fpc-profile-details.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/PROTOTYPE_GAP_REPORT.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M docs/working/digests/epic-004-member-kyc-master.md
+ M sfpcl-lms/src/pages/members/MemberProfile.tsx
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/members/models.py
+ M sfpcl_credit/members/services.py
+ M sfpcl_credit/members/views.py
+?? .ralph/runs/2026-07-08_094146_repair/
+?? sfpcl-lms/src/pages/members/MemberProfile.test.tsx
+?? sfpcl-lms/src/services/memberProfileApi.ts
+?? sfpcl_credit/members/migrations/0002_profile_shells.py
+?? sfpcl_credit/tests/test_member_profile_api.py
