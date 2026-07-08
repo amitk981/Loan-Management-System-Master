@@ -172,7 +172,8 @@ one missing view: which promotion shipped which CRs, one line each.
 ## 10. Open decisions the owner still needs to make
 
 1. **Backup mechanism and location** for the production database (§2) — the only
-   operational gap with no owning document.
+   operational gap with no owning document. Includes the promotion rule in §11.D2:
+   back up before promoting any release that contains a migration.
 2. **Release tagging** — adopt the `v1.x` tag + RELEASE_LOG proposal, or skip it and
    rely on PR history alone.
 3. **Support window** — whether "Critical" bugs get an out-of-order emergency lane
@@ -180,3 +181,84 @@ one missing view: which promotion shipped which CRs, one line each.
    policy, or stay owner-judgment per case.
 4. **Cadence tuning** — accept the §8 defaults or adjust after the first month of
    real maintenance.
+5. **Run-artifact archiving** (§11.B6): `.ralph/runs/` is 142 MB / 121 folders after
+   one week of development; unbounded over years. Proposed: once a quarter, zip runs
+   older than 6 months into `.ralph/archive/` (evidence stays retrievable, repo stays
+   light).
+6. **Production error visibility** (§11.D4): decide how you LEARN about production
+   errors — weekly log check as a calendar habit, or a future CR slice adding simple
+   error alerting. Until decided, users reporting problems is the only signal.
+7. **Fresh-machine bootstrap** (§11.F2): a one-page checklist for rebuilding the
+   operator machine (clone, node via nvm arm64, `.ralph/venv`, `npx playwright
+   install chromium`, git identity, GitHub/Netlify access). Worth writing while the
+   current machine is healthy.
+
+## 11. Appendix — scenario catalogue (what can happen, and what already protects you)
+
+Compiled 2026-07-08 by walking every failure mode against the actual scripts and
+docs. **Bold** = genuine gap, promoted into §10. Everything else is already absorbed
+by the system as built.
+
+### A. Changes and requests
+
+| # | Scenario | What protects you / what happens |
+|---|---|---|
+| A1 | Ordinary bug or feature request | The §4/§5 pipeline — intake, CR slice, impact-analysis gate, full gates, staging, your promotion. |
+| A2 | Critical production bug (money/security/data) | Same pipeline at emergency speed: `--now` intake override, immediate loop, immediate promotion; Netlify/PR revert meanwhile (§10.3 decides if this becomes standing policy). |
+| A3 | Vague or incomplete request | Intake rejects it, lists the missing sections, touches no code. Agent helps you refill; nothing can enter half-specified. |
+| A4 | Request bigger than expected mid-run | Diff limits fail the run before sprawl lands; the CR gets split via the epic/slice templates instead. |
+| A5 | Two requests contradict each other | Intake processes in order; the second CR's impact analysis sees the first's changes. Your batch review (§6) is the human check — read `accepted/` before promoting a batch. |
+| A6 | Request contradicts `docs/source/` | Allowed deliberately: the CR itself becomes the authority ("owner approved"), working docs record the delta, source docs stay untouched as history. |
+| A7 | You change your mind after acceptance | Before the run: edit the CR slice Status to `Superseded — owner withdrew`. After it shipped: file a reversal CR; never hand-edit code. |
+| A8 | External change (SAP, regulation, formats) | Feature CR quoting the external source; `docs/source/integrations.md` and digests record the new reality. |
+
+### B. Automation failures
+
+| # | Scenario | What protects you / what happens |
+|---|---|---|
+| B1 | Run dies mid-flight (crash, closed lid, usage limit) | `ralph-recover.sh` runs automatically at next loop start: salvages artifacts, removes the orphan worktree, requeues the slice. Half-done work is never kept. |
+| B2 | Both agents' usage limits exhausted | Loop switches agents, then stops cleanly. Completed slices are already committed; rerun later. Nothing to fix. |
+| B3 | Same slice fails repeatedly | Loop stops after repeated failures rather than thrashing. Owner action: open a chat session, ask the agent to diagnose (`diagnosing-bugs`) using the salvaged run artifacts — never bypass gates to force it through. |
+| B4 | Gates break from environment drift (node/OS/tool updates — happened 2026-07: Rosetta terminal ran x86_64 node) | Preflight checks catch the obvious; for the rest, the fix is a chat diagnosis session. Rule: repair the environment, never weaken a gate to get green. |
+| B5 | Stale lock / orphaned worktree | Preflight auto-removes locks whose owning process is dead; recovery cleans worktrees. |
+| B6 | **Run artifacts grow unbounded** | Nothing owns this today — 142 MB in week one. See §10.5. |
+| B7 | Agent CLI update changes behavior (codex/claude adapters) | Two independent adapters mean one broken agent ≠ broken loop (`AGENT_TOOL=claude` or default codex). Treat a broken adapter like B4: diagnose in chat. |
+
+### C. Outside world
+
+| # | Scenario | What protects you / what happens |
+|---|---|---|
+| C1 | GitHub down / push fails | Verified non-fatal (`ralph-run.sh:424`): the run completes, work is committed locally, push retries on the next run or manually. |
+| C2 | CI red on the promotion PR | The rule already exists: never merge red. Staging holds the work; a repair CR fixes it. Production is never exposed. |
+| C3 | Netlify build breaks (their node bump, etc.) | Production keeps serving the last good deploy; you see it on the staging preview first. File a CR. |
+| C4 | Dependency security vulnerability | Monthly dependency review (§8) per DEPENDENCY_POLICY; the fix enters as a CR like everything else. |
+| C5 | Framework major-version EOL (Django/React) | Quarterly re-planning turns it into an upgrade epic via the split flow — the one case where "maintenance" temporarily looks like development again. |
+| C6 | AI pricing/limit changes make the loop expensive | The pipeline is agent-agnostic by design; adapters can point at cheaper models, and the queue waits patiently — slices don't rot. |
+
+### D. Production and data
+
+| # | Scenario | What protects you / what happens |
+|---|---|---|
+| D1 | Bad release reaches production | Two independent one-click rollbacks (PR revert; Netlify publish-previous-deploy), then a CR for the real fix. |
+| D2 | **Code rollback ≠ data rollback** | A reverted release does NOT un-run its database migration. Protections today: non-destructive-migrations rule + makemigrations gate. Missing: backup-before-promotion when a release contains a migration — folded into §10.1. |
+| D3 | Bad data imported at go-live | DATA_IMPORT_MIGRATION_PLAN governs the import; run it against a copy first, verify counts, then production. |
+| D4 | **Production error nobody notices** | No monitoring exists or is planned by any slice. See §10.6. |
+| D5 | Secrets rotation / leaked credential | `deployment-ops.md` + `security-privacy.md` own the design; rotation is an ops action + a config change, never a code hot-fix. |
+
+### E. Quality drift (the slow killers)
+
+| # | Scenario | What protects you / what happens |
+|---|---|---|
+| E1 | Architecture erodes across many small CRs | Architecture-review runs continue automatically every 5 completed slices (the state counter doesn't care that they're CR slices). |
+| E2 | Flaky tests erode trust in gates | Treat a flaky test as a Critical bug in the test suite — CR it. A gate people ignore is worse than no gate. |
+| E3 | Evidence quality drifts (e.g. the 2026-07-07 unstyled-evidence incident) | Runbook now mandates self-contained evidence; your review habit is the backstop — reject evidence you can't actually review. |
+| E4 | Assumptions/risk register go stale | Quarterly cleanup (§8) prunes ASSUMPTIONS.md and RISK_REGISTER.md; recurring bug areas in `accepted/` become refactor-slice candidates. |
+
+### F. Owner-side
+
+| # | Scenario | What protects you / what happens |
+|---|---|---|
+| F1 | You're unavailable for weeks | Nothing breaks. The queue, staging, and production all hold position; automation only moves when you run it. |
+| F2 | **Operator machine dies** | Code, docs, baselines: all on GitHub. Local-only: `.ralph/venv`, node setup, Playwright browsers, git identity — rebuildable but undocumented. See §10.7. |
+| F3 | Accidental destructive action (deleted files, bad force-push) | GitHub branch protection on `main`; staging history on the remote; protected-paths validation; worst case is re-cloning. |
+| F4 | Handing the system to a real developer someday | The read-order in AGENTS.md *is* the onboarding: AGENTS.md → this plan → AFK_RUNBOOK → change-requests README. A developer inherits a fully documented, gate-enforced pipeline — not tribal knowledge. |
