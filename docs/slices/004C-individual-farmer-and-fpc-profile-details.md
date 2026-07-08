@@ -28,30 +28,24 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - sfpcl-lms/src/data/mockData.ts
 
 ## Screens Involved
-Member Profile type-specific profile sections only, if 004B leaves them as empty shells.
+Member Profile type-specific profile sections beyond the 004B masked profile shell.
 
 ## Frontend Scope
-If 004B already renders Member Profile from the backend, wire only the type-specific profile fields
-added by this slice into the existing profile layout. Reuse existing cards/tabs/badges/empty states;
-do not add new styling or restore `mockData` rows. If no UI change is needed because 004B already
-renders a generic profile shell, update frontend tests only to prove individual/FPC fields do not
-fall back to mock fixtures.
+004B already renders Member Profile from the backend. Wire only the additional type-specific fields
+added by this slice into that existing profile layout. Reuse existing cards/tabs/badges/empty states;
+do not add new styling or restore `mockData` rows.
 
 ## Backend/API Scope
-Implement explicit member-type profile detail storage and serialization for:
-- `individual_member_profiles` where `members.member_type = individual_farmer`.
-- `producer_institution_profiles` where `members.member_type` is `fpc` or `producer_institution`.
-
-Extend the already implemented `GET /api/v1/members/{member_id}/` profile response from 004B with a
-type-specific `profile` object. Do not implement create/update member mutations unless this slice is
-rewritten before the run; if data must be persisted for tests, use migrations/fixtures/factories
-rather than public mutation endpoints.
+Extend the 004B profile shell storage/serialization with the remaining source §10.2/§10.3 fields:
+individual `first_name`, `middle_name`, `last_name`, `gender`, `date_of_birth`, `occupation`, and
+`employment_or_service_years`; producer/FPC authorised-signatory sensitive fields must remain
+masked/deferred unless this slice explicitly implements the §13.5 reveal controls. Do not implement
+create/update member mutations unless this slice is rewritten before the run.
 
 ## Database/Model Impact
-Add non-destructive tables/models only for the source profile shapes from `data-model.md` §10.2 and
-§10.3. Keep one profile row per member (`member_id` FK/UQ). Do not add nominee, witness,
-shareholding, share certificate, demat, KYC document, bank account, land/crop, loan, or
-communication tables in 004C.
+Add non-destructive columns/migration only to the existing 004B profile shell tables. Keep one
+profile row per member (`member_id` FK/UQ). Do not add nominee, witness, shareholding, share
+certificate, demat, KYC document, bank account, land/crop, loan, or communication tables in 004C.
 
 ## API Contracts
 Update `docs/working/API_CONTRACTS.md` for the profile object added to

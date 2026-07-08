@@ -1,5 +1,24 @@
 # Ralph Progress Log
 
+## 2026-07-08 09:41:46 - 2026-07-08_094146_repair
+- Agent tool used: codex
+- Slice attempted: 004B-member-profile-api-and-ui
+- Summary: Repaired the previous 004B failure by keeping the implementation under Ralph's diff
+  limit. Added masked read-only `GET /api/v1/members/{member_id}/` using the existing members
+  module, with profile shell tables, `members.member.read` gating, `404` for unknown/soft-deleted
+  members, masked PAN/Aadhaar objects, registered address, profile shell fields, and
+  `available_actions[]`. Rewired `MemberProfile` to the backend API with no `mockData` fallback and
+  existing empty states for deferred tabs.
+- Tests run: backend profile TDD red/green; frontend profile TDD red/green; backend `manage.py
+  check`; backend tests (198/198); `makemigrations --check --dry-run`; backend coverage 96% (floor
+  85); frontend `npm run typecheck`; `npm run lint`; `npm test` (58/58); `npm run build`; `git diff
+  --check`; diff-limit check (19 files, 1724 lines).
+- Evidence saved: `.ralph/runs/2026-07-08_094146_repair/`, with API examples, terminal logs, and
+  static member-profile visual HTML under `evidence/screenshots/member-profile-html/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `004C-individual-farmer-and-fpc-profile-details`.
+
 ## 2026-07-07 21:26:19 - 2026-07-07_212619_normal_run
 - Agent tool used: codex
 - Slice attempted: 004A-member-directory-api-and-ui
@@ -1205,6 +1224,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_212619_normal_run/.ralph/runs/2026-07-07_212619_normal_run/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-07_212619_normal_run/.ralph/runs/2026-07-07_212619_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-08 10:11:23 - 2026-07-08_094146_repair
+- Agent tool used: codex
+- Slice attempted: 004B-member-profile-api-and-ui
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-08_094146_repair/.ralph/runs/2026-07-08_094146_repair/.
+- Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-08_094146_repair/.ralph/runs/2026-07-08_094146_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

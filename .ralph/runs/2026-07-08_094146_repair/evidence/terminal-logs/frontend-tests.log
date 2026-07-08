@@ -1,0 +1,23 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-08_094146_repair/sfpcl-lms
+
+ ✓ src/services/tracerApi.test.ts (2 tests) 4ms
+ ✓ src/services/authSession.test.ts (12 tests) 8ms
+ ✓ src/services/navigationPermissions.test.ts (7 tests) 9ms
+ ✓ src/pages/notifications/NotificationsCenter.test.tsx (6 tests) 46ms
+ ✓ src/pages/members/MemberDirectory.test.tsx (5 tests) 53ms
+ ✓ src/pages/Dashboard.test.tsx (13 tests) 56ms
+ ✓ src/pages/members/MemberProfile.test.tsx (7 tests) 71ms
+ ✓ src/utils/applicationDisplay.test.ts (5 tests) 2ms
+ ✓ src/pages/profile/MyProfile.test.tsx (1 test) 9ms
+
+ Test Files  9 passed (9)
+      Tests  58 passed (58)
+   Start at  10:00:38
+   Duration  789ms (transform 523ms, setup 0ms, collect 1.69s, tests 257ms, environment 1ms, prepare 568ms)
+

@@ -41,7 +41,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | API contract test harness | Implemented in slice 002J | None | `api-contracts.md` §6.1-6.4, §7.1-7.3, §44 | Test-only assertions live in `sfpcl_credit/tests/api_contracts.py`. Future endpoint slices should use them to prove standard success envelopes, error envelopes, top-level list pagination, and target §44 `available_actions` item shapes without importing test utilities from production code. The harness regression tests cover `/auth/me/`, admin users pagination, `401 AUTH_REQUIRED`, revoked-session `401 INVALID_TOKEN`, `403 PERMISSION_DENIED`, partial-admin write denial, and tracer `409 INVALID_STATE_TRANSITION`. A-016 records that current `/auth/me/` still returns flat permission-code strings for `available_actions`; the object shape is asserted against an internal sample for future detail endpoints. |
 | Local demo staff seed | Implemented in slice 002K; corrected in 002K2 | Login, dashboard smoke, admin/tracer permission smoke | `implementation-roadmap.md` §10, §20-22; `technical-architecture.md` §8-12, §17-18; `auth-permissions.md`; `api-contracts.md` §11-12, §43-44 | `python manage.py seed_demo_users` is a guarded local/dev seed path. It refuses unless `SFPCL_DEBUG=true` and `SFPCL_ALLOW_DEMO_SEED=true`, calls `seed_catalogue()`, creates or updates deterministic `demo.*@sfpcl.example` staff users with active primary roles and memberships, and does not alter `e2e.*` users. Demo users authenticate through the real `/auth/login/` and `/auth/me/` endpoints; there is no demo auth bypass. The zero-permission user returns `permissions: []` and `available_actions: []`; the tracer-only user uses the guarded local/dev-only `local_demo_tracer_user` role and returns only `tracer.lifecycle.run`; the shared source-catalogue `sales_team_user` role remains permission-neutral until source documents define grants; system admin preserves canonical action-specific user-admin permissions without broad `manage_users` aliases. |
 | Role/permission/team catalogue | Seeded in slice 002C; exposed for current user in 002D | None directly | `auth-permissions.md` §12-15, §38 | Canonical `Permission`, `Role`, `Team`, `RolePermission` catalogue seeded idempotently via `python manage.py seed_role_catalogue` (`sfpcl_credit/identity/catalogue.py`). `/api/v1/auth/me/` exposes the authenticated user's effective permission codes from this data. |
-| Members and KYC | Member directory list implemented in 004A; profile/KYC mutations remain draft | Member Directory, borrower profile, application intake | `api-contracts.md` §13.1; `data-model.md` §10.1; `auth-permissions.md` §12.2/§25.1 | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. Create/update/detail/KYC/nominee/shareholding/land/crop/borrower-360 behavior remains future scope. |
+| Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; profile mutations/KYC remain draft | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5; `data-model.md` §10.1-§10.3; `auth-permissions.md` §12.2/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. Create/update/KYC/nominee/shareholding/land/crop/borrower-360 behavior and §13.5 sensitive reveal remain future scope. |
 | Loan applications | Draft from source | Applications, completeness | `api-contracts.md` | Needs real draft/submit/check endpoints. |
 | Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
@@ -160,6 +160,23 @@ Rules:
 - Unknown query parameters or unsupported enum values return `400 VALIDATION_ERROR` with `field_errors`.
 - The directory response never includes PAN or Aadhaar fields. `mobile_number` is masked to last four digits.
 - Read-only list access writes no audit/workflow event. Sensitive reveal, exports, profile detail, create/update, nominee, witness, KYC verification, share certificate, demat, land/crop, loan application, and Borrower 360 behavior are explicitly deferred.
+
+## Member Profile Detail API (004B)
+
+`GET /api/v1/members/{member_id}/`
+
+Rules:
+- Requires a session-bound bearer token and `members.member.read`; missing auth returns
+  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and a valid UUID that is
+  unknown or soft-deleted returns `404 NOT_FOUND`.
+- Returns the standard success envelope with member identifiers, status fields, masked mobile,
+  registered address, share and active-member shell fields, `pan`/`aadhaar` as
+  `{ "masked": "...", "can_view_full": false }`, nullable `individual_profile` and
+  `producer_institution_profile` shell objects, and §44-shaped `available_actions[]`.
+- The response never serializes `pan_encrypted`, `aadhaar_encrypted`, `pan_hash`, `aadhaar_hash`, or
+  full source values. §13.5 sensitive reveal is not implemented in 004B.
+- Masked read-only profile access writes no workflow event and no profile-access audit row beyond
+  normal authentication audit.
 
 ## Shared response envelope (002C2)
 

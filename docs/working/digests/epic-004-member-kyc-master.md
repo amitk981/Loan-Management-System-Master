@@ -64,3 +64,14 @@ before implementation.
 - `screen-spec.md` S17 says KYC verification covers borrower, nominee, witness, CKYC consent,
   re-KYC, and risk rating. PAN and Aadhaar are required before appraisal completion, but 004B must
   not invent appraisal blockers or CKYC policy behavior.
+
+## 004B Repair Extracts
+- 004B implements only `GET /api/v1/members/{member_id}/` from `api-contracts.md` §13.3 with
+  masked `pan`/`aadhaar` objects, registered address, nullable type-specific profile shell objects,
+  and `available_actions[]`.
+- §13.5 sensitive reveal remains deferred: no full values, no reveal controls, and
+  `can_view_full: false` in the 004B response.
+- `auth-permissions.md` maps member detail to `members.member.read` plus object access; exact
+  object-scope facts are still unmodeled, so 004B gates by `members.member.read` and records A-030.
+- Future slices should add object-scope enforcement only when source-backed member/team ownership
+  facts exist.

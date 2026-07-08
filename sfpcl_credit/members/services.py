@@ -90,6 +90,44 @@ def serialize_member(member):
     }
 
 
+def get_member_profile(member_id):
+    try:
+        return (
+            Member.objects.select_related("individual_profile", "producer_institution_profile")
+            .filter(is_deleted=False)
+            .get(member_id=member_id)
+        )
+    except Member.DoesNotExist:
+        return None
+
+
+def serialize_member_profile(member, user):
+    return {
+        **serialize_member(member),
+        "membership_start_date": (
+            member.membership_start_date.isoformat()
+            if member.membership_start_date
+            else None
+        ),
+        "pan": {"masked": _mask_last_four(member.pan_encrypted), "can_view_full": False},
+        "aadhaar": {
+            "masked": _mask_last_four(member.aadhaar_encrypted),
+            "can_view_full": False,
+        },
+        "registered_address": {
+            "line1": member.registered_address_line1 or None,
+            "line2": member.registered_address_line2 or None,
+            "village_city": member.registered_village_city or None,
+            "district": member.registered_district or None,
+            "state": member.registered_state or None,
+            "pincode": member.registered_pincode or None,
+        },
+        "individual_profile": _individual_profile(member),
+        "producer_institution_profile": _producer_profile(member),
+        "available_actions": _available_actions(member, user),
+    }
+
+
 def validation_field_errors(exc):
     if hasattr(exc, "message_dict"):
         return {field: messages[0] for field, messages in exc.message_dict.items()}
@@ -145,9 +183,65 @@ def _mask_mobile(value):
     return f"{'*' * max(len(digits) - 4, 0)}{suffix}"
 
 
+def _mask_last_four(value):
+    if not value:
+        return None
+    text = str(value)
+    return f"{'*' * max(len(text) - 4, 0)}{text[-4:]}"
+
+
+def _individual_profile(member):
+    profile = getattr(member, "individual_profile", None)
+    if profile is None:
+        return None
+    acres = profile.land_area_under_cultivation_acres
+    return {
+        "land_area_under_cultivation_acres": f"{acres:.2f}" if acres is not None else None,
+        "primary_crop": profile.primary_crop or None,
+        "services_availed_flag": profile.services_availed_flag,
+    }
+
+
+def _producer_profile(member):
+    profile = getattr(member, "producer_institution_profile", None)
+    if profile is None:
+        return None
+    years = profile.produce_supply_years
+    return {
+        "institution_type": profile.institution_type,
+        "registration_number": profile.registration_number or None,
+        "authorised_signatory_name": profile.authorised_signatory_name,
+        "board_resolution_required_flag": profile.board_resolution_required_flag,
+        "services_availed_flag": profile.services_availed_flag,
+        "produce_supply_years": f"{years:.2f}" if years is not None else None,
+    }
+
+
+def _available_actions(member, user):
+    required_permission = "applications.loan_application.create"
+    permissions = auth_service.effective_permission_codes(user)
+    enabled = (
+        required_permission in permissions
+        and member.membership_status == "active"
+        and member.kyc_status == "verified"
+        and member.default_status == "no_default"
+    )
+    return [
+        {
+            "action_code": "create_loan_application",
+            "label": "Start Application",
+            "enabled": enabled,
+            "disabled_reason": None if enabled else "Member is not currently eligible for this action.",
+            "required_permission": required_permission,
+        }
+    ]
+
+
 __all__ = [
     "MEMBER_READ_PERMISSION",
+    "get_member_profile",
     "paginated_members",
+    "serialize_member_profile",
     "user_can_read_members",
     "validation_field_errors",
 ]

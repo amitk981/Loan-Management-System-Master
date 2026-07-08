@@ -72,3 +72,44 @@ class Member(models.Model):
 
     def __str__(self):
         return self.member_number or str(self.member_id)
+
+
+class IndividualMemberProfile(models.Model):
+    individual_member_profile_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    member = models.OneToOneField(
+        Member, on_delete=models.CASCADE, related_name="individual_profile"
+    )
+    land_area_under_cultivation_acres = models.DecimalField(
+        max_digits=12, decimal_places=2, blank=True, null=True
+    )
+    primary_crop = models.CharField(max_length=100, blank=True)
+    services_availed_flag = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = "individual_member_profiles"
+
+
+class ProducerInstitutionProfile(models.Model):
+    producer_institution_profile_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    member = models.OneToOneField(
+        Member, on_delete=models.CASCADE, related_name="producer_institution_profile"
+    )
+    institution_type = models.CharField(max_length=80)
+    registration_number = models.CharField(max_length=120, blank=True, db_index=True)
+    authorised_signatory_name = models.CharField(max_length=200)
+    board_resolution_required_flag = models.BooleanField(default=False)
+    services_availed_flag = models.BooleanField(default=False)
+    produce_supply_years = models.DecimalField(
+        max_digits=5, decimal_places=2, blank=True, null=True
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = "producer_institution_profiles"
