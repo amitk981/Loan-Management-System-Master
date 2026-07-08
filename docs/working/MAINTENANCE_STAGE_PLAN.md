@@ -184,7 +184,7 @@ owner-side operator reviews their content.
 | Cadence | Action | Owner effort |
 |---|---|---|
 | Per CR batch | Loop run + evidence review + promotion PR | ~15 min |
-| Every 5 completed CR slices | `architecture_review` run continues exactly as in development (the existing counter in `.ralph/state.json` does this automatically) | skim findings |
+| Every 4 completed CR slices (config: `architecture_review_every_completed_slices`) | `architecture_review` run continues exactly as in development (the existing counter in `.ralph/state.json` does this automatically) | skim findings |
 | Monthly | Operator E2E full pass; refresh baselines if the UI legitimately changed | ~10 min |
 | Monthly | Dependency review per `docs/working/DEPENDENCY_POLICY.md` — security updates enter as change requests like everything else | file CRs |
 | Monthly | Verify the production DB backup ran and one restore drill succeeds (once §2 decides the mechanism) | ~10 min |
@@ -283,7 +283,7 @@ by the system as built.
 
 | # | Scenario | What protects you / what happens |
 |---|---|---|
-| E1 | Architecture erodes across many small CRs | Architecture-review runs continue automatically every 5 completed slices (the state counter doesn't care that they're CR slices). |
+| E1 | Architecture erodes across many small CRs | Architecture-review runs continue automatically every 4 completed slices (the state counter doesn't care that they're CR slices). |
 | E2 | Flaky tests erode trust in gates | Treat a flaky test as a Critical bug in the test suite — CR it. A gate people ignore is worse than no gate. |
 | E3 | Evidence quality drifts (e.g. the 2026-07-07 unstyled-evidence incident) | Runbook now mandates self-contained evidence; your review habit is the backstop — reject evidence you can't actually review. |
 | E4 | Assumptions/risk register go stale | Quarterly cleanup (§8) prunes ASSUMPTIONS.md and RISK_REGISTER.md; recurring bug areas in `accepted/` become refactor-slice candidates. |
