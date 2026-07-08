@@ -65,17 +65,49 @@ judges; the owner judges "is this change what I wanted?" from the evidence.
 | UI-only change to the approved design — labels, colours, layout, or new frontend-only behaviour with no backend | `TEMPLATE-feature.md` | `ui-change` (+ "owner approved" in Source Document Reference) | CR slice → loop; impact analysis proves backend untouched |
 | Change too big for one run (new module/capability) | `TEMPLATE-feature.md` first, then split | `feature` | CR accepted → owner+agent author epic + child slices from `TEMPLATE-epic.md` / `TEMPLATE-slice.md`, register in the slice index, mark the CR slice `Superseded — see Epic <NNN>` |
 | External change (SAP interface, regulation, new document format) | `TEMPLATE-feature.md`, quoting the external source | `feature` | CR slice; agent updates `docs/working/` digests, **never** `docs/source/` |
+| The *data* is wrong (misspelled name, wrongly entered amount) — the software behaves correctly | — no template — | — | Not a change request at all — see §4.1 |
 
 Notes:
 - "I don't know which type" is fine — pick `bug-cross-stack` or ask the agent in chat
   to classify it; helping fill the template is explicitly allowed.
+- **Step 0 for anything puzzling:** before filing, ask the agent in chat "bug or
+  intended?" — it checks the behaviour against `docs/source/` and
+  `docs/working/ASSUMPTIONS.md`. "Intended, but I want it different" simply becomes a
+  `ui-change`/`feature` CR instead of a bug. This filters junk CRs for free.
+- **Unreproducible bugs are still filed** — write what you know. A CR run that cannot
+  reproduce the bug may legitimately deliver instrumentation/logging as its outcome;
+  the real fix follows as a second CR once the logs catch it in the act.
+- **Automation problems are not change requests.** The CR pipeline is for the product.
+  If the loop, gates, or scripts misbehave, that is an owner chat session (diagnose,
+  fix, commit — like the 2026-07 workflow repairs), never an inbox file.
 - `docs/source/` stays read-only forever. If the real-world rules change, the change
   request itself becomes the authority ("owner approved"), and working docs record it.
+
+### 4.1 Data corrections — wrong data, not wrong code
+
+When a record is wrong but the software behaves correctly, no code changes and no
+change request is filed:
+
+1. **Preferred:** fix it through the app's admin/edit screens — the correction is then
+   permission-gated and audit-logged like any other user action.
+2. **If no screen can edit that field, THAT is the change request:** file a feature CR
+   for the missing admin capability, then do step 1 once it ships.
+3. **Direct database edits are a last resort**, only for corrections that cannot wait
+   for step 2: take a fresh backup first, make the single correction, and record
+   what/why/when (in the audit log if possible, otherwise a dated note in
+   `docs/working/HANDOFF.md` until §10.1 fixes the backup routine). Never batch-edit
+   production data by hand.
 
 ## 5. The pipeline (one picture)
 
 ```
  owner notices something (bug / idea / feedback / error)
+        │
+        ▼
+ step 0 — chat pre-check: "bug or intended?"
+   (agent checks docs/source/ + ASSUMPTIONS.md;
+    data wrong, not code → §4.1, no CR;
+    automation misbehaving → chat session, no CR)
         │
         ▼
  chat with agent: describe in plain words ──▶ agent drafts the template file
@@ -211,6 +243,8 @@ by the system as built.
 | A6 | Request contradicts `docs/source/` | Allowed deliberately: the CR itself becomes the authority ("owner approved"), working docs record the delta, source docs stay untouched as history. |
 | A7 | You change your mind after acceptance | Before the run: edit the CR slice Status to `Superseded — owner withdrew`. After it shipped: file a reversal CR; never hand-edit code. |
 | A8 | External change (SAP, regulation, formats) | Feature CR quoting the external source; `docs/source/integrations.md` and digests record the new reality. |
+| A9 | Wrong data, correct code (typo in a record) | §4.1 path: admin screens first; missing screen = the CR; backed-up single correction as last resort. |
+| A10 | "Is this a bug or intended?" | Step 0 chat pre-check against source docs before any template is filed. |
 
 ### B. Automation failures
 

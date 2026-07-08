@@ -2,6 +2,14 @@
 
 Once all product slices are complete, this is the ONLY way changes enter the codebase. Bugs and feature requests written in chat are never implemented directly — they must become a validated change request first. If a request does not follow the template, **nothing in the code changes**.
 
+## Before you file — three quick checks
+
+1. **Bug or intended?** If unsure, ask the agent in chat first — it checks the behaviour against `docs/source/` and `docs/working/ASSUMPTIONS.md`. If it turns out intended but you want it different, file it as `ui-change`/`feature` instead of a bug. Costs a minute, prevents a wasted slice.
+2. **Is the *data* wrong rather than the software?** A misspelled member name is not a change request — fix it through the admin screens. If no screen can edit that field, the *missing screen* is the change request. Full path: `docs/working/MAINTENANCE_STAGE_PLAN.md` §4.1.
+3. **Is it the automation itself misbehaving (loop, gates, scripts)?** Not a change request — the CR pipeline is for the product. Raise workflow problems in an owner chat session instead.
+
+Can't reproduce a bug reliably? File it anyway with whatever you know — the run may legitimately deliver added logging as its first outcome, with the real fix as a follow-up CR once the logs catch it.
+
 ## How to file a request (owner)
 
 1. Copy the right template: `TEMPLATE-bug.md` for anything broken (frontend, backend, or cross-stack), or `TEMPLATE-feature.md` for new functionality (`feature`) and for changes to the approved design itself (`ui-change` — labels, colours, layout; requires the phrase "owner approved" in the Source Document Reference, because you are amending your own approved design).
