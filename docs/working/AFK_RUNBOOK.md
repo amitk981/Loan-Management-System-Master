@@ -64,3 +64,4 @@ A run can die mid-flight (usage-limit exhaustion, crash, closed terminal) under 
 
 ## Evidence and Review
 Every run folder should contain prompt, plan, changed files, validation outputs, risk assessment, review packet, and final summary. Frontend/API/database slices require matching evidence.
+Evidence artifacts must be self-contained and reviewable after the run ends: the run's worktree is deleted on completion, so evidence files must never reference worktree paths, `dist/` build outputs, or anything outside the run folder. Inline built CSS/assets directly into evidence HTML (or copy them into the evidence folder and link relatively). A run that produced evidence 2026-07-07 (004A) linked its stylesheet from the worktree via absolute `file://` path; the pages rendered unstyled by the time the owner reviewed them.
