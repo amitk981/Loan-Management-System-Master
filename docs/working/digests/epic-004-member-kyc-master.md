@@ -337,3 +337,14 @@ before implementation.
 - Later application, loan-account, repayment, communication, risk/exception, and audit API wiring
   remains deferred. Borrower 360 shows explicit empty states for those modules instead of reusing
   prototype mock data.
+
+## 004K2 Architecture-Review Extract
+- Architecture review 2026-07-09 found a frontend/backend DTO mismatch in the Borrower 360 bank
+  metadata path: the 004J backend/API contract serializes bank-account holder names as
+  `account_holder_name`, but the 004K frontend type, normalizer, and tests use `holder_name`.
+- Corrective slice 004K2 should preserve the backend field name, update the frontend API type and
+  normalizer to consume `account_holder_name`, render that value on Borrower 360, and add a
+  regression using the real backend response shape.
+- Bank account numbers must remain masked-only with `can_view_full: false`; 004K2 must not add a
+  bank-account reveal flow, duplicate-active-borrower warning, signature-mismatch workflow,
+  payment initiation, or disbursement-readiness UI.

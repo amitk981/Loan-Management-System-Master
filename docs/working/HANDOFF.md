@@ -1,26 +1,21 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-09_160945_normal_run
+2026-07-09_163909_architecture_review
 
 ## Current Status
-`004K-borrower-360-kyc-panel-and-masking-ui-wiring` completed successfully.
+Architecture review completed successfully after `004K-borrower-360-kyc-panel-and-masking-ui-wiring`.
 
 ## What Completed
-- Replaced `Borrower360` mock-data usage with API-backed composition over existing Epic 004 member
-  endpoints: member detail, shareholdings, land holdings, crop plans, nominees, KYC profile/document
-  metadata, bank accounts, and cancelled cheques.
-- Added frontend client methods for:
-  `GET /api/v1/members/{member_id}/bank-accounts/` and
-  `GET /api/v1/members/{member_id}/cancelled-cheques/`.
-- Borrower 360 now keeps PAN/Aadhaar masked by default and uses the 004I reveal endpoint with
-  reason capture only when the backend marks the field revealable. Full values remain temporary
-  component state with backend expiry messaging and a hide control.
-- Bank-account and cancelled-cheque account numbers render as masked/last-four metadata only, with
-  `can_view_full: false` normalization and no bank reveal control.
-- Application, loan-account, repayment, communication, risk/exception, and audit sections now show
-  explicit source-backed empty states instead of prototype mock rows.
-- Updated prototype inventory/gap report, Epic 004 digest, and sharpened 005A/005B.
+- Reviewed the four product slices merged since architecture review commit `fef0026`:
+  `004H2`, `004I`, `004J`, and `004K`.
+- Appended findings to `docs/working/REVIEW_FINDINGS.md`.
+- Found one Medium issue: Borrower 360 consumes frontend field `holder_name`, but the 004J backend
+  and API contract return bank-account holder names as `account_holder_name`, so real API data can
+  render a blank holder name on the Bank & Security tab.
+- Created corrective slice `004K2-borrower-360-bank-holder-contract-hardening.md`.
+- Made `005A-loan-application-draft-create-update` depend on `004K2`.
+- Updated the Epic 004 digest and API contract notes with the corrective DTO boundary.
 
 ## Explicit Deferrals
 - Loan application persistence, submit/reference generation, completeness, deficiencies, eligibility,
@@ -31,17 +26,19 @@
 - Witness validation remains blocked until loan-application boundaries exist.
 
 ## Evidence
-See `.ralph/runs/2026-07-09_160945_normal_run/`.
+See `.ralph/runs/2026-07-09_163909_architecture_review/`.
 
 Review artifacts: `execution-plan.md`, `review-packet.md`, `risk-assessment.md`,
-`changed-files.txt`, `final-summary.md`, and self-contained visual HTML evidence.
+`changed-files.txt`, `final-summary.md`, and review-window diff evidence.
 
 Gate logs are under `evidence/terminal-logs/`.
 
 ## Notes For Next Run
-- Architecture review cadence is now due after 004K (`slices_completed_since_architecture_review`
-  is 4).
-- After architecture review, run `005A-loan-application-draft-create-update`.
-- 005A/005B have been sharpened to start draft application persistence and submit transition without
+- Run `004K2-borrower-360-bank-holder-contract-hardening` next.
+- `004K2` should add a failing-first frontend regression using the backend `account_holder_name`
+  response shape, update the frontend type/normalizer/rendering, and keep bank account numbers
+  masked-only with no reveal affordance.
+- After `004K2`, run `005A-loan-application-draft-create-update`.
+- 005A/005B remain sharpened to start draft application persistence and submit transition without
   inventing duplicate-bank, eligibility, payment, disbursement, reference-number, or completeness
   rules outside their owning slices.

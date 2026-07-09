@@ -2,6 +2,68 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-09 16:39 - Architecture Review 2026-07-09_163909_architecture_review
+
+Reviewed completed product slices since the prior architecture review commit `fef0026`:
+- `004H2-kyc-profile-duplicate-create-contract-hardening` (`1544e88`)
+- `004I-sensitive-masking-and-reveal-audit` (`06d8655`)
+- `004J-bank-account-and-cancelled-cheque-profile-foundation` (`127bf9d`)
+- `004K-borrower-360-kyc-panel-and-masking-ui-wiring` (`9327696`)
+
+This review focused on product diffs, run evidence, the Epic 004 digest, and the working API
+contract. Broad source documents were not re-read because the digest covered the reviewed
+requirements.
+
+### Finding 1 - Medium - Borrower 360 drops the bank-account holder name returned by the API
+
+`004J` serializes member bank-account responses with `account_holder_name`
+(`sfpcl_credit/members/services.py:749-755`), and the working API contract records the same response
+field (`docs/working/API_CONTRACTS.md:255-259`). `004K` then introduced a frontend
+`MemberBankAccountDetail` shape with `holder_name` (`sfpcl-lms/src/services/memberProfileApi.ts:189-191`)
+and normalizes only `item?.holder_name` (`sfpcl-lms/src/services/memberProfileApi.ts:655-658`).
+Borrower 360 renders that normalized field in the Bank & Security card
+(`sfpcl-lms/src/pages/members/Borrower360.tsx:451-456`), so a real 004J backend response will render
+the holder as blank even though the API returned it.
+
+The test missed this because its bank-account fixture uses the frontend-only `holder_name` shape and
+asserts masking/endpoint behavior but not holder-name contract fidelity
+(`sfpcl-lms/src/pages/members/Borrower360.test.tsx:37-70` and `:253-256`). This is user-visible
+data loss on the Epic 004 Borrower 360 screen and a DTO drift between the backend contract and
+frontend client.
+
+Corrective action: created
+`docs/slices/004K2-borrower-360-bank-holder-contract-hardening.md` and made `005A` depend on it.
+The corrective slice must add a failing-first frontend regression using `account_holder_name`,
+update the frontend DTO/normalizer/rendering to consume that canonical field, and keep bank account
+numbers masked-only with no reveal control.
+
+### Finding 2 - Pass - 004H2 closes the prior KYC duplicate-create issue
+
+The corrective `004H2` slice adds a public API regression for duplicate member-party KYC profile
+creates, returns a standard `400 VALIDATION_ERROR` with `field_errors.party_id`, leaves exactly one
+profile and one `kyc.profile.created` audit row, and preserves the 004H read/update/document
+behavior. The red/green evidence demonstrates the test failed against the database constraint shape
+first and passed after the service-level validation was added.
+
+Corrective action: none.
+
+### Finding 3 - Pass - Sensitive reveal and bank metadata keep sensitive values bounded
+
+`004I` keeps member profile reads masked, requires `members.member.read` plus the exact PAN/Aadhaar
+field permission, returns full values only in the immediate no-store reveal response, and writes
+metadata-only success/denial audit rows without workflow events. `004J` stores bank account numbers
+as protected token/hash/last-four values, exposes only `{masked,last4,can_view_full:false}`, tests
+permission separation under A-034, and keeps duplicate-bank, signature-mismatch, disbursement, and
+bank reveal behavior deferred.
+
+Corrective action: none.
+
+Functional-spec spot check: the reviewed Epic 004 work still implements member-master foundations
+and staff UI visibility rather than a complete lending module ID set. Loan application persistence,
+submit/reference generation, completeness, deficiencies, eligibility, appraisal, sanction,
+disbursement, repayment, communication history, risk/exception, and audit timeline data remain
+explicitly deferred to Epic 005 and later slices.
+
 ## 2026-07-09 14:18 - Architecture Review 2026-07-09_141049_architecture_review
 
 Reviewed completed product slices since the prior architecture review commit `7c97efc`:

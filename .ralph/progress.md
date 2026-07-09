@@ -1,5 +1,25 @@
 # Ralph Progress Log
 
+## 2026-07-09 16:58:27 - 2026-07-09_163909_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed `004H2`, `004I`, `004J`, and `004K` since prior architecture review commit
+  `fef0026`. Appended findings to `docs/working/REVIEW_FINDINGS.md`. Found one Medium issue:
+  Borrower 360 normalizes bank-account holder names from `holder_name`, while the 004J backend/API
+  contract returns `account_holder_name`; real API data can therefore render a blank holder name in
+  the Bank & Security tab. Created corrective slice
+  `004K2-borrower-360-bank-holder-contract-hardening`, made `005A` depend on it, and updated the
+  Epic 004 digest/API contract notes.
+- Tests run: backend `manage.py check`; backend tests (238/238); `makemigrations --check
+  --dry-run`; backend coverage 96% (floor 85); frontend `npm run typecheck`; `npm run lint`;
+  `npm test` (80/80); `npm run build`; `git diff --check`; protected-path scan.
+- Evidence saved: `.ralph/runs/2026-07-09_163909_architecture_review/`, with review-window diffs
+  and gate logs under `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Low (review/docs-only), with one Medium corrective issue queued.
+- Next action: Run `004K2-borrower-360-bank-holder-contract-hardening`; after it passes, run
+  `005A-loan-application-draft-create-update`.
+
 ## 2026-07-09 16:09:45 - 2026-07-09_160945_normal_run
 - Agent tool used: codex
 - Slice attempted: 004K-borrower-360-kyc-panel-and-masking-ui-wiring
@@ -1601,6 +1621,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_160945_normal_run/.ralph/runs/2026-07-09_160945_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_160945_normal_run/.ralph/runs/2026-07-09_160945_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 17:03:52 - 2026-07-09_163909_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_163909_architecture_review/.ralph/runs/2026-07-09_163909_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_163909_architecture_review/.ralph/runs/2026-07-09_163909_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

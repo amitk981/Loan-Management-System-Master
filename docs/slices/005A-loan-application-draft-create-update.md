@@ -14,7 +14,7 @@ Deliver this narrow capability as a small, testable Ralph implementation slice.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 004K
+- 004K2
 
 ## Prior Slice Facts
 - Epic 004 now provides member profile foundations needed by intake: member detail, nominees,
@@ -26,6 +26,10 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - 004K closed the staff Borrower 360 UI wiring for Epic 004 member-master facts. Application,
   loan-account, repayment, communication, risk/exception, and audit rows on Borrower 360 are still
   source-backed empty states until Epic 005+ APIs exist.
+- 004K2 must close the Borrower 360 bank-account holder-name DTO mismatch before this slice runs:
+  the 004J backend/contract field is `account_holder_name`, and loan-application draft work must
+  reuse that canonical field name for bank metadata summaries rather than the frontend-only
+  `holder_name` alias.
 - `screen-spec.md` S11 says duplicate draft review should warn on same bank account used in other
   active borrower records, but 004J explicitly deferred that decision because active borrower and
   loan-application records did not exist yet. 005A may store enough draft references for a later
