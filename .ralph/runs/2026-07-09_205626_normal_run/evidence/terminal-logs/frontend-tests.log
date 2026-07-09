@@ -1,0 +1,23 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run
+
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_205626_normal_run/sfpcl-lms
+
+ ✓ src/services/authSession.test.ts (12 tests) 16ms
+ ✓ src/services/navigationPermissions.test.ts (7 tests) 13ms
+ ✓ src/pages/members/MemberDirectory.test.tsx (5 tests) 55ms
+ ✓ src/pages/notifications/NotificationsCenter.test.tsx (6 tests) 56ms
+ ✓ src/pages/Dashboard.test.tsx (13 tests) 51ms
+ ✓ src/pages/members/Borrower360.test.tsx (4 tests) 82ms
+ ✓ src/services/tracerApi.test.ts (2 tests) 9ms
+ ✓ src/pages/members/MemberProfile.test.tsx (25 tests) 243ms
+ ✓ src/utils/applicationDisplay.test.ts (5 tests) 2ms
+ ✓ src/pages/profile/MyProfile.test.tsx (1 test) 10ms
+
+ Test Files  10 passed (10)
+      Tests  80 passed (80)
+   Start at  21:22:38
+   Duration  1.35s (transform 1.14s, setup 0ms, collect 2.80s, tests 537ms, environment 2ms, prepare 1.12s)
+

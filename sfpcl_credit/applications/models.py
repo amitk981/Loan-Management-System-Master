@@ -12,6 +12,7 @@ class LoanApplication(models.Model):
     STAGE_INITIAL = "initial_loan_request"
     STAGE_CREDIT_ASSESSMENT = "credit_assessment"
     COMPLETENESS_NOT_STARTED = "not_started"
+    COMPLETENESS_INCOMPLETE = "incomplete"
     COMPLETENESS_COMPLETE = "complete"
 
     loan_application_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -353,6 +354,79 @@ class ApplicationDocument(models.Model):
             self.VERIFICATION_REJECTED,
         } and (self.verified_by_user_id is None or self.verified_at is None):
             errors["verified_by_user"] = "Verified or rejected documents require verifier facts."
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
+class ApplicationDeficiency(models.Model):
+    TYPE_MISSING_DOCUMENT = "missing_document"
+    TYPE_NOT_VERIFIED = "not_verified"
+    STATUS_OPEN = "open"
+    STATUS_RESOLVED = "resolved"
+    STATUS_REJECTED = "rejected"
+
+    deficiency_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    loan_application = models.ForeignKey(
+        LoanApplication,
+        on_delete=models.PROTECT,
+        related_name="deficiencies",
+    )
+    item_code = models.CharField(max_length=100, db_index=True)
+    deficiency_type = models.CharField(max_length=100, db_index=True)
+    source_reason_code = models.CharField(max_length=80, db_index=True)
+    description = models.TextField()
+    remarks = models.TextField(blank=True)
+    resolution_status = models.CharField(max_length=60, default=STATUS_OPEN, db_index=True)
+    raised_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="raised_application_deficiencies",
+    )
+    raised_at = models.DateTimeField(default=timezone.now, db_index=True)
+    resolved_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="resolved_application_deficiencies",
+    )
+    resolved_at = models.DateTimeField(blank=True, null=True)
+    resolution_notes = models.TextField(blank=True)
+    communication_mode = models.CharField(max_length=40, blank=True)
+    message = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = "deficiencies"
+        ordering = ["loan_application_id", "item_code", "raised_at", "deficiency_id"]
+        indexes = [
+            models.Index(
+                fields=["loan_application", "resolution_status"],
+                name="idx_def_app_status",
+            ),
+            models.Index(fields=["loan_application", "item_code"], name="idx_def_app_item"),
+        ]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.deficiency_type not in {self.TYPE_MISSING_DOCUMENT, self.TYPE_NOT_VERIFIED}:
+            errors["deficiency_type"] = "Unsupported deficiency type."
+        if self.resolution_status not in {
+            self.STATUS_OPEN,
+            self.STATUS_RESOLVED,
+            self.STATUS_REJECTED,
+        }:
+            errors["resolution_status"] = "Unsupported resolution status."
+        if self.resolution_status == self.STATUS_RESOLVED and (
+            self.resolved_by_user_id is None or self.resolved_at is None
+        ):
+            errors["resolved_by_user"] = "Resolved deficiencies require resolver facts."
         if errors:
             raise ValidationError(errors)
 

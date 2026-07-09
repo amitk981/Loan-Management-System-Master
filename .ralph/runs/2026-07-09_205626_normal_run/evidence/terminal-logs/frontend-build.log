@@ -1,0 +1,13 @@
+
+> sfpcl-lms@1.0.0 build
+> vite build
+
+vite v5.4.21 building for production...
+transforming...
+✓ 1866 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.75 kB │ gzip:   0.43 kB
+dist/assets/index-7akUTWMG.css     53.61 kB │ gzip:   9.30 kB
+dist/assets/index-AXL322wJ.js   1,178.52 kB │ gzip: 248.88 kB
+✓ built in 2.60s

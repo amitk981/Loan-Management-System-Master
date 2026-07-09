@@ -204,3 +204,34 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
 - 005E deliberately does not persist deficiency rows, create rejection notes, run eligibility,
   calculate loan limits, create appraisal notes, or build frontend/member-portal deficiency
   response screens.
+
+## Deficiency Creation And Resolution
+- 005F implements backend/API-only deficiency endpoints:
+  - `POST /api/v1/loan-applications/{loan_application_id}/return-with-deficiencies/`
+  - `GET /api/v1/loan-applications/{loan_application_id}/deficiencies/`
+  - `POST /api/v1/deficiencies/{deficiency_id}/resolve/`
+- The return action requires `applications.loan_application.complete_check`; list requires
+  `applications.loan_application.read`; resolve requires
+  `applications.loan_application.complete_check`. All preserve the 005C2 application object-access
+  boundary after global permission and `404` checks.
+- Return-with-deficiencies is limited to submitted, non-reference-generated applications without a
+  loan request register row. Draft/reference-generated attempts return
+  `409 INVALID_STATE_TRANSITION`.
+- 005F creates structured `deficiencies` rows only from current 005E blocking checklist facts.
+  Request `items[].item_code` must match a blocking required document code; arbitrary codes, empty
+  selections, duplicate items, unknown fields, or missing communication mode/message return
+  `400 VALIDATION_ERROR`. A-040 records the request-shape decision because the source §19.7 example
+  assumes deficiency IDs already exist.
+- Source reason mapping: `missing_metadata` becomes `deficiency_type = missing_document`;
+  `not_verified` becomes `deficiency_type = not_verified`.
+- Successful return keeps `application_status = submitted`, sets `completeness_status =
+  incomplete`, creates open deficiency rows with raised actor/time and communication metadata,
+  writes `applications.loan_application.returned_with_deficiencies` audit metadata, and records a
+  `loan_application` workflow event from `submitted` to `submitted`. It does not generate a
+  reference, create a loan request register row, move to credit assessment, or advance the visible
+  sequence.
+- Deficiency resolve uses the source §21.2 `resolution_notes` request, closes only open rows with
+  resolver actor/time, writes `applications.deficiency.resolved` audit metadata, and records an
+  `application_deficiency` workflow event from `open` to `resolved`.
+- Borrower portal response drafting, document re-upload UI, application resubmission back to
+  completeness check, rejection notes, and real communication delivery remain later slices.

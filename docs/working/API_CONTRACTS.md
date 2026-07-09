@@ -42,7 +42,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Local demo staff seed | Implemented in slice 002K; corrected in 002K2 | Login, dashboard smoke, admin/tracer permission smoke | `implementation-roadmap.md` §10, §20-22; `technical-architecture.md` §8-12, §17-18; `auth-permissions.md`; `api-contracts.md` §11-12, §43-44 | `python manage.py seed_demo_users` is a guarded local/dev seed path. It refuses unless `SFPCL_DEBUG=true` and `SFPCL_ALLOW_DEMO_SEED=true`, calls `seed_catalogue()`, creates or updates deterministic `demo.*@sfpcl.example` staff users with active primary roles and memberships, and does not alter `e2e.*` users. Demo users authenticate through the real `/auth/login/` and `/auth/me/` endpoints; there is no demo auth bypass. The zero-permission user returns `permissions: []` and `available_actions: []`; the tracer-only user uses the guarded local/dev-only `local_demo_tracer_user` role and returns only `tracer.lifecycle.run`; the shared source-catalogue `sales_team_user` role remains permission-neutral until source documents define grants; system admin preserves canonical action-specific user-admin permissions without broad `manage_users` aliases. |
 | Role/permission/team catalogue | Seeded in slice 002C; exposed for current user in 002D | None directly | `auth-permissions.md` §12-15, §38 | Canonical `Permission`, `Role`, `Team`, `RolePermission` catalogue seeded idempotently via `python manage.py seed_role_catalogue` (`sfpcl_credit/identity/catalogue.py`). `/api/v1/auth/me/` exposes the authenticated user's effective permission codes from this data. |
 | Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; shareholding list/create implemented in 004F; land/crop list/create implemented in 004G; KYC profile/document upload/verify implemented in 004H; member bank-account/cancelled-cheque metadata implemented in 004J; Borrower 360 Epic 004 UI wiring implemented in 004K with corrective DTO hardening queued in 004K2 | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3/§15.1-§15.2/§17.1-§18.4; `data-model.md` §10.1-§10.4/§11.1/§11.7-§12.4; `auth-permissions.md` §12.2-§12.3/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/`, `/shareholdings/`, `/land-holdings/`, `/crop-plans/`, `/bank-accounts/`, and `/cancelled-cheques/` are API-backed with their documented validations and metadata-only create audits. `GET/POST/PATCH /api/v1/kyc-profiles/`, KYC document upload, and KYC document verify are implemented for member parties only with KYC permissions. Sensitive bank-account reveal, re-KYC task management, share certificate/demat, bank verification letters, disbursement bank gates, and loan-application/loan-account/repayment/risk/audit Borrower 360 data remain future scope. |
-| Loan applications | Draft create/read/update implemented in 005A; submit in 005B; reference generation/register in 005C; object access hardened in 005C2; application document/checklist metadata implemented in 005D; completeness workbench/pass implemented in 005E | Applications, completeness | `api-contracts.md` §19.2-§21; `data-model.md` §13.1 and application-document table; `auth-permissions.md` §12.4, §19.2, §34.3, §37.3 | `POST /api/v1/loan-applications/`, `GET /api/v1/loan-applications/{id}/`, `PATCH /api/v1/loan-applications/{id}/`, submit, reference-generation, application-document list/upload/verify, document-checklist read/refresh, and completeness-check read/pass endpoints persist and advance application facts with stable UUID IDs, nullable/formal `LO...` reference numbers, member summaries, optional land/crop/bank/cancelled-cheque references, masked bank metadata, document-file links, permissions, object access, audit, workflow events, and register metadata. Deficiencies, eligibility, loan limits, appraisal, sanction, and disbursement remain future slices. |
+| Loan applications | Draft create/read/update implemented in 005A; submit in 005B; reference generation/register in 005C; object access hardened in 005C2; application document/checklist metadata implemented in 005D; completeness workbench/pass implemented in 005E; deficiency return/list/resolve implemented in 005F | Applications, completeness | `api-contracts.md` §19.2-§21; `data-model.md` §13.1 and application-document/deficiency tables; `auth-permissions.md` §12.4, §19.2, §34.3, §37.3 | `POST /api/v1/loan-applications/`, `GET /api/v1/loan-applications/{id}/`, `PATCH /api/v1/loan-applications/{id}/`, submit, reference-generation, application-document list/upload/verify, document-checklist read/refresh, completeness-check read/pass, return-with-deficiencies, deficiency list, and deficiency resolve endpoints persist and advance application facts with stable UUID IDs, nullable/formal `LO...` reference numbers, member summaries, optional land/crop/bank/cancelled-cheque references, masked bank metadata, document-file links, permissions, object access, audit, workflow events, register metadata, and structured deficiency metadata. Eligibility, loan limits, appraisal, sanction, and disbursement remain future slices. |
 | Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
 | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
@@ -334,6 +334,75 @@ Request body is accepted as a JSON object. On success the endpoint returns the c
 loan application after calling `generate_reference_after_completeness_pass(...)`, including the
 generated `LO...` reference and `loan_request_register_entry` summary.
 
+`POST /api/v1/loan-applications/{loan_application_id}/return-with-deficiencies/`
+
+Request:
+
+```json
+{
+  "communication_mode": "email",
+  "message": "Please submit corrected documents to proceed.",
+  "items": [
+    {
+      "item_code": "borrower_pan",
+      "remarks": "PAN name does not match the member profile."
+    }
+  ]
+}
+```
+
+005F uses `items[].item_code` to select source-backed blocking facts from the 005E completeness
+workbench. The source §19.7 example uses `deficiency_ids`, but prior slices did not create
+deficiency rows before the return action; A-040 records this request-shape decision.
+
+Success data:
+
+```json
+{
+  "loan_application_id": "uuid",
+  "application_reference_number": null,
+  "application_status": "submitted",
+  "current_stage": "initial_loan_request",
+  "completeness_status": "incomplete",
+  "communication_mode": "email",
+  "message": "Please submit corrected documents to proceed.",
+  "items": [
+    {
+      "deficiency_id": "uuid",
+      "loan_application_id": "uuid",
+      "item_code": "borrower_pan",
+      "deficiency_type": "not_verified",
+      "source_reason_code": "not_verified",
+      "description": "borrower pan is submitted but not verified.",
+      "remarks": "PAN name does not match the member profile.",
+      "resolution_status": "open",
+      "raised_by_user_id": "uuid",
+      "raised_at": "2026-07-09T15:30:00Z",
+      "resolved_by_user_id": null,
+      "resolved_at": null,
+      "resolution_notes": ""
+    }
+  ]
+}
+```
+
+`GET /api/v1/loan-applications/{loan_application_id}/deficiencies/`
+
+Returns `{ "loan_application_id": "uuid", "items": [...] }` using the deficiency item shape above.
+
+`POST /api/v1/deficiencies/{deficiency_id}/resolve/`
+
+Request:
+
+```json
+{
+  "resolution_notes": "Nominee Aadhaar uploaded and verified."
+}
+```
+
+Success returns the resolved deficiency item with `resolution_status = resolved`, resolver actor,
+and `resolved_at`.
+
 Rules:
 - All endpoints require session-bound bearer authentication.
 - `POST` requires `applications.loan_application.create`; `GET` requires
@@ -366,6 +435,28 @@ Rules:
   missing_metadata`; submitted but pending/rejected latest metadata returns `reason_code =
   not_verified`. Validation failures return `400 VALIDATION_ERROR` with item-level
   `required_checklist_items` and create no sequence/register/audit/workflow side effects.
+- 005F return-with-deficiencies requires `applications.loan_application.complete_check`; deficiency
+  list requires `applications.loan_application.read`; deficiency resolve requires
+  `applications.loan_application.complete_check`. All reuse
+  `applications.services.evaluate_application_object_access(...)` after global permission and
+  `404` checks.
+- Return-with-deficiencies is limited to submitted applications that do not yet have an
+  `LO...` reference and do not have a loan request register entry. Draft and
+  reference-generated attempts return `409 INVALID_STATE_TRANSITION`.
+- Return items must match current blocking 005E completeness facts. `missing_metadata` source facts
+  become `deficiency_type = missing_document`; `not_verified` source facts become
+  `deficiency_type = not_verified`. Empty selections, duplicate item codes, arbitrary item codes,
+  missing communication mode/message, or unknown fields return `400 VALIDATION_ERROR`.
+- Successful return-with-deficiencies keeps `application_status = submitted`, sets
+  `completeness_status = incomplete`, creates open `deficiencies` rows, writes
+  `applications.loan_application.returned_with_deficiencies` audit metadata, and records a
+  `loan_application` workflow event from submitted to submitted with trigger reason
+  "Application returned with completeness deficiencies." It does not generate a reference, create a
+  loan request register row, advance to credit assessment, or visibly advance the sequence.
+- Deficiency resolve closes only open rows and writes `applications.deficiency.resolved` audit
+  metadata plus an `application_deficiency` workflow event from open to resolved. Borrower portal
+  re-upload, borrower response drafting, application resubmission, rejection notes, and
+  communications delivery are deferred to later slices.
 - Required draft validation is intentionally narrow: known borrower member,
   well-formed UUID references, subresource references owned by the borrower
   member, and positive requested amount when supplied.
@@ -397,7 +488,8 @@ Rules:
   facts return `400 VALIDATION_ERROR`; re-submit, other non-draft submit, draft reference generation,
   or duplicate reference attempts return `409 INVALID_STATE_TRANSITION`. Object-access denials do
   not write success audit rows, workflow events, register rows, application references, or visible
-  sequence advancement.
+  sequence advancement. Return-with-deficiencies permission/object denials additionally create no
+  deficiency rows and no deficiency success audit/workflow events.
 
 ## Application Document and Checklist API (005D)
 

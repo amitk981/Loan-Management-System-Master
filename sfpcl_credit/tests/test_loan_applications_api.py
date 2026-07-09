@@ -984,6 +984,312 @@ class LoanApplicationDraftApiTests(TestCase):
             1,
         )
 
+    def test_return_with_deficiencies_creates_open_records_from_blocking_checklist_items(self):
+        application_id = self._create_and_submit_application()
+        document_file = self._document_file(file_name="borrower-pan-rejected.pdf")
+        upload_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/application-documents/",
+            data={
+                "document_type": "borrower_pan",
+                "party_type": "borrower",
+                "party_id": str(self.member.member_id),
+                "document_file_id": str(document_file.document_id),
+                "remarks": "PAN copy has a mismatch.",
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(upload_response.status_code, 200)
+        application_document_id = upload_response.json()["data"]["application_document_id"]
+        reject_response = self.client.post(
+            f"/api/v1/application-documents/{application_document_id}/verify/",
+            data={"verification_status": "rejected", "remarks": "Name mismatch."},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(reject_response.status_code, 200)
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/return-with-deficiencies/",
+            data={
+                "communication_mode": "email",
+                "message": "Please submit corrected documents to proceed.",
+                "items": [
+                    {
+                        "item_code": "borrower_pan",
+                        "remarks": "PAN name does not match the member profile.",
+                    },
+                    {
+                        "item_code": "six_month_bank_statement",
+                        "remarks": "Recent bank statement is missing.",
+                    },
+                ],
+            },
+            content_type="application/json",
+            headers={
+                **self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+                "X-Request-ID": "req-return-deficiencies",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        assert_success_envelope(self, body)
+        data = body["data"]
+        self.assertEqual(data["loan_application_id"], application_id)
+        self.assertEqual(data["application_status"], "submitted")
+        self.assertEqual(data["completeness_status"], "incomplete")
+        self.assertIsNone(data["application_reference_number"])
+        self.assertEqual(data["communication_mode"], "email")
+        self.assertEqual(data["message"], "Please submit corrected documents to proceed.")
+        self.assertEqual(
+            [item["item_code"] for item in data["items"]],
+            ["borrower_pan", "six_month_bank_statement"],
+        )
+        self.assertEqual(data["items"][0]["deficiency_type"], "not_verified")
+        self.assertEqual(data["items"][0]["resolution_status"], "open")
+        self.assertEqual(data["items"][0]["raised_by_user_id"], str(self.creator.user_id))
+        self.assertIsNotNone(data["items"][0]["raised_at"])
+        self.assertEqual(data["items"][1]["deficiency_type"], "missing_document")
+        self.assertEqual(data["items"][1]["source_reason_code"], "missing_metadata")
+
+        list_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/deficiencies/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(list_response.status_code, 200)
+        self.assertEqual(list_response.json()["data"]["items"], data["items"])
+
+        deficiency_model = apps.get_model("applications", "ApplicationDeficiency")
+        self.assertEqual(
+            deficiency_model.objects.filter(loan_application_id=application_id).count(),
+            2,
+        )
+        register_model = apps.get_model("applications", "LoanRequestRegisterEntry")
+        sequence_model = apps.get_model("applications", "SystemSequence")
+        self.assertEqual(register_model.objects.count(), 0)
+        self.assertEqual(sequence_model.objects.count(), 0)
+
+        audit = AuditLog.objects.filter(
+            action="applications.loan_application.returned_with_deficiencies"
+        ).get()
+        self.assertEqual(str(audit.entity_id), application_id)
+        self.assertEqual(audit.new_value_json["completeness_status"], "incomplete")
+        self.assertEqual(
+            audit.new_value_json["deficiency_item_codes"],
+            ["borrower_pan", "six_month_bank_statement"],
+        )
+        self.assertEqual(audit.new_value_json["request_id"], "req-return-deficiencies")
+        workflow_event = WorkflowEvent.objects.filter(
+            entity_type="loan_application",
+            trigger_reason="Application returned with completeness deficiencies.",
+        ).get()
+        self.assertEqual(str(workflow_event.entity_id), application_id)
+        self.assertEqual(workflow_event.from_state, "submitted")
+        self.assertEqual(workflow_event.to_state, "submitted")
+
+        flattened = f"{body} {list_response.json()} {audit.old_value_json} {audit.new_value_json}"
+        self.assertNotIn("member-pan-token", flattened)
+        self.assertNotIn("member-aadhaar-token", flattened)
+        self.assertNotIn("bank-token-123456789012", flattened)
+        self.assertNotIn("bank-hash-123456789012", flattened)
+        self.assertNotIn("doc-hash-secret", flattened)
+        self.assertNotIn("document-files/private", flattened)
+
+    def test_return_with_deficiencies_enforces_validation_state_permission_and_scope(self):
+        application_id = self._create_and_submit_application()
+
+        empty_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/return-with-deficiencies/",
+            data={
+                "communication_mode": "email",
+                "message": "Please correct the returned items.",
+                "items": [],
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(empty_response.status_code, 400)
+        assert_error_envelope(self, empty_response.json(), "VALIDATION_ERROR")
+        self.assertIn("items", empty_response.json()["error"]["field_errors"])
+
+        arbitrary_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/return-with-deficiencies/",
+            data={
+                "communication_mode": "email",
+                "message": "Please correct the returned items.",
+                "items": [{"item_code": "invented_item"}],
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(arbitrary_response.status_code, 400)
+        assert_error_envelope(self, arbitrary_response.json(), "VALIDATION_ERROR")
+        self.assertEqual(
+            arbitrary_response.json()["error"]["field_errors"]["items"][0]["item_code"],
+            "Must match a current blocking completeness checklist item.",
+        )
+
+        draft_response = self.client.post(
+            "/api/v1/loan-applications/",
+            data=self._draft_payload(declared_purpose="Draft deficiency attempt"),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(draft_response.status_code, 200)
+        draft_id = draft_response.json()["data"]["loan_application_id"]
+        draft_return = self.client.post(
+            f"/api/v1/loan-applications/{draft_id}/return-with-deficiencies/",
+            data={
+                "communication_mode": "email",
+                "message": "Please correct the returned items.",
+                "items": [{"item_code": "borrower_pan"}],
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(draft_return.status_code, 409)
+        assert_error_envelope(self, draft_return.json(), "INVALID_STATE_TRANSITION")
+
+        complete_id = self._create_and_submit_application(
+            declared_purpose="Complete application for deficiency invalid state"
+        )
+        self._verify_required_application_documents(complete_id)
+        pass_response = self.client.post(
+            f"/api/v1/loan-applications/{complete_id}/completeness-check/pass/",
+            data={"completeness_result": "complete"},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(pass_response.status_code, 200)
+        reference_return = self.client.post(
+            f"/api/v1/loan-applications/{complete_id}/return-with-deficiencies/",
+            data={
+                "communication_mode": "email",
+                "message": "Please correct the returned items.",
+                "items": [{"item_code": "borrower_pan"}],
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(reference_return.status_code, 409)
+        assert_error_envelope(self, reference_return.json(), "INVALID_STATE_TRANSITION")
+
+        no_permission = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/return-with-deficiencies/",
+            data={
+                "communication_mode": "email",
+                "message": "Please correct the returned items.",
+                "items": [{"item_code": "borrower_pan"}],
+            },
+            content_type="application/json",
+            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
+        )
+        self.assertEqual(no_permission.status_code, 403)
+        assert_error_envelope(self, no_permission.json(), "PERMISSION_DENIED")
+
+        unrelated_headers = self._headers(
+            "applications.unrelated@sfpcl.example",
+            "UnrelatedPass123!",
+        )
+        scope_denied = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/return-with-deficiencies/",
+            data={
+                "communication_mode": "email",
+                "message": "Please correct the returned items.",
+                "items": [{"item_code": "borrower_pan"}],
+            },
+            content_type="application/json",
+            headers=unrelated_headers,
+        )
+        self.assertEqual(scope_denied.status_code, 403)
+        assert_error_envelope(self, scope_denied.json(), "OBJECT_ACCESS_DENIED")
+
+        deficiency_model = apps.get_model("applications", "ApplicationDeficiency")
+        self.assertEqual(deficiency_model.objects.count(), 0)
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="applications.loan_application.returned_with_deficiencies"
+            ).count(),
+            0,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                trigger_reason="Application returned with completeness deficiencies."
+            ).count(),
+            0,
+        )
+
+    def test_deficiency_resolve_closes_open_item_with_metadata_only_evidence(self):
+        application_id = self._create_and_submit_application()
+        return_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/return-with-deficiencies/",
+            data={
+                "communication_mode": "email",
+                "message": "Please submit corrected documents to proceed.",
+                "items": [{"item_code": "borrower_pan", "remarks": "PAN is missing."}],
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(return_response.status_code, 200)
+        deficiency_id = return_response.json()["data"]["items"][0]["deficiency_id"]
+
+        response = self.client.post(
+            f"/api/v1/deficiencies/{deficiency_id}/resolve/",
+            data={"resolution_notes": "Borrower uploaded replacement PAN and it was verified."},
+            content_type="application/json",
+            headers={
+                **self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+                "X-Request-ID": "req-resolve-deficiency",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        assert_success_envelope(self, body)
+        item = body["data"]
+        self.assertEqual(item["deficiency_id"], deficiency_id)
+        self.assertEqual(item["resolution_status"], "resolved")
+        self.assertEqual(item["resolution_notes"], "Borrower uploaded replacement PAN and it was verified.")
+        self.assertEqual(item["resolved_by_user_id"], str(self.creator.user_id))
+        self.assertIsNotNone(item["resolved_at"])
+
+        duplicate_resolve = self.client.post(
+            f"/api/v1/deficiencies/{deficiency_id}/resolve/",
+            data={"resolution_notes": "Duplicate resolution attempt."},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(duplicate_resolve.status_code, 400)
+        assert_error_envelope(self, duplicate_resolve.json(), "VALIDATION_ERROR")
+
+        no_permission = self.client.post(
+            f"/api/v1/deficiencies/{deficiency_id}/resolve/",
+            data={"resolution_notes": "Reader should not resolve."},
+            content_type="application/json",
+            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
+        )
+        self.assertEqual(no_permission.status_code, 403)
+        assert_error_envelope(self, no_permission.json(), "PERMISSION_DENIED")
+
+        audit = AuditLog.objects.filter(action="applications.deficiency.resolved").get()
+        self.assertEqual(str(audit.entity_id), deficiency_id)
+        self.assertEqual(audit.new_value_json["resolution_status"], "resolved")
+        self.assertEqual(audit.new_value_json["request_id"], "req-resolve-deficiency")
+        workflow_event = WorkflowEvent.objects.filter(entity_type="application_deficiency").get()
+        self.assertEqual(str(workflow_event.entity_id), deficiency_id)
+        self.assertEqual(workflow_event.from_state, "open")
+        self.assertEqual(workflow_event.to_state, "resolved")
+
+        flattened = f"{body} {audit.old_value_json} {audit.new_value_json}"
+        self.assertNotIn("member-pan-token", flattened)
+        self.assertNotIn("member-aadhaar-token", flattened)
+        self.assertNotIn("bank-token-123456789012", flattened)
+        self.assertNotIn("bank-hash-123456789012", flattened)
+        self.assertNotIn("doc-hash-secret", flattened)
+        self.assertNotIn("document-files/private", flattened)
+
     def test_completeness_workbench_and_pass_enforce_permissions_and_object_scope(self):
         application_id = self._create_and_submit_application()
 

@@ -64,6 +64,21 @@ urlpatterns = [
         name="loan-application-completeness-pass",
     ),
     path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/return-with-deficiencies/",
+        application_views.loan_application_return_with_deficiencies,
+        name="loan-application-return-with-deficiencies",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/deficiencies/",
+        application_views.loan_application_deficiencies,
+        name="loan-application-deficiencies",
+    ),
+    path(
+        "api/v1/deficiencies/<uuid:deficiency_id>/resolve/",
+        application_views.application_deficiency_resolve,
+        name="application-deficiency-resolve",
+    ),
+    path(
         "api/v1/application-documents/<uuid:application_document_id>/verify/",
         application_views.application_document_verify,
         name="application-document-verify",

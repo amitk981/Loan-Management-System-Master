@@ -7,6 +7,7 @@ from django.db.models import Max
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import (
+    ApplicationDeficiency,
     ApplicationDocument,
     LoanApplication,
     LoanRequestRegisterEntry,
@@ -19,6 +20,7 @@ from sfpcl_credit.identity.modules.object_permissions import evaluate_object_acc
 from sfpcl_credit.members.models import BankAccount, CancelledCheque, CropPlan, LandHolding, Member
 from sfpcl_credit.workflows.events import record_workflow_event
 from sfpcl_credit.workflows.guard import (
+    InvalidStateTransition,
     TransitionDefinition,
     evaluate_transition,
 )
@@ -34,6 +36,10 @@ APPLICATION_DOCUMENT_VERIFY_PERMISSION = "applications.document.verify"
 LOAN_APPLICATION_REFERENCE_SEQUENCE_CODE = "loan_application_reference"
 APPLICATION_DOCUMENT_ATTACH_AUDIT_ACTION = "applications.application_document.attached"
 APPLICATION_DOCUMENT_VERIFY_AUDIT_ACTION = "applications.application_document.verified"
+APPLICATION_RETURN_DEFICIENCIES_AUDIT_ACTION = (
+    "applications.loan_application.returned_with_deficiencies"
+)
+APPLICATION_DEFICIENCY_RESOLVED_AUDIT_ACTION = "applications.deficiency.resolved"
 APPLICATION_DOCUMENT_TYPES = {
     "loan_application_form",
     "borrower_pan",
@@ -102,6 +108,10 @@ class LoanApplicationValidationError(Exception):
     def __init__(self, field_errors):
         self.field_errors = field_errors
         super().__init__("Loan application payload failed validation.")
+
+
+class LoanApplicationInvalidStateError(Exception):
+    pass
 
 
 def user_can_read_applications(user):
@@ -189,6 +199,21 @@ def get_application_document(application_document_id):
             "verified_by_user",
         )
         .filter(application_document_id=application_document_id)
+        .first()
+    )
+
+
+def get_application_deficiency(deficiency_id):
+    return (
+        ApplicationDeficiency.objects.select_related(
+            "loan_application",
+            "loan_application__member",
+            "loan_application__created_by_user",
+            "loan_application__received_by_user",
+            "raised_by_user",
+            "resolved_by_user",
+        )
+        .filter(deficiency_id=deficiency_id)
         .first()
     )
 
@@ -588,6 +613,146 @@ def completeness_pass_invalid_state_message(application):
     return None
 
 
+def return_deficiencies_invalid_state_message(application):
+    if application.application_status != LoanApplication.STATUS_SUBMITTED:
+        return (
+            "Invalid state transition for loan_application: "
+            f"return_with_deficiencies is not allowed from {application.application_status}."
+        )
+    if application.application_reference_number:
+        return "Application already has a reference number."
+    if LoanRequestRegisterEntry.objects.filter(loan_application=application).exists():
+        return "Loan request register entry already exists."
+    return None
+
+
+def list_application_deficiencies(application):
+    return (
+        ApplicationDeficiency.objects.select_related("raised_by_user", "resolved_by_user")
+        .filter(loan_application=application)
+        .order_by("item_code", "raised_at", "deficiency_id")
+    )
+
+
+@transaction.atomic
+def return_application_with_deficiencies(
+    application,
+    payload,
+    actor,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+):
+    application = (
+        LoanApplication.objects.select_for_update()
+        .select_related("member", "received_by_user")
+        .get(loan_application_id=application.loan_application_id)
+    )
+    invalid_state_message = return_deficiencies_invalid_state_message(application)
+    if invalid_state_message:
+        raise LoanApplicationInvalidStateError(invalid_state_message)
+    cleaned = _clean_return_deficiencies_payload(application, payload)
+    old_value_json = _audit_snapshot(application)
+    now = timezone.now()
+    application.completeness_status = LoanApplication.COMPLETENESS_INCOMPLETE
+    application.updated_at = now
+    application.updated_by_user = actor
+    application.save()
+    deficiencies = []
+    for item in cleaned["items"]:
+        deficiencies.append(
+            ApplicationDeficiency.objects.create(
+                loan_application=application,
+                item_code=item["item_code"],
+                deficiency_type=item["deficiency_type"],
+                source_reason_code=item["source_reason_code"],
+                description=item["description"],
+                remarks=item["remarks"],
+                resolution_status=ApplicationDeficiency.STATUS_OPEN,
+                raised_by_user=actor,
+                raised_at=now,
+                communication_mode=cleaned["communication_mode"],
+                message=cleaned["message"],
+            )
+        )
+    _audit_returned_with_deficiencies(
+        application,
+        deficiencies,
+        actor,
+        old_value_json,
+        request_ip,
+        request_user_agent,
+        request_id,
+        cleaned["communication_mode"],
+        cleaned["message"],
+    )
+    record_workflow_event(
+        actor=actor,
+        workflow_name="loan_application",
+        entity_type="loan_application",
+        entity_id=application.loan_application_id,
+        from_state=LoanApplication.STATUS_SUBMITTED,
+        to_state=LoanApplication.STATUS_SUBMITTED,
+        trigger_reason="Application returned with completeness deficiencies.",
+        action_code="return_with_deficiencies",
+    )
+    return {
+        "application": application,
+        "items": sorted(deficiencies, key=lambda item: (item.item_code, item.raised_at)),
+        "communication_mode": cleaned["communication_mode"],
+        "message": cleaned["message"],
+    }
+
+
+@transaction.atomic
+def resolve_application_deficiency(
+    deficiency,
+    payload,
+    actor,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+):
+    unknown = set(payload.keys()) - {"resolution_notes"}
+    errors = {field: "Unknown field." for field in sorted(unknown)}
+    resolution_notes = _optional_text(payload.get("resolution_notes"))
+    if not resolution_notes:
+        errors["resolution_notes"] = "This field is required."
+    if deficiency.resolution_status != ApplicationDeficiency.STATUS_OPEN:
+        errors["resolution_status"] = "Only open deficiencies can be resolved."
+    if errors:
+        raise LoanApplicationValidationError(errors)
+
+    old_value_json = _application_deficiency_audit_snapshot(deficiency)
+    now = timezone.now()
+    deficiency.resolution_status = ApplicationDeficiency.STATUS_RESOLVED
+    deficiency.resolution_notes = resolution_notes
+    deficiency.resolved_by_user = actor
+    deficiency.resolved_at = now
+    deficiency.updated_at = now
+    deficiency.save()
+    _audit_application_deficiency(
+        deficiency,
+        actor,
+        APPLICATION_DEFICIENCY_RESOLVED_AUDIT_ACTION,
+        old_value_json,
+        request_ip,
+        request_user_agent,
+        request_id,
+    )
+    record_workflow_event(
+        actor=actor,
+        workflow_name="loan_application",
+        entity_type="application_deficiency",
+        entity_id=deficiency.deficiency_id,
+        from_state=ApplicationDeficiency.STATUS_OPEN,
+        to_state=ApplicationDeficiency.STATUS_RESOLVED,
+        trigger_reason="Deficiency resolved.",
+        action_code="resolve_deficiency",
+    )
+    return deficiency
+
+
 def serialize_application(application):
     register_entry = getattr(application, "loan_request_register_entry", None)
     return {
@@ -667,6 +832,40 @@ def serialize_application_document(application_document):
         "updated_by_user_id": str(application_document.updated_by_user_id)
         if application_document.updated_by_user_id
         else None,
+    }
+
+
+def serialize_application_deficiency(deficiency):
+    return {
+        "deficiency_id": str(deficiency.deficiency_id),
+        "loan_application_id": str(deficiency.loan_application_id),
+        "item_code": deficiency.item_code,
+        "deficiency_type": deficiency.deficiency_type,
+        "source_reason_code": deficiency.source_reason_code,
+        "description": deficiency.description,
+        "remarks": deficiency.remarks,
+        "resolution_status": deficiency.resolution_status,
+        "raised_by_user_id": str(deficiency.raised_by_user_id),
+        "raised_at": _datetime(deficiency.raised_at),
+        "resolved_by_user_id": str(deficiency.resolved_by_user_id)
+        if deficiency.resolved_by_user_id
+        else None,
+        "resolved_at": _datetime(deficiency.resolved_at),
+        "resolution_notes": deficiency.resolution_notes,
+    }
+
+
+def serialize_returned_deficiencies(result):
+    application = result["application"]
+    return {
+        "loan_application_id": str(application.loan_application_id),
+        "application_reference_number": application.application_reference_number,
+        "application_status": application.application_status,
+        "current_stage": application.current_stage,
+        "completeness_status": application.completeness_status,
+        "communication_mode": result["communication_mode"],
+        "message": result["message"],
+        "items": [serialize_application_deficiency(item) for item in result["items"]],
     }
 
 
@@ -847,6 +1046,93 @@ def _clean_application_document_payload(payload):
     }
 
 
+def _clean_return_deficiencies_payload(application, payload):
+    unknown = set(payload.keys()) - {"communication_mode", "message", "items"}
+    errors = {field: "Unknown field." for field in sorted(unknown)}
+    communication_mode = _optional_text(payload.get("communication_mode"))
+    message = _optional_text(payload.get("message"))
+    raw_items = payload.get("items")
+    if not communication_mode:
+        errors["communication_mode"] = "This field is required."
+    if not message:
+        errors["message"] = "This field is required."
+    if not isinstance(raw_items, list) or not raw_items:
+        errors["items"] = "At least one deficiency item is required."
+        raw_items = []
+
+    blocking_items = {
+        item["document_type"]: item
+        for item in build_completeness_workbench(application)["required_checklist_items"]
+        if not item["complete"]
+    }
+    cleaned_items = []
+    seen = set()
+    item_errors = []
+    for index, raw_item in enumerate(raw_items):
+        if not isinstance(raw_item, dict):
+            item_errors.append({"index": index, "error": "Each deficiency item must be an object."})
+            continue
+        unknown_item_fields = set(raw_item.keys()) - {"item_code", "remarks"}
+        item_code = _optional_text(raw_item.get("item_code")).lower()
+        if not item_code:
+            item_errors.append({"index": index, "item_code": "This field is required."})
+            continue
+        if unknown_item_fields:
+            item_errors.append(
+                {
+                    "index": index,
+                    "unknown_fields": sorted(unknown_item_fields),
+                }
+            )
+            continue
+        if item_code in seen:
+            item_errors.append({"index": index, "item_code": "Duplicate deficiency item."})
+            continue
+        source_item = blocking_items.get(item_code)
+        if source_item is None:
+            item_errors.append(
+                {
+                    "index": index,
+                    "item_code": "Must match a current blocking completeness checklist item.",
+                }
+            )
+            continue
+        seen.add(item_code)
+        cleaned_items.append(
+            {
+                "item_code": item_code,
+                "deficiency_type": _deficiency_type_for_source_reason(
+                    source_item["reason_code"]
+                ),
+                "source_reason_code": source_item["reason_code"],
+                "description": _deficiency_description(source_item),
+                "remarks": _optional_text(raw_item.get("remarks")),
+            }
+        )
+    if item_errors:
+        errors["items"] = item_errors
+    if errors:
+        raise LoanApplicationValidationError(errors)
+    return {
+        "communication_mode": communication_mode,
+        "message": message,
+        "items": cleaned_items,
+    }
+
+
+def _deficiency_type_for_source_reason(reason_code):
+    if reason_code == "missing_metadata":
+        return ApplicationDeficiency.TYPE_MISSING_DOCUMENT
+    return ApplicationDeficiency.TYPE_NOT_VERIFIED
+
+
+def _deficiency_description(source_item):
+    document_label = source_item["document_type"].replace("_", " ")
+    if source_item["reason_code"] == "missing_metadata":
+        return f"{document_label} is missing."
+    return f"{document_label} is submitted but not verified."
+
+
 def _assign_fields(application, cleaned):
     for field in (
         "required_loan_amount",
@@ -937,6 +1223,62 @@ def _audit_application_document(
     )
 
 
+def _audit_returned_with_deficiencies(
+    application,
+    deficiencies,
+    actor,
+    old_value_json,
+    request_ip,
+    request_user_agent,
+    request_id,
+    communication_mode,
+    message,
+):
+    new_value_json = _audit_snapshot(application)
+    new_value_json.update(
+        {
+            "deficiency_ids": [str(item.deficiency_id) for item in deficiencies],
+            "deficiency_item_codes": [item.item_code for item in deficiencies],
+            "communication_mode": communication_mode,
+            "message": message,
+            "request_id": request_id,
+        }
+    )
+    AuditLog.objects.create(
+        actor_user=actor,
+        action=APPLICATION_RETURN_DEFICIENCIES_AUDIT_ACTION,
+        entity_type="loan_application",
+        entity_id=application.loan_application_id,
+        old_value_json=old_value_json,
+        new_value_json=new_value_json,
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+
+
+def _audit_application_deficiency(
+    deficiency,
+    actor,
+    action,
+    old_value_json,
+    request_ip,
+    request_user_agent,
+    request_id,
+):
+    new_value_json = _application_deficiency_audit_snapshot(deficiency)
+    new_value_json["request_id"] = request_id
+    AuditLog.objects.create(
+        actor_user=actor,
+        action=action,
+        entity_type="application_deficiency",
+        entity_id=deficiency.deficiency_id,
+        old_value_json=old_value_json,
+        new_value_json=new_value_json,
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+
+
 def _audit_snapshot(application):
     return {
         "loan_application_id": str(application.loan_application_id),
@@ -979,6 +1321,26 @@ def _application_document_audit_snapshot(application_document):
         "verified_at": _datetime(application_document.verified_at),
         "remarks": application_document.remarks,
         "version_number": application_document.version_number,
+    }
+
+
+def _application_deficiency_audit_snapshot(deficiency):
+    return {
+        "deficiency_id": str(deficiency.deficiency_id),
+        "loan_application_id": str(deficiency.loan_application_id),
+        "item_code": deficiency.item_code,
+        "deficiency_type": deficiency.deficiency_type,
+        "source_reason_code": deficiency.source_reason_code,
+        "description": deficiency.description,
+        "remarks": deficiency.remarks,
+        "resolution_status": deficiency.resolution_status,
+        "raised_by_user_id": str(deficiency.raised_by_user_id),
+        "raised_at": _datetime(deficiency.raised_at),
+        "resolved_by_user_id": str(deficiency.resolved_by_user_id)
+        if deficiency.resolved_by_user_id
+        else None,
+        "resolved_at": _datetime(deficiency.resolved_at),
+        "resolution_notes": deficiency.resolution_notes,
     }
 
 

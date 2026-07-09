@@ -161,7 +161,7 @@ def loan_application_submit(request, loan_application_id):
             "Loan application payload failed validation.",
             services.validation_field_errors(exc),
         )
-    except InvalidStateTransition as exc:
+    except (services.LoanApplicationInvalidStateError, InvalidStateTransition) as exc:
         return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
     return success_response(services.serialize_application(application), request)
 
@@ -207,7 +207,7 @@ def loan_application_generate_reference(request, loan_application_id):
             "Loan application payload failed validation.",
             services.validation_field_errors(exc),
         )
-    except InvalidStateTransition as exc:
+    except (services.LoanApplicationInvalidStateError, InvalidStateTransition) as exc:
         return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
     return success_response(services.serialize_application(application), request)
 
@@ -448,6 +448,137 @@ def loan_application_completeness_pass(request, loan_application_id):
     except InvalidStateTransition as exc:
         return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
     return success_response(services.serialize_application(application), request)
+
+
+@require_http_methods(["POST"])
+def loan_application_return_with_deficiencies(request, loan_application_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    if not services.user_can_complete_check_applications(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to complete-check loan applications.",
+        )
+    application = services.get_application(loan_application_id)
+    if application is None:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+    object_access = services.evaluate_application_object_access(
+        application,
+        user,
+        services.APPLICATION_COMPLETE_CHECK_PERMISSION,
+        permissions,
+    )
+    if not object_access.allowed:
+        return _object_access_denied_response(request, object_access)
+    try:
+        body = parse_json_body(request)
+        result = services.return_application_with_deficiencies(
+            application,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+    except services.LoanApplicationValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Deficiency return failed validation.",
+            services.validation_field_errors(exc),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Deficiency return failed validation.",
+            services.validation_field_errors(exc),
+        )
+    except (services.LoanApplicationInvalidStateError, InvalidStateTransition) as exc:
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
+    return success_response(services.serialize_returned_deficiencies(result), request)
+
+
+@require_http_methods(["GET"])
+def loan_application_deficiencies(request, loan_application_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    if not services.user_can_read_applications(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read loan applications.",
+        )
+    application = services.get_application(loan_application_id)
+    if application is None:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+    object_access = services.evaluate_application_object_access(
+        application,
+        user,
+        services.APPLICATION_READ_PERMISSION,
+        permissions,
+    )
+    if not object_access.allowed:
+        return _object_access_denied_response(request, object_access)
+    deficiencies = [
+        services.serialize_application_deficiency(deficiency)
+        for deficiency in services.list_application_deficiencies(application)
+    ]
+    return success_response(
+        {"loan_application_id": str(application.loan_application_id), "items": deficiencies},
+        request,
+    )
+
+
+@require_http_methods(["POST"])
+def application_deficiency_resolve(request, deficiency_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    if not services.user_can_complete_check_applications(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to complete-check loan applications.",
+        )
+    deficiency = services.get_application_deficiency(deficiency_id)
+    if deficiency is None:
+        return error_response(request, 404, "NOT_FOUND", "Deficiency was not found.")
+    object_access = services.evaluate_application_object_access(
+        deficiency.loan_application,
+        user,
+        services.APPLICATION_COMPLETE_CHECK_PERMISSION,
+        permissions,
+    )
+    if not object_access.allowed:
+        return _object_access_denied_response(request, object_access)
+    try:
+        body = parse_json_body(request)
+        deficiency = services.resolve_application_deficiency(
+            deficiency,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+    except (services.LoanApplicationValidationError, ValidationError) as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Deficiency resolution failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return success_response(services.serialize_application_deficiency(deficiency), request)
 
 
 def _object_access_denied_response(request, object_access):

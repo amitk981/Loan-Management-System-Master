@@ -16,6 +16,16 @@ A borrower who logs in sees their real profile, applications, loans, alerts, and
 ## Depends On
 - 005FA
 
+## Prior Slice Facts To Preserve
+- 005FA must provide a borrower/member portal token scoped to exactly one linked `member_id`.
+  005FB must consume that member scope instead of accepting arbitrary member IDs from the client.
+- 005F persists open/resolved deficiency rows for loan applications. MP03 pending actions should be
+  able to count open deficiency actions for the logged-in member's own applications once those
+  applications are visible, but 005FB must not implement application list/status screens from 005G.
+- Portal source snippets opened during 005F define MP03 dashboard widgets for Pending Actions and
+  Notices, and MP04 as profile content. The portal must not expose staff-only completeness,
+  reference-generation, or deficiency-resolution actions.
+
 ## Source References
 - docs/source/screen-spec-member-portal.md screens MP03 (dashboard), MP04 (profile)
 - docs/source/api-contracts.md sections 13 (member), 43 (dashboard) for envelope/naming conventions
@@ -29,14 +39,34 @@ A borrower who logs in sees their real profile, applications, loans, alerts, and
 - sfpcl-lms/src/pages/borrower/portal/MemberPortalLayout.tsx
 
 ## Concrete Requirements
-1. Backend: member-scoped portal endpoints for dashboard summary (profile snapshot, application/loan counts, pending actions) and produce supply history, enforcing own-data-only access via the 005FA borrower scope.
-2. Frontend: replace mock data in MP03, MP04, and the supply view with real APIs; masked sensitive fields per api-contracts §9.6 (no reveal on the portal side unless the source docs permit it).
-3. Loading, empty, error, and unauthorized states per existing portal patterns; mobile-friendly per VISUAL_ACCEPTANCE.md.
+1. Backend: member-scoped portal endpoints for dashboard summary (profile snapshot,
+   application/loan counts, pending actions) and produce supply history, enforcing own-data-only
+   access via the 005FA borrower scope. Do not accept a path/query `member_id` as authority when a
+   portal token is present.
+2. Dashboard summary should return at least:
+   - member identity/status snapshot (`member_id`, display name, member number/folio, member type,
+     membership status, KYC status, default status);
+   - counts for own applications and own loans using currently implemented tables only;
+   - pending action counts for open deficiencies where available from 005F, plus placeholders/zeroes
+     for future signature, repayment, KYC update, and closure actions until their modules exist;
+   - latest notice shell data only if backed by existing notification/communication rows.
+3. Profile endpoint/response should reuse existing member profile, nominee, shareholding,
+   land/crop, KYC, bank-account, and cancelled-cheque serializers where possible and preserve their
+   masking rules. No PAN/Aadhaar/full bank reveal is allowed on the portal side unless a later
+   source-backed slice explicitly permits it.
+4. Produce supply history should be read-only and member-scoped. If no produce-supply model exists
+   yet, return an empty list with a documented assumption rather than inventing source data.
+5. Frontend: replace mock data in MP03, MP04, and the supply view with real APIs; masked sensitive
+   fields per api-contracts §9.6.
+6. Loading, empty, error, and unauthorized states per existing portal patterns; mobile-friendly per
+   VISUAL_ACCEPTANCE.md.
 
 ## Test Cases
 - Borrower sees only own profile/supply data (object-permission test).
 - Dashboard counts reflect seeded fixtures; empty states covered.
 - Sensitive fields render masked on the portal.
+- A borrower cannot request another member's profile/dashboard/supply data even if they know the
+  other member UUID.
 
 ## Out of Scope
 Applications list/status (005G), documents (008L), loans/repayments (010L), notices/grievances (011NA).

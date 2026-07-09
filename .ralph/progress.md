@@ -1,5 +1,29 @@
 # Ralph Progress Log
 
+## 2026-07-09 20:56:26 - 2026-07-09_205626_normal_run
+- Agent tool used: codex
+- Slice attempted: 005F-deficiency-creation-and-resolution
+- Summary: Implemented backend/API deficiency creation and resolution. Added structured
+  `deficiencies` records, `POST /api/v1/loan-applications/{loan_application_id}/return-with-deficiencies/`,
+  `GET /api/v1/loan-applications/{loan_application_id}/deficiencies/`, and
+  `POST /api/v1/deficiencies/{deficiency_id}/resolve/`. Return-with-deficiencies derives valid
+  item codes from the existing 005E blocking completeness checklist, maps `missing_metadata` to
+  `missing_document` and `not_verified` to `not_verified`, sets `completeness_status =
+  incomplete`, and creates metadata-only audit/workflow evidence. It does not generate an `LO...`
+  reference, create a loan request register row, advance to credit assessment, or visibly advance
+  the sequence. Permission and object-scope denials create no deficiency/audit/workflow side
+  effects. Recorded A-040 for the item-code request shape and sharpened 005FA/005FB.
+- Tests run: TDD red/green for return-with-deficiencies; focused deficiency API tests (3/3);
+  backend `manage.py check`; backend tests (256/256); `makemigrations --check --dry-run`; backend
+  coverage 95% (floor 85); frontend `npm run lint`; `npm run typecheck`; `npm test` (80/80);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_205626_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus API response examples.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Architecture review is due by cadence before continuing. After review, run
+  `005FA-member-portal-authentication`.
+
 ## 2026-07-09 20:23:50 - 2026-07-09_202350_normal_run
 - Agent tool used: codex
 - Slice attempted: 005E-completeness-workbench
@@ -1896,6 +1920,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_202350_normal_run/.ralph/runs/2026-07-09_202350_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_202350_normal_run/.ralph/runs/2026-07-09_202350_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 21:32:32 - 2026-07-09_205626_normal_run
+- Agent tool used: codex
+- Slice attempted: 005F-deficiency-creation-and-resolution
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_205626_normal_run/.ralph/runs/2026-07-09_205626_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_205626_normal_run/.ralph/runs/2026-07-09_205626_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

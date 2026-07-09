@@ -25,6 +25,15 @@ A member invited to the portal can activate their account, log in securely, reco
 - 005F is expected to create structured deficiency records before borrower deficiency response
   screens are wired; portal tokens introduced here must carry enough member/object scope for later
   own-application deficiency reads and responses.
+- 005F implemented structured deficiency records and staff endpoints:
+  `POST /api/v1/loan-applications/{loan_application_id}/return-with-deficiencies/`,
+  `GET /api/v1/loan-applications/{loan_application_id}/deficiencies/`, and
+  `POST /api/v1/deficiencies/{deficiency_id}/resolve/`. Borrower portal auth must not grant those
+  staff complete-check actions, but it must expose a member scope that future portal endpoints can
+  use to read/respond only to the borrower's own returned applications.
+- Member portal source access boundaries say borrowers can access their own profile, own loan
+  applications, own documents, own loan accounts/repayments, own notices, and own grievances only.
+  Treat every cross-member portal read/write as object-access denied.
 
 ## Source References
 - docs/source/screen-spec-member-portal.md screens MP00, MP01, MP02, MP25 (including OTP and activation rules)
@@ -42,6 +51,8 @@ A member invited to the portal can activate their account, log in securely, reco
 ## Concrete Requirements
 1. Backend: portal account model linked one-to-one to a Member record; activation flow validating member identity per MP01 spec; login/refresh/logout reusing the 002B/002B2 JWT foundation with the Borrower role; password reset flow per MP02. If the docs do not specify an OTP delivery channel, implement the mechanism behind the 003I notification adapter shell and log the channel choice in ASSUMPTIONS.md — do not invent a provider.
 2. Borrower tokens must carry the member/borrower object scope so every portal API can enforce own-data-only access.
+   Token/session payloads should include the linked `member_id` and a borrower/member portal role
+   marker, not staff role grants.
 3. Frontend: wire MP00/MP01/MP02/MP25 to the real APIs; protected portal routes redirect to MP00 when unauthenticated; loading, error, invalid-credential, expired-link, and success states covered per existing prototype patterns.
 4. All auth events (activation, login success/failure, reset, password change, session revocation) create audit events.
 
