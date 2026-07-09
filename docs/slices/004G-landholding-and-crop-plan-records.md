@@ -27,31 +27,51 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - sfpcl-lms/src/data/mockData.ts
 
 ## Screens Involved
-None directly.
+Member Profile — Land & Crop tab.
 
 ## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
+If the backend land/crop APIs land in this slice, replace the current backend-shell Land & Crop tab
+with API-backed list/create behavior using only existing Member Profile card, empty panel, alert,
+and form patterns. Do not restore `mockData` land/crop rows or introduce new styling. Do not show
+loan-limit amounts unless a source-backed calculation endpoint exists.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+Implement `GET` and `POST /api/v1/members/{member_id}/land-holdings/` from `api-contracts.md`
+§17.1 and `GET`/`POST /api/v1/members/{member_id}/crop-plans/` from §17.2. Include
+detail/update endpoints only if they stay within one small slice; otherwise split them.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
+Add non-destructive model/migration changes for `land_holdings` from `data-model.md` §11.7:
+member FK, document type, survey number, village, taluka, district, state, `area_acres`,
+`document_id`, verification status, verifier/timestamp fields, and created timestamp. Add
+`crop_plans` from §11.8: member FK, nullable `loan_application_id`, crop type, season,
+`planned_area_acres`, optional estimated cost amount, loan-purpose alignment, optional document ID,
+verification status, verifier/timestamp fields.
 
 ## API Contracts
 Create or update the API contract for this capability.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Source permission catalogue does not define land/crop-specific permission codes. Follow
+`DECISION_POLICY.md`: use the narrowest source-compatible existing member permission only with an
+ASSUMPTIONS entry, or split a permission-catalogue slice first if validation rejects that default.
+Do not invent new permission codes in this slice.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+Audit successful land-holding and crop-plan creates with metadata only. Do not write workflow events
+for simple read/list access.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+Reject negative or zero `area_acres` and `planned_area_acres`; reject malformed document UUIDs.
+Require `document_id` for land holdings because `data-model.md` §11.7 marks it non-null and 7/12
+extract is required for loan applications. Do not invent land-based loan-limit calculations,
+per-acre scale-of-finance rules, application blockers, or purpose-eligibility decisions in 004G.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+TDD: land list/create success, crop-plan list/create success, missing member, missing auth,
+read/create permission separation per the recorded assumption, invalid acreage, missing land
+document, malformed document UUIDs, audit metadata, and frontend loading/empty/error/validation/
+success states when UI is touched.
 
 ## Visual Acceptance Criteria
 None.

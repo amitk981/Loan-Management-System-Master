@@ -1,5 +1,29 @@
 # Ralph Progress Log
 
+## 2026-07-09 12:29:59 - 2026-07-09_122959_normal_run
+- Agent tool used: codex
+- Slice attempted: 004F-shareholding-and-share-certificate-records
+- Summary: Implemented member shareholding list/create. Added the `shareholdings` table with
+  source-backed share-count constraints, available-share derivation, nullable valuation/demat
+  references, and active share summary refresh on the member. Added
+  `GET`/`POST /api/v1/members/{member_id}/shareholdings/` with standard envelopes,
+  `members.shareholding.read` and `members.shareholding.create` separation, invalid count/overflow
+  validation, missing-member handling, and `members.shareholding.created` audit metadata without a
+  workflow event. Replaced the Member Profile Shareholding tab with API-backed list/create states
+  using existing UI patterns and no mock share rows. Share certificates and PATCH/update are
+  explicitly deferred.
+- Tests run: backend shareholding TDD red/green; frontend shareholding TDD red/green; backend
+  `manage.py check`; backend tests (213/213); `makemigrations --check --dry-run`; backend coverage
+  96% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test` (69/69);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_122959_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`, API examples, and self-contained Shareholding tab HTML. Live PNG
+  screenshot capture was blocked by sandbox localhost/browser restrictions; attempts are logged.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `004G-landholding-and-crop-plan-records`; `004E` can be revisited only after a
+  real loan-application boundary exists, even though shareholding facts now exist.
+
 ## 2026-07-09 12:08:45 - 2026-07-09_120845_normal_run
 - Agent tool used: codex
 - Slice attempted: 004D2-member-profile-and-nominee-contract-hardening
@@ -1351,6 +1375,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_120845_normal_run/.ralph/runs/2026-07-09_120845_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_120845_normal_run/.ralph/runs/2026-07-09_120845_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 12:59:25 - 2026-07-09_122959_normal_run
+- Agent tool used: codex
+- Slice attempted: 004F-shareholding-and-share-certificate-records
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_122959_normal_run/.ralph/runs/2026-07-09_122959_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_122959_normal_run/.ralph/runs/2026-07-09_122959_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

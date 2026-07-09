@@ -95,6 +95,24 @@ export interface MemberNomineeList {
   pagination: Pagination;
 }
 
+export interface MemberShareholdingDetail {
+  shareholding_id: string;
+  folio_number: string;
+  number_of_shares: number;
+  holding_mode: string;
+  valuation_per_share: string | null;
+  valuation_effective_date: string | null;
+  pledged_share_count: number;
+  available_share_count: number;
+  future_shares_pledge_flag: boolean;
+  status: string;
+}
+
+export interface MemberShareholdingList {
+  items: MemberShareholdingDetail[];
+  pagination: Pagination;
+}
+
 export interface CreateMemberNomineePayload {
   nominee_name: string;
   date_of_birth: string;
@@ -103,6 +121,16 @@ export interface CreateMemberNomineePayload {
   pan: string;
   aadhaar: string;
   signature_required_flag: boolean;
+}
+
+export interface CreateMemberShareholdingPayload {
+  folio_number: string;
+  number_of_shares: number;
+  holding_mode: string;
+  valuation_per_share: string;
+  valuation_effective_date: string;
+  pledged_share_count: number;
+  future_shares_pledge_flag: boolean;
 }
 
 export const fetchMemberProfile = async (memberId: string): Promise<MemberProfileDetail> => {
@@ -130,6 +158,27 @@ export const createMemberNominee = async (
   );
   if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
   return normalizeNominee(envelope.data);
+};
+
+export const fetchMemberShareholdings = async (memberId: string): Promise<MemberShareholdingList> => {
+  const envelope = await request<MemberShareholdingDetail[]>(`/api/v1/members/${memberId}/shareholdings/`, 'GET');
+  return {
+    items: normalizeShareholdings(envelope.data ?? []),
+    pagination: envelope.pagination ?? emptyPagination,
+  };
+};
+
+export const createMemberShareholding = async (
+  memberId: string,
+  payload: CreateMemberShareholdingPayload,
+): Promise<MemberShareholdingDetail> => {
+  const envelope = await request<MemberShareholdingDetail>(
+    `/api/v1/members/${memberId}/shareholdings/`,
+    'POST',
+    payload,
+  );
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalizeShareholding(envelope.data);
 };
 
 const request = async <T>(
@@ -204,6 +253,27 @@ const normalizeNominee = (item: MemberNomineeDetail): MemberNomineeDetail => ({
   signature_required_flag: Boolean(item?.signature_required_flag),
   created_at: String(item?.created_at ?? ''),
 });
+
+const normalizeShareholdings = (items: MemberShareholdingDetail[]): MemberShareholdingDetail[] => (
+  Array.isArray(items) ? items.map(normalizeShareholding) : []
+);
+
+const normalizeShareholding = (item: MemberShareholdingDetail): MemberShareholdingDetail => ({
+  shareholding_id: String(item?.shareholding_id ?? ''),
+  folio_number: String(item?.folio_number ?? ''),
+  number_of_shares: numberOrZero(item?.number_of_shares),
+  holding_mode: String(item?.holding_mode ?? ''),
+  valuation_per_share: textOrNull(item?.valuation_per_share),
+  valuation_effective_date: textOrNull(item?.valuation_effective_date),
+  pledged_share_count: numberOrZero(item?.pledged_share_count),
+  available_share_count: numberOrZero(item?.available_share_count),
+  future_shares_pledge_flag: Boolean(item?.future_shares_pledge_flag),
+  status: String(item?.status ?? ''),
+});
+
+const numberOrZero = (value: unknown): number => (
+  Number.isFinite(Number(value)) ? Number(value) : 0
+);
 
 const normalizeFieldErrors = (fieldErrors?: Record<string, unknown>): Record<string, string> | undefined => {
   if (!fieldErrors) return undefined;

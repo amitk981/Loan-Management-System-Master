@@ -17,16 +17,21 @@ import StatusBadge from '../../components/ui/StatusBadge';
 import Tabs from '../../components/ui/Tabs';
 import { AuthSessionError } from '../../services/authSession';
 import {
+  createMemberShareholding,
   createMemberNominee,
   fetchMemberNominees,
   fetchMemberProfile,
+  fetchMemberShareholdings,
   type CreateMemberNomineePayload,
+  type CreateMemberShareholdingPayload,
   type MemberNomineeDetail,
   type MemberProfileDetail,
+  type MemberShareholdingDetail,
 } from '../../services/memberProfileApi';
 
 type ProfileStatus = 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
 type NomineeStatus = 'idle' | 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
+type ShareholdingStatus = 'idle' | 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
 
 interface MemberProfileProps {
   memberId: string;
@@ -44,6 +49,12 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
   const [nomineeCreateFieldErrors, setNomineeCreateFieldErrors] = useState<Record<string, string>>({});
   const [nomineeCreateMessage, setNomineeCreateMessage] = useState('');
   const [nomineeCreateSubmitting, setNomineeCreateSubmitting] = useState(false);
+  const [shareholdingStatus, setShareholdingStatus] = useState<ShareholdingStatus>('idle');
+  const [shareholdingMessage, setShareholdingMessage] = useState('');
+  const [shareholdings, setShareholdings] = useState<MemberShareholdingDetail[]>([]);
+  const [shareholdingCreateFieldErrors, setShareholdingCreateFieldErrors] = useState<Record<string, string>>({});
+  const [shareholdingCreateMessage, setShareholdingCreateMessage] = useState('');
+  const [shareholdingCreateSubmitting, setShareholdingCreateSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +66,11 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
     setNominees([]);
     setNomineeCreateFieldErrors({});
     setNomineeCreateMessage('');
+    setShareholdingStatus('idle');
+    setShareholdingMessage('');
+    setShareholdings([]);
+    setShareholdingCreateFieldErrors({});
+    setShareholdingCreateMessage('');
     fetchMemberProfile(memberId)
       .then(result => {
         if (!cancelled) {
@@ -73,6 +89,30 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
       cancelled = true;
     };
   }, [memberId]);
+
+  useEffect(() => {
+    if (status !== 'success' || activeTab !== 1 || shareholdingStatus !== 'idle') return;
+    let cancelled = false;
+    setShareholdingStatus('loading');
+    setShareholdingMessage('');
+    fetchMemberShareholdings(memberId)
+      .then(result => {
+        if (!cancelled) {
+          setShareholdings(result.items);
+          setShareholdingStatus(result.items.length > 0 ? 'success' : 'empty');
+        }
+      })
+      .catch(error => {
+        if (!cancelled) {
+          const next = errorState(error);
+          setShareholdingStatus(next.status);
+          setShareholdingMessage(next.message);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, memberId, shareholdingStatus, status]);
 
   useEffect(() => {
     if (status !== 'success' || activeTab !== 7 || nomineeStatus !== 'idle') return;
@@ -119,6 +159,27 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
     }
   };
 
+  const handleCreateShareholding = async (payload: CreateMemberShareholdingPayload) => {
+    setShareholdingCreateSubmitting(true);
+    setShareholdingCreateFieldErrors({});
+    setShareholdingCreateMessage('');
+    try {
+      const created = await createMemberShareholding(memberId, payload);
+      setShareholdings(current => [created, ...current.filter(item => item.shareholding_id !== created.shareholding_id)]);
+      setShareholdingStatus('success');
+      setShareholdingCreateMessage('Shareholding saved.');
+    } catch (error) {
+      if (error instanceof AuthSessionError) {
+        setShareholdingCreateFieldErrors(error.fieldErrors ?? {});
+        setShareholdingCreateMessage(error.message);
+      } else {
+        setShareholdingCreateMessage(error instanceof Error ? error.message : 'Shareholding could not be saved.');
+      }
+    } finally {
+      setShareholdingCreateSubmitting(false);
+    }
+  };
+
   return (
     <MemberProfileView
       status={status}
@@ -134,6 +195,13 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
       nomineeCreateMessage={nomineeCreateMessage}
       nomineeCreateSubmitting={nomineeCreateSubmitting}
       onCreateNominee={handleCreateNominee}
+      shareholdingStatus={shareholdingStatus}
+      shareholdingMessage={shareholdingMessage}
+      shareholdings={shareholdings}
+      shareholdingCreateFieldErrors={shareholdingCreateFieldErrors}
+      shareholdingCreateMessage={shareholdingCreateMessage}
+      shareholdingCreateSubmitting={shareholdingCreateSubmitting}
+      onCreateShareholding={handleCreateShareholding}
     />
   );
 };
@@ -152,6 +220,13 @@ interface MemberProfileViewProps {
   nomineeCreateMessage?: string;
   nomineeCreateSubmitting?: boolean;
   onCreateNominee?: (payload: CreateMemberNomineePayload) => void | Promise<void>;
+  shareholdingStatus?: ShareholdingStatus;
+  shareholdingMessage?: string;
+  shareholdings?: MemberShareholdingDetail[];
+  shareholdingCreateFieldErrors?: Record<string, string>;
+  shareholdingCreateMessage?: string;
+  shareholdingCreateSubmitting?: boolean;
+  onCreateShareholding?: (payload: CreateMemberShareholdingPayload) => void | Promise<void>;
 }
 
 export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
@@ -168,6 +243,13 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
   nomineeCreateMessage = '',
   nomineeCreateSubmitting = false,
   onCreateNominee,
+  shareholdingStatus = 'idle',
+  shareholdingMessage = '',
+  shareholdings = [],
+  shareholdingCreateFieldErrors = {},
+  shareholdingCreateMessage = '',
+  shareholdingCreateSubmitting = false,
+  onCreateShareholding,
 }) => {
   if (status !== 'success' || !profile) {
     return <ProfileState status={status} message={message} onBack={onBack} />;
@@ -243,7 +325,15 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
 
       <Tabs tabs={tabs} activeIndex={activeTab} onChange={onTabChange}>
         <OverviewTab profile={profile} />
-        <ShareholdingTab profile={profile} />
+        <ShareholdingTab
+          status={shareholdingStatus}
+          message={shareholdingMessage}
+          shareholdings={shareholdings}
+          createFieldErrors={shareholdingCreateFieldErrors}
+          createMessage={shareholdingCreateMessage}
+          createSubmitting={shareholdingCreateSubmitting}
+          onCreateShareholding={onCreateShareholding}
+        />
         <DeferredTab title="Produce Supply History" message="No produce supply records are available from the backend yet." />
         <ServicesTab profile={profile} />
         <LandTab profile={profile} />
@@ -361,18 +451,145 @@ const TypeSpecificDetails: React.FC<{ profile: MemberProfileDetail }> = ({ profi
   );
 };
 
-const ShareholdingTab: React.FC<{ profile: MemberProfileDetail }> = ({ profile }) => (
-  <div className="card space-y-4">
-    <h3 className="font-semibold text-slate-800">Shareholding Details</h3>
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-      <InfoTile label="Total Shares Held" value={formatCount(profile.share_summary.number_of_shares)} />
-      <InfoTile label="Available Shares" value={formatCount(profile.share_summary.available_share_count)} />
-      <InfoTile label="Folio Number" value={profile.folio_number} />
-      <InfoTile label="Shareholding Mode" value={profile.share_summary.holding_mode || '-'} />
+const ShareholdingTab: React.FC<{
+  status: ShareholdingStatus;
+  message: string;
+  shareholdings: MemberShareholdingDetail[];
+  createFieldErrors: Record<string, string>;
+  createMessage: string;
+  createSubmitting: boolean;
+  onCreateShareholding?: (payload: CreateMemberShareholdingPayload) => void | Promise<void>;
+}> = ({
+  status,
+  message,
+  shareholdings,
+  createFieldErrors,
+  createMessage,
+  createSubmitting,
+  onCreateShareholding,
+}) => (
+  <div className="card space-y-5">
+    <div className="flex items-center justify-between gap-3">
+      <h3 className="font-semibold text-slate-800">Shareholding Details</h3>
+      <StatusBadge label={shareholdings.length > 0 ? `${shareholdings.length} recorded` : 'pending'} size="sm" />
     </div>
-    <EmptyPanel icon={<FileText size={18} className="text-slate-500 flex-shrink-0" />} title="Share certificate details are not available from the backend yet." />
+    {createMessage && (
+      <AlertBanner
+        type={Object.keys(createFieldErrors).length > 0 || status === 'forbidden' || status === 'error' ? 'error' : 'success'}
+        title={Object.keys(createFieldErrors).length > 0 ? 'Shareholding validation failed' : 'Shareholding update'}
+        message={createMessage}
+      />
+    )}
+    <ShareholdingState status={status} message={message} shareholdings={shareholdings} />
+    <ShareholdingCreateForm
+      fieldErrors={createFieldErrors}
+      submitting={createSubmitting}
+      onCreateShareholding={onCreateShareholding}
+    />
   </div>
 );
+
+const ShareholdingState: React.FC<{
+  status: ShareholdingStatus;
+  message: string;
+  shareholdings: MemberShareholdingDetail[];
+}> = ({ status, message, shareholdings }) => {
+  if (status === 'idle' || status === 'loading') {
+    return <EmptyPanel icon={<Clock size={18} className="text-slate-500 flex-shrink-0" />} title="Loading shareholding records" />;
+  }
+  if (status === 'empty' || shareholdings.length === 0) {
+    return <EmptyPanel icon={<FileText size={18} className="text-slate-500 flex-shrink-0" />} title={message || 'No shareholding records are available from the backend yet.'} />;
+  }
+  if (status === 'unauthorized' || status === 'forbidden' || status === 'error') {
+    return <EmptyPanel icon={<AlertTriangle size={18} className="text-slate-500 flex-shrink-0" />} title={message || 'Shareholdings could not be loaded.'} />;
+  }
+  return (
+    <div className="space-y-3">
+      {shareholdings.map(shareholding => (
+        <div key={shareholding.shareholding_id} className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">{shareholding.folio_number}</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {titleCase(shareholding.holding_mode)} · {shareholding.status || 'active'}
+              </p>
+            </div>
+            <StatusBadge label={shareholding.future_shares_pledge_flag ? 'future pledge' : shareholding.status || 'active'} size="sm" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <InfoTile label="Total Shares" value={formatCount(shareholding.number_of_shares)} />
+            <InfoTile label="Pledged Shares" value={formatCount(shareholding.pledged_share_count)} />
+            <InfoTile label="Available Shares" value={formatCount(shareholding.available_share_count)} />
+            <InfoTile label="Valuation / Share" value={shareholding.valuation_per_share || '-'} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const ShareholdingCreateForm: React.FC<{
+  fieldErrors: Record<string, string>;
+  submitting: boolean;
+  onCreateShareholding?: (payload: CreateMemberShareholdingPayload) => void | Promise<void>;
+}> = ({ fieldErrors, submitting, onCreateShareholding }) => {
+  const [form, setForm] = useState<CreateMemberShareholdingPayload>({
+    folio_number: '',
+    number_of_shares: 0,
+    holding_mode: 'physical',
+    valuation_per_share: '',
+    valuation_effective_date: '',
+    pledged_share_count: 0,
+    future_shares_pledge_flag: false,
+  });
+  const setField = (field: keyof CreateMemberShareholdingPayload, value: string | number | boolean) => {
+    setForm(current => ({ ...current, [field]: value }));
+  };
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await onCreateShareholding?.(form);
+  };
+  return (
+    <form className="border-t border-slate-100 pt-4 space-y-4" onSubmit={submit}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label="Folio number" error={fieldErrors.folio_number}>
+          <input className="field-input" value={form.folio_number} onChange={event => setField('folio_number', event.target.value)} />
+        </Field>
+        <Field label="Holding mode" error={fieldErrors.holding_mode}>
+          <select className="field-select" value={form.holding_mode} onChange={event => setField('holding_mode', event.target.value)}>
+            <option value="physical">Physical</option>
+            <option value="demat">Demat</option>
+            <option value="mixed">Mixed</option>
+          </select>
+        </Field>
+        <Field label="Number of shares" error={fieldErrors.number_of_shares}>
+          <input type="number" min="0" className="field-input" value={form.number_of_shares} onChange={event => setField('number_of_shares', Number(event.target.value))} />
+        </Field>
+        <Field label="Pledged shares" error={fieldErrors.pledged_share_count}>
+          <input type="number" min="0" className="field-input" value={form.pledged_share_count} onChange={event => setField('pledged_share_count', Number(event.target.value))} />
+        </Field>
+        <Field label="Valuation per share" error={fieldErrors.valuation_per_share}>
+          <input className="field-input" value={form.valuation_per_share} onChange={event => setField('valuation_per_share', event.target.value)} />
+        </Field>
+        <Field label="Valuation effective date" error={fieldErrors.valuation_effective_date}>
+          <input type="date" className="field-input" value={form.valuation_effective_date} onChange={event => setField('valuation_effective_date', event.target.value)} />
+        </Field>
+      </div>
+      <label className="flex items-center gap-2 text-sm text-slate-700">
+        <input
+          type="checkbox"
+          className="accent-green-600"
+          checked={form.future_shares_pledge_flag}
+          onChange={event => setField('future_shares_pledge_flag', event.target.checked)}
+        />
+        Future shares pledged
+      </label>
+      <button className="btn-primary" disabled={submitting || !onCreateShareholding} type="submit">
+        {submitting ? 'Saving shareholding' : 'Save shareholding'}
+      </button>
+    </form>
+  );
+};
 
 const ServicesTab: React.FC<{ profile: MemberProfileDetail }> = ({ profile }) => {
   const serviceFlag = profile.individual_profile?.services_availed_flag ?? profile.producer_institution_profile?.services_availed_flag ?? null;
@@ -609,6 +826,7 @@ const deferredIcon = (title: string) => {
 };
 
 const memberTypeLabel = (value: string) => (value === 'fpc' ? 'FPC' : value.replace(/_/g, ' '));
+const titleCase = (value: string) => value ? `${value.charAt(0).toUpperCase()}${value.slice(1).replace(/_/g, ' ')}` : '-';
 const activeStatusLabel = (profile: MemberProfileDetail) => (
   (profile.active_member_status.status || profile.membership_status) === 'active'
     ? 'active_member'

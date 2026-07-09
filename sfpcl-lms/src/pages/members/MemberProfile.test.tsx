@@ -3,11 +3,14 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearStoredAuthSession, storedAuthSession } from '../../services/authSession';
 import {
+  createMemberShareholding,
   createMemberNominee,
   fetchMemberNominees,
   fetchMemberProfile,
+  fetchMemberShareholdings,
   type MemberNomineeDetail,
   type MemberProfileDetail,
+  type MemberShareholdingDetail,
 } from '../../services/memberProfileApi';
 import { MemberProfileView } from './MemberProfile';
 
@@ -94,6 +97,54 @@ describe('member profile API client', () => {
       }),
     );
   });
+
+  it('loads member shareholdings through the source-backed shareholding endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(listOk([shareholding]));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await fetchMemberShareholdings('member-1');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://127.0.0.1:8000/api/v1/members/member-1/shareholdings/',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({ Authorization: 'Bearer access-token-1' }),
+      }),
+    );
+    expect(result.items[0]).toMatchObject({
+      folio_number: 'FOL-456',
+      number_of_shares: 100,
+      pledged_share_count: 15,
+      available_share_count: 85,
+    });
+  });
+
+  it('creates member shareholdings and surfaces validation fields', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(ok(shareholding))
+      .mockResolvedValueOnce(error(400, 'VALIDATION_ERROR', { pledged_share_count: 'Pledged shares cannot exceed total shares.' }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createMemberShareholding('member-1', shareholdingRequest)).resolves.toMatchObject({
+      folio_number: 'FOL-456',
+      available_share_count: 85,
+    });
+    await expect(createMemberShareholding('member-1', {
+      ...shareholdingRequest,
+      pledged_share_count: 101,
+    })).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+      fieldErrors: { pledged_share_count: 'Pledged shares cannot exceed total shares.' },
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://127.0.0.1:8000/api/v1/members/member-1/shareholdings/',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(shareholdingRequest),
+      }),
+    );
+  });
 });
 
 describe('MemberProfileView', () => {
@@ -149,6 +200,36 @@ describe('MemberProfileView', () => {
     expect(html).toContain('No audit trail records are available from the backend yet.');
     expect(html).not.toContain('APP-');
     expect(html).not.toContain('Overdue repayment reminder');
+  });
+
+  it('renders shareholding tab list and create states from the API', () => {
+    expect(renderProfile('success', member, 1, '', { shareholdingStatus: 'loading' })).toContain('Loading shareholding records');
+    expect(renderProfile('success', member, 1, '', { shareholdingStatus: 'empty', shareholdings: [] })).toContain('No shareholding records are available from the backend yet.');
+    expect(renderProfile('success', member, 1, '', { shareholdingStatus: 'error', shareholdingMessage: 'Shareholdings could not be loaded.' })).toContain('Shareholdings could not be loaded.');
+    const html = renderProfile('success', member, 1, '', {
+      shareholdingStatus: 'success',
+      shareholdings: [shareholding],
+      shareholdingCreateMessage: 'Shareholding saved.',
+    });
+
+    expect(html).toContain('Shareholding Details');
+    expect(html).toContain('FOL-456');
+    expect(html).toContain('Physical');
+    expect(html).toContain('100');
+    expect(html).toContain('85');
+    expect(html).toContain('Shareholding saved.');
+    expect(html).not.toContain('mockData');
+  });
+
+  it('renders shareholding validation errors without falling back to profile summary rows', () => {
+    const html = renderProfile('success', member, 1, '', {
+      shareholdingStatus: 'success',
+      shareholdings: [],
+      shareholdingCreateFieldErrors: { pledged_share_count: 'Pledged shares cannot exceed total shares.' },
+    });
+
+    expect(html).toContain('Pledged shares cannot exceed total shares.');
+    expect(html).not.toContain('Share certificate details are not available from the backend yet.');
   });
 
   it('renders nominee tab list and masked identifiers from the API', () => {
@@ -284,6 +365,29 @@ const nomineeRequest = {
   pan: 'ABCDE1234F',
   aadhaar: '123412341234',
   signature_required_flag: true,
+};
+
+const shareholding: MemberShareholdingDetail = {
+  shareholding_id: 'shareholding-1',
+  folio_number: 'FOL-456',
+  number_of_shares: 100,
+  holding_mode: 'physical',
+  valuation_per_share: '2000.00',
+  valuation_effective_date: '2026-04-01',
+  pledged_share_count: 15,
+  available_share_count: 85,
+  future_shares_pledge_flag: true,
+  status: 'active',
+};
+
+const shareholdingRequest = {
+  folio_number: 'FOL-456',
+  number_of_shares: 100,
+  holding_mode: 'physical',
+  valuation_per_share: '2000.00',
+  valuation_effective_date: '2026-04-01',
+  pledged_share_count: 15,
+  future_shares_pledge_flag: true,
 };
 
 const renderProfile = (

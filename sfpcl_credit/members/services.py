@@ -1,22 +1,26 @@
 import hashlib
 import hmac
 import re
+import uuid
 from datetime import date
+from decimal import Decimal, InvalidOperation
 from math import ceil
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.utils.dateparse import parse_date
 
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.members.models import Member, Nominee
+from sfpcl_credit.members.models import Member, Nominee, Shareholding
 
 
 MEMBER_READ_PERMISSION = "members.member.read"
 NOMINEE_READ_PERMISSION = "members.nominee.read"
 NOMINEE_CREATE_PERMISSION = "members.nominee.create"
+SHAREHOLDING_READ_PERMISSION = "members.shareholding.read"
+SHAREHOLDING_CREATE_PERMISSION = "members.shareholding.create"
 _DEFAULT_PAGE_SIZE = 20
 _MAX_PAGE_SIZE = 100
 _LEGAL_MAJORITY_AGE = 18
@@ -43,6 +47,14 @@ def user_can_read_nominees(user):
 
 def user_can_create_nominees(user):
     return NOMINEE_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_read_shareholdings(user):
+    return SHAREHOLDING_READ_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_create_shareholdings(user):
+    return SHAREHOLDING_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
 
 
 def paginated_members(query_params):
@@ -248,6 +260,90 @@ def serialize_nominee(nominee):
     }
 
 
+def paginated_shareholdings(member, query_params):
+    page = _positive_int(query_params.get("page"), 1, "page")
+    page_size = min(
+        _positive_int(query_params.get("page_size"), _DEFAULT_PAGE_SIZE, "page_size"),
+        _MAX_PAGE_SIZE,
+    )
+    queryset = member.shareholdings.order_by("created_at", "shareholding_id")
+    total_count = queryset.count()
+    total_pages = ceil(total_count / page_size) if total_count else 1
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+    items = [serialize_shareholding(row) for row in queryset[offset : offset + page_size]]
+    return items, {
+        "page": page,
+        "page_size": page_size,
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_previous": page > 1,
+    }
+
+
+def create_shareholding(member, payload, actor_user, request_ip="", request_user_agent=""):
+    values = _validated_shareholding_payload(payload)
+    shareholding = Shareholding.objects.create(
+        member=member,
+        folio_number=values["folio_number"],
+        number_of_shares=values["number_of_shares"],
+        holding_mode=values["holding_mode"],
+        demat_account_id=values["demat_account_id"],
+        latest_share_valuation_id=values["latest_share_valuation_id"],
+        valuation_per_share=values["valuation_per_share"],
+        valuation_effective_date=values["valuation_effective_date"],
+        pledged_share_count=values["pledged_share_count"],
+        available_share_count=values["available_share_count"],
+        future_shares_pledge_flag=values["future_shares_pledge_flag"],
+        status="active",
+    )
+    _refresh_member_share_summary(member)
+    AuditLog.objects.create(
+        actor_user=actor_user,
+        action="members.shareholding.created",
+        entity_type="shareholding",
+        entity_id=shareholding.shareholding_id,
+        new_value_json={
+            "member_id": str(member.member_id),
+            "shareholding_id": str(shareholding.shareholding_id),
+            "folio_number": shareholding.folio_number,
+            "number_of_shares": shareholding.number_of_shares,
+            "holding_mode": shareholding.holding_mode,
+            "pledged_share_count": shareholding.pledged_share_count,
+            "available_share_count": shareholding.available_share_count,
+            "future_shares_pledge_flag": shareholding.future_shares_pledge_flag,
+            "status": shareholding.status,
+        },
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+    return shareholding
+
+
+def serialize_shareholding(shareholding):
+    return {
+        "shareholding_id": str(shareholding.shareholding_id),
+        "folio_number": shareholding.folio_number,
+        "number_of_shares": shareholding.number_of_shares,
+        "holding_mode": shareholding.holding_mode,
+        "valuation_per_share": (
+            f"{shareholding.valuation_per_share:.2f}"
+            if shareholding.valuation_per_share is not None
+            else None
+        ),
+        "valuation_effective_date": (
+            shareholding.valuation_effective_date.isoformat()
+            if shareholding.valuation_effective_date
+            else None
+        ),
+        "pledged_share_count": shareholding.pledged_share_count,
+        "available_share_count": shareholding.available_share_count,
+        "future_shares_pledge_flag": shareholding.future_shares_pledge_flag,
+        "status": shareholding.status,
+    }
+
+
 def _validate_query(query_params):
     unknown = set(query_params.keys()) - _ALLOWED_PARAMS
     if unknown:
@@ -358,6 +454,113 @@ def _validated_nominee_payload(payload):
     }
 
 
+def _validated_shareholding_payload(payload):
+    folio_number = str(payload.get("folio_number") or "").strip()
+    holding_mode = str(payload.get("holding_mode") or "").strip()
+    if not folio_number:
+        raise ValidationError({"folio_number": "This field is required."})
+    if not holding_mode:
+        raise ValidationError({"holding_mode": "This field is required."})
+    if holding_mode not in Shareholding.HOLDING_MODES:
+        raise ValidationError({"holding_mode": "Unsupported holding mode."})
+
+    number_of_shares = _required_non_negative_int(
+        payload.get("number_of_shares"), "number_of_shares"
+    )
+    pledged_share_count = _optional_non_negative_int(
+        payload.get("pledged_share_count"), "pledged_share_count", 0
+    )
+    if pledged_share_count > number_of_shares:
+        raise ValidationError(
+            {"pledged_share_count": "Pledged shares cannot exceed total shares."}
+        )
+
+    return {
+        "folio_number": folio_number,
+        "number_of_shares": number_of_shares,
+        "holding_mode": holding_mode,
+        "demat_account_id": _optional_uuid(payload.get("demat_account_id"), "demat_account_id"),
+        "latest_share_valuation_id": _optional_uuid(
+            payload.get("latest_share_valuation_id"), "latest_share_valuation_id"
+        ),
+        "valuation_per_share": _optional_decimal(
+            payload.get("valuation_per_share"), "valuation_per_share"
+        ),
+        "valuation_effective_date": _optional_date(
+            payload.get("valuation_effective_date"), "valuation_effective_date"
+        ),
+        "pledged_share_count": pledged_share_count,
+        "available_share_count": number_of_shares - pledged_share_count,
+        "future_shares_pledge_flag": bool(payload.get("future_shares_pledge_flag", False)),
+    }
+
+
+def _required_non_negative_int(value, field):
+    if value in (None, ""):
+        raise ValidationError({field: "This field is required."})
+    return _non_negative_int(value, field)
+
+
+def _optional_non_negative_int(value, field, default):
+    if value in (None, ""):
+        return default
+    return _non_negative_int(value, field)
+
+
+def _non_negative_int(value, field):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError({field: "Value must be a non-negative integer."}) from exc
+    if parsed < 0:
+        raise ValidationError({field: "Value must be a non-negative integer."})
+    return parsed
+
+
+def _optional_decimal(value, field):
+    if value in (None, ""):
+        return None
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, ValueError) as exc:
+        raise ValidationError({field: "Value must be a decimal amount."}) from exc
+
+
+def _optional_date(value, field):
+    if value in (None, ""):
+        return None
+    parsed = parse_date(str(value))
+    if parsed is None:
+        raise ValidationError({field: "Value must be an ISO date."})
+    return parsed
+
+
+def _optional_uuid(value, field):
+    if value in (None, ""):
+        return None
+    try:
+        return uuid.UUID(str(value))
+    except ValueError as exc:
+        raise ValidationError({field: "Value must be a UUID."}) from exc
+
+
+def _refresh_member_share_summary(member):
+    active_shareholdings = member.shareholdings.filter(status="active")
+    totals = active_shareholdings.aggregate(
+        number_of_shares=Sum("number_of_shares"),
+        available_share_count=Sum("available_share_count"),
+    )
+    modes = list(
+        active_shareholdings.order_by("holding_mode")
+        .values_list("holding_mode", flat=True)
+        .distinct()
+    )
+    member.number_of_shares = totals["number_of_shares"] or 0
+    member.available_share_count = totals["available_share_count"] or 0
+    member.holding_mode = modes[0] if len(modes) == 1 else ("mixed" if modes else "")
+    member.save(update_fields=["number_of_shares", "available_share_count", "holding_mode"])
+
+
 def _required_date(value):
     if not value:
         raise NomineeValidationError(
@@ -463,15 +666,22 @@ __all__ = [
     "NOMINEE_CREATE_PERMISSION",
     "NOMINEE_READ_PERMISSION",
     "NomineeValidationError",
+    "SHAREHOLDING_CREATE_PERMISSION",
+    "SHAREHOLDING_READ_PERMISSION",
     "create_nominee",
+    "create_shareholding",
     "get_accessible_member",
     "get_member_profile",
     "paginated_nominees",
     "paginated_members",
+    "paginated_shareholdings",
     "serialize_nominee",
     "serialize_member_profile",
+    "serialize_shareholding",
     "user_can_create_nominees",
+    "user_can_create_shareholdings",
     "user_can_read_members",
     "user_can_read_nominees",
+    "user_can_read_shareholdings",
     "validation_field_errors",
 ]

@@ -152,3 +152,48 @@ before implementation.
   shareholding/shareholder facts and a real loan-application boundary exist. 004F shareholding now
   follows 004D2 directly so witness verification can later resolve against real facts instead of a
   member-level or boolean-only stub.
+
+## 004F Shareholding Extracts
+- `api-contracts.md` §15.1-§15.2 define member shareholding list/create/update. 004F implements
+  only `GET`/`POST /api/v1/members/{member_id}/shareholdings/`; `PATCH
+  /api/v1/shareholdings/{shareholding_id}/` is deferred to a follow-up slice.
+- `data-model.md` §11.1 requires member FK, folio number, non-negative share count, holding mode
+  (`physical`/`demat`/`mixed`), nullable demat/valuation references, valuation snapshot fields,
+  pledged and available share counts, future-shares pledge flag, status, and timestamps.
+  004F maintains `available_share_count = number_of_shares - pledged_share_count` and rejects
+  pledged shares above total shares.
+- `auth-permissions.md` §12.2/endpoint map uses `members.shareholding.read` for list and
+  `members.shareholding.create` for create. 004F does not use `members.member.read` as a substitute
+  for shareholding access.
+- 004F writes `members.shareholding.created` audit metadata for successful creates and no workflow
+  event. Read-only list access writes no audit/workflow row.
+- Member Profile's Shareholding tab is API-backed and must not render `mockData` shareholding rows
+  or a certificate placeholder as the primary backend-backed state. It uses existing card, empty
+  panel, alert, and form patterns.
+- `data-model.md` §11.2 share certificates remain deferred: certificate number, optional
+  distinctive range, share count, optional document FK, and active/pledged/transferred status should
+  be implemented in a small follow-up slice, not folded into unrelated land/KYC work.
+
+## 004G/004H Queue-Sharpening Extracts
+- `api-contracts.md` §17.1 defines land-holding endpoints:
+  `GET`/`POST /api/v1/members/{member_id}/land-holdings/` and detail/update
+  `/api/v1/land-holdings/{land_holding_id}/`. Create request fields: `document_type`,
+  `survey_number`, `village`, `taluka`, `district`, `state`, `area_acres`, `document_id`.
+- `api-contracts.md` §17.2 defines crop-plan endpoints:
+  `GET`/`POST /api/v1/members/{member_id}/crop-plans/` and detail/update
+  `/api/v1/crop-plans/{crop_plan_id}/`. Create request fields: nullable
+  `loan_application_id`, `crop_type`, `season`, `planned_area_acres`,
+  `estimated_cost_amount`, `loan_purpose_alignment`, and nullable `document_id`.
+- `data-model.md` §11.7 requires land-holding verification fields and says 7/12 extract is
+  required for loan application, while `area_acres` feeds land-based loan limit. 004G must not
+  invent loan-limit calculations or application blockers.
+- `data-model.md` §11.8 requires crop-plan verification fields. 004G should persist records and
+  validation only; loan-purpose eligibility decisions belong to later application/eligibility
+  slices.
+- `api-contracts.md` §18.1-§18.5 define KYC profile list/create/update, document upload, document
+  verify, and re-KYC review endpoints. `data-model.md` §12.1-§12.2 requires `kyc_profiles` and
+  `kyc_documents`; KYC must be complete before disbursement, and re-KYC recurs every two years.
+- Screen spec S06 Land and Crop Evidence tab fields are 7/12 extract document, land area under
+  cultivation, crop plan, crop type, season, per-acre scale of finance, and land-based eligible
+  amount. 004G should not add frontend UI unless it wires to real backend data using existing
+  Member Profile patterns.

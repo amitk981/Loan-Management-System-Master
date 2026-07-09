@@ -185,3 +185,84 @@ class Nominee(models.Model):
 
     def __str__(self):
         return self.nominee_name
+
+
+class Shareholding(models.Model):
+    HOLDING_MODES = {"physical", "demat", "mixed"}
+    STATUSES = {"active", "inactive"}
+
+    shareholding_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="shareholdings")
+    folio_number = models.CharField(max_length=100, db_index=True)
+    number_of_shares = models.IntegerField()
+    holding_mode = models.CharField(max_length=40, db_index=True)
+    demat_account_id = models.UUIDField(blank=True, null=True)
+    latest_share_valuation_id = models.UUIDField(blank=True, null=True)
+    valuation_per_share = models.DecimalField(
+        max_digits=18, decimal_places=2, blank=True, null=True
+    )
+    valuation_effective_date = models.DateField(blank=True, null=True)
+    pledged_share_count = models.IntegerField(default=0)
+    available_share_count = models.IntegerField()
+    future_shares_pledge_flag = models.BooleanField(default=False)
+    status = models.CharField(max_length=40, default="active")
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = "shareholdings"
+        indexes = [
+            models.Index(fields=["member"], name="idx_shareholdings_member"),
+            models.Index(fields=["folio_number"], name="idx_shareholdings_folio"),
+            models.Index(fields=["holding_mode"], name="idx_shareholdings_mode"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(number_of_shares__gte=0),
+                name="shareholdings_non_negative_shares",
+            ),
+            models.CheckConstraint(
+                check=models.Q(pledged_share_count__gte=0),
+                name="shareholdings_non_negative_pledged",
+            ),
+            models.CheckConstraint(
+                check=models.Q(pledged_share_count__lte=models.F("number_of_shares")),
+                name="shareholdings_pledged_lte_total",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    available_share_count=models.F("number_of_shares")
+                    - models.F("pledged_share_count")
+                ),
+                name="shareholdings_available_derived",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.holding_mode not in self.HOLDING_MODES:
+            raise ValidationError({"holding_mode": "Unsupported holding mode."})
+        if self.status not in self.STATUSES:
+            raise ValidationError({"status": "Unsupported shareholding status."})
+        if self.number_of_shares is not None and self.number_of_shares < 0:
+            raise ValidationError({"number_of_shares": "Share count cannot be negative."})
+        if self.pledged_share_count is not None and self.pledged_share_count < 0:
+            raise ValidationError({"pledged_share_count": "Pledged share count cannot be negative."})
+        if (
+            self.number_of_shares is not None
+            and self.pledged_share_count is not None
+            and self.pledged_share_count > self.number_of_shares
+        ):
+            raise ValidationError(
+                {"pledged_share_count": "Pledged shares cannot exceed total shares."}
+            )
+        self.available_share_count = (
+            self.number_of_shares or 0
+        ) - (self.pledged_share_count or 0)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.folio_number} ({self.number_of_shares})"

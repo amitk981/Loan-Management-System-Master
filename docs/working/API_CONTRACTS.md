@@ -238,6 +238,51 @@ Rules:
   `kyc_status: "pending"`, `minor_flag: false`, stores the calculated `age_at_application`, and
   writes `members.nominee.created` audit metadata without a workflow event.
 
+## Member Shareholding API (004F)
+
+`GET /api/v1/members/{member_id}/shareholdings/`
+
+Rules:
+- Requires a session-bound bearer token and `members.shareholding.read`; missing auth returns
+  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and an unknown or
+  soft-deleted member returns `404 NOT_FOUND`.
+- Returns the standard top-level list envelope. Each item contains `shareholding_id`,
+  `folio_number`, `number_of_shares`, `holding_mode`, nullable `valuation_per_share`, nullable
+  `valuation_effective_date`, `pledged_share_count`, `available_share_count`,
+  `future_shares_pledge_flag`, and `status`.
+- Read-only shareholding access writes no workflow event and no access audit row.
+
+`POST /api/v1/members/{member_id}/shareholdings/`
+
+Request data:
+
+```json
+{
+  "folio_number": "FOL-456",
+  "number_of_shares": 100,
+  "holding_mode": "physical",
+  "valuation_per_share": "2000.00",
+  "valuation_effective_date": "2026-04-01",
+  "pledged_share_count": 15,
+  "future_shares_pledge_flag": true
+}
+```
+
+Rules:
+- Requires `members.shareholding.create`, not `members.shareholding.read`.
+- `holding_mode` is limited to `physical`, `demat`, or `mixed`. Demat account and latest valuation
+  references are accepted as nullable UUID fields only when supplied; demat account table behavior
+  remains deferred.
+- `number_of_shares` and `pledged_share_count` must be non-negative integers, and pledged shares
+  cannot exceed total shares. `available_share_count` is maintained as
+  `number_of_shares - pledged_share_count` and protected by a database check constraint.
+- Successful create updates the member directory/profile share summary from active shareholdings:
+  total shares, total available shares, and holding mode (`mixed` when multiple active modes exist).
+- Successful create writes `members.shareholding.created` audit metadata without a workflow event.
+- `PATCH /api/v1/shareholdings/{shareholding_id}/`, share certificates, demat account management,
+  CDSL integration, share valuation calculation, pledge eligibility, and loan-limit rules are
+  deferred to later slices.
+
 ## Shared response envelope (002C2)
 
 Health and auth endpoints use one production envelope implementation in `sfpcl_credit/api.py`
