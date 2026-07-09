@@ -159,7 +159,7 @@ Rules:
 - Missing bearer token returns `401 AUTH_REQUIRED`; users without `members.member.read` return `403 PERMISSION_DENIED`.
 - Unknown query parameters or unsupported enum values return `400 VALIDATION_ERROR` with `field_errors`.
 - The directory response never includes PAN or Aadhaar fields. `mobile_number` is masked to last four digits.
-- Read-only list access writes no audit/workflow event. Sensitive reveal, exports, profile detail, create/update, nominee, witness, KYC verification, share certificate, demat, land/crop, loan application, and Borrower 360 behavior are explicitly deferred.
+- Read-only list access writes no audit/workflow event. Exports, create/update, nominee, witness, KYC verification, share certificate, demat, land/crop, loan application, and Borrower 360 behavior are explicitly deferred.
 
 ## Member Profile Detail API (004B, extended by 004C)
 
@@ -171,8 +171,9 @@ Rules:
   unknown or soft-deleted returns `404 NOT_FOUND`.
 - Returns the standard success envelope with member identifiers, status fields, masked mobile,
   registered address, share and active-member shell fields, `pan`/`aadhaar` as
-  `{ "masked": "...", "can_view_full": false }`, nullable type-specific profile objects, and
-  §44-shaped `available_actions[]`.
+  `{ "masked": "...", "can_view_full": boolean }`, nullable type-specific profile objects, and
+  §44-shaped `available_actions[]`. `can_view_full` is true only for the matching field-specific
+  reveal permission; it never includes the full source value in the profile response.
 - `available_actions[]` is currently empty for member profile detail. The profile read does not infer
   `create_loan_application` from `membership_status`, `kyc_status`, `default_status`, or
   `applications.loan_application.create`; slice 005A and later eligibility slices own the
@@ -189,10 +190,59 @@ Rules:
 - Profile persistence rejects an individual profile whose member is not `individual_farmer` and
   rejects a producer-institution profile whose member is not `fpc` or `producer_institution`.
 - The response never serializes `pan_encrypted`, `aadhaar_encrypted`, `pan_hash`, `aadhaar_hash`, or
-  full source values. Producer authorised-signatory PAN/Aadhaar fields are not stored or returned;
-  §13.5 sensitive reveal controls remain deferred.
+  full source values. Producer authorised-signatory PAN/Aadhaar fields are not stored or returned.
 - Masked read-only profile access writes no workflow event and no profile-access audit row beyond
   normal authentication audit.
+
+## Member Sensitive Reveal API (004I)
+
+`POST /api/v1/members/{member_id}/reveal-sensitive-field/`
+
+Request:
+
+```json
+{
+  "field_name": "pan",
+  "reason": "KYC verification during loan application"
+}
+```
+
+Success response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "field_name": "pan",
+    "value": "ABCDE1234F",
+    "expires_at": "2026-06-22T10:35:00Z"
+  },
+  "meta": { "request_id": "req-id", "timestamp": "2026-06-22T10:30:00Z", "api_version": "v1" }
+}
+```
+
+Rules:
+- Implemented fields are member `pan` and `aadhaar` only. Nominee, witness, signatory, document,
+  bank, export, and generic sensitive-data reveal remain deferred.
+- Requires a session-bound bearer token, the base member read permission `members.member.read`, and
+  the field-specific permission: `members.sensitive.reveal_pan` for `pan` and
+  `members.sensitive.reveal_aadhaar` for `aadhaar`. Broad member read, KYC, document, admin, or
+  export permissions do not grant reveal.
+- Missing auth returns `401 AUTH_REQUIRED` without a reveal audit because no actor is known. Missing
+  base read returns `403 PERMISSION_DENIED`; missing field-specific permission returns
+  `403 SENSITIVE_FIELD_ACCESS_DENIED`; unsupported/missing `field_name`, blank `reason`, or an
+  unavailable source value return `400 VALIDATION_ERROR`; unknown or soft-deleted members return
+  `404 NOT_FOUND`.
+- Successful reveal returns the full value only in the immediate response with a five-minute
+  `expires_at` timestamp. The response includes `Cache-Control: no-store` and `Pragma: no-cache`.
+  The existing masked member profile remains masked; the frontend keeps full values only in
+  temporary component state and clears the reason after success.
+- Successful reveals write one `AuditLog` action `members.sensitive_field.revealed`. Authenticated
+  denied reveal attempts write `members.sensitive_field.reveal_denied`. Audit metadata includes
+  actor, member ID, field name, reason, outcome, denial reason when applicable, request ID, IP,
+  user-agent, and expiry for successful reveals. Audit rows never include full PAN/Aadhaar,
+  encrypted token columns, hash values, or submitted identifier-derived values.
+- Sensitive reveal writes no `WorkflowEvent`.
 
 ## Member Nominee API (004D)
 

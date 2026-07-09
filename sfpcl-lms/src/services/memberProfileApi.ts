@@ -251,10 +251,38 @@ export interface VerifyMemberKycDocumentPayload {
   remarks: string;
 }
 
+export interface RevealSensitiveFieldPayload {
+  field_name: 'pan' | 'aadhaar';
+  reason: string;
+}
+
+export interface RevealSensitiveFieldResponse {
+  field_name: 'pan' | 'aadhaar';
+  value: string;
+  expires_at: string;
+}
+
 export const fetchMemberProfile = async (memberId: string): Promise<MemberProfileDetail> => {
   const envelope = await request<MemberProfileDetail>(`/api/v1/members/${memberId}/`, 'GET');
   if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
   return normalize(envelope.data);
+};
+
+export const revealMemberSensitiveField = async (
+  memberId: string,
+  payload: RevealSensitiveFieldPayload,
+): Promise<RevealSensitiveFieldResponse> => {
+  const envelope = await request<RevealSensitiveFieldResponse>(
+    `/api/v1/members/${memberId}/reveal-sensitive-field/`,
+    'POST',
+    payload,
+  );
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return {
+    field_name: envelope.data.field_name,
+    value: String(envelope.data.value ?? ''),
+    expires_at: String(envelope.data.expires_at ?? ''),
+  };
 };
 
 export const fetchMemberNominees = async (memberId: string): Promise<MemberNomineeList> => {

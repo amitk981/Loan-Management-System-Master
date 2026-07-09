@@ -1,0 +1,107 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 13 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: communications, configurations, contenttypes, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying documents.0001_initial... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying members.0007_kycprofile_kycdocument_and_more... OK
+  Applying scheduler.0001_initial... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_aadhaar_reveal_uses_aadhaar_permission_only (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_aadhaar_reveal_uses_aadhaar_permission_only) ... ok
+test_authenticated_user_can_retrieve_masked_member_profile_detail (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_authenticated_user_can_retrieve_masked_member_profile_detail) ... ok
+test_masked_profile_read_does_not_create_audit_or_workflow_events (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_masked_profile_read_does_not_create_audit_or_workflow_events) ... ok
+test_member_profile_does_not_derive_loan_start_actions_from_member_statuses (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_does_not_derive_loan_start_actions_from_member_statuses) ... ok
+test_member_profile_requires_authentication_and_member_read_permission (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_requires_authentication_and_member_read_permission) ... ok
+test_member_profile_returns_not_found_for_unknown_or_deleted_member (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_returns_not_found_for_unknown_or_deleted_member) ... ok
+test_member_profile_sets_can_view_full_by_field_specific_permissions_without_full_values (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_sets_can_view_full_by_field_specific_permissions_without_full_values) ... FAIL
+test_member_without_type_specific_profile_returns_null_profile_objects (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_without_type_specific_profile_returns_null_profile_objects) ... ok
+test_pan_reveal_returns_temporary_value_and_audits_metadata_only (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_pan_reveal_returns_temporary_value_and_audits_metadata_only) ... ok
+test_producer_institution_profile_serializes_non_sensitive_fields_only (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_producer_institution_profile_serializes_non_sensitive_fields_only) ... ok
+test_profile_models_reject_member_type_mismatches (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_profile_models_reject_member_type_mismatches) ... ok
+test_reveal_requires_authentication_base_read_and_field_permission (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_reveal_requires_authentication_base_read_and_field_permission) ... FAIL
+test_reveal_validates_field_reason_member_and_available_value (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_reveal_validates_field_reason_member_and_available_value) ... 
+  test_reveal_validates_field_reason_member_and_available_value (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_reveal_validates_field_reason_member_and_available_value) (body={'reason': 'KYC verification'}) ... FAIL
+  test_reveal_validates_field_reason_member_and_available_value (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_reveal_validates_field_reason_member_and_available_value) (body={'field_name': 'ifsc', 'reason': 'KYC verification'}) ... FAIL
+  test_reveal_validates_field_reason_member_and_available_value (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_reveal_validates_field_reason_member_and_available_value) (body={'field_name': 'pan', 'reason': '   '}) ... FAIL
+test_reveal_validates_field_reason_member_and_available_value (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_reveal_validates_field_reason_member_and_available_value) ... FAIL
+
+======================================================================
+FAIL: test_member_profile_sets_can_view_full_by_field_specific_permissions_without_full_values (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_sets_can_view_full_by_field_specific_permissions_without_full_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_150108_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 213, in test_member_profile_sets_can_view_full_by_field_specific_permissions_without_full_values
+    self.assertEqual(data["pan"], {"masked": "******234F", "can_view_full": True})
+AssertionError: {'masked': '******234F', 'can_view_full': False} != {'masked': '******234F', 'can_view_full': True}
+- {'can_view_full': False, 'masked': '******234F'}
+?                   ^^^^
+
++ {'can_view_full': True, 'masked': '******234F'}
+?                   ^^^
+
+
+======================================================================
+FAIL: test_reveal_requires_authentication_base_read_and_field_permission (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_reveal_requires_authentication_base_read_and_field_permission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_150108_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 449, in test_reveal_requires_authentication_base_read_and_field_permission
+    self.assertEqual(denials.count(), 2)
+AssertionError: 0 != 2
+
+======================================================================
+FAIL: test_reveal_validates_field_reason_member_and_available_value (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_reveal_validates_field_reason_member_and_available_value) (body={'reason': 'KYC verification'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_150108_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 474, in test_reveal_validates_field_reason_member_and_available_value
+    self.assertEqual(response.status_code, 400)
+AssertionError: 403 != 400
+
+======================================================================
+FAIL: test_reveal_validates_field_reason_member_and_available_value (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_reveal_validates_field_reason_member_and_available_value) (body={'field_name': 'ifsc', 'reason': 'KYC verification'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_150108_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 474, in test_reveal_validates_field_reason_member_and_available_value
+    self.assertEqual(response.status_code, 400)
+AssertionError: 403 != 400
+
+======================================================================
+FAIL: test_reveal_validates_field_reason_member_and_available_value (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_reveal_validates_field_reason_member_and_available_value) (body={'field_name': 'pan', 'reason': '   '})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_150108_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 474, in test_reveal_validates_field_reason_member_and_available_value
+    self.assertEqual(response.status_code, 400)
+AssertionError: 200 != 400
+
+======================================================================
+FAIL: test_reveal_validates_field_reason_member_and_available_value (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_reveal_validates_field_reason_member_and_available_value)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_150108_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 496, in test_reveal_validates_field_reason_member_and_available_value
+    self.assertEqual(response.status_code, 400)
+AssertionError: 200 != 400
+
+----------------------------------------------------------------------
+Ran 13 tests in 26.440s
+
+FAILED (failures=6)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

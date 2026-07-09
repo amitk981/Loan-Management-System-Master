@@ -6,6 +6,8 @@ import {
   Clock,
   FileText,
   History,
+  Eye,
+  EyeOff,
   Lock,
   MapPin,
   MessageSquare,
@@ -28,6 +30,7 @@ import {
   fetchMemberNominees,
   fetchMemberProfile,
   fetchMemberShareholdings,
+  revealMemberSensitiveField,
   updateMemberKycProfile,
   uploadMemberKycDocument,
   verifyMemberKycDocument,
@@ -737,34 +740,98 @@ const ProfileState: React.FC<{ status: ProfileStatus; message?: string; onBack: 
 };
 
 const OverviewTab: React.FC<{ profile: MemberProfileDetail }> = ({ profile }) => (
-  <div className="card space-y-5">
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-      {[
-        ['Member ID', profile.member_id.toUpperCase()],
-        ['Member Number', profile.member_number || '-'],
-        ['Folio Number', profile.folio_number],
-        ['Member Type', memberTypeLabel(profile.member_type)],
-        ['Membership Status', profile.membership_status.replace(/_/g, ' ')],
-        ['Active Status', activeStatusLabel(profile).replace(/_/g, ' ')],
-        ['Registered On', formatDate(profile.membership_start_date)],
-        ['Mobile', profile.mobile_number || '-'],
-        ['Email', profile.email || '-'],
-      ].map(([label, value]) => <InfoTile key={label} label={label} value={value} />)}
-    </div>
-    <div>
-      <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1 flex items-center gap-1"><MapPin size={12} /> Address</p>
-      <p className="text-sm text-slate-800">{addressText(profile)}</p>
-    </div>
-    <TypeSpecificDetails profile={profile} />
-    <div className="border-t border-slate-100 pt-4">
-      <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-3 flex items-center gap-1"><Lock size={12} /> Sensitive Identifiers - Masked</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <SensitiveTile label="PAN" value={profile.pan.masked} />
-        <SensitiveTile label="Aadhaar" value={profile.aadhaar.masked} />
+  <OverviewPanel profile={profile} />
+);
+
+const OverviewPanel: React.FC<{ profile: MemberProfileDetail }> = ({ profile }) => {
+  const [revealed, setRevealed] = useState<Record<string, { value: string; expiresAt: string }>>({});
+  const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [messages, setMessages] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState<Record<string, boolean>>({});
+
+  const handleReveal = async (fieldName: 'pan' | 'aadhaar') => {
+    const reason = (reasons[fieldName] || '').trim();
+    if (!reason) {
+      setMessages(current => ({ ...current, [fieldName]: 'Reason is required before reveal.' }));
+      return;
+    }
+    setSubmitting(current => ({ ...current, [fieldName]: true }));
+    setMessages(current => ({ ...current, [fieldName]: '' }));
+    try {
+      const result = await revealMemberSensitiveField(profile.member_id, { field_name: fieldName, reason });
+      setRevealed(current => ({ ...current, [fieldName]: { value: result.value, expiresAt: result.expires_at } }));
+      setReasons(current => ({ ...current, [fieldName]: '' }));
+      setMessages(current => ({ ...current, [fieldName]: `Temporary access expires at ${formatDateTime(result.expires_at)}.` }));
+    } catch (error) {
+      setMessages(current => ({
+        ...current,
+        [fieldName]: error instanceof Error ? error.message : 'Sensitive value could not be revealed.',
+      }));
+    } finally {
+      setSubmitting(current => ({ ...current, [fieldName]: false }));
+    }
+  };
+
+  const hideReveal = (fieldName: 'pan' | 'aadhaar') => {
+    setRevealed(current => {
+      const next = { ...current };
+      delete next[fieldName];
+      return next;
+    });
+  };
+
+  return (
+    <div className="card space-y-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {[
+          ['Member ID', profile.member_id.toUpperCase()],
+          ['Member Number', profile.member_number || '-'],
+          ['Folio Number', profile.folio_number],
+          ['Member Type', memberTypeLabel(profile.member_type)],
+          ['Membership Status', profile.membership_status.replace(/_/g, ' ')],
+          ['Active Status', activeStatusLabel(profile).replace(/_/g, ' ')],
+          ['Registered On', formatDate(profile.membership_start_date)],
+          ['Mobile', profile.mobile_number || '-'],
+          ['Email', profile.email || '-'],
+        ].map(([label, value]) => <InfoTile key={label} label={label} value={value} />)}
+      </div>
+      <div>
+        <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1 flex items-center gap-1"><MapPin size={12} /> Address</p>
+        <p className="text-sm text-slate-800">{addressText(profile)}</p>
+      </div>
+      <TypeSpecificDetails profile={profile} />
+      <div className="border-t border-slate-100 pt-4">
+        <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-3 flex items-center gap-1"><Lock size={12} /> Sensitive Identifiers - Masked</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <SensitiveTile
+            label="PAN"
+            value={revealed.pan?.value || profile.pan.masked}
+            canReveal={profile.pan.can_view_full}
+            revealed={Boolean(revealed.pan)}
+            reason={reasons.pan || ''}
+            message={messages.pan || ''}
+            submitting={Boolean(submitting.pan)}
+            onReasonChange={value => setReasons(current => ({ ...current, pan: value }))}
+            onReveal={() => handleReveal('pan')}
+            onHide={() => hideReveal('pan')}
+          />
+          <SensitiveTile
+            label="Aadhaar"
+            value={revealed.aadhaar?.value || profile.aadhaar.masked}
+            canReveal={profile.aadhaar.can_view_full}
+            revealed={Boolean(revealed.aadhaar)}
+            reason={reasons.aadhaar || ''}
+            message={messages.aadhaar || ''}
+            submitting={Boolean(submitting.aadhaar)}
+            onReasonChange={value => setReasons(current => ({ ...current, aadhaar: value }))}
+            onReveal={() => handleReveal('aadhaar')}
+            onHide={() => hideReveal('aadhaar')}
+          />
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const TypeSpecificDetails: React.FC<{ profile: MemberProfileDetail }> = ({ profile }) => {
   const isInstitution = profile.member_type === 'fpc' || profile.member_type === 'producer_institution';
@@ -1620,13 +1687,57 @@ const InfoTile: React.FC<{ label: string; value: string | number }> = ({ label, 
   </div>
 );
 
-const SensitiveTile: React.FC<{ label: string; value: string | null }> = ({ label, value }) => (
+const SensitiveTile: React.FC<{
+  label: string;
+  value: string | null;
+  canReveal?: boolean;
+  revealed?: boolean;
+  reason?: string;
+  message?: string;
+  submitting?: boolean;
+  onReasonChange?: (value: string) => void;
+  onReveal?: () => void;
+  onHide?: () => void;
+}> = ({
+  label,
+  value,
+  canReveal = false,
+  revealed = false,
+  reason = '',
+  message = '',
+  submitting = false,
+  onReasonChange,
+  onReveal,
+  onHide,
+}) => (
   <div className="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-lg p-3">
     <div className="flex-1">
       <p className="text-xs text-slate-500">{label}</p>
       <p className="text-sm font-mono font-semibold text-slate-900">{value || '-'}</p>
+      {canReveal && (
+        <div className="mt-3 space-y-2">
+          {!revealed && (
+            <input
+              className="field-input"
+              value={reason}
+              onChange={event => onReasonChange?.(event.target.value)}
+              placeholder={`Reason to reveal ${label}`}
+            />
+          )}
+          {message && <p className="text-xs text-slate-600">{message}</p>}
+          <button
+            className="btn-secondary text-xs inline-flex items-center gap-1"
+            disabled={submitting}
+            onClick={revealed ? onHide : onReveal}
+            type="button"
+          >
+            {revealed ? <EyeOff size={12} /> : <Eye size={12} />}
+            {revealed ? 'Hide' : submitting ? 'Revealing' : 'Reveal'}
+          </button>
+        </div>
+      )}
     </div>
-    <Lock size={14} className="text-amber-700" />
+    {revealed ? <Eye size={14} className="text-amber-700" /> : <Lock size={14} className="text-amber-700" />}
   </div>
 );
 
@@ -1661,6 +1772,7 @@ const activeStatusLabel = (profile: MemberProfileDetail) => (
 );
 const formatCount = (value: number | null) => (value === null ? '-' : value.toLocaleString('en-IN'));
 const formatDate = (value: string | null) => (value ? new Date(value).toLocaleDateString('en-IN') : '-');
+const formatDateTime = (value: string | null) => (value ? new Date(value).toLocaleString('en-IN') : '-');
 const formatYears = (value: string | null) => (value ? `${value} years` : '-');
 const addressText = (profile: MemberProfileDetail) => (
   [

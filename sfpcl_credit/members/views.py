@@ -56,6 +56,120 @@ def member_detail(request, member_id):
     return success_response(services.serialize_member_profile(member, user), request)
 
 
+@require_http_methods(["POST"])
+def reveal_sensitive_field(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    body = {}
+    try:
+        body = parse_json_body(request)
+        field_name, reason = services.validate_sensitive_reveal_payload(body)
+    except ValidationError as exc:
+        audit_field_name = body.get("field_name") if isinstance(body.get("field_name"), str) else None
+        audit_reason = body.get("reason") if isinstance(body.get("reason"), str) else None
+        services.audit_sensitive_reveal_denied(
+            user,
+            member_id,
+            audit_field_name,
+            audit_reason,
+            "validation_failed",
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Sensitive reveal payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+
+    if not services.user_can_read_members(user):
+        services.audit_sensitive_reveal_denied(
+            user,
+            member_id,
+            field_name,
+            reason,
+            "missing_base_read_permission",
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read members.",
+        )
+
+    member = services.get_accessible_member(member_id)
+    if member is None:
+        services.audit_sensitive_reveal_denied(
+            user,
+            member_id,
+            field_name,
+            reason,
+            "member_not_found",
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+
+    if not services.user_can_reveal_sensitive_field(user, field_name):
+        services.audit_sensitive_reveal_denied(
+            user,
+            member.member_id,
+            field_name,
+            reason,
+            "missing_field_permission",
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+        return error_response(
+            request,
+            403,
+            "SENSITIVE_FIELD_ACCESS_DENIED",
+            "You do not have permission to reveal this sensitive field.",
+        )
+
+    try:
+        data = services.reveal_member_sensitive_field(
+            member,
+            field_name,
+            reason,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+    except ValidationError as exc:
+        services.audit_sensitive_reveal_denied(
+            user,
+            member.member_id,
+            field_name,
+            reason,
+            "source_value_unavailable",
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Sensitive reveal payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    response = success_response(data, request)
+    response["Cache-Control"] = "no-store"
+    response["Pragma"] = "no-cache"
+    return response
+
+
 @require_http_methods(["GET", "POST"])
 def member_nominees(request, member_id):
     user, response = http_auth.authenticated_user(request)

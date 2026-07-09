@@ -267,3 +267,26 @@ before implementation.
   cheque-derived holder name, masked account number, IFSC, and branch. 004J should persist the
   foundation facts but not invent duplicate-active-borrower decisions, mismatch resolution,
   disbursement blockers, or payment initiation.
+
+## 004I Sensitive Reveal Extracts
+- 004I implements only member PAN/Aadhaar reveal:
+  `POST /api/v1/members/{member_id}/reveal-sensitive-field/` with request
+  `field_name` (`pan` or `aadhaar`) and non-empty `reason`.
+- Base member read remains `members.member.read`; field permissions are exact:
+  `members.sensitive.reveal_pan` for `pan` and `members.sensitive.reveal_aadhaar` for `aadhaar`.
+  Broad member read, KYC, document, admin, export, or bank permissions do not grant reveal.
+- `GET /api/v1/members/{member_id}/` stays masked. Its `pan.can_view_full` and
+  `aadhaar.can_view_full` flags reflect only the matching field-specific permission and never
+  include full source values.
+- Successful reveal returns the full value only in the immediate response with a five-minute
+  `expires_at`, `Cache-Control: no-store`, and `Pragma: no-cache`. Frontend code keeps full values
+  only in temporary component state, requires a reason before calling the endpoint, and clears the
+  reason after success.
+- Success audit action: `members.sensitive_field.revealed`. Authenticated denial audit action:
+  `members.sensitive_field.reveal_denied`. Audit metadata includes member ID, field name, reason,
+  outcome, denial reason when applicable, request ID, IP/user-agent, and expiry on success; it
+  excludes full PAN/Aadhaar, encrypted token contents, hash values, and identifier-derived values.
+- Missing auth returns `401 AUTH_REQUIRED` without reveal audit. Missing base read returns
+  `403 PERMISSION_DENIED`; missing field permission returns `403 SENSITIVE_FIELD_ACCESS_DENIED`;
+  invalid field/reason or unavailable source value returns `400 VALIDATION_ERROR`; unknown or
+  soft-deleted member returns `404 NOT_FOUND`. Sensitive reveal writes no workflow event.

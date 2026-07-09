@@ -21,6 +21,11 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
   response before the database uniqueness constraint. 004J should not reopen KYC profile creation,
   document verification, or sensitive reveal contracts; it starts after 004I and should stay focused
   on bank-account/cancelled-cheque profile facts.
+- 004I implemented `POST /api/v1/members/{member_id}/reveal-sensitive-field/` for member PAN and
+  Aadhaar only. 004J must not reuse `members.sensitive.reveal_pan`,
+  `members.sensitive.reveal_aadhaar`, KYC reveal, document download, disbursement, or export
+  permissions for normal bank-account metadata read/create. Bank-account full-number reveal remains
+  out of scope unless a later bank-specific sensitive reveal slice defines it.
 - Epic 004 digest records that bank account and cancelled-cheque values are sensitive fields:
   full account numbers must be protected/encrypted plus hashed/last-four storage only, and responses
   and audit metadata must expose masked/last-four values only.
@@ -59,6 +64,9 @@ small:
   IFSC, branch name, verification status, signature mismatch flag, and created timestamp;
 - exact full account number must be stored only as protected/encrypted token plus keyed hash/last4,
   never serialized or audited;
+- `GET /api/v1/members/{member_id}/` must keep PAN/Aadhaar masked and may show only bank-account
+  metadata if this slice explicitly wires it; do not add full bank account values to the existing
+  member profile response or frontend state;
 - do not implement loan-application-specific bank verification letters unless the slice is split or
   explicitly widened.
 

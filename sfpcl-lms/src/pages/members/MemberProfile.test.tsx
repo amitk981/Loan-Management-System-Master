@@ -12,6 +12,7 @@ import {
   fetchMemberNominees,
   fetchMemberProfile,
   fetchMemberShareholdings,
+  revealMemberSensitiveField,
   type KycDocumentDetail,
   type KycProfileDetail,
   type MemberCropPlanDetail,
@@ -55,6 +56,40 @@ describe('member profile API client', () => {
       }),
     );
     expect(result.pan).toEqual({ masked: '******234F', can_view_full: false });
+  });
+
+  it('posts member sensitive reveal requests with a reason and does not use mock values', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(ok({
+      field_name: 'pan',
+      value: 'ABCDE1234F',
+      expires_at: '2026-06-22T10:35:00Z',
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await revealMemberSensitiveField('member-1', {
+      field_name: 'pan',
+      reason: 'KYC verification during loan application',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://127.0.0.1:8000/api/v1/members/member-1/reveal-sensitive-field/',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer access-token-1',
+          'Content-Type': 'application/json',
+        }),
+        body: JSON.stringify({
+          field_name: 'pan',
+          reason: 'KYC verification during loan application',
+        }),
+      }),
+    );
+    expect(result).toEqual({
+      field_name: 'pan',
+      value: 'ABCDE1234F',
+      expires_at: '2026-06-22T10:35:00Z',
+    });
   });
 
   it.each([['AUTH_REQUIRED', 401], ['PERMISSION_DENIED', 403], ['NOT_FOUND', 404]])(
@@ -246,6 +281,23 @@ describe('MemberProfileView', () => {
     expect(html).not.toContain('Reveal');
     expect(html).not.toContain('ABCDE1234F');
     expect(html).not.toContain('Ganesh Thorat');
+  });
+
+  it('renders reveal controls only when the backend marks a field revealable', () => {
+    const revealable = {
+      ...member,
+      pan: { ...member.pan, can_view_full: true },
+      aadhaar: { ...member.aadhaar, can_view_full: false },
+    };
+
+    const html = renderProfile('success', revealable, 0);
+
+    expect(html).toContain('******234F');
+    expect(html).toContain('Reason to reveal PAN');
+    expect(html).toContain('Reveal');
+    expect(html).not.toContain('Reason to reveal Aadhaar');
+    expect(html).not.toContain('ABCDE1234F');
+    expect(html).not.toContain('123456789012');
   });
 
   it('renders individual farmer profile details from the API', () => {

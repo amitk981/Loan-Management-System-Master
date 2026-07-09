@@ -1,5 +1,31 @@
 # Ralph Progress Log
 
+## 2026-07-09 15:01:08 - 2026-07-09_150108_normal_run
+- Agent tool used: codex
+- Slice attempted: 004I-sensitive-masking-and-reveal-audit
+- Summary: Implemented member PAN/Aadhaar sensitive reveal through
+  `POST /api/v1/members/{member_id}/reveal-sensitive-field/`. The endpoint requires
+  `members.member.read` plus field-specific reveal permissions
+  (`members.sensitive.reveal_pan` or `members.sensitive.reveal_aadhaar`), validates non-empty
+  reason capture, returns full values only in the immediate no-store response with a five-minute
+  expiry, keeps the masked member profile response masked, and writes metadata-only success/denial
+  audit rows without workflow events. Wired the Member Profile overview reveal controls with
+  existing UI patterns, reason-required behavior, temporary component state only, and no mock/local
+  storage full-value persistence. Updated API contracts and sharpened 004J/004K plus the Epic 004
+  digest with the closed reveal boundary.
+- Tests run: backend reveal TDD red/green; backend member profile reveal suite (13/13); frontend
+  MemberProfile focused tests (25/25); backend `manage.py check`; backend tests (231/231);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend `npm run
+  typecheck`; `npm run lint`; `npm test` (76/76); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-09_150108_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`, API examples, and self-contained sensitive reveal visual HTML. Live PNG
+  screenshot capture was blocked because the sandbox refused local dev-server binding and no
+  in-app browser backend was available.
+- Result: Success.
+- Risk level: High.
+- Next action: Run `004J-bank-account-and-cancelled-cheque-profile-foundation`; keep bank-account
+  full-number reveal out of scope and do not reuse PAN/Aadhaar reveal permissions for bank metadata.
+
 ## 2026-07-09 14:36:51 - 2026-07-09_143651_normal_run
 - Agent tool used: codex
 - Slice attempted: 004H2-kyc-profile-duplicate-create-contract-hardening
@@ -1500,6 +1526,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_143651_normal_run/.ralph/runs/2026-07-09_143651_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_143651_normal_run/.ralph/runs/2026-07-09_143651_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 15:46:32 - 2026-07-09_150108_normal_run
+- Agent tool used: codex
+- Slice attempted: 004I-sensitive-masking-and-reveal-audit
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_150108_normal_run/.ralph/runs/2026-07-09_150108_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_150108_normal_run/.ralph/runs/2026-07-09_150108_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

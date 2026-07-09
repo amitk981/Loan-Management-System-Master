@@ -16,6 +16,18 @@ Credit and compliance staff can see the complete member/borrower picture — pro
 ## Depends On
 - 004J
 
+## Prior Slice Facts
+- 004I implemented member PAN/Aadhaar reveal only through
+  `POST /api/v1/members/{member_id}/reveal-sensitive-field/` with request
+  `{field_name: "pan"|"aadhaar", reason: non-empty text}`. Success returns the full value only in
+  the immediate response with `expires_at`, `Cache-Control: no-store`, and `Pragma: no-cache`.
+- 004I field permissions are exact: `members.sensitive.reveal_pan` for PAN and
+  `members.sensitive.reveal_aadhaar` for Aadhaar, plus base `members.member.read`. Broad member,
+  KYC, document, admin, export, or bank permissions are not reveal permissions.
+- 004I audit actions are `members.sensitive_field.revealed` and
+  `members.sensitive_field.reveal_denied`, metadata-only. 004K should test UI wiring against the
+  endpoint and avoid duplicating backend audit contract tests unless UI behavior depends on them.
+
 ## Source References
 - docs/source/screen-spec.md screens S07 (Borrower 360) and S17 (KYC Verification)
 - docs/source/api-contracts.md sections 13.5 (view sensitive field), 18 (KYC APIs)
@@ -30,12 +42,16 @@ Credit and compliance staff can see the complete member/borrower picture — pro
 ## Concrete Requirements
 1. Wire `Borrower360.tsx` to real member, KYC, shareholding, land/crop, and loan-summary APIs from 004A-004J (add a thin aggregate endpoint only if the existing ones cannot compose the view).
 2. Wire the KYC verification panel: document list, verify action, re-KYC status from 004H APIs.
-3. Implement the masked-field reveal UI: masked display by default (api-contracts §9.6 masked value type), reveal via §13.5 endpoint with reason capture; reveal events audited per 004I.
+3. Implement remaining masked-field reveal UI outside the Member Profile overview: masked display by
+   default (api-contracts §9.6 masked value type), reveal via the 004I §13.5 endpoint with reason
+   capture, no local storage/mock-data/full-value caching, temporary expiry messaging only from the
+   backend response, and hide/clear controls using existing Member Profile/Borrower360 patterns.
 4. Follow `docs/working/FRONTEND_DESIGN_RULES.md`: reuse existing panels/cards; loading, empty, error, unauthorized, and masked states covered.
 
 ## Test Cases
 - Unauthorized user sees masked values and cannot reveal.
-- Reveal with reason succeeds for permitted role and writes an audit event (asserted via API).
+- Reveal with reason succeeds for permitted role through the 004I endpoint; blank reason blocks the
+  UI call; full values are not persisted to local storage, mock data, URLs, or long-lived app state.
 - Borrower 360 renders real data for a seeded member; empty and error states covered.
 
 ## Out of Scope

@@ -3,6 +3,7 @@ import hmac
 import re
 import uuid
 from datetime import date
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 from math import ceil
 from pathlib import Path
@@ -42,6 +43,11 @@ KYC_PROFILE_CREATE_PERMISSION = "kyc.profile.create"
 KYC_PROFILE_UPDATE_PERMISSION = "kyc.profile.update"
 KYC_DOCUMENT_UPLOAD_PERMISSION = "kyc.document.upload"
 KYC_DOCUMENT_VERIFY_PERMISSION = "kyc.document.verify"
+REVEAL_FIELD_PERMISSIONS = {
+    "pan": "members.sensitive.reveal_pan",
+    "aadhaar": "members.sensitive.reveal_aadhaar",
+}
+_SENSITIVE_REVEAL_TTL_MINUTES = 5
 _DEFAULT_PAGE_SIZE = 20
 _MAX_PAGE_SIZE = 100
 _LEGAL_MAJORITY_AGE = 18
@@ -104,6 +110,24 @@ def user_can_upload_kyc_documents(user):
 
 def user_can_verify_kyc_documents(user):
     return KYC_DOCUMENT_VERIFY_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_reveal_sensitive_field(user, field_name):
+    permission = REVEAL_FIELD_PERMISSIONS.get(field_name)
+    return bool(permission and permission in auth_service.effective_permission_codes(user))
+
+
+def validate_sensitive_reveal_payload(payload):
+    field_name = payload.get("field_name")
+    reason = payload.get("reason")
+    errors = {}
+    if field_name not in REVEAL_FIELD_PERMISSIONS:
+        errors["field_name"] = "field_name must be pan or aadhaar."
+    if not isinstance(reason, str) or not reason.strip():
+        errors["reason"] = "Reason is required."
+    if errors:
+        raise ValidationError(errors)
+    return field_name, reason.strip()
 
 
 def paginated_members(query_params):
@@ -186,6 +210,76 @@ def get_accessible_member(member_id):
     return Member.objects.filter(is_deleted=False, member_id=member_id).first()
 
 
+def sensitive_field_value(member, field_name):
+    value = getattr(member, f"{field_name}_encrypted")
+    if not value:
+        raise ValidationError({"field_name": f"{field_name} is not available for this member."})
+    return value
+
+
+def audit_sensitive_reveal_denied(
+    actor_user,
+    member_id,
+    field_name,
+    reason,
+    denial_reason,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+):
+    AuditLog.objects.create(
+        actor_user=actor_user,
+        action="members.sensitive_field.reveal_denied",
+        entity_type="member",
+        entity_id=member_id,
+        new_value_json={
+            "member_id": str(member_id) if member_id else None,
+            "field_name": field_name,
+            "reason": reason,
+            "outcome": "denied",
+            "denial_reason": denial_reason,
+            "request_id": request_id,
+        },
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+
+
+def reveal_member_sensitive_field(
+    member,
+    field_name,
+    reason,
+    actor_user,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+):
+    expires_at = timezone.now() + timedelta(minutes=_SENSITIVE_REVEAL_TTL_MINUTES)
+    value = sensitive_field_value(member, field_name)
+    expires_at_value = expires_at.isoformat().replace("+00:00", "Z")
+    AuditLog.objects.create(
+        actor_user=actor_user,
+        action="members.sensitive_field.revealed",
+        entity_type="member",
+        entity_id=member.member_id,
+        new_value_json={
+            "member_id": str(member.member_id),
+            "field_name": field_name,
+            "reason": reason,
+            "outcome": "success",
+            "request_id": request_id,
+            "expires_at": expires_at_value,
+        },
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+    return {
+        "field_name": field_name,
+        "value": value,
+        "expires_at": expires_at_value,
+    }
+
+
 def serialize_member_profile(member, user):
     return {
         **serialize_member(member),
@@ -194,10 +288,13 @@ def serialize_member_profile(member, user):
             if member.membership_start_date
             else None
         ),
-        "pan": {"masked": _mask_last_four(member.pan_encrypted), "can_view_full": False},
+        "pan": {
+            "masked": _mask_last_four(member.pan_encrypted),
+            "can_view_full": user_can_reveal_sensitive_field(user, "pan"),
+        },
         "aadhaar": {
             "masked": _mask_last_four(member.aadhaar_encrypted),
-            "can_view_full": False,
+            "can_view_full": user_can_reveal_sensitive_field(user, "aadhaar"),
         },
         "registered_address": {
             "line1": member.registered_address_line1 or None,
