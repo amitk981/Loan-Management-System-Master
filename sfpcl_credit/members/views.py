@@ -401,6 +401,120 @@ def member_crop_plans(request, member_id):
 
 
 @require_http_methods(["GET", "POST"])
+def member_bank_accounts(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if request.method == "GET" and not services.user_can_read_bank_metadata(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read member bank account metadata.",
+        )
+    if request.method == "POST" and not services.user_can_create_bank_metadata(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to create member bank account metadata.",
+        )
+
+    member = services.get_accessible_member(member_id)
+    if member is None:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+
+    if request.method == "GET":
+        try:
+            data, pagination = services.paginated_bank_accounts(member, request.GET)
+        except ValidationError as exc:
+            return error_response(
+                request,
+                400,
+                "VALIDATION_ERROR",
+                "Bank account query failed validation.",
+                services.validation_field_errors(exc),
+            )
+        return list_response(data, pagination, request)
+
+    try:
+        body = parse_json_body(request)
+        bank_account = services.create_bank_account(
+            member,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Bank account payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return success_response(services.serialize_bank_account(bank_account), request)
+
+
+@require_http_methods(["GET", "POST"])
+def member_cancelled_cheques(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if request.method == "GET" and not services.user_can_read_bank_metadata(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read member cancelled cheque metadata.",
+        )
+    if request.method == "POST" and not services.user_can_create_bank_metadata(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to create member cancelled cheque metadata.",
+        )
+
+    member = services.get_accessible_member(member_id)
+    if member is None:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+
+    if request.method == "GET":
+        try:
+            data, pagination = services.paginated_cancelled_cheques(member, request.GET)
+        except ValidationError as exc:
+            return error_response(
+                request,
+                400,
+                "VALIDATION_ERROR",
+                "Cancelled cheque query failed validation.",
+                services.validation_field_errors(exc),
+            )
+        return list_response(data, pagination, request)
+
+    try:
+        body = parse_json_body(request)
+        cancelled_cheque = services.create_cancelled_cheque(
+            member,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Cancelled cheque payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return success_response(services.serialize_cancelled_cheque(cancelled_cheque), request)
+
+
+@require_http_methods(["GET", "POST"])
 def kyc_profiles(request):
     user, response = http_auth.authenticated_user(request)
     if response is not None:

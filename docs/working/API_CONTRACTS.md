@@ -41,7 +41,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | API contract test harness | Implemented in slice 002J | None | `api-contracts.md` §6.1-6.4, §7.1-7.3, §44 | Test-only assertions live in `sfpcl_credit/tests/api_contracts.py`. Future endpoint slices should use them to prove standard success envelopes, error envelopes, top-level list pagination, and target §44 `available_actions` item shapes without importing test utilities from production code. The harness regression tests cover `/auth/me/`, admin users pagination, `401 AUTH_REQUIRED`, revoked-session `401 INVALID_TOKEN`, `403 PERMISSION_DENIED`, partial-admin write denial, and tracer `409 INVALID_STATE_TRANSITION`. A-016 records that current `/auth/me/` still returns flat permission-code strings for `available_actions`; the object shape is asserted against an internal sample for future detail endpoints. |
 | Local demo staff seed | Implemented in slice 002K; corrected in 002K2 | Login, dashboard smoke, admin/tracer permission smoke | `implementation-roadmap.md` §10, §20-22; `technical-architecture.md` §8-12, §17-18; `auth-permissions.md`; `api-contracts.md` §11-12, §43-44 | `python manage.py seed_demo_users` is a guarded local/dev seed path. It refuses unless `SFPCL_DEBUG=true` and `SFPCL_ALLOW_DEMO_SEED=true`, calls `seed_catalogue()`, creates or updates deterministic `demo.*@sfpcl.example` staff users with active primary roles and memberships, and does not alter `e2e.*` users. Demo users authenticate through the real `/auth/login/` and `/auth/me/` endpoints; there is no demo auth bypass. The zero-permission user returns `permissions: []` and `available_actions: []`; the tracer-only user uses the guarded local/dev-only `local_demo_tracer_user` role and returns only `tracer.lifecycle.run`; the shared source-catalogue `sales_team_user` role remains permission-neutral until source documents define grants; system admin preserves canonical action-specific user-admin permissions without broad `manage_users` aliases. |
 | Role/permission/team catalogue | Seeded in slice 002C; exposed for current user in 002D | None directly | `auth-permissions.md` §12-15, §38 | Canonical `Permission`, `Role`, `Team`, `RolePermission` catalogue seeded idempotently via `python manage.py seed_role_catalogue` (`sfpcl_credit/identity/catalogue.py`). `/api/v1/auth/me/` exposes the authenticated user's effective permission codes from this data. |
-| Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; shareholding list/create implemented in 004F; land/crop list/create implemented in 004G; KYC profile/document upload/verify implemented in 004H | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3/§15.1-§15.2/§17.1-§18.4; `data-model.md` §10.1-§10.4/§11.1/§11.7-§12.2; `auth-permissions.md` §12.2-§12.3/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/`, `/shareholdings/`, `/land-holdings/`, and `/crop-plans/` are API-backed with their documented validations and metadata-only create audits. `GET/POST/PATCH /api/v1/kyc-profiles/`, KYC document upload, and KYC document verify are implemented for member parties only with KYC permissions. Sensitive reveal, re-KYC task management, share certificate/demat, and borrower-360 behavior remain future scope. |
+| Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; shareholding list/create implemented in 004F; land/crop list/create implemented in 004G; KYC profile/document upload/verify implemented in 004H; member bank-account/cancelled-cheque metadata implemented in 004J | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3/§15.1-§15.2/§17.1-§18.4; `data-model.md` §10.1-§10.4/§11.1/§11.7-§12.4; `auth-permissions.md` §12.2-§12.3/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/`, `/shareholdings/`, `/land-holdings/`, `/crop-plans/`, `/bank-accounts/`, and `/cancelled-cheques/` are API-backed with their documented validations and metadata-only create audits. `GET/POST/PATCH /api/v1/kyc-profiles/`, KYC document upload, and KYC document verify are implemented for member parties only with KYC permissions. Sensitive bank-account reveal, re-KYC task management, share certificate/demat, bank verification letters, disbursement bank gates, and borrower-360 behavior remain future scope. |
 | Loan applications | Draft from source | Applications, completeness | `api-contracts.md` | Needs real draft/submit/check endpoints. |
 | Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
@@ -243,6 +243,93 @@ Rules:
   user-agent, and expiry for successful reveals. Audit rows never include full PAN/Aadhaar,
   encrypted token columns, hash values, or submitted identifier-derived values.
 - Sensitive reveal writes no `WorkflowEvent`.
+
+## Member Bank Account and Cancelled Cheque Metadata API (004J)
+
+`GET /api/v1/members/{member_id}/bank-accounts/`
+
+Rules:
+- Requires a session-bound bearer token and `members.member.read` under A-034; missing auth returns
+  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and an unknown or
+  soft-deleted member returns `404 NOT_FOUND`.
+- Returns the standard top-level list envelope. Each item contains `bank_account_id`,
+  `owner_party_type`, `owner_party_id`, `account_holder_name`, masked `account_number` as
+  `{ "masked": "...", "last4": "...", "can_view_full": false }`, `ifsc`, nullable `bank_name`,
+  nullable `branch_name`, `verification_status`, nullable `cancelled_cheque_id`, nullable
+  `signature_verified_flag`, `status`, and `created_at`.
+- The response never serializes full account numbers, `account_number_encrypted`, or
+  `account_number_hash`.
+
+`POST /api/v1/members/{member_id}/bank-accounts/`
+
+Request:
+
+```json
+{
+  "account_holder_name": "Ramesh Patil",
+  "account_number": "123456789012",
+  "ifsc": "HDFC0001234",
+  "bank_name": "HDFC Bank",
+  "branch_name": "Nashik Road",
+  "verification_status": "pending",
+  "cancelled_cheque_id": null,
+  "signature_verified_flag": null,
+  "status": "active"
+}
+```
+
+Rules:
+- Requires `members.member.update` under A-034.
+- Account holder name, account number, and IFSC are required. Account numbers must contain at least
+  four digits. `verification_status` is limited to `pending`, `verified`, or `rejected`; `status` is
+  limited to `active` or `inactive`; malformed `cancelled_cheque_id` returns
+  `400 VALIDATION_ERROR`.
+- The stored row keeps only a protected token, keyed hash, and last four digits for the account
+  number. The create response is masked and `can_view_full` is always false.
+- Successful create writes `members.bank_account.created` audit metadata with member ID,
+  bank-account ID, masked last four, IFSC, verification status, signature flag, status, request/IP,
+  and user-agent. Audit metadata never includes full account numbers, protected tokens, hashes,
+  cheque images, or file bytes.
+
+`GET /api/v1/members/{member_id}/cancelled-cheques/`
+
+Rules:
+- Requires `members.member.read` under A-034.
+- Returns the standard top-level list envelope. Each item contains `cancelled_cheque_id`,
+  nullable `loan_application_id`, `member_id`, `document_id`, masked `account_number` as
+  `{ "masked": "...", "last4": "...", "can_view_full": false }`, `ifsc`, nullable
+  `branch_name`, `verification_status`, `signature_mismatch_flag`, and `created_at`.
+- Full account numbers, protected token values, and hashes are never serialized.
+
+`POST /api/v1/members/{member_id}/cancelled-cheques/`
+
+Request:
+
+```json
+{
+  "loan_application_id": null,
+  "document_id": "uuid",
+  "account_number": "987654324321",
+  "ifsc": "SBIN0000456",
+  "branch_name": "Lasalgaon",
+  "verification_status": "pending",
+  "signature_mismatch_flag": false
+}
+```
+
+Rules:
+- Requires `members.member.update` under A-034.
+- `document_id`, account number, and IFSC are required. `loan_application_id` is accepted only as a
+  nullable UUID placeholder because real loan applications do not exist yet. `verification_status`
+  is limited to `pending`, `verified`, or `rejected`.
+- Successful create writes `members.cancelled_cheque.created` audit metadata with member ID,
+  cheque ID, nullable loan application ID, document ID, masked last four, IFSC, verification status,
+  signature mismatch flag, request/IP, and user-agent.
+- Read/list endpoints write no audit row and no workflow event. Create endpoints write no workflow
+  event.
+- Explicit deferrals: duplicate-active-borrower warnings, bank verification letters, signature
+  mismatch resolution, blank-dated cheque custody, payment initiation, disbursement readiness gates,
+  bank-account full reveal, and Member Profile/Borrower360 UI wiring.
 
 ## Member Nominee API (004D)
 

@@ -1,0 +1,44 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 7 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: communications, configurations, contenttypes, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying documents.0001_initial... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying members.0007_kycprofile_kycdocument_and_more... OK
+  Applying members.0008_cancelledcheque_bankaccount_and_more... OK
+  Applying scheduler.0001_initial... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_bank_account_can_be_created_and_listed_with_masked_number (sfpcl_credit.tests.test_member_bank_accounts_api.MemberBankAccountApiTests.test_bank_account_can_be_created_and_listed_with_masked_number) ... ok
+test_bank_account_create_rejects_required_and_unsupported_values (sfpcl_credit.tests.test_member_bank_accounts_api.MemberBankAccountApiTests.test_bank_account_create_rejects_required_and_unsupported_values) ... ok
+test_bank_metadata_creates_audit_metadata_without_workflow_event_or_sensitive_values (sfpcl_credit.tests.test_member_bank_accounts_api.MemberBankAccountApiTests.test_bank_metadata_creates_audit_metadata_without_workflow_event_or_sensitive_values) ... ok
+test_bank_metadata_endpoints_require_authentication_and_separate_member_permissions (sfpcl_credit.tests.test_member_bank_accounts_api.MemberBankAccountApiTests.test_bank_metadata_endpoints_require_authentication_and_separate_member_permissions) ... ok
+test_bank_metadata_endpoints_return_not_found_for_unknown_or_deleted_member (sfpcl_credit.tests.test_member_bank_accounts_api.MemberBankAccountApiTests.test_bank_metadata_endpoints_return_not_found_for_unknown_or_deleted_member) ... ok
+test_cancelled_cheque_can_be_created_and_listed_with_masked_number (sfpcl_credit.tests.test_member_bank_accounts_api.MemberBankAccountApiTests.test_cancelled_cheque_can_be_created_and_listed_with_masked_number) ... ok
+test_cancelled_cheque_create_rejects_required_and_unsupported_values (sfpcl_credit.tests.test_member_bank_accounts_api.MemberBankAccountApiTests.test_cancelled_cheque_create_rejects_required_and_unsupported_values) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 20.842s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

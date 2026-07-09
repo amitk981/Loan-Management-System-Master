@@ -21,6 +21,8 @@ from sfpcl_credit.documents.storage import LocalDocumentStorage
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.members.models import (
+    BankAccount,
+    CancelledCheque,
     CropPlan,
     KycDocument,
     KycProfile,
@@ -38,6 +40,8 @@ SHAREHOLDING_READ_PERMISSION = "members.shareholding.read"
 SHAREHOLDING_CREATE_PERMISSION = "members.shareholding.create"
 LAND_CROP_READ_PERMISSION = MEMBER_READ_PERMISSION
 LAND_CROP_CREATE_PERMISSION = "members.member.update"
+BANK_METADATA_READ_PERMISSION = MEMBER_READ_PERMISSION
+BANK_METADATA_CREATE_PERMISSION = "members.member.update"
 KYC_PROFILE_READ_PERMISSION = "kyc.profile.read"
 KYC_PROFILE_CREATE_PERMISSION = "kyc.profile.create"
 KYC_PROFILE_UPDATE_PERMISSION = "kyc.profile.update"
@@ -90,6 +94,14 @@ def user_can_read_land_crop(user):
 
 def user_can_create_land_crop(user):
     return LAND_CROP_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_read_bank_metadata(user):
+    return BANK_METADATA_READ_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_create_bank_metadata(user):
+    return BANK_METADATA_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
 
 
 def user_can_read_kyc_profiles(user):
@@ -665,6 +677,195 @@ def serialize_crop_plan(crop_plan):
     }
 
 
+def paginated_bank_accounts(member, query_params):
+    page = _positive_int(query_params.get("page"), 1, "page")
+    page_size = min(
+        _positive_int(query_params.get("page_size"), _DEFAULT_PAGE_SIZE, "page_size"),
+        _MAX_PAGE_SIZE,
+    )
+    queryset = BankAccount.objects.filter(
+        owner_party_type="member",
+        owner_party_id=member.member_id,
+    ).order_by("created_at", "bank_account_id")
+    total_count = queryset.count()
+    total_pages = ceil(total_count / page_size) if total_count else 1
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+    items = [serialize_bank_account(row) for row in queryset[offset : offset + page_size]]
+    return items, {
+        "page": page,
+        "page_size": page_size,
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_previous": page > 1,
+    }
+
+
+def create_bank_account(member, payload, actor_user, request_ip="", request_user_agent=""):
+    values = _validated_bank_account_payload(payload)
+    if values["cancelled_cheque_id"] and not member.cancelled_cheques.filter(
+        cancelled_cheque_id=values["cancelled_cheque_id"]
+    ).exists():
+        raise ValidationError(
+            {"cancelled_cheque_id": "Cancelled cheque was not found for this member."}
+        )
+    bank_account = BankAccount.objects.create(
+        owner_party_type="member",
+        owner_party_id=member.member_id,
+        account_holder_name=values["account_holder_name"],
+        account_number_encrypted=_protected_account_number_token(values["account_number"]),
+        account_number_hash=_identity_hash(values["account_number"]),
+        account_number_last4=values["account_number"][-4:],
+        ifsc=values["ifsc"],
+        bank_name=values["bank_name"],
+        branch_name=values["branch_name"],
+        verification_status=values["verification_status"],
+        cancelled_cheque_id=values["cancelled_cheque_id"],
+        signature_verified_flag=values["signature_verified_flag"],
+        status=values["status"],
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user,
+        action="members.bank_account.created",
+        entity_type="bank_account",
+        entity_id=bank_account.bank_account_id,
+        new_value_json={
+            "member_id": str(member.member_id),
+            "bank_account_id": str(bank_account.bank_account_id),
+            "masked_account_number": _mask_account_last4(bank_account.account_number_last4, values["account_number_length"]),
+            "account_number_last4": bank_account.account_number_last4,
+            "ifsc": bank_account.ifsc,
+            "verification_status": bank_account.verification_status,
+            "signature_verified_flag": bank_account.signature_verified_flag,
+            "status": bank_account.status,
+        },
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+    return bank_account
+
+
+def serialize_bank_account(bank_account):
+    return {
+        "bank_account_id": str(bank_account.bank_account_id),
+        "owner_party_type": bank_account.owner_party_type,
+        "owner_party_id": str(bank_account.owner_party_id),
+        "account_holder_name": bank_account.account_holder_name,
+        "account_number": {
+            "masked": _mask_account_last4(
+                bank_account.account_number_last4,
+                _protected_account_number_length(bank_account.account_number_encrypted),
+            ),
+            "last4": bank_account.account_number_last4 or None,
+            "can_view_full": False,
+        },
+        "ifsc": bank_account.ifsc,
+        "bank_name": bank_account.bank_name or None,
+        "branch_name": bank_account.branch_name or None,
+        "verification_status": bank_account.verification_status,
+        "cancelled_cheque_id": (
+            str(bank_account.cancelled_cheque_id)
+            if bank_account.cancelled_cheque_id
+            else None
+        ),
+        "signature_verified_flag": bank_account.signature_verified_flag,
+        "status": bank_account.status,
+        "created_at": bank_account.created_at.isoformat().replace("+00:00", "Z"),
+    }
+
+
+def paginated_cancelled_cheques(member, query_params):
+    page = _positive_int(query_params.get("page"), 1, "page")
+    page_size = min(
+        _positive_int(query_params.get("page_size"), _DEFAULT_PAGE_SIZE, "page_size"),
+        _MAX_PAGE_SIZE,
+    )
+    queryset = member.cancelled_cheques.order_by("created_at", "cancelled_cheque_id")
+    total_count = queryset.count()
+    total_pages = ceil(total_count / page_size) if total_count else 1
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+    items = [serialize_cancelled_cheque(row) for row in queryset[offset : offset + page_size]]
+    return items, {
+        "page": page,
+        "page_size": page_size,
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_previous": page > 1,
+    }
+
+
+def create_cancelled_cheque(member, payload, actor_user, request_ip="", request_user_agent=""):
+    values = _validated_cancelled_cheque_payload(payload)
+    cancelled_cheque = CancelledCheque.objects.create(
+        loan_application_id=values["loan_application_id"],
+        member=member,
+        document_id=values["document_id"],
+        account_number_encrypted=_protected_account_number_token(values["account_number"]),
+        account_number_hash=_identity_hash(values["account_number"]),
+        account_number_last4=values["account_number"][-4:],
+        ifsc=values["ifsc"],
+        branch_name=values["branch_name"],
+        verification_status=values["verification_status"],
+        signature_mismatch_flag=values["signature_mismatch_flag"],
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user,
+        action="members.cancelled_cheque.created",
+        entity_type="cancelled_cheque",
+        entity_id=cancelled_cheque.cancelled_cheque_id,
+        new_value_json={
+            "member_id": str(member.member_id),
+            "cancelled_cheque_id": str(cancelled_cheque.cancelled_cheque_id),
+            "loan_application_id": (
+                str(cancelled_cheque.loan_application_id)
+                if cancelled_cheque.loan_application_id
+                else None
+            ),
+            "document_id": str(cancelled_cheque.document_id),
+            "masked_account_number": _mask_account_last4(
+                cancelled_cheque.account_number_last4,
+                values["account_number_length"],
+            ),
+            "account_number_last4": cancelled_cheque.account_number_last4,
+            "ifsc": cancelled_cheque.ifsc,
+            "verification_status": cancelled_cheque.verification_status,
+            "signature_mismatch_flag": cancelled_cheque.signature_mismatch_flag,
+        },
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+    return cancelled_cheque
+
+
+def serialize_cancelled_cheque(cancelled_cheque):
+    return {
+        "cancelled_cheque_id": str(cancelled_cheque.cancelled_cheque_id),
+        "loan_application_id": (
+            str(cancelled_cheque.loan_application_id)
+            if cancelled_cheque.loan_application_id
+            else None
+        ),
+        "member_id": str(cancelled_cheque.member_id),
+        "document_id": str(cancelled_cheque.document_id),
+        "account_number": {
+            "masked": _mask_account_last4(
+                cancelled_cheque.account_number_last4,
+                _protected_account_number_length(cancelled_cheque.account_number_encrypted),
+            ),
+            "last4": cancelled_cheque.account_number_last4 or None,
+            "can_view_full": False,
+        },
+        "ifsc": cancelled_cheque.ifsc,
+        "branch_name": cancelled_cheque.branch_name or None,
+        "verification_status": cancelled_cheque.verification_status,
+        "signature_mismatch_flag": cancelled_cheque.signature_mismatch_flag,
+        "created_at": cancelled_cheque.created_at.isoformat().replace("+00:00", "Z"),
+    }
+
+
 def get_kyc_profile_for_member(party_type, party_id):
     if party_type != "member":
         raise ValidationError({"party_type": "Only member KYC profiles are supported."})
@@ -1097,6 +1298,87 @@ def _validated_crop_plan_payload(payload):
     }
 
 
+def _validated_bank_account_payload(payload):
+    account_holder_name = str(payload.get("account_holder_name") or "").strip()
+    ifsc = str(payload.get("ifsc") or "").strip().upper()
+    verification_status = str(payload.get("verification_status") or "pending").strip()
+    status = str(payload.get("status") or "active").strip()
+    field_errors = {}
+    if not account_holder_name:
+        field_errors["account_holder_name"] = "This field is required."
+    if not ifsc:
+        field_errors["ifsc"] = "This field is required."
+    if verification_status not in BankAccount.VERIFICATION_STATUSES:
+        field_errors["verification_status"] = "Unsupported verification status."
+    if status not in BankAccount.STATUSES:
+        field_errors["status"] = "Unsupported bank account status."
+    try:
+        account_number = _required_account_number(payload.get("account_number"))
+    except ValidationError as exc:
+        field_errors.update(validation_field_errors(exc))
+        account_number = ""
+    try:
+        cancelled_cheque_id = _optional_uuid(
+            payload.get("cancelled_cheque_id"), "cancelled_cheque_id"
+        )
+    except ValidationError as exc:
+        field_errors.update(validation_field_errors(exc))
+        cancelled_cheque_id = None
+    if field_errors:
+        raise ValidationError(field_errors)
+    return {
+        "account_holder_name": account_holder_name,
+        "account_number": account_number,
+        "account_number_length": len(account_number),
+        "ifsc": ifsc,
+        "bank_name": str(payload.get("bank_name") or "").strip(),
+        "branch_name": str(payload.get("branch_name") or "").strip(),
+        "verification_status": verification_status,
+        "cancelled_cheque_id": cancelled_cheque_id,
+        "signature_verified_flag": _optional_bool(payload.get("signature_verified_flag")),
+        "status": status,
+    }
+
+
+def _validated_cancelled_cheque_payload(payload):
+    ifsc = str(payload.get("ifsc") or "").strip().upper()
+    verification_status = str(payload.get("verification_status") or "pending").strip()
+    field_errors = {}
+    if not ifsc:
+        field_errors["ifsc"] = "This field is required."
+    if verification_status not in CancelledCheque.VERIFICATION_STATUSES:
+        field_errors["verification_status"] = "Unsupported verification status."
+    try:
+        document_id = _required_uuid(payload.get("document_id"), "document_id")
+    except ValidationError as exc:
+        field_errors.update(validation_field_errors(exc))
+        document_id = None
+    try:
+        account_number = _required_account_number(payload.get("account_number"))
+    except ValidationError as exc:
+        field_errors.update(validation_field_errors(exc))
+        account_number = ""
+    try:
+        loan_application_id = _optional_uuid(
+            payload.get("loan_application_id"), "loan_application_id"
+        )
+    except ValidationError as exc:
+        field_errors.update(validation_field_errors(exc))
+        loan_application_id = None
+    if field_errors:
+        raise ValidationError(field_errors)
+    return {
+        "loan_application_id": loan_application_id,
+        "document_id": document_id,
+        "account_number": account_number,
+        "account_number_length": len(account_number),
+        "ifsc": ifsc,
+        "branch_name": str(payload.get("branch_name") or "").strip(),
+        "verification_status": verification_status,
+        "signature_mismatch_flag": bool(payload.get("signature_mismatch_flag", False)),
+    }
+
+
 def _validated_kyc_profile_payload(payload, partial):
     field_errors = {}
     values = {}
@@ -1177,6 +1459,15 @@ def _parse_bool(value):
     if normalized in {"false", "0", "no", "off"}:
         return False
     return None
+
+
+def _optional_bool(value):
+    if value is None or value == "":
+        return None
+    parsed = _parse_bool(value)
+    if parsed is None:
+        return bool(value)
+    return parsed
 
 
 def _kyc_profile_audit_metadata(profile):
@@ -1335,6 +1626,36 @@ def _identity_hash(value):
 def _protected_identity_token(value, expected_length):
     digest = _identity_hash(f"enc:{value}")
     return f"enc:v1:{expected_length}:{digest}:{value[-4:]}"
+
+
+def _required_account_number(value):
+    digits = "".join(char for char in str(value or "").strip() if char.isdigit())
+    if not digits:
+        raise ValidationError({"account_number": "This field is required."})
+    if len(digits) < 4:
+        raise ValidationError({"account_number": "Account number must have at least four digits."})
+    return digits
+
+
+def _protected_account_number_token(value):
+    digest = _identity_hash(f"bank-account:{value}")
+    return f"enc:v1:{len(value)}:{digest}:{value[-4:]}"
+
+
+def _protected_account_number_length(token):
+    parts = str(token or "").split(":")
+    if len(parts) == 5 and parts[0] == "enc" and parts[1] == "v1":
+        try:
+            return int(parts[2])
+        except ValueError:
+            return 4
+    return len(str(token or ""))
+
+
+def _mask_account_last4(last4, total_length):
+    if not last4:
+        return None
+    return f"{'*' * max(int(total_length or 4) - 4, 0)}{last4}"
 
 
 def _mask_protected_identity(token, default_length):

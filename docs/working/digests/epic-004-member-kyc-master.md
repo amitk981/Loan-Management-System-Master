@@ -290,3 +290,31 @@ before implementation.
   `403 PERMISSION_DENIED`; missing field permission returns `403 SENSITIVE_FIELD_ACCESS_DENIED`;
   invalid field/reason or unavailable source value returns `400 VALIDATION_ERROR`; unknown or
   soft-deleted member returns `404 NOT_FOUND`. Sensitive reveal writes no workflow event.
+
+## 004J Bank Account and Cancelled Cheque Extracts
+- 004J implements member-profile bank metadata only:
+  `GET/POST /api/v1/members/{member_id}/bank-accounts/` and
+  `GET/POST /api/v1/members/{member_id}/cancelled-cheques/`.
+- `bank_accounts` stores member ownership as `owner_party_type = member` plus `owner_party_id`,
+  holder name, protected account-number token, keyed hash, last four, IFSC, bank/branch names,
+  verification status (`pending`/`verified`/`rejected`), nullable cancelled-cheque FK, nullable
+  signature-verified flag, status (`active`/`inactive`), and created timestamp.
+- `cancelled_cheques` stores member FK, nullable `loan_application_id` placeholder, document ID,
+  protected account-number token, keyed hash, last four, IFSC, branch, verification status,
+  signature-mismatch flag, and created timestamp. Loan-application-specific cheque behavior remains
+  deferred until application persistence exists.
+- Responses expose only masked account-number metadata shaped as
+  `{masked, last4, can_view_full: false}`. Full account numbers, protected token contents, and
+  account-number hashes are never serialized or included in audit metadata.
+- Because `auth-permissions.md` has no exact bank-account metadata codes, A-034 records the 004J
+  assumption: lists use `members.member.read`, creates use `members.member.update`, and no new
+  permission codes are seeded. PAN/Aadhaar reveal, KYC, document, disbursement, export, and security
+  permissions do not grant bank metadata access or reveal.
+- Successful creates write metadata-only audit rows: `members.bank_account.created` and
+  `members.cancelled_cheque.created`. Read-only lists write no audit/workflow row, and create
+  actions write no workflow event.
+- Validation rejects missing holder/account/IFSC facts, account numbers shorter than four digits,
+  malformed UUID fields, unsupported verification status, and unsupported bank-account status.
+  Duplicate-active-borrower warnings, bank verification letters, signature mismatch resolution,
+  blank-dated cheque custody, disbursement gates, payment initiation, and bank-account full reveal
+  are deferred.

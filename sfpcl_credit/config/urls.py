@@ -132,6 +132,16 @@ urlpatterns = [
         name="member-crop-plans",
     ),
     path(
+        "api/v1/members/<uuid:member_id>/bank-accounts/",
+        member_views.member_bank_accounts,
+        name="member-bank-accounts",
+    ),
+    path(
+        "api/v1/members/<uuid:member_id>/cancelled-cheques/",
+        member_views.member_cancelled_cheques,
+        name="member-cancelled-cheques",
+    ),
+    path(
         "api/v1/kyc-profiles/",
         member_views.kyc_profiles,
         name="kyc-profile-list-create",

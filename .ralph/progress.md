@@ -1,5 +1,29 @@
 # Ralph Progress Log
 
+## 2026-07-09 16:04:49 - 2026-07-09_154649_normal_run
+- Agent tool used: codex
+- Slice attempted: 004J-bank-account-and-cancelled-cheque-profile-foundation
+- Summary: Implemented member bank-account and cancelled-cheque metadata foundations. Added
+  `bank_accounts` and `cancelled_cheques`, plus
+  `GET/POST /api/v1/members/{member_id}/bank-accounts/` and
+  `GET/POST /api/v1/members/{member_id}/cancelled-cheques/`. Account numbers are stored only as
+  protected token plus keyed hash plus last four, responses expose masked/last-four metadata only,
+  and successful creates write metadata-only audit rows without workflow events. Recorded A-034:
+  bank metadata lists use `members.member.read`, creates use `members.member.update` until source
+  docs define exact bank metadata permissions. Updated API contracts and Epic 004 digest; sharpened
+  004K/005A with the closed bank boundary.
+- Tests run: backend bank-account TDD red/green; focused bank metadata tests (7/7); backend
+  `manage.py check`; backend tests (238/238); `makemigrations --check --dry-run`; backend coverage
+  95% (floor 85); frontend `npm run lint`; `npm run typecheck`; `npm test` (76/76);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_154649_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus `api-response-examples.md`.
+- Result: Success.
+- Risk level: High.
+- Next action: Run `004K-borrower-360-kyc-panel-and-masking-ui-wiring`; keep bank-account full
+  reveal, duplicate warnings, signature-mismatch resolution, and disbursement/payment UI out of
+  scope.
+
 ## 2026-07-09 15:01:08 - 2026-07-09_150108_normal_run
 - Agent tool used: codex
 - Slice attempted: 004I-sensitive-masking-and-reveal-audit
@@ -1536,6 +1560,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_150108_normal_run/.ralph/runs/2026-07-09_150108_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_150108_normal_run/.ralph/runs/2026-07-09_150108_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 16:09:29 - 2026-07-09_154649_normal_run
+- Agent tool used: codex
+- Slice attempted: 004J-bank-account-and-cancelled-cheque-profile-foundation
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_154649_normal_run/.ralph/runs/2026-07-09_154649_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_154649_normal_run/.ralph/runs/2026-07-09_154649_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

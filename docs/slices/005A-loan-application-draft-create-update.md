@@ -16,6 +16,20 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 ## Depends On
 - 004J
 
+## Prior Slice Facts
+- Epic 004 now provides member profile foundations needed by intake: member detail, nominees,
+  shareholding, land/crop, KYC profile/document metadata, sensitive PAN/Aadhaar reveal, and
+  member bank-account/cancelled-cheque metadata.
+- 004J bank metadata endpoints persist protected account numbers and expose only masked account
+  values. Loan-application-specific cancelled-cheque behavior remains a placeholder because real
+  application persistence starts in Epic 005.
+- `screen-spec.md` S11 says duplicate draft review should warn on same bank account used in other
+  active borrower records, but 004J explicitly deferred that decision because active borrower and
+  loan-application records did not exist yet. 005A may store enough draft references for a later
+  duplicate-warning slice, but must not invent the duplicate-active-borrower rule.
+- `api-contracts.md` §31.2 and §45 reserve bank-account IDs and idempotency for future
+  disbursement initiation, not for draft application create/update.
+
 ## Source References
 - docs/source/implementation-roadmap.md section 11
 - docs/source/api-contracts.md sections 19-21
@@ -36,8 +50,17 @@ None for this slice, except updating frontend documentation or fixtures if requi
 ## Backend/API Scope
 Implement the named backend/API capability only.
 
+Narrow this first slice to draft loan-application create/update and read-back of stored draft
+facts. Do not implement submit, completeness check, reference-number generation, document checklist
+verification, deficiency workflow, eligibility, loan limit, appraisal, sanction, disbursement, or
+member portal flows unless this slice is split.
+
 ## Database/Model Impact
 Non-destructive model/migration changes for this capability, if needed.
+
+If a draft stores borrower/member references, use existing `members.member_id` and existing member
+profile facts rather than copying PAN/Aadhaar or full bank-account numbers into the application
+record. Bank references must use IDs/masked metadata only.
 
 ## API Contracts
 Create or update the API contract for this capability.
@@ -50,6 +73,10 @@ Record audit/workflow events for critical create/update/approval/access actions.
 
 ## Validation Rules
 Enforce source-doc business rules and block invalid state transitions.
+
+For this foundation slice, validate required draft fields and malformed UUIDs, but do not invent
+eligibility, duplicate-bank-account, payment-initiation, or disbursement-readiness rules. Record
+any missing source-backed draft status or permission detail in `docs/working/ASSUMPTIONS.md`.
 
 ## Test Cases
 Unit/service/API/permission tests plus frontend tests where UI is touched.

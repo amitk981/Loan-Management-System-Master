@@ -491,3 +491,95 @@ class KycDocument(models.Model):
 
     def __str__(self):
         return f"{self.document_type}:{self.kyc_document_id}"
+
+
+class CancelledCheque(models.Model):
+    VERIFICATION_STATUSES = {"pending", "verified", "rejected"}
+
+    cancelled_cheque_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    loan_application_id = models.UUIDField(blank=True, null=True)
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="cancelled_cheques")
+    document_id = models.UUIDField()
+    account_number_encrypted = models.TextField()
+    account_number_hash = models.CharField(max_length=128, db_index=True)
+    account_number_last4 = models.CharField(max_length=4, blank=True)
+    ifsc = models.CharField(max_length=20, db_index=True)
+    branch_name = models.CharField(max_length=150, blank=True)
+    verification_status = models.CharField(max_length=60, default="pending", db_index=True)
+    signature_mismatch_flag = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "cancelled_cheques"
+        indexes = [
+            models.Index(fields=["member"], name="idx_can_cheques_member"),
+            models.Index(fields=["document_id"], name="idx_can_cheques_doc"),
+            models.Index(fields=["account_number_hash"], name="idx_can_cheques_acct_hash"),
+            models.Index(fields=["verification_status"], name="idx_can_cheques_verify"),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.verification_status not in self.VERIFICATION_STATUSES:
+            raise ValidationError({"verification_status": "Unsupported verification status."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.member_id}:{self.account_number_last4}"
+
+
+class BankAccount(models.Model):
+    OWNER_PARTY_TYPES = {"member"}
+    VERIFICATION_STATUSES = {"pending", "verified", "rejected"}
+    STATUSES = {"active", "inactive"}
+
+    bank_account_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner_party_type = models.CharField(max_length=60, db_index=True)
+    owner_party_id = models.UUIDField(db_index=True)
+    account_holder_name = models.CharField(max_length=255)
+    account_number_encrypted = models.TextField()
+    account_number_hash = models.CharField(max_length=128, db_index=True)
+    account_number_last4 = models.CharField(max_length=4, blank=True)
+    ifsc = models.CharField(max_length=20, db_index=True)
+    bank_name = models.CharField(max_length=150, blank=True)
+    branch_name = models.CharField(max_length=150, blank=True)
+    verification_status = models.CharField(max_length=60, default="pending", db_index=True)
+    cancelled_cheque = models.ForeignKey(
+        CancelledCheque,
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="bank_accounts",
+    )
+    signature_verified_flag = models.BooleanField(blank=True, null=True)
+    status = models.CharField(max_length=40, default="active", db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "bank_accounts"
+        indexes = [
+            models.Index(fields=["owner_party_type", "owner_party_id"], name="idx_bank_accounts_owner"),
+            models.Index(fields=["account_number_hash"], name="idx_bank_accounts_hash"),
+            models.Index(fields=["ifsc"], name="idx_bank_accounts_ifsc"),
+            models.Index(fields=["verification_status"], name="idx_bank_accounts_verify"),
+            models.Index(fields=["status"], name="idx_bank_accounts_status"),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.owner_party_type not in self.OWNER_PARTY_TYPES:
+            raise ValidationError({"owner_party_type": "Unsupported owner party type."})
+        if self.verification_status not in self.VERIFICATION_STATUSES:
+            raise ValidationError({"verification_status": "Unsupported verification status."})
+        if self.status not in self.STATUSES:
+            raise ValidationError({"status": "Unsupported bank account status."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.owner_party_type}:{self.owner_party_id}:{self.account_number_last4}"
