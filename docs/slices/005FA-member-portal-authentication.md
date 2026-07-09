@@ -14,7 +14,7 @@ Give borrowers/members a real way into the portal: portal login (MP00), first-ti
 A member invited to the portal can activate their account, log in securely, recover access, and manage their password — the front door for every borrower self-service feature.
 
 ## Depends On
-- 005F
+- 005F2
 
 ## Prior Slice Facts To Preserve
 - MP08 copy says a borrower receives the official `LO...` reference only after submitted details
@@ -31,6 +31,9 @@ A member invited to the portal can activate their account, log in securely, reco
   `POST /api/v1/deficiencies/{deficiency_id}/resolve/`. Borrower portal auth must not grant those
   staff complete-check actions, but it must expose a member scope that future portal endpoints can
   use to read/respond only to the borrower's own returned applications.
+- 005F2 must correct returned deficiency applications to the source-backed
+  `application_status = incomplete_returned`. Portal auth must not depend on returned applications
+  still looking like plain `submitted` applications.
 - Member portal source access boundaries say borrowers can access their own profile, own loan
   applications, own documents, own loan accounts/repayments, own notices, and own grievances only.
   Treat every cross-member portal read/write as object-access denied.

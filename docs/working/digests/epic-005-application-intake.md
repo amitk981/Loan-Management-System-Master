@@ -235,3 +235,17 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   `application_deficiency` workflow event from `open` to `resolved`.
 - Borrower portal response drafting, document re-upload UI, application resubmission back to
   completeness check, rejection notes, and real communication delivery remain later slices.
+
+## Architecture Review 2026-07-09 21:38 - Deficiency Return Status Contract
+- Reviewed slices 005C2, 005D, 005E, and 005F after commit `1f30ed6`.
+- Source status facts opened for this review:
+  - `docs/source/data-model.md` `loan_application_status` includes `incomplete_returned`.
+  - `docs/source/functional-spec.md` M03 deficiency flow says an incomplete application enters the
+    incomplete state and keeps deficiency history.
+  - `docs/source/screen-spec.md` S12 says returned applications become
+    `Incomplete - Returned to Applicant` or rejected, depending on business decision.
+- 005F currently stores returned applications as `application_status = submitted` plus
+  `completeness_status = incomplete`. That hides the returned state from downstream portal/status
+  slices. Corrective slice 005F2 should set `application_status = incomplete_returned`, keep
+  `completeness_status = incomplete`, and preserve the existing no-reference/no-register/no-sequence
+  side-effect guarantees.

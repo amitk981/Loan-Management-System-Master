@@ -1,0 +1,9 @@
+   864	### Deficiency Flow
+   865	
+   866	1. Deputy Manager – Finance reviews submitted application.
+   867	2. Missing fields / documents are marked.
+   868	3. System generates deficiency note or Rejection Note as applicable.
+   869	4. Borrower is notified through configured channel.
+   870	5. Application enters `INCOMPLETE` state.
+   871	6. Borrower / field officer resubmits.
+   872	7. System keeps deficiency history.

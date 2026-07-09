@@ -1,0 +1,9 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/005FA-member-portal-authentication.md
+ M docs/slices/005FB-member-portal-dashboard-profile-and-supply-view.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-005-application-intake.md
+?? .ralph/runs/2026-07-09_213305_architecture_review/
+?? docs/slices/005F2-deficiency-return-status-contract-hardening.md

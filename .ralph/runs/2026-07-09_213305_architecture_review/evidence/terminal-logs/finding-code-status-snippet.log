@@ -1,0 +1,10 @@
+   651	    invalid_state_message = return_deficiencies_invalid_state_message(application)
+   652	    if invalid_state_message:
+   653	        raise LoanApplicationInvalidStateError(invalid_state_message)
+   654	    cleaned = _clean_return_deficiencies_payload(application, payload)
+   655	    old_value_json = _audit_snapshot(application)
+   656	    now = timezone.now()
+   657	    application.completeness_status = LoanApplication.COMPLETENESS_INCOMPLETE
+   658	    application.updated_at = now
+   659	    application.updated_by_user = actor
+   660	    application.save()

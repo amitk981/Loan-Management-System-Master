@@ -2,6 +2,77 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-09 21:38 - Architecture Review 2026-07-09_213305_architecture_review
+
+Reviewed completed product slices since the prior architecture review commit `1f30ed6`:
+- `005C2-application-object-access-hardening` (`5f3dd0c`)
+- `005D-application-document-checklist` (`ec33d63`)
+- `005E-completeness-workbench` (`f282820`)
+- `005F-deficiency-creation-and-resolution` (`39477f0`)
+
+This review focused on the product diff, run evidence, the Epic 005 digest, working API contracts,
+and targeted source extracts for application document, completeness, deficiency, and status rules.
+Broad source documents were not re-read beyond the sections needed to verify the finding below.
+
+### Finding 1 - Medium - Deficiency return hides the source-backed returned-incomplete application state
+
+`005F` correctly creates structured deficiency rows from the current blocking completeness checklist,
+keeps returned applications out of credit assessment, and proves no `LO...` reference, loan request
+register row, or visible sequence is created. However, the return action keeps
+`application_status = submitted` and only sets `completeness_status = incomplete`
+(`sfpcl_credit/applications/services.py:651-660`; asserted in
+`sfpcl_credit/tests/test_loan_applications_api.py:1040-1042`). That means downstream status
+surfaces and portal slices can see a returned application as merely submitted unless they infer state
+from deficiency rows or completeness status.
+
+The source status model includes a dedicated `incomplete_returned` application status
+(`docs/source/data-model.md:262-270`). The functional deficiency flow says the application enters
+the incomplete state and keeps deficiency history (`docs/source/functional-spec.md:864-872`), and
+S12 says returned applications become `Incomplete - Returned to Applicant` or rejected depending on
+business decision (`docs/source/screen-spec.md:1217-1224`). 005F recorded A-040 for the
+`items[].item_code` request shape, but did not record an assumption for replacing the
+source-backed returned status with plain `submitted`.
+
+Corrective action: created
+`docs/slices/005F2-deficiency-return-status-contract-hardening.md`, made `005FA` depend on it, and
+sharpened `005FA`/`005FB` plus the Epic 005 digest so portal auth/dashboard work builds on
+`application_status = incomplete_returned`. The corrective slice should add failing-first backend
+regressions for response/persisted status, audit/workflow old/new state, repeat-return handling, and
+the existing no-reference/no-register/no-sequence side-effect guarantees.
+
+### Finding 2 - Pass - Prior object-access finding was closed and carried forward
+
+`005C2` integrates `applications.services.evaluate_application_object_access(...)` into detail,
+patch, submit, and reference generation, with tests for unrelated same-permission denial and no
+side effects. `005D`, `005E`, and `005F` reuse the same application boundary for document/checklist,
+completeness, and deficiency endpoints, preserving the order `404` for missing records, then
+`403 PERMISSION_DENIED` for missing global permission, then `403 OBJECT_ACCESS_DENIED` for
+same-permission out-of-scope actors. This directly closes the prior architecture-review finding.
+
+Corrective action: none.
+
+### Finding 3 - Pass with evidence note - Tests assert behavior, but 005F TDD snippets are not self-contained
+
+The reviewed backend tests are substantive: they assert permission/object-scope denials, metadata-only
+audit payloads, version history, checklist blocking reasons, completeness pass delegation to the
+existing reference-generation path, deficiency validation, deficiency resolve behavior, and no
+partial sequence/register/audit/workflow side effects. Full gates passed in every reviewed run.
+
+One evidence-quality gap remains: the 005F targeted TDD red/green files
+(`tdd-red-return-with-deficiencies.log`, `tdd-green-return-with-deficiencies.log`, and
+`deficiency-targeted-tests.log`) contain only startup lines, not the failure/pass result. The 005F
+gate summary and full backend `-v 2` results are sufficient to verify the final state, but future
+runs should save targeted red/green output with enough verbosity to be self-contained.
+
+Corrective action: none for product code; noted in this review packet.
+
+Functional-spec spot check: the reviewed Epic 005 work implements application object-access
+hardening, application-document/checklist metadata, completeness read/pass, and deficiency
+return/list/resolve. M03-FR-006, M03-FR-007, M03-FR-011, and M03-FR-012 are partially implemented
+for the backend/API slices reviewed here; member portal intake/status, borrower deficiency
+response/resubmission, rejection notes, eligibility, appraisal, sanction, disbursement, and frontend
+intake wiring remain explicitly deferred in queued slices and assumptions.
+
 ## 2026-07-09 19:12 - Architecture Review 2026-07-09_190655_architecture_review
 
 Reviewed completed product slices since the prior architecture review commit `dadeefd`:

@@ -1,5 +1,25 @@
 # Ralph Progress Log
 
+## 2026-07-09 21:38:22 - 2026-07-09_213305_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed `005C2`, `005D`, `005E`, and `005F` since architecture review commit
+  `1f30ed6`. Appended findings to `docs/working/REVIEW_FINDINGS.md`. Found one Medium
+  source-fidelity issue: `005F` returns deficient applications while keeping
+  `application_status = submitted`, but the source status enum and deficiency flows require the
+  returned-incomplete state. Created corrective slice
+  `005F2-deficiency-return-status-contract-hardening`, made `005FA` depend on it, and sharpened
+  `005FA`/`005FB` plus the Epic 005 digest so portal work does not build on the wrong status.
+- Tests run: backend `manage.py check`; backend tests (256/256); `makemigrations --check
+  --dry-run`; backend coverage 95% (floor 85); frontend `npm run lint`; `npm run typecheck`;
+  `npm test` (80/80); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_213305_architecture_review/`, with review-window,
+  source-extract, and gate logs under `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Low (review/docs-only), with one Medium corrective issue queued.
+- Next action: Run `005F2-deficiency-return-status-contract-hardening`; after it passes, continue
+  with `005FA-member-portal-authentication`.
+
 ## 2026-07-09 20:56:26 - 2026-07-09_205626_normal_run
 - Agent tool used: codex
 - Slice attempted: 005F-deficiency-creation-and-resolution
@@ -1930,6 +1950,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_205626_normal_run/.ralph/runs/2026-07-09_205626_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_205626_normal_run/.ralph/runs/2026-07-09_205626_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 21:56:19 - 2026-07-09_213305_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_213305_architecture_review/.ralph/runs/2026-07-09_213305_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_213305_architecture_review/.ralph/runs/2026-07-09_213305_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
