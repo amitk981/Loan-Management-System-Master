@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_patch_updates_allowed_draft_fields_and_rejects_cross_member_references (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_patch_updates_allowed_draft_fields_and_rejects_cross_member_references)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_172309_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 178, in test_patch_updates_allowed_draft_fields_and_rejects_cross_member_references
+    self.assertEqual(bad_response.status_code, 400)
+AssertionError: 501 != 400
+
+----------------------------------------------------------------------
+Ran 1 test in 1.831s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

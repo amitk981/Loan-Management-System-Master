@@ -42,7 +42,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Local demo staff seed | Implemented in slice 002K; corrected in 002K2 | Login, dashboard smoke, admin/tracer permission smoke | `implementation-roadmap.md` §10, §20-22; `technical-architecture.md` §8-12, §17-18; `auth-permissions.md`; `api-contracts.md` §11-12, §43-44 | `python manage.py seed_demo_users` is a guarded local/dev seed path. It refuses unless `SFPCL_DEBUG=true` and `SFPCL_ALLOW_DEMO_SEED=true`, calls `seed_catalogue()`, creates or updates deterministic `demo.*@sfpcl.example` staff users with active primary roles and memberships, and does not alter `e2e.*` users. Demo users authenticate through the real `/auth/login/` and `/auth/me/` endpoints; there is no demo auth bypass. The zero-permission user returns `permissions: []` and `available_actions: []`; the tracer-only user uses the guarded local/dev-only `local_demo_tracer_user` role and returns only `tracer.lifecycle.run`; the shared source-catalogue `sales_team_user` role remains permission-neutral until source documents define grants; system admin preserves canonical action-specific user-admin permissions without broad `manage_users` aliases. |
 | Role/permission/team catalogue | Seeded in slice 002C; exposed for current user in 002D | None directly | `auth-permissions.md` §12-15, §38 | Canonical `Permission`, `Role`, `Team`, `RolePermission` catalogue seeded idempotently via `python manage.py seed_role_catalogue` (`sfpcl_credit/identity/catalogue.py`). `/api/v1/auth/me/` exposes the authenticated user's effective permission codes from this data. |
 | Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; shareholding list/create implemented in 004F; land/crop list/create implemented in 004G; KYC profile/document upload/verify implemented in 004H; member bank-account/cancelled-cheque metadata implemented in 004J; Borrower 360 Epic 004 UI wiring implemented in 004K with corrective DTO hardening queued in 004K2 | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3/§15.1-§15.2/§17.1-§18.4; `data-model.md` §10.1-§10.4/§11.1/§11.7-§12.4; `auth-permissions.md` §12.2-§12.3/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/`, `/shareholdings/`, `/land-holdings/`, `/crop-plans/`, `/bank-accounts/`, and `/cancelled-cheques/` are API-backed with their documented validations and metadata-only create audits. `GET/POST/PATCH /api/v1/kyc-profiles/`, KYC document upload, and KYC document verify are implemented for member parties only with KYC permissions. Sensitive bank-account reveal, re-KYC task management, share certificate/demat, bank verification letters, disbursement bank gates, and loan-application/loan-account/repayment/risk/audit Borrower 360 data remain future scope. |
-| Loan applications | Draft from source | Applications, completeness | `api-contracts.md` | Needs real draft/submit/check endpoints. |
+| Loan applications | Draft create/read/update implemented in 005A; submit/completeness/checks remain draft | Applications, completeness | `api-contracts.md` §19.2-§19.4; `data-model.md` §13.1; `auth-permissions.md` §12.4 and endpoint map | `POST /api/v1/loan-applications/`, `GET /api/v1/loan-applications/{id}/`, and `PATCH /api/v1/loan-applications/{id}/` persist draft facts only with stable UUID IDs, nullable formal reference number, draft status, member summaries, optional land/crop/bank/cancelled-cheque references, masked bank metadata, permissions, audit, and draft-created workflow event. Submit, `LO...` sequence, completeness, documents, deficiencies, eligibility, loan limits, appraisal, sanction, and disbursement are future slices. |
 | Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
 | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
@@ -243,6 +243,58 @@ Rules:
   user-agent, and expiry for successful reveals. Audit rows never include full PAN/Aadhaar,
   encrypted token columns, hash values, or submitted identifier-derived values.
 - Sensitive reveal writes no `WorkflowEvent`.
+
+## Loan Application Draft API (005A)
+
+`POST /api/v1/loan-applications/`
+
+Request:
+
+```json
+{
+  "member_id": "uuid",
+  "required_loan_amount": "400000.00",
+  "requested_tenure_months": 12,
+  "declared_purpose": "Crop production loan for grape cultivation",
+  "purpose_category": "crop_production",
+  "loan_type_requested": "short_term",
+  "land_holding_id": "uuid",
+  "crop_plan_id": "uuid",
+  "bank_account_id": "uuid",
+  "cancelled_cheque_id": "uuid",
+  "borrower_request_notes": "Assisted intake notes",
+  "terms_acceptance_flag": false
+}
+```
+
+`GET /api/v1/loan-applications/{loan_application_id}/`
+
+`PATCH /api/v1/loan-applications/{loan_application_id}/`
+
+Patch accepts only the draft facts above except `member_id`; borrower ownership is preserved.
+
+Rules:
+- All endpoints require session-bound bearer authentication.
+- `POST` requires `applications.loan_application.create`; `GET` requires
+  `applications.loan_application.read`; `PATCH` requires
+  `applications.loan_application.update`.
+- 005A stores draft applications only. `application_status` is `draft`,
+  `current_stage` is `initial_loan_request`, and `completeness_status` is
+  `not_started`.
+- `application_reference_number` is nullable for drafts; formal `LO...`
+  generation starts in a later submit/completeness slice.
+- Required draft validation is intentionally narrow: known borrower member,
+  well-formed UUID references, subresource references owned by the borrower
+  member, and positive requested amount when supplied.
+- Draft saves allow incomplete KYC/documents; submit and completeness blockers
+  are future slices.
+- Responses include member identity summaries plus land/crop and masked
+  bank/cancelled-cheque metadata by ID. They never include PAN, Aadhaar, full
+  bank account numbers, encrypted values, protected tokens, or hash fields.
+- Successful create writes `applications.loan_application.created` audit metadata
+  plus one `loan_application` workflow event into `draft`. Successful patch
+  writes `applications.loan_application.updated` audit metadata and does not
+  create a workflow event because no source-backed state transition occurs.
 
 ## Member Bank Account and Cancelled Cheque Metadata API (004J)
 

@@ -1,5 +1,28 @@
 # Ralph Progress Log
 
+## 2026-07-09 17:23:09 - 2026-07-09_172309_normal_run
+- Agent tool used: codex
+- Slice attempted: 005A-loan-application-draft-create-update
+- Summary: Implemented loan-application draft create/read/update as a backend/API slice. Added the
+  `applications` Django app, `loan_applications` table, draft serializer/service boundary, and
+  `POST /api/v1/loan-applications/`, `GET /api/v1/loan-applications/{id}/`, and
+  `PATCH /api/v1/loan-applications/{id}/`. Drafts persist member, requested amount/tenure,
+  purpose, optional land/crop/bank/cancelled-cheque references, request notes, status/stage, and
+  actor fields. Responses and audit metadata include member summaries and masked bank metadata only,
+  preserve `account_holder_name`, and never expose PAN/Aadhaar/full bank values/token/hash fields.
+  Create writes metadata-only audit plus a draft workflow event; patch writes audit only.
+- Tests run: backend loan-application TDD red/green; focused loan-application API tests (3/3);
+  backend `manage.py check`; backend tests (241/241); `makemigrations --check --dry-run`;
+  backend coverage 95% (floor 85); frontend `npm run lint`; `npm run typecheck`; `npm test`
+  (80/80); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-09_172309_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus API response examples.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005B-application-submit-and-status-transition`; keep reference generation,
+  completeness, document checklist, deficiencies, eligibility, appraisal, sanction, and frontend
+  wiring out of scope.
+
 ## 2026-07-09 17:03:59 - 2026-07-09_170359_normal_run
 - Agent tool used: codex
 - Slice attempted: 004K2-borrower-360-bank-holder-contract-hardening
@@ -1661,6 +1684,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_170359_normal_run/.ralph/runs/2026-07-09_170359_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_170359_normal_run/.ralph/runs/2026-07-09_170359_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 17:51:26 - 2026-07-09_172309_normal_run
+- Agent tool used: codex
+- Slice attempted: 005A-loan-application-draft-create-update
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_172309_normal_run/.ralph/runs/2026-07-09_172309_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_172309_normal_run/.ralph/runs/2026-07-09_172309_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

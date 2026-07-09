@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_create_and_read_draft_returns_metadata_only_response_and_audit (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_create_and_read_draft_returns_metadata_only_response_and_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_172309_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 93, in test_create_and_read_draft_returns_metadata_only_response_and_audit
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 1.395s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

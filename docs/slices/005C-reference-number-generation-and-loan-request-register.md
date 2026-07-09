@@ -16,6 +16,14 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 ## Depends On
 - 005B
 
+## Prior Slice Facts
+- 005A created persisted loan-application drafts with nullable `application_reference_number`.
+- 005B should submit the draft and leave formal `LO...` reference generation untouched unless its
+  source pass explicitly changes A-035.
+- Use `docs/working/digests/epic-005-application-intake.md` before reopening large source docs.
+- Epic 004/005A sensitive data boundaries remain binding: register rows, audit metadata, and
+  responses must not include full PAN, Aadhaar, full bank account numbers, token values, or hashes.
+
 ## Source References
 - docs/source/implementation-roadmap.md section 11
 - docs/source/api-contracts.md sections 19-21
@@ -36,8 +44,30 @@ None for this slice, except updating frontend documentation or fixtures if requi
 ## Backend/API Scope
 Implement the named backend/API capability only.
 
+Concrete 005C scope:
+- Add source-backed formal loan-application reference generation using a sequence that starts at
+  `LO00000001` and produces unique values for applications that have reached the source-backed
+  reference-generation point.
+- Create and persist loan request register entries only for the submitted/pre-completeness
+  applications that receive a formal reference in this slice. Keep register data sourced from the
+  existing loan application/member record; do not copy sensitive identifiers into the register.
+- Decide from the opened source sections whether the reference is generated at submit, immediately
+  after submit, or during completeness check. If unresolved, follow A-035 and record the transition
+  chosen in `docs/working/ASSUMPTIONS.md`.
+- Expose only the narrow API needed for the reference/register capability. If no public action is
+  source-backed, implement it behind the existing submit/completeness path and document the
+  contract; do not invent a broad register management UI in this slice.
+- Do not implement document checklist verification, deficiency workflow, eligibility, loan limit,
+  appraisal, sanction, disbursement, or frontend wiring in 005C.
+
 ## Database/Model Impact
 Non-destructive model/migration changes for this capability, if needed.
+
+Expected model impact:
+- A sequence/config table or service-backed sequence row if the existing schema does not already
+  support `LO...` generation.
+- A `loan_request_register_entries` table only if needed for this slice, linked one-to-one to
+  `loan_applications` and storing register metadata without sensitive identity/bank values.
 
 ## API Contracts
 Create or update the API contract for this capability.
@@ -45,14 +75,37 @@ Create or update the API contract for this capability.
 ## Permissions
 Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
 
+Use the existing loan-application permission that owns the transition triggering reference
+generation. Do not invent register-admin permission codes unless the source sections opened during
+005C name them.
+
 ## Audit Requirements
 Record audit/workflow events for critical create/update/approval/access actions.
 
 ## Validation Rules
 Enforce source-doc business rules and block invalid state transitions.
 
+Specific validation to cover:
+- Reject reference generation for unknown applications.
+- Reject reference generation for draft applications if the chosen transition requires submitted
+  status.
+- Reject duplicate register/reference generation for an application that already has a formal
+  reference or register entry.
+- Ensure generated references are unique and zero-padded in the `LO00000001` style.
+- Preserve nullable/no-reference behavior for drafts before the chosen transition.
+
 ## Test Cases
 Unit/service/API/permission tests plus frontend tests where UI is touched.
+
+Minimum regression tests:
+- First reference generated for a submitted application is `LO00000001` (or the configured starting
+  value if a source/config row exists) and is persisted on the application.
+- Two applications receive distinct sequential references without collisions.
+- A loan request register entry is created once and links to the application/member/reference.
+- Re-running the generation path is idempotent or returns a standard duplicate-state error, based
+  on the source-backed transition chosen for 005C.
+- Responses, audit rows, workflow events, and register rows contain no full PAN, Aadhaar, full bank
+  account values, protected token values, or hashes.
 
 ## Visual Acceptance Criteria
 None.
