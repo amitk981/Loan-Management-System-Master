@@ -1,0 +1,113 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/members/Borrower360.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_160945_normal_run/sfpcl-lms
+
+ ❯ src/pages/members/Borrower360.test.tsx (5 tests | 5 failed) 19ms
+   × borrower 360 API client additions > loads bank and cancelled-cheque metadata from 004J endpoints without full account numbers 3ms
+     → fetchMemberBankAccounts is not a function
+   × Borrower360View > renders API-backed borrower, KYC, shareholding, land, crop, nominee, and bank metadata without mock remnants 3ms
+     → Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+   × Borrower360View > renders reveal controls only for backend-revealable fields and does not offer bank reveal controls 0ms
+     → Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+   × Borrower360View > blocks blank sensitive reveal reason before calling the audited reveal endpoint 12ms
+     → promise rejected "TypeError: Cannot read properties of unde…" instead of resolving
+   × Borrower360View > renders loading, empty, forbidden, and error states through the borrower layout 0ms
+     → Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/members/Borrower360.test.tsx > borrower 360 API client additions > loads bank and cancelled-cheque metadata from 004J endpoints without full account numbers
+TypeError: fetchMemberBankAccounts is not a function
+ ❯ src/pages/members/Borrower360.test.tsx:45:28
+     43|     vi.stubGlobal('fetch', fetchMock);
+     44| 
+     45|     const accounts = await fetchMemberBankAccounts('member-1');
+       |                            ^
+     46|     const cheques = await fetchMemberCancelledCheques('member-1');
+     47| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/pages/members/Borrower360.test.tsx > Borrower360View > renders API-backed borrower, KYC, shareholding, land, crop, nominee, and bank metadata without mock remnants
+Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+ ❯ renderElement node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6119:15
+ ❯ retryNode node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6428:21
+ ❯ performWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:7435:17
+ ❯ startWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8270:7
+ ❯ renderToStringImpl node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8380:7
+ ❯ Proxy.process.env.NODE_ENV.exports.renderToStaticMarkup node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:9861:14
+ ❯ renderBorrower360 src/pages/members/Borrower360.test.tsx:288:102
+    286| };
+    287| 
+    288| const renderBorrower360 = (overrides: Partial<React.ComponentProps<typ…
+       |                                                                                                      ^
+    289|   <Borrower360View
+    290|     status="success"
+ ❯ src/pages/members/Borrower360.test.tsx:77:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/pages/members/Borrower360.test.tsx > Borrower360View > renders reveal controls only for backend-revealable fields and does not offer bank reveal controls
+Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+ ❯ renderElement node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6119:15
+ ❯ retryNode node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6428:21
+ ❯ performWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:7435:17
+ ❯ startWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8270:7
+ ❯ renderToStringImpl node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8380:7
+ ❯ Proxy.process.env.NODE_ENV.exports.renderToStaticMarkup node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:9861:14
+ ❯ renderBorrower360 src/pages/members/Borrower360.test.tsx:288:102
+    286| };
+    287| 
+    288| const renderBorrower360 = (overrides: Partial<React.ComponentProps<typ…
+       |                                                                                                      ^
+    289|   <Borrower360View
+    290|     status="success"
+ ❯ src/pages/members/Borrower360.test.tsx:100:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/pages/members/Borrower360.test.tsx > Borrower360View > blocks blank sensitive reveal reason before calling the audited reveal endpoint
+AssertionError: promise rejected "TypeError: Cannot read properties of unde…" instead of resolving
+ ❯ src/pages/members/Borrower360.test.tsx:119:107
+    117|     vi.stubGlobal('fetch', fetchMock);
+    118| 
+    119|     await expect(revealMemberSensitiveField('member-1', { field_name: …
+       |                                                                                                           ^
+    120|       .resolves.toBeDefined();
+    121|   });
+
+Caused by: TypeError: Cannot read properties of undefined (reading 'json')
+ ❯ request src/services/memberProfileApi.ts:455:35
+ ❯ Module.revealMemberSensitiveField src/services/memberProfileApi.ts:275:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/pages/members/Borrower360.test.tsx > Borrower360View > renders loading, empty, forbidden, and error states through the borrower layout
+Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+ ❯ renderElement node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6119:15
+ ❯ retryNode node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6428:21
+ ❯ performWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:7435:17
+ ❯ startWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8270:7
+ ❯ renderToStringImpl node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8380:7
+ ❯ Proxy.process.env.NODE_ENV.exports.renderToStaticMarkup node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:9861:14
+ ❯ renderBorrower360 src/pages/members/Borrower360.test.tsx:288:102
+    286| };
+    287| 
+    288| const renderBorrower360 = (overrides: Partial<React.ComponentProps<typ…
+       |                                                                                                      ^
+    289|   <Borrower360View
+    290|     status="success"
+ ❯ src/pages/members/Borrower360.test.tsx:124:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed (5)
+   Start at  16:13:21
+   Duration  652ms (transform 143ms, setup 0ms, collect 221ms, tests 19ms, environment 0ms, prepare 38ms)
+

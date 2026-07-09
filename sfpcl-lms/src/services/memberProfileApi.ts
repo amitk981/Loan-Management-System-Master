@@ -186,6 +186,42 @@ export interface KycProfileDetail {
   documents: KycDocumentDetail[];
 }
 
+export interface MemberBankAccountDetail {
+  bank_account_id: string;
+  holder_name: string;
+  account_number: { masked: string | null; last4: string | null; can_view_full: boolean };
+  ifsc: string;
+  bank_name: string | null;
+  branch_name: string | null;
+  verification_status: string;
+  cancelled_cheque_id: string | null;
+  signature_verified_flag: boolean | null;
+  status: string;
+  created_at: string;
+}
+
+export interface MemberBankAccountList {
+  items: MemberBankAccountDetail[];
+  pagination: Pagination;
+}
+
+export interface MemberCancelledChequeDetail {
+  cancelled_cheque_id: string;
+  loan_application_id: string | null;
+  document_id: string;
+  account_number: { masked: string | null; last4: string | null; can_view_full: boolean };
+  ifsc: string;
+  branch_name: string | null;
+  verification_status: string;
+  signature_mismatch_flag: boolean;
+  created_at: string;
+}
+
+export interface MemberCancelledChequeList {
+  items: MemberCancelledChequeDetail[];
+  pagination: Pagination;
+}
+
 export interface CreateMemberNomineePayload {
   nominee_name: string;
   date_of_birth: string;
@@ -376,6 +412,22 @@ export const fetchMemberKycProfile = async (memberId: string): Promise<KycProfil
   );
   if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
   return normalizeKycProfile(envelope.data);
+};
+
+export const fetchMemberBankAccounts = async (memberId: string): Promise<MemberBankAccountList> => {
+  const envelope = await request<MemberBankAccountDetail[]>(`/api/v1/members/${memberId}/bank-accounts/`, 'GET');
+  return {
+    items: normalizeBankAccounts(envelope.data ?? []),
+    pagination: envelope.pagination ?? emptyPagination,
+  };
+};
+
+export const fetchMemberCancelledCheques = async (memberId: string): Promise<MemberCancelledChequeList> => {
+  const envelope = await request<MemberCancelledChequeDetail[]>(`/api/v1/members/${memberId}/cancelled-cheques/`, 'GET');
+  return {
+    items: normalizeCancelledCheques(envelope.data ?? []),
+    pagination: envelope.pagination ?? emptyPagination,
+  };
 };
 
 export const createMemberKycProfile = async (
@@ -594,6 +646,46 @@ const normalizeKycDocument = (item: KycDocumentDetail): KycDocumentDetail => ({
   verified_at: textOrNull(item?.verified_at),
   remarks: textOrNull(item?.remarks),
   created_at: String(item?.created_at ?? ''),
+});
+
+const normalizeBankAccounts = (items: MemberBankAccountDetail[]): MemberBankAccountDetail[] => (
+  Array.isArray(items) ? items.map(normalizeBankAccount) : []
+);
+
+const normalizeBankAccount = (item: MemberBankAccountDetail): MemberBankAccountDetail => ({
+  bank_account_id: String(item?.bank_account_id ?? ''),
+  holder_name: String(item?.holder_name ?? ''),
+  account_number: normalizeMaskedAccount(item?.account_number),
+  ifsc: String(item?.ifsc ?? ''),
+  bank_name: textOrNull(item?.bank_name),
+  branch_name: textOrNull(item?.branch_name),
+  verification_status: String(item?.verification_status ?? ''),
+  cancelled_cheque_id: textOrNull(item?.cancelled_cheque_id),
+  signature_verified_flag: booleanOrNull(item?.signature_verified_flag),
+  status: String(item?.status ?? ''),
+  created_at: String(item?.created_at ?? ''),
+});
+
+const normalizeCancelledCheques = (items: MemberCancelledChequeDetail[]): MemberCancelledChequeDetail[] => (
+  Array.isArray(items) ? items.map(normalizeCancelledCheque) : []
+);
+
+const normalizeCancelledCheque = (item: MemberCancelledChequeDetail): MemberCancelledChequeDetail => ({
+  cancelled_cheque_id: String(item?.cancelled_cheque_id ?? ''),
+  loan_application_id: textOrNull(item?.loan_application_id),
+  document_id: String(item?.document_id ?? ''),
+  account_number: normalizeMaskedAccount(item?.account_number),
+  ifsc: String(item?.ifsc ?? ''),
+  branch_name: textOrNull(item?.branch_name),
+  verification_status: String(item?.verification_status ?? ''),
+  signature_mismatch_flag: Boolean(item?.signature_mismatch_flag),
+  created_at: String(item?.created_at ?? ''),
+});
+
+const normalizeMaskedAccount = (value?: { masked?: unknown; last4?: unknown; can_view_full?: unknown }) => ({
+  masked: textOrNull(value?.masked),
+  last4: textOrNull(value?.last4),
+  can_view_full: false,
 });
 
 const numberOrZero = (value: unknown): number => (

@@ -318,3 +318,22 @@ before implementation.
   Duplicate-active-borrower warnings, bank verification letters, signature mismatch resolution,
   blank-dated cheque custody, disbursement gates, payment initiation, and bank-account full reveal
   are deferred.
+
+## 004K Borrower 360 and KYC UI Wiring Extracts
+- 004K wires `Borrower360` to existing Epic 004 frontend client methods and adds bank/cancelled
+  cheque fetch methods for `GET /api/v1/members/{member_id}/bank-accounts/` and
+  `GET /api/v1/members/{member_id}/cancelled-cheques/`.
+- Borrower 360 now composes member detail, shareholding, land/crop, nominee, KYC profile/document,
+  bank-account, and cancelled-cheque metadata in the approved existing card/tab/status patterns.
+  It no longer imports `mockData` or renders the former synthetic loan, repayment, communication,
+  risk, audit, security, or nominee rows.
+- PAN/Aadhaar display remains masked by default. If the backend marks a field revealable, the page
+  captures a reason and calls the 004I reveal endpoint; full values remain temporary component state
+  only with backend expiry messaging and a hide control.
+- Bank-account and cancelled-cheque account numbers are normalized to masked/last-four metadata with
+  `can_view_full: false`; the UI has no bank reveal affordance and does not add duplicate-active
+  borrower warnings, signature-mismatch resolution, payment initiation, or disbursement-readiness
+  controls.
+- Later application, loan-account, repayment, communication, risk/exception, and audit API wiring
+  remains deferred. Borrower 360 shows explicit empty states for those modules instead of reusing
+  prototype mock data.

@@ -1,5 +1,26 @@
 # Ralph Progress Log
 
+## 2026-07-09 16:09:45 - 2026-07-09_160945_normal_run
+- Agent tool used: codex
+- Slice attempted: 004K-borrower-360-kyc-panel-and-masking-ui-wiring
+- Summary: Wired Borrower 360 to real Epic 004 frontend APIs. Added bank-account and
+  cancelled-cheque list client methods, replaced `Borrower360` mock-data imports with member
+  detail/shareholding/land/crop/nominee/KYC/bank/cancelled-cheque API composition, retained
+  PAN/Aadhaar reveal only through the 004I reason-capturing endpoint, normalized bank metadata as
+  masked-only with no reveal affordance, and replaced unimplemented loan/application/repayment/
+  communication/risk/audit areas with explicit empty states. Updated prototype tracking docs and
+  Epic 004 digest; sharpened 005A/005B.
+- Tests run: Borrower 360 frontend TDD red/green; frontend `npm test` (80/80), `npm run
+  typecheck`, `npm run lint`, `npm run build`; backend `manage.py check`; backend tests (238/238);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85).
+- Evidence saved: `.ralph/runs/2026-07-09_160945_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus self-contained Borrower 360 visual HTML. PNG screenshot capture
+  was attempted with the installed Playwright binary but Chromium launch was blocked by sandbox
+  Mach port permissions; logs are saved.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run architecture review by cadence before `005A-loan-application-draft-create-update`.
+
 ## 2026-07-09 16:04:49 - 2026-07-09_154649_normal_run
 - Agent tool used: codex
 - Slice attempted: 004J-bank-account-and-cancelled-cheque-profile-foundation
@@ -1570,6 +1591,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_154649_normal_run/.ralph/runs/2026-07-09_154649_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_154649_normal_run/.ralph/runs/2026-07-09_154649_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 16:38:51 - 2026-07-09_160945_normal_run
+- Agent tool used: codex
+- Slice attempted: 004K-borrower-360-kyc-panel-and-masking-ui-wiring
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_160945_normal_run/.ralph/runs/2026-07-09_160945_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_160945_normal_run/.ralph/runs/2026-07-09_160945_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

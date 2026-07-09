@@ -14,7 +14,7 @@ Deliver this narrow capability as a small, testable Ralph implementation slice.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 004J
+- 004K
 
 ## Prior Slice Facts
 - Epic 004 now provides member profile foundations needed by intake: member detail, nominees,
@@ -23,6 +23,9 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - 004J bank metadata endpoints persist protected account numbers and expose only masked account
   values. Loan-application-specific cancelled-cheque behavior remains a placeholder because real
   application persistence starts in Epic 005.
+- 004K closed the staff Borrower 360 UI wiring for Epic 004 member-master facts. Application,
+  loan-account, repayment, communication, risk/exception, and audit rows on Borrower 360 are still
+  source-backed empty states until Epic 005+ APIs exist.
 - `screen-spec.md` S11 says duplicate draft review should warn on same bank account used in other
   active borrower records, but 004J explicitly deferred that decision because active borrower and
   loan-application records did not exist yet. 005A may store enough draft references for a later
@@ -55,6 +58,21 @@ facts. Do not implement submit, completeness check, reference-number generation,
 verification, deficiency workflow, eligibility, loan limit, appraisal, sanction, disbursement, or
 member portal flows unless this slice is split.
 
+Concrete 005A scope:
+- Add persistent draft loan-application storage with a stable application UUID, borrower member FK,
+  draft status, requested amount, requested tenure/months when supplied, loan purpose/category text
+  or source-backed enum if already defined in the docs opened for the run, optional crop-plan and
+  land-holding references, optional bank-account/cancelled-cheque references by ID only, free-text
+  borrower request notes, created/updated timestamps, and actor audit fields.
+- Add `POST /api/v1/loan-applications/` to create a draft, `GET /api/v1/loan-applications/{id}/`
+  to read it back, and `PATCH /api/v1/loan-applications/{id}/` to update draft facts only.
+- Responses must include member identity summary and only masked member/bank metadata already
+  exposed by Epic 004 APIs. Never copy or serialize full PAN, Aadhaar, bank account numbers,
+  protected tokens, or hashes into the application response.
+- Audit create/update with metadata-only values and no full sensitive identifiers. Workflow events
+  may record draft creation/update state only if the existing workflow-event foundation supports it
+  without inventing submit/completeness transitions.
+
 ## Database/Model Impact
 Non-destructive model/migration changes for this capability, if needed.
 
@@ -78,8 +96,23 @@ For this foundation slice, validate required draft fields and malformed UUIDs, b
 eligibility, duplicate-bank-account, payment-initiation, or disbursement-readiness rules. Record
 any missing source-backed draft status or permission detail in `docs/working/ASSUMPTIONS.md`.
 
+Specific validation to cover:
+- Reject missing or unknown `borrower_member_id`.
+- Reject malformed member, land-holding, crop-plan, bank-account, and cancelled-cheque UUIDs.
+- Reject references that do not belong to the selected member.
+- Reject non-positive requested amounts when an amount is supplied.
+- Allow draft saves with incomplete KYC/documents; 005B+ own submit/completeness blockers.
+
 ## Test Cases
 Unit/service/API/permission tests plus frontend tests where UI is touched.
+
+Minimum regression tests:
+- Create draft with a real member returns standard success envelope and metadata-only audit row.
+- Patch draft updates only allowed draft fields and preserves borrower/member ownership.
+- Unknown member and cross-member subresource references return standard validation errors.
+- Response and audit metadata do not contain full PAN, Aadhaar, bank account numbers, token values,
+  or hashes.
+- User without the source-backed loan-application create/update permission is denied.
 
 ## Visual Acceptance Criteria
 None.

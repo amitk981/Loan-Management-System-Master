@@ -1,51 +1,47 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-09_154649_normal_run
+2026-07-09_160945_normal_run
 
 ## Current Status
-`004J-bank-account-and-cancelled-cheque-profile-foundation` completed successfully.
+`004K-borrower-360-kyc-panel-and-masking-ui-wiring` completed successfully.
 
 ## What Completed
-- Added `bank_accounts` and `cancelled_cheques` model foundations with migration `0008`.
-- Added `GET/POST /api/v1/members/{member_id}/bank-accounts/`.
-- Added `GET/POST /api/v1/members/{member_id}/cancelled-cheques/`.
-- Bank accounts store member ownership, holder name, protected account-number token, keyed hash,
-  last four, IFSC, bank/branch, verification status, nullable cancelled-cheque link, nullable
-  signature flag, status, and created timestamp.
-- Cancelled cheques store member FK, nullable `loan_application_id` placeholder, document ID,
-  protected account-number token, keyed hash, last four, IFSC, branch, verification status,
-  signature mismatch flag, and created timestamp.
-- API responses expose only masked account-number metadata:
-  `{ masked, last4, can_view_full: false }`.
-- Successful creates write metadata-only `members.bank_account.created` and
-  `members.cancelled_cheque.created` audit rows. List/read writes no audit row, and these endpoints
-  write no workflow events.
-- A-034 records the temporary permission boundary: list bank metadata with `members.member.read`,
-  create bank metadata with `members.member.update`. PAN/Aadhaar reveal, KYC, document download,
-  disbursement, export, and security permissions do not reveal bank account numbers.
-- Updated `docs/working/API_CONTRACTS.md`, Epic 004 digest, and sharpened 004K/005A.
+- Replaced `Borrower360` mock-data usage with API-backed composition over existing Epic 004 member
+  endpoints: member detail, shareholdings, land holdings, crop plans, nominees, KYC profile/document
+  metadata, bank accounts, and cancelled cheques.
+- Added frontend client methods for:
+  `GET /api/v1/members/{member_id}/bank-accounts/` and
+  `GET /api/v1/members/{member_id}/cancelled-cheques/`.
+- Borrower 360 now keeps PAN/Aadhaar masked by default and uses the 004I reveal endpoint with
+  reason capture only when the backend marks the field revealable. Full values remain temporary
+  component state with backend expiry messaging and a hide control.
+- Bank-account and cancelled-cheque account numbers render as masked/last-four metadata only, with
+  `can_view_full: false` normalization and no bank reveal control.
+- Application, loan-account, repayment, communication, risk/exception, and audit sections now show
+  explicit source-backed empty states instead of prototype mock rows.
+- Updated prototype inventory/gap report, Epic 004 digest, and sharpened 005A/005B.
 
 ## Explicit Deferrals
-- Bank-account full-number reveal.
-- Duplicate-active-borrower bank-account warnings.
-- Bank verification letters and signature mismatch resolution.
-- Blank-dated cheque custody.
-- Payment initiation, disbursement readiness gates, idempotency, and transfer workflows.
-- Loan-application-specific cancelled-cheque behavior beyond nullable placeholder storage.
-- Member Profile/Borrower360 bank metadata UI wiring belongs to 004K.
+- Loan application persistence, submit/reference generation, completeness, deficiencies, eligibility,
+  loan limit, appraisal, sanction, disbursement, repayment, communication history, risk/exception
+  records, and audit timeline UI wiring.
+- Bank-account full-number reveal, duplicate-active-borrower bank warnings, signature-mismatch
+  resolution, payment initiation, and disbursement-readiness UI.
+- Witness validation remains blocked until loan-application boundaries exist.
 
 ## Evidence
-See `.ralph/runs/2026-07-09_154649_normal_run/`.
+See `.ralph/runs/2026-07-09_160945_normal_run/`.
 
 Review artifacts: `execution-plan.md`, `review-packet.md`, `risk-assessment.md`,
-`changed-files.txt`, `final-summary.md`, and `api-response-examples.md`.
+`changed-files.txt`, `final-summary.md`, and self-contained visual HTML evidence.
 
 Gate logs are under `evidence/terminal-logs/`.
 
 ## Notes For Next Run
-- Run `004K-borrower-360-kyc-panel-and-masking-ui-wiring` next.
-- 004K should consume 004J bank metadata only as masked values and must not add bank-account reveal,
-  duplicate warnings, signature-mismatch resolution, payment initiation, or disbursement readiness UI.
-- 005A has been sharpened to start draft loan-application persistence without inventing duplicate
-  bank, eligibility, payment, or disbursement rules.
+- Architecture review cadence is now due after 004K (`slices_completed_since_architecture_review`
+  is 4).
+- After architecture review, run `005A-loan-application-draft-create-update`.
+- 005A/005B have been sharpened to start draft application persistence and submit transition without
+  inventing duplicate-bank, eligibility, payment, disbursement, reference-number, or completeness
+  rules outside their owning slices.
