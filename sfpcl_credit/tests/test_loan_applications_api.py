@@ -46,6 +46,14 @@ class LoanApplicationDraftApiTests(TestCase):
             self.submit_permission,
             self.complete_check_permission,
         )
+        self.unrelated_actor = self._user(
+            "applications.unrelated@sfpcl.example",
+            "UnrelatedPass123!",
+            self.read_permission,
+            self.update_permission,
+            self.submit_permission,
+            self.complete_check_permission,
+        )
         self.reader = self._user(
             "applications.reader@sfpcl.example",
             "ReaderPass123!",
@@ -131,7 +139,7 @@ class LoanApplicationDraftApiTests(TestCase):
 
         read_response = self.client.get(
             f"/api/v1/loan-applications/{draft['loan_application_id']}/",
-            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
         )
 
         self.assertEqual(read_response.status_code, 200)
@@ -199,7 +207,7 @@ class LoanApplicationDraftApiTests(TestCase):
 
         read_response = self.client.get(
             f"/api/v1/loan-applications/{draft['loan_application_id']}/",
-            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
         )
         self.assertEqual(read_response.status_code, 200)
         self.assertEqual(read_response.json()["data"], submitted)
@@ -281,7 +289,7 @@ class LoanApplicationDraftApiTests(TestCase):
 
         read_response = self.client.get(
             f"/api/v1/loan-applications/{draft['loan_application_id']}/",
-            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
         )
         self.assertEqual(read_response.status_code, 200)
         self.assertEqual(read_response.json()["data"], generated)
@@ -468,6 +476,122 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(update_audit.new_value_json["request_id"], "req-update-loan-draft")
         self.assertEqual(WorkflowEvent.objects.filter(entity_type="loan_application").count(), 1)
 
+    def test_unrelated_same_permission_user_is_object_access_denied_without_side_effects(self):
+        create_response = self.client.post(
+            "/api/v1/loan-applications/",
+            data=self._draft_payload(),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(create_response.status_code, 200)
+        application_id = create_response.json()["data"]["loan_application_id"]
+        unrelated_headers = self._headers(
+            "applications.unrelated@sfpcl.example",
+            "UnrelatedPass123!",
+        )
+
+        denied_read = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/",
+            headers=unrelated_headers,
+        )
+        self.assertEqual(denied_read.status_code, 403)
+        assert_error_envelope(self, denied_read.json(), "OBJECT_ACCESS_DENIED")
+
+        denied_patch = self.client.patch(
+            f"/api/v1/loan-applications/{application_id}/",
+            data={"borrower_request_notes": "Unrelated actor edit attempt"},
+            content_type="application/json",
+            headers=unrelated_headers,
+        )
+        self.assertEqual(denied_patch.status_code, 403)
+        assert_error_envelope(self, denied_patch.json(), "OBJECT_ACCESS_DENIED")
+
+        denied_submit = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/submit/",
+            data={},
+            content_type="application/json",
+            headers=unrelated_headers,
+        )
+        self.assertEqual(denied_submit.status_code, 403)
+        assert_error_envelope(self, denied_submit.json(), "OBJECT_ACCESS_DENIED")
+        self.assertEqual(
+            AuditLog.objects.filter(action="applications.loan_application.updated").count(),
+            0,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(action="applications.loan_application.submitted").count(),
+            0,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                entity_type="loan_application",
+                to_state="submitted",
+            ).count(),
+            0,
+        )
+
+        submit_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/submit/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(submit_response.status_code, 200)
+
+        denied_reference = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/generate-reference/",
+            data={"completeness_result": "complete"},
+            content_type="application/json",
+            headers=unrelated_headers,
+        )
+        self.assertEqual(denied_reference.status_code, 403)
+        assert_error_envelope(self, denied_reference.json(), "OBJECT_ACCESS_DENIED")
+
+        register_model = apps.get_model("applications", "LoanRequestRegisterEntry")
+        sequence_model = apps.get_model("applications", "SystemSequence")
+        self.assertEqual(register_model.objects.count(), 0)
+        self.assertEqual(sequence_model.objects.count(), 0)
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="applications.loan_application.reference_generated"
+            ).count(),
+            0,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                entity_type="loan_application",
+                to_state="reference_generated",
+            ).count(),
+            0,
+        )
+
+    def test_credit_manager_can_read_credit_assessment_application_by_domain_scope(self):
+        application_id = self._create_and_submit_application()
+        generate_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/generate-reference/",
+            data={"completeness_result": "complete"},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(generate_response.status_code, 200)
+        credit_manager = self._user(
+            "applications.credit.manager@sfpcl.example",
+            "CreditManagerPass123!",
+            self.read_permission,
+            role_code="credit_manager",
+        )
+
+        read_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/",
+            headers=self._headers(credit_manager.email, "CreditManagerPass123!"),
+        )
+
+        self.assertEqual(read_response.status_code, 200)
+        body = read_response.json()
+        assert_success_envelope(self, body)
+        self.assertEqual(body["data"]["loan_application_id"], application_id)
+        self.assertEqual(body["data"]["current_stage"], "credit_assessment")
+
     def test_submit_enforces_permissions_required_facts_and_draft_only_transition(self):
         draft_response = self.client.post(
             "/api/v1/loan-applications/",
@@ -641,9 +765,9 @@ class LoanApplicationDraftApiTests(TestCase):
             risk_level="high",
         )
 
-    def _user(self, email, password, *permissions):
+    def _user(self, email, password, *permissions, role_code=None):
         role = Role.objects.create(
-            role_code=email.split("@")[0].replace(".", "_"),
+            role_code=role_code or email.split("@")[0].replace(".", "_"),
             role_name=email,
             is_system_role=True,
             status="active",

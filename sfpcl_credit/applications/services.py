@@ -12,6 +12,7 @@ from sfpcl_credit.applications.models import (
 )
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.identity.modules.object_permissions import evaluate_object_access
 from sfpcl_credit.members.models import BankAccount, CancelledCheque, CropPlan, LandHolding, Member
 from sfpcl_credit.workflows.events import record_workflow_event
 from sfpcl_credit.workflows.guard import (
@@ -91,6 +92,34 @@ def user_can_complete_check_applications(user):
     return APPLICATION_COMPLETE_CHECK_PERMISSION in auth_service.effective_permission_codes(user)
 
 
+def evaluate_application_object_access(application, actor, required_permission, actor_permissions=None):
+    permissions = actor_permissions or auth_service.effective_permission_codes(actor)
+    allow_global = _has_credit_manager_domain_access(application, actor)
+    result = evaluate_object_access(
+        actor_user_id=actor.user_id,
+        actor_team_codes=actor.team_codes(),
+        actor_permission_codes=permissions,
+        required_permission=required_permission,
+        object_owner_user_id=application.created_by_user_id,
+        allow_global=allow_global,
+    )
+    if result.allowed or result.error_code != "OBJECT_ACCESS_DENIED":
+        return result
+    if (
+        application.received_by_user_id
+        and application.received_by_user_id != application.created_by_user_id
+    ):
+        return evaluate_object_access(
+            actor_user_id=actor.user_id,
+            actor_team_codes=actor.team_codes(),
+            actor_permission_codes=permissions,
+            required_permission=required_permission,
+            object_owner_user_id=application.received_by_user_id,
+            allow_global=allow_global,
+        )
+    return result
+
+
 def get_application(application_id):
     return (
         LoanApplication.objects.select_related(
@@ -106,6 +135,13 @@ def get_application(application_id):
         )
         .filter(loan_application_id=application_id)
         .first()
+    )
+
+
+def _has_credit_manager_domain_access(application, actor):
+    return (
+        "credit_manager" in actor.role_codes()
+        and application.current_stage == LoanApplication.STAGE_CREDIT_ASSESSMENT
     )
 
 

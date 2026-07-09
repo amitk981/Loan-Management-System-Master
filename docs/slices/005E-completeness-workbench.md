@@ -29,6 +29,11 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
   records instead of inventing document facts or re-uploading documents.
 - 005C2 should already enforce object-level access for loan application detail/actions. 005E must
   reuse that same application object-access boundary for workbench reads and completeness actions.
+- Concretely, 005C2 exposed `applications.services.evaluate_application_object_access(...)` with
+  created/received actors as current owner facts and `credit_manager` access only after the
+  application reaches `current_stage = credit_assessment`. Completeness workbench reads/actions
+  must preserve `403 PERMISSION_DENIED` for missing global permission and
+  `403 OBJECT_ACCESS_DENIED` for same-permission actors outside object scope.
 - Use `docs/working/digests/epic-005-application-intake.md` before reopening large source docs.
 
 ## Source References
@@ -118,6 +123,9 @@ Minimum regression tests:
 - Draft and duplicate/reference-generated applications return `409 INVALID_STATE_TRANSITION` for
   completeness pass.
 - Users without read/complete-check permissions receive `403 PERMISSION_DENIED`.
+- Same-permission users outside the 005C2 object scope receive `403 OBJECT_ACCESS_DENIED`, and
+  denials create no completeness audit rows, workflow events, register rows, references, or visible
+  sequence advancement.
 
 ## Visual Acceptance Criteria
 Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.

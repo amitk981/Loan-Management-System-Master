@@ -56,16 +56,17 @@
     "004K2-borrower-360-bank-holder-contract-hardening",
     "005A-loan-application-draft-create-update",
     "005B-application-submit-and-status-transition",
-    "005C-reference-number-generation-and-loan-request-register"
+    "005C-reference-number-generation-and-loan-request-register",
+    "005C2-application-object-access-hardening"
   ],
   "failed_slices": [],
   "blocked_slices": [
     "004E-witness-shareholder-validation"
   ],
   "last_successful_commit": "56d89dd",
-  "last_run_id": "2026-07-09_190655_architecture_review",
+  "last_run_id": "2026-07-09_193538_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
+  "slices_completed_since_architecture_review": 1,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

@@ -1,5 +1,28 @@
 # Ralph Progress Log
 
+## 2026-07-09 19:55:14 - 2026-07-09_193538_normal_run
+- Agent tool used: codex
+- Slice attempted: 005C2-application-object-access-hardening
+- Summary: Hardened loan-application object access for detail, draft patch, submit, and reference
+  generation. The endpoints now check global permission first, preserve `404 NOT_FOUND` for missing
+  applications, then enforce the 002I object-access helper before serialization or mutation.
+  Created/received users are the current owner facts; `credit_manager` role access is allowed only
+  once an application is in `current_stage = credit_assessment`; unrelated same-permission users
+  receive `403 OBJECT_ACCESS_DENIED`. Denials do not create update/submit/reference success audit
+  rows, workflow events, register rows, application references, or visible sequence advancement.
+  Updated API contracts, A-038, the Epic 005 digest, and sharpened 005D/005E with the corrected
+  boundary.
+- Tests run: TDD red regression for unrelated same-permission read denial; focused green object
+  access regression; loan-application API tests (9/9); backend `manage.py check`; backend tests
+  (247/247); `makemigrations --check --dry-run`; backend coverage 95% (floor 85); frontend
+  `npm run typecheck`; `npm run lint`; `npm test` (80/80); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-09_193538_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005D-application-document-checklist`; it must reuse
+  `applications.services.evaluate_application_object_access(...)` for document/checklist endpoints.
+
 ## 2026-07-09 19:33:00 - 2026-07-09_190655_architecture_review
 - Agent tool used: codex
 - Slice attempted: architecture-review
@@ -1792,6 +1815,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_190655_architecture_review/.ralph/runs/2026-07-09_190655_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_190655_architecture_review/.ralph/runs/2026-07-09_190655_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 20:00:39 - 2026-07-09_193538_normal_run
+- Agent tool used: codex
+- Slice attempted: 005C2-application-object-access-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_193538_normal_run/.ralph/runs/2026-07-09_193538_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_193538_normal_run/.ralph/runs/2026-07-09_193538_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

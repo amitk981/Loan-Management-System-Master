@@ -30,6 +30,10 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - 005C2 must close the architecture-review object-access finding before this slice runs. 005D
   document/checklist endpoints must reuse the corrected loan-application object-access boundary
   instead of relying only on global permission codes.
+- 005C2 implemented that boundary in `applications.services.evaluate_application_object_access(...)`:
+  created/received actors are the current owner facts, `credit_manager` is allowed only for
+  applications in `current_stage = credit_assessment`, and unrelated same-permission actors receive
+  `403 OBJECT_ACCESS_DENIED` with no success audit/workflow/register/sequence side effects.
 - Use `docs/working/digests/epic-005-application-intake.md` before reopening large source docs.
 - Epic 004/005 sensitive data boundaries remain binding: document/checklist responses and audits
   must not include full PAN, Aadhaar, bank-account numbers, encrypted token values, hashes, or raw
@@ -95,7 +99,9 @@ Apply the role and object-access rules from `docs/source/auth-permissions.md`; c
 
 Use source-backed application/document permissions:
 - Listing application documents/checklist: require `applications.loan_application.read` plus object
-  access through the 005C2 application access helper.
+  access through the 005C2 application access helper. Unknown application IDs should still return
+  `404 NOT_FOUND` before object-access denial; missing global permission remains
+  `403 PERMISSION_DENIED`; scope mismatch returns `403 OBJECT_ACCESS_DENIED`.
 - Uploading application documents: require `applications.document.upload`.
 - Verifying application documents: require `applications.document.verify`.
 - If refresh is implemented as a mutating checklist action, use the narrowest source-backed
@@ -143,6 +149,9 @@ Minimum regression tests:
   metadata-only audit with old/new status.
 - Unknown applications/document IDs return standard `404 NOT_FOUND`.
 - Users without read/upload/verify permissions receive `403 PERMISSION_DENIED` and no writes.
+- Same-permission users outside the 005C2 application object scope receive
+  `403 OBJECT_ACCESS_DENIED` for list/checklist/upload paths and create no document metadata or
+  audit rows.
 - Duplicate upload/version behavior preserves history and never overwrites prior audit facts.
 
 ## Visual Acceptance Criteria

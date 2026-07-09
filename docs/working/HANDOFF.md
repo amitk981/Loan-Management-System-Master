@@ -1,52 +1,43 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-09_190655_architecture_review
+2026-07-09_193538_normal_run
 
 ## Current Status
-Architecture review completed successfully after `005C-reference-number-generation-and-loan-request-register`.
+Slice `005C2-application-object-access-hardening` completed successfully.
 
-Reviewed product slices since prior architecture review commit `dadeefd`:
-- `004K2-borrower-360-bank-holder-contract-hardening`
-- `005A-loan-application-draft-create-update`
-- `005B-application-submit-and-status-transition`
-- `005C-reference-number-generation-and-loan-request-register`
+The application detail/action access boundary is now:
+- global permission check first;
+- missing application returns `404 NOT_FOUND`;
+- object scope check through `sfpcl_credit.applications.services.evaluate_application_object_access(...)`;
+- scope mismatch returns `403 OBJECT_ACCESS_DENIED`;
+- state/validation checks happen only after object access is allowed.
 
-Architecture review cadence is reset: `slices_completed_since_architecture_review = 0`.
+Implemented scope facts:
+- `LoanApplication.created_by_user` and `received_by_user` are the current owner facts for
+  Field Officer-style access.
+- `credit_manager` role-code access is allowed only when the application is in
+  `current_stage = credit_assessment`.
+- Denied object access does not create update/submit/reference success audit rows, workflow
+  events, register rows, application references, or visible sequence advancement.
 
-## Review Findings
-- Medium corrective issue: application detail and mutating actions (`GET/PATCH`, submit, and
-  reference generation) currently enforce global permission codes but not loan-application object
-  scope. Source `auth-permissions.md` requires application object access, including denial for a
-  Field Officer viewing an unrelated application.
-- Pass: `004K2` correctly closed the Borrower 360 bank-account holder-name DTO mismatch by using
-  backend field `account_holder_name`.
-- Pass: `005A`-`005C` have meaningful tests for envelopes, permissions, state transitions, audit,
-  workflow events, sensitive-data exclusion, and `LO...` sequence/register behavior.
-
-## Corrective Slice Created
-`005C2-application-object-access-hardening` is now the next `Not Started` slice before `005D`.
-
-It should:
-- add failing-first regressions for unrelated same-permission users;
-- reuse `sfpcl_credit.identity.modules.object_permissions.evaluate_object_access(...)`;
-- enforce object access for application detail, draft update, submit, and reference-generation
-  actions;
-- preserve `403 PERMISSION_DENIED` for missing global permission and use
-  `403 OBJECT_ACCESS_DENIED` for scope mismatch;
-- prove denials create no update/submit/reference audit rows, workflow events, register rows, or
-  visible sequence advancement;
-- record any remaining Credit Manager/global credit-domain assumption if the current schema lacks
-  queue/domain facts.
+## Documentation Updates
+- `docs/working/API_CONTRACTS.md` now documents `403 OBJECT_ACCESS_DENIED` for scoped loan
+  application detail/action endpoints.
+- `docs/working/ASSUMPTIONS.md` has A-038 for no denial-audit convention and the current
+  Credit Manager/domain-scope representation.
+- `docs/working/digests/epic-005-application-intake.md` records the implemented 005C2 boundary.
+- `005D` and `005E` were sharpened to reuse the helper and test object-scope denials.
 
 ## Next Run
-Run `005C2-application-object-access-hardening`.
+Run `005D-application-document-checklist`.
 
-After it passes, continue to `005D-application-document-checklist`; `005D` and `005E` have been
-sharpened to reuse the corrected application object-access boundary.
+Key instruction for 005D: document/checklist endpoints must reuse
+`applications.services.evaluate_application_object_access(...)` rather than checking only global
+permissions or reimplementing application scope.
 
 ## Evidence
-See `.ralph/runs/2026-07-09_190655_architecture_review/`.
+See `.ralph/runs/2026-07-09_193538_normal_run/`.
 
 Key artifacts: `execution-plan.md`, `review-packet.md`, `risk-assessment.md`,
-`changed-files.txt`, `final-summary.md`, and gate/review logs under `evidence/terminal-logs/`.
+`changed-files.txt`, `final-summary.md`, and gate logs under `evidence/terminal-logs/`.

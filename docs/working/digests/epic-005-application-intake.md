@@ -119,6 +119,14 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   §37.3 says a Field Officer viewing an unrelated application must be denied. Corrective slice
   005C2 should integrate the existing 002I object-access helper for application detail/actions
   before document/checklist and completeness slices build on those endpoints.
+- 005C2 implemented the application object-access boundary for detail, patch, submit, and
+  reference generation. Current source-backed owner facts are `LoanApplication.created_by_user` and
+  `received_by_user`; Credit Manager role-code access is allowed only when
+  `current_stage = credit_assessment`. Same-permission users outside those scopes receive
+  `403 OBJECT_ACCESS_DENIED` after the global permission and `404` checks. Denials create no
+  update/submit/reference success audit, workflow event, register row, application reference, or
+  visible sequence advancement. Future 005D/005E endpoints must reuse
+  `applications.services.evaluate_application_object_access(...)` instead of reimplementing scope.
 - Source application-document endpoints:
   - `GET /api/v1/loan-applications/{loan_application_id}/application-documents/`
   - `POST /api/v1/loan-applications/{loan_application_id}/application-documents/`
