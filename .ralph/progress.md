@@ -1,5 +1,28 @@
 # Ralph Progress Log
 
+## 2026-07-09 12:59:44 - 2026-07-09_125944_normal_run
+- Agent tool used: codex
+- Slice attempted: 004G-landholding-and-crop-plan-records
+- Summary: Implemented member land-holding and crop-plan list/create records. Added
+  `land_holdings` and `crop_plans` with source-backed fields, positive-acreage constraints,
+  verification fields, and metadata-only create audit. Added
+  `GET/POST /api/v1/members/{member_id}/land-holdings/` and
+  `GET/POST /api/v1/members/{member_id}/crop-plans/` with standard envelopes,
+  missing-member handling, validation for positive acreage and UUID fields, and read/create
+  permission separation using A-032 (`members.member.read` for list and `members.member.update`
+  for create). Replaced the Member Profile Land & Crop tab with API-backed list/create states
+  using existing UI patterns and no loan-limit/calculation display.
+- Tests run: backend land/crop TDD red/green; frontend land/crop TDD red/green; backend
+  `manage.py check`; backend tests (220/220); `makemigrations --check --dry-run`; backend coverage
+  96% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test` (73/73);
+  `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-09_125944_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`, API examples, and self-contained Land & Crop tab HTML evidence.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `004H-kyc-upload-and-verification`; `004I-sensitive-masking-and-reveal-audit`
+  has been sharpened for the member sensitive reveal endpoint after KYC.
+
 ## 2026-07-09 12:29:59 - 2026-07-09_122959_normal_run
 - Agent tool used: codex
 - Slice attempted: 004F-shareholding-and-share-certificate-records
@@ -1385,6 +1408,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_122959_normal_run/.ralph/runs/2026-07-09_122959_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_122959_normal_run/.ralph/runs/2026-07-09_122959_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 13:28:44 - 2026-07-09_125944_normal_run
+- Agent tool used: codex
+- Slice attempted: 004G-landholding-and-crop-plan-records
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_125944_normal_run/.ralph/runs/2026-07-09_125944_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_125944_normal_run/.ralph/runs/2026-07-09_125944_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

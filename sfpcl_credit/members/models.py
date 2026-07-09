@@ -266,3 +266,111 @@ class Shareholding(models.Model):
 
     def __str__(self):
         return f"{self.folio_number} ({self.number_of_shares})"
+
+
+class LandHolding(models.Model):
+    VERIFICATION_STATUSES = {"pending", "verified", "rejected"}
+
+    land_holding_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="land_holdings")
+    document_type = models.CharField(max_length=80)
+    survey_number = models.CharField(max_length=120, blank=True)
+    village = models.CharField(max_length=150, blank=True)
+    taluka = models.CharField(max_length=150, blank=True)
+    district = models.CharField(max_length=150, blank=True)
+    state = models.CharField(max_length=150, blank=True)
+    area_acres = models.DecimalField(max_digits=12, decimal_places=2)
+    document_id = models.UUIDField()
+    verification_status = models.CharField(max_length=60, default="pending", db_index=True)
+    verified_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="verified_land_holdings",
+    )
+    verified_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "land_holdings"
+        indexes = [
+            models.Index(fields=["member"], name="idx_land_holdings_member"),
+            models.Index(fields=["verification_status"], name="idx_land_holdings_verify"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(area_acres__gt=0),
+                name="land_holdings_positive_area",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.verification_status not in self.VERIFICATION_STATUSES:
+            raise ValidationError({"verification_status": "Unsupported verification status."})
+        if self.area_acres is not None and self.area_acres <= 0:
+            raise ValidationError({"area_acres": "Area acres must be greater than zero."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.survey_number or self.land_holding_id} ({self.area_acres} acres)"
+
+
+class CropPlan(models.Model):
+    VERIFICATION_STATUSES = {"pending", "verified", "rejected"}
+
+    crop_plan_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="crop_plans")
+    loan_application_id = models.UUIDField(blank=True, null=True)
+    crop_type = models.CharField(max_length=100, db_index=True)
+    season = models.CharField(max_length=100, blank=True)
+    planned_area_acres = models.DecimalField(max_digits=12, decimal_places=2)
+    estimated_cost_amount = models.DecimalField(
+        max_digits=18, decimal_places=2, blank=True, null=True
+    )
+    loan_purpose_alignment = models.CharField(max_length=60)
+    document_id = models.UUIDField(blank=True, null=True)
+    verification_status = models.CharField(max_length=60, default="pending", db_index=True)
+    verified_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="verified_crop_plans",
+    )
+    verified_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "crop_plans"
+        indexes = [
+            models.Index(fields=["member"], name="idx_crop_plans_member"),
+            models.Index(fields=["crop_type"], name="idx_crop_plans_crop_type"),
+            models.Index(fields=["verification_status"], name="idx_crop_plans_verify"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(planned_area_acres__gt=0),
+                name="crop_plans_positive_area",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.verification_status not in self.VERIFICATION_STATUSES:
+            raise ValidationError({"verification_status": "Unsupported verification status."})
+        if self.planned_area_acres is not None and self.planned_area_acres <= 0:
+            raise ValidationError(
+                {"planned_area_acres": "Planned area acres must be greater than zero."}
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.crop_type} ({self.planned_area_acres} acres)"

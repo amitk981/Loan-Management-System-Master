@@ -197,3 +197,25 @@ before implementation.
   cultivation, crop plan, crop type, season, per-acre scale of finance, and land-based eligible
   amount. 004G should not add frontend UI unless it wires to real backend data using existing
   Member Profile patterns.
+
+## 004G Landholding and Crop Plan Extracts
+- 004G implements only `GET`/`POST /api/v1/members/{member_id}/land-holdings/` and
+  `GET`/`POST /api/v1/members/{member_id}/crop-plans/`. Detail/update endpoints remain deferred.
+- `land_holdings` now stores member FK, document type, survey/location fields, positive
+  `area_acres`, required `document_id`, verification status, nullable verifier/timestamp, and
+  created timestamp.
+- `crop_plans` now stores member FK, nullable `loan_application_id`, crop type, season, positive
+  `planned_area_acres`, optional estimated cost, loan-purpose alignment, optional `document_id`,
+  verification status, nullable verifier/timestamp, and created timestamp.
+- Because `auth-permissions.md` has no land/crop-specific codes, A-032 records the 004G assumption:
+  lists use `members.member.read`, creates use `members.member.update`, and no new permission codes
+  are seeded.
+- Successful creates write metadata-only audit rows: `members.land_holding.created` and
+  `members.crop_plan.created`. Read-only lists write no access audit and no workflow event.
+- Validation rejects zero/negative acreage, missing land `document_id`, malformed UUIDs, and missing
+  required create fields. Loan-limit calculations, per-acre scale-of-finance, purpose eligibility,
+  application blockers, verification actions, and land/crop detail updates are deferred.
+- Member Profile's Land & Crop tab is API-backed with loading/empty/error/list/validation/success
+  states using existing Member Profile card, empty-panel, alert, and form patterns. It does not show
+  per-acre scale of finance or land-based eligible amount because no source-backed calculation
+  endpoint exists yet.

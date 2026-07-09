@@ -41,7 +41,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | API contract test harness | Implemented in slice 002J | None | `api-contracts.md` §6.1-6.4, §7.1-7.3, §44 | Test-only assertions live in `sfpcl_credit/tests/api_contracts.py`. Future endpoint slices should use them to prove standard success envelopes, error envelopes, top-level list pagination, and target §44 `available_actions` item shapes without importing test utilities from production code. The harness regression tests cover `/auth/me/`, admin users pagination, `401 AUTH_REQUIRED`, revoked-session `401 INVALID_TOKEN`, `403 PERMISSION_DENIED`, partial-admin write denial, and tracer `409 INVALID_STATE_TRANSITION`. A-016 records that current `/auth/me/` still returns flat permission-code strings for `available_actions`; the object shape is asserted against an internal sample for future detail endpoints. |
 | Local demo staff seed | Implemented in slice 002K; corrected in 002K2 | Login, dashboard smoke, admin/tracer permission smoke | `implementation-roadmap.md` §10, §20-22; `technical-architecture.md` §8-12, §17-18; `auth-permissions.md`; `api-contracts.md` §11-12, §43-44 | `python manage.py seed_demo_users` is a guarded local/dev seed path. It refuses unless `SFPCL_DEBUG=true` and `SFPCL_ALLOW_DEMO_SEED=true`, calls `seed_catalogue()`, creates or updates deterministic `demo.*@sfpcl.example` staff users with active primary roles and memberships, and does not alter `e2e.*` users. Demo users authenticate through the real `/auth/login/` and `/auth/me/` endpoints; there is no demo auth bypass. The zero-permission user returns `permissions: []` and `available_actions: []`; the tracer-only user uses the guarded local/dev-only `local_demo_tracer_user` role and returns only `tracer.lifecycle.run`; the shared source-catalogue `sales_team_user` role remains permission-neutral until source documents define grants; system admin preserves canonical action-specific user-admin permissions without broad `manage_users` aliases. |
 | Role/permission/team catalogue | Seeded in slice 002C; exposed for current user in 002D | None directly | `auth-permissions.md` §12-15, §38 | Canonical `Permission`, `Role`, `Team`, `RolePermission` catalogue seeded idempotently via `python manage.py seed_role_catalogue` (`sfpcl_credit/identity/catalogue.py`). `/api/v1/auth/me/` exposes the authenticated user's effective permission codes from this data. |
-| Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; profile mutations/KYC remain draft | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3; `data-model.md` §10.1-§10.4; `auth-permissions.md` §12.2/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/` is API-backed with separate nominee read/create permissions, masked PAN/Aadhaar, adult validation, and metadata-only creation audit. Create/update/KYC/shareholding/land/crop/borrower-360 behavior and §13.5 sensitive reveal remain future scope. |
+| Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; shareholding list/create implemented in 004F; land/crop list/create implemented in 004G; profile mutations/KYC remain draft | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3/§15.1-§15.2/§17.1-§17.2; `data-model.md` §10.1-§10.4/§11.1/§11.7-§11.8; `auth-permissions.md` §12.2/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/`, `/shareholdings/`, `/land-holdings/`, and `/crop-plans/` are API-backed with their documented validations and metadata-only create audits. Create/update/KYC/share certificate/demat/borrower-360 behavior and §13.5 sensitive reveal remain future scope. |
 | Loan applications | Draft from source | Applications, completeness | `api-contracts.md` | Needs real draft/submit/check endpoints. |
 | Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
@@ -282,6 +282,77 @@ Rules:
 - `PATCH /api/v1/shareholdings/{shareholding_id}/`, share certificates, demat account management,
   CDSL integration, share valuation calculation, pledge eligibility, and loan-limit rules are
   deferred to later slices.
+
+## Member Land Holding and Crop Plan API (004G)
+
+`GET /api/v1/members/{member_id}/land-holdings/`
+
+Rules:
+- Requires a session-bound bearer token and `members.member.read` per A-032; missing auth returns
+  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and an unknown or
+  soft-deleted member returns `404 NOT_FOUND`.
+- Returns the standard top-level list envelope. Each item contains `land_holding_id`,
+  `document_type`, nullable location/survey fields, `area_acres`, `document_id`,
+  `verification_status`, nullable verifier/timestamp fields, and `created_at`.
+- Read-only list access writes no workflow event and no access audit row.
+
+`POST /api/v1/members/{member_id}/land-holdings/`
+
+Request data:
+
+```json
+{
+  "document_type": "7_12_extract",
+  "survey_number": "123/4",
+  "village": "Village Name",
+  "taluka": "Niphad",
+  "district": "Nashik",
+  "state": "Maharashtra",
+  "area_acres": "5.00",
+  "document_id": "uuid"
+}
+```
+
+Rules:
+- Requires `members.member.update` per A-032.
+- `document_type`, positive `area_acres`, and valid non-null `document_id` are required.
+- Successful create sets `verification_status: "pending"` and writes
+  `members.land_holding.created` audit metadata without a workflow event.
+
+`GET /api/v1/members/{member_id}/crop-plans/`
+
+Rules:
+- Requires a session-bound bearer token and `members.member.read` per A-032.
+- Returns the standard top-level list envelope. Each item contains `crop_plan_id`,
+  nullable `loan_application_id`, `crop_type`, nullable `season`, `planned_area_acres`,
+  nullable `estimated_cost_amount`, `loan_purpose_alignment`, nullable `document_id`,
+  `verification_status`, nullable verifier/timestamp fields, and `created_at`.
+- Read-only list access writes no workflow event and no access audit row.
+
+`POST /api/v1/members/{member_id}/crop-plans/`
+
+Request data:
+
+```json
+{
+  "loan_application_id": "uuid",
+  "crop_type": "grapes",
+  "season": "FY2026 Kharif",
+  "planned_area_acres": "5.00",
+  "estimated_cost_amount": "100000.00",
+  "loan_purpose_alignment": "agriculture_aligned",
+  "document_id": "uuid"
+}
+```
+
+Rules:
+- Requires `members.member.update` per A-032.
+- `crop_type`, positive `planned_area_acres`, and `loan_purpose_alignment` are required.
+- `loan_application_id` and `document_id` are optional, but malformed UUIDs are rejected.
+- Successful create sets `verification_status: "pending"` and writes
+  `members.crop_plan.created` audit metadata without a workflow event.
+- Detail/update endpoints, verification actions, loan-limit calculations, scale-of-finance,
+  eligibility blockers, and purpose decisions are deferred to later application/eligibility slices.
 
 ## Shared response envelope (002C2)
 

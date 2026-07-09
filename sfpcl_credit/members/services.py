@@ -13,7 +13,7 @@ from django.utils.dateparse import parse_date
 
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.members.models import Member, Nominee, Shareholding
+from sfpcl_credit.members.models import CropPlan, LandHolding, Member, Nominee, Shareholding
 
 
 MEMBER_READ_PERMISSION = "members.member.read"
@@ -21,6 +21,8 @@ NOMINEE_READ_PERMISSION = "members.nominee.read"
 NOMINEE_CREATE_PERMISSION = "members.nominee.create"
 SHAREHOLDING_READ_PERMISSION = "members.shareholding.read"
 SHAREHOLDING_CREATE_PERMISSION = "members.shareholding.create"
+LAND_CROP_READ_PERMISSION = MEMBER_READ_PERMISSION
+LAND_CROP_CREATE_PERMISSION = "members.member.update"
 _DEFAULT_PAGE_SIZE = 20
 _MAX_PAGE_SIZE = 100
 _LEGAL_MAJORITY_AGE = 18
@@ -55,6 +57,14 @@ def user_can_read_shareholdings(user):
 
 def user_can_create_shareholdings(user):
     return SHAREHOLDING_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_read_land_crop(user):
+    return LAND_CROP_READ_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_create_land_crop(user):
+    return LAND_CROP_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
 
 
 def paginated_members(query_params):
@@ -344,6 +354,181 @@ def serialize_shareholding(shareholding):
     }
 
 
+def paginated_land_holdings(member, query_params):
+    page = _positive_int(query_params.get("page"), 1, "page")
+    page_size = min(
+        _positive_int(query_params.get("page_size"), _DEFAULT_PAGE_SIZE, "page_size"),
+        _MAX_PAGE_SIZE,
+    )
+    queryset = member.land_holdings.order_by("created_at", "land_holding_id")
+    total_count = queryset.count()
+    total_pages = ceil(total_count / page_size) if total_count else 1
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+    items = [serialize_land_holding(row) for row in queryset[offset : offset + page_size]]
+    return items, {
+        "page": page,
+        "page_size": page_size,
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_previous": page > 1,
+    }
+
+
+def create_land_holding(member, payload, actor_user, request_ip="", request_user_agent=""):
+    values = _validated_land_holding_payload(payload)
+    land_holding = LandHolding.objects.create(
+        member=member,
+        document_type=values["document_type"],
+        survey_number=values["survey_number"],
+        village=values["village"],
+        taluka=values["taluka"],
+        district=values["district"],
+        state=values["state"],
+        area_acres=values["area_acres"],
+        document_id=values["document_id"],
+        verification_status="pending",
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user,
+        action="members.land_holding.created",
+        entity_type="land_holding",
+        entity_id=land_holding.land_holding_id,
+        new_value_json={
+            "member_id": str(member.member_id),
+            "land_holding_id": str(land_holding.land_holding_id),
+            "document_type": land_holding.document_type,
+            "survey_number": land_holding.survey_number,
+            "area_acres": f"{land_holding.area_acres:.2f}",
+            "document_id": str(land_holding.document_id),
+            "verification_status": land_holding.verification_status,
+        },
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+    return land_holding
+
+
+def serialize_land_holding(land_holding):
+    return {
+        "land_holding_id": str(land_holding.land_holding_id),
+        "document_type": land_holding.document_type,
+        "survey_number": land_holding.survey_number or None,
+        "village": land_holding.village or None,
+        "taluka": land_holding.taluka or None,
+        "district": land_holding.district or None,
+        "state": land_holding.state or None,
+        "area_acres": f"{land_holding.area_acres:.2f}",
+        "document_id": str(land_holding.document_id),
+        "verification_status": land_holding.verification_status,
+        "verified_by_user_id": (
+            str(land_holding.verified_by_user_id)
+            if land_holding.verified_by_user_id
+            else None
+        ),
+        "verified_at": (
+            land_holding.verified_at.isoformat().replace("+00:00", "Z")
+            if land_holding.verified_at
+            else None
+        ),
+        "created_at": land_holding.created_at.isoformat().replace("+00:00", "Z"),
+    }
+
+
+def paginated_crop_plans(member, query_params):
+    page = _positive_int(query_params.get("page"), 1, "page")
+    page_size = min(
+        _positive_int(query_params.get("page_size"), _DEFAULT_PAGE_SIZE, "page_size"),
+        _MAX_PAGE_SIZE,
+    )
+    queryset = member.crop_plans.order_by("created_at", "crop_plan_id")
+    total_count = queryset.count()
+    total_pages = ceil(total_count / page_size) if total_count else 1
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+    items = [serialize_crop_plan(row) for row in queryset[offset : offset + page_size]]
+    return items, {
+        "page": page,
+        "page_size": page_size,
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_previous": page > 1,
+    }
+
+
+def create_crop_plan(member, payload, actor_user, request_ip="", request_user_agent=""):
+    values = _validated_crop_plan_payload(payload)
+    crop_plan = CropPlan.objects.create(
+        member=member,
+        loan_application_id=values["loan_application_id"],
+        crop_type=values["crop_type"],
+        season=values["season"],
+        planned_area_acres=values["planned_area_acres"],
+        estimated_cost_amount=values["estimated_cost_amount"],
+        loan_purpose_alignment=values["loan_purpose_alignment"],
+        document_id=values["document_id"],
+        verification_status="pending",
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user,
+        action="members.crop_plan.created",
+        entity_type="crop_plan",
+        entity_id=crop_plan.crop_plan_id,
+        new_value_json={
+            "member_id": str(member.member_id),
+            "crop_plan_id": str(crop_plan.crop_plan_id),
+            "loan_application_id": (
+                str(crop_plan.loan_application_id) if crop_plan.loan_application_id else None
+            ),
+            "crop_type": crop_plan.crop_type,
+            "season": crop_plan.season,
+            "planned_area_acres": f"{crop_plan.planned_area_acres:.2f}",
+            "estimated_cost_amount": (
+                f"{crop_plan.estimated_cost_amount:.2f}"
+                if crop_plan.estimated_cost_amount is not None
+                else None
+            ),
+            "loan_purpose_alignment": crop_plan.loan_purpose_alignment,
+            "document_id": str(crop_plan.document_id) if crop_plan.document_id else None,
+            "verification_status": crop_plan.verification_status,
+        },
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+    return crop_plan
+
+
+def serialize_crop_plan(crop_plan):
+    return {
+        "crop_plan_id": str(crop_plan.crop_plan_id),
+        "loan_application_id": (
+            str(crop_plan.loan_application_id) if crop_plan.loan_application_id else None
+        ),
+        "crop_type": crop_plan.crop_type,
+        "season": crop_plan.season or None,
+        "planned_area_acres": f"{crop_plan.planned_area_acres:.2f}",
+        "estimated_cost_amount": (
+            f"{crop_plan.estimated_cost_amount:.2f}"
+            if crop_plan.estimated_cost_amount is not None
+            else None
+        ),
+        "loan_purpose_alignment": crop_plan.loan_purpose_alignment,
+        "document_id": str(crop_plan.document_id) if crop_plan.document_id else None,
+        "verification_status": crop_plan.verification_status,
+        "verified_by_user_id": (
+            str(crop_plan.verified_by_user_id) if crop_plan.verified_by_user_id else None
+        ),
+        "verified_at": (
+            crop_plan.verified_at.isoformat().replace("+00:00", "Z")
+            if crop_plan.verified_at
+            else None
+        ),
+        "created_at": crop_plan.created_at.isoformat().replace("+00:00", "Z"),
+    }
+
+
 def _validate_query(query_params):
     unknown = set(query_params.keys()) - _ALLOWED_PARAMS
     if unknown:
@@ -495,6 +680,46 @@ def _validated_shareholding_payload(payload):
     }
 
 
+def _validated_land_holding_payload(payload):
+    document_type = str(payload.get("document_type") or "").strip()
+    if not document_type:
+        raise ValidationError({"document_type": "This field is required."})
+    return {
+        "document_type": document_type,
+        "survey_number": str(payload.get("survey_number") or "").strip(),
+        "village": str(payload.get("village") or "").strip(),
+        "taluka": str(payload.get("taluka") or "").strip(),
+        "district": str(payload.get("district") or "").strip(),
+        "state": str(payload.get("state") or "").strip(),
+        "area_acres": _required_positive_decimal(payload.get("area_acres"), "area_acres"),
+        "document_id": _required_uuid(payload.get("document_id"), "document_id"),
+    }
+
+
+def _validated_crop_plan_payload(payload):
+    crop_type = str(payload.get("crop_type") or "").strip()
+    loan_purpose_alignment = str(payload.get("loan_purpose_alignment") or "").strip()
+    if not crop_type:
+        raise ValidationError({"crop_type": "This field is required."})
+    if not loan_purpose_alignment:
+        raise ValidationError({"loan_purpose_alignment": "This field is required."})
+    return {
+        "loan_application_id": _optional_uuid(
+            payload.get("loan_application_id"), "loan_application_id"
+        ),
+        "crop_type": crop_type,
+        "season": str(payload.get("season") or "").strip(),
+        "planned_area_acres": _required_positive_decimal(
+            payload.get("planned_area_acres"), "planned_area_acres"
+        ),
+        "estimated_cost_amount": _optional_decimal(
+            payload.get("estimated_cost_amount"), "estimated_cost_amount"
+        ),
+        "loan_purpose_alignment": loan_purpose_alignment,
+        "document_id": _optional_uuid(payload.get("document_id"), "document_id"),
+    }
+
+
 def _required_non_negative_int(value, field):
     if value in (None, ""):
         raise ValidationError({field: "This field is required."})
@@ -526,6 +751,15 @@ def _optional_decimal(value, field):
         raise ValidationError({field: "Value must be a decimal amount."}) from exc
 
 
+def _required_positive_decimal(value, field):
+    if value in (None, ""):
+        raise ValidationError({field: "This field is required."})
+    parsed = _optional_decimal(value, field)
+    if parsed is None or parsed <= 0:
+        raise ValidationError({field: "Value must be greater than zero."})
+    return parsed
+
+
 def _optional_date(value, field):
     if value in (None, ""):
         return None
@@ -542,6 +776,12 @@ def _optional_uuid(value, field):
         return uuid.UUID(str(value))
     except ValueError as exc:
         raise ValidationError({field: "Value must be a UUID."}) from exc
+
+
+def _required_uuid(value, field):
+    if value in (None, ""):
+        raise ValidationError({field: "This field is required."})
+    return _optional_uuid(value, field)
 
 
 def _refresh_member_share_summary(member):
@@ -668,18 +908,28 @@ __all__ = [
     "NomineeValidationError",
     "SHAREHOLDING_CREATE_PERMISSION",
     "SHAREHOLDING_READ_PERMISSION",
+    "LAND_CROP_CREATE_PERMISSION",
+    "LAND_CROP_READ_PERMISSION",
+    "create_crop_plan",
+    "create_land_holding",
     "create_nominee",
     "create_shareholding",
     "get_accessible_member",
     "get_member_profile",
+    "paginated_crop_plans",
+    "paginated_land_holdings",
     "paginated_nominees",
     "paginated_members",
     "paginated_shareholdings",
+    "serialize_crop_plan",
+    "serialize_land_holding",
     "serialize_nominee",
     "serialize_member_profile",
     "serialize_shareholding",
+    "user_can_create_land_crop",
     "user_can_create_nominees",
     "user_can_create_shareholdings",
+    "user_can_read_land_crop",
     "user_can_read_members",
     "user_can_read_nominees",
     "user_can_read_shareholdings",

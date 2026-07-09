@@ -3,11 +3,17 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearStoredAuthSession, storedAuthSession } from '../../services/authSession';
 import {
+  createMemberCropPlan,
+  createMemberLandHolding,
   createMemberShareholding,
   createMemberNominee,
+  fetchMemberCropPlans,
+  fetchMemberLandHoldings,
   fetchMemberNominees,
   fetchMemberProfile,
   fetchMemberShareholdings,
+  type MemberCropPlanDetail,
+  type MemberLandHoldingDetail,
   type MemberNomineeDetail,
   type MemberProfileDetail,
   type MemberShareholdingDetail,
@@ -145,6 +151,83 @@ describe('member profile API client', () => {
       }),
     );
   });
+
+  it('loads land holdings and crop plans through source-backed endpoints', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(listOk([landHolding]))
+      .mockResolvedValueOnce(listOk([cropPlan]));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const landResult = await fetchMemberLandHoldings('member-1');
+    const cropResult = await fetchMemberCropPlans('member-1');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://127.0.0.1:8000/api/v1/members/member-1/land-holdings/',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({ Authorization: 'Bearer access-token-1' }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://127.0.0.1:8000/api/v1/members/member-1/crop-plans/',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({ Authorization: 'Bearer access-token-1' }),
+      }),
+    );
+    expect(landResult.items[0]).toMatchObject({ survey_number: '123/4', area_acres: '5.00' });
+    expect(cropResult.items[0]).toMatchObject({ crop_type: 'grapes', planned_area_acres: '5.00' });
+  });
+
+  it('creates land holdings and crop plans and surfaces validation fields', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(ok(landHolding))
+      .mockResolvedValueOnce(error(400, 'VALIDATION_ERROR', { area_acres: 'Value must be greater than zero.' }))
+      .mockResolvedValueOnce(ok(cropPlan))
+      .mockResolvedValueOnce(error(400, 'VALIDATION_ERROR', { planned_area_acres: 'Value must be greater than zero.' }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createMemberLandHolding('member-1', landHoldingRequest)).resolves.toMatchObject({
+      survey_number: '123/4',
+      area_acres: '5.00',
+    });
+    await expect(createMemberLandHolding('member-1', {
+      ...landHoldingRequest,
+      area_acres: '0',
+    })).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+      fieldErrors: { area_acres: 'Value must be greater than zero.' },
+    });
+    await expect(createMemberCropPlan('member-1', cropPlanRequest)).resolves.toMatchObject({
+      crop_type: 'grapes',
+      planned_area_acres: '5.00',
+    });
+    await expect(createMemberCropPlan('member-1', {
+      ...cropPlanRequest,
+      planned_area_acres: '0',
+    })).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+      fieldErrors: { planned_area_acres: 'Value must be greater than zero.' },
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://127.0.0.1:8000/api/v1/members/member-1/land-holdings/',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(landHoldingRequest),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://127.0.0.1:8000/api/v1/members/member-1/crop-plans/',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(cropPlanRequest),
+      }),
+    );
+  });
 });
 
 describe('MemberProfileView', () => {
@@ -264,6 +347,46 @@ describe('MemberProfileView', () => {
       nominees: [nominee],
       nomineeCreateMessage: 'Nominee saved.',
     })).toContain('Nominee saved.');
+  });
+
+  it('renders land and crop tab list, loading, empty, error, validation, and success states from the API', () => {
+    expect(renderProfile('success', member, 4, '', { landCropStatus: 'loading' })).toContain('Loading land and crop records');
+    expect(renderProfile('success', member, 4, '', { landCropStatus: 'empty', landHoldings: [], cropPlans: [] })).toContain('No land or crop records are available from the backend yet.');
+    expect(renderProfile('success', member, 4, '', { landCropStatus: 'error', landCropMessage: 'Land and crop records could not be loaded.' })).toContain('Land and crop records could not be loaded.');
+    const html = renderProfile('success', member, 4, '', {
+      landCropStatus: 'success',
+      landHoldings: [landHolding],
+      cropPlans: [cropPlan],
+      landCreateMessage: 'Land holding saved.',
+      cropCreateMessage: 'Crop plan saved.',
+    });
+
+    expect(html).toContain('Land &amp; Crop Evidence');
+    expect(html).toContain('123/4');
+    expect(html).toContain('5.00 acres');
+    expect(html).toContain('7_12_extract');
+    expect(html).toContain('grapes');
+    expect(html).toContain('FY2026 Kharif');
+    expect(html).toContain('100000.00');
+    expect(html).toContain('Land holding saved.');
+    expect(html).toContain('Crop plan saved.');
+    expect(html).not.toContain('Per-acre scale of finance');
+    expect(html).not.toContain('Land-based eligible amount');
+  });
+
+  it('renders land and crop validation errors without falling back to profile summary rows', () => {
+    const html = renderProfile('success', member, 4, '', {
+      landCropStatus: 'success',
+      landHoldings: [],
+      cropPlans: [],
+      landCreateFieldErrors: { document_id: 'This field is required.' },
+      cropCreateFieldErrors: { planned_area_acres: 'Value must be greater than zero.' },
+    });
+
+    expect(html).toContain('This field is required.');
+    expect(html).toContain('Value must be greater than zero.');
+    expect(html).not.toContain('Land Area Under Cultivation');
+    expect(html).not.toContain('Primary Crop');
   });
 
   it('renders loading, empty, and auth/error states using existing profile layout patterns', () => {
@@ -390,6 +513,58 @@ const shareholdingRequest = {
   future_shares_pledge_flag: true,
 };
 
+const landHolding: MemberLandHoldingDetail = {
+  land_holding_id: 'land-1',
+  document_type: '7_12_extract',
+  survey_number: '123/4',
+  village: 'Village Name',
+  taluka: 'Niphad',
+  district: 'Nashik',
+  state: 'Maharashtra',
+  area_acres: '5.00',
+  document_id: '11111111-1111-4111-8111-111111111111',
+  verification_status: 'pending',
+  verified_by_user_id: null,
+  verified_at: null,
+  created_at: '2026-07-09T05:55:00Z',
+};
+
+const cropPlan: MemberCropPlanDetail = {
+  crop_plan_id: 'crop-1',
+  loan_application_id: '22222222-2222-4222-8222-222222222222',
+  crop_type: 'grapes',
+  season: 'FY2026 Kharif',
+  planned_area_acres: '5.00',
+  estimated_cost_amount: '100000.00',
+  loan_purpose_alignment: 'agriculture_aligned',
+  document_id: '33333333-3333-4333-8333-333333333333',
+  verification_status: 'pending',
+  verified_by_user_id: null,
+  verified_at: null,
+  created_at: '2026-07-09T05:56:00Z',
+};
+
+const landHoldingRequest = {
+  document_type: '7_12_extract',
+  survey_number: '123/4',
+  village: 'Village Name',
+  taluka: 'Niphad',
+  district: 'Nashik',
+  state: 'Maharashtra',
+  area_acres: '5.00',
+  document_id: '11111111-1111-4111-8111-111111111111',
+};
+
+const cropPlanRequest = {
+  loan_application_id: '22222222-2222-4222-8222-222222222222',
+  crop_type: 'grapes',
+  season: 'FY2026 Kharif',
+  planned_area_acres: '5.00',
+  estimated_cost_amount: '100000.00',
+  loan_purpose_alignment: 'agriculture_aligned',
+  document_id: '33333333-3333-4333-8333-333333333333',
+};
+
 const renderProfile = (
   status: React.ComponentProps<typeof MemberProfileView>['status'],
   profile: MemberProfileDetail | null,
@@ -405,6 +580,9 @@ const renderProfile = (
     onTabChange={vi.fn()}
     onBack={vi.fn()}
     onCreateNominee={vi.fn()}
+    onCreateShareholding={vi.fn()}
+    onCreateLandHolding={vi.fn()}
+    onCreateCropPlan={vi.fn()}
     {...overrides}
   />,
 );

@@ -17,13 +17,21 @@ import StatusBadge from '../../components/ui/StatusBadge';
 import Tabs from '../../components/ui/Tabs';
 import { AuthSessionError } from '../../services/authSession';
 import {
+  createMemberCropPlan,
+  createMemberLandHolding,
   createMemberShareholding,
   createMemberNominee,
+  fetchMemberCropPlans,
+  fetchMemberLandHoldings,
   fetchMemberNominees,
   fetchMemberProfile,
   fetchMemberShareholdings,
+  type CreateMemberCropPlanPayload,
+  type CreateMemberLandHoldingPayload,
   type CreateMemberNomineePayload,
   type CreateMemberShareholdingPayload,
+  type MemberCropPlanDetail,
+  type MemberLandHoldingDetail,
   type MemberNomineeDetail,
   type MemberProfileDetail,
   type MemberShareholdingDetail,
@@ -32,6 +40,7 @@ import {
 type ProfileStatus = 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
 type NomineeStatus = 'idle' | 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
 type ShareholdingStatus = 'idle' | 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
+type LandCropStatus = 'idle' | 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
 
 interface MemberProfileProps {
   memberId: string;
@@ -55,6 +64,16 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
   const [shareholdingCreateFieldErrors, setShareholdingCreateFieldErrors] = useState<Record<string, string>>({});
   const [shareholdingCreateMessage, setShareholdingCreateMessage] = useState('');
   const [shareholdingCreateSubmitting, setShareholdingCreateSubmitting] = useState(false);
+  const [landCropStatus, setLandCropStatus] = useState<LandCropStatus>('idle');
+  const [landCropMessage, setLandCropMessage] = useState('');
+  const [landHoldings, setLandHoldings] = useState<MemberLandHoldingDetail[]>([]);
+  const [cropPlans, setCropPlans] = useState<MemberCropPlanDetail[]>([]);
+  const [landCreateFieldErrors, setLandCreateFieldErrors] = useState<Record<string, string>>({});
+  const [landCreateMessage, setLandCreateMessage] = useState('');
+  const [landCreateSubmitting, setLandCreateSubmitting] = useState(false);
+  const [cropCreateFieldErrors, setCropCreateFieldErrors] = useState<Record<string, string>>({});
+  const [cropCreateMessage, setCropCreateMessage] = useState('');
+  const [cropCreateSubmitting, setCropCreateSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +90,14 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
     setShareholdings([]);
     setShareholdingCreateFieldErrors({});
     setShareholdingCreateMessage('');
+    setLandCropStatus('idle');
+    setLandCropMessage('');
+    setLandHoldings([]);
+    setCropPlans([]);
+    setLandCreateFieldErrors({});
+    setLandCreateMessage('');
+    setCropCreateFieldErrors({});
+    setCropCreateMessage('');
     fetchMemberProfile(memberId)
       .then(result => {
         if (!cancelled) {
@@ -113,6 +140,31 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
       cancelled = true;
     };
   }, [activeTab, memberId, shareholdingStatus, status]);
+
+  useEffect(() => {
+    if (status !== 'success' || activeTab !== 4 || landCropStatus !== 'idle') return;
+    let cancelled = false;
+    setLandCropStatus('loading');
+    setLandCropMessage('');
+    Promise.all([fetchMemberLandHoldings(memberId), fetchMemberCropPlans(memberId)])
+      .then(([landResult, cropResult]) => {
+        if (!cancelled) {
+          setLandHoldings(landResult.items);
+          setCropPlans(cropResult.items);
+          setLandCropStatus(landResult.items.length > 0 || cropResult.items.length > 0 ? 'success' : 'empty');
+        }
+      })
+      .catch(error => {
+        if (!cancelled) {
+          const next = errorState(error);
+          setLandCropStatus(next.status);
+          setLandCropMessage(next.message);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, landCropStatus, memberId, status]);
 
   useEffect(() => {
     if (status !== 'success' || activeTab !== 7 || nomineeStatus !== 'idle') return;
@@ -180,6 +232,48 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
     }
   };
 
+  const handleCreateLandHolding = async (payload: CreateMemberLandHoldingPayload) => {
+    setLandCreateSubmitting(true);
+    setLandCreateFieldErrors({});
+    setLandCreateMessage('');
+    try {
+      const created = await createMemberLandHolding(memberId, payload);
+      setLandHoldings(current => [created, ...current.filter(item => item.land_holding_id !== created.land_holding_id)]);
+      setLandCropStatus('success');
+      setLandCreateMessage('Land holding saved.');
+    } catch (error) {
+      if (error instanceof AuthSessionError) {
+        setLandCreateFieldErrors(error.fieldErrors ?? {});
+        setLandCreateMessage(error.message);
+      } else {
+        setLandCreateMessage(error instanceof Error ? error.message : 'Land holding could not be saved.');
+      }
+    } finally {
+      setLandCreateSubmitting(false);
+    }
+  };
+
+  const handleCreateCropPlan = async (payload: CreateMemberCropPlanPayload) => {
+    setCropCreateSubmitting(true);
+    setCropCreateFieldErrors({});
+    setCropCreateMessage('');
+    try {
+      const created = await createMemberCropPlan(memberId, payload);
+      setCropPlans(current => [created, ...current.filter(item => item.crop_plan_id !== created.crop_plan_id)]);
+      setLandCropStatus('success');
+      setCropCreateMessage('Crop plan saved.');
+    } catch (error) {
+      if (error instanceof AuthSessionError) {
+        setCropCreateFieldErrors(error.fieldErrors ?? {});
+        setCropCreateMessage(error.message);
+      } else {
+        setCropCreateMessage(error instanceof Error ? error.message : 'Crop plan could not be saved.');
+      }
+    } finally {
+      setCropCreateSubmitting(false);
+    }
+  };
+
   return (
     <MemberProfileView
       status={status}
@@ -202,6 +296,18 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
       shareholdingCreateMessage={shareholdingCreateMessage}
       shareholdingCreateSubmitting={shareholdingCreateSubmitting}
       onCreateShareholding={handleCreateShareholding}
+      landCropStatus={landCropStatus}
+      landCropMessage={landCropMessage}
+      landHoldings={landHoldings}
+      cropPlans={cropPlans}
+      landCreateFieldErrors={landCreateFieldErrors}
+      landCreateMessage={landCreateMessage}
+      landCreateSubmitting={landCreateSubmitting}
+      cropCreateFieldErrors={cropCreateFieldErrors}
+      cropCreateMessage={cropCreateMessage}
+      cropCreateSubmitting={cropCreateSubmitting}
+      onCreateLandHolding={handleCreateLandHolding}
+      onCreateCropPlan={handleCreateCropPlan}
     />
   );
 };
@@ -227,6 +333,18 @@ interface MemberProfileViewProps {
   shareholdingCreateMessage?: string;
   shareholdingCreateSubmitting?: boolean;
   onCreateShareholding?: (payload: CreateMemberShareholdingPayload) => void | Promise<void>;
+  landCropStatus?: LandCropStatus;
+  landCropMessage?: string;
+  landHoldings?: MemberLandHoldingDetail[];
+  cropPlans?: MemberCropPlanDetail[];
+  landCreateFieldErrors?: Record<string, string>;
+  landCreateMessage?: string;
+  landCreateSubmitting?: boolean;
+  cropCreateFieldErrors?: Record<string, string>;
+  cropCreateMessage?: string;
+  cropCreateSubmitting?: boolean;
+  onCreateLandHolding?: (payload: CreateMemberLandHoldingPayload) => void | Promise<void>;
+  onCreateCropPlan?: (payload: CreateMemberCropPlanPayload) => void | Promise<void>;
 }
 
 export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
@@ -250,6 +368,18 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
   shareholdingCreateMessage = '',
   shareholdingCreateSubmitting = false,
   onCreateShareholding,
+  landCropStatus = 'idle',
+  landCropMessage = '',
+  landHoldings = [],
+  cropPlans = [],
+  landCreateFieldErrors = {},
+  landCreateMessage = '',
+  landCreateSubmitting = false,
+  cropCreateFieldErrors = {},
+  cropCreateMessage = '',
+  cropCreateSubmitting = false,
+  onCreateLandHolding,
+  onCreateCropPlan,
 }) => {
   if (status !== 'success' || !profile) {
     return <ProfileState status={status} message={message} onBack={onBack} />;
@@ -336,7 +466,20 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
         />
         <DeferredTab title="Produce Supply History" message="No produce supply records are available from the backend yet." />
         <ServicesTab profile={profile} />
-        <LandTab profile={profile} />
+        <LandTab
+          status={landCropStatus}
+          message={landCropMessage}
+          landHoldings={landHoldings}
+          cropPlans={cropPlans}
+          landCreateFieldErrors={landCreateFieldErrors}
+          landCreateMessage={landCreateMessage}
+          landCreateSubmitting={landCreateSubmitting}
+          cropCreateFieldErrors={cropCreateFieldErrors}
+          cropCreateMessage={cropCreateMessage}
+          cropCreateSubmitting={cropCreateSubmitting}
+          onCreateLandHolding={onCreateLandHolding}
+          onCreateCropPlan={onCreateCropPlan}
+        />
         <KycTab profile={profile} />
         <DeferredTab title="Loans" message="No loan records are available from the backend yet." />
         <NomineeTab
@@ -602,16 +745,242 @@ const ServicesTab: React.FC<{ profile: MemberProfileDetail }> = ({ profile }) =>
   );
 };
 
-const LandTab: React.FC<{ profile: MemberProfileDetail }> = ({ profile }) => (
-  <div className="card space-y-4">
-    <h3 className="font-semibold text-slate-800">Land & Crop Evidence</h3>
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-      <InfoTile label="Land Area Under Cultivation" value={profile.individual_profile?.land_area_under_cultivation_acres ? `${profile.individual_profile.land_area_under_cultivation_acres} acres` : '-'} />
-      <InfoTile label="Primary Crop" value={profile.individual_profile?.primary_crop || '-'} />
+const LandTab: React.FC<{
+  status: LandCropStatus;
+  message: string;
+  landHoldings: MemberLandHoldingDetail[];
+  cropPlans: MemberCropPlanDetail[];
+  landCreateFieldErrors: Record<string, string>;
+  landCreateMessage: string;
+  landCreateSubmitting: boolean;
+  cropCreateFieldErrors: Record<string, string>;
+  cropCreateMessage: string;
+  cropCreateSubmitting: boolean;
+  onCreateLandHolding?: (payload: CreateMemberLandHoldingPayload) => void | Promise<void>;
+  onCreateCropPlan?: (payload: CreateMemberCropPlanPayload) => void | Promise<void>;
+}> = ({
+  status,
+  message,
+  landHoldings,
+  cropPlans,
+  landCreateFieldErrors,
+  landCreateMessage,
+  landCreateSubmitting,
+  cropCreateFieldErrors,
+  cropCreateMessage,
+  cropCreateSubmitting,
+  onCreateLandHolding,
+  onCreateCropPlan,
+}) => (
+  <div className="card space-y-5">
+    <div className="flex items-center justify-between gap-3">
+      <h3 className="font-semibold text-slate-800">Land & Crop Evidence</h3>
+      <StatusBadge label={landHoldings.length + cropPlans.length > 0 ? `${landHoldings.length + cropPlans.length} recorded` : 'pending'} size="sm" />
     </div>
-    <EmptyPanel icon={<FileText size={18} className="text-slate-500 flex-shrink-0" />} title="Land document and crop evidence records are not available from the backend yet." />
+    {landCreateMessage && (
+      <AlertBanner
+        type={Object.keys(landCreateFieldErrors).length > 0 ? 'error' : 'success'}
+        title={Object.keys(landCreateFieldErrors).length > 0 ? 'Land holding validation failed' : 'Land holding update'}
+        message={landCreateMessage}
+      />
+    )}
+    {cropCreateMessage && (
+      <AlertBanner
+        type={Object.keys(cropCreateFieldErrors).length > 0 ? 'error' : 'success'}
+        title={Object.keys(cropCreateFieldErrors).length > 0 ? 'Crop plan validation failed' : 'Crop plan update'}
+        message={cropCreateMessage}
+      />
+    )}
+    <LandCropState status={status} message={message} landHoldings={landHoldings} cropPlans={cropPlans} />
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 border-t border-slate-100 pt-4">
+      <LandHoldingCreateForm
+        fieldErrors={landCreateFieldErrors}
+        submitting={landCreateSubmitting}
+        onCreateLandHolding={onCreateLandHolding}
+      />
+      <CropPlanCreateForm
+        fieldErrors={cropCreateFieldErrors}
+        submitting={cropCreateSubmitting}
+        onCreateCropPlan={onCreateCropPlan}
+      />
+    </div>
   </div>
 );
+
+const LandCropState: React.FC<{
+  status: LandCropStatus;
+  message: string;
+  landHoldings: MemberLandHoldingDetail[];
+  cropPlans: MemberCropPlanDetail[];
+}> = ({ status, message, landHoldings, cropPlans }) => {
+  if (status === 'idle' || status === 'loading') {
+    return <EmptyPanel icon={<Clock size={18} className="text-slate-500 flex-shrink-0" />} title="Loading land and crop records" />;
+  }
+  if (status === 'unauthorized' || status === 'forbidden' || status === 'error') {
+    return <EmptyPanel icon={<AlertTriangle size={18} className="text-slate-500 flex-shrink-0" />} title={message || 'Land and crop records could not be loaded.'} />;
+  }
+  if (status === 'empty' || (landHoldings.length === 0 && cropPlans.length === 0)) {
+    return <EmptyPanel icon={<FileText size={18} className="text-slate-500 flex-shrink-0" />} title={message || 'No land or crop records are available from the backend yet.'} />;
+  }
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="space-y-3">
+        <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Land Holdings</p>
+        {landHoldings.length === 0 && <EmptyPanel icon={<FileText size={18} className="text-slate-500 flex-shrink-0" />} title="No land holding records are available from the backend yet." />}
+        {landHoldings.map(land => (
+          <div key={land.land_holding_id} className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">{land.survey_number || 'Survey number not recorded'}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{land.village || '-'} · {land.taluka || '-'} · {land.district || '-'}</p>
+              </div>
+              <StatusBadge label={land.verification_status || 'pending'} size="sm" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <InfoTile label="Document Type" value={land.document_type || '-'} />
+              <InfoTile label="Area" value={`${land.area_acres} acres`} />
+              <InfoTile label="State" value={land.state || '-'} />
+              <InfoTile label="Document ID" value={land.document_id} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="space-y-3">
+        <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Crop Plans</p>
+        {cropPlans.length === 0 && <EmptyPanel icon={<FileText size={18} className="text-slate-500 flex-shrink-0" />} title="No crop plan records are available from the backend yet." />}
+        {cropPlans.map(crop => (
+          <div key={crop.crop_plan_id} className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">{crop.crop_type}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{crop.season || 'Season not recorded'} · {crop.loan_purpose_alignment}</p>
+              </div>
+              <StatusBadge label={crop.verification_status || 'pending'} size="sm" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <InfoTile label="Planned Area" value={`${crop.planned_area_acres} acres`} />
+              <InfoTile label="Estimated Cost" value={crop.estimated_cost_amount || '-'} />
+              <InfoTile label="Document ID" value={crop.document_id || '-'} />
+              <InfoTile label="Application ID" value={crop.loan_application_id || '-'} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const LandHoldingCreateForm: React.FC<{
+  fieldErrors: Record<string, string>;
+  submitting: boolean;
+  onCreateLandHolding?: (payload: CreateMemberLandHoldingPayload) => void | Promise<void>;
+}> = ({ fieldErrors, submitting, onCreateLandHolding }) => {
+  const [form, setForm] = useState<CreateMemberLandHoldingPayload>({
+    document_type: '7_12_extract',
+    survey_number: '',
+    village: '',
+    taluka: '',
+    district: '',
+    state: '',
+    area_acres: '',
+    document_id: '',
+  });
+  const setField = (field: keyof CreateMemberLandHoldingPayload, value: string) => {
+    setForm(current => ({ ...current, [field]: value }));
+  };
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await onCreateLandHolding?.(form);
+  };
+  return (
+    <form className="space-y-4" onSubmit={submit}>
+      <h4 className="text-sm font-semibold text-slate-800">Add Land Holding</h4>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label="Document type" error={fieldErrors.document_type}>
+          <input className="field-input" value={form.document_type} onChange={event => setField('document_type', event.target.value)} />
+        </Field>
+        <Field label="Survey number" error={fieldErrors.survey_number}>
+          <input className="field-input" value={form.survey_number} onChange={event => setField('survey_number', event.target.value)} />
+        </Field>
+        <Field label="Village" error={fieldErrors.village}>
+          <input className="field-input" value={form.village} onChange={event => setField('village', event.target.value)} />
+        </Field>
+        <Field label="Taluka" error={fieldErrors.taluka}>
+          <input className="field-input" value={form.taluka} onChange={event => setField('taluka', event.target.value)} />
+        </Field>
+        <Field label="District" error={fieldErrors.district}>
+          <input className="field-input" value={form.district} onChange={event => setField('district', event.target.value)} />
+        </Field>
+        <Field label="State" error={fieldErrors.state}>
+          <input className="field-input" value={form.state} onChange={event => setField('state', event.target.value)} />
+        </Field>
+        <Field label="Area acres" error={fieldErrors.area_acres}>
+          <input className="field-input" value={form.area_acres} onChange={event => setField('area_acres', event.target.value)} />
+        </Field>
+        <Field label="Document ID" error={fieldErrors.document_id}>
+          <input className="field-input" value={form.document_id} onChange={event => setField('document_id', event.target.value)} />
+        </Field>
+      </div>
+      <button className="btn-primary" disabled={submitting || !onCreateLandHolding} type="submit">
+        {submitting ? 'Saving land holding' : 'Save land holding'}
+      </button>
+    </form>
+  );
+};
+
+const CropPlanCreateForm: React.FC<{
+  fieldErrors: Record<string, string>;
+  submitting: boolean;
+  onCreateCropPlan?: (payload: CreateMemberCropPlanPayload) => void | Promise<void>;
+}> = ({ fieldErrors, submitting, onCreateCropPlan }) => {
+  const [form, setForm] = useState<CreateMemberCropPlanPayload>({
+    loan_application_id: '',
+    crop_type: '',
+    season: '',
+    planned_area_acres: '',
+    estimated_cost_amount: '',
+    loan_purpose_alignment: 'agriculture_aligned',
+    document_id: '',
+  });
+  const setField = (field: keyof CreateMemberCropPlanPayload, value: string) => {
+    setForm(current => ({ ...current, [field]: value }));
+  };
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await onCreateCropPlan?.(form);
+  };
+  return (
+    <form className="space-y-4" onSubmit={submit}>
+      <h4 className="text-sm font-semibold text-slate-800">Add Crop Plan</h4>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label="Loan application ID" error={fieldErrors.loan_application_id}>
+          <input className="field-input" value={form.loan_application_id} onChange={event => setField('loan_application_id', event.target.value)} />
+        </Field>
+        <Field label="Crop type" error={fieldErrors.crop_type}>
+          <input className="field-input" value={form.crop_type} onChange={event => setField('crop_type', event.target.value)} />
+        </Field>
+        <Field label="Season" error={fieldErrors.season}>
+          <input className="field-input" value={form.season} onChange={event => setField('season', event.target.value)} />
+        </Field>
+        <Field label="Planned area acres" error={fieldErrors.planned_area_acres}>
+          <input className="field-input" value={form.planned_area_acres} onChange={event => setField('planned_area_acres', event.target.value)} />
+        </Field>
+        <Field label="Estimated cost amount" error={fieldErrors.estimated_cost_amount}>
+          <input className="field-input" value={form.estimated_cost_amount} onChange={event => setField('estimated_cost_amount', event.target.value)} />
+        </Field>
+        <Field label="Purpose alignment" error={fieldErrors.loan_purpose_alignment}>
+          <input className="field-input" value={form.loan_purpose_alignment} onChange={event => setField('loan_purpose_alignment', event.target.value)} />
+        </Field>
+        <Field label="Document ID" error={fieldErrors.document_id}>
+          <input className="field-input" value={form.document_id} onChange={event => setField('document_id', event.target.value)} />
+        </Field>
+      </div>
+      <button className="btn-primary" disabled={submitting || !onCreateCropPlan} type="submit">
+        {submitting ? 'Saving crop plan' : 'Save crop plan'}
+      </button>
+    </form>
+  );
+};
 
 const KycTab: React.FC<{ profile: MemberProfileDetail }> = ({ profile }) => (
   <div className="card space-y-4">

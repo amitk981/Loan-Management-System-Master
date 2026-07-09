@@ -16,6 +16,12 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 ## Depends On
 - 004G
 
+## Prior Slice Facts
+- 004G added API-backed Member Profile Land & Crop records. Do not reopen land/crop behavior here
+  except to ensure KYC UI changes do not regress the existing Member Profile tab routing/patterns.
+- 004G did not implement sensitive reveal or KYC document workflows; those remain owned by 004H
+  and 004I respectively.
+
 ## Source References
 - docs/source/implementation-roadmap.md section 11
 - docs/source/api-contracts.md sections 13-18

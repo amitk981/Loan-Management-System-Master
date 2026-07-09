@@ -113,6 +113,47 @@ export interface MemberShareholdingList {
   pagination: Pagination;
 }
 
+export interface MemberLandHoldingDetail {
+  land_holding_id: string;
+  document_type: string;
+  survey_number: string | null;
+  village: string | null;
+  taluka: string | null;
+  district: string | null;
+  state: string | null;
+  area_acres: string;
+  document_id: string;
+  verification_status: string;
+  verified_by_user_id: string | null;
+  verified_at: string | null;
+  created_at: string;
+}
+
+export interface MemberLandHoldingList {
+  items: MemberLandHoldingDetail[];
+  pagination: Pagination;
+}
+
+export interface MemberCropPlanDetail {
+  crop_plan_id: string;
+  loan_application_id: string | null;
+  crop_type: string;
+  season: string | null;
+  planned_area_acres: string;
+  estimated_cost_amount: string | null;
+  loan_purpose_alignment: string;
+  document_id: string | null;
+  verification_status: string;
+  verified_by_user_id: string | null;
+  verified_at: string | null;
+  created_at: string;
+}
+
+export interface MemberCropPlanList {
+  items: MemberCropPlanDetail[];
+  pagination: Pagination;
+}
+
 export interface CreateMemberNomineePayload {
   nominee_name: string;
   date_of_birth: string;
@@ -131,6 +172,27 @@ export interface CreateMemberShareholdingPayload {
   valuation_effective_date: string;
   pledged_share_count: number;
   future_shares_pledge_flag: boolean;
+}
+
+export interface CreateMemberLandHoldingPayload {
+  document_type: string;
+  survey_number: string;
+  village: string;
+  taluka: string;
+  district: string;
+  state: string;
+  area_acres: string;
+  document_id: string;
+}
+
+export interface CreateMemberCropPlanPayload {
+  loan_application_id: string;
+  crop_type: string;
+  season: string;
+  planned_area_acres: string;
+  estimated_cost_amount: string;
+  loan_purpose_alignment: string;
+  document_id: string;
 }
 
 export const fetchMemberProfile = async (memberId: string): Promise<MemberProfileDetail> => {
@@ -179,6 +241,48 @@ export const createMemberShareholding = async (
   );
   if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
   return normalizeShareholding(envelope.data);
+};
+
+export const fetchMemberLandHoldings = async (memberId: string): Promise<MemberLandHoldingList> => {
+  const envelope = await request<MemberLandHoldingDetail[]>(`/api/v1/members/${memberId}/land-holdings/`, 'GET');
+  return {
+    items: normalizeLandHoldings(envelope.data ?? []),
+    pagination: envelope.pagination ?? emptyPagination,
+  };
+};
+
+export const createMemberLandHolding = async (
+  memberId: string,
+  payload: CreateMemberLandHoldingPayload,
+): Promise<MemberLandHoldingDetail> => {
+  const envelope = await request<MemberLandHoldingDetail>(
+    `/api/v1/members/${memberId}/land-holdings/`,
+    'POST',
+    payload,
+  );
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalizeLandHolding(envelope.data);
+};
+
+export const fetchMemberCropPlans = async (memberId: string): Promise<MemberCropPlanList> => {
+  const envelope = await request<MemberCropPlanDetail[]>(`/api/v1/members/${memberId}/crop-plans/`, 'GET');
+  return {
+    items: normalizeCropPlans(envelope.data ?? []),
+    pagination: envelope.pagination ?? emptyPagination,
+  };
+};
+
+export const createMemberCropPlan = async (
+  memberId: string,
+  payload: CreateMemberCropPlanPayload,
+): Promise<MemberCropPlanDetail> => {
+  const envelope = await request<MemberCropPlanDetail>(
+    `/api/v1/members/${memberId}/crop-plans/`,
+    'POST',
+    payload,
+  );
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalizeCropPlan(envelope.data);
 };
 
 const request = async <T>(
@@ -269,6 +373,45 @@ const normalizeShareholding = (item: MemberShareholdingDetail): MemberShareholdi
   available_share_count: numberOrZero(item?.available_share_count),
   future_shares_pledge_flag: Boolean(item?.future_shares_pledge_flag),
   status: String(item?.status ?? ''),
+});
+
+const normalizeLandHoldings = (items: MemberLandHoldingDetail[]): MemberLandHoldingDetail[] => (
+  Array.isArray(items) ? items.map(normalizeLandHolding) : []
+);
+
+const normalizeLandHolding = (item: MemberLandHoldingDetail): MemberLandHoldingDetail => ({
+  land_holding_id: String(item?.land_holding_id ?? ''),
+  document_type: String(item?.document_type ?? ''),
+  survey_number: textOrNull(item?.survey_number),
+  village: textOrNull(item?.village),
+  taluka: textOrNull(item?.taluka),
+  district: textOrNull(item?.district),
+  state: textOrNull(item?.state),
+  area_acres: String(item?.area_acres ?? ''),
+  document_id: String(item?.document_id ?? ''),
+  verification_status: String(item?.verification_status ?? ''),
+  verified_by_user_id: textOrNull(item?.verified_by_user_id),
+  verified_at: textOrNull(item?.verified_at),
+  created_at: String(item?.created_at ?? ''),
+});
+
+const normalizeCropPlans = (items: MemberCropPlanDetail[]): MemberCropPlanDetail[] => (
+  Array.isArray(items) ? items.map(normalizeCropPlan) : []
+);
+
+const normalizeCropPlan = (item: MemberCropPlanDetail): MemberCropPlanDetail => ({
+  crop_plan_id: String(item?.crop_plan_id ?? ''),
+  loan_application_id: textOrNull(item?.loan_application_id),
+  crop_type: String(item?.crop_type ?? ''),
+  season: textOrNull(item?.season),
+  planned_area_acres: String(item?.planned_area_acres ?? ''),
+  estimated_cost_amount: textOrNull(item?.estimated_cost_amount),
+  loan_purpose_alignment: String(item?.loan_purpose_alignment ?? ''),
+  document_id: textOrNull(item?.document_id),
+  verification_status: String(item?.verification_status ?? ''),
+  verified_by_user_id: textOrNull(item?.verified_by_user_id),
+  verified_at: textOrNull(item?.verified_at),
+  created_at: String(item?.created_at ?? ''),
 });
 
 const numberOrZero = (value: unknown): number => (
