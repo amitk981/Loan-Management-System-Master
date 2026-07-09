@@ -42,7 +42,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Local demo staff seed | Implemented in slice 002K; corrected in 002K2 | Login, dashboard smoke, admin/tracer permission smoke | `implementation-roadmap.md` §10, §20-22; `technical-architecture.md` §8-12, §17-18; `auth-permissions.md`; `api-contracts.md` §11-12, §43-44 | `python manage.py seed_demo_users` is a guarded local/dev seed path. It refuses unless `SFPCL_DEBUG=true` and `SFPCL_ALLOW_DEMO_SEED=true`, calls `seed_catalogue()`, creates or updates deterministic `demo.*@sfpcl.example` staff users with active primary roles and memberships, and does not alter `e2e.*` users. Demo users authenticate through the real `/auth/login/` and `/auth/me/` endpoints; there is no demo auth bypass. The zero-permission user returns `permissions: []` and `available_actions: []`; the tracer-only user uses the guarded local/dev-only `local_demo_tracer_user` role and returns only `tracer.lifecycle.run`; the shared source-catalogue `sales_team_user` role remains permission-neutral until source documents define grants; system admin preserves canonical action-specific user-admin permissions without broad `manage_users` aliases. |
 | Role/permission/team catalogue | Seeded in slice 002C; exposed for current user in 002D | None directly | `auth-permissions.md` §12-15, §38 | Canonical `Permission`, `Role`, `Team`, `RolePermission` catalogue seeded idempotently via `python manage.py seed_role_catalogue` (`sfpcl_credit/identity/catalogue.py`). `/api/v1/auth/me/` exposes the authenticated user's effective permission codes from this data. |
 | Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; shareholding list/create implemented in 004F; land/crop list/create implemented in 004G; KYC profile/document upload/verify implemented in 004H; member bank-account/cancelled-cheque metadata implemented in 004J; Borrower 360 Epic 004 UI wiring implemented in 004K with corrective DTO hardening queued in 004K2 | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3/§15.1-§15.2/§17.1-§18.4; `data-model.md` §10.1-§10.4/§11.1/§11.7-§12.4; `auth-permissions.md` §12.2-§12.3/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/`, `/shareholdings/`, `/land-holdings/`, `/crop-plans/`, `/bank-accounts/`, and `/cancelled-cheques/` are API-backed with their documented validations and metadata-only create audits. `GET/POST/PATCH /api/v1/kyc-profiles/`, KYC document upload, and KYC document verify are implemented for member parties only with KYC permissions. Sensitive bank-account reveal, re-KYC task management, share certificate/demat, bank verification letters, disbursement bank gates, and loan-application/loan-account/repayment/risk/audit Borrower 360 data remain future scope. |
-| Loan applications | Draft create/read/update implemented in 005A; submit in 005B; reference generation/register in 005C; object access hardened in 005C2 | Applications, completeness | `api-contracts.md` §19.2-§19.4; `data-model.md` §13.1; `auth-permissions.md` §12.4, §19.2, §34.3, §37.3 | `POST /api/v1/loan-applications/`, `GET /api/v1/loan-applications/{id}/`, `PATCH /api/v1/loan-applications/{id}/`, submit, and reference-generation endpoints persist and advance application facts with stable UUID IDs, nullable/formal `LO...` reference numbers, member summaries, optional land/crop/bank/cancelled-cheque references, masked bank metadata, permissions, object access, audit, workflow events, and register metadata. Documents, deficiencies, eligibility, loan limits, appraisal, sanction, and disbursement remain future slices. |
+| Loan applications | Draft create/read/update implemented in 005A; submit in 005B; reference generation/register in 005C; object access hardened in 005C2; application document/checklist metadata implemented in 005D | Applications, completeness | `api-contracts.md` §19.2-§21; `data-model.md` §13.1 and application-document table; `auth-permissions.md` §12.4, §19.2, §34.3, §37.3 | `POST /api/v1/loan-applications/`, `GET /api/v1/loan-applications/{id}/`, `PATCH /api/v1/loan-applications/{id}/`, submit, reference-generation, application-document list/upload/verify, and document-checklist read/refresh endpoints persist and advance application facts with stable UUID IDs, nullable/formal `LO...` reference numbers, member summaries, optional land/crop/bank/cancelled-cheque references, masked bank metadata, document-file links, permissions, object access, audit, workflow events, and register metadata. Deficiencies, eligibility, loan limits, appraisal, sanction, and disbursement remain future slices. |
 | Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
 | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
@@ -336,6 +336,102 @@ Rules:
   or duplicate reference attempts return `409 INVALID_STATE_TRANSITION`. Object-access denials do
   not write success audit rows, workflow events, register rows, application references, or visible
   sequence advancement.
+
+## Application Document and Checklist API (005D)
+
+`GET /api/v1/loan-applications/{loan_application_id}/application-documents/`
+
+Returns:
+
+```json
+{
+  "loan_application_id": "uuid",
+  "items": [
+    {
+      "application_document_id": "uuid",
+      "loan_application_id": "uuid",
+      "document_type": "borrower_pan",
+      "party_type": "borrower",
+      "party_id": "uuid",
+      "document_file": {
+        "document_id": "uuid",
+        "file_name": "borrower-pan.pdf",
+        "mime_type": "application/pdf",
+        "file_size_bytes": 256,
+        "sensitivity_level": "restricted",
+        "uploaded_at": "2026-07-09T14:00:00Z"
+      },
+      "required_flag": true,
+      "submission_status": "submitted",
+      "verification_status": "pending",
+      "verified_by_user_id": null,
+      "verified_at": null,
+      "remarks": "PAN copy received at branch.",
+      "version_number": 1,
+      "created_at": "2026-07-09T14:00:00Z",
+      "created_by_user_id": "uuid",
+      "updated_at": "2026-07-09T14:00:00Z",
+      "updated_by_user_id": "uuid"
+    }
+  ]
+}
+```
+
+`POST /api/v1/loan-applications/{loan_application_id}/application-documents/`
+
+Request:
+
+```json
+{
+  "document_type": "borrower_pan",
+  "party_type": "borrower",
+  "party_id": "uuid",
+  "document_file_id": "uuid",
+  "remarks": "PAN copy received at branch."
+}
+```
+
+`POST /api/v1/application-documents/{application_document_id}/verify/`
+
+Request:
+
+```json
+{
+  "verification_status": "verified",
+  "remarks": "PAN name matches member profile."
+}
+```
+
+`GET /api/v1/loan-applications/{loan_application_id}/document-checklist/`
+
+`POST /api/v1/loan-applications/{loan_application_id}/document-checklist/refresh/`
+
+Checklist responses contain the source-required item codes with pending placeholders until metadata
+exists: `loan_application_form`, `borrower_pan`, `borrower_aadhaar_ovd`, `nominee_pan`,
+`nominee_aadhaar_ovd`, `share_certificate_copy`, `land_document_7_12`, `crop_plan`, and
+`six_month_bank_statement`.
+
+Rules:
+- All endpoints require session-bound bearer authentication.
+- Application-document list and checklist read/refresh require
+  `applications.loan_application.read`. Upload requires `applications.document.upload`. Verify
+  requires `applications.document.verify`.
+- Application-scoped endpoints return `404 NOT_FOUND` for unknown applications before object-scope
+  checks, then use `applications.services.evaluate_application_object_access(...)`. Same-permission
+  actors outside the application scope receive `403 OBJECT_ACCESS_DENIED`; missing global permission
+  returns `403 PERMISSION_DENIED`.
+- Upload links metadata to an existing `documents.DocumentFile` by `document_file_id`; 005D does not
+  upload or duplicate file bytes. Upload is accepted only after application submit and creates a new
+  version row for duplicate document type/party combinations instead of overwriting prior history.
+- Supported `party_type` values are `borrower`, `nominee`, and `witness`. Supported verification
+  values are `pending`, `verified`, and `rejected`.
+- Successful upload writes `applications.application_document.attached`; successful verification
+  writes `applications.application_document.verified`. Both audit rows are metadata-only and never
+  include raw file bytes, storage keys, checksums, PAN, Aadhaar, full bank-account numbers, encrypted
+  token values, or hashes.
+- Checklist refresh is currently a derived read operation under A-039 because the source names the
+  endpoint but no exact checklist-refresh mutation or permission is defined yet. It writes no audit
+  or workflow event.
 
 ## Member Bank Account and Cancelled Cheque Metadata API (004J)
 

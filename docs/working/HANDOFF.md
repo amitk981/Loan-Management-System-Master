@@ -1,43 +1,68 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-09_193538_normal_run
+2026-07-09_200049_normal_run
 
 ## Current Status
-Slice `005C2-application-object-access-hardening` completed successfully.
+Slice `005D-application-document-checklist` completed successfully.
 
-The application detail/action access boundary is now:
-- global permission check first;
-- missing application returns `404 NOT_FOUND`;
-- object scope check through `sfpcl_credit.applications.services.evaluate_application_object_access(...)`;
-- scope mismatch returns `403 OBJECT_ACCESS_DENIED`;
-- state/validation checks happen only after object access is allowed.
+The application-document/checklist backend now includes:
+- `application_documents` metadata rows with UUID PK, loan application FK, linked
+  `documents.DocumentFile`, document type, party type/ID, required flag, submission status,
+  verification status, verifier actor/time, remarks, version number, and actor timestamps.
+- `GET/POST /api/v1/loan-applications/{loan_application_id}/application-documents/`
+- `POST /api/v1/application-documents/{application_document_id}/verify/`
+- `GET /api/v1/loan-applications/{loan_application_id}/document-checklist/`
+- `POST /api/v1/loan-applications/{loan_application_id}/document-checklist/refresh/`
 
-Implemented scope facts:
-- `LoanApplication.created_by_user` and `received_by_user` are the current owner facts for
-  Field Officer-style access.
-- `credit_manager` role-code access is allowed only when the application is in
-  `current_stage = credit_assessment`.
-- Denied object access does not create update/submit/reference success audit rows, workflow
-  events, register rows, application references, or visible sequence advancement.
+Permission and access order:
+- List/checklist/refresh require `applications.loan_application.read`.
+- Upload requires `applications.document.upload`.
+- Verify requires `applications.document.verify`.
+- Unknown applications/document metadata return `404 NOT_FOUND`.
+- Missing global permission returns `403 PERMISSION_DENIED`.
+- Application scope uses `applications.services.evaluate_application_object_access(...)`;
+  same-permission actors outside scope receive `403 OBJECT_ACCESS_DENIED`.
+- Scope denials create no application-document metadata or upload/verify success audit rows.
+
+Implemented checklist facts:
+- Required application-stage checklist codes are `loan_application_form`, `borrower_pan`,
+  `borrower_aadhaar_ovd`, `nominee_pan`, `nominee_aadhaar_ovd`, `share_certificate_copy`,
+  `land_document_7_12`, `crop_plan`, and `six_month_bank_statement`.
+- `cancelled_cheque` is accepted as application-document metadata but is not required for the
+  application-stage checklist because source extracts place it before disbursement.
+- Upload is limited to submitted applications, links an existing `DocumentFile` by UUID, and creates
+  a new version row for duplicate document type/party combinations.
+- Verification values are `pending`, `verified`, and `rejected`.
+- Checklist refresh is read-derived under A-039; it writes no audit/workflow rows and does not
+  persist checklist rows.
+
+Sensitive-data boundary:
+- Responses and audit metadata omit raw file bytes, storage keys, checksums, full PAN/Aadhaar/bank
+  values, encrypted tokens, and hashes.
+- Upload audit action: `applications.application_document.attached`.
+- Verify audit action: `applications.application_document.verified`.
 
 ## Documentation Updates
-- `docs/working/API_CONTRACTS.md` now documents `403 OBJECT_ACCESS_DENIED` for scoped loan
-  application detail/action endpoints.
-- `docs/working/ASSUMPTIONS.md` has A-038 for no denial-audit convention and the current
-  Credit Manager/domain-scope representation.
-- `docs/working/digests/epic-005-application-intake.md` records the implemented 005C2 boundary.
-- `005D` and `005E` were sharpened to reuse the helper and test object-scope denials.
+- `docs/working/API_CONTRACTS.md` documents the 005D endpoints, request/response shape, permission
+  checks, object-access order, version behavior, and audit boundaries.
+- `docs/working/ASSUMPTIONS.md` has A-039 for read-derived checklist refresh.
+- `docs/working/digests/epic-005-application-intake.md` records the implemented 005D facts.
+- `005E` was sharpened to evaluate 005D's required checklist codes and call the existing reference
+  generation service only after mandatory latest metadata is verified.
 
 ## Next Run
-Run `005D-application-document-checklist`.
+Run `005E-completeness-workbench`.
 
-Key instruction for 005D: document/checklist endpoints must reuse
-`applications.services.evaluate_application_object_access(...)` rather than checking only global
-permissions or reimplementing application scope.
+Key instruction for 005E: use the 005D checklist/application-document metadata and
+`applications.services.evaluate_application_object_access(...)`. Do not duplicate document facts,
+storage behavior, sequence generation, or loan request register writes. Completeness pass should
+call `applications.services.generate_reference_after_completeness_pass(...)` only after all
+mandatory latest checklist metadata is verified.
 
 ## Evidence
-See `.ralph/runs/2026-07-09_193538_normal_run/`.
+See `.ralph/runs/2026-07-09_200049_normal_run/`.
 
-Key artifacts: `execution-plan.md`, `review-packet.md`, `risk-assessment.md`,
-`changed-files.txt`, `final-summary.md`, and gate logs under `evidence/terminal-logs/`.
+Key artifacts: `execution-plan.md`, `api-response-examples.md`, `review-packet.md`,
+`risk-assessment.md`, `changed-files.txt`, `final-summary.md`, and gate logs under
+`evidence/terminal-logs/`.

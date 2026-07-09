@@ -236,3 +236,126 @@ class LoanRequestRegisterEntry(models.Model):
                 name="idx_lrr_ref_gen_date",
             ),
         ]
+
+
+class ApplicationDocument(models.Model):
+    SUBMISSION_PENDING = "pending"
+    SUBMISSION_SUBMITTED = "submitted"
+    VERIFICATION_PENDING = "pending"
+    VERIFICATION_VERIFIED = "verified"
+    VERIFICATION_REJECTED = "rejected"
+    PARTY_TYPES = {"borrower", "nominee", "witness"}
+
+    application_document_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    loan_application = models.ForeignKey(
+        LoanApplication,
+        on_delete=models.PROTECT,
+        related_name="application_documents",
+    )
+    document_type = models.CharField(max_length=80, db_index=True)
+    party_type = models.CharField(max_length=40, db_index=True)
+    party_id = models.UUIDField(blank=True, null=True, db_index=True)
+    document_file = models.ForeignKey(
+        "documents.DocumentFile",
+        on_delete=models.PROTECT,
+        related_name="application_documents",
+    )
+    required_flag = models.BooleanField(default=True)
+    submission_status = models.CharField(
+        max_length=40,
+        default=SUBMISSION_SUBMITTED,
+        db_index=True,
+    )
+    verification_status = models.CharField(
+        max_length=40,
+        default=VERIFICATION_PENDING,
+        db_index=True,
+    )
+    verified_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="verified_application_documents",
+    )
+    verified_at = models.DateTimeField(blank=True, null=True)
+    remarks = models.TextField(blank=True)
+    version_number = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(default=timezone.now)
+    created_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="created_application_documents",
+    )
+    updated_at = models.DateTimeField(blank=True, null=True)
+    updated_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="updated_application_documents",
+    )
+
+    class Meta:
+        db_table = "application_documents"
+        ordering = [
+            "loan_application_id",
+            "document_type",
+            "party_type",
+            "party_id",
+            "version_number",
+        ]
+        indexes = [
+            models.Index(
+                fields=["loan_application", "document_type"],
+                name="idx_app_docs_app_type",
+            ),
+            models.Index(
+                fields=["loan_application", "submission_status", "verification_status"],
+                name="idx_app_docs_statuses",
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "loan_application",
+                    "document_type",
+                    "party_type",
+                    "party_id",
+                    "version_number",
+                ],
+                name="unique_app_doc_party_version",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.party_type not in self.PARTY_TYPES:
+            errors["party_type"] = "Unsupported party type."
+        if self.submission_status not in {
+            self.SUBMISSION_PENDING,
+            self.SUBMISSION_SUBMITTED,
+        }:
+            errors["submission_status"] = "Unsupported submission status."
+        if self.verification_status not in {
+            self.VERIFICATION_PENDING,
+            self.VERIFICATION_VERIFIED,
+            self.VERIFICATION_REJECTED,
+        }:
+            errors["verification_status"] = "Unsupported verification status."
+        if self.verification_status in {
+            self.VERIFICATION_VERIFIED,
+            self.VERIFICATION_REJECTED,
+        } and (self.verified_by_user_id is None or self.verified_at is None):
+            errors["verified_by_user"] = "Verified or rejected documents require verifier facts."
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)

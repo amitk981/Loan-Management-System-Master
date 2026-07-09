@@ -149,3 +149,28 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   submitted / verified / rejected metadata without exposing sensitive values.
 - Duplicate document types should create a new version/history row or a standard duplicate-state
   error, but must not overwrite audit history.
+- 005D implemented `application_documents` metadata rows with UUID PK, loan application FK,
+  document type, party type/ID, linked `documents.DocumentFile`, required flag, submission status,
+  verification status, verifier actor/time, remarks, version number, and actor timestamps.
+- Implemented endpoints:
+  - `GET/POST /api/v1/loan-applications/{loan_application_id}/application-documents/`
+  - `POST /api/v1/application-documents/{application_document_id}/verify/`
+  - `GET /api/v1/loan-applications/{loan_application_id}/document-checklist/`
+  - `POST /api/v1/loan-applications/{loan_application_id}/document-checklist/refresh/`
+- 005D permission/order facts: list/checklist/refresh require
+  `applications.loan_application.read`; upload requires `applications.document.upload`; verify
+  requires `applications.document.verify`. Unknown applications/document metadata return
+  `404 NOT_FOUND`; missing global permission returns `403 PERMISSION_DENIED`; application scope
+  uses `applications.services.evaluate_application_object_access(...)` and out-of-scope
+  same-permission actors receive `403 OBJECT_ACCESS_DENIED` with no metadata/audit writes.
+- 005D upload is limited to submitted applications and links existing document files by UUID; it
+  does not duplicate file bytes or change storage behavior. Duplicate document type/party uploads
+  create a new version row, preserving prior audit facts.
+- 005D checklist is derived from required application-stage document codes and current latest
+  application-document metadata. `cancelled_cheque` is accepted as upload metadata but is not part
+  of the required application checklist because the source places it before disbursement.
+- 005D audit actions are `applications.application_document.attached` and
+  `applications.application_document.verified`. Audit payloads are metadata-only and omit raw file
+  bytes, storage keys, checksums, full PAN/Aadhaar/bank values, encrypted tokens, and hashes.
+- A-039 records that checklist refresh is read-derived until a future source-backed completeness
+  slice defines persisted checklist side effects and a narrower mutation permission.

@@ -25,8 +25,32 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
   completeness-pass transition, created the `system_sequences` and
   `loan_request_register_entries` tables, and recorded A-037 for the `reference_generated` status
   vocabulary.
-- 005D should provide `application_documents` and checklist metadata. 005E must build on those
-  records instead of inventing document facts or re-uploading documents.
+- 005D provides `application_documents` metadata and a derived checklist foundation. 005E must
+  build on those records instead of inventing document facts, re-uploading documents, or duplicating
+  file/storage behavior.
+- 005D concrete contract:
+  - `GET/POST /api/v1/loan-applications/{loan_application_id}/application-documents/`
+  - `POST /api/v1/application-documents/{application_document_id}/verify/`
+  - `GET /api/v1/loan-applications/{loan_application_id}/document-checklist/`
+  - `POST /api/v1/loan-applications/{loan_application_id}/document-checklist/refresh/`
+- 005D checklist item codes that 005E must evaluate as mandatory before reference generation:
+  `loan_application_form`, `borrower_pan`, `borrower_aadhaar_ovd`, `nominee_pan`,
+  `nominee_aadhaar_ovd`, `share_certificate_copy`, `land_document_7_12`, `crop_plan`, and
+  `six_month_bank_statement`. `cancelled_cheque` may exist as application-document metadata but is
+  not required for the application-stage checklist.
+- 005D upload creates versioned metadata rows (`submission_status = submitted`,
+  initial `verification_status = pending`), verification supports `pending`, `verified`, and
+  `rejected`, and duplicate document type/party uploads preserve history by creating a new version
+  row. 005E should use the latest version per mandatory item and treat only `verified` as complete
+  unless a source pass finds a stronger accepted-status mapping.
+- 005D audit actions are `applications.application_document.attached` and
+  `applications.application_document.verified`, both metadata-only. 005E completeness audit
+  payloads must continue to omit raw file bytes, storage keys, checksums, full PAN/Aadhaar/bank
+  values, encrypted tokens, and hashes.
+- A-039 records that 005D checklist refresh is currently read-derived with no persisted checklist
+  rows. If 005E adds persisted completeness decision/check history, keep it metadata-only and
+  source-backed; do not reinterpret refresh as a mutating checklist update without documenting the
+  source-backed permission/side effects.
 - 005C2 should already enforce object-level access for loan application detail/actions. 005E must
   reuse that same application object-access boundary for workbench reads and completeness actions.
 - Concretely, 005C2 exposed `applications.services.evaluate_application_object_access(...)` with
@@ -105,6 +129,12 @@ Specific validation to cover:
   cannot pass completeness again.
 - Completeness pass is blocked until all mandatory S12/005D checklist items are present and
   verified/accepted. Return item-level errors rather than silently generating a reference.
+- The item-level error payload should name the failing `document_type` codes from the 005D checklist
+  and distinguish at least missing metadata from non-verified/rejected latest metadata, without
+  exposing sensitive identity or file-storage values.
+- Completeness pass must call the existing
+  `applications.services.generate_reference_after_completeness_pass(...)` service rather than
+  writing sequence/register/application-reference facts directly.
 - Failed validation must not create partial sequence values on the application, register rows,
   workflow events, or audit rows.
 - Preserve sensitive-data boundaries: responses/audits must not include PAN, Aadhaar, full bank

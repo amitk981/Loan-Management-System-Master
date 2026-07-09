@@ -1,0 +1,70 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 11 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, communications, configurations, contenttypes, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying documents.0001_initial... OK
+  Applying members.0007_kycprofile_kycdocument_and_more... OK
+  Applying members.0008_cancelledcheque_bankaccount_and_more... OK
+  Applying applications.0001_initial... OK
+  Applying applications.0002_loanapplication_submitted_by_user... OK
+  Applying applications.0003_systemsequence_loanrequestregisterentry... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying scheduler.0001_initial... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_application_document_checklist_upload_and_verify_are_metadata_only (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_application_document_checklist_upload_and_verify_are_metadata_only) ... FAIL
+test_application_document_endpoints_enforce_permissions_scope_and_version_history (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_application_document_endpoints_enforce_permissions_scope_and_version_history) ... ERROR
+test_create_and_read_draft_returns_metadata_only_response_and_audit (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_create_and_read_draft_returns_metadata_only_response_and_audit) ... ok
+test_credit_manager_can_read_credit_assessment_application_by_domain_scope (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_credit_manager_can_read_credit_assessment_application_by_domain_scope) ... ok
+test_draft_endpoints_enforce_permissions_and_validation (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_draft_endpoints_enforce_permissions_and_validation) ... ok
+test_generate_reference_after_completeness_pass_creates_register_and_metadata_only_evidence (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_generate_reference_after_completeness_pass_creates_register_and_metadata_only_evidence) ... ok
+test_patch_updates_allowed_draft_fields_and_rejects_cross_member_references (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_patch_updates_allowed_draft_fields_and_rejects_cross_member_references) ... ok
+test_reference_generation_enforces_sequence_permission_state_and_duplicate_guards (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_reference_generation_enforces_sequence_permission_state_and_duplicate_guards) ... ok
+test_submit_draft_transitions_to_submitted_and_records_metadata_only_evidence (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_submit_draft_transitions_to_submitted_and_records_metadata_only_evidence) ... ok
+test_submit_enforces_permissions_required_facts_and_draft_only_transition (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_submit_enforces_permissions_required_facts_and_draft_only_transition) ... ok
+test_unrelated_same_permission_user_is_object_access_denied_without_side_effects (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_unrelated_same_permission_user_is_object_access_denied_without_side_effects) ... ok
+
+======================================================================
+ERROR: test_application_document_endpoints_enforce_permissions_scope_and_version_history (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_application_document_endpoints_enforce_permissions_scope_and_version_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_200049_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 750, in test_application_document_endpoints_enforce_permissions_scope_and_version_history
+    assert_error_envelope(self, missing_application.json(), "NOT_FOUND")
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 882, in _parse_json
+    raise ValueError(
+ValueError: Content-Type header is "text/html; charset=utf-8", not "application/json"
+
+======================================================================
+FAIL: test_application_document_checklist_upload_and_verify_are_metadata_only (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_application_document_checklist_upload_and_verify_are_metadata_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_200049_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 617, in test_application_document_checklist_upload_and_verify_are_metadata_only
+    self.assertEqual(checklist_response.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 11 tests in 33.824s
+
+FAILED (failures=1, errors=1)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

@@ -3,13 +3,16 @@ from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Max
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import (
+    ApplicationDocument,
     LoanApplication,
     LoanRequestRegisterEntry,
     SystemSequence,
 )
+from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.identity.modules.object_permissions import evaluate_object_access
@@ -26,7 +29,36 @@ APPLICATION_CREATE_PERMISSION = "applications.loan_application.create"
 APPLICATION_UPDATE_PERMISSION = "applications.loan_application.update"
 APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
 APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_check"
+APPLICATION_DOCUMENT_UPLOAD_PERMISSION = "applications.document.upload"
+APPLICATION_DOCUMENT_VERIFY_PERMISSION = "applications.document.verify"
 LOAN_APPLICATION_REFERENCE_SEQUENCE_CODE = "loan_application_reference"
+APPLICATION_DOCUMENT_ATTACH_AUDIT_ACTION = "applications.application_document.attached"
+APPLICATION_DOCUMENT_VERIFY_AUDIT_ACTION = "applications.application_document.verified"
+APPLICATION_DOCUMENT_TYPES = {
+    "loan_application_form",
+    "borrower_pan",
+    "borrower_aadhaar_ovd",
+    "nominee_pan",
+    "nominee_aadhaar_ovd",
+    "share_certificate_copy",
+    "land_document_7_12",
+    "crop_plan",
+    "six_month_bank_statement",
+    "cancelled_cheque",
+}
+REQUIRED_APPLICATION_DOCUMENT_TYPES = (
+    "loan_application_form",
+    "borrower_pan",
+    "borrower_aadhaar_ovd",
+    "nominee_pan",
+    "nominee_aadhaar_ovd",
+    "share_certificate_copy",
+    "land_document_7_12",
+    "crop_plan",
+    "six_month_bank_statement",
+)
+APPLICATION_DOCUMENT_PARTY_TYPES = ("borrower", "nominee", "witness")
+APPLICATION_DOCUMENT_VERIFICATION_STATUSES = ("pending", "verified", "rejected")
 APPLICATION_TRANSITIONS = (
     TransitionDefinition(
         entity_type="loan_application",
@@ -92,6 +124,14 @@ def user_can_complete_check_applications(user):
     return APPLICATION_COMPLETE_CHECK_PERMISSION in auth_service.effective_permission_codes(user)
 
 
+def user_can_upload_application_documents(user):
+    return APPLICATION_DOCUMENT_UPLOAD_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_verify_application_documents(user):
+    return APPLICATION_DOCUMENT_VERIFY_PERMISSION in auth_service.effective_permission_codes(user)
+
+
 def evaluate_application_object_access(application, actor, required_permission, actor_permissions=None):
     permissions = actor_permissions or auth_service.effective_permission_codes(actor)
     allow_global = _has_credit_manager_domain_access(application, actor)
@@ -134,6 +174,21 @@ def get_application(application_id):
             "loan_request_register_entry",
         )
         .filter(loan_application_id=application_id)
+        .first()
+    )
+
+
+def get_application_document(application_document_id):
+    return (
+        ApplicationDocument.objects.select_related(
+            "loan_application",
+            "loan_application__member",
+            "document_file",
+            "created_by_user",
+            "updated_by_user",
+            "verified_by_user",
+        )
+        .filter(application_document_id=application_document_id)
         .first()
     )
 
@@ -330,6 +385,152 @@ def generate_reference_after_completeness_pass(
     return application
 
 
+def list_application_documents(application):
+    return (
+        ApplicationDocument.objects.select_related(
+            "document_file",
+            "created_by_user",
+            "updated_by_user",
+            "verified_by_user",
+        )
+        .filter(loan_application=application)
+        .order_by("document_type", "party_type", "party_id", "version_number")
+    )
+
+
+@transaction.atomic
+def attach_application_document(
+    application,
+    payload,
+    actor,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+):
+    if application.application_status == LoanApplication.STATUS_DRAFT:
+        raise LoanApplicationValidationError(
+            {"application_status": "Documents can be attached only after application submit."}
+        )
+    cleaned = _clean_application_document_payload(payload)
+    latest_version = (
+        ApplicationDocument.objects.filter(
+            loan_application=application,
+            document_type=cleaned["document_type"],
+            party_type=cleaned["party_type"],
+            party_id=cleaned["party_id"],
+        ).aggregate(max_version=Max("version_number"))["max_version"]
+        or 0
+    )
+    now = timezone.now()
+    application_document = ApplicationDocument.objects.create(
+        loan_application=application,
+        document_type=cleaned["document_type"],
+        party_type=cleaned["party_type"],
+        party_id=cleaned["party_id"],
+        document_file=cleaned["document_file"],
+        required_flag=cleaned["document_type"] in REQUIRED_APPLICATION_DOCUMENT_TYPES,
+        submission_status=ApplicationDocument.SUBMISSION_SUBMITTED,
+        verification_status=ApplicationDocument.VERIFICATION_PENDING,
+        remarks=cleaned["remarks"],
+        version_number=latest_version + 1,
+        created_by_user=actor,
+        updated_by_user=actor,
+        updated_at=now,
+    )
+    _audit_application_document(
+        application_document,
+        actor,
+        APPLICATION_DOCUMENT_ATTACH_AUDIT_ACTION,
+        None,
+        request_ip,
+        request_user_agent,
+        request_id,
+    )
+    return application_document
+
+
+@transaction.atomic
+def verify_application_document(
+    application_document,
+    payload,
+    actor,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+):
+    if application_document.submission_status != ApplicationDocument.SUBMISSION_SUBMITTED:
+        raise LoanApplicationValidationError(
+            {"submission_status": "Only submitted document metadata can be verified."}
+        )
+    status = (payload.get("verification_status") or "").strip().lower()
+    errors = {}
+    if status not in APPLICATION_DOCUMENT_VERIFICATION_STATUSES:
+        errors["verification_status"] = "Must be one of pending, verified, rejected."
+    unknown = set(payload.keys()) - {"verification_status", "remarks"}
+    errors.update({field: "Unknown field." for field in sorted(unknown)})
+    if errors:
+        raise LoanApplicationValidationError(errors)
+
+    old_value_json = _application_document_audit_snapshot(application_document)
+    now = timezone.now()
+    application_document.verification_status = status
+    application_document.remarks = _optional_text(payload.get("remarks"))
+    application_document.verified_by_user = actor
+    application_document.verified_at = now
+    application_document.updated_by_user = actor
+    application_document.updated_at = now
+    application_document.save()
+    _audit_application_document(
+        application_document,
+        actor,
+        APPLICATION_DOCUMENT_VERIFY_AUDIT_ACTION,
+        old_value_json,
+        request_ip,
+        request_user_agent,
+        request_id,
+    )
+    return application_document
+
+
+def build_document_checklist(application):
+    latest_by_type = {}
+    documents = list_application_documents(application)
+    for application_document in documents:
+        current = latest_by_type.get(application_document.document_type)
+        if current is None or application_document.version_number > current.version_number:
+            latest_by_type[application_document.document_type] = application_document
+
+    items = []
+    for document_type in REQUIRED_APPLICATION_DOCUMENT_TYPES:
+        latest = latest_by_type.get(document_type)
+        if latest is None:
+            items.append(
+                {
+                    "document_type": document_type,
+                    "required_flag": True,
+                    "submission_status": ApplicationDocument.SUBMISSION_PENDING,
+                    "verification_status": ApplicationDocument.VERIFICATION_PENDING,
+                    "latest_application_document_id": None,
+                    "latest_version_number": None,
+                }
+            )
+            continue
+        items.append(
+            {
+                "document_type": document_type,
+                "required_flag": True,
+                "submission_status": latest.submission_status,
+                "verification_status": latest.verification_status,
+                "latest_application_document_id": str(latest.application_document_id),
+                "latest_version_number": latest.version_number,
+            }
+        )
+    return {
+        "loan_application_id": str(application.loan_application_id),
+        "items": items,
+    }
+
+
 def serialize_application(application):
     register_entry = getattr(application, "loan_request_register_entry", None)
     return {
@@ -364,6 +565,34 @@ def serialize_application(application):
         if application.updated_by_user_id
         else None,
         "loan_request_register_entry": _register_summary(register_entry),
+    }
+
+
+def serialize_application_document(application_document):
+    return {
+        "application_document_id": str(application_document.application_document_id),
+        "loan_application_id": str(application_document.loan_application_id),
+        "document_type": application_document.document_type,
+        "party_type": application_document.party_type,
+        "party_id": str(application_document.party_id)
+        if application_document.party_id
+        else None,
+        "document_file": _document_file_summary(application_document.document_file),
+        "required_flag": application_document.required_flag,
+        "submission_status": application_document.submission_status,
+        "verification_status": application_document.verification_status,
+        "verified_by_user_id": str(application_document.verified_by_user_id)
+        if application_document.verified_by_user_id
+        else None,
+        "verified_at": _datetime(application_document.verified_at),
+        "remarks": application_document.remarks,
+        "version_number": application_document.version_number,
+        "created_at": _datetime(application_document.created_at),
+        "created_by_user_id": str(application_document.created_by_user_id),
+        "updated_at": _datetime(application_document.updated_at),
+        "updated_by_user_id": str(application_document.updated_by_user_id)
+        if application_document.updated_by_user_id
+        else None,
     }
 
 
@@ -504,6 +733,46 @@ def _clean_payload(payload, *, require_member):
     return cleaned
 
 
+def _clean_application_document_payload(payload):
+    unknown = set(payload.keys()) - {
+        "document_type",
+        "party_type",
+        "party_id",
+        "document_file_id",
+        "remarks",
+    }
+    errors = {field: "Unknown field." for field in sorted(unknown)}
+    document_type = (payload.get("document_type") or "").strip().lower()
+    party_type = (payload.get("party_type") or "").strip().lower()
+    document_file_id = _parse_uuid("document_file_id", payload.get("document_file_id"), errors)
+    party_id = _optional_uuid("party_id", payload.get("party_id"), errors)
+
+    if not document_type:
+        errors["document_type"] = "This field is required."
+    elif document_type not in APPLICATION_DOCUMENT_TYPES:
+        errors["document_type"] = "Unsupported application document type."
+    if not party_type:
+        errors["party_type"] = "This field is required."
+    elif party_type not in APPLICATION_DOCUMENT_PARTY_TYPES:
+        errors["party_type"] = "Must be one of borrower, nominee, witness."
+
+    document_file = None
+    if document_file_id:
+        document_file = DocumentFile.objects.filter(document_id=document_file_id).first()
+        if document_file is None:
+            errors["document_file_id"] = "Document file was not found."
+
+    if errors:
+        raise LoanApplicationValidationError(errors)
+    return {
+        "document_type": document_type,
+        "party_type": party_type,
+        "party_id": party_id,
+        "document_file": document_file,
+        "remarks": _optional_text(payload.get("remarks")),
+    }
+
+
 def _assign_fields(application, cleaned):
     for field in (
         "required_loan_amount",
@@ -571,6 +840,29 @@ def _audit_application(
     )
 
 
+def _audit_application_document(
+    application_document,
+    actor,
+    action,
+    old_value_json,
+    request_ip,
+    request_user_agent,
+    request_id,
+):
+    new_value_json = _application_document_audit_snapshot(application_document)
+    new_value_json["request_id"] = request_id
+    AuditLog.objects.create(
+        actor_user=actor,
+        action=action,
+        entity_type="application_document",
+        entity_id=application_document.application_document_id,
+        old_value_json=old_value_json,
+        new_value_json=new_value_json,
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+
+
 def _audit_snapshot(application):
     return {
         "loan_application_id": str(application.loan_application_id),
@@ -591,6 +883,28 @@ def _audit_snapshot(application):
         "cancelled_cheque_id": str(application.cancelled_cheque_id)
         if application.cancelled_cheque_id
         else None,
+    }
+
+
+def _application_document_audit_snapshot(application_document):
+    return {
+        "application_document_id": str(application_document.application_document_id),
+        "loan_application_id": str(application_document.loan_application_id),
+        "document_type": application_document.document_type,
+        "party_type": application_document.party_type,
+        "party_id": str(application_document.party_id)
+        if application_document.party_id
+        else None,
+        "document_file_id": str(application_document.document_file_id),
+        "required_flag": application_document.required_flag,
+        "submission_status": application_document.submission_status,
+        "verification_status": application_document.verification_status,
+        "verified_by_user_id": str(application_document.verified_by_user_id)
+        if application_document.verified_by_user_id
+        else None,
+        "verified_at": _datetime(application_document.verified_at),
+        "remarks": application_document.remarks,
+        "version_number": application_document.version_number,
     }
 
 
@@ -705,6 +1019,17 @@ def _register_summary(register_entry):
         "documentation_status": register_entry.documentation_status,
         "disbursement_status": register_entry.disbursement_status,
         "created_at": _datetime(register_entry.created_at),
+    }
+
+
+def _document_file_summary(document):
+    return {
+        "document_id": str(document.document_id),
+        "file_name": document.file_name,
+        "mime_type": document.mime_type,
+        "file_size_bytes": document.file_size_bytes,
+        "sensitivity_level": document.sensitivity_level,
+        "uploaded_at": _datetime(document.uploaded_at),
     }
 
 

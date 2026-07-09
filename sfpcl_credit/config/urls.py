@@ -38,6 +38,26 @@ urlpatterns = [
         application_views.loan_application_generate_reference,
         name="loan-application-generate-reference",
     ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/application-documents/",
+        application_views.loan_application_documents,
+        name="loan-application-documents",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/document-checklist/",
+        application_views.loan_application_document_checklist,
+        name="loan-application-document-checklist",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/document-checklist/refresh/",
+        application_views.loan_application_document_checklist,
+        name="loan-application-document-checklist-refresh",
+    ),
+    path(
+        "api/v1/application-documents/<uuid:application_document_id>/verify/",
+        application_views.application_document_verify,
+        name="application-document-verify",
+    ),
     path("api/v1/dashboard/", dashboard_views.dashboard_summary, name="dashboard-summary"),
     path("api/v1/admin/users/", admin_views.user_list, name="admin-user-list"),
     path(

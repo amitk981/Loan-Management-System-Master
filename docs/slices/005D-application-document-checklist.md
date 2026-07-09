@@ -1,7 +1,7 @@
 # Slice 005D: Application Document Checklist
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 005: Loan Application Intake, Documents, Completeness, and Deficiencies

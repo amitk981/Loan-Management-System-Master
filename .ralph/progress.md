@@ -1,5 +1,29 @@
 # Ralph Progress Log
 
+## 2026-07-09 20:00:49 - 2026-07-09_200049_normal_run
+- Agent tool used: codex
+- Slice attempted: 005D-application-document-checklist
+- Summary: Implemented application-document metadata and derived checklist APIs for submitted loan
+  applications. Added `application_documents` with document-file links, party facts, required flag,
+  submission/verification statuses, verifier stamps, remarks, and version history. Added
+  application document list/upload, document verify, checklist read, and read-derived checklist
+  refresh endpoints. Endpoints enforce global permission first, preserve `404 NOT_FOUND` for
+  missing application/document metadata, then reuse
+  `applications.services.evaluate_application_object_access(...)`; unrelated same-permission users
+  receive `403 OBJECT_ACCESS_DENIED` with no document/audit writes. Successful upload/verify write
+  metadata-only audit rows. Updated API contracts, A-039, the Epic 005 digest, and sharpened 005E.
+- Tests run: TDD red regression for missing document/checklist routes; focused green loan
+  application API tests (11/11); backend `manage.py check`; backend tests (249/249);
+  `makemigrations --check --dry-run`; backend coverage 95% (floor 85); frontend
+  `npm run typecheck`; `npm run lint`; `npm test` (80/80); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-09_200049_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus API response examples.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005E-completeness-workbench`; it should evaluate the 005D mandatory checklist
+  item codes and call the existing reference-generation service only after all mandatory latest
+  metadata is verified.
+
 ## 2026-07-09 19:55:14 - 2026-07-09_193538_normal_run
 - Agent tool used: codex
 - Slice attempted: 005C2-application-object-access-hardening
@@ -1825,6 +1849,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_193538_normal_run/.ralph/runs/2026-07-09_193538_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_193538_normal_run/.ralph/runs/2026-07-09_193538_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 20:23:15 - 2026-07-09_200049_normal_run
+- Agent tool used: codex
+- Slice attempted: 005D-application-document-checklist
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_200049_normal_run/.ralph/runs/2026-07-09_200049_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_200049_normal_run/.ralph/runs/2026-07-09_200049_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

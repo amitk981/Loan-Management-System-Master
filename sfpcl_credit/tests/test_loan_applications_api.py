@@ -4,6 +4,7 @@ from uuid import uuid4
 from django.test import Client, TestCase
 from django.apps import apps
 
+from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import BankAccount, CancelledCheque, CropPlan, LandHolding, Member
 from sfpcl_credit.tests.api_contracts import assert_error_envelope, assert_success_envelope
@@ -15,6 +16,8 @@ APPLICATION_CREATE_PERMISSION = "applications.loan_application.create"
 APPLICATION_UPDATE_PERMISSION = "applications.loan_application.update"
 APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
 APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_check"
+APPLICATION_DOCUMENT_UPLOAD_PERMISSION = "applications.document.upload"
+APPLICATION_DOCUMENT_VERIFY_PERMISSION = "applications.document.verify"
 
 
 class LoanApplicationDraftApiTests(TestCase):
@@ -37,6 +40,14 @@ class LoanApplicationDraftApiTests(TestCase):
             APPLICATION_COMPLETE_CHECK_PERMISSION,
             "Mark completeness result",
         )
+        self.document_upload_permission = self._permission(
+            APPLICATION_DOCUMENT_UPLOAD_PERMISSION,
+            "Upload application documents",
+        )
+        self.document_verify_permission = self._permission(
+            APPLICATION_DOCUMENT_VERIFY_PERMISSION,
+            "Verify application documents",
+        )
         self.creator = self._user(
             "applications.creator@sfpcl.example",
             "CreatorPass123!",
@@ -45,6 +56,8 @@ class LoanApplicationDraftApiTests(TestCase):
             self.update_permission,
             self.submit_permission,
             self.complete_check_permission,
+            self.document_upload_permission,
+            self.document_verify_permission,
         )
         self.unrelated_actor = self._user(
             "applications.unrelated@sfpcl.example",
@@ -53,6 +66,7 @@ class LoanApplicationDraftApiTests(TestCase):
             self.update_permission,
             self.submit_permission,
             self.complete_check_permission,
+            self.document_upload_permission,
         )
         self.reader = self._user(
             "applications.reader@sfpcl.example",
@@ -592,6 +606,253 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(body["data"]["loan_application_id"], application_id)
         self.assertEqual(body["data"]["current_stage"], "credit_assessment")
 
+    def test_application_document_checklist_upload_and_verify_are_metadata_only(self):
+        application_id = self._create_and_submit_application()
+
+        checklist_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/document-checklist/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(checklist_response.status_code, 200)
+        checklist_body = checklist_response.json()
+        assert_success_envelope(self, checklist_body)
+        checklist_codes = {item["document_type"] for item in checklist_body["data"]["items"]}
+        self.assertEqual(
+            checklist_codes,
+            {
+                "loan_application_form",
+                "borrower_pan",
+                "borrower_aadhaar_ovd",
+                "nominee_pan",
+                "nominee_aadhaar_ovd",
+                "share_certificate_copy",
+                "land_document_7_12",
+                "crop_plan",
+                "six_month_bank_statement",
+            },
+        )
+        for item in checklist_body["data"]["items"]:
+            self.assertTrue(item["required_flag"])
+            self.assertEqual(item["submission_status"], "pending")
+            self.assertEqual(item["verification_status"], "pending")
+
+        document_file = self._document_file()
+        upload_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/application-documents/",
+            data={
+                "document_type": "borrower_pan",
+                "party_type": "borrower",
+                "party_id": str(self.member.member_id),
+                "document_file_id": str(document_file.document_id),
+                "remarks": "PAN copy received at branch.",
+            },
+            content_type="application/json",
+            headers={
+                **self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+                "X-Request-ID": "req-app-doc-upload",
+            },
+        )
+
+        self.assertEqual(upload_response.status_code, 200)
+        upload_body = upload_response.json()
+        assert_success_envelope(self, upload_body)
+        uploaded = upload_body["data"]
+        self.assertEqual(uploaded["loan_application_id"], application_id)
+        self.assertEqual(uploaded["document_type"], "borrower_pan")
+        self.assertEqual(uploaded["party_type"], "borrower")
+        self.assertEqual(uploaded["party_id"], str(self.member.member_id))
+        self.assertEqual(uploaded["document_file"]["document_id"], str(document_file.document_id))
+        self.assertEqual(uploaded["document_file"]["file_name"], "borrower-pan.pdf")
+        self.assertEqual(uploaded["submission_status"], "submitted")
+        self.assertEqual(uploaded["verification_status"], "pending")
+        self.assertEqual(uploaded["version_number"], 1)
+
+        list_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/application-documents/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(list_response.status_code, 200)
+        self.assertEqual(list_response.json()["data"]["items"], [uploaded])
+
+        upload_audit = AuditLog.objects.filter(
+            action="applications.application_document.attached"
+        ).get()
+        self.assertEqual(upload_audit.entity_type, "application_document")
+        self.assertEqual(str(upload_audit.entity_id), uploaded["application_document_id"])
+        self.assertEqual(upload_audit.new_value_json["loan_application_id"], application_id)
+        self.assertEqual(upload_audit.new_value_json["document_type"], "borrower_pan")
+        self.assertEqual(upload_audit.new_value_json["party_type"], "borrower")
+        self.assertEqual(upload_audit.new_value_json["document_file_id"], str(document_file.document_id))
+        self.assertEqual(upload_audit.new_value_json["request_id"], "req-app-doc-upload")
+
+        verify_response = self.client.post(
+            f"/api/v1/application-documents/{uploaded['application_document_id']}/verify/",
+            data={"verification_status": "verified", "remarks": "PAN name matches member profile."},
+            content_type="application/json",
+            headers={
+                **self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+                "X-Request-ID": "req-app-doc-verify",
+            },
+        )
+
+        self.assertEqual(verify_response.status_code, 200)
+        verified = verify_response.json()["data"]
+        self.assertEqual(verified["verification_status"], "verified")
+        self.assertEqual(verified["verified_by_user_id"], str(self.creator.user_id))
+        self.assertIsNotNone(verified["verified_at"])
+        self.assertEqual(verified["remarks"], "PAN name matches member profile.")
+
+        verify_audit = AuditLog.objects.filter(
+            action="applications.application_document.verified"
+        ).get()
+        self.assertEqual(str(verify_audit.entity_id), uploaded["application_document_id"])
+        self.assertEqual(verify_audit.old_value_json["verification_status"], "pending")
+        self.assertEqual(verify_audit.new_value_json["verification_status"], "verified")
+        self.assertEqual(verify_audit.new_value_json["request_id"], "req-app-doc-verify")
+
+        refreshed_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/document-checklist/refresh/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(refreshed_response.status_code, 200)
+        refreshed_pan = [
+            item
+            for item in refreshed_response.json()["data"]["items"]
+            if item["document_type"] == "borrower_pan"
+        ][0]
+        self.assertEqual(refreshed_pan["submission_status"], "submitted")
+        self.assertEqual(refreshed_pan["verification_status"], "verified")
+        self.assertEqual(refreshed_pan["latest_application_document_id"], uploaded["application_document_id"])
+
+        flattened = (
+            f"{checklist_body} {upload_body} {verify_response.json()} "
+            f"{upload_audit.new_value_json} {verify_audit.new_value_json}"
+        )
+        self.assertNotIn("member-pan-token", flattened)
+        self.assertNotIn("member-aadhaar-token", flattened)
+        self.assertNotIn("bank-token-123456789012", flattened)
+        self.assertNotIn("bank-hash-123456789012", flattened)
+        self.assertNotIn("doc-hash-secret", flattened)
+        self.assertNotIn("document-files/private/borrower-pan.pdf", flattened)
+
+    def test_application_document_endpoints_enforce_permissions_scope_and_version_history(self):
+        application_id = self._create_and_submit_application()
+        document_file = self._document_file()
+
+        missing_application = self.client.get(
+            f"/api/v1/loan-applications/{uuid4()}/document-checklist/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(missing_application.status_code, 404)
+        assert_error_envelope(self, missing_application.json(), "NOT_FOUND")
+
+        no_read = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/document-checklist/",
+            headers=self._headers("applications.plain@sfpcl.example", "PlainPass123!"),
+        )
+        self.assertEqual(no_read.status_code, 403)
+        assert_error_envelope(self, no_read.json(), "PERMISSION_DENIED")
+
+        no_upload = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/application-documents/",
+            data={
+                "document_type": "borrower_pan",
+                "party_type": "borrower",
+                "document_file_id": str(document_file.document_id),
+            },
+            content_type="application/json",
+            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
+        )
+        self.assertEqual(no_upload.status_code, 403)
+        assert_error_envelope(self, no_upload.json(), "PERMISSION_DENIED")
+
+        unrelated_headers = self._headers(
+            "applications.unrelated@sfpcl.example",
+            "UnrelatedPass123!",
+        )
+        denied_upload = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/application-documents/",
+            data={
+                "document_type": "borrower_pan",
+                "party_type": "borrower",
+                "document_file_id": str(document_file.document_id),
+            },
+            content_type="application/json",
+            headers=unrelated_headers,
+        )
+        self.assertEqual(denied_upload.status_code, 403)
+        assert_error_envelope(self, denied_upload.json(), "OBJECT_ACCESS_DENIED")
+        application_document_model = apps.get_model("applications", "ApplicationDocument")
+        self.assertEqual(application_document_model.objects.count(), 0)
+        self.assertEqual(
+            AuditLog.objects.filter(action="applications.application_document.attached").count(),
+            0,
+        )
+
+        first_upload = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/application-documents/",
+            data={
+                "document_type": "borrower_pan",
+                "party_type": "borrower",
+                "document_file_id": str(document_file.document_id),
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(first_upload.status_code, 200)
+        second_file = self._document_file(file_name="borrower-pan-v2.pdf")
+        second_upload = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/application-documents/",
+            data={
+                "document_type": "borrower_pan",
+                "party_type": "borrower",
+                "document_file_id": str(second_file.document_id),
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(second_upload.status_code, 200)
+        self.assertEqual(first_upload.json()["data"]["version_number"], 1)
+        self.assertEqual(second_upload.json()["data"]["version_number"], 2)
+        self.assertEqual(application_document_model.objects.count(), 2)
+        self.assertEqual(
+            AuditLog.objects.filter(action="applications.application_document.attached").count(),
+            2,
+        )
+
+        draft_response = self.client.post(
+            "/api/v1/loan-applications/",
+            data=self._draft_payload(declared_purpose="Draft document attempt"),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(draft_response.status_code, 200)
+        draft_id = draft_response.json()["data"]["loan_application_id"]
+        draft_upload = self.client.post(
+            f"/api/v1/loan-applications/{draft_id}/application-documents/",
+            data={
+                "document_type": "borrower_pan",
+                "party_type": "borrower",
+                "document_file_id": str(document_file.document_id),
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(draft_upload.status_code, 400)
+        assert_error_envelope(self, draft_upload.json(), "VALIDATION_ERROR")
+
+        unknown_document = self.client.post(
+            f"/api/v1/application-documents/{uuid4()}/verify/",
+            data={"verification_status": "verified"},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(unknown_document.status_code, 404)
+        assert_error_envelope(self, unknown_document.json(), "NOT_FOUND")
+
     def test_submit_enforces_permissions_required_facts_and_draft_only_transition(self):
         draft_response = self.client.post(
             "/api/v1/loan-applications/",
@@ -805,4 +1066,17 @@ class LoanApplicationDraftApiTests(TestCase):
             aadhaar_hash=f"{suffix}-member-aadhaar-hash",
             kyc_status="verified",
             default_status="no_default",
+        )
+
+    def _document_file(self, file_name="borrower-pan.pdf"):
+        return DocumentFile.objects.create(
+            file_name=file_name,
+            file_extension=".pdf",
+            mime_type="application/pdf",
+            file_size_bytes=256,
+            storage_provider="local",
+            storage_key=f"document-files/private/{file_name}",
+            checksum_sha256="doc-hash-secret",
+            uploaded_by_user=self.creator,
+            sensitivity_level="restricted",
         )
