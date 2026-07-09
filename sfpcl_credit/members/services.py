@@ -218,8 +218,6 @@ def create_nominee(member, payload, actor_user, request_ip="", request_user_agen
             "minor_flag": nominee.minor_flag,
             "kyc_status": nominee.kyc_status,
             "signature_required_flag": nominee.signature_required_flag,
-            "pan_hash": nominee.pan_hash,
-            "aadhaar_hash": nominee.aadhaar_hash,
         },
         ip_address=request_ip,
         user_agent=request_user_agent,
@@ -457,23 +455,7 @@ def _producer_profile(member):
 
 
 def _available_actions(member, user):
-    required_permission = "applications.loan_application.create"
-    permissions = auth_service.effective_permission_codes(user)
-    enabled = (
-        required_permission in permissions
-        and member.membership_status == "active"
-        and member.kyc_status == "verified"
-        and member.default_status == "no_default"
-    )
-    return [
-        {
-            "action_code": "create_loan_application",
-            "label": "Start Application",
-            "enabled": enabled,
-            "disabled_reason": None if enabled else "Member is not currently eligible for this action.",
-            "required_permission": required_permission,
-        }
-    ]
+    return []
 
 
 __all__ = [

@@ -4,7 +4,7 @@ from uuid import uuid4
 from django.test import Client, TestCase
 
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
-from sfpcl_credit.members.models import Member
+from sfpcl_credit.members.models import Member, Nominee
 from sfpcl_credit.tests.api_contracts import (
     assert_error_envelope,
     assert_pagination_shape,
@@ -186,7 +186,7 @@ class MemberNomineeApiTests(TestCase):
                 assert_error_envelope(self, body, code)
                 self.assertIn("date_of_birth", body["error"]["field_errors"])
 
-    def test_member_nominee_create_audits_metadata_without_plaintext_identity_values(self):
+    def test_member_nominee_create_audits_metadata_without_identity_values_or_hashes(self):
         response = self.client.post(
             self._url(),
             data=self._valid_payload(pan="KLMNO9876P", aadhaar="987698769876"),
@@ -200,9 +200,28 @@ class MemberNomineeApiTests(TestCase):
         self.assertEqual(str(audit.entity_id), nominee_id)
         self.assertEqual(audit.entity_type, "nominee")
         self.assertEqual(audit.new_value_json["member_id"], str(self.member.member_id))
+        self.assertEqual(audit.new_value_json["nominee_name"], "Sita Patil")
+        self.assertIn("age_at_application", audit.new_value_json)
+        self.assertEqual(audit.new_value_json["minor_flag"], False)
+        self.assertEqual(audit.new_value_json["kyc_status"], "pending")
+        self.assertEqual(audit.new_value_json["signature_required_flag"], True)
+        nominee = Nominee.objects.get(nominee_id=nominee_id)
+        self.assertTrue(nominee.pan_hash)
+        self.assertTrue(nominee.aadhaar_hash)
+        for forbidden_key in (
+            "pan",
+            "aadhaar",
+            "pan_hash",
+            "aadhaar_hash",
+            "pan_encrypted",
+            "aadhaar_encrypted",
+        ):
+            self.assertNotIn(forbidden_key, audit.new_value_json)
         serialized_audit = str(audit.new_value_json).lower()
         self.assertNotIn("klmno9876p", serialized_audit)
         self.assertNotIn("987698769876", serialized_audit)
+        self.assertNotIn(nominee.pan_hash.lower(), serialized_audit)
+        self.assertNotIn(nominee.aadhaar_hash.lower(), serialized_audit)
         self.assertEqual(WorkflowEvent.objects.count(), 0)
 
     def _valid_payload(self, **overrides):

@@ -161,11 +161,37 @@ class MemberProfileApiTests(TestCase):
         )
         self.assertIsNone(data["producer_institution_profile"])
         assert_available_actions_shape(self, data["available_actions"])
-        self.assertEqual(data["available_actions"][0]["action_code"], "create_loan_application")
-        self.assertTrue(data["available_actions"][0]["enabled"])
+        self.assertEqual(data["available_actions"], [])
         serialized = str(data).lower()
         for forbidden in ("pan_encrypted", "aadhaar_encrypted", "pan_hash", "aadhaar_hash", "abcde1234f", "123456789012"):
             self.assertNotIn(forbidden, serialized)
+
+    def test_member_profile_does_not_derive_loan_start_actions_from_member_statuses(self):
+        status_cases = [
+            ("active", "verified", "no_default"),
+            ("inactive", "verified", "no_default"),
+            ("active", "missing", "no_default"),
+            ("active", "verified", "in_default"),
+        ]
+
+        for membership_status, kyc_status, default_status in status_cases:
+            with self.subTest(
+                membership_status=membership_status,
+                kyc_status=kyc_status,
+                default_status=default_status,
+            ):
+                member = self._member(
+                    membership_status=membership_status,
+                    kyc_status=kyc_status,
+                    default_status=default_status,
+                    folio_number=f"FOL-{uuid.uuid4()}",
+                )
+                response = self.client.get(self._url(member.member_id), headers=self._headers())
+
+                self.assertEqual(response.status_code, 200)
+                data = response.json()["data"]
+                assert_available_actions_shape(self, data["available_actions"])
+                self.assertEqual(data["available_actions"], [])
 
     def test_member_profile_returns_not_found_for_unknown_or_deleted_member(self):
         for member_id in (uuid.uuid4(), self.deleted.member_id):

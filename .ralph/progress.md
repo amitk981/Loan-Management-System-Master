@@ -1,5 +1,28 @@
 # Ralph Progress Log
 
+## 2026-07-09 12:08:45 - 2026-07-09_120845_normal_run
+- Agent tool used: codex
+- Slice attempted: 004D2-member-profile-and-nominee-contract-hardening
+- Summary: Closed the two architecture-review findings from `2026-07-09_114836_architecture_review`.
+  Nominee creation still stores protected identity tokens and keyed hashes on the nominee row for
+  duplicate/search support, but `members.nominee.created` audit metadata now excludes PAN/Aadhaar
+  plaintext, encrypted-token keys, hash keys, and submitted identity-derived hash values. Member
+  profile detail now returns neutral `available_actions: []` and no longer derives
+  `create_loan_application` availability from member/KYC/default status or the caller's application
+  create permission before 005A/eligibility slices own those rules. API contracts and Epic 004
+  digest were updated. Queue sharpened: `004E` witness validation is blocked until shareholding and
+  loan-application prerequisites exist, and `004F` shareholding now follows 004D2.
+- Tests run: nominee audit TDD red/green; member profile action TDD red/green; combined hardening
+  regressions (14/14); backend `manage.py check`; backend tests (208/208);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend `npm run
+  typecheck`; `npm run lint`; `npm test` (65/65); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_120845_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `004F-shareholding-and-share-certificate-records`; keep `004E` blocked until
+  both persisted shareholding facts and a real loan-application boundary exist.
+
 ## 2026-07-09 12:04:18 - 2026-07-09_114836_architecture_review
 - Agent tool used: codex
 - Slice attempted: architecture-review
@@ -1318,6 +1341,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_114836_architecture_review/.ralph/runs/2026-07-09_114836_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_114836_architecture_review/.ralph/runs/2026-07-09_114836_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 12:29:50 - 2026-07-09_120845_normal_run
+- Agent tool used: codex
+- Slice attempted: 004D2-member-profile-and-nominee-contract-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_120845_normal_run/.ralph/runs/2026-07-09_120845_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_120845_normal_run/.ralph/runs/2026-07-09_120845_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

@@ -134,3 +134,21 @@ before implementation.
   within one slice alongside the shareholding API; otherwise split certificates into a follow-up.
 - `auth-permissions.md` maps shareholding endpoints to `members.shareholding.read`,
   `members.shareholding.create`, and `members.shareholding.update`.
+
+## 004D2 Contract-Hardening Extracts
+- `auth-permissions.md` §30.2 requires actor/action/entity/old/new values/request/IP/user-agent
+  audit contents, and §30.3 AUD-005/AUD-006 allows only masked values or metadata, not sensitive
+  data values, in audit logs.
+- `api-contracts.md` §13.3 shows member-detail `available_actions[]`, and §44 says detail endpoints
+  may return action availability for frontend usability, but the backend remains the source of
+  workflow gates. 004D2 keeps member profile detail neutral by returning `available_actions: []`
+  until 005A and later eligibility slices own loan-start actions and blockers.
+- `api-contracts.md` §14.1-§14.3 plus local API contracts keep nominee PAN/Aadhaar required,
+  validated, stored as protected tokens plus keyed hashes, and returned masked. 004D2 removes
+  nominee PAN/Aadhaar plaintext, encrypted token keys, hash keys, and submitted identity-derived hash
+  values from `members.nominee.created` audit metadata only; stored hash columns stay unchanged for
+  duplicate/search support.
+- Queue sharpening on 2026-07-09: 004E witness validation is blocked until persisted
+  shareholding/shareholder facts and a real loan-application boundary exist. 004F shareholding now
+  follows 004D2 directly so witness verification can later resolve against real facts instead of a
+  member-level or boolean-only stub.

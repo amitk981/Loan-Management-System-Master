@@ -1,35 +1,48 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-09_114836_architecture_review
+2026-07-09_120845_normal_run
 
 ## Current Status
-Architecture review completed after `004A` through `004D`. All review-run backend and frontend gates
-passed. The review found two Medium contract/spec issues that should be corrected before witness
-work resumes, so the next queued slice is now
-`004D2-member-profile-and-nominee-contract-hardening`; `004E` depends on it.
+`004D2-member-profile-and-nominee-contract-hardening` completed successfully. It closed both Medium
+findings from the `2026-07-09_114836_architecture_review`.
 
 ## What Completed
-- Appended architecture-review findings to `docs/working/REVIEW_FINDINGS.md`.
-- Created `docs/slices/004D2-member-profile-and-nominee-contract-hardening.md`.
-- Sharpened `004E-witness-shareholder-validation` to depend on `004D2`.
-- Reset architecture-review cadence in `.ralph/state.json`.
+- Hardened nominee creation audit metadata: `members.nominee.created` still records actor/entity,
+  member ID, nominee ID, nominee name, age/minor/KYC/signature metadata, IP, and user agent, but no
+  PAN/Aadhaar plaintext, encrypted-token keys, hash keys, or submitted identity-derived hash values.
+- Kept nominee stored protected tokens and keyed hashes unchanged for duplicate/search support.
+- Changed member profile detail to return neutral `available_actions: []`; it no longer infers
+  `create_loan_application` availability from `membership_status`, `kyc_status`, `default_status`,
+  or `applications.loan_application.create`.
+- Updated `docs/working/API_CONTRACTS.md` and the Epic 004 digest with the corrected behavior.
+- Sharpened the queue: `004E-witness-shareholder-validation` is now blocked until shareholding and
+  loan-application prerequisites exist, and `004F-shareholding-and-share-certificate-records`
+  depends on `004D2` so it can run next.
 
 ## Evidence
-See `.ralph/runs/2026-07-09_114836_architecture_review/`.
+See `.ralph/runs/2026-07-09_120845_normal_run/`.
 
-Key logs under `evidence/terminal-logs/` include backend check/tests/migration/coverage and frontend
-typecheck/lint/tests/build. Backend tests: 207 passed. Frontend tests: 65 passed. Coverage: 96%,
-above the 85% floor. `git diff --check` and protected-path scan passed.
+Key logs under `evidence/terminal-logs/`:
+- `backend-nominee-red.log` and `backend-nominee-green.log`
+- `backend-member-profile-red.log` and `backend-member-profile-green.log`
+- `backend-member-hardening-regressions.log`
+- `backend-check.log`, `backend-tests.log`, `backend-makemigrations-check.log`,
+  `backend-coverage.log`
+- `frontend-typecheck.log`, `frontend-lint.log`, `frontend-tests.log`, `frontend-build.log`
+- `git-diff-check.log`
+
+Backend tests: 208 passed. Frontend tests: 65 passed. Coverage: 96%, above the 85% floor.
 
 ## Current Blocker
-None.
+`004E-witness-shareholder-validation` is blocked because witnesses are application documentation
+records and require both persisted shareholder/shareholding facts and a real loan-application
+boundary. Do not create a member-level witness API or a boolean-only shareholder verification stub.
 
 ## Notes For Next Run
-- Run `004D2-member-profile-and-nominee-contract-hardening` next. It must add failing-first tests
-  for nominee audit metadata excluding identity hash/encrypted/plain fields and for member profile
-  `available_actions[]` not encoding loan-start eligibility before `005A`/eligibility slices own
-  those rules.
-- After `004D2`, continue to `004E-witness-shareholder-validation` only if the required
-  loan-application and shareholding prerequisites exist; otherwise sharpen/reorder the queue instead
-  of creating a member-level witness API.
+- Run `004F-shareholding-and-share-certificate-records` next.
+- Keep witness validation blocked until after shareholding and loan application prerequisites exist.
+- `004F` should implement source §15.1-§15.2 shareholding list/create using
+  `members.shareholding.read` and `members.shareholding.create`, non-negative share-count
+  validation, pledged-count overflow validation, and available-share calculation. Share certificates
+  should be included only if they stay within one small slice; otherwise split them.

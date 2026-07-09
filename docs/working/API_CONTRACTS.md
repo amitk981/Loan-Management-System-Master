@@ -173,6 +173,10 @@ Rules:
   registered address, share and active-member shell fields, `pan`/`aadhaar` as
   `{ "masked": "...", "can_view_full": false }`, nullable type-specific profile objects, and
   §44-shaped `available_actions[]`.
+- `available_actions[]` is currently empty for member profile detail. The profile read does not infer
+  `create_loan_application` from `membership_status`, `kyc_status`, `default_status`, or
+  `applications.loan_application.create`; slice 005A and later eligibility slices own the
+  source-backed loan-start action and blockers.
 - For `member_type = individual_farmer`, `individual_profile` is either `null` when no row exists
   or contains `first_name`, nullable `middle_name`, `last_name`, nullable `gender`,
   `date_of_birth`, nullable `occupation`, `land_area_under_cultivation_acres`, `primary_crop`,
@@ -228,8 +232,8 @@ Rules:
   formats return `400 INVALID_PAN_FORMAT` or `400 INVALID_AADHAAR_FORMAT`.
 - Nominees below legal majority return `400 NOMINEE_MINOR_NOT_ALLOWED`; 004D uses age 18 per A-031.
 - Stored identity values use protected tokens plus keyed hashes. Responses and audit logs never
-  include full PAN/Aadhaar, `pan_encrypted`, `aadhaar_encrypted`, `pan_hash`, or `aadhaar_hash` as
-  plaintext identifiers.
+  include full PAN/Aadhaar, `pan_encrypted`, `aadhaar_encrypted`, `pan_hash`, `aadhaar_hash`, or
+  values derived from submitted PAN/Aadhaar identifiers.
 - Successful creation returns the nominee item in the standard success envelope, sets
   `kyc_status: "pending"`, `minor_flag: false`, stores the calculated `age_at_application`, and
   writes `members.nominee.created` audit metadata without a workflow event.

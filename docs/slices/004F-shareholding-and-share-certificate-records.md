@@ -14,7 +14,7 @@ Deliver this narrow capability as a small, testable Ralph implementation slice.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 004E
+- 004D2
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11
@@ -39,6 +39,9 @@ Implement `GET` and `POST /api/v1/members/{member_id}/shareholdings/` from `api-
 §15.1-§15.2. Include `PATCH /api/v1/shareholdings/{shareholding_id}/` only if it stays within this
 small slice; otherwise leave update to a separate follow-up. Return standard envelopes and paginate
 lists consistently with the existing member/nominee endpoints.
+
+This slice now precedes witness validation because `data-model.md` §10.5 and `screen-spec.md` S09
+require witness shareholder verification to resolve against real shareholder/shareholding facts.
 
 ## Database/Model Impact
 Add non-destructive model/migration changes for `shareholdings` from `data-model.md` §11.1:

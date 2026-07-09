@@ -1,0 +1,104 @@
+Creating test database for alias 'default'...
+Found 8 test(s).
+System check identified no issues (0 silenced).
+F.FFFF.....
+======================================================================
+FAIL: test_authenticated_user_can_retrieve_masked_member_profile_detail (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_authenticated_user_can_retrieve_masked_member_profile_detail)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_120845_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 164, in test_authenticated_user_can_retrieve_masked_member_profile_detail
+    self.assertEqual(data["available_actions"], [])
+AssertionError: Lists differ: [{'action_code': 'create_loan_application'[132 chars]te'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'action_code': 'create_loan_application', 'label': 'Start Application', 'enabled': True, 'disabled_reason': None, 'required_permission': 'applications.loan_application.create'}
+
++ []
+- [{'action_code': 'create_loan_application',
+-   'disabled_reason': None,
+-   'enabled': True,
+-   'label': 'Start Application',
+-   'required_permission': 'applications.loan_application.create'}]
+
+======================================================================
+FAIL: test_member_profile_does_not_derive_loan_start_actions_from_member_statuses (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_does_not_derive_loan_start_actions_from_member_statuses) (membership_status='active', kyc_status='verified', default_status='no_default')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_120845_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 194, in test_member_profile_does_not_derive_loan_start_actions_from_member_statuses
+    self.assertEqual(data["available_actions"], [])
+AssertionError: Lists differ: [{'action_code': 'create_loan_application'[132 chars]te'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'action_code': 'create_loan_application', 'label': 'Start Application', 'enabled': True, 'disabled_reason': None, 'required_permission': 'applications.loan_application.create'}
+
++ []
+- [{'action_code': 'create_loan_application',
+-   'disabled_reason': None,
+-   'enabled': True,
+-   'label': 'Start Application',
+-   'required_permission': 'applications.loan_application.create'}]
+
+======================================================================
+FAIL: test_member_profile_does_not_derive_loan_start_actions_from_member_statuses (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_does_not_derive_loan_start_actions_from_member_statuses) (membership_status='inactive', kyc_status='verified', default_status='no_default')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_120845_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 194, in test_member_profile_does_not_derive_loan_start_actions_from_member_statuses
+    self.assertEqual(data["available_actions"], [])
+AssertionError: Lists differ: [{'action_code': 'create_loan_application'[180 chars]te'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'action_code': 'create_loan_application', 'label': 'Start Application', 'enabled': False, 'disabled_reason': 'Member is not currently eligible for this action.', 'required_permission': 'applications.loan_application.create'}
+
++ []
+- [{'action_code': 'create_loan_application',
+-   'disabled_reason': 'Member is not currently eligible for this action.',
+-   'enabled': False,
+-   'label': 'Start Application',
+-   'required_permission': 'applications.loan_application.create'}]
+
+======================================================================
+FAIL: test_member_profile_does_not_derive_loan_start_actions_from_member_statuses (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_does_not_derive_loan_start_actions_from_member_statuses) (membership_status='active', kyc_status='missing', default_status='no_default')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_120845_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 194, in test_member_profile_does_not_derive_loan_start_actions_from_member_statuses
+    self.assertEqual(data["available_actions"], [])
+AssertionError: Lists differ: [{'action_code': 'create_loan_application'[180 chars]te'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'action_code': 'create_loan_application', 'label': 'Start Application', 'enabled': False, 'disabled_reason': 'Member is not currently eligible for this action.', 'required_permission': 'applications.loan_application.create'}
+
++ []
+- [{'action_code': 'create_loan_application',
+-   'disabled_reason': 'Member is not currently eligible for this action.',
+-   'enabled': False,
+-   'label': 'Start Application',
+-   'required_permission': 'applications.loan_application.create'}]
+
+======================================================================
+FAIL: test_member_profile_does_not_derive_loan_start_actions_from_member_statuses (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_does_not_derive_loan_start_actions_from_member_statuses) (membership_status='active', kyc_status='verified', default_status='in_default')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_120845_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 194, in test_member_profile_does_not_derive_loan_start_actions_from_member_statuses
+    self.assertEqual(data["available_actions"], [])
+AssertionError: Lists differ: [{'action_code': 'create_loan_application'[180 chars]te'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'action_code': 'create_loan_application', 'label': 'Start Application', 'enabled': False, 'disabled_reason': 'Member is not currently eligible for this action.', 'required_permission': 'applications.loan_application.create'}
+
++ []
+- [{'action_code': 'create_loan_application',
+-   'disabled_reason': 'Member is not currently eligible for this action.',
+-   'enabled': False,
+-   'label': 'Start Application',
+-   'required_permission': 'applications.loan_application.create'}]
+
+----------------------------------------------------------------------
+Ran 8 tests in 9.318s
+
+FAILED (failures=5)
+Destroying test database for alias 'default'...

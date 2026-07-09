@@ -1,7 +1,7 @@
 # Slice 004E: Witness Shareholder Validation
 
 ## Status
-Not Started
+Blocked
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master
@@ -14,7 +14,8 @@ Deliver this narrow capability as a small, testable Ralph implementation slice.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 004D2
+- 004F
+- 005A
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11
@@ -37,11 +38,15 @@ Do not start this slice until `004D2-member-profile-and-nominee-contract-hardeni
 member module must first remove premature loan-start action availability and sensitive nominee audit
 hashes.
 
-First confirm an owning loan-application boundary and persisted shareholding records exist by the
-time this slice runs. `data-model.md` §10.5 and `screen-spec.md` S09 make witnesses application
-documentation records, not member-profile records. Implement witness capture only against a real
-loan application and real member/shareholding records; do not create a member-level witness API or
-boolean-only verification stub.
+This slice is blocked until both prerequisites exist:
+
+- `004F` or an equivalent completed slice has persisted shareholding/shareholder facts.
+- `005A` or an equivalent completed slice has an owning loan-application table/API boundary.
+
+`data-model.md` §10.5 and `screen-spec.md` S09 make witnesses application documentation records,
+not member-profile records. Implement witness capture only against a real loan application and real
+member/shareholding records; do not create a member-level witness API or boolean-only verification
+stub.
 
 ## Database/Model Impact
 Add the data-model §10.5 witness fields only when their required loan-application FK can reference
@@ -66,10 +71,10 @@ completion must not treat the witness as complete until verification is complete
 caller-supplied `shareholder_verified_flag` without checking persisted shareholding facts.
 
 ## Test Cases
-TDD: existing-shareholder success, non-shareholder rejection, missing application/member,
-permission/object-access denial, encrypted identity persistence/no plaintext response leakage, and
-verification metadata. If application/shareholding prerequisites are still absent, sharpen/reorder
-the queue instead of implementing an unverifiable witness shell.
+TDD only after the prerequisites exist: existing-shareholder success, non-shareholder rejection,
+missing application/member, permission/object-access denial, encrypted identity persistence/no
+plaintext response leakage, and verification metadata. If application/shareholding prerequisites are
+still absent, keep this slice blocked instead of implementing an unverifiable witness shell.
 
 ## Visual Acceptance Criteria
 None.
