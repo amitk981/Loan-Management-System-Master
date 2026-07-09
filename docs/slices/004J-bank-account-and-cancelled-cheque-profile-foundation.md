@@ -16,6 +16,15 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 ## Depends On
 - 004I
 
+## Prior Slice Facts
+- 004H2 hardened duplicate member-party KYC profile creates with a stable `400 VALIDATION_ERROR`
+  response before the database uniqueness constraint. 004J should not reopen KYC profile creation,
+  document verification, or sensitive reveal contracts; it starts after 004I and should stay focused
+  on bank-account/cancelled-cheque profile facts.
+- Epic 004 digest records that bank account and cancelled-cheque values are sensitive fields:
+  full account numbers must be protected/encrypted plus hashed/last-four storage only, and responses
+  and audit metadata must expose masked/last-four values only.
+
 ## Source References
 - `docs/source/data-model.md` §12.3-§12.5 bank accounts, cancelled cheques, and bank verification
   letters

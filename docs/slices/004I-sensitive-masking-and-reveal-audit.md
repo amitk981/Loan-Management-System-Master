@@ -23,6 +23,10 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - 004H2 is expected to harden duplicate member-party KYC profile creates before this slice runs.
   Do not reopen that create-profile contract here except to keep the KYC tab from regressing while
   adding reveal controls.
+- 004H2 closes the duplicate KYC profile create contract with `400 VALIDATION_ERROR` on `party_id:
+  "A KYC profile already exists for this member."` and keeps `GET /api/v1/kyc-profiles/?party_type=member&party_id=...`
+  as the existing-profile read path. 004I must preserve that behavior while adding member
+  PAN/Aadhaar reveal only.
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11

@@ -588,6 +588,10 @@ def create_kyc_profile(payload, actor_user, request_ip="", request_user_agent=""
     member = get_accessible_member(values["party_id"])
     if member is None:
         return None
+    if KycProfile.objects.filter(party_type="member", party_id=member.member_id).exists():
+        raise ValidationError(
+            {"party_id": "A KYC profile already exists for this member."}
+        )
     with transaction.atomic():
         profile = KycProfile.objects.create(
             party_type="member",

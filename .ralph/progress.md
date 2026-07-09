@@ -1,5 +1,24 @@
 # Ralph Progress Log
 
+## 2026-07-09 14:36:51 - 2026-07-09_143651_normal_run
+- Agent tool used: codex
+- Slice attempted: 004H2-kyc-profile-duplicate-create-contract-hardening
+- Summary: Hardened duplicate member-party KYC profile creation. `POST /api/v1/kyc-profiles/`
+  now checks for an existing active member-party `KycProfile` before attempting create and returns
+  a standard `400 VALIDATION_ERROR` with `field_errors.party_id = "A KYC profile already exists for
+  this member."` Duplicate attempts leave exactly one profile and one `kyc.profile.created` audit
+  row. Updated the local API contract and sharpened 004I/004J with the closed duplicate-create
+  contract.
+- Tests run: duplicate-create TDD red/green; KYC API tests (6/6); backend `manage.py check`;
+  backend tests (226/226); `makemigrations --check --dry-run`; backend coverage 96% (floor 85);
+  frontend `npm run lint`; `npm run typecheck`; `npm test` (74/74); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-09_143651_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `004I-sensitive-masking-and-reveal-audit`; it now depends on the closed 004H2
+  duplicate-create contract and must preserve it while adding member PAN/Aadhaar reveal only.
+
 ## 2026-07-09 14:18:56 - 2026-07-09_141049_architecture_review
 - Agent tool used: codex
 - Slice attempted: architecture-review
@@ -1471,6 +1490,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_141049_architecture_review/.ralph/runs/2026-07-09_141049_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_141049_architecture_review/.ralph/runs/2026-07-09_141049_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 15:01:00 - 2026-07-09_143651_normal_run
+- Agent tool used: codex
+- Slice attempted: 004H2-kyc-profile-duplicate-create-contract-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_143651_normal_run/.ralph/runs/2026-07-09_143651_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_143651_normal_run/.ralph/runs/2026-07-09_143651_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

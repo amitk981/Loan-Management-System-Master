@@ -4,7 +4,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
-from sfpcl_credit.members.models import Member
+from sfpcl_credit.members.models import KycProfile, Member
 from sfpcl_credit.tests.api_contracts import assert_error_envelope, assert_success_envelope
 from sfpcl_credit.workflows.models import WorkflowEvent
 KYC_PROFILE_READ = "kyc.profile.read"
@@ -76,6 +76,41 @@ class MemberKycApiTests(TestCase):
         self.assertEqual(patch_response.status_code, 200)
         patch_body = patch_response.json()
         self.assertEqual(patch_body["data"]["risk_rating"], "medium")
+
+    def test_duplicate_kyc_profile_create_returns_validation_error_without_extra_rows(self):
+        first_response = self.client.post(
+            "/api/v1/kyc-profiles/",
+            data=self._profile_payload(),
+            content_type="application/json",
+            headers=self._headers("kyc.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(first_response.status_code, 200)
+
+        duplicate_response = self.client.post(
+            "/api/v1/kyc-profiles/",
+            data=self._profile_payload(risk_rating="medium"),
+            content_type="application/json",
+            headers=self._headers("kyc.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(duplicate_response.status_code, 400)
+        duplicate_body = duplicate_response.json()
+        assert_error_envelope(self, duplicate_body, "VALIDATION_ERROR")
+        self.assertEqual(
+            duplicate_body["error"]["field_errors"],
+            {"party_id": "A KYC profile already exists for this member."},
+        )
+        self.assertEqual(
+            KycProfile.objects.filter(
+                party_type="member", party_id=self.member.member_id
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(action="kyc.profile.created").count(),
+            1,
+        )
+
     def test_kyc_profile_requires_auth_permission_member_party_and_existing_member(self):
         unauthenticated = self.client.get(self._profile_list_url())
         self.assertEqual(unauthenticated.status_code, 401)

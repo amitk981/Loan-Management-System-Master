@@ -371,6 +371,10 @@ Rules:
 - Create requires `kyc.profile.create`; patch requires `kyc.profile.update`.
 - Create requires `party_type`, `party_id`, and `ckyc_consent_flag`; risk rating is limited to
   `low`, `medium`, or `high`.
+- Duplicate member-party create requests return `400 VALIDATION_ERROR` with `party_id:
+  "A KYC profile already exists for this member."`; clients should use
+  `GET /api/v1/kyc-profiles/?party_type=member&party_id={member_id}` to read the existing profile
+  and `PATCH /api/v1/kyc-profiles/{kyc_profile_id}/` to update it.
 - Successful create/update writes `kyc.profile.created` / `kyc.profile.updated` audit metadata only.
 
 `POST /api/v1/kyc-profiles/{kyc_profile_id}/documents/`
