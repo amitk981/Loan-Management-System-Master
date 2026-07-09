@@ -2,6 +2,101 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-10 01:01 - Architecture Review 2026-07-10_005716_architecture_review
+
+Reviewed completed product slices since the prior architecture review commit `49da479`:
+- `005F2-deficiency-return-status-contract-hardening` (`1edc65a`)
+- `005FA-member-portal-authentication` (`6c259f9`)
+- `005FB-member-portal-dashboard-profile-and-supply-view` (`da34735`)
+- `005G-member-portal-application-start-status` (`d1a12cf`)
+
+This review focused on the product diff, run evidence, the Epic 005 digest, working API contracts,
+and targeted source extracts for member-portal login/access, portal audit events, and M03 intake
+requirements. Broad source documents were not re-read beyond the sections needed to verify the
+findings below.
+
+### Finding 1 - High - Suspended portal accounts can still expose portal claims through existing sessions
+
+`005FA` correctly blocks a fresh login when `PortalAccount.can_authenticate()` is false, and
+`005FB`/`005G` portal data routes require an active portal account through
+`portal_member_for_user(...)`. The gap is the shared session/current-user path: `/auth/me` validates
+only the underlying `UserSession` and `User.status`, then `current_user_payload(...)` adds
+`member_id`, `portal_account_id`, `portal_role = borrower_member`, and portal own-data permissions
+for any linked `portal_account` regardless of account status
+(`sfpcl_credit/identity/modules/auth_service.py:138-240`). Access-token construction does the same
+(`sfpcl_credit/identity/modules/tokens.py:69-73`), and portal password change checks only
+`hasattr(user, "portal_account")` before allowing the action
+(`sfpcl_credit/identity/modules/portal_auth_service.py:403-432`).
+
+The source MP00 validation says inactive/suspended portal users are blocked
+(`docs/source/screen-spec-member-portal.md:231-233`), and §14.1 says inactive or unauthorised portal
+accounts are blocked (`docs/source/screen-spec-member-portal.md:1464-1469`). The reviewed tests
+cover login denial indirectly through `PortalAccount.can_authenticate()`, but do not suspend an
+account after login and prove the old access token loses `/auth/me`, password-change, and portal
+own-data authority.
+
+Corrective action: created
+`docs/slices/005G2-member-portal-session-and-audit-contract-hardening.md`, made `005H` depend on it,
+and added the session-status extract to the Epic 005 digest. The corrective slice should add
+failing-first tests for an active portal session whose `PortalAccount.status` changes to
+`suspended`, then centralise portal-session validity so old sessions are revoked or denied before
+portal claims/actions are returned.
+
+### Finding 2 - Medium - Portal audit rows use implementation action names instead of the source portal event contract
+
+The portal implementation writes meaningful metadata-only audit rows, but the action names diverge
+from the portal source table. Source §11 names `portal.login.success`, `portal.login.failed`,
+`portal.account.activated`, `portal.application.draft_created`, `portal.application.saved`,
+`portal.application.submitted`, and `portal.password.changed`
+(`docs/source/screen-spec-member-portal.md:1408-1428`). The current code/tests instead assert
+`portal.auth.activation.completed`, `portal.auth.login.succeeded`,
+`portal.auth.password_changed`, and reused internal `applications.loan_application.created` /
+`applications.loan_application.submitted` for borrower portal draft and submit
+(`sfpcl_credit/identity/views.py:168-182`,
+`sfpcl_credit/identity/modules/portal_auth_service.py:268-276`,
+`sfpcl_credit/applications/services.py:241-318`,
+`sfpcl_credit/tests/test_portal_member_api.py:375-381`).
+
+Reusing the internal application service is the right architecture, but audit action codes are part
+of the compliance/reporting contract. Without source-backed portal action names, later audit
+explorer, notices, and borrower self-service reviews cannot distinguish "borrower acted in the
+portal" from "staff acted through internal intake" without inferring from actor role.
+
+Corrective action: included this in `005G2`. The slice should keep staff routes on existing
+`applications.*` audit names, but let portal routes override or add source-backed portal audit
+actions for activation, login, password change, draft create/save, and submit. Tests should assert
+the source names and continue checking sensitive values, OTPs, token hashes, and raw document data
+are absent from audit payloads.
+
+### Finding 3 - Pass - Portal own-data object boundaries are carried through the reviewed slices
+
+The reviewed portal own-data endpoints consistently derive authority from the active
+`PortalAccount.member_id`, not client-supplied `member_id` values. `005FB` ignores query member IDs
+for dashboard/profile/supply, `005G` rejects cross-member existing applications with
+`403 OBJECT_ACCESS_DENIED`, and staff/non-portal tokens receive `403 PERMISSION_DENIED`. The tests
+include own/cross-member assertions and no-side-effect checks for cross-member create/read attempts.
+
+Corrective action: none beyond the session-status hardening in Finding 1.
+
+### Finding 4 - Pass - Test quality and source sequencing are substantive
+
+The reviewed runs include real red/green evidence and meaningful assertions: 005F2 covers
+persisted/API/audit/workflow returned-incomplete status and repeat-return side effects; 005FA covers
+activation, login claims, password-reset replay, session revocation, and password change; 005FB
+covers member-scoped profile/dashboard/supply masking; 005G covers own create/update/submit/list,
+cross-member denial, nullable reference numbers, and returned-incomplete portal status. Full gates
+passed in all reviewed runs.
+
+Corrective action: none.
+
+Functional-spec spot check: M03-FR-001/M03-FR-002/M03-FR-008/M03-FR-009 are now partially
+implemented for borrower portal initiation/save/submit and staff-created drafts; M03-FR-010 is
+represented by submitted state and SFPCL pending owner but still needs task-inbox/assignment work;
+M03-FR-011/M03-FR-012 were implemented by the previously reviewed completeness/deficiency slices
+and preserved by 005F2/005G. M03-FR-003 through M03-FR-007 remain partially deferred for nominee,
+signature, document upload, loan-limit, and full frontend intake wiring in queued slices and
+assumptions.
+
 ## 2026-07-09 21:38 - Architecture Review 2026-07-09_213305_architecture_review
 
 Reviewed completed product slices since the prior architecture review commit `1f30ed6`:

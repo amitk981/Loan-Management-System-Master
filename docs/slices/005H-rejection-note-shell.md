@@ -18,9 +18,12 @@ while preserving the intake workflow guarantees that references, registers, and 
 state are only created by their owning slices.
 
 ## Depends On
-- 005G
+- 005G2
 
 ## Prior Slice Facts To Preserve
+- 005G2 must close the portal session/audit hardening finding before this staff rejection-note
+  slice runs. Keep staff rejection-note audit actions staff-scoped and do not reuse portal action
+  names for internal staff work.
 - Official `LO...` reference generation remains owned by completeness pass; rejection-note work
   must not generate references, register rows, sequences, or appraisal state.
 - Returned deficient applications use `application_status = incomplete_returned`,
@@ -32,6 +35,8 @@ state are only created by their owning slices.
 - 005FB/005G portal endpoints derive member scope from the active `PortalAccount`; staff rejection
   note endpoints must continue to use staff authentication, global permission checks, and object
   access boundaries.
+- Suspended portal accounts must not be able to reach staff rejection-note APIs through old portal
+  sessions.
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11
@@ -116,6 +121,8 @@ state are only created by their owning slices.
 - Missing permission returns `403 PERMISSION_DENIED`; same-permission out-of-scope staff returns
   `403 OBJECT_ACCESS_DENIED`.
 - Borrower portal token cannot create/send rejection notes.
+- A suspended portal account token cannot create/send rejection notes and cannot receive portal
+  action availability through `/auth/me`.
 - Invalid state and duplicate/create-after-send cases create no rejection note, audit, workflow,
   register, reference, or sequence side effects.
 - Response/audit payloads do not contain PAN, Aadhaar, full bank account values, encrypted values,

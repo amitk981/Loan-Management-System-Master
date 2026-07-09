@@ -17,6 +17,9 @@ Staff create, review, and track real loan applications in the screens they alrea
 - 005H
 
 ## Prior Slice Facts To Preserve
+- 005G2 must close portal session/audit contract hardening before this staff frontend wiring runs.
+  Staff screens must remain on staff audit/action semantics; do not consume portal audit action
+  names or portal own-data permissions for staff intake flows.
 - 005G portal application endpoints are borrower own-data APIs only; staff screens must use the
   existing staff `/api/v1/loan-applications/` APIs and staff object-access rules, not portal routes.
 - Submitted applications may have no `LO...` reference until completeness pass generates it.
@@ -25,6 +28,9 @@ Staff create, review, and track real loan applications in the screens they alrea
   them as plain submitted applications.
 - Do not reintroduce `mockData.ts` application rows into Application List, New Application, or
   Application Detail once a screen is wired to backend data.
+- If staff UI surfaces audit/status history, distinguish internal staff application events from
+  borrower portal events. Portal actions such as `portal.application.submitted` are evidence that a
+  borrower acted through the portal, not a replacement for staff-side application audit actions.
 
 ## Source References
 - docs/source/screen-spec.md screens S10 (New Loan Application), S11 (Application Draft Review), S13 (Loan Request Register)

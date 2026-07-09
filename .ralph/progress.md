@@ -1,5 +1,26 @@
 # Ralph Progress Log
 
+## 2026-07-10 01:01:38 - 2026-07-10_005716_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed `005F2`, `005FA`, `005FB`, and `005G` since prior architecture-review commit
+  `49da479`. Appended findings to `docs/working/REVIEW_FINDINGS.md`. Found one High issue:
+  suspended portal accounts can still expose portal claims through existing `/auth/me` sessions
+  because shared current-user/token payload paths do not validate `PortalAccount.status`. Found one
+  Medium issue: portal audit rows use implementation/internal action names instead of the source
+  portal audit event names. Created corrective slice
+  `005G2-member-portal-session-and-audit-contract-hardening`, made `005H` depend on it, sharpened
+  `005I`, and added the review extract to the Epic 005 digest.
+- Tests run: backend `manage.py check`; backend tests (265/265); `makemigrations --check
+  --dry-run`; backend coverage 95% (floor 85); frontend `npm run lint`; `npm run typecheck`;
+  `npm test` (90/90); `npm run build`; `git diff --check`; protected-path scan.
+- Evidence saved: `.ralph/runs/2026-07-10_005716_architecture_review/`, with review-window,
+  source-extract, code-snippet, and gate logs under `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Low (review/docs-only), with one High corrective slice queued.
+- Next action: Run `005G2-member-portal-session-and-audit-contract-hardening`; after it passes,
+  continue with `005H-rejection-note-shell`.
+
 ## 2026-07-09 22:52:50 - 2026-07-09_222250_normal_run
 - Agent tool used: codex
 - Slice attempted: 005FA-member-portal-authentication
@@ -2075,6 +2096,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_002243_normal_run/.ralph/runs/2026-07-10_002243_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_002243_normal_run/.ralph/runs/2026-07-10_002243_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 01:26:43 - 2026-07-10_005716_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_005716_architecture_review/.ralph/runs/2026-07-10_005716_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_005716_architecture_review/.ralph/runs/2026-07-10_005716_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

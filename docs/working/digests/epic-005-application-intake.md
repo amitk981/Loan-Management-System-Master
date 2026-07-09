@@ -315,3 +315,24 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
 - Portal responses intentionally omit staff completeness/reference/return/resolve actions, PAN,
   Aadhaar, full bank-account values, encrypted values, token hashes, raw document contents, and
   staff-only document internals.
+
+## Architecture Review 2026-07-10 01:01 - Portal Session And Audit Contract
+- Reviewed slices 005F2, 005FA, 005FB, and 005G after prior architecture-review commit `49da479`.
+- Source portal login/access facts opened for this review:
+  - MP00 says inactive/suspended portal users are blocked.
+  - §14.1 says inactive or unauthorised portal accounts are blocked.
+  - §11 names portal-specific audit events including `portal.login.success`,
+    `portal.login.failed`, `portal.account.activated`, `portal.application.draft_created`,
+    `portal.application.saved`, `portal.application.submitted`, and `portal.password.changed`.
+- 005FA blocks suspended portal accounts at fresh login, and 005FB/005G portal data routes require
+  an active `PortalAccount` for their own-data scope. However, `/auth/me` and token/current-user
+  payload construction still add portal member claims for any linked portal account regardless of
+  `PortalAccount.status`; password-change also checks only that a portal account relation exists.
+  Corrective slice 005G2 should add a shared portal-session validity boundary and revoke/block old
+  sessions once the portal account is no longer active.
+- 005FA/005G audit rows currently use implementation names such as
+  `portal.auth.login.succeeded`, `portal.auth.activation.completed`,
+  `portal.auth.password_changed`, and reused internal `applications.loan_application.*` actions for
+  borrower portal draft/create/submit. Corrective slice 005G2 should align borrower portal audit
+  actions with the source portal event names while preserving existing internal staff audit action
+  names for staff routes.

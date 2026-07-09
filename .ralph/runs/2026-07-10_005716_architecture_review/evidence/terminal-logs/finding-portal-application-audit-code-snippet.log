@@ -1,0 +1,74 @@
+   236	        updated_by_user=actor,
+   237	        updated_at=timezone.now(),
+   238	    )
+   239	    _assign_fields(application, cleaned)
+   240	    application.save()
+   241	    _audit_application(
+   242	        application,
+   243	        actor,
+   244	        "applications.loan_application.created",
+   245	        None,
+   246	        request_ip,
+   247	        request_user_agent,
+   248	        request_id,
+   249	    )
+   250	    record_workflow_event(
+   251	        actor=actor,
+   252	        workflow_name="loan_application",
+   253	        entity_type="loan_application",
+   254	        entity_id=application.loan_application_id,
+   255	        from_state=None,
+   256	        to_state=LoanApplication.STATUS_DRAFT,
+   257	        trigger_reason="Draft application created.",
+   258	    )
+   259	    return application
+   260	
+   261	
+   262	@transaction.atomic
+   263	def update_draft(application, payload, actor, request_ip="", request_user_agent="", request_id=None):
+   264	    if application.application_status != LoanApplication.STATUS_DRAFT:
+   265	        raise LoanApplicationValidationError(
+   266	            {"application_status": "Only draft applications can be updated."}
+   267	        )
+   268	    cleaned = _clean_update_payload(payload, application.member)
+   269	    old_value_json = _audit_snapshot(application)
+   270	    for field, value in cleaned.items():
+   271	        setattr(application, field, value)
+   272	    application.updated_by_user = actor
+   273	    application.updated_at = timezone.now()
+   274	    application.save()
+   275	    _audit_application(
+   276	        application,
+   277	        actor,
+   278	        "applications.loan_application.updated",
+   279	        old_value_json,
+   280	        request_ip,
+   281	        request_user_agent,
+   282	        request_id,
+   292	    request_user_agent="",
+   293	    request_id=None,
+   294	    actor_permissions=None,
+   295	):
+   296	    transition = evaluate_transition(
+   297	        current_state=application.application_status,
+   298	        requested_action="submit",
+   299	        actor_permissions=actor_permissions or auth_service.effective_permission_codes(actor),
+   300	        transitions=APPLICATION_TRANSITIONS,
+   301	    )
+   302	    _validate_submit_facts(application)
+   303	    old_value_json = _audit_snapshot(application)
+   304	    application.application_status = transition.next_state
+   305	    application.submitted_at = timezone.now()
+   306	    application.submitted_by_user = actor
+   307	    application.updated_at = application.submitted_at
+   308	    application.updated_by_user = actor
+   309	    application.save()
+   310	    _audit_application(
+   311	        application,
+   312	        actor,
+   313	        transition.definition.audit_action,
+   314	        old_value_json,
+   315	        request_ip,
+   316	        request_user_agent,
+   317	        request_id,
+   318	    )
