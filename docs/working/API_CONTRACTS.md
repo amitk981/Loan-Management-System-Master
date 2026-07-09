@@ -361,7 +361,7 @@ Success data:
 {
   "loan_application_id": "uuid",
   "application_reference_number": null,
-  "application_status": "submitted",
+  "application_status": "incomplete_returned",
   "current_stage": "initial_loan_request",
   "completeness_status": "incomplete",
   "communication_mode": "email",
@@ -441,16 +441,19 @@ Rules:
   `applications.services.evaluate_application_object_access(...)` after global permission and
   `404` checks.
 - Return-with-deficiencies is limited to submitted applications that do not yet have an
-  `LO...` reference and do not have a loan request register entry. Draft and
-  reference-generated attempts return `409 INVALID_STATE_TRANSITION`.
+  `LO...` reference and do not have a loan request register entry. Draft, already-returned
+  `incomplete_returned`, and reference-generated attempts return `409 INVALID_STATE_TRANSITION`;
+  A-041 records the blocked repeat-return assumption because source docs do not define a repeat
+  return rule.
 - Return items must match current blocking 005E completeness facts. `missing_metadata` source facts
   become `deficiency_type = missing_document`; `not_verified` source facts become
   `deficiency_type = not_verified`. Empty selections, duplicate item codes, arbitrary item codes,
   missing communication mode/message, or unknown fields return `400 VALIDATION_ERROR`.
-- Successful return-with-deficiencies keeps `application_status = submitted`, sets
-  `completeness_status = incomplete`, creates open `deficiencies` rows, writes
+- Successful return-with-deficiencies sets `application_status = incomplete_returned`, keeps
+  `current_stage = initial_loan_request`, sets `completeness_status = incomplete`, creates open
+  `deficiencies` rows, writes
   `applications.loan_application.returned_with_deficiencies` audit metadata, and records a
-  `loan_application` workflow event from submitted to submitted with trigger reason
+  `loan_application` workflow event from submitted to incomplete_returned with trigger reason
   "Application returned with completeness deficiencies." It does not generate a reference, create a
   loan request register row, advance to credit assessment, or visibly advance the sequence.
 - Deficiency resolve closes only open rows and writes `applications.deficiency.resolved` audit

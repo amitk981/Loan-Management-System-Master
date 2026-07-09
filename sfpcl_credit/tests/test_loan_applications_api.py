@@ -1037,8 +1037,9 @@ class LoanApplicationDraftApiTests(TestCase):
         assert_success_envelope(self, body)
         data = body["data"]
         self.assertEqual(data["loan_application_id"], application_id)
-        self.assertEqual(data["application_status"], "submitted")
+        self.assertEqual(data["application_status"], "incomplete_returned")
         self.assertEqual(data["completeness_status"], "incomplete")
+        self.assertEqual(data["current_stage"], "initial_loan_request")
         self.assertIsNone(data["application_reference_number"])
         self.assertEqual(data["communication_mode"], "email")
         self.assertEqual(data["message"], "Please submit corrected documents to proceed.")
@@ -1065,6 +1066,11 @@ class LoanApplicationDraftApiTests(TestCase):
             deficiency_model.objects.filter(loan_application_id=application_id).count(),
             2,
         )
+        application_model = apps.get_model("applications", "LoanApplication")
+        persisted_application = application_model.objects.get(loan_application_id=application_id)
+        self.assertEqual(persisted_application.application_status, "incomplete_returned")
+        self.assertEqual(persisted_application.completeness_status, "incomplete")
+        self.assertEqual(persisted_application.current_stage, "initial_loan_request")
         register_model = apps.get_model("applications", "LoanRequestRegisterEntry")
         sequence_model = apps.get_model("applications", "SystemSequence")
         self.assertEqual(register_model.objects.count(), 0)
@@ -1074,6 +1080,8 @@ class LoanApplicationDraftApiTests(TestCase):
             action="applications.loan_application.returned_with_deficiencies"
         ).get()
         self.assertEqual(str(audit.entity_id), application_id)
+        self.assertEqual(audit.old_value_json["application_status"], "submitted")
+        self.assertEqual(audit.new_value_json["application_status"], "incomplete_returned")
         self.assertEqual(audit.new_value_json["completeness_status"], "incomplete")
         self.assertEqual(
             audit.new_value_json["deficiency_item_codes"],
@@ -1086,7 +1094,49 @@ class LoanApplicationDraftApiTests(TestCase):
         ).get()
         self.assertEqual(str(workflow_event.entity_id), application_id)
         self.assertEqual(workflow_event.from_state, "submitted")
-        self.assertEqual(workflow_event.to_state, "submitted")
+        self.assertEqual(workflow_event.to_state, "incomplete_returned")
+
+        detail_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertEqual(
+            detail_response.json()["data"]["application_status"],
+            "incomplete_returned",
+        )
+
+        repeat_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/return-with-deficiencies/",
+            data={
+                "communication_mode": "email",
+                "message": "Please correct the returned items.",
+                "items": [{"item_code": "borrower_pan"}],
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(repeat_response.status_code, 409)
+        assert_error_envelope(self, repeat_response.json(), "INVALID_STATE_TRANSITION")
+        self.assertEqual(
+            deficiency_model.objects.filter(loan_application_id=application_id).count(),
+            2,
+        )
+        self.assertEqual(register_model.objects.count(), 0)
+        self.assertEqual(sequence_model.objects.count(), 0)
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="applications.loan_application.returned_with_deficiencies"
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                entity_type="loan_application",
+                trigger_reason="Application returned with completeness deficiencies.",
+            ).count(),
+            1,
+        )
 
         flattened = f"{body} {list_response.json()} {audit.old_value_json} {audit.new_value_json}"
         self.assertNotIn("member-pan-token", flattened)

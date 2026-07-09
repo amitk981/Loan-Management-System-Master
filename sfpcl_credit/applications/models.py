@@ -8,6 +8,7 @@ from django.utils import timezone
 class LoanApplication(models.Model):
     STATUS_DRAFT = "draft"
     STATUS_SUBMITTED = "submitted"
+    STATUS_INCOMPLETE_RETURNED = "incomplete_returned"
     STATUS_REFERENCE_GENERATED = "reference_generated"
     STAGE_INITIAL = "initial_loan_request"
     STAGE_CREDIT_ASSESSMENT = "credit_assessment"
@@ -124,6 +125,7 @@ class LoanApplication(models.Model):
         if self.application_status not in {
             self.STATUS_DRAFT,
             self.STATUS_SUBMITTED,
+            self.STATUS_INCOMPLETE_RETURNED,
             self.STATUS_REFERENCE_GENERATED,
         }:
             raise ValidationError({"application_status": "Unsupported application status."})

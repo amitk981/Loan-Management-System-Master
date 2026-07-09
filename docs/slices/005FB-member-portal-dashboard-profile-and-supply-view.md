@@ -22,10 +22,14 @@ A borrower who logs in sees their real profile, applications, loans, alerts, and
 - 005F persists open/resolved deficiency rows for loan applications. MP03 pending actions should be
   able to count open deficiency actions for the logged-in member's own applications once those
   applications are visible, but 005FB must not implement application list/status screens from 005G.
-- 005F2 should have corrected returned deficiency applications to
-  `application_status = incomplete_returned`. Dashboard pending-action counts may use open
-  deficiency rows, but any application-status summaries exposed by 005FB must preserve that
-  returned-incomplete state rather than reporting the application as merely submitted.
+- 005F2 corrected returned deficiency applications to `application_status = incomplete_returned`
+  with `completeness_status = incomplete` and `current_stage = initial_loan_request`. Dashboard
+  pending-action counts may use open deficiency rows, but any application-status summaries exposed
+  by 005FB must preserve that returned-incomplete state rather than reporting the application as
+  merely submitted.
+- 005F2 blocks repeat staff return attempts from `incomplete_returned`; if 005FB exposes pending
+  action counts for returned applications, it must treat them as borrower/member rectification work,
+  not staff completeness actions.
 - Portal source snippets opened during 005F define MP03 dashboard widgets for Pending Actions and
   Notices, and MP04 as profile content. The portal must not expose staff-only completeness,
   reference-generation, or deficiency-resolution actions.

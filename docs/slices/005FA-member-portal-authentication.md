@@ -31,9 +31,14 @@ A member invited to the portal can activate their account, log in securely, reco
   `POST /api/v1/deficiencies/{deficiency_id}/resolve/`. Borrower portal auth must not grant those
   staff complete-check actions, but it must expose a member scope that future portal endpoints can
   use to read/respond only to the borrower's own returned applications.
-- 005F2 must correct returned deficiency applications to the source-backed
-  `application_status = incomplete_returned`. Portal auth must not depend on returned applications
-  still looking like plain `submitted` applications.
+- 005F2 corrected returned deficiency applications to the source-backed `application_status =
+  incomplete_returned`, kept `completeness_status = incomplete`, and kept `current_stage =
+  initial_loan_request`. Portal auth must not depend on returned applications still looking like
+  plain `submitted` applications.
+- 005F2 blocks repeat staff return attempts from `incomplete_returned` until a future source-backed
+  borrower resubmission flow defines the transition back to submitted/completeness review. Portal
+  auth must provide member scope only; it must not grant borrowers staff complete-check or repeat
+  return authority.
 - Member portal source access boundaries say borrowers can access their own profile, own loan
   applications, own documents, own loan accounts/repayments, own notices, and own grievances only.
   Treat every cross-member portal read/write as object-access denied.

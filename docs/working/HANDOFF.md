@@ -1,58 +1,51 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-09_213305_architecture_review
+2026-07-09_215632_normal_run
 
 ## Current Status
-Architecture review completed successfully for slices `005C2`, `005D`, `005E`, and `005F`.
+Slice `005F2-deficiency-return-status-contract-hardening` completed successfully.
 
-Finding:
-- Medium source-fidelity issue in 005F: returned deficiency applications currently keep
-  `application_status = submitted` while setting `completeness_status = incomplete`.
-- Source extracts opened in this review show `loan_application_status = incomplete_returned`
-  (`data-model.md` enum), the functional deficiency flow says the application enters an incomplete
-  state, and S12 says returned applications become `Incomplete - Returned to Applicant` or rejected.
+What changed:
+- Added `LoanApplication.STATUS_INCOMPLETE_RETURNED = "incomplete_returned"` and included it in
+  model validation.
+- `POST /api/v1/loan-applications/{loan_application_id}/return-with-deficiencies/` now persists
+  and returns `application_status = incomplete_returned`, `completeness_status = incomplete`, and
+  `current_stage = initial_loan_request`.
+- Audit metadata and the loan-application workflow event now record
+  `submitted -> incomplete_returned`.
+- Repeat returns from `incomplete_returned` remain blocked with standard
+  `409 INVALID_STATE_TRANSITION` and no duplicate deficiency/audit/workflow/register/reference or
+  sequence side effects. Assumption A-041 records this because source docs do not define repeat
+  returns before borrower resubmission.
+- API contract docs, Epic 005 digest, and the next portal slices were sharpened with the corrected
+  returned-incomplete contract.
 
-Corrective action queued:
-- Created `docs/slices/005F2-deficiency-return-status-contract-hardening.md`.
-- Made `005FA-member-portal-authentication` depend on `005F2`.
-- Sharpened `005FA`, `005FB`, and `docs/working/digests/epic-005-application-intake.md` with the
-  returned-incomplete status contract.
+Source facts used:
+- `docs/source/data-model.md` lists `loan_application_status = incomplete_returned`.
+- `docs/source/functional-spec.md` M03 deficiency flow says incomplete applications enter the
+  incomplete state and retain deficiency history.
+- `docs/source/screen-spec.md` S12 says returned applications become
+  `Incomplete - Returned to Applicant` or rejected.
 
-005F2 key requirements:
-- Add `LoanApplication.STATUS_INCOMPLETE_RETURNED = "incomplete_returned"`.
-- Successful return-with-deficiencies must persist and return `application_status =
-  incomplete_returned` plus `completeness_status = incomplete`.
-- Audit/workflow evidence should show `submitted -> incomplete_returned`.
-- Preserve 005F guarantees: no `LO...` reference, no loan request register row, no sequence
-  advancement, no credit-assessment transition, metadata-only audit payloads, and existing
-  permission/object-access denial behavior.
-- Block repeat returns from `incomplete_returned` unless source docs define a repeat-return rule;
-  record any assumption.
+## Validation
+- TDD red/green saved for the focused deficiency-return regression.
+- Focused loan-application API module passed.
+- Full backend suite passed: 256 tests.
+- Backend coverage passed: 95% total, above 85% floor.
+- Backend `manage.py check` and `makemigrations --check --dry-run` passed.
+- Frontend lint, typecheck, tests (80/80), and build passed.
+- `git diff --check` passed.
 
-Review also confirmed:
-- 005C2 closed the prior object-access finding and 005D/005E/005F carried that boundary forward.
-- Tests are substantive across object scope, document/checklist behavior, completeness pass,
-  deficiency return/resolve, and no-side-effect guarantees.
-- Evidence note: 005F targeted TDD red/green logs are not self-contained, though full gates and
-  review packet verify the final state. Future runs should save targeted red/green output with
-  enough verbosity to show failure/pass details.
-
-## Documentation Updates
-- `docs/working/REVIEW_FINDINGS.md` has the full newest-first architecture-review entry.
-- `docs/working/digests/epic-005-application-intake.md` now includes the status-contract extract.
-- `docs/slices/005F2-deficiency-return-status-contract-hardening.md` is the next corrective slice.
+Evidence is in `.ralph/runs/2026-07-09_215632_normal_run/`.
 
 ## Next Run
-Run `005F2-deficiency-return-status-contract-hardening` before member portal work. After it passes,
-run `005FA-member-portal-authentication`.
+Run `005FA-member-portal-authentication`.
 
-Key instruction for 005FA after 005F2: borrower/member portal tokens must carry a linked
-`member_id` own-data scope and must not grant staff completeness/pass/deficiency-resolution
-permissions.
-
-## Evidence
-See `.ralph/runs/2026-07-09_213305_architecture_review/`.
-
-Key artifacts: `execution-plan.md`, `review-packet.md`, `risk-assessment.md`,
-`changed-files.txt`, `final-summary.md`, and review/gate logs under `evidence/terminal-logs/`.
+Key instructions for 005FA:
+- Borrower/member portal tokens must carry a linked `member_id` own-data scope and must not grant
+  staff completeness/pass/deficiency-resolution permissions.
+- Portal auth and later portal screens must treat returned deficiency applications as
+  `application_status = incomplete_returned`, not plain `submitted`.
+- Do not allow borrower flows to perform repeat staff returns; resubmission behavior needs a
+  source-backed transition in a later portal deficiency-response slice.

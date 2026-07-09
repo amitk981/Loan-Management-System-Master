@@ -654,7 +654,9 @@ def return_application_with_deficiencies(
     cleaned = _clean_return_deficiencies_payload(application, payload)
     old_value_json = _audit_snapshot(application)
     now = timezone.now()
+    application.application_status = LoanApplication.STATUS_INCOMPLETE_RETURNED
     application.completeness_status = LoanApplication.COMPLETENESS_INCOMPLETE
+    application.current_stage = LoanApplication.STAGE_INITIAL
     application.updated_at = now
     application.updated_by_user = actor
     application.save()
@@ -692,7 +694,7 @@ def return_application_with_deficiencies(
         entity_type="loan_application",
         entity_id=application.loan_application_id,
         from_state=LoanApplication.STATUS_SUBMITTED,
-        to_state=LoanApplication.STATUS_SUBMITTED,
+        to_state=LoanApplication.STATUS_INCOMPLETE_RETURNED,
         trigger_reason="Application returned with completeness deficiencies.",
         action_code="return_with_deficiencies",
     )

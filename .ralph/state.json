@@ -60,16 +60,17 @@
     "005C2-application-object-access-hardening",
     "005D-application-document-checklist",
     "005E-completeness-workbench",
-    "005F-deficiency-creation-and-resolution"
+    "005F-deficiency-creation-and-resolution",
+    "005F2-deficiency-return-status-contract-hardening"
   ],
   "failed_slices": [],
   "blocked_slices": [
     "004E-witness-shareholder-validation"
   ],
   "last_successful_commit": "39477f0",
-  "last_run_id": "2026-07-09_213305_architecture_review",
+  "last_run_id": "2026-07-09_215632_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
+  "slices_completed_since_architecture_review": 1,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

@@ -224,11 +224,13 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   assumes deficiency IDs already exist.
 - Source reason mapping: `missing_metadata` becomes `deficiency_type = missing_document`;
   `not_verified` becomes `deficiency_type = not_verified`.
-- Successful return keeps `application_status = submitted`, sets `completeness_status =
+- Successful return originally kept `application_status = submitted`; corrective slice 005F2
+  hardens this to the source-backed returned state. It now sets `application_status =
+  incomplete_returned`, keeps `current_stage = initial_loan_request`, sets `completeness_status =
   incomplete`, creates open deficiency rows with raised actor/time and communication metadata,
   writes `applications.loan_application.returned_with_deficiencies` audit metadata, and records a
-  `loan_application` workflow event from `submitted` to `submitted`. It does not generate a
-  reference, create a loan request register row, move to credit assessment, or advance the visible
+  `loan_application` workflow event from `submitted` to `incomplete_returned`. It does not generate
+  a reference, create a loan request register row, move to credit assessment, or advance the visible
   sequence.
 - Deficiency resolve uses the source §21.2 `resolution_notes` request, closes only open rows with
   resolver actor/time, writes `applications.deficiency.resolved` audit metadata, and records an
@@ -249,3 +251,7 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   slices. Corrective slice 005F2 should set `application_status = incomplete_returned`, keep
   `completeness_status = incomplete`, and preserve the existing no-reference/no-register/no-sequence
   side-effect guarantees.
+- 005F2 implemented that correction. Source docs do not define repeat returns from
+  `incomplete_returned`, so repeat return attempts remain blocked with `409 INVALID_STATE_TRANSITION`
+  and create no duplicate deficiency rows, success audit/workflow events, register rows, references,
+  or visible sequence advancement.

@@ -1,5 +1,26 @@
 # Ralph Progress Log
 
+## 2026-07-09 21:56:32 - 2026-07-09_215632_normal_run
+- Agent tool used: codex
+- Slice attempted: 005F2-deficiency-return-status-contract-hardening
+- Summary: Hardened the deficiency return contract so returned incomplete applications now persist
+  and serialize `application_status = incomplete_returned`, `completeness_status = incomplete`,
+  and `current_stage = initial_loan_request`. Audit metadata and workflow evidence now record
+  `submitted -> incomplete_returned`. Repeat returns from `incomplete_returned` are blocked without
+  duplicate deficiency rows, success audit/workflow events, register rows, references, or sequence
+  advancement; A-041 records this source-gap assumption. Updated API contracts, the Epic 005
+  digest, handoff, and sharpened 005FA/005FB with the corrected returned-incomplete contract.
+- Tests run: TDD red/green for deficiency return status; focused loan-application API tests
+  (18/18); backend `manage.py check`; backend tests (256/256); `makemigrations --check --dry-run`;
+  backend coverage 95% (floor 85); frontend `npm run lint`; `npm run typecheck`; `npm test`
+  (80/80); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_215632_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005FA-member-portal-authentication`; borrower portal auth must carry linked
+  `member_id` own-data scope and must not grant staff completeness/pass/deficiency actions.
+
 ## 2026-07-09 21:38:22 - 2026-07-09_213305_architecture_review
 - Agent tool used: codex
 - Slice attempted: architecture-review
@@ -1960,6 +1981,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_213305_architecture_review/.ralph/runs/2026-07-09_213305_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_213305_architecture_review/.ralph/runs/2026-07-09_213305_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 22:22:41 - 2026-07-09_215632_normal_run
+- Agent tool used: codex
+- Slice attempted: 005F2-deficiency-return-status-contract-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_215632_normal_run/.ralph/runs/2026-07-09_215632_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_215632_normal_run/.ralph/runs/2026-07-09_215632_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
