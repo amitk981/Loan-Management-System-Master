@@ -1,40 +1,43 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-09_091651_normal_run
+2026-07-09_111927_normal_run
 
 ## Current Status
-Slice `004C-individual-farmer-and-fpc-profile-details` completed with all backend and frontend gates
-green. Architecture review cadence is at three completed slices since the last review and is not
-yet due.
+Slice `004D-nominee-validation-and-ui` completed with all backend and frontend gates green.
+Architecture review cadence is now at four completed slices since the last review and is due before
+the next product slice.
 
 ## What Completed
-- Added the remaining source §10.2 individual-profile fields in one non-destructive migration:
-  first/middle/last name, gender, date of birth, occupation, and employment/service years.
-- Added model-boundary validation: individual profiles require `individual_farmer`; producer
-  profiles require `fpc` or `producer_institution`.
-- Extended `GET /api/v1/members/{member_id}/` with exact individual serialization while preserving
-  nullable missing-profile behavior and the existing non-sensitive producer/FPC shape.
-- Kept producer authorised-signatory PAN/Aadhaar absent because §13.5 reveal controls remain
-  deferred. Existing masked member PAN/Aadhaar behavior and `members.member.read` gating remain.
-- Added individual and producer detail rendering to the existing Member Profile overview card,
-  using existing `InfoTile` and `EmptyPanel` patterns with no `mockData` dependency.
-- Updated API contracts and the Epic 004 digest; sharpened 004D nominee and 004E witness slices
-  from the source sections opened during this run.
+- Added `Nominee` persistence in one non-destructive members migration with member FK, nullable
+  application UUID storage, name, DOB, age snapshot, gender, relationship, protected PAN/Aadhaar
+  tokens and keyed hashes, KYC/minor/signature flags, and timestamps.
+- Added `GET` and `POST /api/v1/members/{member_id}/nominees/` with standard envelopes, list
+  pagination, `members.nominee.read` / `members.nominee.create` separation, member existence checks,
+  adult validation, required/format validation for PAN/Aadhaar, and metadata-only
+  `members.nominee.created` audit rows.
+- Masked nominee PAN/Aadhaar in API responses and tests; no full PAN/Aadhaar appears in response or
+  audit metadata.
+- Replaced the deferred Member Profile Nominee tab with API-backed list/create behavior using
+  existing card, empty panel, alert, field, button, and badge patterns. No `mockData` nominee rows
+  were restored.
+- Updated API contracts, assumptions (A-031 legal-majority age default), Epic 004 digest, and
+  sharpened 004E/004F with source-backed witness/shareholding requirements.
 
 ## Evidence
-See `.ralph/runs/2026-07-09_091651_normal_run/`.
+See `.ralph/runs/2026-07-09_111927_normal_run/`.
 
 Key logs under `evidence/terminal-logs/` include backend/frontend TDD red/green evidence and every
-quality gate. Backend tests: 201 passed. Frontend tests: 61 passed. Coverage: 96%, above the 85%
-floor. Self-contained profile HTML is under `evidence/screenshots/profile-details/`; the in-app
-browser exposed no instances, so live PNG capture was unavailable.
+quality gate. Backend tests: 207 passed. Frontend tests: 65 passed. Coverage: 96%, above the 85%
+floor. API response examples are in `api-response-examples.md`; self-contained nominee-tab visual
+evidence is under `evidence/screenshots/member-nominee-tab.html`.
 
 ## Current Blocker
 None.
 
 ## Notes For Next Run
-- Next slice is `004D-nominee-validation-and-ui`.
-- Use `members.nominee.read` and `members.nominee.create` separately, encrypt/hash nominee PAN and
-  Aadhaar, reject minors and invalid/missing identity fields, and replace only the existing deferred
-  Nominee tab. Do not restore mock nominee data.
+- Run architecture review next because `.ralph/state.json` has `architecture_review_due: true` after
+  004D.
+- After review, the next product slice is `004E-witness-shareholder-validation`. The slice is
+  intentionally constrained: do not build a member-level witness API or fake shareholder verifier
+  unless loan-application and shareholding prerequisites exist.

@@ -41,7 +41,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | API contract test harness | Implemented in slice 002J | None | `api-contracts.md` §6.1-6.4, §7.1-7.3, §44 | Test-only assertions live in `sfpcl_credit/tests/api_contracts.py`. Future endpoint slices should use them to prove standard success envelopes, error envelopes, top-level list pagination, and target §44 `available_actions` item shapes without importing test utilities from production code. The harness regression tests cover `/auth/me/`, admin users pagination, `401 AUTH_REQUIRED`, revoked-session `401 INVALID_TOKEN`, `403 PERMISSION_DENIED`, partial-admin write denial, and tracer `409 INVALID_STATE_TRANSITION`. A-016 records that current `/auth/me/` still returns flat permission-code strings for `available_actions`; the object shape is asserted against an internal sample for future detail endpoints. |
 | Local demo staff seed | Implemented in slice 002K; corrected in 002K2 | Login, dashboard smoke, admin/tracer permission smoke | `implementation-roadmap.md` §10, §20-22; `technical-architecture.md` §8-12, §17-18; `auth-permissions.md`; `api-contracts.md` §11-12, §43-44 | `python manage.py seed_demo_users` is a guarded local/dev seed path. It refuses unless `SFPCL_DEBUG=true` and `SFPCL_ALLOW_DEMO_SEED=true`, calls `seed_catalogue()`, creates or updates deterministic `demo.*@sfpcl.example` staff users with active primary roles and memberships, and does not alter `e2e.*` users. Demo users authenticate through the real `/auth/login/` and `/auth/me/` endpoints; there is no demo auth bypass. The zero-permission user returns `permissions: []` and `available_actions: []`; the tracer-only user uses the guarded local/dev-only `local_demo_tracer_user` role and returns only `tracer.lifecycle.run`; the shared source-catalogue `sales_team_user` role remains permission-neutral until source documents define grants; system admin preserves canonical action-specific user-admin permissions without broad `manage_users` aliases. |
 | Role/permission/team catalogue | Seeded in slice 002C; exposed for current user in 002D | None directly | `auth-permissions.md` §12-15, §38 | Canonical `Permission`, `Role`, `Team`, `RolePermission` catalogue seeded idempotently via `python manage.py seed_role_catalogue` (`sfpcl_credit/identity/catalogue.py`). `/api/v1/auth/me/` exposes the authenticated user's effective permission codes from this data. |
-| Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; profile mutations/KYC remain draft | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5; `data-model.md` §10.1-§10.3; `auth-permissions.md` §12.2/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. Create/update/KYC/nominee/shareholding/land/crop/borrower-360 behavior and §13.5 sensitive reveal remain future scope. |
+| Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; profile mutations/KYC remain draft | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3; `data-model.md` §10.1-§10.4; `auth-permissions.md` §12.2/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/` is API-backed with separate nominee read/create permissions, masked PAN/Aadhaar, adult validation, and metadata-only creation audit. Create/update/KYC/shareholding/land/crop/borrower-360 behavior and §13.5 sensitive reveal remain future scope. |
 | Loan applications | Draft from source | Applications, completeness | `api-contracts.md` | Needs real draft/submit/check endpoints. |
 | Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
@@ -189,6 +189,50 @@ Rules:
   §13.5 sensitive reveal controls remain deferred.
 - Masked read-only profile access writes no workflow event and no profile-access audit row beyond
   normal authentication audit.
+
+## Member Nominee API (004D)
+
+`GET /api/v1/members/{member_id}/nominees/`
+
+Rules:
+- Requires a session-bound bearer token and `members.nominee.read`; missing auth returns
+  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and an unknown or
+  soft-deleted member returns `404 NOT_FOUND`.
+- Returns the standard top-level list envelope. Each nominee item contains `nominee_id`,
+  `nominee_name`, nullable `date_of_birth`, `age_at_application`, `gender`, nullable
+  `relationship_to_borrower`, masked `pan`/`aadhaar` as `{ "masked": "...", "can_view_full": false }`,
+  `kyc_status`, `minor_flag`, `signature_required_flag`, and `created_at`.
+- Read-only nominee access writes no workflow event and no nominee-access audit row.
+
+`POST /api/v1/members/{member_id}/nominees/`
+
+Request data:
+
+```json
+{
+  "nominee_name": "Sita Patil",
+  "date_of_birth": "1985-05-20",
+  "gender": "female",
+  "relationship_to_borrower": "Spouse",
+  "pan": "ABCDE1234F",
+  "aadhaar": "123412341234",
+  "signature_required_flag": true
+}
+```
+
+Rules:
+- Requires `members.nominee.create`, not `members.nominee.read`.
+- Persists member-level nominees only. `loan_application_id` exists as nullable storage for a future
+  application snapshot but is not accepted or populated by the 004D API.
+- PAN and Aadhaar are required. Missing values return `400 MISSING_REQUIRED_FIELD`; invalid source
+  formats return `400 INVALID_PAN_FORMAT` or `400 INVALID_AADHAAR_FORMAT`.
+- Nominees below legal majority return `400 NOMINEE_MINOR_NOT_ALLOWED`; 004D uses age 18 per A-031.
+- Stored identity values use protected tokens plus keyed hashes. Responses and audit logs never
+  include full PAN/Aadhaar, `pan_encrypted`, `aadhaar_encrypted`, `pan_hash`, or `aadhaar_hash` as
+  plaintext identifiers.
+- Successful creation returns the nominee item in the standard success envelope, sets
+  `kyc_status: "pending"`, `minor_flag: false`, stores the calculated `age_at_application`, and
+  writes `members.nominee.created` audit metadata without a workflow event.
 
 ## Shared response envelope (002C2)
 

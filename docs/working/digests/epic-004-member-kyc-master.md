@@ -95,3 +95,42 @@ before implementation.
   shareholder, needs KYC, and signs the Loan Agreement/SH-4 where applicable. Because 004E follows
   nominee work but precedes application/shareholding persistence, it must not invent a standalone
   witness endpoint or fake shareholder verification.
+
+## 004D Nominee Extracts
+- 004D implements `GET`/`POST /api/v1/members/{member_id}/nominees/` from `api-contracts.md`
+  §14.1-§14.3 as member-level nominee list/create only. Application-specific snapshot behavior
+  remains deferred; `loan_application_id` is nullable storage and is not accepted by the API.
+- `data-model.md` §10.4 fields now exist in `nominees`: member FK, nullable application UUID,
+  nominee name, DOB, age snapshot, gender, relationship, protected PAN/Aadhaar token storage plus
+  keyed hashes, `kyc_status`, `minor_flag`, signature-required flag, and timestamps.
+- `auth-permissions.md` §12.2 and endpoint map split read/create permissions:
+  `members.nominee.read` for `GET` and `members.nominee.create` for `POST`. 004D does not reuse
+  `members.member.read` for nominee creation.
+- Validation: PAN and Aadhaar are required; missing values return `MISSING_REQUIRED_FIELD`, invalid
+  source formats return `INVALID_PAN_FORMAT` / `INVALID_AADHAAR_FORMAT`, and nominees under legal
+  majority return `NOMINEE_MINOR_NOT_ALLOWED`. A-031 records the age-18 majority default pending
+  source confirmation.
+- Responses and audit metadata expose masked PAN/Aadhaar only and never full plaintext identity
+  values. Nominee create writes `members.nominee.created`; masked list/read writes no workflow event.
+- Member Profile's Nominee tab is API-backed with existing card/empty/alert/form styles. It must not
+  restore `mockData` nominee rows such as the old synthetic `Sudha Patil` example.
+- `data-model.md` §10.5 and `screen-spec.md` S09 require witnesses to belong to a loan application,
+  resolve to an existing SFPCL shareholder/member or folio, carry protected PAN/Aadhaar, and remain
+  incomplete until shareholder/KYC verification is complete. 004E should not create a member-level
+  witness endpoint if loan applications/shareholdings are still absent.
+- `api-contracts.md` §15.1-§15.2 define member shareholding list/create/update:
+  `GET`/`POST /api/v1/members/{member_id}/shareholdings/` and
+  `PATCH /api/v1/shareholdings/{shareholding_id}/`. Response fields include `shareholding_id`,
+  `folio_number`, `number_of_shares`, `holding_mode`, valuation snapshot fields,
+  `pledged_share_count`, `available_share_count`, and `future_shares_pledge_flag`.
+- `data-model.md` §11.1 requires `shareholdings` with member FK, folio, non-negative share counts,
+  holding mode (`physical`/`demat`/`mixed`), optional demat/valuation references, pledged and
+  available counts, future-pledge flag, status, and timestamps. Constraints: shares cannot be
+  negative, pledged shares cannot exceed total shares, and available shares equal total minus
+  pledged when maintained.
+- `data-model.md` §11.2 defines `share_certificates` under a shareholding: certificate number,
+  optional distinctive-number range, share count, optional document FK, and status
+  (`active`/`pledged`/`transferred`). 004F should only implement certificate behavior if it can stay
+  within one slice alongside the shareholding API; otherwise split certificates into a follow-up.
+- `auth-permissions.md` maps shareholding endpoints to `members.shareholding.read`,
+  `members.shareholding.create`, and `members.shareholding.update`.

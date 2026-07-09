@@ -33,9 +33,11 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-First confirm an owning loan-application boundary and a source-backed witness endpoint exist by the
-time this slice runs. Implement witness capture only against a real loan application and real member
-/shareholding records; do not create a member-level witness API or boolean-only verification stub.
+First confirm an owning loan-application boundary and persisted shareholding records exist by the
+time this slice runs. `data-model.md` §10.5 and `screen-spec.md` S09 make witnesses application
+documentation records, not member-profile records. Implement witness capture only against a real
+loan application and real member/shareholding records; do not create a member-level witness API or
+boolean-only verification stub.
 
 ## Database/Model Impact
 Add the data-model §10.5 witness fields only when their required loan-application FK can reference
@@ -48,16 +50,16 @@ Create or update the API contract for this capability.
 ## Permissions
 Apply application object access and the exact witness permission available at run time. Source roles
 allow Credit/Compliance capture and read-only audit access, but no exact witness endpoint permission
-code was confirmed in the 004C source pass; record/stub this gap rather than borrowing nominee or KYC
-permissions.
+code was confirmed in the source pass; record/stub this gap rather than borrowing nominee,
+shareholding, or KYC permissions.
 
 ## Audit Requirements
 Record audit/workflow events for critical create/update/approval/access actions.
 
 ## Validation Rules
-Witness must resolve to an existing SFPCL shareholder and requires KYC. Documentation completion
-must not treat the witness as complete until verification is complete. Do not accept a caller-supplied
-`shareholder_verified_flag` without checking persisted shareholding facts.
+Witness must resolve to an existing SFPCL shareholder/member or folio and requires KYC. Documentation
+completion must not treat the witness as complete until verification is complete. Do not accept a
+caller-supplied `shareholder_verified_flag` without checking persisted shareholding facts.
 
 ## Test Cases
 TDD: existing-shareholder success, non-shareholder rejection, missing application/member,

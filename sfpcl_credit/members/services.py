@@ -1,15 +1,27 @@
+import hashlib
+import hmac
+import re
+from datetime import date
 from math import ceil
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.utils.dateparse import parse_date
 
+from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.members.models import Member
+from sfpcl_credit.members.models import Member, Nominee
 
 
 MEMBER_READ_PERMISSION = "members.member.read"
+NOMINEE_READ_PERMISSION = "members.nominee.read"
+NOMINEE_CREATE_PERMISSION = "members.nominee.create"
 _DEFAULT_PAGE_SIZE = 20
 _MAX_PAGE_SIZE = 100
+_LEGAL_MAJORITY_AGE = 18
+_PAN_RE = re.compile(r"^[A-Z]{5}[0-9]{4}[A-Z]$")
+_AADHAAR_RE = re.compile(r"^[0-9]{12}$")
 _ALLOWED_PARAMS = {
     "search",
     "member_type",
@@ -23,6 +35,14 @@ _ALLOWED_PARAMS = {
 
 def user_can_read_members(user):
     return MEMBER_READ_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_read_nominees(user):
+    return NOMINEE_READ_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_create_nominees(user):
+    return NOMINEE_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
 
 
 def paginated_members(query_params):
@@ -101,6 +121,10 @@ def get_member_profile(member_id):
         return None
 
 
+def get_accessible_member(member_id):
+    return Member.objects.filter(is_deleted=False, member_id=member_id).first()
+
+
 def serialize_member_profile(member, user):
     return {
         **serialize_member(member),
@@ -132,6 +156,98 @@ def validation_field_errors(exc):
     if hasattr(exc, "message_dict"):
         return {field: messages[0] for field, messages in exc.message_dict.items()}
     return {"non_field_errors": str(exc)}
+
+
+class NomineeValidationError(Exception):
+    def __init__(self, code, message, field_errors=None):
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.field_errors = field_errors or {}
+
+
+def paginated_nominees(member, query_params):
+    page = _positive_int(query_params.get("page"), 1, "page")
+    page_size = min(
+        _positive_int(query_params.get("page_size"), _DEFAULT_PAGE_SIZE, "page_size"),
+        _MAX_PAGE_SIZE,
+    )
+    queryset = member.nominees.order_by("created_at", "nominee_id")
+    total_count = queryset.count()
+    total_pages = ceil(total_count / page_size) if total_count else 1
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+    items = [serialize_nominee(row) for row in queryset[offset : offset + page_size]]
+    return items, {
+        "page": page,
+        "page_size": page_size,
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_previous": page > 1,
+    }
+
+
+def create_nominee(member, payload, actor_user, request_ip="", request_user_agent=""):
+    values = _validated_nominee_payload(payload)
+    nominee = Nominee.objects.create(
+        member=member,
+        nominee_name=values["nominee_name"],
+        date_of_birth=values["date_of_birth"],
+        age_at_application=values["age_at_application"],
+        gender=values["gender"],
+        relationship_to_borrower=values["relationship_to_borrower"],
+        pan_encrypted=_protected_identity_token(values["pan"], 10),
+        pan_hash=_identity_hash(values["pan"]),
+        aadhaar_encrypted=_protected_identity_token(values["aadhaar"], 12),
+        aadhaar_hash=_identity_hash(values["aadhaar"]),
+        kyc_status="pending",
+        minor_flag=False,
+        signature_required_flag=values["signature_required_flag"],
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user,
+        action="members.nominee.created",
+        entity_type="nominee",
+        entity_id=nominee.nominee_id,
+        new_value_json={
+            "member_id": str(member.member_id),
+            "nominee_id": str(nominee.nominee_id),
+            "nominee_name": nominee.nominee_name,
+            "age_at_application": nominee.age_at_application,
+            "minor_flag": nominee.minor_flag,
+            "kyc_status": nominee.kyc_status,
+            "signature_required_flag": nominee.signature_required_flag,
+            "pan_hash": nominee.pan_hash,
+            "aadhaar_hash": nominee.aadhaar_hash,
+        },
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+    return nominee
+
+
+def serialize_nominee(nominee):
+    return {
+        "nominee_id": str(nominee.nominee_id),
+        "nominee_name": nominee.nominee_name,
+        "date_of_birth": nominee.date_of_birth.isoformat() if nominee.date_of_birth else None,
+        "age_at_application": nominee.age_at_application,
+        "gender": nominee.gender,
+        "relationship_to_borrower": nominee.relationship_to_borrower or None,
+        "pan": {
+            "masked": _mask_protected_identity(nominee.pan_encrypted, 10),
+            "can_view_full": False,
+        },
+        "aadhaar": {
+            "masked": _mask_protected_identity(nominee.aadhaar_encrypted, 12),
+            "can_view_full": False,
+        },
+        "kyc_status": nominee.kyc_status,
+        "minor_flag": nominee.minor_flag,
+        "signature_required_flag": nominee.signature_required_flag,
+        "created_at": nominee.created_at.isoformat().replace("+00:00", "Z"),
+    }
 
 
 def _validate_query(query_params):
@@ -188,6 +304,117 @@ def _mask_last_four(value):
         return None
     text = str(value)
     return f"{'*' * max(len(text) - 4, 0)}{text[-4:]}"
+
+
+def _validated_nominee_payload(payload):
+    nominee_name = str(payload.get("nominee_name") or "").strip()
+    gender = str(payload.get("gender") or "").strip()
+    relationship = str(payload.get("relationship_to_borrower") or "").strip()
+    if not nominee_name:
+        raise NomineeValidationError(
+            "MISSING_REQUIRED_FIELD",
+            "Nominee name is required.",
+            {"nominee_name": "This field is required."},
+        )
+    if not gender:
+        raise NomineeValidationError(
+            "MISSING_REQUIRED_FIELD",
+            "Gender is required.",
+            {"gender": "This field is required."},
+        )
+
+    date_of_birth = _required_date(payload.get("date_of_birth"))
+    age = _age_on(date_of_birth, date.today())
+    if age < _LEGAL_MAJORITY_AGE:
+        raise NomineeValidationError(
+            "NOMINEE_MINOR_NOT_ALLOWED",
+            "Nominee must not be a minor.",
+            {"date_of_birth": "Nominee must be at least 18 years old."},
+        )
+
+    pan = _required_identity(payload.get("pan"), "pan").upper()
+    if not _PAN_RE.match(pan):
+        raise NomineeValidationError(
+            "INVALID_PAN_FORMAT",
+            "PAN format is invalid.",
+            {"pan": "PAN must match the source-defined format."},
+        )
+
+    aadhaar = _required_identity(payload.get("aadhaar"), "aadhaar").replace(" ", "")
+    if not _AADHAAR_RE.match(aadhaar):
+        raise NomineeValidationError(
+            "INVALID_AADHAAR_FORMAT",
+            "Aadhaar format is invalid.",
+            {"aadhaar": "Aadhaar must be a 12 digit number."},
+        )
+
+    return {
+        "nominee_name": nominee_name,
+        "date_of_birth": date_of_birth,
+        "age_at_application": age,
+        "gender": gender,
+        "relationship_to_borrower": relationship,
+        "pan": pan,
+        "aadhaar": aadhaar,
+        "signature_required_flag": bool(payload.get("signature_required_flag", True)),
+    }
+
+
+def _required_date(value):
+    if not value:
+        raise NomineeValidationError(
+            "MISSING_REQUIRED_FIELD",
+            "Date of birth is required.",
+            {"date_of_birth": "This field is required."},
+        )
+    parsed = parse_date(str(value))
+    if parsed is None:
+        raise NomineeValidationError(
+            "MISSING_REQUIRED_FIELD",
+            "Date of birth is required.",
+            {"date_of_birth": "Enter a valid date."},
+        )
+    return parsed
+
+
+def _required_identity(value, field):
+    normalized = str(value or "").strip()
+    if not normalized:
+        raise NomineeValidationError(
+            "MISSING_REQUIRED_FIELD",
+            f"{field.capitalize()} is required.",
+            {field: "This field is required."},
+        )
+    return normalized
+
+
+def _age_on(born, today):
+    before_birthday = (today.month, today.day) < (born.month, born.day)
+    return today.year - born.year - int(before_birthday)
+
+
+def _identity_hash(value):
+    return hmac.new(
+        settings.SECRET_KEY.encode("utf-8"),
+        value.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def _protected_identity_token(value, expected_length):
+    digest = _identity_hash(f"enc:{value}")
+    return f"enc:v1:{expected_length}:{digest}:{value[-4:]}"
+
+
+def _mask_protected_identity(token, default_length):
+    parts = str(token or "").split(":")
+    if len(parts) == 5 and parts[0] == "enc" and parts[1] == "v1":
+        try:
+            length = int(parts[2])
+        except ValueError:
+            length = default_length
+        return f"{'*' * max(length - 4, 0)}{parts[4]}"
+    return _mask_last_four(token)
 
 
 def _individual_profile(member):
@@ -251,9 +478,18 @@ def _available_actions(member, user):
 
 __all__ = [
     "MEMBER_READ_PERMISSION",
+    "NOMINEE_CREATE_PERMISSION",
+    "NOMINEE_READ_PERMISSION",
+    "NomineeValidationError",
+    "create_nominee",
+    "get_accessible_member",
     "get_member_profile",
+    "paginated_nominees",
     "paginated_members",
+    "serialize_nominee",
     "serialize_member_profile",
+    "user_can_create_nominees",
     "user_can_read_members",
+    "user_can_read_nominees",
     "validation_field_errors",
 ]

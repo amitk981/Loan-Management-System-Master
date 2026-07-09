@@ -1,5 +1,23 @@
 # Ralph Progress Log
 
+## 2026-07-09 11:19:27 - 2026-07-09_111927_normal_run
+- Agent tool used: codex
+- Slice attempted: 004D-nominee-validation-and-ui
+- Summary: Implemented member-level nominee list/create. Added the `nominees` table, protected
+  identity token/hash storage, masked nominee serialization, `members.nominee.read` and
+  `members.nominee.create` permission separation, adult validation, required/format validation for
+  PAN and Aadhaar, and metadata-only nominee creation audit. Replaced the Member Profile Nominee tab
+  with API-backed list/create behavior using existing UI patterns and no mock nominee rows.
+- Tests run: backend nominee TDD red/green; frontend nominee TDD red/green; backend `manage.py
+  check`; backend tests (207/207); `makemigrations --check --dry-run`; backend coverage 96%
+  (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test` (65/65);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_111927_normal_run/`, including API examples, terminal
+  logs, and self-contained nominee-tab HTML evidence.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run architecture review by cadence before implementing `004E-witness-shareholder-validation`.
+
 ## 2026-07-09 09:31:45 - 2026-07-09_091651_normal_run
 - Agent tool used: codex
 - Slice attempted: 004C-individual-farmer-and-fpc-profile-details
@@ -1260,6 +1278,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_091651_normal_run/.ralph/runs/2026-07-09_091651_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_091651_normal_run/.ralph/runs/2026-07-09_091651_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 11:48:16 - 2026-07-09_111927_normal_run
+- Agent tool used: codex
+- Slice attempted: 004D-nominee-validation-and-ui
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/.ralph/runs/2026-07-09_111927_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/.ralph/runs/2026-07-09_111927_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

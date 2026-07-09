@@ -107,6 +107,11 @@ urlpatterns = [
         name="member-detail",
     ),
     path(
+        "api/v1/members/<uuid:member_id>/nominees/",
+        member_views.member_nominees,
+        name="member-nominees",
+    ),
+    path(
         "api/v1/document-files/",
         document_views.upload_document_file,
         name="document-file-upload",

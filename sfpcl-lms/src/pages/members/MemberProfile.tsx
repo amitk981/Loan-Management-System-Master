@@ -16,9 +16,17 @@ import AlertBanner from '../../components/ui/AlertBanner';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Tabs from '../../components/ui/Tabs';
 import { AuthSessionError } from '../../services/authSession';
-import { fetchMemberProfile, type MemberProfileDetail } from '../../services/memberProfileApi';
+import {
+  createMemberNominee,
+  fetchMemberNominees,
+  fetchMemberProfile,
+  type CreateMemberNomineePayload,
+  type MemberNomineeDetail,
+  type MemberProfileDetail,
+} from '../../services/memberProfileApi';
 
 type ProfileStatus = 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
+type NomineeStatus = 'idle' | 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
 
 interface MemberProfileProps {
   memberId: string;
@@ -30,12 +38,23 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
   const [message, setMessage] = useState('');
   const [profile, setProfile] = useState<MemberProfileDetail | null>(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [nomineeStatus, setNomineeStatus] = useState<NomineeStatus>('idle');
+  const [nomineeMessage, setNomineeMessage] = useState('');
+  const [nominees, setNominees] = useState<MemberNomineeDetail[]>([]);
+  const [nomineeCreateFieldErrors, setNomineeCreateFieldErrors] = useState<Record<string, string>>({});
+  const [nomineeCreateMessage, setNomineeCreateMessage] = useState('');
+  const [nomineeCreateSubmitting, setNomineeCreateSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setStatus('loading');
     setMessage('');
     setProfile(null);
+    setNomineeStatus('idle');
+    setNomineeMessage('');
+    setNominees([]);
+    setNomineeCreateFieldErrors({});
+    setNomineeCreateMessage('');
     fetchMemberProfile(memberId)
       .then(result => {
         if (!cancelled) {
@@ -55,6 +74,51 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
     };
   }, [memberId]);
 
+  useEffect(() => {
+    if (status !== 'success' || activeTab !== 7 || nomineeStatus !== 'idle') return;
+    let cancelled = false;
+    setNomineeStatus('loading');
+    setNomineeMessage('');
+    fetchMemberNominees(memberId)
+      .then(result => {
+        if (!cancelled) {
+          setNominees(result.items);
+          setNomineeStatus(result.items.length > 0 ? 'success' : 'empty');
+        }
+      })
+      .catch(error => {
+        if (!cancelled) {
+          const next = errorState(error);
+          setNomineeStatus(next.status);
+          setNomineeMessage(next.message);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, memberId, nomineeStatus, status]);
+
+  const handleCreateNominee = async (payload: CreateMemberNomineePayload) => {
+    setNomineeCreateSubmitting(true);
+    setNomineeCreateFieldErrors({});
+    setNomineeCreateMessage('');
+    try {
+      const created = await createMemberNominee(memberId, payload);
+      setNominees(current => [created, ...current.filter(item => item.nominee_id !== created.nominee_id)]);
+      setNomineeStatus('success');
+      setNomineeCreateMessage('Nominee saved.');
+    } catch (error) {
+      if (error instanceof AuthSessionError) {
+        setNomineeCreateFieldErrors(error.fieldErrors ?? {});
+        setNomineeCreateMessage(error.message);
+      } else {
+        setNomineeCreateMessage(error instanceof Error ? error.message : 'Nominee could not be saved.');
+      }
+    } finally {
+      setNomineeCreateSubmitting(false);
+    }
+  };
+
   return (
     <MemberProfileView
       status={status}
@@ -63,6 +127,13 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
       activeTab={activeTab}
       onTabChange={setActiveTab}
       onBack={onBack}
+      nomineeStatus={nomineeStatus}
+      nomineeMessage={nomineeMessage}
+      nominees={nominees}
+      nomineeCreateFieldErrors={nomineeCreateFieldErrors}
+      nomineeCreateMessage={nomineeCreateMessage}
+      nomineeCreateSubmitting={nomineeCreateSubmitting}
+      onCreateNominee={handleCreateNominee}
     />
   );
 };
@@ -74,6 +145,13 @@ interface MemberProfileViewProps {
   activeTab: number;
   onTabChange: (index: number) => void;
   onBack: () => void;
+  nomineeStatus?: NomineeStatus;
+  nomineeMessage?: string;
+  nominees?: MemberNomineeDetail[];
+  nomineeCreateFieldErrors?: Record<string, string>;
+  nomineeCreateMessage?: string;
+  nomineeCreateSubmitting?: boolean;
+  onCreateNominee?: (payload: CreateMemberNomineePayload) => void | Promise<void>;
 }
 
 export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
@@ -83,6 +161,13 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
   activeTab,
   onTabChange,
   onBack,
+  nomineeStatus = 'idle',
+  nomineeMessage = '',
+  nominees = [],
+  nomineeCreateFieldErrors = {},
+  nomineeCreateMessage = '',
+  nomineeCreateSubmitting = false,
+  onCreateNominee,
 }) => {
   if (status !== 'success' || !profile) {
     return <ProfileState status={status} message={message} onBack={onBack} />;
@@ -164,7 +249,15 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
         <LandTab profile={profile} />
         <KycTab profile={profile} />
         <DeferredTab title="Loans" message="No loan records are available from the backend yet." />
-        <DeferredTab title="Nominee" message="No nominee records are available from the backend yet." />
+        <NomineeTab
+          status={nomineeStatus}
+          message={nomineeMessage}
+          nominees={nominees}
+          createFieldErrors={nomineeCreateFieldErrors}
+          createMessage={nomineeCreateMessage}
+          createSubmitting={nomineeCreateSubmitting}
+          onCreateNominee={onCreateNominee}
+        />
         <DeferredTab title="Communications" message="No communication records are available from the backend yet." />
         <DeferredTab title="Audit Trail" message="No audit trail records are available from the backend yet." />
       </Tabs>
@@ -315,6 +408,154 @@ const KycTab: React.FC<{ profile: MemberProfileDetail }> = ({ profile }) => (
     </div>
     <EmptyPanel icon={<Shield size={18} className="text-slate-500 flex-shrink-0" />} title="KYC document records are not available from the backend yet." />
   </div>
+);
+
+const NomineeTab: React.FC<{
+  status: NomineeStatus;
+  message: string;
+  nominees: MemberNomineeDetail[];
+  createFieldErrors: Record<string, string>;
+  createMessage: string;
+  createSubmitting: boolean;
+  onCreateNominee?: (payload: CreateMemberNomineePayload) => void | Promise<void>;
+}> = ({
+  status,
+  message,
+  nominees,
+  createFieldErrors,
+  createMessage,
+  createSubmitting,
+  onCreateNominee,
+}) => (
+  <div className="card space-y-5">
+    <div className="flex items-center justify-between gap-3">
+      <h3 className="font-semibold text-slate-800">Nominee Details</h3>
+      <StatusBadge label={nominees.length > 0 ? `${nominees.length} recorded` : 'pending'} size="sm" />
+    </div>
+    {createMessage && (
+      <AlertBanner
+        type={Object.keys(createFieldErrors).length > 0 || status === 'forbidden' || status === 'error' ? 'error' : 'success'}
+        title={Object.keys(createFieldErrors).length > 0 ? 'Nominee validation failed' : 'Nominee update'}
+        message={createMessage}
+      />
+    )}
+    <NomineeState status={status} message={message} nominees={nominees} />
+    <NomineeCreateForm
+      fieldErrors={createFieldErrors}
+      submitting={createSubmitting}
+      onCreateNominee={onCreateNominee}
+    />
+  </div>
+);
+
+const NomineeState: React.FC<{
+  status: NomineeStatus;
+  message: string;
+  nominees: MemberNomineeDetail[];
+}> = ({ status, message, nominees }) => {
+  if (status === 'idle' || status === 'loading') {
+    return <EmptyPanel icon={<Clock size={18} className="text-slate-500 flex-shrink-0" />} title="Loading nominee records" />;
+  }
+  if (status === 'empty' || nominees.length === 0) {
+    return <EmptyPanel icon={<FileText size={18} className="text-slate-500 flex-shrink-0" />} title={message || 'No nominee records are available from the backend yet.'} />;
+  }
+  if (status === 'unauthorized' || status === 'forbidden' || status === 'error') {
+    return <EmptyPanel icon={<AlertTriangle size={18} className="text-slate-500 flex-shrink-0" />} title={message || 'Nominees could not be loaded.'} />;
+  }
+  return (
+    <div className="space-y-3">
+      {nominees.map(nominee => (
+        <div key={nominee.nominee_id} className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">{nominee.nominee_name}</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {nominee.relationship_to_borrower || 'Relationship not recorded'} · {nominee.gender || '-'} · Age {nominee.age_at_application ?? '-'}
+              </p>
+            </div>
+            <StatusBadge label={nominee.kyc_status || 'pending'} size="sm" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <SensitiveTile label="PAN" value={nominee.pan.masked} />
+            <SensitiveTile label="Aadhaar" value={nominee.aadhaar.masked} />
+            <InfoTile label="Signature Required" value={nominee.signature_required_flag ? 'Yes' : 'No'} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const NomineeCreateForm: React.FC<{
+  fieldErrors: Record<string, string>;
+  submitting: boolean;
+  onCreateNominee?: (payload: CreateMemberNomineePayload) => void | Promise<void>;
+}> = ({ fieldErrors, submitting, onCreateNominee }) => {
+  const [form, setForm] = useState<CreateMemberNomineePayload>({
+    nominee_name: '',
+    date_of_birth: '',
+    gender: '',
+    relationship_to_borrower: '',
+    pan: '',
+    aadhaar: '',
+    signature_required_flag: true,
+  });
+  const setField = (field: keyof CreateMemberNomineePayload, value: string | boolean) => {
+    setForm(current => ({ ...current, [field]: value }));
+  };
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await onCreateNominee?.(form);
+  };
+  return (
+    <form className="border-t border-slate-100 pt-4 space-y-4" onSubmit={submit}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label="Nominee full name" error={fieldErrors.nominee_name}>
+          <input className="field-input" value={form.nominee_name} onChange={event => setField('nominee_name', event.target.value)} />
+        </Field>
+        <Field label="Date of birth" error={fieldErrors.date_of_birth}>
+          <input type="date" className="field-input" value={form.date_of_birth} onChange={event => setField('date_of_birth', event.target.value)} />
+        </Field>
+        <Field label="Gender" error={fieldErrors.gender}>
+          <select className="field-select" value={form.gender} onChange={event => setField('gender', event.target.value)}>
+            <option value="">Select gender</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+            <option value="other">Other</option>
+          </select>
+        </Field>
+        <Field label="Relationship to borrower" error={fieldErrors.relationship_to_borrower}>
+          <input className="field-input" value={form.relationship_to_borrower} onChange={event => setField('relationship_to_borrower', event.target.value)} />
+        </Field>
+        <Field label="PAN" error={fieldErrors.pan}>
+          <input className="field-input" value={form.pan} onChange={event => setField('pan', event.target.value)} />
+        </Field>
+        <Field label="Aadhaar" error={fieldErrors.aadhaar}>
+          <input className="field-input" value={form.aadhaar} onChange={event => setField('aadhaar', event.target.value)} />
+        </Field>
+      </div>
+      <label className="flex items-center gap-2 text-sm text-slate-700">
+        <input
+          type="checkbox"
+          className="accent-green-600"
+          checked={form.signature_required_flag}
+          onChange={event => setField('signature_required_flag', event.target.checked)}
+        />
+        Signature required
+      </label>
+      <button className="btn-primary" disabled={submitting || !onCreateNominee} type="submit">
+        {submitting ? 'Saving nominee' : 'Save nominee'}
+      </button>
+    </form>
+  );
+};
+
+const Field: React.FC<{ label: string; error?: string; children: React.ReactNode }> = ({ label, error, children }) => (
+  <label className="block">
+    <span className="field-label">{label}</span>
+    {children}
+    {error && <span className="text-xs text-red-600 mt-1 block">{error}</span>}
+  </label>
 );
 
 const DeferredTab: React.FC<{ title: string; message: string }> = ({ title, message }) => (

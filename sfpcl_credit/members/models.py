@@ -153,3 +153,35 @@ class ProducerInstitutionProfile(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
+
+
+class Nominee(models.Model):
+    nominee_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="nominees")
+    loan_application_id = models.UUIDField(blank=True, null=True)
+    nominee_name = models.CharField(max_length=255)
+    date_of_birth = models.DateField(blank=True, null=True)
+    age_at_application = models.PositiveIntegerField(blank=True, null=True)
+    gender = models.CharField(max_length=40)
+    relationship_to_borrower = models.CharField(max_length=100, blank=True)
+    pan_encrypted = models.TextField()
+    pan_hash = models.CharField(max_length=128, db_index=True)
+    aadhaar_encrypted = models.TextField()
+    aadhaar_hash = models.CharField(max_length=128, db_index=True)
+    kyc_status = models.CharField(max_length=60, default="pending")
+    minor_flag = models.BooleanField(default=False, db_index=True)
+    signature_required_flag = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = "nominees"
+        indexes = [
+            models.Index(fields=["member"], name="idx_nominees_member"),
+            models.Index(fields=["minor_flag"], name="idx_nominees_minor_flag"),
+            models.Index(fields=["pan_hash"], name="idx_nominees_pan_hash"),
+            models.Index(fields=["aadhaar_hash"], name="idx_nominees_aadhaar_hash"),
+        ]
+
+    def __str__(self):
+        return self.nominee_name

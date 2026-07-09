@@ -3,7 +3,17 @@ import { API_BASE_URL, AuthSessionError, loadStoredAuthSession } from './authSes
 interface ApiEnvelope<T> {
   success: boolean;
   data?: T;
-  error?: { code: string; message: string };
+  error?: { code: string; message: string; field_errors?: Record<string, unknown> };
+  pagination?: Pagination;
+}
+
+interface Pagination {
+  page: number;
+  page_size: number;
+  total_count: number;
+  total_pages: number;
+  has_next: boolean;
+  has_previous: boolean;
 }
 
 export interface MemberProfileDetail {
@@ -65,23 +75,90 @@ export interface MemberProfileDetail {
   }[];
 }
 
+export interface MemberNomineeDetail {
+  nominee_id: string;
+  nominee_name: string;
+  date_of_birth: string | null;
+  age_at_application: number | null;
+  gender: string;
+  relationship_to_borrower: string | null;
+  pan: { masked: string | null; can_view_full: boolean };
+  aadhaar: { masked: string | null; can_view_full: boolean };
+  kyc_status: string;
+  minor_flag: boolean;
+  signature_required_flag: boolean;
+  created_at: string;
+}
+
+export interface MemberNomineeList {
+  items: MemberNomineeDetail[];
+  pagination: Pagination;
+}
+
+export interface CreateMemberNomineePayload {
+  nominee_name: string;
+  date_of_birth: string;
+  gender: string;
+  relationship_to_borrower: string;
+  pan: string;
+  aadhaar: string;
+  signature_required_flag: boolean;
+}
+
 export const fetchMemberProfile = async (memberId: string): Promise<MemberProfileDetail> => {
+  const envelope = await request<MemberProfileDetail>(`/api/v1/members/${memberId}/`, 'GET');
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalize(envelope.data);
+};
+
+export const fetchMemberNominees = async (memberId: string): Promise<MemberNomineeList> => {
+  const envelope = await request<MemberNomineeDetail[]>(`/api/v1/members/${memberId}/nominees/`, 'GET');
+  return {
+    items: normalizeNominees(envelope.data ?? []),
+    pagination: envelope.pagination ?? emptyPagination,
+  };
+};
+
+export const createMemberNominee = async (
+  memberId: string,
+  payload: CreateMemberNomineePayload,
+): Promise<MemberNomineeDetail> => {
+  const envelope = await request<MemberNomineeDetail>(
+    `/api/v1/members/${memberId}/nominees/`,
+    'POST',
+    payload,
+  );
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalizeNominee(envelope.data);
+};
+
+const request = async <T>(
+  path: string,
+  method: 'GET' | 'POST',
+  body?: unknown,
+): Promise<ApiEnvelope<T>> => {
   const session = loadStoredAuthSession();
   if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
 
-  const response = await fetch(`${API_BASE_URL}/api/v1/members/${memberId}/`, {
-    method: 'GET',
-    headers: { Accept: 'application/json', Authorization: `Bearer ${session.accessToken}` },
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${session.accessToken}`,
+      ...(method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
+    },
+    ...(method === 'POST' ? { body: JSON.stringify(body ?? {}) } : {}),
   });
-  const envelope = await response.json() as ApiEnvelope<MemberProfileDetail>;
-  if (!response.ok || !envelope.success || !envelope.data) {
+  const envelope = await response.json() as ApiEnvelope<T>;
+  if (!response.ok || !envelope.success) {
     throw new AuthSessionError(
       envelope.error?.code ?? 'REQUEST_FAILED',
       envelope.error?.message ?? 'Request failed.',
       response.status,
+      normalizeFieldErrors(envelope.error?.field_errors),
     );
   }
-  return normalize(envelope.data);
+  return envelope;
 };
 
 const normalize = (profile: MemberProfileDetail): MemberProfileDetail => ({
@@ -108,3 +185,40 @@ const textOrNull = (value: unknown) => (
 const numberOrNull = (value: unknown): number | null => (
   Number.isFinite(Number(value)) ? Number(value) : null
 );
+
+const normalizeNominees = (items: MemberNomineeDetail[]): MemberNomineeDetail[] => (
+  Array.isArray(items) ? items.map(normalizeNominee) : []
+);
+
+const normalizeNominee = (item: MemberNomineeDetail): MemberNomineeDetail => ({
+  nominee_id: String(item?.nominee_id ?? ''),
+  nominee_name: String(item?.nominee_name ?? ''),
+  date_of_birth: textOrNull(item?.date_of_birth),
+  age_at_application: numberOrNull(item?.age_at_application),
+  gender: String(item?.gender ?? ''),
+  relationship_to_borrower: textOrNull(item?.relationship_to_borrower),
+  pan: { masked: textOrNull(item?.pan?.masked), can_view_full: Boolean(item?.pan?.can_view_full) },
+  aadhaar: { masked: textOrNull(item?.aadhaar?.masked), can_view_full: Boolean(item?.aadhaar?.can_view_full) },
+  kyc_status: String(item?.kyc_status ?? ''),
+  minor_flag: Boolean(item?.minor_flag),
+  signature_required_flag: Boolean(item?.signature_required_flag),
+  created_at: String(item?.created_at ?? ''),
+});
+
+const normalizeFieldErrors = (fieldErrors?: Record<string, unknown>): Record<string, string> | undefined => {
+  if (!fieldErrors) return undefined;
+  const normalized: Record<string, string> = {};
+  Object.entries(fieldErrors).forEach(([key, value]) => {
+    normalized[key] = Array.isArray(value) ? String(value[0] ?? '') : String(value ?? '');
+  });
+  return normalized;
+};
+
+const emptyPagination: Pagination = {
+  page: 1,
+  page_size: 20,
+  total_count: 0,
+  total_pages: 1,
+  has_next: false,
+  has_previous: false,
+};

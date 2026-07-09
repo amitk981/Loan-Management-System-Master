@@ -72,12 +72,14 @@ export interface FrontendCurrentUser {
 export class AuthSessionError extends Error {
   code: string;
   status?: number;
+  fieldErrors?: Record<string, string>;
 
-  constructor(code: string, message: string, status?: number) {
+  constructor(code: string, message: string, status?: number, fieldErrors?: Record<string, string>) {
     super(message);
     this.name = 'AuthSessionError';
     this.code = code;
     this.status = status;
+    this.fieldErrors = fieldErrors;
   }
 }
 

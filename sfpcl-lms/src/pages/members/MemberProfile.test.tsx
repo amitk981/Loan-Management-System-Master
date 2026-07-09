@@ -2,7 +2,13 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearStoredAuthSession, storedAuthSession } from '../../services/authSession';
-import { fetchMemberProfile, type MemberProfileDetail } from '../../services/memberProfileApi';
+import {
+  createMemberNominee,
+  fetchMemberNominees,
+  fetchMemberProfile,
+  type MemberNomineeDetail,
+  type MemberProfileDetail,
+} from '../../services/memberProfileApi';
 import { MemberProfileView } from './MemberProfile';
 
 const storage = new Map<string, string>();
@@ -47,6 +53,47 @@ describe('member profile API client', () => {
       await expect(fetchMemberProfile('member-1')).rejects.toMatchObject({ code, status });
     },
   );
+
+  it('loads member nominees through the source-backed nominee endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(listOk([nominee]));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await fetchMemberNominees('member-1');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://127.0.0.1:8000/api/v1/members/member-1/nominees/',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({ Authorization: 'Bearer access-token-1' }),
+      }),
+    );
+    expect(result.items[0].pan.masked).toBe('******234F');
+    expect(result.items[0].aadhaar.masked).toBe('********1234');
+  });
+
+  it('creates member nominees without falling back to mock data and surfaces validation fields', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(ok(nominee))
+      .mockResolvedValueOnce(error(400, 'INVALID_PAN_FORMAT', { pan: 'PAN must match the source-defined format.' }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createMemberNominee('member-1', nomineeRequest)).resolves.toMatchObject({
+      nominee_name: 'Sita Patil',
+      pan: { masked: '******234F', can_view_full: false },
+    });
+    await expect(createMemberNominee('member-1', { ...nomineeRequest, pan: 'bad-pan' })).rejects.toMatchObject({
+      code: 'INVALID_PAN_FORMAT',
+      fieldErrors: { pan: 'PAN must match the source-defined format.' },
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://127.0.0.1:8000/api/v1/members/member-1/nominees/',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(nomineeRequest),
+      }),
+    );
+  });
 });
 
 describe('MemberProfileView', () => {
@@ -98,12 +145,44 @@ describe('MemberProfileView', () => {
     const html = [6, 7, 8, 9].map(tab => renderProfile('success', member, tab)).join('\n');
 
     expect(html).toContain('No loan records are available from the backend yet.');
-    expect(html).toContain('No nominee records are available from the backend yet.');
     expect(html).toContain('No communication records are available from the backend yet.');
     expect(html).toContain('No audit trail records are available from the backend yet.');
     expect(html).not.toContain('APP-');
-    expect(html).not.toContain('Sudha Patil');
     expect(html).not.toContain('Overdue repayment reminder');
+  });
+
+  it('renders nominee tab list and masked identifiers from the API', () => {
+    const html = renderProfile('success', member, 7, '', {
+      nomineeStatus: 'success',
+      nominees: [nominee],
+    });
+
+    expect(html).toContain('Nominee Details');
+    expect(html).toContain('Sita Patil');
+    expect(html).toContain('Spouse');
+    expect(html).toContain('******234F');
+    expect(html).toContain('********1234');
+    expect(html).toContain('Pending');
+    expect(html).not.toContain('ABCDE1234F');
+    expect(html).not.toContain('123412341234');
+    expect(html).not.toContain('Sudha Patil');
+  });
+
+  it('renders nominee empty, loading, error, forbidden, validation, and success states', () => {
+    expect(renderProfile('success', member, 7, '', { nomineeStatus: 'loading' })).toContain('Loading nominee records');
+    expect(renderProfile('success', member, 7, '', { nomineeStatus: 'empty', nominees: [] })).toContain('No nominee records are available from the backend yet.');
+    expect(renderProfile('success', member, 7, '', { nomineeStatus: 'error', nomineeMessage: 'Nominees could not be loaded.' })).toContain('Nominees could not be loaded.');
+    expect(renderProfile('success', member, 7, '', { nomineeStatus: 'forbidden', nomineeMessage: 'You do not have permission to read nominees.' })).toContain('You do not have permission to read nominees.');
+    expect(renderProfile('success', member, 7, '', {
+      nomineeStatus: 'success',
+      nominees: [],
+      nomineeCreateFieldErrors: { pan: 'PAN must match the source-defined format.' },
+    })).toContain('PAN must match the source-defined format.');
+    expect(renderProfile('success', member, 7, '', {
+      nomineeStatus: 'success',
+      nominees: [nominee],
+      nomineeCreateMessage: 'Nominee saved.',
+    })).toContain('Nominee saved.');
   });
 
   it('renders loading, empty, and auth/error states using existing profile layout patterns', () => {
@@ -182,11 +261,37 @@ const producerMember: MemberProfileDetail = {
   },
 };
 
+const nominee: MemberNomineeDetail = {
+  nominee_id: 'nominee-1',
+  nominee_name: 'Sita Patil',
+  date_of_birth: '1985-05-20',
+  age_at_application: 41,
+  gender: 'female',
+  relationship_to_borrower: 'Spouse',
+  pan: { masked: '******234F', can_view_full: false },
+  aadhaar: { masked: '********1234', can_view_full: false },
+  kyc_status: 'pending',
+  minor_flag: false,
+  signature_required_flag: true,
+  created_at: '2026-07-09T05:55:00Z',
+};
+
+const nomineeRequest = {
+  nominee_name: 'Sita Patil',
+  date_of_birth: '1985-05-20',
+  gender: 'female',
+  relationship_to_borrower: 'Spouse',
+  pan: 'ABCDE1234F',
+  aadhaar: '123412341234',
+  signature_required_flag: true,
+};
+
 const renderProfile = (
   status: React.ComponentProps<typeof MemberProfileView>['status'],
   profile: MemberProfileDetail | null,
   activeTab: number,
   message = '',
+  overrides: Partial<React.ComponentProps<typeof MemberProfileView>> = {},
 ) => renderToStaticMarkup(
   <MemberProfileView
     status={status}
@@ -195,6 +300,8 @@ const renderProfile = (
     activeTab={activeTab}
     onTabChange={vi.fn()}
     onBack={vi.fn()}
+    onCreateNominee={vi.fn()}
+    {...overrides}
   />,
 );
 
@@ -206,14 +313,26 @@ function ok(data: unknown): Response {
   } as Response;
 }
 
-function error(status: number, code: string): Response {
+function error(status: number, code: string, fieldErrors: Record<string, string> = {}): Response {
   return {
     ok: false,
     status,
     json: async () => ({
       success: false,
-      error: { code, message: code === 'PERMISSION_DENIED' ? 'You do not have permission.' : 'Request failed.' },
+      error: {
+        code,
+        message: code === 'PERMISSION_DENIED' ? 'You do not have permission.' : 'Request failed.',
+        field_errors: fieldErrors,
+      },
       meta: { api_version: 'v1' },
     }),
+  } as Response;
+}
+
+function listOk(data: unknown[]): Response {
+  return {
+    ok: true,
+    status: 200,
+    json: async () => ({ success: true, data, pagination: { page: 1, page_size: 20, total_count: data.length, total_pages: 1, has_next: false, has_previous: false }, meta: { api_version: 'v1' } }),
   } as Response;
 }
