@@ -11,6 +11,7 @@ from sfpcl_credit.applications.models import (
     ApplicationDocument,
     LoanApplication,
     LoanRequestRegisterEntry,
+    RejectionNote,
     SystemSequence,
 )
 from sfpcl_credit.documents.models import DocumentFile
@@ -40,6 +41,8 @@ APPLICATION_RETURN_DEFICIENCIES_AUDIT_ACTION = (
     "applications.loan_application.returned_with_deficiencies"
 )
 APPLICATION_DEFICIENCY_RESOLVED_AUDIT_ACTION = "applications.deficiency.resolved"
+APPLICATION_REJECTION_NOTE_CREATED_AUDIT_ACTION = "applications.rejection_note.created"
+APPLICATION_REJECTION_NOTE_SENT_AUDIT_ACTION = "applications.rejection_note.sent"
 APPLICATION_DOCUMENT_TYPES = {
     "loan_application_form",
     "borrower_pan",
@@ -214,6 +217,22 @@ def get_application_deficiency(deficiency_id):
             "resolved_by_user",
         )
         .filter(deficiency_id=deficiency_id)
+        .first()
+    )
+
+
+def get_rejection_note(rejection_note_id):
+    return (
+        RejectionNote.objects.select_related(
+            "loan_application",
+            "loan_application__member",
+            "loan_application__created_by_user",
+            "loan_application__received_by_user",
+            "prepared_by_user",
+            "approved_by_user",
+            "sent_by_user",
+        )
+        .filter(rejection_note_id=rejection_note_id)
         .first()
     )
 
@@ -642,6 +661,21 @@ def return_deficiencies_invalid_state_message(application):
     return None
 
 
+def rejection_note_create_invalid_state_message(application):
+    if application.application_status != LoanApplication.STATUS_SUBMITTED:
+        return (
+            "Invalid state transition for loan_application: "
+            f"create_rejection_note is not allowed from {application.application_status}."
+        )
+    if application.application_reference_number:
+        return "Application already has a reference number."
+    if LoanRequestRegisterEntry.objects.filter(loan_application=application).exists():
+        return "Loan request register entry already exists."
+    if RejectionNote.objects.filter(loan_application=application).exists():
+        return "Application already has a rejection note."
+    return None
+
+
 def list_application_deficiencies(application):
     return (
         ApplicationDeficiency.objects.select_related("raised_by_user", "resolved_by_user")
@@ -771,6 +805,109 @@ def resolve_application_deficiency(
     return deficiency
 
 
+@transaction.atomic
+def create_rejection_note(
+    application,
+    payload,
+    actor,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+):
+    application = (
+        LoanApplication.objects.select_for_update()
+        .select_related("member", "received_by_user")
+        .get(loan_application_id=application.loan_application_id)
+    )
+    invalid_state_message = rejection_note_create_invalid_state_message(application)
+    if invalid_state_message:
+        raise LoanApplicationInvalidStateError(invalid_state_message)
+    cleaned = _clean_rejection_note_payload(payload)
+    now = timezone.now()
+    rejection_note = RejectionNote.objects.create(
+        loan_application=application,
+        rejection_stage=cleaned["rejection_stage"],
+        rejection_reason_category=cleaned["rejection_reason_category"],
+        detailed_reason=cleaned["detailed_reason"],
+        reapply_allowed_flag=cleaned["reapply_allowed_flag"],
+        note_status=RejectionNote.STATUS_DRAFT,
+        prepared_by_user=actor,
+        communication_mode=cleaned["communication_mode"],
+        updated_by_user=actor,
+        updated_at=now,
+    )
+    _audit_rejection_note(
+        rejection_note,
+        actor,
+        APPLICATION_REJECTION_NOTE_CREATED_AUDIT_ACTION,
+        None,
+        request_ip,
+        request_user_agent,
+        request_id,
+    )
+    record_workflow_event(
+        actor=actor,
+        workflow_name="loan_application",
+        entity_type="rejection_note",
+        entity_id=rejection_note.rejection_note_id,
+        from_state=None,
+        to_state=RejectionNote.STATUS_DRAFT,
+        trigger_reason="Rejection note draft created.",
+        action_code="create_rejection_note",
+    )
+    return rejection_note
+
+
+@transaction.atomic
+def send_rejection_note(
+    rejection_note,
+    payload,
+    actor,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+):
+    rejection_note = (
+        RejectionNote.objects.select_for_update()
+        .select_related("loan_application", "loan_application__member")
+        .get(rejection_note_id=rejection_note.rejection_note_id)
+    )
+    errors = _validate_rejection_note_send_payload(payload)
+    if rejection_note.note_status != RejectionNote.STATUS_DRAFT:
+        errors["note_status"] = "Only draft rejection notes can be sent."
+    if errors:
+        raise LoanApplicationValidationError(errors)
+
+    old_value_json = _rejection_note_audit_snapshot(rejection_note)
+    now = timezone.now()
+    rejection_note.note_status = RejectionNote.STATUS_SENT
+    rejection_note.sent_by_user = actor
+    rejection_note.sent_at = now
+    rejection_note.updated_by_user = actor
+    rejection_note.updated_at = now
+    rejection_note.save()
+    _audit_rejection_note(
+        rejection_note,
+        actor,
+        APPLICATION_REJECTION_NOTE_SENT_AUDIT_ACTION,
+        old_value_json,
+        request_ip,
+        request_user_agent,
+        request_id,
+    )
+    record_workflow_event(
+        actor=actor,
+        workflow_name="loan_application",
+        entity_type="rejection_note",
+        entity_id=rejection_note.rejection_note_id,
+        from_state=RejectionNote.STATUS_DRAFT,
+        to_state=RejectionNote.STATUS_SENT,
+        trigger_reason="Rejection note marked sent.",
+        action_code="send_rejection_note",
+    )
+    return rejection_note
+
+
 def serialize_application(application):
     register_entry = getattr(application, "loan_request_register_entry", None)
     return {
@@ -870,6 +1007,35 @@ def serialize_application_deficiency(deficiency):
         else None,
         "resolved_at": _datetime(deficiency.resolved_at),
         "resolution_notes": deficiency.resolution_notes,
+    }
+
+
+def serialize_rejection_note(rejection_note):
+    return {
+        "rejection_note_id": str(rejection_note.rejection_note_id),
+        "loan_application_id": str(rejection_note.loan_application_id),
+        "rejection_stage": rejection_note.rejection_stage,
+        "rejection_reason_category": rejection_note.rejection_reason_category,
+        "detailed_reason": rejection_note.detailed_reason,
+        "reapply_allowed_flag": rejection_note.reapply_allowed_flag,
+        "note_status": rejection_note.note_status,
+        "prepared_by_user_id": str(rejection_note.prepared_by_user_id),
+        "approved_by_user_id": str(rejection_note.approved_by_user_id)
+        if rejection_note.approved_by_user_id
+        else None,
+        "communication_mode": rejection_note.communication_mode,
+        "communication_id": str(rejection_note.communication_id)
+        if rejection_note.communication_id
+        else None,
+        "sent_by_user_id": str(rejection_note.sent_by_user_id)
+        if rejection_note.sent_by_user_id
+        else None,
+        "sent_at": _datetime(rejection_note.sent_at),
+        "created_at": _datetime(rejection_note.created_at),
+        "updated_at": _datetime(rejection_note.updated_at),
+        "updated_by_user_id": str(rejection_note.updated_by_user_id)
+        if rejection_note.updated_by_user_id
+        else None,
     }
 
 
@@ -1138,6 +1304,57 @@ def _clean_return_deficiencies_payload(application, payload):
     }
 
 
+def _clean_rejection_note_payload(payload):
+    unknown = set(payload.keys()) - {
+        "rejection_stage",
+        "rejection_reason_category",
+        "detailed_reason",
+        "reapply_allowed_flag",
+        "communication_mode",
+    }
+    errors = {field: "Unknown field." for field in sorted(unknown)}
+    rejection_stage = _optional_text(payload.get("rejection_stage")).lower()
+    reason_category = _optional_text(payload.get("rejection_reason_category")).lower()
+    detailed_reason = _optional_text(payload.get("detailed_reason"))
+    communication_mode = _optional_text(payload.get("communication_mode")).lower()
+    if not rejection_stage:
+        errors["rejection_stage"] = "This field is required."
+    elif rejection_stage not in RejectionNote.REJECTION_STAGES:
+        errors["rejection_stage"] = "Unsupported rejection stage."
+    if not reason_category:
+        errors["rejection_reason_category"] = "This field is required."
+    elif reason_category not in RejectionNote.REASON_CATEGORIES:
+        errors["rejection_reason_category"] = "Unsupported rejection reason category."
+    if not detailed_reason:
+        errors["detailed_reason"] = "This field is required."
+    if not communication_mode:
+        errors["communication_mode"] = "This field is required."
+    elif communication_mode not in RejectionNote.COMMUNICATION_MODES:
+        errors["communication_mode"] = "Unsupported communication mode."
+    if "reapply_allowed_flag" in payload and not isinstance(
+        payload.get("reapply_allowed_flag"), bool
+    ):
+        errors["reapply_allowed_flag"] = "Must be a boolean."
+    if errors:
+        raise LoanApplicationValidationError(errors)
+    return {
+        "rejection_stage": rejection_stage,
+        "rejection_reason_category": reason_category,
+        "detailed_reason": detailed_reason,
+        "reapply_allowed_flag": bool(payload.get("reapply_allowed_flag", True)),
+        "communication_mode": communication_mode,
+    }
+
+
+def _validate_rejection_note_send_payload(payload):
+    unknown = set(payload.keys()) - {"recipient_email", "message_override"}
+    errors = {field: "Unknown field." for field in sorted(unknown)}
+    recipient_email = _optional_text(payload.get("recipient_email"))
+    if not recipient_email:
+        errors["recipient_email"] = "This field is required."
+    return errors
+
+
 def _deficiency_type_for_source_reason(reason_code):
     if reason_code == "missing_metadata":
         return ApplicationDeficiency.TYPE_MISSING_DOCUMENT
@@ -1297,6 +1514,29 @@ def _audit_application_deficiency(
     )
 
 
+def _audit_rejection_note(
+    rejection_note,
+    actor,
+    action,
+    old_value_json,
+    request_ip,
+    request_user_agent,
+    request_id,
+):
+    new_value_json = _rejection_note_audit_snapshot(rejection_note)
+    new_value_json["request_id"] = request_id
+    AuditLog.objects.create(
+        actor_user=actor,
+        action=action,
+        entity_type="rejection_note",
+        entity_id=rejection_note.rejection_note_id,
+        old_value_json=old_value_json,
+        new_value_json=new_value_json,
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+
+
 def _audit_snapshot(application):
     return {
         "loan_application_id": str(application.loan_application_id),
@@ -1359,6 +1599,30 @@ def _application_deficiency_audit_snapshot(deficiency):
         else None,
         "resolved_at": _datetime(deficiency.resolved_at),
         "resolution_notes": deficiency.resolution_notes,
+    }
+
+
+def _rejection_note_audit_snapshot(rejection_note):
+    return {
+        "rejection_note_id": str(rejection_note.rejection_note_id),
+        "loan_application_id": str(rejection_note.loan_application_id),
+        "rejection_stage": rejection_note.rejection_stage,
+        "rejection_reason_category": rejection_note.rejection_reason_category,
+        "detailed_reason": rejection_note.detailed_reason,
+        "reapply_allowed_flag": rejection_note.reapply_allowed_flag,
+        "note_status": rejection_note.note_status,
+        "prepared_by_user_id": str(rejection_note.prepared_by_user_id),
+        "approved_by_user_id": str(rejection_note.approved_by_user_id)
+        if rejection_note.approved_by_user_id
+        else None,
+        "communication_mode": rejection_note.communication_mode,
+        "communication_id": str(rejection_note.communication_id)
+        if rejection_note.communication_id
+        else None,
+        "sent_by_user_id": str(rejection_note.sent_by_user_id)
+        if rejection_note.sent_by_user_id
+        else None,
+        "sent_at": _datetime(rejection_note.sent_at),
     }
 
 

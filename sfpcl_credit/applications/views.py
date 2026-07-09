@@ -581,6 +581,96 @@ def application_deficiency_resolve(request, deficiency_id):
     return success_response(services.serialize_application_deficiency(deficiency), request)
 
 
+@require_http_methods(["POST"])
+def loan_application_rejection_note(request, loan_application_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    if not services.user_can_complete_check_applications(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to complete-check loan applications.",
+        )
+    application = services.get_application(loan_application_id)
+    if application is None:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+    object_access = services.evaluate_application_object_access(
+        application,
+        user,
+        services.APPLICATION_COMPLETE_CHECK_PERMISSION,
+        permissions,
+    )
+    if not object_access.allowed:
+        return _object_access_denied_response(request, object_access)
+    try:
+        body = parse_json_body(request)
+        rejection_note = services.create_rejection_note(
+            application,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+    except (services.LoanApplicationValidationError, ValidationError) as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Rejection note payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    except (services.LoanApplicationInvalidStateError, InvalidStateTransition) as exc:
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
+    return success_response(services.serialize_rejection_note(rejection_note), request)
+
+
+@require_http_methods(["POST"])
+def rejection_note_send(request, rejection_note_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    if not services.user_can_complete_check_applications(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to complete-check loan applications.",
+        )
+    rejection_note = services.get_rejection_note(rejection_note_id)
+    if rejection_note is None:
+        return error_response(request, 404, "NOT_FOUND", "Rejection note was not found.")
+    object_access = services.evaluate_application_object_access(
+        rejection_note.loan_application,
+        user,
+        services.APPLICATION_COMPLETE_CHECK_PERMISSION,
+        permissions,
+    )
+    if not object_access.allowed:
+        return _object_access_denied_response(request, object_access)
+    try:
+        body = parse_json_body(request)
+        rejection_note = services.send_rejection_note(
+            rejection_note,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+    except (services.LoanApplicationValidationError, ValidationError) as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Rejection note payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return success_response(services.serialize_rejection_note(rejection_note), request)
+
+
 def _object_access_denied_response(request, object_access):
     return error_response(
         request,

@@ -318,6 +318,36 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
 
 ## Architecture Review 2026-07-10 01:01 - Portal Session And Audit Contract
 - Reviewed slices 005F2, 005FA, 005FB, and 005G after prior architecture-review commit `49da479`.
+
+## Rejection Note Shell
+- 005H implements backend/API-only staff rejection-note metadata:
+  - `POST /api/v1/loan-applications/{loan_application_id}/rejection-note/`
+  - `POST /api/v1/rejection-notes/{rejection_note_id}/send/`
+- Source fields from `api-contracts.md` §21.3-§21.4 and `data-model.md` §13.6 are represented by
+  `rejection_stage`, `rejection_reason_category`, `detailed_reason`, `reapply_allowed_flag`,
+  `communication_mode`, `prepared_by_user`, optional approval/communication facts, and send actor
+  timestamps. 005H adds `note_status = draft/sent` as the metadata-shell state.
+- 005H uses the existing staff permission `applications.loan_application.complete_check` because no
+  narrower source-backed rejection-note permission exists yet. Staff object access reuses
+  `applications.services.evaluate_application_object_access(...)` after global permission and
+  `404` checks. Same-permission actors outside scope receive `403 OBJECT_ACCESS_DENIED`.
+- Borrower portal tokens cannot create or send staff rejection notes. Active portal tokens receive
+  `403 PERMISSION_DENIED`; stale sessions for suspended portal accounts receive
+  `401 INVALID_TOKEN` through the shared session validator before any rejection-note side effect.
+- Create is limited to submitted applications with no `LO...` reference, no loan request register
+  row, and no existing rejection note. Draft, `incomplete_returned`, reference-generated, and
+  duplicate-create attempts return `409 INVALID_STATE_TRANSITION` and create no rejection note,
+  success audit row, workflow event, register row, reference, or sequence advancement.
+- Successful create writes `applications.rejection_note.created` metadata-only audit and a
+  `rejection_note` workflow event into `draft`. Successful send writes
+  `applications.rejection_note.sent`, stamps `sent_by_user`/`sent_at`, and records a workflow event
+  from `draft` to `sent`.
+- Send is a metadata/status transition only in 005H. It validates `recipient_email` but does not
+  call a provider and does not create a `communications` row.
+- A-045 records the status deferral: rejection-note creation leaves
+  `LoanApplication.application_status = submitted` because the current source-backed intake status
+  vocabulary has no generic rejected state yet. Future appraisal/sanction rejection slices must
+  define when and how the application status changes.
 - Source portal login/access facts opened for this review:
   - MP00 says inactive/suspended portal users are blocked.
   - §14.1 says inactive or unauthorised portal accounts are blocked.

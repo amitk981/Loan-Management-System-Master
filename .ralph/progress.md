@@ -1,5 +1,26 @@
 # Ralph Progress Log
 
+## 2026-07-10 01:57:23 - 2026-07-10_015723_normal_run
+- Agent tool used: codex
+- Slice attempted: 005H-rejection-note-shell
+- Summary: Implemented the staff-only rejection-note metadata shell. Added `rejection_notes` with
+  `note_status = draft/sent`, create and send endpoints, metadata-only audit/workflow evidence, and
+  strict no-reference/no-register/no-sequence side-effect guarantees. Active borrower portal tokens
+  receive `403 PERMISSION_DENIED` on staff rejection-note routes, while old suspended portal
+  sessions receive `401 INVALID_TOKEN`. Send is metadata-only and does not create communication
+  rows or call providers. A-045 records that application status remains `submitted` until a future
+  source-backed rejected status is defined.
+- Tests run: TDD red for missing rejection-note create route; focused rejection-note tests (3/3);
+  focused loan-application API tests (21/21); backend `manage.py check`; backend tests (272/272);
+  `makemigrations --check --dry-run`; backend coverage 95% (floor 85); frontend `npm run lint`;
+  `npm run typecheck`; `npm test` (90/90); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_015723_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005I-application-intake-frontend-wiring`; it has been sharpened with the
+  exact 005H rejection-note metadata contract and portal/staff separation rules.
+
 ## 2026-07-10 01:26:50 - 2026-07-10_012650_normal_run
 - Agent tool used: codex
 - Slice attempted: 005G2-member-portal-session-and-audit-contract-hardening
@@ -2142,6 +2163,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_012650_normal_run/.ralph/runs/2026-07-10_012650_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_012650_normal_run/.ralph/runs/2026-07-10_012650_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 02:31:08 - 2026-07-10_015723_normal_run
+- Agent tool used: codex
+- Slice attempted: 005H-rejection-note-shell
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_015723_normal_run/.ralph/runs/2026-07-10_015723_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_015723_normal_run/.ralph/runs/2026-07-10_015723_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

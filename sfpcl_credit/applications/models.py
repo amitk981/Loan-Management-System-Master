@@ -435,3 +435,98 @@ class ApplicationDeficiency(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
+
+
+class RejectionNote(models.Model):
+    STATUS_DRAFT = "draft"
+    STATUS_SENT = "sent"
+    REJECTION_STAGES = {"completeness", "credit_assessment", "sanction_committee"}
+    REASON_CATEGORIES = {
+        "missing_document",
+        "eligibility",
+        "default",
+        "purpose_mismatch",
+        "limit_issue",
+        "committee_rejection",
+        "other",
+    }
+    COMMUNICATION_MODES = {"email", "courier", "hard_copy", "sms_summary"}
+
+    rejection_note_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    loan_application = models.OneToOneField(
+        LoanApplication,
+        on_delete=models.PROTECT,
+        related_name="rejection_note",
+    )
+    rejection_stage = models.CharField(max_length=80, db_index=True)
+    rejection_reason_category = models.CharField(max_length=100, db_index=True)
+    detailed_reason = models.TextField()
+    reapply_allowed_flag = models.BooleanField(default=True)
+    note_status = models.CharField(max_length=40, default=STATUS_DRAFT, db_index=True)
+    prepared_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="prepared_rejection_notes",
+    )
+    approved_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="approved_rejection_notes",
+    )
+    communication_mode = models.CharField(max_length=60)
+    communication_id = models.UUIDField(blank=True, null=True)
+    sent_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="sent_rejection_notes",
+    )
+    sent_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(blank=True, null=True)
+    updated_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="updated_rejection_notes",
+    )
+
+    class Meta:
+        db_table = "rejection_notes"
+        ordering = ["loan_application_id", "created_at", "rejection_note_id"]
+        indexes = [
+            models.Index(
+                fields=["loan_application", "note_status"],
+                name="idx_rej_note_app_status",
+            ),
+            models.Index(fields=["rejection_stage"], name="idx_rej_note_stage"),
+            models.Index(fields=["rejection_reason_category"], name="idx_rej_note_reason"),
+        ]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.rejection_stage not in self.REJECTION_STAGES:
+            errors["rejection_stage"] = "Unsupported rejection stage."
+        if self.rejection_reason_category not in self.REASON_CATEGORIES:
+            errors["rejection_reason_category"] = "Unsupported rejection reason category."
+        if not self.detailed_reason.strip():
+            errors["detailed_reason"] = "This field is required."
+        if self.communication_mode not in self.COMMUNICATION_MODES:
+            errors["communication_mode"] = "Unsupported communication mode."
+        if self.note_status not in {self.STATUS_DRAFT, self.STATUS_SENT}:
+            errors["note_status"] = "Unsupported rejection note status."
+        if self.note_status == self.STATUS_SENT and (
+            self.sent_by_user_id is None or self.sent_at is None
+        ):
+            errors["sent_by_user"] = "Sent rejection notes require sender facts."
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)

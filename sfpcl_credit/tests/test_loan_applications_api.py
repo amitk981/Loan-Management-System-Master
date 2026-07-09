@@ -3,9 +3,10 @@ from uuid import uuid4
 
 from django.test import Client, TestCase
 from django.apps import apps
+from django.utils import timezone
 
 from sfpcl_credit.documents.models import DocumentFile
-from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
+from sfpcl_credit.identity.models import AuditLog, Permission, PortalAccount, Role, RolePermission, User
 from sfpcl_credit.members.models import BankAccount, CancelledCheque, CropPlan, LandHolding, Member
 from sfpcl_credit.tests.api_contracts import assert_error_envelope, assert_success_envelope
 from sfpcl_credit.workflows.models import WorkflowEvent
@@ -1270,6 +1271,286 @@ class LoanApplicationDraftApiTests(TestCase):
             0,
         )
 
+    def test_rejection_note_create_and_send_records_metadata_only_staff_evidence(self):
+        application_id = self._create_and_submit_application()
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/rejection-note/",
+            data=self._rejection_note_payload(),
+            content_type="application/json",
+            headers={
+                **self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+                "X-Request-ID": "req-create-rejection-note",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        assert_success_envelope(self, body)
+        note = body["data"]
+        self.assertEqual(note["loan_application_id"], application_id)
+        self.assertEqual(note["rejection_stage"], "credit_assessment")
+        self.assertEqual(note["rejection_reason_category"], "eligibility")
+        self.assertEqual(note["detailed_reason"], "Borrower does not meet active member criteria.")
+        self.assertTrue(note["reapply_allowed_flag"])
+        self.assertEqual(note["communication_mode"], "email")
+        self.assertEqual(note["note_status"], "draft")
+        self.assertEqual(note["prepared_by_user_id"], str(self.creator.user_id))
+        self.assertIsNotNone(note["created_at"])
+        self.assertIsNone(note["sent_at"])
+
+        rejection_note_model = apps.get_model("applications", "RejectionNote")
+        self.assertEqual(rejection_note_model.objects.filter(loan_application_id=application_id).count(), 1)
+        application_model = apps.get_model("applications", "LoanApplication")
+        persisted_application = application_model.objects.get(loan_application_id=application_id)
+        self.assertEqual(persisted_application.application_status, "submitted")
+        self.assertIsNone(persisted_application.application_reference_number)
+        self.assertEqual(apps.get_model("applications", "LoanRequestRegisterEntry").objects.count(), 0)
+        self.assertEqual(apps.get_model("applications", "SystemSequence").objects.count(), 0)
+
+        create_audit = AuditLog.objects.filter(
+            action="applications.rejection_note.created"
+        ).get()
+        self.assertEqual(str(create_audit.entity_id), note["rejection_note_id"])
+        self.assertEqual(create_audit.entity_type, "rejection_note")
+        self.assertEqual(create_audit.new_value_json["loan_application_id"], application_id)
+        self.assertEqual(create_audit.new_value_json["note_status"], "draft")
+        self.assertEqual(create_audit.new_value_json["request_id"], "req-create-rejection-note")
+        create_event = WorkflowEvent.objects.filter(
+            entity_type="rejection_note",
+            to_state="draft",
+        ).get()
+        self.assertEqual(str(create_event.entity_id), note["rejection_note_id"])
+
+        send_response = self.client.post(
+            f"/api/v1/rejection-notes/{note['rejection_note_id']}/send/",
+            data={"recipient_email": "borrower@example.com", "message_override": None},
+            content_type="application/json",
+            headers={
+                **self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+                "X-Request-ID": "req-send-rejection-note",
+            },
+        )
+
+        self.assertEqual(send_response.status_code, 200)
+        send_body = send_response.json()
+        assert_success_envelope(self, send_body)
+        sent_note = send_body["data"]
+        self.assertEqual(sent_note["rejection_note_id"], note["rejection_note_id"])
+        self.assertEqual(sent_note["note_status"], "sent")
+        self.assertEqual(sent_note["sent_by_user_id"], str(self.creator.user_id))
+        self.assertIsNotNone(sent_note["sent_at"])
+        self.assertIsNone(sent_note["communication_id"])
+        self.assertEqual(apps.get_model("applications", "LoanRequestRegisterEntry").objects.count(), 0)
+        self.assertEqual(apps.get_model("applications", "SystemSequence").objects.count(), 0)
+
+        send_audit = AuditLog.objects.filter(action="applications.rejection_note.sent").get()
+        self.assertEqual(str(send_audit.entity_id), note["rejection_note_id"])
+        self.assertEqual(send_audit.old_value_json["note_status"], "draft")
+        self.assertEqual(send_audit.new_value_json["note_status"], "sent")
+        self.assertEqual(send_audit.new_value_json["request_id"], "req-send-rejection-note")
+        send_event = WorkflowEvent.objects.filter(
+            entity_type="rejection_note",
+            from_state="draft",
+            to_state="sent",
+        ).get()
+        self.assertEqual(str(send_event.entity_id), note["rejection_note_id"])
+
+        flattened = (
+            f"{body} {send_body} {create_audit.new_value_json} "
+            f"{send_audit.old_value_json} {send_audit.new_value_json}"
+        )
+        self.assertNotIn("member-pan-token", flattened)
+        self.assertNotIn("member-aadhaar-token", flattened)
+        self.assertNotIn("bank-token-123456789012", flattened)
+        self.assertNotIn("bank-hash-123456789012", flattened)
+        self.assertNotIn("doc-hash-secret", flattened)
+        self.assertNotIn("document-files/private", flattened)
+
+    def test_rejection_note_create_and_send_enforce_staff_permissions_and_object_scope(self):
+        application_id = self._create_and_submit_application()
+
+        no_permission = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/rejection-note/",
+            data=self._rejection_note_payload(),
+            content_type="application/json",
+            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
+        )
+        self.assertEqual(no_permission.status_code, 403)
+        assert_error_envelope(self, no_permission.json(), "PERMISSION_DENIED")
+
+        scope_denied = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/rejection-note/",
+            data=self._rejection_note_payload(),
+            content_type="application/json",
+            headers=self._headers("applications.unrelated@sfpcl.example", "UnrelatedPass123!"),
+        )
+        self.assertEqual(scope_denied.status_code, 403)
+        assert_error_envelope(self, scope_denied.json(), "OBJECT_ACCESS_DENIED")
+
+        portal_token = self._portal_token()
+        portal_denied = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/rejection-note/",
+            data=self._rejection_note_payload(),
+            content_type="application/json",
+            headers={"Authorization": f"Bearer {portal_token}"},
+        )
+        self.assertEqual(portal_denied.status_code, 403)
+        assert_error_envelope(self, portal_denied.json(), "PERMISSION_DENIED")
+
+        create_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/rejection-note/",
+            data=self._rejection_note_payload(),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(create_response.status_code, 200)
+        note_id = create_response.json()["data"]["rejection_note_id"]
+
+        portal_send_denied = self.client.post(
+            f"/api/v1/rejection-notes/{note_id}/send/",
+            data={"recipient_email": "borrower@example.com", "message_override": None},
+            content_type="application/json",
+            headers={"Authorization": f"Bearer {portal_token}"},
+        )
+        self.assertEqual(portal_send_denied.status_code, 403)
+        assert_error_envelope(self, portal_send_denied.json(), "PERMISSION_DENIED")
+
+        suspended_token = self._portal_token(email="suspended.portal@sfpcl.example")
+        suspended_account = PortalAccount.objects.get(user__email="suspended.portal@sfpcl.example")
+        suspended_account.status = PortalAccount.STATUS_SUSPENDED
+        suspended_account.save(update_fields=["status"])
+        suspended_create = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/rejection-note/",
+            data=self._rejection_note_payload(),
+            content_type="application/json",
+            headers={"Authorization": f"Bearer {suspended_token}"},
+        )
+        self.assertEqual(suspended_create.status_code, 401)
+        assert_error_envelope(self, suspended_create.json(), "INVALID_TOKEN")
+        suspended_send = self.client.post(
+            f"/api/v1/rejection-notes/{note_id}/send/",
+            data={"recipient_email": "borrower@example.com", "message_override": None},
+            content_type="application/json",
+            headers={"Authorization": f"Bearer {suspended_token}"},
+        )
+        self.assertEqual(suspended_send.status_code, 401)
+        assert_error_envelope(self, suspended_send.json(), "INVALID_TOKEN")
+
+        rejection_note_model = apps.get_model("applications", "RejectionNote")
+        self.assertEqual(rejection_note_model.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action="applications.rejection_note.created").count(),
+            1,
+        )
+        self.assertFalse(AuditLog.objects.filter(action="applications.rejection_note.sent").exists())
+        self.assertEqual(WorkflowEvent.objects.filter(entity_type="rejection_note").count(), 1)
+
+    def test_rejection_note_validation_state_and_duplicate_guards_have_no_side_effects(self):
+        application_id = self._create_and_submit_application()
+
+        invalid_payload = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/rejection-note/",
+            data={
+                "rejection_stage": "",
+                "rejection_reason_category": "invented",
+                "detailed_reason": "",
+                "reapply_allowed_flag": "yes",
+                "communication_mode": "fax",
+                "unexpected": "value",
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(invalid_payload.status_code, 400)
+        assert_error_envelope(self, invalid_payload.json(), "VALIDATION_ERROR")
+        self.assertEqual(apps.get_model("applications", "RejectionNote").objects.count(), 0)
+
+        draft_response = self.client.post(
+            "/api/v1/loan-applications/",
+            data=self._draft_payload(declared_purpose="Draft rejection note attempt"),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(draft_response.status_code, 200)
+        draft_id = draft_response.json()["data"]["loan_application_id"]
+        draft_rejection = self.client.post(
+            f"/api/v1/loan-applications/{draft_id}/rejection-note/",
+            data=self._rejection_note_payload(),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(draft_rejection.status_code, 409)
+        assert_error_envelope(self, draft_rejection.json(), "INVALID_STATE_TRANSITION")
+
+        referenced_id = self._create_and_submit_application(
+            declared_purpose="Reference generated rejection note attempt"
+        )
+        reference_response = self.client.post(
+            f"/api/v1/loan-applications/{referenced_id}/generate-reference/",
+            data={"completeness_result": "complete"},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(reference_response.status_code, 200)
+        referenced_rejection = self.client.post(
+            f"/api/v1/loan-applications/{referenced_id}/rejection-note/",
+            data=self._rejection_note_payload(),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(referenced_rejection.status_code, 409)
+        assert_error_envelope(self, referenced_rejection.json(), "INVALID_STATE_TRANSITION")
+
+        create_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/rejection-note/",
+            data=self._rejection_note_payload(),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(create_response.status_code, 200)
+        note_id = create_response.json()["data"]["rejection_note_id"]
+        duplicate_create = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/rejection-note/",
+            data=self._rejection_note_payload(detailed_reason="Duplicate attempt."),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(duplicate_create.status_code, 409)
+        assert_error_envelope(self, duplicate_create.json(), "INVALID_STATE_TRANSITION")
+
+        send_response = self.client.post(
+            f"/api/v1/rejection-notes/{note_id}/send/",
+            data={"recipient_email": "borrower@example.com", "message_override": None},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(send_response.status_code, 200)
+        duplicate_send = self.client.post(
+            f"/api/v1/rejection-notes/{note_id}/send/",
+            data={"recipient_email": "borrower@example.com", "message_override": None},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(duplicate_send.status_code, 400)
+        assert_error_envelope(self, duplicate_send.json(), "VALIDATION_ERROR")
+
+        self.assertEqual(apps.get_model("applications", "RejectionNote").objects.count(), 1)
+        self.assertEqual(apps.get_model("applications", "LoanRequestRegisterEntry").objects.count(), 1)
+        self.assertEqual(apps.get_model("applications", "SystemSequence").objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action="applications.rejection_note.created").count(),
+            1,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(action="applications.rejection_note.sent").count(),
+            1,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(entity_type="rejection_note").count(),
+            2,
+        )
+
     def test_deficiency_resolve_closes_open_item_with_metadata_only_evidence(self):
         application_id = self._create_and_submit_application()
         return_response = self.client.post(
@@ -1718,6 +1999,17 @@ class LoanApplicationDraftApiTests(TestCase):
             verified_ids.append(application_document_id)
         return verified_ids
 
+    def _rejection_note_payload(self, **overrides):
+        payload = {
+            "rejection_stage": "credit_assessment",
+            "rejection_reason_category": "eligibility",
+            "detailed_reason": "Borrower does not meet active member criteria.",
+            "reapply_allowed_flag": True,
+            "communication_mode": "email",
+        }
+        payload.update(overrides)
+        return payload
+
     def _permission(self, code, name):
         return Permission.objects.create(
             permission_code=code,
@@ -1751,6 +2043,22 @@ class LoanApplicationDraftApiTests(TestCase):
 
     def _headers(self, email, password):
         return {"Authorization": f"Bearer {self._token(email, password)}"}
+
+    def _portal_token(self, email="borrower.portal@sfpcl.example"):
+        portal_user = self._user(email, "PortalPass123!", role_code=email.split("@")[0])
+        PortalAccount.objects.create(
+            member=self.other_member if email.startswith("suspended") else self.member,
+            user=portal_user,
+            status=PortalAccount.STATUS_ACTIVE,
+            activated_at=timezone.now(),
+        )
+        response = self.client.post(
+            "/api/v1/portal/auth/login/",
+            data={"identifier": email, "password": "PortalPass123!"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        return response.json()["data"]["access_token"]
 
     def _member(self, suffix, display_name):
         return Member.objects.create(
