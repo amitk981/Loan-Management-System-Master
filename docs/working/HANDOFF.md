@@ -1,57 +1,62 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-09_175511_normal_run
+2026-07-09_183552_normal_run
 
 ## Current Status
-`005B-application-submit-and-status-transition` completed successfully.
+`005C-reference-number-generation-and-loan-request-register` completed successfully.
+
+Architecture review is now due by cadence: `slices_completed_since_architecture_review = 4`.
 
 ## What Completed
-- Added `POST /api/v1/loan-applications/{loan_application_id}/submit/`.
-- Submit requires `applications.loan_application.submit`.
-- Submit permits only `draft -> submitted` and returns `409 INVALID_STATE_TRANSITION` for repeat or
-  non-draft submits.
-- Submit stamps `submitted_at` and `submitted_by_user`, updates `updated_at`/`updated_by_user`, and
-  preserves `current_stage = initial_loan_request`, `completeness_status = not_started`, and
-  nullable `application_reference_number`.
-- Submitted applications remain readable through `GET /api/v1/loan-applications/{id}/`.
-- Draft `PATCH` now rejects submitted applications through the existing draft-only validation path.
-- Submit validates the persisted 005B request facts: borrower member, positive
-  `required_loan_amount`, nonblank `declared_purpose`, and nonblank `purpose_category`.
-- Successful submit writes metadata-only `applications.loan_application.submitted` audit and a
-  `loan_application` workflow event from `draft` to `submitted`.
-- Submit responses and audit metadata preserve 005A/Epic 004 sensitive-data boundaries:
-  no PAN, Aadhaar, full bank account numbers, token values, or hashes; selected bank metadata still
-  uses `account_holder_name`, masked account values, and `can_view_full: false`.
-- Updated `docs/working/API_CONTRACTS.md`, `docs/working/ASSUMPTIONS.md`, and
+- Added `POST /api/v1/loan-applications/{loan_application_id}/generate-reference/`.
+- The action is gated by source-backed `applications.loan_application.complete_check`.
+- Source trigger confirmed: official `LO...` generation occurs after completeness check passes, not
+  at draft creation or submit.
+- Added `SystemSequence` / `system_sequences` for `loan_application_reference` with `LO` prefix,
+  8-digit padding, and first generated value `LO00000001`.
+- Added one-to-one `LoanRequestRegisterEntry` / `loan_request_register_entries` linked to
+  `loan_applications`.
+- Generation is allowed only from `submitted`; draft and duplicate/reference-generated attempts
+  return `409 INVALID_STATE_TRANSITION`.
+- Successful generation:
+  - persists `application_reference_number`;
+  - sets `application_status = reference_generated`;
+  - sets `current_stage = credit_assessment`;
+  - sets `completeness_status = complete`;
+  - creates exactly one loan request register row sourced from application/member facts;
+  - writes metadata-only `applications.loan_application.reference_generated` audit;
+  - writes a `loan_application` workflow event from `submitted` to `reference_generated`.
+- Responses, audit metadata, workflow events, and register rows preserve Epic 004/005 sensitive-data
+  boundaries: no PAN, Aadhaar, full bank account numbers, token values, or hashes.
+- Updated `docs/working/API_CONTRACTS.md`, `docs/working/ASSUMPTIONS.md` (A-037), and
   `docs/working/digests/epic-005-application-intake.md`.
-- Sharpened `005C-reference-number-generation-and-loan-request-register` and
-  `005D-application-document-checklist`.
+- Sharpened `005D-application-document-checklist` and `005E-completeness-workbench`.
 
 ## Explicit Deferrals
-- Formal `LO...` reference generation and loan request register remain `005C`.
-- `submission_notes` is accepted as JSON but not persisted; no source-backed column exists yet.
-- Nominee checks, application document placeholders, document checklist, completeness check,
-  deficiencies, eligibility, loan limit, appraisal, sanction, disbursement, payment initiation,
-  member portal flows, and frontend application wiring remain future slices.
-- A-036 records that the broader source submit gate mentions nominee/document placeholders, but
-  005B deliberately leaves those to document/completeness slices.
+- 005C does not evaluate checklist items or nominee/document completeness; it represents the
+  successful completeness-pass transition point.
+- Application document metadata/checklist remains `005D`.
+- Completeness workbench/read/fail/pass evaluation remains `005E` and should reuse the 005C
+  reference-generation service instead of duplicating sequence/register logic.
+- Deficiencies remain `005F`.
+- Eligibility, loan limit, appraisal, sanction, disbursement, payment initiation, and frontend
+  application wiring remain future slices.
+- A-037 records that `screen-spec.md` S12 names `Reference Generated` while `data-model.md` §28 omits
+  that stored status from the enum list. Future completeness/appraisal slices should confirm or map
+  this status.
 
 ## Evidence
-See `.ralph/runs/2026-07-09_175511_normal_run/`.
+See `.ralph/runs/2026-07-09_183552_normal_run/`.
 
 Key artifacts: `execution-plan.md`, `review-packet.md`, `risk-assessment.md`,
 `changed-files.txt`, `final-summary.md`, `api-response-examples.md`, and gate logs under
 `evidence/terminal-logs/`.
 
-No visual evidence was required because 005B was backend/API-only.
+No visual evidence was required because 005C was backend/API-only.
 
 ## Notes For Next Run
-- Run `005C-reference-number-generation-and-loan-request-register` next.
-- 005C must re-check the exact source-backed trigger for formal `LO...` generation because the
-  portal copy says borrowers receive the reference number after submitted details/documents are
-  checked.
-- Keep document checklist verification, completeness, deficiencies, eligibility, appraisal,
-  sanction, disbursement, and frontend wiring out of 005C unless the selected slice is explicitly
-  rewritten.
-- Use `docs/working/digests/epic-005-application-intake.md` before reopening large source docs.
+- Run architecture review first because cadence is due after 005C.
+- After review, run `005D-application-document-checklist`.
+- 005D should not call `generate-reference`; it should prepare document/checklist metadata that
+  005E can evaluate before invoking the existing 005C reference-generation path.

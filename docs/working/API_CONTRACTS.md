@@ -278,19 +278,27 @@ Patch accepts only the draft facts above except `member_id`; borrower ownership 
 Request body is accepted as a JSON object. `submission_notes` may be supplied by clients, but 005B
 does not persist notes because no source-backed column exists yet.
 
+`POST /api/v1/loan-applications/{loan_application_id}/generate-reference/`
+
+Request body is accepted as a JSON object. In 005C this endpoint represents the successful
+completeness-pass transition only; it does not evaluate document checklist items, nominee rules,
+deficiencies, eligibility, appraisal, sanction, or disbursement.
+
 Rules:
 - All endpoints require session-bound bearer authentication.
 - `POST` requires `applications.loan_application.create`; `GET` requires
   `applications.loan_application.read`; `PATCH` requires
   `applications.loan_application.update`; submit requires
-  `applications.loan_application.submit`.
+  `applications.loan_application.submit`; reference generation requires
+  `applications.loan_application.complete_check`.
 - 005A stores draft applications. 005B permits only `draft -> submitted`.
   `current_stage` remains `initial_loan_request`, `completeness_status` remains
   `not_started`, and submitted applications are locked from `PATCH`.
-- `application_reference_number` remains nullable through submit; formal
-  `LO...` generation starts in the later reference/completeness slice because
-  the member portal source says the borrower receives the reference number after
-  submitted details and documents are checked.
+- `application_reference_number` remains nullable through submit. 005C generates the formal
+  `LO...` number only from the submitted state at the source-backed completeness-pass point,
+  using the `loan_application_reference` system sequence (`LO` prefix, 8-digit padding, starting
+  at `LO00000001`). On success it sets `application_status = reference_generated`,
+  `current_stage = credit_assessment`, and `completeness_status = complete`.
 - Required draft validation is intentionally narrow: known borrower member,
   well-formed UUID references, subresource references owned by the borrower
   member, and positive requested amount when supplied.
@@ -303,17 +311,23 @@ Rules:
   bank/cancelled-cheque metadata by ID. They never include PAN, Aadhaar, full
   bank account numbers, encrypted values, protected tokens, or hash fields.
   005B responses additionally include nullable `submitted_at` and
-  `submitted_by_user_id`.
+  `submitted_by_user_id`. 005C responses additionally include nullable
+  `loan_request_register_entry` metadata sourced from the application/member record:
+  register entry ID, loan application ID, reference number, member ID, received/reference dates,
+  received channel, register status, borrower name, folio, member type, requested amount,
+  purpose category, current stage, owner role, and pending downstream statuses.
 - Successful create writes `applications.loan_application.created` audit metadata
   plus one `loan_application` workflow event into `draft`. Successful patch
   writes `applications.loan_application.updated` audit metadata and does not
   create a workflow event because no source-backed state transition occurs.
   Successful submit writes `applications.loan_application.submitted` audit
   metadata plus one `loan_application` workflow event from `draft` to
-  `submitted`.
+  `submitted`. Successful reference generation writes
+  `applications.loan_application.reference_generated` audit metadata plus one
+  `loan_application` workflow event from `submitted` to `reference_generated`.
 - Unknown applications return `404 NOT_FOUND`; missing permissions return
   `403 PERMISSION_DENIED`; invalid submit facts return `400 VALIDATION_ERROR`;
-  re-submit or other non-draft submit attempts return
+  re-submit, other non-draft submit, draft reference generation, or duplicate reference attempts return
   `409 INVALID_STATE_TRANSITION`.
 
 ## Member Bank Account and Cancelled Cheque Metadata API (004J)

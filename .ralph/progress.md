@@ -1,5 +1,29 @@
 # Ralph Progress Log
 
+## 2026-07-09 19:05:00 - 2026-07-09_183552_normal_run
+- Agent tool used: codex
+- Slice attempted: 005C-reference-number-generation-and-loan-request-register
+- Summary: Implemented source-backed loan-application reference generation at the completeness-pass
+  point. Added `POST /api/v1/loan-applications/{loan_application_id}/generate-reference/`, gated
+  by `applications.loan_application.complete_check`, plus `system_sequences` and
+  `loan_request_register_entries`. References start at `LO00000001`, are sequential and unique,
+  are generated only from submitted applications, and create exactly one register entry. Successful
+  generation marks the application `reference_generated`, moves it to `credit_assessment`, sets
+  completeness `complete`, writes metadata-only audit, and records a workflow event from
+  `submitted` to `reference_generated`. Duplicate/draft attempts return standard invalid-state
+  errors without register/audit/workflow side effects. Recorded A-037 for the screen/data-model
+  status vocabulary mismatch.
+- Tests run: reference-generation TDD red/green; focused sequence/guard regression; loan
+  application API tests (7/7); backend `manage.py check`; backend tests (245/245);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend `npm run
+  typecheck`; `npm run lint`; `npm test` (80/80); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-09_183552_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus API response examples.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Architecture review is due by cadence before continuing to `005D`; when product
+  work resumes, run `005D-application-document-checklist`.
+
 ## 2026-07-09 18:15:45 - 2026-07-09_175511_normal_run
 - Agent tool used: codex
 - Slice attempted: 005B-application-submit-and-status-transition
@@ -1728,6 +1752,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_175511_normal_run/.ralph/runs/2026-07-09_175511_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_175511_normal_run/.ralph/runs/2026-07-09_175511_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 19:06:41 - 2026-07-09_183552_normal_run
+- Agent tool used: codex
+- Slice attempted: 005C-reference-number-generation-and-loan-request-register
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_183552_normal_run/.ralph/runs/2026-07-09_183552_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_183552_normal_run/.ralph/runs/2026-07-09_183552_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

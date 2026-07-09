@@ -84,6 +84,32 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   metadata-only `applications.loan_application.submitted` audit, and write a `loan_application`
   workflow event from `draft` to `submitted`.
 
+## Reference Generation And Loan Request Register
+- Source trigger confirmed in 005C: the official `LO00000001` sequence is assigned after
+  completeness check passes, not at draft creation or submit. Evidence:
+  `screen-spec.md` §4.4 says assigned after completeness check, S12 says generate reference when
+  all mandatory completeness checks pass, and member portal MP08 says the borrower receives the
+  reference number after submitted details/documents are checked.
+- 005C implements a narrow backend action:
+  `POST /api/v1/loan-applications/{loan_application_id}/generate-reference/`. It represents the
+  successful completeness-pass point but does not implement checklist evaluation, nominee gates,
+  document verification, deficiencies, eligibility, appraisal, sanction, disbursement, or frontend
+  wiring.
+- Permission is source-backed `applications.loan_application.complete_check`.
+- Generation is limited to submitted applications. Draft or duplicate generation attempts return
+  a standard invalid-state error and must not create extra register rows, audit rows, workflow
+  events, or sequence-visible application references.
+- The sequence table is `system_sequences` with code `loan_application_reference`, prefix `LO`,
+  current value, 8-digit padding, and last generated value. References start at `LO00000001`.
+- Successful generation sets `application_reference_number`, marks completeness `complete`, moves
+  the stage to `credit_assessment`, writes metadata-only audit/action evidence, records a workflow
+  event from `submitted` to `reference_generated`, and creates exactly one
+  `loan_request_register_entries` row linked one-to-one to the application.
+- Register rows are sourced from existing application/member facts and must not copy PAN, Aadhaar,
+  full bank account values, protected token values, or hashes.
+- A-037 records the source mismatch that S12 names `Reference Generated` as the application status
+  while the data-model enum table omits that value.
+
 ## Application Documents And Checklist
 - Source application-document endpoints:
   - `GET /api/v1/loan-applications/{loan_application_id}/application-documents/`

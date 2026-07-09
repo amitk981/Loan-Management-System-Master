@@ -22,8 +22,11 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - 005B implemented submit as `draft -> submitted`; submitted applications remain at
   `current_stage = initial_loan_request`, `completeness_status = not_started`, and formal
   references remain nullable until the reference/completeness owner.
-- 005C should own formal `LO...` generation and loan request register, if source-backed at that
-  point.
+- 005C confirmed formal `LO...` generation is source-backed after completeness pass, not submit.
+  It added `POST /api/v1/loan-applications/{loan_application_id}/generate-reference/`, the
+  `system_sequences` row for `loan_application_reference`, and one-to-one
+  `loan_request_register_entries`. 005D must not call that endpoint; it prepares the
+  application-document/checklist metadata that 005E can evaluate before reference generation.
 - Use `docs/working/digests/epic-005-application-intake.md` before reopening large source docs.
 - Epic 004/005 sensitive data boundaries remain binding: document/checklist responses and audits
   must not include full PAN, Aadhaar, bank-account numbers, encrypted token values, hashes, or raw

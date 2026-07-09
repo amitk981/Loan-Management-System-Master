@@ -5,7 +5,11 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from sfpcl_credit.applications.models import LoanApplication
+from sfpcl_credit.applications.models import (
+    LoanApplication,
+    LoanRequestRegisterEntry,
+    SystemSequence,
+)
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.members.models import BankAccount, CancelledCheque, CropPlan, LandHolding, Member
@@ -20,6 +24,8 @@ APPLICATION_READ_PERMISSION = "applications.loan_application.read"
 APPLICATION_CREATE_PERMISSION = "applications.loan_application.create"
 APPLICATION_UPDATE_PERMISSION = "applications.loan_application.update"
 APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
+APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_check"
+LOAN_APPLICATION_REFERENCE_SEQUENCE_CODE = "loan_application_reference"
 APPLICATION_TRANSITIONS = (
     TransitionDefinition(
         entity_type="loan_application",
@@ -30,6 +36,16 @@ APPLICATION_TRANSITIONS = (
         audit_action="applications.loan_application.submitted",
         workflow_name="loan_application",
         workflow_label="Application submitted for completeness review.",
+    ),
+    TransitionDefinition(
+        entity_type="loan_application",
+        action_code="generate_reference",
+        from_states=frozenset({LoanApplication.STATUS_SUBMITTED}),
+        to_state=LoanApplication.STATUS_REFERENCE_GENERATED,
+        required_permission=APPLICATION_COMPLETE_CHECK_PERMISSION,
+        audit_action="applications.loan_application.reference_generated",
+        workflow_name="loan_application",
+        workflow_label="Completeness passed and reference generated.",
     ),
 )
 _CREATE_FIELDS = {
@@ -71,6 +87,10 @@ def user_can_submit_applications(user):
     return APPLICATION_SUBMIT_PERMISSION in auth_service.effective_permission_codes(user)
 
 
+def user_can_complete_check_applications(user):
+    return APPLICATION_COMPLETE_CHECK_PERMISSION in auth_service.effective_permission_codes(user)
+
+
 def get_application(application_id):
     return (
         LoanApplication.objects.select_related(
@@ -82,6 +102,7 @@ def get_application(application_id):
             "created_by_user",
             "updated_by_user",
             "submitted_by_user",
+            "loan_request_register_entry",
         )
         .filter(loan_application_id=application_id)
         .first()
@@ -192,7 +213,89 @@ def submit_application(
     return application
 
 
+@transaction.atomic
+def generate_reference_after_completeness_pass(
+    application,
+    actor,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+    actor_permissions=None,
+):
+    application = (
+        LoanApplication.objects.select_for_update()
+        .select_related("member", "received_by_user")
+        .get(loan_application_id=application.loan_application_id)
+    )
+    transition = evaluate_transition(
+        current_state=application.application_status,
+        requested_action="generate_reference",
+        actor_permissions=actor_permissions or auth_service.effective_permission_codes(actor),
+        transitions=APPLICATION_TRANSITIONS,
+    )
+    if application.application_reference_number:
+        raise LoanApplicationValidationError(
+            {"application_reference_number": "Application already has a reference number."}
+        )
+    if LoanRequestRegisterEntry.objects.filter(loan_application=application).exists():
+        raise LoanApplicationValidationError(
+            {"loan_request_register_entry": "Loan request register entry already exists."}
+        )
+
+    old_value_json = _audit_snapshot(application)
+    reference_number = _next_loan_application_reference()
+    now = timezone.now()
+    application.application_reference_number = reference_number
+    application.application_status = transition.next_state
+    application.current_stage = LoanApplication.STAGE_CREDIT_ASSESSMENT
+    application.completeness_status = LoanApplication.COMPLETENESS_COMPLETE
+    application.updated_at = now
+    application.updated_by_user = actor
+    application.save()
+    register_entry = LoanRequestRegisterEntry.objects.create(
+        loan_application=application,
+        application_reference_number=reference_number,
+        member=application.member,
+        date_received=application.application_date,
+        reference_generated_date=timezone.localdate(now),
+        received_channel=application.application_channel,
+        received_by_user=application.received_by_user,
+        register_status=LoanRequestRegisterEntry.STATUS_REFERENCE_GENERATED,
+        requested_amount=application.required_loan_amount,
+        declared_purpose=application.declared_purpose,
+        purpose_category=application.purpose_category,
+        borrower_name=application.member.display_name,
+        folio_number=application.member.folio_number,
+        member_type=application.member.member_type,
+        current_stage=application.current_stage,
+        current_owner_role="Deputy Manager / Credit Manager",
+    )
+    _audit_application(
+        application,
+        actor,
+        transition.definition.audit_action,
+        old_value_json,
+        request_ip,
+        request_user_agent,
+        request_id,
+        register_entry=register_entry,
+    )
+    record_workflow_event(
+        actor=actor,
+        workflow_name=transition.definition.workflow_name,
+        entity_type=transition.definition.entity_type,
+        entity_id=application.loan_application_id,
+        from_state=transition.previous_state,
+        to_state=transition.next_state,
+        trigger_reason=transition.definition.workflow_label,
+        action_code=transition.definition.action_code,
+    )
+    application.loan_request_register_entry = register_entry
+    return application
+
+
 def serialize_application(application):
+    register_entry = getattr(application, "loan_request_register_entry", None)
     return {
         "loan_application_id": str(application.loan_application_id),
         "application_reference_number": application.application_reference_number,
@@ -224,6 +327,7 @@ def serialize_application(application):
         "updated_by_user_id": str(application.updated_by_user_id)
         if application.updated_by_user_id
         else None,
+        "loan_request_register_entry": _register_summary(register_entry),
     }
 
 
@@ -389,39 +493,43 @@ def _audit_application(
     request_ip,
     request_user_agent,
     request_id,
+    register_entry=None,
 ):
+    new_value_json = {
+        "loan_application_id": str(application.loan_application_id),
+        "member_id": str(application.member_id),
+        "application_reference_number": application.application_reference_number,
+        "application_status": application.application_status,
+        "current_stage": application.current_stage,
+        "completeness_status": application.completeness_status,
+        "required_loan_amount": _money(application.required_loan_amount),
+        "purpose_category": application.purpose_category or None,
+        "land_holding_id": str(application.land_holding_id)
+        if application.land_holding_id
+        else None,
+        "crop_plan_id": str(application.crop_plan_id) if application.crop_plan_id else None,
+        "bank_account_id": str(application.bank_account_id)
+        if application.bank_account_id
+        else None,
+        "masked_bank_account_number": _masked_last4(application.bank_account.account_number_last4)
+        if application.bank_account_id
+        else None,
+        "cancelled_cheque_id": str(application.cancelled_cheque_id)
+        if application.cancelled_cheque_id
+        else None,
+        "request_id": request_id,
+    }
+    if register_entry is not None:
+        new_value_json["loan_request_register_entry_id"] = str(
+            register_entry.loan_request_register_entry_id
+        )
     AuditLog.objects.create(
         actor_user=actor,
         action=action,
         entity_type="loan_application",
         entity_id=application.loan_application_id,
         old_value_json=old_value_json,
-        new_value_json={
-            "loan_application_id": str(application.loan_application_id),
-            "member_id": str(application.member_id),
-            "application_status": application.application_status,
-            "current_stage": application.current_stage,
-            "required_loan_amount": _money(application.required_loan_amount),
-            "purpose_category": application.purpose_category or None,
-            "land_holding_id": str(application.land_holding_id)
-            if application.land_holding_id
-            else None,
-            "crop_plan_id": str(application.crop_plan_id)
-            if application.crop_plan_id
-            else None,
-            "bank_account_id": str(application.bank_account_id)
-            if application.bank_account_id
-            else None,
-            "masked_bank_account_number": _masked_last4(
-                application.bank_account.account_number_last4
-            )
-            if application.bank_account_id
-            else None,
-            "cancelled_cheque_id": str(application.cancelled_cheque_id)
-            if application.cancelled_cheque_id
-            else None,
-            "request_id": request_id,
-        },
+        new_value_json=new_value_json,
         ip_address=request_ip,
         user_agent=request_user_agent,
     )
@@ -431,8 +539,10 @@ def _audit_snapshot(application):
     return {
         "loan_application_id": str(application.loan_application_id),
         "member_id": str(application.member_id),
+        "application_reference_number": application.application_reference_number,
         "application_status": application.application_status,
         "current_stage": application.current_stage,
+        "completeness_status": application.completeness_status,
         "required_loan_amount": _money(application.required_loan_amount),
         "purpose_category": application.purpose_category or None,
         "land_holding_id": str(application.land_holding_id)
@@ -446,6 +556,18 @@ def _audit_snapshot(application):
         if application.cancelled_cheque_id
         else None,
     }
+
+
+def _next_loan_application_reference():
+    sequence, _created = SystemSequence.objects.select_for_update().get_or_create(
+        sequence_code=LOAN_APPLICATION_REFERENCE_SEQUENCE_CODE,
+        defaults={
+            "prefix": "LO",
+            "current_value": 0,
+            "padding_length": 8,
+        },
+    )
+    return sequence.next_value()
 
 
 def _member_summary(member):
@@ -518,6 +640,35 @@ def _cheque_summary(cheque):
         "branch_name": cheque.branch_name or None,
         "verification_status": cheque.verification_status,
         "signature_mismatch_flag": cheque.signature_mismatch_flag,
+    }
+
+
+def _register_summary(register_entry):
+    if register_entry is None:
+        return None
+    return {
+        "loan_request_register_entry_id": str(
+            register_entry.loan_request_register_entry_id
+        ),
+        "loan_application_id": str(register_entry.loan_application_id),
+        "application_reference_number": register_entry.application_reference_number,
+        "member_id": str(register_entry.member_id),
+        "date_received": register_entry.date_received.isoformat(),
+        "reference_generated_date": register_entry.reference_generated_date.isoformat(),
+        "received_channel": register_entry.received_channel,
+        "register_status": register_entry.register_status,
+        "borrower_name": register_entry.borrower_name or None,
+        "folio_number": register_entry.folio_number or None,
+        "member_type": register_entry.member_type or None,
+        "requested_amount": _money(register_entry.requested_amount),
+        "purpose_category": register_entry.purpose_category or None,
+        "current_stage": register_entry.current_stage or None,
+        "current_owner_role": register_entry.current_owner_role or None,
+        "eligibility_status": register_entry.eligibility_status,
+        "sanction_status": register_entry.sanction_status,
+        "documentation_status": register_entry.documentation_status,
+        "disbursement_status": register_entry.disbursement_status,
+        "created_at": _datetime(register_entry.created_at),
     }
 
 

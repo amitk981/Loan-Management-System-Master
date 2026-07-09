@@ -33,6 +33,11 @@ urlpatterns = [
         application_views.loan_application_submit,
         name="loan-application-submit",
     ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/generate-reference/",
+        application_views.loan_application_generate_reference,
+        name="loan-application-generate-reference",
+    ),
     path("api/v1/dashboard/", dashboard_views.dashboard_summary, name="dashboard-summary"),
     path("api/v1/admin/users/", admin_views.user_list, name="admin-user-list"),
     path(

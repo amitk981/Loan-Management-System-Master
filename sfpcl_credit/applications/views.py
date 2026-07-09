@@ -140,3 +140,41 @@ def loan_application_submit(request, loan_application_id):
     except InvalidStateTransition as exc:
         return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
     return success_response(services.serialize_application(application), request)
+
+
+@require_http_methods(["POST"])
+def loan_application_generate_reference(request, loan_application_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    if not services.user_can_complete_check_applications(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to complete-check loan applications.",
+        )
+    application = services.get_application(loan_application_id)
+    if application is None:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+    try:
+        parse_json_body(request)
+        application = services.generate_reference_after_completeness_pass(
+            application,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+            permissions,
+        )
+    except (services.LoanApplicationValidationError, ValidationError) as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Loan application payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    except InvalidStateTransition as exc:
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
+    return success_response(services.serialize_application(application), request)

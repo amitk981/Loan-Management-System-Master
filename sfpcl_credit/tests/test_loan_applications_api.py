@@ -2,6 +2,7 @@ import json
 from uuid import uuid4
 
 from django.test import Client, TestCase
+from django.apps import apps
 
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import BankAccount, CancelledCheque, CropPlan, LandHolding, Member
@@ -13,6 +14,7 @@ APPLICATION_READ_PERMISSION = "applications.loan_application.read"
 APPLICATION_CREATE_PERMISSION = "applications.loan_application.create"
 APPLICATION_UPDATE_PERMISSION = "applications.loan_application.update"
 APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
+APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_check"
 
 
 class LoanApplicationDraftApiTests(TestCase):
@@ -31,6 +33,10 @@ class LoanApplicationDraftApiTests(TestCase):
             APPLICATION_SUBMIT_PERMISSION,
             "Submit loan application",
         )
+        self.complete_check_permission = self._permission(
+            APPLICATION_COMPLETE_CHECK_PERMISSION,
+            "Mark completeness result",
+        )
         self.creator = self._user(
             "applications.creator@sfpcl.example",
             "CreatorPass123!",
@@ -38,6 +44,7 @@ class LoanApplicationDraftApiTests(TestCase):
             self.create_permission,
             self.update_permission,
             self.submit_permission,
+            self.complete_check_permission,
         )
         self.reader = self._user(
             "applications.reader@sfpcl.example",
@@ -220,6 +227,180 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertNotIn("cheque-token-123456789012", flattened)
         self.assertNotIn("cheque-hash-123456789012", flattened)
         self.assertNotIn("123456789012", flattened)
+
+    def test_generate_reference_after_completeness_pass_creates_register_and_metadata_only_evidence(self):
+        create_response = self.client.post(
+            "/api/v1/loan-applications/",
+            data=self._draft_payload(),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(create_response.status_code, 200)
+        draft = create_response.json()["data"]
+        submit_response = self.client.post(
+            f"/api/v1/loan-applications/{draft['loan_application_id']}/submit/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(submit_response.status_code, 200)
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{draft['loan_application_id']}/generate-reference/",
+            data={"completeness_result": "complete"},
+            content_type="application/json",
+            headers={
+                **self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+                "X-Request-ID": "req-generate-reference",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        assert_success_envelope(self, body)
+        generated = body["data"]
+        self.assertEqual(generated["application_reference_number"], "LO00000001")
+        self.assertEqual(generated["application_status"], "reference_generated")
+        self.assertEqual(generated["current_stage"], "credit_assessment")
+        self.assertEqual(generated["completeness_status"], "complete")
+        self.assertEqual(
+            generated["loan_request_register_entry"]["application_reference_number"],
+            "LO00000001",
+        )
+        self.assertEqual(
+            generated["loan_request_register_entry"]["loan_application_id"],
+            draft["loan_application_id"],
+        )
+        self.assertEqual(
+            generated["loan_request_register_entry"]["member_id"],
+            str(self.member.member_id),
+        )
+        self.assertEqual(generated["loan_request_register_entry"]["borrower_name"], "Ramesh Patil")
+        self.assertEqual(generated["loan_request_register_entry"]["folio_number"], "FOL-005A")
+        self.assertEqual(generated["loan_request_register_entry"]["requested_amount"], "400000.00")
+
+        read_response = self.client.get(
+            f"/api/v1/loan-applications/{draft['loan_application_id']}/",
+            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
+        )
+        self.assertEqual(read_response.status_code, 200)
+        self.assertEqual(read_response.json()["data"], generated)
+
+        register_model = apps.get_model("applications", "LoanRequestRegisterEntry")
+        register_entry = register_model.objects.get(
+            loan_application_id=draft["loan_application_id"]
+        )
+        self.assertEqual(register_entry.application_reference_number, "LO00000001")
+        self.assertEqual(str(register_entry.member_id), str(self.member.member_id))
+
+        audit = AuditLog.objects.filter(
+            action="applications.loan_application.reference_generated"
+        ).get()
+        self.assertEqual(audit.old_value_json["application_reference_number"], None)
+        self.assertEqual(audit.new_value_json["application_reference_number"], "LO00000001")
+        self.assertEqual(audit.new_value_json["loan_request_register_entry_id"], str(register_entry.pk))
+        self.assertEqual(audit.new_value_json["request_id"], "req-generate-reference")
+
+        workflow_event = WorkflowEvent.objects.filter(
+            entity_type="loan_application",
+            from_state="submitted",
+            to_state="reference_generated",
+        ).get()
+        self.assertEqual(str(workflow_event.entity_id), draft["loan_application_id"])
+
+        flattened = f"{body} {audit.old_value_json} {audit.new_value_json}"
+        self.assertNotIn("member-pan-token", flattened)
+        self.assertNotIn("member-aadhaar-token", flattened)
+        self.assertNotIn("bank-token-123456789012", flattened)
+        self.assertNotIn("bank-hash-123456789012", flattened)
+        self.assertNotIn("cheque-token-123456789012", flattened)
+        self.assertNotIn("cheque-hash-123456789012", flattened)
+        self.assertNotIn("123456789012", flattened)
+
+    def test_reference_generation_enforces_sequence_permission_state_and_duplicate_guards(self):
+        first_id = self._create_and_submit_application()
+        second_id = self._create_and_submit_application(
+            declared_purpose="Crop production loan for onion cultivation",
+            required_loan_amount="250000.00",
+        )
+
+        first = self.client.post(
+            f"/api/v1/loan-applications/{first_id}/generate-reference/",
+            data={"completeness_result": "complete"},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        second = self.client.post(
+            f"/api/v1/loan-applications/{second_id}/generate-reference/",
+            data={"completeness_result": "complete"},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.json()["data"]["application_reference_number"], "LO00000001")
+        self.assertEqual(second.json()["data"]["application_reference_number"], "LO00000002")
+
+        duplicate = self.client.post(
+            f"/api/v1/loan-applications/{first_id}/generate-reference/",
+            data={"completeness_result": "complete"},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(duplicate.status_code, 409)
+        assert_error_envelope(self, duplicate.json(), "INVALID_STATE_TRANSITION")
+
+        draft_response = self.client.post(
+            "/api/v1/loan-applications/",
+            data=self._draft_payload(declared_purpose="Draft only request"),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(draft_response.status_code, 200)
+        draft_id = draft_response.json()["data"]["loan_application_id"]
+        draft_generate = self.client.post(
+            f"/api/v1/loan-applications/{draft_id}/generate-reference/",
+            data={"completeness_result": "complete"},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(draft_generate.status_code, 409)
+        assert_error_envelope(self, draft_generate.json(), "INVALID_STATE_TRANSITION")
+
+        missing_application = self.client.post(
+            f"/api/v1/loan-applications/{uuid4()}/generate-reference/",
+            data={"completeness_result": "complete"},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(missing_application.status_code, 404)
+        assert_error_envelope(self, missing_application.json(), "NOT_FOUND")
+
+        no_permission = self.client.post(
+            f"/api/v1/loan-applications/{second_id}/generate-reference/",
+            data={"completeness_result": "complete"},
+            content_type="application/json",
+            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
+        )
+        self.assertEqual(no_permission.status_code, 403)
+        assert_error_envelope(self, no_permission.json(), "PERMISSION_DENIED")
+
+        register_model = apps.get_model("applications", "LoanRequestRegisterEntry")
+        self.assertEqual(register_model.objects.count(), 2)
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="applications.loan_application.reference_generated"
+            ).count(),
+            2,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                entity_type="loan_application",
+                to_state="reference_generated",
+            ).count(),
+            2,
+        )
 
     def test_patch_updates_allowed_draft_fields_and_rejects_cross_member_references(self):
         create_response = self.client.post(
@@ -433,6 +614,24 @@ class LoanApplicationDraftApiTests(TestCase):
         }
         payload.update(overrides)
         return payload
+
+    def _create_and_submit_application(self, **payload_overrides):
+        create_response = self.client.post(
+            "/api/v1/loan-applications/",
+            data=self._draft_payload(**payload_overrides),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(create_response.status_code, 200)
+        application_id = create_response.json()["data"]["loan_application_id"]
+        submit_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/submit/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(submit_response.status_code, 200)
+        return application_id
 
     def _permission(self, code, name):
         return Permission.objects.create(

@@ -8,8 +8,11 @@ from django.utils import timezone
 class LoanApplication(models.Model):
     STATUS_DRAFT = "draft"
     STATUS_SUBMITTED = "submitted"
+    STATUS_REFERENCE_GENERATED = "reference_generated"
     STAGE_INITIAL = "initial_loan_request"
+    STAGE_CREDIT_ASSESSMENT = "credit_assessment"
     COMPLETENESS_NOT_STARTED = "not_started"
+    COMPLETENESS_COMPLETE = "complete"
 
     loan_application_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     application_reference_number = models.CharField(
@@ -117,15 +120,119 @@ class LoanApplication(models.Model):
             raise ValidationError(
                 {"required_loan_amount": "Requested amount must be greater than zero."}
             )
-        if self.application_status not in {self.STATUS_DRAFT, self.STATUS_SUBMITTED}:
+        if self.application_status not in {
+            self.STATUS_DRAFT,
+            self.STATUS_SUBMITTED,
+            self.STATUS_REFERENCE_GENERATED,
+        }:
             raise ValidationError({"application_status": "Unsupported application status."})
-        if self.current_stage != self.STAGE_INITIAL:
-            raise ValidationError({"current_stage": "Only initial loan request stage is supported."})
+        if self.current_stage not in {self.STAGE_INITIAL, self.STAGE_CREDIT_ASSESSMENT}:
+            raise ValidationError({"current_stage": "Unsupported current stage."})
         if self.application_status == self.STATUS_SUBMITTED and self.submitted_at is None:
             raise ValidationError({"submitted_at": "Submitted applications require submitted_at."})
+        if self.application_status == self.STATUS_REFERENCE_GENERATED:
+            if self.application_reference_number is None:
+                raise ValidationError(
+                    {
+                        "application_reference_number": (
+                            "Reference generated applications require a reference number."
+                        )
+                    }
+                )
+            if self.current_stage != self.STAGE_CREDIT_ASSESSMENT:
+                raise ValidationError(
+                    {"current_stage": "Reference generated applications move to credit assessment."}
+                )
+            if self.completeness_status != self.COMPLETENESS_COMPLETE:
+                raise ValidationError(
+                    {"completeness_status": "Reference generation requires complete status."}
+                )
 
     def save(self, *args, **kwargs):
         if self.member_id and not self.borrower_type:
             self.borrower_type = self.member.member_type
         self.full_clean()
         return super().save(*args, **kwargs)
+
+
+class SystemSequence(models.Model):
+    system_sequence_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    sequence_code = models.CharField(max_length=80, unique=True)
+    prefix = models.CharField(max_length=20)
+    current_value = models.BigIntegerField(default=0)
+    padding_length = models.PositiveIntegerField(default=8)
+    last_generated_value = models.CharField(max_length=80, blank=True, null=True)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "system_sequences"
+
+    def next_value(self):
+        self.current_value += 1
+        self.last_generated_value = f"{self.prefix}{self.current_value:0{self.padding_length}d}"
+        self.updated_at = timezone.now()
+        self.save(update_fields=["current_value", "last_generated_value", "updated_at"])
+        return self.last_generated_value
+
+
+class LoanRequestRegisterEntry(models.Model):
+    STATUS_REFERENCE_GENERATED = "reference_generated"
+
+    loan_request_register_entry_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    loan_application = models.OneToOneField(
+        LoanApplication,
+        on_delete=models.PROTECT,
+        related_name="loan_request_register_entry",
+    )
+    application_reference_number = models.CharField(max_length=40, db_index=True)
+    member = models.ForeignKey(
+        "members.Member",
+        on_delete=models.PROTECT,
+        related_name="loan_request_register_entries",
+    )
+    date_received = models.DateField(db_index=True)
+    reference_generated_date = models.DateField(db_index=True)
+    received_channel = models.CharField(max_length=60)
+    received_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="received_loan_request_register_entries",
+    )
+    register_status = models.CharField(
+        max_length=60,
+        default=STATUS_REFERENCE_GENERATED,
+        db_index=True,
+    )
+    requested_amount = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
+    declared_purpose = models.TextField(blank=True)
+    purpose_category = models.CharField(max_length=80, blank=True, db_index=True)
+    borrower_name = models.CharField(max_length=255, blank=True)
+    folio_number = models.CharField(max_length=120, blank=True)
+    member_type = models.CharField(max_length=60, blank=True)
+    current_stage = models.CharField(max_length=80, blank=True, db_index=True)
+    current_owner_role = models.CharField(max_length=120, blank=True)
+    eligibility_status = models.CharField(max_length=60, default="pending", db_index=True)
+    sanction_status = models.CharField(max_length=60, default="pending", db_index=True)
+    documentation_status = models.CharField(max_length=60, default="pending", db_index=True)
+    disbursement_status = models.CharField(max_length=60, default="pending", db_index=True)
+    original_copy_reference = models.CharField(max_length=255, blank=True)
+    remarks = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "loan_request_register_entries"
+        indexes = [
+            models.Index(
+                fields=["register_status", "current_stage"],
+                name="idx_lrr_status_stage",
+            ),
+            models.Index(fields=["date_received"], name="idx_lrr_date_received"),
+            models.Index(
+                fields=["reference_generated_date"],
+                name="idx_lrr_ref_gen_date",
+            ),
+        ]
