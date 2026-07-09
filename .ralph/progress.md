@@ -1,5 +1,25 @@
 # Ralph Progress Log
 
+## 2026-07-09 12:04:18 - 2026-07-09_114836_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed the four product slices completed since the prior architecture review:
+  `004A-member-directory-api-and-ui`, `004B-member-profile-api-and-ui`,
+  `004C-individual-farmer-and-fpc-profile-details`, and `004D-nominee-validation-and-ui`.
+  Appended findings to `docs/working/REVIEW_FINDINGS.md`. Found two Medium contract/spec issues:
+  nominee create audit metadata includes PAN/Aadhaar hash fields, and member profile
+  `available_actions[]` prematurely encodes loan-start eligibility from member/KYC/default status.
+  Created corrective slice `004D2-member-profile-and-nominee-contract-hardening` and sharpened
+  `004E` to depend on it before witness work resumes.
+- Tests run: backend `manage.py check`; backend tests (207/207); `makemigrations --check
+  --dry-run`; backend coverage 96% (floor 85); frontend `npm run typecheck`; `npm run lint`;
+  `npm test` (65/65); `npm run build`; `git diff --check`; protected-path scan.
+- Evidence saved: `.ralph/runs/2026-07-09_114836_architecture_review/`, including terminal logs,
+  review packet, risk assessment, and changed-files list.
+- Result: Success.
+- Risk level: Low.
+- Next action: Run `004D2-member-profile-and-nominee-contract-hardening` before `004E`.
+
 ## 2026-07-09 11:19:27 - 2026-07-09_111927_normal_run
 - Agent tool used: codex
 - Slice attempted: 004D-nominee-validation-and-ui
@@ -1288,6 +1308,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/.ralph/runs/2026-07-09_111927_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/.ralph/runs/2026-07-09_111927_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 12:08:37 - 2026-07-09_114836_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_114836_architecture_review/.ralph/runs/2026-07-09_114836_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_114836_architecture_review/.ralph/runs/2026-07-09_114836_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

@@ -2,6 +2,72 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-09 11:48 - Architecture Review 2026-07-09_114836_architecture_review
+
+Reviewed completed product slices since the prior architecture review commit `e370720`:
+- `004A-member-directory-api-and-ui` (`caa3d36`)
+- `004B-member-profile-api-and-ui` (`8bcf160`, repaired by `2026-07-08_094146_repair`)
+- `004C-individual-farmer-and-fpc-profile-details` (`79f2b77`)
+- `004D-nominee-validation-and-ui` (`56d89dd`)
+
+Also noted intervening automation/docs commits in the diff window, but this review focused on the
+four product slices counted by Ralph state.
+
+### Finding 1 - Medium - Nominee create audit stores sensitive identity hashes despite the contract
+
+`004D` correctly masks nominee PAN/Aadhaar in API responses and tests that plaintext values are not
+stored in the create audit. However, `create_nominee()` still writes `pan_hash` and `aadhaar_hash`
+into `AuditLog.new_value_json` (`sfpcl_credit/members/services.py:213-223`). The local contract says
+responses and audit logs must not include `pan_encrypted`, `aadhaar_encrypted`, `pan_hash`, or
+`aadhaar_hash` fields for nominee create (`docs/working/API_CONTRACTS.md:230-235`), and the source
+audit rule says sensitive data values should not be stored in audit logs while masked values or
+metadata are acceptable (`docs/source/auth-permissions.md` §30.3). The current test only asserts the
+raw PAN/Aadhaar strings are absent (`sfpcl_credit/tests/test_member_nominees_api.py:189-206`), so it
+misses hashed identifiers that are still linkable sensitive metadata.
+
+Corrective action: created
+`docs/slices/004D2-member-profile-and-nominee-contract-hardening.md`. It must add a failing-first
+audit regression that forbids identity hash keys/values in nominee audit metadata, remove those
+fields from the audit payload, and keep responses masked.
+
+### Finding 2 - Medium - Member profile `available_actions[]` invents loan-start eligibility
+
+`004B` was scoped to masked read-only profile detail and explicitly said not to implement loan
+application start or invent eligibility, KYC approval, active-member, default, or loan-application
+business rules (`docs/slices/004B-member-profile-api-and-ui.md:56-59` and `:87-90`). The
+implementation nevertheless enables `create_loan_application` only when the user has
+`applications.loan_application.create` and the member is active, KYC verified, and not in default
+(`sfpcl_credit/members/services.py:459-476`). Source §13.3 shows `available_actions[]` as part of
+the member-detail shape, and §44 allows detail endpoints to return action availability, but the
+actual workflow gates belong to later application/eligibility slices. This hard-codes a business
+decision before the loan-application endpoint and eligibility service exist, and the test locks in
+the happy path (`sfpcl_credit/tests/test_member_profile_api.py:163-165`) rather than proving the
+action is neutral/deferred.
+
+Corrective action: same `004D2` slice. It must remove or neutralize the profile action until the
+loan-application slice owns the endpoint and source-backed gate, with tests proving member
+KYC/default status alone no longer decides action availability in the profile read service.
+
+### Finding 3 - Pass - Directory/profile UI wiring removed mock fallback without visual drift
+
+`004A` and `004B` removed the backend-wired Member Directory/Profile dependency on `mockData`,
+added API clients, and tested loading, success, empty, auth/permission, and error states. The tests
+assert mock-only fields and rows are absent from the wired paths, and the generated visual HTML uses
+existing table/card/tab/empty/alert classes. The old `Borrower360` prototype still imports mock data
+and contains the synthetic `Sudha Patil` nominee, but it is outside the reviewed backend-wired
+Member Profile path and remains future scope.
+
+Corrective action: none.
+
+### Finding 4 - Pass with queue sharpening - 004E still must not implement witness records early
+
+The Epic 004 digest/source extracts already warn that witnesses belong to loan applications and must
+resolve to real shareholder/shareholding facts. `004E` was sharpened again to depend on the new
+contract-hardening slice and to stop/reorder rather than create a member-level witness endpoint if
+loan application and shareholding prerequisites are still absent.
+
+Corrective action: `004D2` inserted before `004E`; `004E` dependency sharpened.
+
 ## 2026-07-07 21:08 - Architecture Review 2026-07-07_210824_architecture_review
 
 Reviewed commits since the prior architecture review (`e26ed12`):

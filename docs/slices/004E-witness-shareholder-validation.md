@@ -14,7 +14,7 @@ Deliver this narrow capability as a small, testable Ralph implementation slice.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 004D
+- 004D2
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11
@@ -33,6 +33,10 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
+Do not start this slice until `004D2-member-profile-and-nominee-contract-hardening` is complete; the
+member module must first remove premature loan-start action availability and sensitive nominee audit
+hashes.
+
 First confirm an owning loan-application boundary and persisted shareholding records exist by the
 time this slice runs. `data-model.md` §10.5 and `screen-spec.md` S09 make witnesses application
 documentation records, not member-profile records. Implement witness capture only against a real

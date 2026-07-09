@@ -1,43 +1,35 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-09_111927_normal_run
+2026-07-09_114836_architecture_review
 
 ## Current Status
-Slice `004D-nominee-validation-and-ui` completed with all backend and frontend gates green.
-Architecture review cadence is now at four completed slices since the last review and is due before
-the next product slice.
+Architecture review completed after `004A` through `004D`. All review-run backend and frontend gates
+passed. The review found two Medium contract/spec issues that should be corrected before witness
+work resumes, so the next queued slice is now
+`004D2-member-profile-and-nominee-contract-hardening`; `004E` depends on it.
 
 ## What Completed
-- Added `Nominee` persistence in one non-destructive members migration with member FK, nullable
-  application UUID storage, name, DOB, age snapshot, gender, relationship, protected PAN/Aadhaar
-  tokens and keyed hashes, KYC/minor/signature flags, and timestamps.
-- Added `GET` and `POST /api/v1/members/{member_id}/nominees/` with standard envelopes, list
-  pagination, `members.nominee.read` / `members.nominee.create` separation, member existence checks,
-  adult validation, required/format validation for PAN/Aadhaar, and metadata-only
-  `members.nominee.created` audit rows.
-- Masked nominee PAN/Aadhaar in API responses and tests; no full PAN/Aadhaar appears in response or
-  audit metadata.
-- Replaced the deferred Member Profile Nominee tab with API-backed list/create behavior using
-  existing card, empty panel, alert, field, button, and badge patterns. No `mockData` nominee rows
-  were restored.
-- Updated API contracts, assumptions (A-031 legal-majority age default), Epic 004 digest, and
-  sharpened 004E/004F with source-backed witness/shareholding requirements.
+- Appended architecture-review findings to `docs/working/REVIEW_FINDINGS.md`.
+- Created `docs/slices/004D2-member-profile-and-nominee-contract-hardening.md`.
+- Sharpened `004E-witness-shareholder-validation` to depend on `004D2`.
+- Reset architecture-review cadence in `.ralph/state.json`.
 
 ## Evidence
-See `.ralph/runs/2026-07-09_111927_normal_run/`.
+See `.ralph/runs/2026-07-09_114836_architecture_review/`.
 
-Key logs under `evidence/terminal-logs/` include backend/frontend TDD red/green evidence and every
-quality gate. Backend tests: 207 passed. Frontend tests: 65 passed. Coverage: 96%, above the 85%
-floor. API response examples are in `api-response-examples.md`; self-contained nominee-tab visual
-evidence is under `evidence/screenshots/member-nominee-tab.html`.
+Key logs under `evidence/terminal-logs/` include backend check/tests/migration/coverage and frontend
+typecheck/lint/tests/build. Backend tests: 207 passed. Frontend tests: 65 passed. Coverage: 96%,
+above the 85% floor. `git diff --check` and protected-path scan passed.
 
 ## Current Blocker
 None.
 
 ## Notes For Next Run
-- Run architecture review next because `.ralph/state.json` has `architecture_review_due: true` after
-  004D.
-- After review, the next product slice is `004E-witness-shareholder-validation`. The slice is
-  intentionally constrained: do not build a member-level witness API or fake shareholder verifier
-  unless loan-application and shareholding prerequisites exist.
+- Run `004D2-member-profile-and-nominee-contract-hardening` next. It must add failing-first tests
+  for nominee audit metadata excluding identity hash/encrypted/plain fields and for member profile
+  `available_actions[]` not encoding loan-start eligibility before `005A`/eligibility slices own
+  those rules.
+- After `004D2`, continue to `004E-witness-shareholder-validation` only if the required
+  loan-application and shareholding prerequisites exist; otherwise sharpen/reorder the queue instead
+  of creating a member-level witness API.
