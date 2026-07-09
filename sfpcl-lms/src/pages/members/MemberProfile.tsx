@@ -216,6 +216,7 @@ const OverviewTab: React.FC<{ profile: MemberProfileDetail }> = ({ profile }) =>
       <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1 flex items-center gap-1"><MapPin size={12} /> Address</p>
       <p className="text-sm text-slate-800">{addressText(profile)}</p>
     </div>
+    <TypeSpecificDetails profile={profile} />
     <div className="border-t border-slate-100 pt-4">
       <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-3 flex items-center gap-1"><Lock size={12} /> Sensitive Identifiers - Masked</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -225,6 +226,47 @@ const OverviewTab: React.FC<{ profile: MemberProfileDetail }> = ({ profile }) =>
     </div>
   </div>
 );
+
+const TypeSpecificDetails: React.FC<{ profile: MemberProfileDetail }> = ({ profile }) => {
+  const isInstitution = profile.member_type === 'fpc' || profile.member_type === 'producer_institution';
+  const individual = profile.individual_profile;
+  const producer = profile.producer_institution_profile;
+  return (
+    <div className="border-t border-slate-100 pt-4 space-y-3">
+      <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">
+        {isInstitution ? 'Producer Institution Details' : 'Individual Farmer Details'}
+      </p>
+      {isInstitution && producer && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <InfoTile label="Institution Type" value={producer.institution_type.replace(/_/g, ' ')} />
+          <InfoTile label="Registration Number" value={producer.registration_number || '-'} />
+          <InfoTile label="Authorised Signatory" value={producer.authorised_signatory_name} />
+          <InfoTile label="Board Resolution Required" value={producer.board_resolution_required_flag ? 'Yes' : 'No'} />
+          <InfoTile label="Produce Supply" value={formatYears(producer.produce_supply_years)} />
+        </div>
+      )}
+      {!isInstitution && individual && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <InfoTile label="First Name" value={individual.first_name} />
+          <InfoTile label="Middle Name" value={individual.middle_name || '-'} />
+          <InfoTile label="Last Name" value={individual.last_name} />
+          <InfoTile label="Gender" value={individual.gender?.replace(/_/g, ' ') || '-'} />
+          <InfoTile label="Date of Birth" value={formatDate(individual.date_of_birth)} />
+          <InfoTile label="Occupation" value={individual.occupation || '-'} />
+          <InfoTile label="Employment / Service" value={formatYears(individual.employment_or_service_years)} />
+        </div>
+      )}
+      {!producer && !individual && (
+        <EmptyPanel
+          icon={isInstitution
+            ? <Building2 size={18} className="text-slate-500 flex-shrink-0" />
+            : <User size={18} className="text-slate-500 flex-shrink-0" />}
+          title="Profile details are not available from the backend yet."
+        />
+      )}
+    </div>
+  );
+};
 
 const ShareholdingTab: React.FC<{ profile: MemberProfileDetail }> = ({ profile }) => (
   <div className="card space-y-4">
@@ -333,6 +375,7 @@ const activeStatusLabel = (profile: MemberProfileDetail) => (
 );
 const formatCount = (value: number | null) => (value === null ? '-' : value.toLocaleString('en-IN'));
 const formatDate = (value: string | null) => (value ? new Date(value).toLocaleDateString('en-IN') : '-');
+const formatYears = (value: string | null) => (value ? `${value} years` : '-');
 const addressText = (profile: MemberProfileDetail) => (
   [
     profile.registered_address.line1,

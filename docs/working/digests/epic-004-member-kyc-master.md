@@ -75,3 +75,23 @@ before implementation.
   object-scope facts are still unmodeled, so 004B gates by `members.member.read` and records A-030.
 - Future slices should add object-scope enforcement only when source-backed member/team ownership
   facts exist.
+
+## 004C Profile Detail Extracts
+- `data-model.md` §10.2 requires individual-profile first/last name and permits nullable middle
+  name, gender, date of birth, occupation, and employment/service years. One row belongs only to
+  an `individual_farmer`.
+- §10.3 requires producer/FPC institution type and authorised-signatory name; registration number,
+  produce-supply years, and sensitive signatory identifiers are nullable. One row belongs only to
+  an `fpc` or `producer_institution`.
+- 004C returns the remaining individual fields and the existing non-sensitive producer fields from
+  `GET /api/v1/members/{member_id}/`. Missing type-specific rows remain `null`.
+- Signatory PAN/Aadhaar remain deferred because §13.5 requires reason capture, expiry, audit, and
+  no frontend caching. They are neither stored nor serialized by 004C.
+- `api-contracts.md` §14.1-§14.3 define nominee list/create plus minor, required PAN/Aadhaar, and
+  identity-format errors. `data-model.md` §10.4 requires encrypted/hash identity storage,
+  `minor_flag = false`, and nominee signatures; `auth-permissions.md` maps reads to
+  `members.nominee.read` and creates to `members.nominee.create`.
+- `data-model.md` §10.5 says a witness belongs to a loan application, must be an existing SFPCL
+  shareholder, needs KYC, and signs the Loan Agreement/SH-4 where applicable. Because 004E follows
+  nominee work but precedes application/shareholding persistence, it must not invent a standalone
+  witness endpoint or fake shareholder verification.

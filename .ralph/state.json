@@ -42,14 +42,15 @@
     "003K-prototype-visual-gap-report-update",
     "003L-data-import-and-migration-planning",
     "004A-member-directory-api-and-ui",
-    "004B-member-profile-api-and-ui"
+    "004B-member-profile-api-and-ui",
+    "004C-individual-farmer-and-fpc-profile-details"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "51f4b18",
-  "last_run_id": "2026-07-08_094146_repair",
+  "last_run_id": "2026-07-09_091651_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 2,
+  "slices_completed_since_architecture_review": 3,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

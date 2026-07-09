@@ -1,0 +1,28 @@
+/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/coverage/core.py:107: CoverageWarning: Couldn't import C tracer: dlopen(/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/coverage/tracer.cpython-311-darwin.so, 0x0002): tried: '/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/coverage/tracer.cpython-311-darwin.so' (mach-o file, but is an incompatible architecture (have 'arm64', need 'x86_64')), '/System/Volumes/Preboot/Cryptexes/OS/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/coverage/tracer.cpython-311-darwin.so' (no such file), '/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/coverage/tracer.cpython-311-darwin.so' (mach-o file, but is an incompatible architecture (have 'arm64', need 'x86_64')) (no-ctracer); see https://coverage.readthedocs.io/en/7.14.3/messages.html#warning-no-ctracer
+  warn(f"Couldn't import C tracer: {IMPORT_ERROR}", slug="no-ctracer", once=True)
+Creating test database for alias 'default'...
+Found 201 test(s).
+System check identified no issues (0 silenced).
+.........................................................................Catalogue seeded: 177 permissions, 20 roles, 8 teams, 161 role-permission links.
+Catalogue seeded: 177 permissions, 20 roles, 8 teams, 161 role-permission links.
+..........................................................................Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+...Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+........................................
+----------------------------------------------------------------------
+Ran 201 tests in 203.023s
+
+OK
+Destroying test database for alias 'default'...

@@ -64,6 +64,36 @@ describe('MemberProfileView', () => {
     expect(html).not.toContain('Ganesh Thorat');
   });
 
+  it('renders individual farmer profile details from the API', () => {
+    const html = renderProfile('success', member, 0);
+
+    expect(html).toContain('Individual Farmer Details');
+    expect(html).toContain('Ramesh');
+    expect(html).toContain('Patil');
+    expect(html).toContain('15/1/1980');
+    expect(html).toContain('Farmer');
+    expect(html).toContain('12.50 years');
+  });
+
+  it('renders producer institution details without sensitive signatory identifiers', () => {
+    const html = renderProfile('success', producerMember, 0);
+
+    expect(html).toContain('Producer Institution Details');
+    expect(html).toContain('farmer producer company');
+    expect(html).toContain('U00000MH2021PTC000000');
+    expect(html).toContain('Authorised Person');
+    expect(html).toContain('2.00 years');
+    expect(html).not.toContain('Signatory PAN');
+    expect(html).not.toContain('Signatory Aadhaar');
+  });
+
+  it('uses the existing empty-value treatment when the type-specific profile is missing', () => {
+    const html = renderProfile('success', { ...producerMember, producer_institution_profile: null }, 0);
+
+    expect(html).toContain('Producer Institution Details');
+    expect(html).toContain('Profile details are not available from the backend yet.');
+  });
+
   it('renders deferred tab empty states instead of synthetic mock rows', () => {
     const html = [6, 7, 8, 9].map(tab => renderProfile('success', member, tab)).join('\n');
 
@@ -112,9 +142,16 @@ const member: MemberProfileDetail = {
   share_summary: { number_of_shares: 100, holding_mode: 'physical', available_share_count: 100 },
   active_member_status: { status: 'active', verified_at: '2026-06-22T10:30:00Z' },
   individual_profile: {
+    first_name: 'Ramesh',
+    middle_name: null,
+    last_name: 'Patil',
+    gender: 'male',
+    date_of_birth: '1980-01-15',
+    occupation: 'Farmer',
     land_area_under_cultivation_acres: '5.00',
     primary_crop: 'grapes',
     services_availed_flag: true,
+    employment_or_service_years: '12.50',
   },
   producer_institution_profile: null,
   available_actions: [{
@@ -124,6 +161,25 @@ const member: MemberProfileDetail = {
     disabled_reason: null,
     required_permission: 'applications.loan_application.create',
   }],
+};
+
+const producerMember: MemberProfileDetail = {
+  ...member,
+  member_id: 'member-2',
+  member_number: 'MEM-00126',
+  member_type: 'fpc',
+  legal_name: 'ABC Farmer Producer Company Limited',
+  display_name: 'ABC FPC',
+  folio_number: 'FOL-789',
+  individual_profile: null,
+  producer_institution_profile: {
+    institution_type: 'farmer_producer_company',
+    registration_number: 'U00000MH2021PTC000000',
+    authorised_signatory_name: 'Authorised Person',
+    board_resolution_required_flag: true,
+    services_availed_flag: true,
+    produce_supply_years: '2.00',
+  },
 };
 
 const renderProfile = (

@@ -195,10 +195,22 @@ def _individual_profile(member):
     if profile is None:
         return None
     acres = profile.land_area_under_cultivation_acres
+    years = profile.employment_or_service_years
     return {
+        "first_name": profile.first_name,
+        "middle_name": profile.middle_name or None,
+        "last_name": profile.last_name,
+        "gender": profile.gender or None,
+        "date_of_birth": (
+            profile.date_of_birth.isoformat() if profile.date_of_birth else None
+        ),
+        "occupation": profile.occupation or None,
         "land_area_under_cultivation_acres": f"{acres:.2f}" if acres is not None else None,
         "primary_crop": profile.primary_crop or None,
         "services_availed_flag": profile.services_availed_flag,
+        "employment_or_service_years": (
+            f"{years:.2f}" if years is not None else None
+        ),
     }
 
 

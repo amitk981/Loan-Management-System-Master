@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -81,16 +82,36 @@ class IndividualMemberProfile(models.Model):
     member = models.OneToOneField(
         Member, on_delete=models.CASCADE, related_name="individual_profile"
     )
+    first_name = models.CharField(max_length=120)
+    middle_name = models.CharField(max_length=120, blank=True, null=True)
+    last_name = models.CharField(max_length=120)
+    gender = models.CharField(max_length=40, blank=True, null=True)
+    date_of_birth = models.DateField(blank=True, null=True)
+    occupation = models.CharField(max_length=150, blank=True, null=True)
     land_area_under_cultivation_acres = models.DecimalField(
         max_digits=12, decimal_places=2, blank=True, null=True
     )
     primary_crop = models.CharField(max_length=100, blank=True)
     services_availed_flag = models.BooleanField(default=False)
+    employment_or_service_years = models.DecimalField(
+        max_digits=5, decimal_places=2, blank=True, null=True
+    )
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         db_table = "individual_member_profiles"
+
+    def clean(self):
+        super().clean()
+        if self.member_id and self.member.member_type != "individual_farmer":
+            raise ValidationError(
+                {"member": "Individual profiles require an individual_farmer member."}
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
 
 class ProducerInstitutionProfile(models.Model):
@@ -113,3 +134,22 @@ class ProducerInstitutionProfile(models.Model):
 
     class Meta:
         db_table = "producer_institution_profiles"
+
+    def clean(self):
+        super().clean()
+        if self.member_id and self.member.member_type not in {
+            "fpc",
+            "producer_institution",
+        }:
+            raise ValidationError(
+                {
+                    "member": (
+                        "Producer institution profiles require an fpc or "
+                        "producer_institution member."
+                    )
+                }
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)

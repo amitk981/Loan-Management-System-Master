@@ -1,9 +1,14 @@
 import uuid
 
+from django.core.exceptions import ValidationError
 from django.test import Client, TestCase
 
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
-from sfpcl_credit.members.models import IndividualMemberProfile, Member
+from sfpcl_credit.members.models import (
+    IndividualMemberProfile,
+    Member,
+    ProducerInstitutionProfile,
+)
 from sfpcl_credit.tests.api_contracts import (
     assert_available_actions_shape,
     assert_error_envelope,
@@ -63,9 +68,16 @@ class MemberProfileApiTests(TestCase):
         )
         IndividualMemberProfile.objects.create(
             member=self.member,
+            first_name="Ramesh",
+            middle_name=None,
+            last_name="Patil",
+            gender="male",
+            date_of_birth="1980-01-15",
+            occupation="Farmer",
             land_area_under_cultivation_acres="5.00",
             primary_crop="grapes",
             services_availed_flag=True,
+            employment_or_service_years="12.50",
         )
         self.deleted = Member.objects.create(
             member_type="individual_farmer",
@@ -132,7 +144,21 @@ class MemberProfileApiTests(TestCase):
         self.assertEqual(data["pan"], {"masked": "******234F", "can_view_full": False})
         self.assertEqual(data["aadhaar"], {"masked": "********9012", "can_view_full": False})
         self.assertEqual(data["registered_address"]["line1"], "Village Road")
-        self.assertEqual(data["individual_profile"]["primary_crop"], "grapes")
+        self.assertEqual(
+            data["individual_profile"],
+            {
+                "first_name": "Ramesh",
+                "middle_name": None,
+                "last_name": "Patil",
+                "gender": "male",
+                "date_of_birth": "1980-01-15",
+                "occupation": "Farmer",
+                "land_area_under_cultivation_acres": "5.00",
+                "primary_crop": "grapes",
+                "services_availed_flag": True,
+                "employment_or_service_years": "12.50",
+            },
+        )
         self.assertIsNone(data["producer_institution_profile"])
         assert_available_actions_shape(self, data["available_actions"])
         self.assertEqual(data["available_actions"][0]["action_code"], "create_loan_application")
@@ -146,6 +172,89 @@ class MemberProfileApiTests(TestCase):
             response = self.client.get(self._url(member_id), headers=self._headers())
             self.assertEqual(response.status_code, 404)
             assert_error_envelope(self, response.json(), "NOT_FOUND")
+
+    def test_producer_institution_profile_serializes_non_sensitive_fields_only(self):
+        producer = self._member(
+            member_type="fpc",
+            legal_name="ABC Farmer Producer Company Limited",
+            display_name="ABC FPC",
+            folio_number="FOL-789",
+            pan_hash="hash-producer-pan",
+        )
+        ProducerInstitutionProfile.objects.create(
+            member=producer,
+            institution_type="farmer_producer_company",
+            registration_number="U00000MH2021PTC000000",
+            authorised_signatory_name="Authorised Person",
+            board_resolution_required_flag=True,
+            services_availed_flag=True,
+            produce_supply_years="2.00",
+        )
+
+        response = self.client.get(self._url(producer.member_id), headers=self._headers())
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()["data"]
+        self.assertIsNone(data["individual_profile"])
+        self.assertEqual(
+            data["producer_institution_profile"],
+            {
+                "institution_type": "farmer_producer_company",
+                "registration_number": "U00000MH2021PTC000000",
+                "authorised_signatory_name": "Authorised Person",
+                "board_resolution_required_flag": True,
+                "services_availed_flag": True,
+                "produce_supply_years": "2.00",
+            },
+        )
+        serialized = str(data["producer_institution_profile"]).lower()
+        self.assertNotIn("signatory_pan", serialized)
+        self.assertNotIn("signatory_aadhaar", serialized)
+
+    def test_member_without_type_specific_profile_returns_null_profile_objects(self):
+        producer = self._member(
+            member_type="producer_institution",
+            legal_name="Missing Profile Producer Institution",
+            display_name="Missing Profile PI",
+            folio_number="FOL-790",
+            pan_hash="hash-missing-profile-pan",
+        )
+
+        response = self.client.get(self._url(producer.member_id), headers=self._headers())
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()["data"]
+        self.assertIsNone(data["individual_profile"])
+        self.assertIsNone(data["producer_institution_profile"])
+
+    def test_profile_models_reject_member_type_mismatches(self):
+        fpc = self._member(
+            member_type="fpc",
+            legal_name="Wrong Individual Owner",
+            display_name="Wrong Individual Owner",
+            folio_number="FOL-791",
+            pan_hash="hash-wrong-individual",
+        )
+        individual = self._member(
+            member_type="individual_farmer",
+            legal_name="Wrong Producer Owner",
+            display_name="Wrong Producer Owner",
+            folio_number="FOL-792",
+            pan_hash="hash-wrong-producer",
+        )
+
+        with self.assertRaises(ValidationError):
+            IndividualMemberProfile.objects.create(
+                member=fpc,
+                first_name="Wrong",
+                last_name="Profile",
+            )
+        with self.assertRaises(ValidationError):
+            ProducerInstitutionProfile.objects.create(
+                member=individual,
+                institution_type="farmer_producer_company",
+                authorised_signatory_name="Wrong Profile",
+            )
 
     def test_member_profile_requires_authentication_and_member_read_permission(self):
         unauthenticated = self.client.get(self._url(self.member.member_id))
@@ -163,3 +272,18 @@ class MemberProfileApiTests(TestCase):
         self.assertEqual(AuditLog.objects.count(), 1)
         self.assertEqual(AuditLog.objects.first().action, "auth.login.succeeded")
         self.assertEqual(WorkflowEvent.objects.count(), 0)
+
+    def _member(self, **overrides):
+        values = {
+            "member_type": "individual_farmer",
+            "legal_name": "Member",
+            "display_name": "Member",
+            "folio_number": f"FOL-{uuid.uuid4()}",
+            "membership_status": "active",
+            "pan_encrypted": "ABCDE1234F",
+            "pan_hash": f"hash-{uuid.uuid4()}",
+            "kyc_status": "verified",
+            "default_status": "no_default",
+        }
+        values.update(overrides)
+        return Member.objects.create(**values)

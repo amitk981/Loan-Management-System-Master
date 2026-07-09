@@ -161,7 +161,7 @@ Rules:
 - The directory response never includes PAN or Aadhaar fields. `mobile_number` is masked to last four digits.
 - Read-only list access writes no audit/workflow event. Sensitive reveal, exports, profile detail, create/update, nominee, witness, KYC verification, share certificate, demat, land/crop, loan application, and Borrower 360 behavior are explicitly deferred.
 
-## Member Profile Detail API (004B)
+## Member Profile Detail API (004B, extended by 004C)
 
 `GET /api/v1/members/{member_id}/`
 
@@ -171,10 +171,22 @@ Rules:
   unknown or soft-deleted returns `404 NOT_FOUND`.
 - Returns the standard success envelope with member identifiers, status fields, masked mobile,
   registered address, share and active-member shell fields, `pan`/`aadhaar` as
-  `{ "masked": "...", "can_view_full": false }`, nullable `individual_profile` and
-  `producer_institution_profile` shell objects, and §44-shaped `available_actions[]`.
+  `{ "masked": "...", "can_view_full": false }`, nullable type-specific profile objects, and
+  §44-shaped `available_actions[]`.
+- For `member_type = individual_farmer`, `individual_profile` is either `null` when no row exists
+  or contains `first_name`, nullable `middle_name`, `last_name`, nullable `gender`,
+  `date_of_birth`, nullable `occupation`, `land_area_under_cultivation_acres`, `primary_crop`,
+  `services_availed_flag`, and nullable `employment_or_service_years`.
+- For `member_type = fpc` or `producer_institution`, `producer_institution_profile` is either
+  `null` when no row exists or contains `institution_type`, nullable `registration_number`,
+  `authorised_signatory_name`, `board_resolution_required_flag`, `services_availed_flag`, and
+  nullable `produce_supply_years`. Decimal values are serialized as fixed two-decimal strings;
+  dates are ISO `YYYY-MM-DD`.
+- Profile persistence rejects an individual profile whose member is not `individual_farmer` and
+  rejects a producer-institution profile whose member is not `fpc` or `producer_institution`.
 - The response never serializes `pan_encrypted`, `aadhaar_encrypted`, `pan_hash`, `aadhaar_hash`, or
-  full source values. §13.5 sensitive reveal is not implemented in 004B.
+  full source values. Producer authorised-signatory PAN/Aadhaar fields are not stored or returned;
+  §13.5 sensitive reveal controls remain deferred.
 - Masked read-only profile access writes no workflow event and no profile-access audit row beyond
   normal authentication audit.
 

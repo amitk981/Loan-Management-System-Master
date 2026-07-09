@@ -37,9 +37,16 @@ export interface MemberProfileDetail {
   };
   active_member_status: { status: string | null; verified_at: string | null };
   individual_profile: {
+    first_name: string;
+    middle_name: string | null;
+    last_name: string;
+    gender: string | null;
+    date_of_birth: string | null;
+    occupation: string | null;
     land_area_under_cultivation_acres: string | null;
     primary_crop: string | null;
     services_availed_flag: boolean;
+    employment_or_service_years: string | null;
   } | null;
   producer_institution_profile: {
     institution_type: string;
