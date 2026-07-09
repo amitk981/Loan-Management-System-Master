@@ -1,4 +1,4 @@
-# Slice 005G: Member Portal Application Start Status
+# Slice 005G: Member Portal Application Start and Status
 
 ## Status
 Not Started
@@ -8,10 +8,13 @@ Epic 005: Loan Application Intake, Documents, Completeness, and Deficiencies
 Epic file: `docs/epics/005-application-intake-completeness.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Wire the authenticated borrower/member application screens to real backend data: MP05 new
+application start, MP06/MP08 draft/review submission path where supported by existing 005A/005B
+APIs, MP09 my applications list, and MP10 application status.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+A logged-in member can start or resume their own draft application, submit it to SFPCL, and see
+their own application status without staff assistance.
 
 ## Depends On
 - 005FB
@@ -24,35 +27,79 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - docs/source/screen-spec-member-portal.md application screens
 
 ## Prototype Reference
-- sfpcl-lms/src/pages/applications/*
-- sfpcl-lms/src/pages/borrower/portal/applications/*
+- sfpcl-lms/src/pages/borrower/portal/applications/MP05_NewApplication.tsx
+- sfpcl-lms/src/pages/borrower/portal/applications/MP09_MyApplications.tsx
+- sfpcl-lms/src/pages/borrower/portal/applications/MP10_ApplicationStatus.tsx
+- Existing staff application API/service patterns in sfpcl-lms/src/pages/applications/*
 
 ## Screens Involved
-Relevant prototype screen area for this capability.
+- MP05 New Application Start
+- MP06/MP08 draft/review facts as represented by the current prototype flow
+- MP09 My Applications
+- MP10 Application Status
 
 ## Frontend Scope
-Small UI wiring for the named workflow, if applicable.
+- Replace mock application data in MP05/MP09/MP10 with real member-portal APIs.
+- Preserve existing portal layout, cards, table/list patterns, badges, and spacing.
+- Show submitted applications without an official `LO...` reference until completeness passes.
+- Render returned-incomplete applications as borrower rectification work using
+  `application_status = incomplete_returned`, not plain `submitted`.
+- Include loading, empty, error, unauthorized, validation, draft-saved, submitted, and
+  returned-incomplete states.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+- Add member-scoped portal endpoints backed by the 005A/005B application services:
+  - create/update/read own draft application using the authenticated `member_id` from 005FA;
+  - submit own draft application to the existing `submitted` state;
+  - list own applications for MP09;
+  - read own application status for MP10.
+- Do not accept client-supplied `member_id` as authority. The portal token’s `member_id` is the
+  borrower scope.
+- Do not expose staff completeness, reference-generation, return-with-deficiencies, or deficiency
+  resolve actions to borrowers.
+- Do not implement document upload/checklist, deficiency response/resubmission, rejection note,
+  eligibility, appraisal, sanction, disbursement, or repayment behavior in this slice.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
+- Prefer reusing the existing `loan_applications` model. Add fields only if a required MP05 fact
+  cannot be represented by the current 005A draft schema.
 
 ## API Contracts
-Create or update the API contract for this capability.
+- Update `docs/working/API_CONTRACTS.md` with the member-portal application endpoints and response
+  examples. Responses must follow the standard envelope and avoid PAN, Aadhaar, full bank account
+  numbers, encrypted values, token hashes, or raw document contents.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+- Require an authenticated portal account with `portal_role = borrower_member` and matching
+  `member_id`.
+- Cross-member read/write attempts return `403 OBJECT_ACCESS_DENIED` and create no application,
+  audit, workflow, register, reference, or sequence side effects.
+- Staff users should continue to use existing staff application endpoints; do not broaden staff
+  access through portal routes.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+- Draft create/update and submit must reuse existing metadata-only audit/workflow behavior where
+  possible, with actor set to the linked portal user.
+- Read-only list/status access does not need a new audit row unless existing service conventions
+  already audit it.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+- Draft save may remain incomplete, matching 005A.
+- Submit requires the persisted 005B facts: member from portal scope, positive requested amount,
+  declared purpose, and purpose category.
+- Submitted applications are locked from direct draft editing.
+- Official `LO...` reference remains nullable until staff completeness pass generates it.
+- Returned deficiency applications remain `incomplete_returned`; resubmission from
+  `incomplete_returned` is out of scope unless source-backed transition requirements are added.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Borrower can create, update, submit, list, and read status for their own application.
+- Borrower cannot create/list/read/update/submit another member's application.
+- Borrower token cannot call staff completeness/reference/deficiency-return APIs.
+- Submitted application can appear with no official reference number.
+- Returned-incomplete application displays borrower-facing rectification status without enabling
+  staff repeat-return behavior.
+- Frontend tests cover API mapping and loading/error/empty states for MP09/MP10.
 
 ## Visual Acceptance Criteria
 Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.

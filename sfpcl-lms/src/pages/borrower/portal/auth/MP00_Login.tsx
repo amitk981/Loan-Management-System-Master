@@ -3,19 +3,30 @@ import { Leaf, Lock, Mail, Smartphone, ArrowRight, CheckCircle2 } from 'lucide-r
 
 interface MP00_LoginProps {
   onLogin: () => void;
+  onSubmitLogin?: (credentials: { identifier: string; password: string }) => Promise<void>;
   onNavigateToActivation: () => void;
   onNavigateToForgot: () => void;
   onBackToStaffLogin?: () => void;
+  error?: string;
+  isSubmitting?: boolean;
 }
 
-const MP00_Login: React.FC<MP00_LoginProps> = ({ onLogin, onNavigateToActivation, onNavigateToForgot, onBackToStaffLogin }) => {
+const MP00_Login: React.FC<MP00_LoginProps> = ({ onLogin, onSubmitLogin, onNavigateToActivation, onNavigateToForgot, onBackToStaffLogin, error, isSubmitting = false }) => {
   const [method, setMethod] = useState<'password' | 'otp'>('password');
   const [identifier, setIdentifier] = useState('');
   const [secret, setSecret] = useState('');
+  const [localError, setLocalError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (identifier && secret) {
+    setLocalError('');
+    if (method === 'otp') {
+      setLocalError('OTP login will be available after portal OTP preference setup.');
+      return;
+    }
+    if (identifier && secret && onSubmitLogin) {
+      await onSubmitLogin({ identifier, password: secret });
+    } else if (identifier && secret) {
       onLogin();
     }
   };
@@ -51,6 +62,11 @@ const MP00_Login: React.FC<MP00_LoginProps> = ({ onLogin, onNavigateToActivation
           </div>
 
           <form className="space-y-5" onSubmit={handleSubmit}>
+            {(error || localError) && (
+              <div className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error || localError}
+              </div>
+            )}
             <div>
               <label htmlFor="identifier" className="block text-sm font-medium text-slate-700">
                 Mobile Number or Email
@@ -115,9 +131,10 @@ const MP00_Login: React.FC<MP00_LoginProps> = ({ onLogin, onNavigateToActivation
             <div>
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
               >
-                {method === 'password' ? 'Sign in securely' : 'Verify OTP & Login'}
+                {isSubmitting ? 'Signing in...' : method === 'password' ? 'Sign in securely' : 'Verify OTP & Login'}
               </button>
             </div>
           </form>

@@ -8,6 +8,7 @@ import {
   DEMO_AUTH_ENABLED,
   loginAndLoadCurrentUser,
   logoutSession,
+  portalLoginAndLoadCurrentUser,
   restoreCurrentUserFromStoredSession,
 } from './services/authSession';
 import { Page, resolveNavigationAttempt } from './services/navigationPermissions';
@@ -116,6 +117,23 @@ const AppInner: React.FC = () => {
     }
   };
 
+  const handleMemberLogin = async (credentials: { identifier: string; password: string }) => {
+    setIsSubmittingLogin(true);
+    setLoginError('');
+    try {
+      const backendUser = await portalLoginAndLoadCurrentUser(credentials);
+      setBackendUser(backendUser);
+      setIsLoggedIn(true);
+      setPage('borrower');
+      setBlockedPage(null);
+    } catch (error) {
+      setIsLoggedIn(false);
+      setLoginError(sessionErrorMessage(error));
+    } finally {
+      setIsSubmittingLogin(false);
+    }
+  };
+
   const handleDemoLogin = (role: Role) => {
     setRole(role);
     setIsLoggedIn(true);
@@ -144,9 +162,12 @@ const AppInner: React.FC = () => {
       return (
         <MP00_Login
           onLogin={() => handleDemoLogin('borrower')}
+          onSubmitLogin={handleMemberLogin}
           onNavigateToActivation={() => setAuthView('memberActivation')}
           onNavigateToForgot={() => setAuthView('memberForgot')}
           onBackToStaffLogin={() => setAuthView('staff')}
+          error={loginError}
+          isSubmitting={isSubmittingLogin}
         />
       );
     }
@@ -154,7 +175,7 @@ const AppInner: React.FC = () => {
       return (
         <MP01_Activation
           onBackToLogin={() => setAuthView('memberLogin')}
-          onActivate={() => handleDemoLogin('borrower')}
+          onActivate={() => setAuthView('memberLogin')}
         />
       );
     }

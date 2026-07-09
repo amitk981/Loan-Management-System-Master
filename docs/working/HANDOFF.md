@@ -1,51 +1,62 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-09_215632_normal_run
+2026-07-09_222250_normal_run
 
 ## Current Status
-Slice `005F2-deficiency-return-status-contract-hardening` completed successfully.
+Slice `005FA-member-portal-authentication` completed successfully.
 
 What changed:
-- Added `LoanApplication.STATUS_INCOMPLETE_RETURNED = "incomplete_returned"` and included it in
-  model validation.
-- `POST /api/v1/loan-applications/{loan_application_id}/return-with-deficiencies/` now persists
-  and returns `application_status = incomplete_returned`, `completeness_status = incomplete`, and
-  `current_stage = initial_loan_request`.
-- Audit metadata and the loan-application workflow event now record
-  `submitted -> incomplete_returned`.
-- Repeat returns from `incomplete_returned` remain blocked with standard
-  `409 INVALID_STATE_TRANSITION` and no duplicate deficiency/audit/workflow/register/reference or
-  sequence side effects. Assumption A-041 records this because source docs do not define repeat
-  returns before borrower resubmission.
-- API contract docs, Epic 005 digest, and the next portal slices were sharpened with the corrected
-  returned-incomplete contract.
+- Added portal auth models: `PortalAccount` links one `Member` to one borrower portal `User`;
+  `PortalOtpChallenge` stores activation/reset OTP hashes, status, expiry, and challenge metadata.
+- Added portal endpoints:
+  `/api/v1/portal/auth/activation/start/`,
+  `/api/v1/portal/auth/activation/complete/`,
+  `/api/v1/portal/auth/login/`,
+  `/api/v1/portal/auth/password-reset/start/`,
+  `/api/v1/portal/auth/password-reset/complete/`, and
+  `/api/v1/portal/auth/password/change/`.
+- Borrower access tokens and `/api/v1/auth/me/` now include `member_id`, `portal_account_id`, and
+  `portal_role = borrower_member`. They expose only portal own-data permission codes and do not
+  grant staff completeness, reference generation, return-with-deficiencies, or deficiency
+  resolution authority.
+- Password reset OTPs are single-use and revoke active sessions; MP25 password change revokes
+  other sessions while keeping the current session active.
+- MP00/MP01/MP02/MP25 now call real APIs while preserving existing visual patterns.
+- API contracts, A-042, the Epic 005 digest, and next portal slices were updated with the member
+  scope and OTP-delivery assumptions.
 
 Source facts used:
-- `docs/source/data-model.md` lists `loan_application_status = incomplete_returned`.
-- `docs/source/functional-spec.md` M03 deficiency flow says incomplete applications enter the
-  incomplete state and retain deficiency history.
-- `docs/source/screen-spec.md` S12 says returned applications become
-  `Incomplete - Returned to Applicant` or rejected.
+- `docs/source/screen-spec-member-portal.md` MP00/MP01/MP02/MP25 require login, activation,
+  OTP/password reset, and security settings.
+- `docs/source/auth-permissions.md` §5 requires JWT session tracking, minimal claims, refresh
+  revocation, and no sensitive token data; borrower portal users are own-record users.
+- `docs/source/security-privacy.md` requires generic invalid-credential/reset handling, OTP/hash
+  protections, failed-login auditability, and session revocation on password reset.
+- `docs/source/api-contracts.md` §11 defines auth envelope conventions.
 
 ## Validation
-- TDD red/green saved for the focused deficiency-return regression.
-- Focused loan-application API module passed.
-- Full backend suite passed: 256 tests.
+- TDD red/green saved for backend portal auth and frontend auth-session API wiring.
+- Focused portal auth backend module passed: 4 tests.
+- Full backend suite passed: 260 tests.
 - Backend coverage passed: 95% total, above 85% floor.
 - Backend `manage.py check` and `makemigrations --check --dry-run` passed.
-- Frontend lint, typecheck, tests (80/80), and build passed.
+- Frontend lint, typecheck, tests (83/83), and build passed.
 - `git diff --check` passed.
+- Visual evidence HTML is saved. Browser screenshots could not be captured in this sandbox because
+  Vite server binding failed with `EPERM`, in-app browser was unavailable, and Playwright Chromium
+  launch failed with macOS Mach port permission denial; logs are in the run folder.
 
-Evidence is in `.ralph/runs/2026-07-09_215632_normal_run/`.
+Evidence is in `.ralph/runs/2026-07-09_222250_normal_run/`.
 
 ## Next Run
-Run `005FA-member-portal-authentication`.
+Run `005FB-member-portal-dashboard-profile-and-supply-view`.
 
-Key instructions for 005FA:
-- Borrower/member portal tokens must carry a linked `member_id` own-data scope and must not grant
-  staff completeness/pass/deficiency-resolution permissions.
-- Portal auth and later portal screens must treat returned deficiency applications as
-  `application_status = incomplete_returned`, not plain `submitted`.
-- Do not allow borrower flows to perform repeat staff returns; resubmission behavior needs a
-  source-backed transition in a later portal deficiency-response slice.
+Key instructions for 005FB:
+- Consume `member_id` and `portal_role = borrower_member` from the authenticated portal token and
+  `/auth/me`; do not accept arbitrary member IDs from the client as authority.
+- Borrower portal reads should use portal own-data permissions, not staff `members.member.read` or
+  `applications.loan_application.*` grants.
+- Preserve masking for PAN/Aadhaar/full bank values; no portal reveal path exists yet.
+- Dashboard pending actions may count open deficiencies for the member's own applications, but
+  application list/status screens belong to 005G.

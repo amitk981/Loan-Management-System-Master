@@ -55,7 +55,7 @@ def hash_token(token):
 def access_claims(user, session):
     now = timezone.now()
     exp = now + timezone.timedelta(minutes=settings.AUTH_ACCESS_TOKEN_MINUTES)
-    return {
+    claims = {
         "token_type": "access",
         "user_id": str(user.user_id),
         "session_id": str(session.user_session_id),
@@ -66,6 +66,12 @@ def access_claims(user, session):
         "iat": int(now.timestamp()),
         "exp": int(exp.timestamp()),
     }
+    portal_account = getattr(user, "portal_account", None)
+    if portal_account is not None:
+        claims["member_id"] = str(portal_account.member_id)
+        claims["portal_account_id"] = str(portal_account.portal_account_id)
+        claims["portal_role"] = "borrower_member"
+    return claims
 
 
 def refresh_claims(session):

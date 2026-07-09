@@ -1,5 +1,29 @@
 # Ralph Progress Log
 
+## 2026-07-09 22:52:50 - 2026-07-09_222250_normal_run
+- Agent tool used: codex
+- Slice attempted: 005FA-member-portal-authentication
+- Summary: Implemented member portal authentication for MP00/MP01/MP02/MP25. Added
+  `PortalAccount` and `PortalOtpChallenge` identity models, activation start/complete, portal
+  login, password-reset start/complete, and portal password-change endpoints. Borrower access
+  tokens and `/auth/me` now carry `member_id`, `portal_account_id`, and
+  `portal_role = borrower_member`, with portal own-data permissions only. Portal tokens do not
+  grant staff completeness, reference-generation, deficiency-return, or deficiency-resolution
+  authority. Wired the existing portal auth screens to real APIs without changing the visual
+  system. Recorded A-042 for no-provider OTP delivery and placeholder last-four verification.
+- Tests run: TDD red/green for backend portal auth and frontend auth-session API wiring; backend
+  `manage.py check`; backend tests (260/260); `makemigrations --check --dry-run`; backend coverage
+  95% (floor 85); frontend `npm run lint`; `npm run typecheck`; `npm test` (83/83);
+  `npm run build`; `git diff --check`; protected-path scan.
+- Evidence saved: `.ralph/runs/2026-07-09_222250_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus self-contained portal auth visual evidence HTML. Browser PNG
+  screenshots could not be captured because the sandbox refused localhost binding, the in-app
+  browser was unavailable, and Playwright Chromium launch was denied by macOS sandbox permissions.
+- Result: Success.
+- Risk level: High.
+- Next action: Run `005FB-member-portal-dashboard-profile-and-supply-view`; consume 005FA
+  `member_id`/`portal_role` scope for own-data-only profile/dashboard APIs.
+
 ## 2026-07-09 21:56:32 - 2026-07-09_215632_normal_run
 - Agent tool used: codex
 - Slice attempted: 005F2-deficiency-return-status-contract-hardening
@@ -1991,6 +2015,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_215632_normal_run/.ralph/runs/2026-07-09_215632_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_215632_normal_run/.ralph/runs/2026-07-09_215632_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 23:01:16 - 2026-07-09_222250_normal_run
+- Agent tool used: codex
+- Slice attempted: 005FA-member-portal-authentication
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_222250_normal_run/.ralph/runs/2026-07-09_222250_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_222250_normal_run/.ralph/runs/2026-07-09_222250_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

@@ -10,7 +10,7 @@ from django.core.exceptions import ValidationError
 from django.views.decorators.http import require_GET, require_POST
 
 from sfpcl_credit.api import error_response, parse_json_body, success_response
-from sfpcl_credit.identity.modules import auth_service, http_auth
+from sfpcl_credit.identity.modules import auth_service, http_auth, portal_auth_service
 from sfpcl_credit.identity.modules.auth_service import CredentialError
 from sfpcl_credit.identity.modules.tokens import TokenError, decode_token  # noqa: F401  (re-exported)
 
@@ -114,4 +114,116 @@ def me(request):
         payload = auth_service.current_user_payload_for_access_token(access_token)
     except TokenError as exc:
         return error_response(request, 401, exc.code, exc.message)
+    return success_response(payload, request)
+
+
+def _portal_error_response(request, exc):
+    return error_response(request, exc.status, exc.code, exc.message, exc.field_errors)
+
+
+@require_POST
+def portal_activation_start(request):
+    try:
+        payload = portal_auth_service.start_activation(parse_json_body(request), request)
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", str(exc))
+    except portal_auth_service.PortalAuthError as exc:
+        return _portal_error_response(request, exc)
+    return success_response(payload, request)
+
+
+@require_POST
+def portal_activation_complete(request):
+    try:
+        payload = portal_auth_service.complete_activation(parse_json_body(request), request)
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", str(exc))
+    except portal_auth_service.PortalAuthError as exc:
+        return _portal_error_response(request, exc)
+    return success_response(payload, request)
+
+
+@require_POST
+def portal_login(request):
+    try:
+        data = parse_json_body(request)
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", str(exc))
+    identifier = str(data.get("identifier", "")).strip().lower()
+    password = data.get("password", "")
+    if not identifier or not password:
+        return error_response(
+            request,
+            400,
+            "MISSING_REQUIRED_FIELD",
+            "Identifier and password are required.",
+            {
+                "identifier": "This field is required." if not identifier else "",
+                "password": "This field is required." if not password else "",
+            },
+        )
+    try:
+        user = portal_auth_service.authenticate_portal_user(identifier, password)
+    except CredentialError as exc:
+        auth_service.record_auth_event(
+            request,
+            "portal.auth.login.failed",
+            user=exc.user,
+            outcome=exc.outcome,
+            email=identifier,
+        )
+        return error_response(
+            request, 401, "INVALID_CREDENTIALS", "Identifier or password is incorrect."
+        )
+    session, payload = portal_auth_service.issue_portal_login(user, request)
+    auth_service.record_auth_event(
+        request,
+        "portal.auth.login.succeeded",
+        user=user,
+        session=session,
+        outcome="success",
+    )
+    return success_response(payload, request)
+
+
+@require_POST
+def portal_password_reset_start(request):
+    try:
+        payload = portal_auth_service.start_password_reset(parse_json_body(request), request)
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", str(exc))
+    except portal_auth_service.PortalAuthError as exc:
+        return _portal_error_response(request, exc)
+    return success_response(payload, request)
+
+
+@require_POST
+def portal_password_reset_complete(request):
+    try:
+        payload = portal_auth_service.complete_password_reset(
+            parse_json_body(request), request
+        )
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", str(exc))
+    except portal_auth_service.PortalAuthError as exc:
+        return _portal_error_response(request, exc)
+    return success_response(payload, request)
+
+
+@require_POST
+def portal_password_change(request):
+    access_token, response = http_auth.bearer_access_token(request)
+    if response is not None:
+        return response
+    try:
+        session = auth_service.validate_access_session(access_token)
+        payload = portal_auth_service.change_password(
+            session.user, session, parse_json_body(request), request
+        )
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", str(exc))
+    except TokenError as exc:
+        return error_response(request, 401, exc.code, exc.message)
+    except portal_auth_service.PortalAuthError as exc:
+        return _portal_error_response(request, exc)
     return success_response(payload, request)

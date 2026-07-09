@@ -255,3 +255,19 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   `incomplete_returned`, so repeat return attempts remain blocked with `409 INVALID_STATE_TRANSITION`
   and create no duplicate deficiency rows, success audit/workflow events, register rows, references,
   or visible sequence advancement.
+
+## Member Portal Authentication
+- 005FA implements MP00/MP01/MP02/MP25 portal authentication foundation:
+  activation start/complete, portal login, password-reset start/complete, and portal password
+  change.
+- Source MP01 requires member identity/contact verification plus OTP before setting a portal
+  password. The implementation links one `PortalAccount` to one `Member` and one
+  `borrower_portal_user` auth user.
+- Borrower access tokens and `/auth/me` responses include `member_id`,
+  `portal_account_id`, and `portal_role = borrower_member`. They expose only portal own-data
+  permission codes such as `portal.loan_application.read_own`; they do not grant staff
+  `applications.loan_application.complete_check`, deficiency return, or register permissions.
+- Password reset OTPs are single-use and revoke all active sessions on success. MP25 password
+  change keeps the current session active and revokes other sessions.
+- OTP delivery remains behind the 003I communication-shell boundary with no real provider call.
+  A-042 records the delivery-channel and last-four verification assumptions.

@@ -18,6 +18,10 @@ export interface User {
   availableActions: string[];
   prototypePermissions: Permission[];
   isBackendSession?: boolean;
+  memberId?: string;
+  portalAccountId?: string;
+  portalRole?: string;
+  memberDisplayName?: string;
 }
 
 const makeDemoUser = (user: Omit<User, 'roleName' | 'roleCodes' | 'teamCodes' | 'permissions' | 'availableActions' | 'prototypePermissions'>): User => ({
@@ -50,6 +54,10 @@ const makeBackendUser = (user: FrontendCurrentUser): User => {
     availableActions: user.availableActions,
     prototypePermissions,
     isBackendSession: true,
+    memberId: user.memberId,
+    portalAccountId: user.portalAccountId,
+    portalRole: user.portalRole,
+    memberDisplayName: user.memberDisplayName,
   };
 }
 

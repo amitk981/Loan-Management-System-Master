@@ -1,0 +1,27 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/005FA-member-portal-authentication.md
+ M docs/slices/005FB-member-portal-dashboard-profile-and-supply-view.md
+ M docs/slices/005G-member-portal-application-start-status.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-005-application-intake.md
+ M sfpcl-lms/src/App.tsx
+ M sfpcl-lms/src/contexts/RoleContext.tsx
+ M sfpcl-lms/src/pages/borrower/portal/auth/MP00_Login.tsx
+ M sfpcl-lms/src/pages/borrower/portal/auth/MP01_Activation.tsx
+ M sfpcl-lms/src/pages/borrower/portal/auth/MP02_ForgotPassword.tsx
+ M sfpcl-lms/src/pages/borrower/portal/auth/MP25_SecuritySettings.tsx
+ M sfpcl-lms/src/services/authSession.test.ts
+ M sfpcl-lms/src/services/authSession.ts
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/identity/models.py
+ M sfpcl_credit/identity/modules/auth_service.py
+ M sfpcl_credit/identity/modules/tokens.py
+ M sfpcl_credit/identity/views.py
+?? .ralph/runs/2026-07-09_222250_normal_run/
+?? .ralph/runs/2026-07-09_225628_validate/
+?? sfpcl_credit/identity/migrations/0003_portal_member_auth.py
+?? sfpcl_credit/identity/modules/portal_auth_service.py
+?? sfpcl_credit/tests/test_portal_auth_api.py

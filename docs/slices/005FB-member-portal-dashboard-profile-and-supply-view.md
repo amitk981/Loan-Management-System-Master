@@ -33,6 +33,14 @@ A borrower who logs in sees their real profile, applications, loans, alerts, and
 - Portal source snippets opened during 005F define MP03 dashboard widgets for Pending Actions and
   Notices, and MP04 as profile content. The portal must not expose staff-only completeness,
   reference-generation, or deficiency-resolution actions.
+- 005FA implemented `/api/v1/portal/auth/login/`, activation, reset, and password-change
+  endpoints. Borrower access tokens and `/api/v1/auth/me/` now include `member_id`,
+  `portal_account_id`, and `portal_role = borrower_member`; 005FB must derive the member from
+  that authenticated scope and never from user-editable route/query values.
+- 005FA exposes only portal own-data permission codes such as
+  `portal.loan_application.read_own`; do not require or grant staff permissions like
+  `members.member.read`, `applications.loan_application.read`, or
+  `applications.loan_application.complete_check` for borrower portal reads.
 
 ## Source References
 - docs/source/screen-spec-member-portal.md screens MP03 (dashboard), MP04 (profile)
@@ -71,6 +79,8 @@ A borrower who logs in sees their real profile, applications, loans, alerts, and
 
 ## Test Cases
 - Borrower sees only own profile/supply data (object-permission test).
+- Staff tokens without `portal_role = borrower_member` cannot call member-portal own-data APIs
+  unless a later source-backed staff-assist endpoint explicitly allows it.
 - Dashboard counts reflect seeded fixtures; empty states covered.
 - Sensitive fields render masked on the portal.
 - A borrower cannot request another member's profile/dashboard/supply data even if they know the

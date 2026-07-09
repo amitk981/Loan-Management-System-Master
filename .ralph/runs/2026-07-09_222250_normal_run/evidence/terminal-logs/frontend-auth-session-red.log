@@ -1,0 +1,72 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/authSession.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_222250_normal_run/sfpcl-lms
+
+ ❯ src/services/authSession.test.ts (15 tests | 3 failed) 11ms
+   ✓ auth session API flow > posts credentials, stores tokens, calls /auth/me/, and returns backend current user state 2ms
+   ✓ auth session API flow > does not store a session when login returns invalid credentials 1ms
+   ✓ auth session API flow > clears stored auth when /auth/me/ rejects an expired or invalid token 1ms
+   ✓ auth session API flow > posts the refresh token on logout and clears local auth state 1ms
+   × member portal auth API flow > posts portal credentials, stores tokens, and maps borrower member scope from /auth/me/ 3ms
+     → portalLoginAndLoadCurrentUser is not a function
+   × member portal auth API flow > calls portal activation and password reset endpoints using standard envelopes 0ms
+     → startPortalActivation is not a function
+   × member portal auth API flow > posts portal password changes with the stored bearer token 0ms
+     → changePortalPassword is not a function
+   ✓ backend current-user mapping > uses roles and teams objects for display and derives compatibility codes from those arrays 0ms
+   ✓ backend current-user mapping > maps canonical backend permissions to existing prototype permission checks without granting unknown codes 0ms
+   ✓ backend current-user mapping > maps only the explicit tracer permission to the tracer workspace action 0ms
+   ✓ backend current-user mapping > keeps tracer lifecycle mapping isolated from every non-tracer prototype permission 1ms
+   ✓ backend current-user mapping > keeps zero-permission roles restricted to unrestricted routes 0ms
+   ✓ backend current-user mapping > maps zero-permission IT Head to a neutral backend staff role without auditor/admin/borrower behavior 0ms
+   ✓ backend current-user mapping > maps zero-permission Management Viewer to a neutral backend staff role without prototype permissions 0ms
+   ✓ backend current-user mapping > maps unknown and empty-role current-user responses to neutral backend staff without prototype permissions 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/authSession.test.ts > member portal auth API flow > posts portal credentials, stores tokens, and maps borrower member scope from /auth/me/
+TypeError: portalLoginAndLoadCurrentUser is not a function
+ ❯ src/services/authSession.test.ts:169:24
+    167|     vi.stubGlobal('fetch', fetchMock);
+    168| 
+    169|     const user = await portalLoginAndLoadCurrentUser({
+       |                        ^
+    170|       identifier: 'ganesh.thorat@sfpcl.example',
+    171|       password: 'CorrectPortal123!',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/services/authSession.test.ts > member portal auth API flow > calls portal activation and password reset endpoints using standard envelopes
+TypeError: startPortalActivation is not a function
+ ❯ src/services/authSession.test.ts:205:18
+    203|     vi.stubGlobal('fetch', fetchMock);
+    204| 
+    205|     await expect(startPortalActivation({
+       |                  ^
+    206|       folioOrMemberId: 'FOLIO-42',
+    207|       contact: 'ganesh.thorat@sfpcl.example',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/services/authSession.test.ts > member portal auth API flow > posts portal password changes with the stored bearer token
+TypeError: changePortalPassword is not a function
+ ❯ src/services/authSession.test.ts:231:18
+    229|     vi.stubGlobal('fetch', fetchMock);
+    230| 
+    231|     await expect(changePortalPassword({
+       |                  ^
+    232|       currentPassword: 'CorrectPortal123!',
+    233|       newPassword: 'ChangedPortal123!',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 12 passed (15)
+   Start at  22:31:46
+   Duration  392ms (transform 74ms, setup 0ms, collect 74ms, tests 11ms, environment 0ms, prepare 102ms)
+

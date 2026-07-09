@@ -6,7 +6,18 @@ from sfpcl_credit.configurations import views as configuration_views
 from sfpcl_credit.dashboard import views as dashboard_views
 from sfpcl_credit.documents import views as document_views
 from sfpcl_credit.identity import admin_views, audit_views
-from sfpcl_credit.identity.views import login, logout, me, refresh
+from sfpcl_credit.identity.views import (
+    login,
+    logout,
+    me,
+    portal_activation_complete,
+    portal_activation_start,
+    portal_login,
+    portal_password_change,
+    portal_password_reset_complete,
+    portal_password_reset_start,
+    refresh,
+)
 from sfpcl_credit.members import views as member_views
 from sfpcl_credit.ops import deep_health, live_health, ready_health
 from sfpcl_credit.tracer import views as tracer_views
@@ -18,6 +29,32 @@ urlpatterns = [
     path("api/v1/auth/refresh/", refresh, name="auth-refresh"),
     path("api/v1/auth/logout/", logout, name="auth-logout"),
     path("api/v1/auth/me/", me, name="auth-me"),
+    path(
+        "api/v1/portal/auth/activation/start/",
+        portal_activation_start,
+        name="portal-activation-start",
+    ),
+    path(
+        "api/v1/portal/auth/activation/complete/",
+        portal_activation_complete,
+        name="portal-activation-complete",
+    ),
+    path("api/v1/portal/auth/login/", portal_login, name="portal-auth-login"),
+    path(
+        "api/v1/portal/auth/password-reset/start/",
+        portal_password_reset_start,
+        name="portal-password-reset-start",
+    ),
+    path(
+        "api/v1/portal/auth/password-reset/complete/",
+        portal_password_reset_complete,
+        name="portal-password-reset-complete",
+    ),
+    path(
+        "api/v1/portal/auth/password/change/",
+        portal_password_change,
+        name="portal-password-change",
+    ),
     path(
         "api/v1/loan-applications/",
         application_views.loan_application_collection,

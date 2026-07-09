@@ -173,6 +173,83 @@ class UserSession(models.Model):
         self.save(update_fields=["session_status", "revoked_reason", "revoked_at"])
 
 
+class PortalAccount(models.Model):
+    STATUS_INVITED = "invited"
+    STATUS_ACTIVE = "active"
+    STATUS_SUSPENDED = "suspended"
+    STATUSES = {STATUS_INVITED, STATUS_ACTIVE, STATUS_SUSPENDED}
+
+    portal_account_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    member = models.OneToOneField(
+        "members.Member", on_delete=models.PROTECT, related_name="portal_account"
+    )
+    user = models.OneToOneField(
+        User, on_delete=models.PROTECT, related_name="portal_account"
+    )
+    status = models.CharField(max_length=40, default=STATUS_INVITED, db_index=True)
+    activated_at = models.DateTimeField(blank=True, null=True)
+    otp_login_enabled = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = "portal_accounts"
+
+    def can_authenticate(self):
+        return self.status == self.STATUS_ACTIVE and self.user.can_authenticate()
+
+
+class PortalOtpChallenge(models.Model):
+    PURPOSE_ACTIVATION = "activation"
+    PURPOSE_PASSWORD_RESET = "password_reset"
+    PURPOSES = {PURPOSE_ACTIVATION, PURPOSE_PASSWORD_RESET}
+
+    STATUS_PENDING = "pending"
+    STATUS_USED = "used"
+    STATUS_EXPIRED = "expired"
+    STATUSES = {STATUS_PENDING, STATUS_USED, STATUS_EXPIRED}
+
+    challenge_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    member = models.ForeignKey(
+        "members.Member", on_delete=models.PROTECT, related_name="portal_otp_challenges"
+    )
+    portal_account = models.ForeignKey(
+        PortalAccount,
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="otp_challenges",
+    )
+    purpose = models.CharField(max_length=40, db_index=True)
+    contact = models.CharField(max_length=255)
+    otp_hash = models.CharField(max_length=128)
+    status = models.CharField(max_length=40, default=STATUS_PENDING, db_index=True)
+    attempt_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField(db_index=True)
+    used_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = "portal_otp_challenges"
+        indexes = [
+            models.Index(fields=["purpose", "status"], name="idx_portal_otp_purpose_status"),
+            models.Index(fields=["member", "purpose"], name="idx_portal_otp_member_purpose"),
+        ]
+
+    @property
+    def test_plain_otp(self):
+        from django.conf import settings
+
+        return getattr(settings, "PORTAL_AUTH_TEST_OTP", "246810")
+
+    def is_pending(self):
+        return self.status == self.STATUS_PENDING and self.expires_at > timezone.now()
+
+
 class AuditLog(models.Model):
     audit_log_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     actor_user = models.ForeignKey(

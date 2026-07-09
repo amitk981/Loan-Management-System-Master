@@ -51,6 +51,10 @@ export interface BackendCurrentUser {
   team_codes?: string[];
   permissions: string[];
   available_actions: string[];
+  member_id?: string;
+  portal_account_id?: string;
+  portal_role?: string;
+  member_display_name?: string;
 }
 
 export interface FrontendCurrentUser {
@@ -67,6 +71,21 @@ export interface FrontendCurrentUser {
   teamCodes: string[];
   permissions: string[];
   availableActions: string[];
+  memberId?: string;
+  portalAccountId?: string;
+  portalRole?: string;
+  memberDisplayName?: string;
+}
+
+export interface PortalActivationStartResult {
+  challengeId: string;
+  maskedContact?: string;
+  expiresAt?: string;
+}
+
+export interface PortalAccountResult {
+  memberId: string;
+  status: string;
 }
 
 export class AuthSessionError extends Error {
@@ -214,6 +233,10 @@ export const mapBackendUserToFrontendUser = (user: BackendCurrentUser): Frontend
     teamCodes,
     permissions: user.permissions,
     availableActions: user.available_actions,
+    memberId: user.member_id,
+    portalAccountId: user.portal_account_id,
+    portalRole: user.portal_role,
+    memberDisplayName: user.member_display_name,
   };
 };
 
@@ -255,6 +278,118 @@ export const loginAndLoadCurrentUser = async (credentials: { email: string; pass
     clearStoredAuthSession();
     throw error;
   }
+};
+
+export const portalLoginAndLoadCurrentUser = async (credentials: { identifier: string; password: string }): Promise<FrontendCurrentUser> => {
+  const loginData = await request<LoginData>('/api/v1/portal/auth/login/', {
+    method: 'POST',
+    body: JSON.stringify(credentials),
+  });
+  const session = {
+    accessToken: loginData.access_token,
+    refreshToken: loginData.refresh_token,
+  };
+  storedAuthSession(session);
+
+  try {
+    return await fetchCurrentUser(session.accessToken);
+  } catch (error) {
+    clearStoredAuthSession();
+    throw error;
+  }
+};
+
+export const startPortalActivation = async (payload: {
+  folioOrMemberId: string;
+  contact: string;
+  panLast4?: string;
+  aadhaarLast4?: string;
+}): Promise<PortalActivationStartResult> => {
+  const data = await request<{ challenge_id: string; masked_contact?: string; expires_at?: string }>('/api/v1/portal/auth/activation/start/', {
+    method: 'POST',
+    body: JSON.stringify({
+      folio_or_member_id: payload.folioOrMemberId,
+      contact: payload.contact,
+      pan_last4: payload.panLast4,
+      aadhaar_last4: payload.aadhaarLast4,
+    }),
+  });
+  return {
+    challengeId: data.challenge_id,
+    maskedContact: data.masked_contact,
+    expiresAt: data.expires_at,
+  };
+};
+
+export const completePortalActivation = async (payload: {
+  challengeId: string;
+  otp: string;
+  password: string;
+  confirmPassword: string;
+}): Promise<PortalAccountResult> => {
+  const data = await request<{ portal_account: { member_id: string; status: string } }>('/api/v1/portal/auth/activation/complete/', {
+    method: 'POST',
+    body: JSON.stringify({
+      challenge_id: payload.challengeId,
+      otp: payload.otp,
+      password: payload.password,
+      confirm_password: payload.confirmPassword,
+    }),
+  });
+  return {
+    memberId: data.portal_account.member_id,
+    status: data.portal_account.status,
+  };
+};
+
+export const startPortalPasswordReset = async (payload: { identifier: string }): Promise<PortalActivationStartResult> => {
+  const data = await request<{ challenge_id: string; masked_contact?: string; expires_at?: string }>('/api/v1/portal/auth/password-reset/start/', {
+    method: 'POST',
+    body: JSON.stringify({ identifier: payload.identifier }),
+  });
+  return {
+    challengeId: data.challenge_id,
+    maskedContact: data.masked_contact,
+    expiresAt: data.expires_at,
+  };
+};
+
+export const completePortalPasswordReset = async (payload: {
+  challengeId: string;
+  otp: string;
+  password: string;
+  confirmPassword: string;
+}): Promise<{ reset: boolean }> => {
+  return request<{ reset: boolean }>('/api/v1/portal/auth/password-reset/complete/', {
+    method: 'POST',
+    body: JSON.stringify({
+      challenge_id: payload.challengeId,
+      otp: payload.otp,
+      password: payload.password,
+      confirm_password: payload.confirmPassword,
+    }),
+  });
+};
+
+export const changePortalPassword = async (payload: {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}): Promise<{ passwordChanged: boolean }> => {
+  const session = loadStoredAuthSession();
+  if (!session) {
+    throw new AuthSessionError('AUTH_REQUIRED', 'Member portal session is required.', 401);
+  }
+  const data = await request<{ password_changed: boolean }>('/api/v1/portal/auth/password/change/', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${session.accessToken}` },
+    body: JSON.stringify({
+      current_password: payload.currentPassword,
+      new_password: payload.newPassword,
+      confirm_password: payload.confirmPassword,
+    }),
+  });
+  return { passwordChanged: data.password_changed };
 };
 
 export const restoreCurrentUserFromStoredSession = async (): Promise<FrontendCurrentUser | null> => {

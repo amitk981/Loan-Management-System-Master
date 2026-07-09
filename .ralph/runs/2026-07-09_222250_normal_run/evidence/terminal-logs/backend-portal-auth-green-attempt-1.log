@@ -1,0 +1,88 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 4 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, communications, configurations, contenttypes, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying documents.0001_initial... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying members.0007_kycprofile_kycdocument_and_more... OK
+  Applying members.0008_cancelledcheque_bankaccount_and_more... OK
+  Applying applications.0001_initial... OK
+  Applying applications.0002_loanapplication_submitted_by_user... OK
+  Applying applications.0003_systemsequence_loanrequestregisterentry... OK
+  Applying applications.0004_applicationdocument_and_more... OK
+  Applying applications.0005_application_deficiency... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying identity.0003_portal_member_auth... OK
+  Applying scheduler.0001_initial... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_activation_rejects_unknown_and_already_active_members (sfpcl_credit.tests.test_portal_auth_api.PortalAuthApiTests.test_activation_rejects_unknown_and_already_active_members) ... FAIL
+test_password_reset_is_single_use_and_revokes_existing_sessions (sfpcl_credit.tests.test_portal_auth_api.PortalAuthApiTests.test_password_reset_is_single_use_and_revokes_existing_sessions) ... FAIL
+test_security_settings_password_change_audits_and_revokes_other_sessions (sfpcl_credit.tests.test_portal_auth_api.PortalAuthApiTests.test_security_settings_password_change_audits_and_revokes_other_sessions) ... FAIL
+test_valid_invited_member_can_activate_and_login_with_member_scoped_tokens (sfpcl_credit.tests.test_portal_auth_api.PortalAuthApiTests.test_valid_invited_member_can_activate_and_login_with_member_scoped_tokens) ... FAIL
+
+======================================================================
+FAIL: test_activation_rejects_unknown_and_already_active_members (sfpcl_credit.tests.test_portal_auth_api.PortalAuthApiTests.test_activation_rejects_unknown_and_already_active_members)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_222250_normal_run/sfpcl_credit/tests/test_portal_auth_api.py", line 134, in test_activation_rejects_unknown_and_already_active_members
+    self._activate_member()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_222250_normal_run/sfpcl_credit/tests/test_portal_auth_api.py", line 64, in _activate_member
+    self.assertEqual(start_response.status_code, 200)
+AssertionError: 400 != 200
+
+======================================================================
+FAIL: test_password_reset_is_single_use_and_revokes_existing_sessions (sfpcl_credit.tests.test_portal_auth_api.PortalAuthApiTests.test_password_reset_is_single_use_and_revokes_existing_sessions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_222250_normal_run/sfpcl_credit/tests/test_portal_auth_api.py", line 149, in test_password_reset_is_single_use_and_revokes_existing_sessions
+    self._activate_member()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_222250_normal_run/sfpcl_credit/tests/test_portal_auth_api.py", line 64, in _activate_member
+    self.assertEqual(start_response.status_code, 200)
+AssertionError: 400 != 200
+
+======================================================================
+FAIL: test_security_settings_password_change_audits_and_revokes_other_sessions (sfpcl_credit.tests.test_portal_auth_api.PortalAuthApiTests.test_security_settings_password_change_audits_and_revokes_other_sessions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_222250_normal_run/sfpcl_credit/tests/test_portal_auth_api.py", line 207, in test_security_settings_password_change_audits_and_revokes_other_sessions
+    self._activate_member()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_222250_normal_run/sfpcl_credit/tests/test_portal_auth_api.py", line 64, in _activate_member
+    self.assertEqual(start_response.status_code, 200)
+AssertionError: 400 != 200
+
+======================================================================
+FAIL: test_valid_invited_member_can_activate_and_login_with_member_scoped_tokens (sfpcl_credit.tests.test_portal_auth_api.PortalAuthApiTests.test_valid_invited_member_can_activate_and_login_with_member_scoped_tokens)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_222250_normal_run/sfpcl_credit/tests/test_portal_auth_api.py", line 82, in test_valid_invited_member_can_activate_and_login_with_member_scoped_tokens
+    activation_payload = self._activate_member()
+                         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_222250_normal_run/sfpcl_credit/tests/test_portal_auth_api.py", line 64, in _activate_member
+    self.assertEqual(start_response.status_code, 200)
+AssertionError: 400 != 200
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.388s
+
+FAILED (failures=4)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
