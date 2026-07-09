@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_completeness_pass_requires_verified_checklist_then_generates_reference (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_completeness_pass_requires_verified_checklist_then_generates_reference)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_202350_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 822, in test_completeness_pass_requires_verified_checklist_then_generates_reference
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 9.197s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

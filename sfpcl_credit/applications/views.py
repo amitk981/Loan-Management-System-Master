@@ -361,6 +361,95 @@ def loan_application_document_checklist(request, loan_application_id):
     return success_response(services.build_document_checklist(application), request)
 
 
+@require_http_methods(["GET"])
+def loan_application_completeness_check(request, loan_application_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    if not services.user_can_read_applications(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read loan applications.",
+        )
+    application = services.get_application(loan_application_id)
+    if application is None:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+    object_access = services.evaluate_application_object_access(
+        application,
+        user,
+        services.APPLICATION_READ_PERMISSION,
+        permissions,
+    )
+    if not object_access.allowed:
+        return _object_access_denied_response(request, object_access)
+    return success_response(services.build_completeness_workbench(application), request)
+
+
+@require_http_methods(["POST"])
+def loan_application_completeness_pass(request, loan_application_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    if not services.user_can_complete_check_applications(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to complete-check loan applications.",
+        )
+    application = services.get_application(loan_application_id)
+    if application is None:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+    object_access = services.evaluate_application_object_access(
+        application,
+        user,
+        services.APPLICATION_COMPLETE_CHECK_PERMISSION,
+        permissions,
+    )
+    if not object_access.allowed:
+        return _object_access_denied_response(request, object_access)
+    try:
+        parse_json_body(request)
+        invalid_state_message = services.completeness_pass_invalid_state_message(application)
+        if invalid_state_message:
+            return error_response(
+                request,
+                409,
+                "INVALID_STATE_TRANSITION",
+                invalid_state_message,
+            )
+        services.validate_completeness_ready_for_reference(application)
+        application = services.generate_reference_after_completeness_pass(
+            application,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+            permissions,
+        )
+    except services.LoanApplicationValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Completeness check failed validation.",
+            services.validation_field_errors(exc),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Completeness check failed validation.",
+            services.validation_field_errors(exc),
+        )
+    except InvalidStateTransition as exc:
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
+    return success_response(services.serialize_application(application), request)
+
+
 def _object_access_denied_response(request, object_access):
     return error_response(
         request,

@@ -54,6 +54,16 @@ urlpatterns = [
         name="loan-application-document-checklist-refresh",
     ),
     path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/completeness-check/",
+        application_views.loan_application_completeness_check,
+        name="loan-application-completeness-check",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/completeness-check/pass/",
+        application_views.loan_application_completeness_pass,
+        name="loan-application-completeness-pass",
+    ),
+    path(
         "api/v1/application-documents/<uuid:application_document_id>/verify/",
         application_views.application_document_verify,
         name="application-document-verify",

@@ -16,6 +16,16 @@ A member invited to the portal can activate their account, log in securely, reco
 ## Depends On
 - 005F
 
+## Prior Slice Facts To Preserve
+- MP08 copy says a borrower receives the official `LO...` reference only after submitted details
+  and documents are checked. Portal status screens must therefore handle submitted applications
+  with no reference number.
+- 005E generates references only after staff completeness pass. Borrower auth must not grant access
+  to staff completeness/pass endpoints.
+- 005F is expected to create structured deficiency records before borrower deficiency response
+  screens are wired; portal tokens introduced here must carry enough member/object scope for later
+  own-application deficiency reads and responses.
+
 ## Source References
 - docs/source/screen-spec-member-portal.md screens MP00, MP01, MP02, MP25 (including OTP and activation rules)
 - docs/source/auth-permissions.md section 4.2 (external roles: Borrower/Member) and session policy sections

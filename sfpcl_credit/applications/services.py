@@ -531,6 +531,63 @@ def build_document_checklist(application):
     }
 
 
+def build_completeness_workbench(application):
+    checklist = build_document_checklist(application)
+    required_items = [_completeness_checklist_item(item) for item in checklist["items"]]
+    blocking_document_types = [
+        item["document_type"] for item in required_items if not item["complete"]
+    ]
+    return {
+        "loan_application_id": str(application.loan_application_id),
+        "application_reference_number": application.application_reference_number,
+        "application_status": application.application_status,
+        "current_stage": application.current_stage,
+        "completeness_status": application.completeness_status,
+        "member": _member_summary(application.member),
+        "required_checklist_items": required_items,
+        "blocking_document_types": blocking_document_types,
+        "can_generate_reference": (
+            application.application_status == LoanApplication.STATUS_SUBMITTED
+            and not application.application_reference_number
+            and not LoanRequestRegisterEntry.objects.filter(loan_application=application).exists()
+            and not blocking_document_types
+        ),
+    }
+
+
+def validate_completeness_ready_for_reference(application):
+    workbench = build_completeness_workbench(application)
+    if workbench["blocking_document_types"]:
+        raise LoanApplicationValidationError(
+            {
+                "required_checklist_items": [
+                    {
+                        "document_type": item["document_type"],
+                        "reason_code": item["reason_code"],
+                        "submission_status": item["submission_status"],
+                        "verification_status": item["verification_status"],
+                    }
+                    for item in workbench["required_checklist_items"]
+                    if not item["complete"]
+                ]
+            }
+        )
+    return workbench
+
+
+def completeness_pass_invalid_state_message(application):
+    if application.application_status != LoanApplication.STATUS_SUBMITTED:
+        return (
+            "Invalid state transition for loan_application: "
+            f"generate_reference is not allowed from {application.application_status}."
+        )
+    if application.application_reference_number:
+        return "Application already has a reference number."
+    if LoanRequestRegisterEntry.objects.filter(loan_application=application).exists():
+        return "Loan request register entry already exists."
+    return None
+
+
 def serialize_application(application):
     register_entry = getattr(application, "loan_request_register_entry", None)
     return {
@@ -565,6 +622,23 @@ def serialize_application(application):
         if application.updated_by_user_id
         else None,
         "loan_request_register_entry": _register_summary(register_entry),
+    }
+
+
+def _completeness_checklist_item(item):
+    complete = (
+        item["submission_status"] == ApplicationDocument.SUBMISSION_SUBMITTED
+        and item["verification_status"] == ApplicationDocument.VERIFICATION_VERIFIED
+    )
+    reason_code = None
+    if item["latest_application_document_id"] is None:
+        reason_code = "missing_metadata"
+    elif not complete:
+        reason_code = "not_verified"
+    return {
+        **item,
+        "complete": complete,
+        "reason_code": reason_code,
     }
 
 

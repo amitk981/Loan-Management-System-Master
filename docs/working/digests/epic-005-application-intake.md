@@ -174,3 +174,33 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   bytes, storage keys, checksums, full PAN/Aadhaar/bank values, encrypted tokens, and hashes.
 - A-039 records that checklist refresh is read-derived until a future source-backed completeness
   slice defines persisted checklist side effects and a narrower mutation permission.
+
+## Completeness Workbench And Pass
+- 005E implements backend/API-only completeness workbench endpoints:
+  - `GET /api/v1/loan-applications/{loan_application_id}/completeness-check/`
+  - `POST /api/v1/loan-applications/{loan_application_id}/completeness-check/pass/`
+- Workbench read requires `applications.loan_application.read`; pass requires
+  `applications.loan_application.complete_check`. Both endpoints preserve the 005C2 object-access
+  boundary after global permission and `404` checks. Same-permission actors outside object scope
+  receive `403 OBJECT_ACCESS_DENIED` with no sequence/register/audit/workflow writes.
+- The workbench is derived from the 005D checklist/application-document metadata. It returns
+  application summary facts, required checklist item statuses, `blocking_document_types`, and
+  `can_generate_reference`.
+- Completeness pass first enforces source-backed state: only submitted, non-reference-generated
+  applications without a loan request register entry can pass. Draft and duplicate/reference
+  attempts return `409 INVALID_STATE_TRANSITION`.
+- Completeness pass then evaluates the latest 005D metadata row for each mandatory document code:
+  `loan_application_form`, `borrower_pan`, `borrower_aadhaar_ovd`, `nominee_pan`,
+  `nominee_aadhaar_ovd`, `share_certificate_copy`, `land_document_7_12`, `crop_plan`, and
+  `six_month_bank_statement`. Only `submission_status = submitted` and
+  `verification_status = verified` is complete. Missing latest metadata is reported as
+  `missing_metadata`; pending or rejected latest metadata is reported as `not_verified`.
+- Failed completeness validation returns `400 VALIDATION_ERROR` with item-level document codes and
+  creates no sequence, register, reference, audit, or workflow side effects.
+- Successful completeness pass delegates to the existing 005C
+  `generate_reference_after_completeness_pass(...)` service, which generates the `LO...` reference,
+  creates the one-to-one loan request register entry, sets completeness complete, moves the
+  application to credit assessment, and writes the existing metadata-only audit/workflow evidence.
+- 005E deliberately does not persist deficiency rows, create rejection notes, run eligibility,
+  calculate loan limits, create appraisal notes, or build frontend/member-portal deficiency
+  response screens.
