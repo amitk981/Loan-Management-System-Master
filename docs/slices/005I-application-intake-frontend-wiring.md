@@ -17,9 +17,10 @@ Staff create, review, and track real loan applications in the screens they alrea
 - 005H
 
 ## Prior Slice Facts To Preserve
-- 005G2 must close portal session/audit contract hardening before this staff frontend wiring runs.
-  Staff screens must remain on staff audit/action semantics; do not consume portal audit action
-  names or portal own-data permissions for staff intake flows.
+- 005G2 closed portal session/audit contract hardening. Staff screens must remain on staff
+  audit/action semantics; do not consume portal audit action names or portal own-data permissions
+  for staff intake flows. If a browser has an old suspended portal session, `/auth/me` now returns
+  `401 INVALID_TOKEN` and must clear local session state through the existing auth-session path.
 - 005G portal application endpoints are borrower own-data APIs only; staff screens must use the
   existing staff `/api/v1/loan-applications/` APIs and staff object-access rules, not portal routes.
 - Submitted applications may have no `LO...` reference until completeness pass generates it.

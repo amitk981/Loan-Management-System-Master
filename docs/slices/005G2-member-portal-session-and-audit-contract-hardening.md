@@ -1,7 +1,7 @@
 # Slice 005G2: Member Portal Session and Audit Contract Hardening
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 005: Loan Application Intake, Documents, Completeness, and Deficiencies
@@ -136,15 +136,15 @@ High
   no side effects on denied portal actions.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated
+- [x] Database rules followed, if needed
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

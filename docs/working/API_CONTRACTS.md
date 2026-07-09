@@ -67,18 +67,18 @@ Implemented endpoints:
 | `POST /api/v1/auth/login/` | `email`, `password` | bearer `access_token`, `refresh_token`, `expires_in`, user profile with role/team codes | Only `active` users receive tokens; invalid credentials and non-active users receive `401 INVALID_CREDENTIALS`; successful and failed attempts are audited. |
 | `POST /api/v1/auth/refresh/` | `refresh_token` | rotated bearer token payload | Refresh tokens are matched against `user_sessions.refresh_token_hash`; successful refresh rotates the token; replayed, revoked, expired, malformed, or status-invalid tokens return `401`. |
 | `POST /api/v1/auth/logout/` | `refresh_token` | `{ "logged_out": true }` | Logout revokes the matching session with reason `logout`; the same refresh token cannot be used again; logout is audited. |
-| `GET /api/v1/auth/me/` | `Authorization: Bearer <access_token>` | user identity (`user_id`, `full_name`, `email`, `mobile_number`, `status`), `roles`, `teams`, compatibility `role_codes`/`team_codes`, `permissions`, `available_actions` | Access token must be signed, unexpired, type `access`, and bound to an active `user_sessions` row for an active user. Missing token returns `401 AUTH_REQUIRED`; expired access tokens return `401 TOKEN_EXPIRED`; refresh/wrong-type, malformed, revoked-session, inactive-user, or unknown-session tokens return `401 INVALID_TOKEN`. |
+| `GET /api/v1/auth/me/` | `Authorization: Bearer <access_token>` | user identity (`user_id`, `full_name`, `email`, `mobile_number`, `status`), `roles`, `teams`, compatibility `role_codes`/`team_codes`, `permissions`, `available_actions` | Access token must be signed, unexpired, type `access`, and bound to an active `user_sessions` row for an active user. Missing token returns `401 AUTH_REQUIRED`; expired access tokens return `401 TOKEN_EXPIRED`; refresh/wrong-type, malformed, revoked-session, inactive-user, unknown-session tokens, or sessions linked to non-active portal accounts return `401 INVALID_TOKEN`. When a linked `PortalAccount` is suspended/inactive/deleted-member scoped, the active session is revoked with reason `portal_account_status_changed` before `/auth/me` returns. |
 
 Member portal endpoints added in 005FA:
 
 | Endpoint | Request | Success Data | Key Rules |
 |---|---|---|---|
 | `POST /api/v1/portal/auth/activation/start/` | `folio_or_member_id`, `contact`, optional `pan_last4`, optional `aadhaar_last4` | `challenge_id`, `masked_contact`, `expires_at` | Member/contact/last-four facts must match a non-deleted member; already-active accounts return `409 PORTAL_ACCOUNT_ACTIVE`; no full PAN/Aadhaar or OTP is returned. Creates an OTP challenge, a pending communication-shell row, and `portal.auth.activation.started` audit metadata. |
-| `POST /api/v1/portal/auth/activation/complete/` | `challenge_id`, `otp`, `password`, `confirm_password` | `portal_account` with `portal_account_id`, `member_id`, `status`, masked contact facts | OTP must be pending and unexpired; password must match and be at least 10 characters. Creates/updates a `borrower_portal_user` user linked one-to-one to the member, activates the portal account, and writes `portal.auth.activation.completed`. |
-| `POST /api/v1/portal/auth/login/` | `identifier`, `password` | bearer token payload plus user payload | Identifier may match portal user email, member email, or member mobile. Invalid/inactive/suspended cases return generic `401 INVALID_CREDENTIALS`. Access tokens include `member_id`, `portal_account_id`, and `portal_role = borrower_member`; `/auth/me` returns the same member scope and only portal own-data permissions. |
+| `POST /api/v1/portal/auth/activation/complete/` | `challenge_id`, `otp`, `password`, `confirm_password` | `portal_account` with `portal_account_id`, `member_id`, `status`, masked contact facts | OTP must be pending and unexpired; password must match and be at least 10 characters. Creates/updates a `borrower_portal_user` user linked one-to-one to the member, activates the portal account, and writes `portal.account.activated`. |
+| `POST /api/v1/portal/auth/login/` | `identifier`, `password` | bearer token payload plus user payload | Identifier may match portal user email, member email, or member mobile. Invalid/inactive/suspended cases return generic `401 INVALID_CREDENTIALS` and write `portal.login.failed`; successful login writes `portal.login.success`. Access tokens include `member_id`, `portal_account_id`, and `portal_role = borrower_member` only for active, non-deleted member portal accounts; `/auth/me` returns the same member scope and only portal own-data permissions while the portal account remains active. |
 | `POST /api/v1/portal/auth/password-reset/start/` | `identifier` | generic message plus challenge details when a valid account exists | Returns a generic response to avoid account enumeration; valid active portal accounts receive an OTP challenge and `portal.auth.password_reset.started` audit metadata. |
 | `POST /api/v1/portal/auth/password-reset/complete/` | `challenge_id`, `otp`, `password`, `confirm_password` | `{ "reset": true }` | OTP is single-use and expiring; successful reset updates the password hash, revokes all active sessions with reason `portal_password_reset`, and writes `portal.auth.password_reset.completed`. Replay returns `400 OTP_INVALID`. |
-| `POST /api/v1/portal/auth/password/change/` | bearer token plus `current_password`, `new_password`, `confirm_password` | `{ "password_changed": true }` | Requires a portal bearer session. Current password must match. Successful change updates the password hash, revokes other active sessions with reason `portal_password_change`, keeps the current session active, and writes `portal.auth.password_changed`. |
+| `POST /api/v1/portal/auth/password/change/` | bearer token plus `current_password`, `new_password`, `confirm_password` | `{ "password_changed": true }` | Requires a portal bearer session whose linked portal account is still active. Suspended/inactive portal accounts using old bearer tokens receive `401 INVALID_TOKEN` and the session is revoked with reason `portal_account_status_changed`. Current password must match. Successful change updates the password hash, revokes other active sessions with reason `portal_password_change`, keeps the current session active, and writes `portal.password.changed`. |
 
 Full 002D3 current-user example responses are saved in `.ralph/runs/2026-07-03_214932_normal_run/api-response-examples.md`.
 
@@ -1525,6 +1525,9 @@ Protected borrower portal endpoints:
 Rules:
 - The member scope comes only from the authenticated active `PortalAccount` linked to the bearer
   token user. Client-supplied `member_id` query values are ignored and never grant authority.
+- If the linked `PortalAccount` becomes suspended/inactive after token issuance, the shared
+  session-bound auth validator revokes the active session with reason
+  `portal_account_status_changed` and these endpoints return `401 INVALID_TOKEN`.
 - Staff or non-portal tokens return `403 PERMISSION_DENIED`; missing/invalid bearer tokens return
   the standard auth errors.
 - Dashboard returns own member snapshot, own application counts from implemented
@@ -1553,11 +1556,20 @@ Protected borrower portal endpoints:
 Rules:
 - Scope comes only from the authenticated active `PortalAccount.member_id`. Query/path/payload
   member IDs cannot broaden access.
+- If the linked `PortalAccount` becomes suspended/inactive after token issuance, the shared
+  session-bound auth validator revokes the active session with reason
+  `portal_account_status_changed`; old-token portal application calls return
+  `401 INVALID_TOKEN` before creating applications, audit rows, workflow events, register rows,
+  references, or visible sequence side effects.
 - Staff or non-portal tokens return `403 PERMISSION_DENIED`; cross-member create/read/update/submit
   returns `403 OBJECT_ACCESS_DENIED` and creates no application, audit row, workflow event, register
   row, reference, or visible sequence side effect.
-- Create/update/submit reuse the existing 005A/005B application service behavior, metadata-only
-  audit rows, and workflow events with the linked portal user as actor.
+- Create/update/submit reuse the existing 005A/005B application service behavior and workflow
+  events with the linked portal user as actor. Borrower portal routes write metadata-only source
+  portal audit actions: `portal.application.draft_created`, `portal.application.saved`, and
+  `portal.application.submitted`. Staff application routes keep internal
+  `applications.loan_application.created`, `applications.loan_application.updated`, and
+  `applications.loan_application.submitted` audit actions.
 - Draft save can be incomplete. Submit requires existing 005B persisted facts: own member, positive
   requested amount, declared purpose, and purpose category.
 - Submitted applications remain without an `LO...` reference until staff completeness pass

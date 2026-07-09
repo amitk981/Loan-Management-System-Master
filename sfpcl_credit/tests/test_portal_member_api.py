@@ -373,13 +373,35 @@ class PortalMemberApiTests(TestCase):
         self.assertEqual(LoanApplication.objects.filter(member=self.other_member).count(), 1)
 
         self.assertEqual(
-            AuditLog.objects.filter(action="applications.loan_application.created").count(),
+            AuditLog.objects.filter(action="portal.application.draft_created").count(),
             1,
         )
         self.assertEqual(
-            AuditLog.objects.filter(action="applications.loan_application.submitted").count(),
+            AuditLog.objects.filter(action="portal.application.saved").count(),
             1,
         )
+        self.assertEqual(
+            AuditLog.objects.filter(action="portal.application.submitted").count(),
+            1,
+        )
+        self.assertFalse(
+            AuditLog.objects.filter(
+                action__in=[
+                    "applications.loan_application.created",
+                    "applications.loan_application.updated",
+                    "applications.loan_application.submitted",
+                ]
+            ).exists()
+        )
+        portal_audit_payloads = list(
+            AuditLog.objects.filter(action__startswith="portal.application.").values_list(
+                "new_value_json", flat=True
+            )
+        )
+        flattened_audit = json.dumps(portal_audit_payloads)
+        self.assertNotIn("ABCDE1234F", flattened_audit)
+        self.assertNotIn("123456789012", flattened_audit)
+        self.assertNotIn("CorrectHorse123!", flattened_audit)
         self.assertEqual(
             WorkflowEvent.objects.filter(entity_type="loan_application", to_state="submitted").count(),
             1,
@@ -442,3 +464,35 @@ class PortalMemberApiTests(TestCase):
             )
             self.assertEqual(response.status_code, 403)
             assert_error_envelope(self, response.json(), "PERMISSION_DENIED")
+
+    def test_suspended_portal_account_cannot_use_existing_session_for_portal_routes(self):
+        token = self._portal_token()
+        account = PortalAccount.objects.get(user=self.portal_user)
+        account.status = PortalAccount.STATUS_SUSPENDED
+        account.save(update_fields=["status"])
+
+        for path in (
+            "/api/v1/portal/dashboard/",
+            "/api/v1/portal/profile/",
+            "/api/v1/portal/produce-supply/",
+            "/api/v1/portal/applications/",
+        ):
+            response = self.client.get(path, headers={"Authorization": f"Bearer {token}"})
+            self.assertEqual(response.status_code, 401)
+            assert_error_envelope(self, response.json(), "INVALID_TOKEN")
+
+        create_response = self.client.post(
+            "/api/v1/portal/applications/",
+            data={
+                "required_loan_amount": "250000.00",
+                "declared_purpose": "Suspended account attempt",
+                "purpose_category": "crop_production",
+            },
+            content_type="application/json",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(create_response.status_code, 401)
+        assert_error_envelope(self, create_response.json(), "INVALID_TOKEN")
+        self.assertEqual(LoanApplication.objects.filter(member=self.member).count(), 0)
+        self.assertFalse(AuditLog.objects.filter(action__startswith="portal.application.").exists())
+        self.assertFalse(WorkflowEvent.objects.exists())

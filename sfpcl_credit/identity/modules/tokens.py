@@ -13,6 +13,8 @@ import jwt
 from django.conf import settings
 from django.utils import timezone
 
+from sfpcl_credit.identity.models import PortalAccount
+
 
 class TokenError(Exception):
     def __init__(self, code, message):
@@ -66,7 +68,15 @@ def access_claims(user, session):
         "iat": int(now.timestamp()),
         "exp": int(exp.timestamp()),
     }
-    portal_account = getattr(user, "portal_account", None)
+    portal_account = (
+        PortalAccount.objects.filter(
+            user=user,
+            status=PortalAccount.STATUS_ACTIVE,
+            member__is_deleted=False,
+        )
+        .select_related("member")
+        .first()
+    )
     if portal_account is not None:
         claims["member_id"] = str(portal_account.member_id)
         claims["portal_account_id"] = str(portal_account.portal_account_id)

@@ -14,7 +14,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
-from sfpcl_credit.identity.models import AuditLog, Permission, User, UserSession
+from sfpcl_credit.identity.models import AuditLog, Permission, PortalAccount, User, UserSession
 from sfpcl_credit.identity.modules.tokens import (
     TokenError,
     access_claims,
@@ -116,6 +116,7 @@ def validate_refresh_session(refresh_token):
     if not session.user.can_authenticate():
         session.revoke("user_status_changed")
         raise TokenError("INVALID_TOKEN", "User is not active.")
+    validate_portal_session_authority(session)
     return session
 
 
@@ -157,7 +158,34 @@ def validate_access_session(access_token):
     if not session.user.can_authenticate():
         session.revoke("user_status_changed")
         raise TokenError("INVALID_TOKEN", "User is not active.")
+    validate_portal_session_authority(session)
     return session
+
+
+def active_portal_account_for_user(user):
+    return (
+        PortalAccount.objects.select_related("member")
+        .filter(
+            user=user,
+            status=PortalAccount.STATUS_ACTIVE,
+            member__is_deleted=False,
+        )
+        .first()
+    )
+
+
+def validate_portal_session_authority(session):
+    account = (
+        PortalAccount.objects.select_related("member")
+        .filter(user=session.user)
+        .first()
+    )
+    if account is None:
+        return None
+    if account.status != PortalAccount.STATUS_ACTIVE or account.member.is_deleted:
+        session.revoke("portal_account_status_changed")
+        raise TokenError("INVALID_TOKEN", "Portal account is not active.")
+    return account
 
 
 def effective_permission_codes(user):
@@ -212,7 +240,7 @@ def current_user_payload(user):
         "permissions": permissions,
         "available_actions": permissions,
     }
-    portal_account = getattr(user, "portal_account", None)
+    portal_account = active_portal_account_for_user(user)
     if portal_account is not None:
         portal_permissions = [
             "portal.member.profile.read_own",

@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_portal_borrower_can_create_update_submit_list_and_read_own_application_status (sfpcl_credit.tests.test_portal_member_api.PortalMemberApiTests.test_portal_borrower_can_create_update_submit_list_and_read_own_application_status)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_012650_normal_run/sfpcl_credit/tests/test_portal_member_api.py", line 375, in test_portal_borrower_can_create_update_submit_list_and_read_own_application_status
+    self.assertEqual(
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 1.073s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

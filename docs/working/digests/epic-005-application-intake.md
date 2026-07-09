@@ -336,3 +336,25 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   borrower portal draft/create/submit. Corrective slice 005G2 should align borrower portal audit
   actions with the source portal event names while preserving existing internal staff audit action
   names for staff routes.
+
+## Member Portal Session And Audit Contract Hardening
+- 005G2 implemented the architecture-review correction. A shared session-bound portal authority
+  check now rejects already-issued access/refresh sessions when the linked `PortalAccount` is no
+  longer active or the linked member is deleted. It revokes the `UserSession` with
+  `revoked_reason = portal_account_status_changed` and returns `401 INVALID_TOKEN` through the
+  existing auth helper semantics. A-044 records this route-level status decision.
+- `/api/v1/auth/me/`, portal password change, portal dashboard/profile/produce-supply, and portal
+  application routes no longer expose portal `member_id`, `portal_account_id`, `portal_role`, or
+  portal own-data permissions after account suspension. Denied suspended-session portal application
+  attempts create no application, portal application audit row, workflow event, register row,
+  reference, or visible sequence side effect.
+- Portal auth/action audit names now match the source member-portal audit table:
+  `portal.account.activated`, `portal.login.success`, `portal.login.failed`,
+  `portal.password.changed`, `portal.application.draft_created`,
+  `portal.application.saved`, and `portal.application.submitted`.
+- Staff application routes keep the internal audit action names
+  `applications.loan_application.created`, `applications.loan_application.updated`, and
+  `applications.loan_application.submitted`; the portal-specific names are passed only by borrower
+  portal route services.
+- New tests prove portal audit payloads remain metadata-only and do not include PAN, Aadhaar, full
+  bank account values, OTP values, token hashes, passwords, encrypted values, or raw document data.

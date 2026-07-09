@@ -1,5 +1,31 @@
 # Ralph Progress Log
 
+## 2026-07-10 01:26:50 - 2026-07-10_012650_normal_run
+- Agent tool used: codex
+- Slice attempted: 005G2-member-portal-session-and-audit-contract-hardening
+- Summary: Hardened member portal sessions and audit contracts. Existing access/refresh sessions
+  for a linked portal account are now revoked with `portal_account_status_changed` and rejected as
+  `401 INVALID_TOKEN` once the `PortalAccount` is no longer active or its member is deleted.
+  `/auth/me`, portal password change, portal own-data APIs, and portal application APIs no longer
+  expose stale portal authority after suspension. Canonical portal audit actions now use
+  `portal.account.activated`, `portal.login.success`, `portal.login.failed`,
+  `portal.password.changed`, `portal.application.draft_created`,
+  `portal.application.saved`, and `portal.application.submitted`; staff application routes keep
+  `applications.loan_application.*` audit names.
+- Tests run: TDD red/green for suspended `/auth/me`, portal auth audit names, and portal
+  application audit names; focused backend portal/application tests (31/31); backend
+  `manage.py check`; backend tests (269/269); `makemigrations --check --dry-run`; backend coverage
+  95% (floor 85); frontend `npm run lint`; `npm run typecheck`; `npm test` (90/90);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_012650_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: High.
+- Next action: Run `005H-rejection-note-shell`. It has been sharpened to preserve staff-only
+  rejection-note behavior, use staff audit names, and assert old suspended portal tokens receive
+  `401 INVALID_TOKEN` while valid active portal tokens remain `403 PERMISSION_DENIED` for staff
+  rejection-note actions.
+
 ## 2026-07-10 01:01:38 - 2026-07-10_005716_architecture_review
 - Agent tool used: codex
 - Slice attempted: architecture-review
@@ -2106,6 +2132,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_005716_architecture_review/.ralph/runs/2026-07-10_005716_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_005716_architecture_review/.ralph/runs/2026-07-10_005716_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 01:57:10 - 2026-07-10_012650_normal_run
+- Agent tool used: codex
+- Slice attempted: 005G2-member-portal-session-and-audit-contract-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_012650_normal_run/.ralph/runs/2026-07-10_012650_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_012650_normal_run/.ralph/runs/2026-07-10_012650_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

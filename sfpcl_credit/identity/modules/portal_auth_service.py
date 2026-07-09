@@ -268,7 +268,7 @@ def complete_activation(data, request):
     AuditLog.objects.create(
         actor_user=user,
         actor_type="portal_member",
-        action="portal.auth.activation.completed",
+        action="portal.account.activated",
         entity_type="member",
         entity_id=challenge.member_id,
         new_value_json={"outcome": "success"},
@@ -426,7 +426,7 @@ def change_password(user, session, data, request):
     AuditLog.objects.create(
         actor_user=user,
         actor_type="portal_member",
-        action="portal.auth.password_changed",
+        action="portal.password.changed",
         entity_type="portal_account",
         entity_id=user.portal_account.portal_account_id,
         new_value_json={"outcome": "success"},

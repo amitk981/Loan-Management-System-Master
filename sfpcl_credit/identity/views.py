@@ -167,7 +167,7 @@ def portal_login(request):
     except CredentialError as exc:
         auth_service.record_auth_event(
             request,
-            "portal.auth.login.failed",
+            "portal.login.failed",
             user=exc.user,
             outcome=exc.outcome,
             email=identifier,
@@ -178,7 +178,7 @@ def portal_login(request):
     session, payload = portal_auth_service.issue_portal_login(user, request)
     auth_service.record_auth_event(
         request,
-        "portal.auth.login.succeeded",
+        "portal.login.success",
         user=user,
         session=session,
         outcome="success",

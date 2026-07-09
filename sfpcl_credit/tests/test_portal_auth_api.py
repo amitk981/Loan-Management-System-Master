@@ -4,7 +4,7 @@ import jwt
 from django.conf import settings
 from django.test import Client, override_settings
 
-from sfpcl_credit.identity.models import AuditLog, Role, UserSession
+from sfpcl_credit.identity.models import AuditLog, PortalAccount, Role, UserSession
 from sfpcl_credit.identity.models import PortalOtpChallenge
 from sfpcl_credit.members.models import Member
 from sfpcl_credit.tests.base import IdentityTestCase
@@ -87,7 +87,7 @@ class PortalAuthApiTests(IdentityTestCase):
         self.assertNotIn("pan", json.dumps(activation_payload).lower())
         self.assertTrue(
             AuditLog.objects.filter(
-                action="portal.auth.activation.completed",
+                action="portal.account.activated",
                 entity_id=self.member.member_id,
             ).exists()
         )
@@ -109,6 +109,12 @@ class PortalAuthApiTests(IdentityTestCase):
         self.assertNotIn("applications.loan_application.complete_check", payload["user"]["permissions"])
         self.assertEqual(payload["user"]["member_id"], str(self.member.member_id))
         self.assertEqual(payload["user"]["portal_role"], "borrower_member")
+        self.assertTrue(
+            AuditLog.objects.filter(
+                action="portal.login.success",
+                actor_user__email=self.member.email,
+            ).exists()
+        )
 
         staff_response = Client().post(
             "/api/v1/loan-applications/00000000-0000-0000-0000-000000000000/return-with-deficiencies/",
@@ -118,6 +124,23 @@ class PortalAuthApiTests(IdentityTestCase):
         )
         self.assertEqual(staff_response.status_code, 403)
         self.assertEqual(staff_response.json()["error"]["code"], "PERMISSION_DENIED")
+
+    def test_failed_portal_login_audits_source_event_without_sensitive_values(self):
+        self._activate_member()
+
+        response = Client().post(
+            "/api/v1/portal/auth/login/",
+            data={"identifier": self.member.email, "password": "WrongPortal123!"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 401)
+        audit = AuditLog.objects.filter(action="portal.login.failed").get()
+        self.assertEqual(audit.actor_type, "user")
+        self.assertEqual(audit.new_value_json["outcome"], "invalid_credentials")
+        flattened = json.dumps(audit.new_value_json)
+        self.assertNotIn("WrongPortal123!", flattened)
+        self.assertNotIn("246810", flattened)
 
     def test_activation_rejects_unknown_and_already_active_members(self):
         unknown_response = Client().post(
@@ -204,6 +227,61 @@ class PortalAuthApiTests(IdentityTestCase):
         )
         self.assertEqual(me_response.status_code, 401)
 
+    def test_suspended_portal_account_invalidates_existing_session_for_current_user(self):
+        self._activate_member()
+        login_response = Client().post(
+            "/api/v1/portal/auth/login/",
+            data={"identifier": self.member.email, "password": "CorrectPortal123!"},
+            content_type="application/json",
+        )
+        self.assertEqual(login_response.status_code, 200)
+        access_token = login_response.json()["data"]["access_token"]
+        session = UserSession.objects.get(user__email=self.member.email)
+
+        account = PortalAccount.objects.get(member=self.member)
+        account.status = PortalAccount.STATUS_SUSPENDED
+        account.save(update_fields=["status"])
+
+        me_response = Client().get(
+            "/api/v1/auth/me/",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
+        self.assertEqual(me_response.status_code, 401)
+        self.assertEqual(me_response.json()["error"]["code"], "INVALID_TOKEN")
+        session.refresh_from_db()
+        self.assertEqual(session.session_status, UserSession.REVOKED)
+        self.assertEqual(session.revoked_reason, "portal_account_status_changed")
+
+    def test_suspended_portal_account_cannot_change_password_with_existing_session(self):
+        self._activate_member()
+        login_response = Client().post(
+            "/api/v1/portal/auth/login/",
+            data={"identifier": self.member.email, "password": "CorrectPortal123!"},
+            content_type="application/json",
+        )
+        self.assertEqual(login_response.status_code, 200)
+        access_token = login_response.json()["data"]["access_token"]
+
+        account = PortalAccount.objects.get(member=self.member)
+        account.status = PortalAccount.STATUS_SUSPENDED
+        account.save(update_fields=["status"])
+
+        response = Client().post(
+            "/api/v1/portal/auth/password/change/",
+            data={
+                "current_password": "CorrectPortal123!",
+                "new_password": "ChangedPortal123!",
+                "confirm_password": "ChangedPortal123!",
+            },
+            content_type="application/json",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["error"]["code"], "INVALID_TOKEN")
+        self.assertFalse(AuditLog.objects.filter(action="portal.password.changed").exists())
+
     def test_security_settings_password_change_audits_and_revokes_other_sessions(self):
         self._activate_member()
         first_login = Client().post(
@@ -234,7 +312,7 @@ class PortalAuthApiTests(IdentityTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(
-            AuditLog.objects.filter(action="portal.auth.password_changed").exists()
+            AuditLog.objects.filter(action="portal.password.changed").exists()
         )
         revoked = UserSession.objects.filter(revoked_reason="portal_password_change")
         self.assertEqual(revoked.count(), 1)

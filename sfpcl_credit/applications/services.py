@@ -226,7 +226,14 @@ def _has_credit_manager_domain_access(application, actor):
 
 
 @transaction.atomic
-def create_draft(payload, actor, request_ip="", request_user_agent="", request_id=None):
+def create_draft(
+    payload,
+    actor,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+    audit_action="applications.loan_application.created",
+):
     cleaned = _clean_payload(payload, require_member=True)
     application = LoanApplication(
         member=cleaned["member"],
@@ -241,7 +248,7 @@ def create_draft(payload, actor, request_ip="", request_user_agent="", request_i
     _audit_application(
         application,
         actor,
-        "applications.loan_application.created",
+        audit_action,
         None,
         request_ip,
         request_user_agent,
@@ -260,7 +267,15 @@ def create_draft(payload, actor, request_ip="", request_user_agent="", request_i
 
 
 @transaction.atomic
-def update_draft(application, payload, actor, request_ip="", request_user_agent="", request_id=None):
+def update_draft(
+    application,
+    payload,
+    actor,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+    audit_action="applications.loan_application.updated",
+):
     if application.application_status != LoanApplication.STATUS_DRAFT:
         raise LoanApplicationValidationError(
             {"application_status": "Only draft applications can be updated."}
@@ -275,7 +290,7 @@ def update_draft(application, payload, actor, request_ip="", request_user_agent=
     _audit_application(
         application,
         actor,
-        "applications.loan_application.updated",
+        audit_action,
         old_value_json,
         request_ip,
         request_user_agent,
@@ -292,6 +307,7 @@ def submit_application(
     request_user_agent="",
     request_id=None,
     actor_permissions=None,
+    audit_action=None,
 ):
     transition = evaluate_transition(
         current_state=application.application_status,
@@ -310,7 +326,7 @@ def submit_application(
     _audit_application(
         application,
         actor,
-        transition.definition.audit_action,
+        audit_action or transition.definition.audit_action,
         old_value_json,
         request_ip,
         request_user_agent,

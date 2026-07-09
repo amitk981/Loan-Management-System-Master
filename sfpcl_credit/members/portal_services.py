@@ -118,6 +118,7 @@ def create_application(member, payload, actor, request_ip="", request_user_agent
         request_ip,
         request_user_agent,
         request_id,
+        audit_action="portal.application.draft_created",
     )
     return _portal_application_detail(application)
 
@@ -133,6 +134,7 @@ def update_application(application, payload, actor, request_ip="", request_user_
         request_ip,
         request_user_agent,
         request_id,
+        audit_action="portal.application.saved",
     )
     return _portal_application_detail(application)
 
@@ -145,6 +147,7 @@ def submit_application(application, actor, request_ip="", request_user_agent="",
         request_user_agent,
         request_id,
         actor_permissions=[application_services.APPLICATION_SUBMIT_PERMISSION],
+        audit_action="portal.application.submitted",
     )
     return _portal_application_detail(application)
 
