@@ -2,6 +2,73 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-09 14:18 - Architecture Review 2026-07-09_141049_architecture_review
+
+Reviewed completed product slices since the prior architecture review commit `7c97efc`:
+- `004D2-member-profile-and-nominee-contract-hardening` (`187096b`)
+- `004F-shareholding-and-share-certificate-records` (`38b575f`)
+- `004G-landholding-and-crop-plan-records` (`75ad4b5`)
+- `004H-kyc-upload-and-verification` (`bac6359`)
+
+This review focused on product diffs plus the run evidence and Epic 004 digest/source extracts.
+
+### Finding 1 - Medium - Duplicate KYC profile creates can fall through to an unhandled database error
+
+`004H` correctly added a unique database constraint for one `kyc_profiles` row per member party
+(`sfpcl_credit/members/models.py:412-416`), and the Epic 004 digest says one profile is allowed per
+member party (`docs/working/digests/epic-004-member-kyc-master.md:228-230`). However,
+`create_kyc_profile()` always calls `KycProfile.objects.create(...)` after confirming the member
+exists (`sfpcl_credit/members/services.py:586-613`) and does not check whether a profile already
+exists or catch the uniqueness failure. The API test covers first create/read/update and validation
+for auth, party type, missing member, and missing consent (`sfpcl_credit/tests/test_member_kyc_api.py:37-114`),
+but it does not exercise a second create for the same member. The likely user-visible behavior is a
+500-style server error instead of the standard `VALIDATION_ERROR` envelope expected across this API.
+
+Corrective action: created
+`docs/slices/004H2-kyc-profile-duplicate-create-contract-hardening.md` and made `004I` depend on it.
+The corrective slice must add a failing-first duplicate-create regression, return a standard
+validation envelope before the database constraint raises, and prove no second profile/audit row is
+created.
+
+### Finding 2 - Pass - Prior architecture-review findings were closed cleanly
+
+`004D2` removes nominee identity hashes/encrypted-token keys from nominee create audit metadata and
+adds explicit tests that the audit payload excludes the submitted identifiers, hash keys, and hash
+values while preserving protected storage for duplicate/search support. It also neutralizes member
+profile `available_actions[]` to `[]`, so member/KYC/default status no longer invents
+loan-application eligibility before 005A and later eligibility slices own that behavior. This
+matches the prior corrective slice scope.
+
+Corrective action: none.
+
+### Finding 3 - Pass - Shareholding and land/crop foundations stay within their documented boundaries
+
+`004F` implements only shareholding list/create and defers share certificates/PATCH/update.
+Tests cover permission separation, count validation, available-share derivation, create audit
+metadata, member share-summary refresh, and no workflow event. `004G` implements only land-holding
+and crop-plan list/create, records A-032 for the source permission gap, tests positive-acreage and
+UUID validation, and avoids loan-limit, application-blocker, and purpose-eligibility decisions.
+Frontend tests for both tabs assert backend-backed loading/empty/error/validation/success states
+using existing Member Profile patterns rather than restoring mock rows.
+
+Corrective action: none.
+
+### Finding 4 - Pass with queue sharpening - Bank-account work needed concrete source boundaries
+
+`004I` was already sharpened for member PAN/Aadhaar reveal, but `004J` still had generic placeholder
+scope. This review opened only the targeted bank-account source sections and sharpened `004J` with
+bank account, cancelled cheque, encrypted-account-number, masking, audit, and disbursement/mismatch
+deferral requirements. The extracted requirements were added to the Epic 004 digest so the next
+agent does not need to re-read broad source files.
+
+Corrective action: sharpened `docs/slices/004J-bank-account-and-cancelled-cheque-profile-foundation.md`
+and updated `docs/working/digests/epic-004-member-kyc-master.md`.
+
+Functional-spec spot check: the reviewed Epic 004 work still implements foundations rather than a
+complete functional module ID set. Member shareholding, land/crop, and member-party KYC records are
+implemented with explicit deferrals for share certificates, witness validation, sensitive reveal,
+bank-account foundations, KYC completeness/disbursement blockers, and loan application intake.
+
 ## 2026-07-09 11:48 - Architecture Review 2026-07-09_114836_architecture_review
 
 Reviewed completed product slices since the prior architecture review commit `e370720`:

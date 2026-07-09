@@ -241,3 +241,29 @@ before implementation.
 - Member Profile's KYC tab is API-backed with loading/empty/error/list/validation/success states
   using existing profile card, empty-panel, alert, field, and status-badge patterns. Sensitive reveal
   remains deferred to 004I.
+
+## 004H2/004J Architecture-Review Extracts
+- Architecture review 2026-07-09 found that `kyc_profiles` has a one-profile-per-party database
+  constraint, and this digest says one profile is allowed per member party. 004H2 should add a
+  failing-first duplicate-create regression and return a standard validation envelope before the
+  database raises an unhandled uniqueness error.
+- `data-model.md` §12.3 defines `bank_accounts` with owner party type/id, holder name, protected
+  account number storage/hash/last4, IFSC, bank and branch names, verification status, nullable
+  cancelled-cheque link, signature-verified flag, and active/inactive status.
+- `data-model.md` §12.4 defines `cancelled_cheques` with loan-application/member/document IDs,
+  protected account-number storage, IFSC, branch, verification status, signature-mismatch flag, and
+  created timestamp. Because loan applications do not exist yet, 004J should either keep the
+  cancelled-cheque boundary member-profile-only with an explicit assumption or defer
+  loan-application-specific cheque behavior.
+- `data-model.md` §12.5 defines `bank_verification_letters` for signature mismatch/detail
+  confirmation with bank signed/stamped flags and verification result. This belongs to a
+  signature-mismatch/documentation workflow unless 004J is split.
+- `data-model.md` §28 includes `bank_accounts.account_number_encrypted` and
+  `cancelled_cheques.account_number_encrypted` in the encrypted sensitive-field set. API responses
+  and audit metadata must expose only masked/last-four account values, never full numbers, encrypted
+  token contents, hashes, cheque images, or file bytes.
+- `screen-spec.md` S11 says duplicate checks include the same bank account in other active borrower
+  records, S15 covers bank verification letters for signature mismatch, and disbursement screens use
+  cheque-derived holder name, masked account number, IFSC, and branch. 004J should persist the
+  foundation facts but not invent duplicate-active-borrower decisions, mismatch resolution,
+  disbursement blockers, or payment initiation.

@@ -14,12 +14,15 @@ Deliver this narrow capability as a small, testable Ralph implementation slice.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 004H
+- 004H2
 
 ## Prior Slice Facts
 - 004H added member-party KYC profile/document APIs and a Member Profile KYC tab, but did not add
   sensitive reveal. Keep 004I focused on member PAN/Aadhaar reveal from the existing masked member
   profile path; do not reopen KYC document upload/verify or document download behavior.
+- 004H2 is expected to harden duplicate member-party KYC profile creates before this slice runs.
+  Do not reopen that create-profile contract here except to keep the KYC tab from regressing while
+  adding reveal controls.
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11
