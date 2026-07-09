@@ -452,7 +452,7 @@ const BankSecurityTab: React.FC<{
         <div key={account.bank_account_id} className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-slate-900">{account.holder_name}</p>
+              <p className="text-sm font-semibold text-slate-900">{account.account_holder_name}</p>
               <p className="text-xs text-slate-500 mt-0.5">{account.bank_name || '-'} · {account.branch_name || '-'}</p>
             </div>
             <StatusBadge label={account.verification_status || account.status || 'pending'} size="sm" family={account.verification_status === 'verified' ? 'approved' : undefined} />

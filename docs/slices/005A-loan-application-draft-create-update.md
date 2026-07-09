@@ -30,6 +30,10 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
   the 004J backend/contract field is `account_holder_name`, and loan-application draft work must
   reuse that canonical field name for bank metadata summaries rather than the frontend-only
   `holder_name` alias.
+- 004K2 is complete: the frontend `MemberBankAccountDetail` type, normalizer, Borrower 360 render
+  path, and regression fixtures now use `account_holder_name`. 005A must not add a loan-application
+  DTO or response summary that revives `holder_name`, copies full bank-account values, or broadens
+  bank reveal behavior.
 - `screen-spec.md` S11 says duplicate draft review should warn on same bank account used in other
   active borrower records, but 004J explicitly deferred that decision because active borrower and
   loan-application records did not exist yet. 005A may store enough draft references for a later

@@ -1,44 +1,49 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-09_163909_architecture_review
+2026-07-09_170359_normal_run
 
 ## Current Status
-Architecture review completed successfully after `004K-borrower-360-kyc-panel-and-masking-ui-wiring`.
+`004K2-borrower-360-bank-holder-contract-hardening` completed successfully after the architecture
+review finding from `2026-07-09_163909_architecture_review`.
 
 ## What Completed
-- Reviewed the four product slices merged since architecture review commit `fef0026`:
-  `004H2`, `004I`, `004J`, and `004K`.
-- Appended findings to `docs/working/REVIEW_FINDINGS.md`.
-- Found one Medium issue: Borrower 360 consumes frontend field `holder_name`, but the 004J backend
-  and API contract return bank-account holder names as `account_holder_name`, so real API data can
-  render a blank holder name on the Bank & Security tab.
-- Created corrective slice `004K2-borrower-360-bank-holder-contract-hardening.md`.
-- Made `005A-loan-application-draft-create-update` depend on `004K2`.
-- Updated the Epic 004 digest and API contract notes with the corrective DTO boundary.
+- Updated the Borrower 360 frontend bank-account contract to use the backend/API field
+  `account_holder_name` end to end.
+- Updated `MemberBankAccountDetail`, the bank-account normalizer, and the Bank & Security tab
+  rendering path in Borrower 360.
+- Updated Borrower 360 tests so the API-client fixture uses the backend response shape instead of
+  the old frontend-only `holder_name` alias.
+- Added/strengthened regressions that prove `account_holder_name` normalizes and renders, while
+  bank account numbers remain masked-only and no bank reveal affordance is introduced.
+- Sharpened `005A` and `005B` to preserve `account_holder_name` if upcoming loan-application APIs
+  include bank metadata summaries.
 
 ## Explicit Deferrals
-- Loan application persistence, submit/reference generation, completeness, deficiencies, eligibility,
-  loan limit, appraisal, sanction, disbursement, repayment, communication history, risk/exception
-  records, and audit timeline UI wiring.
-- Bank-account full-number reveal, duplicate-active-borrower bank warnings, signature-mismatch
-  resolution, payment initiation, and disbursement-readiness UI.
-- Witness validation remains blocked until loan-application boundaries exist.
+- No backend, database, permission, audit, or API contract rename was needed.
+- Bank-account full-number reveal, duplicate-active-borrower warnings, signature-mismatch
+  resolution, payment initiation, and disbursement-readiness UI remain deferred.
+- Loan application draft persistence starts in `005A`; submit transition starts in `005B`.
+- Witness validation remains blocked until a real loan-application boundary exists.
 
 ## Evidence
-See `.ralph/runs/2026-07-09_163909_architecture_review/`.
+See `.ralph/runs/2026-07-09_170359_normal_run/`.
 
-Review artifacts: `execution-plan.md`, `review-packet.md`, `risk-assessment.md`,
-`changed-files.txt`, `final-summary.md`, and review-window diff evidence.
+Key artifacts: `execution-plan.md`, `review-packet.md`, `risk-assessment.md`,
+`changed-files.txt`, `final-summary.md`, and gate logs under `evidence/terminal-logs/`.
 
-Gate logs are under `evidence/terminal-logs/`.
+Visual evidence: `evidence/borrower360-bank-security-contract.html` shows the Bank & Security card
+with the canonical holder field and masked-only account values. PNG screenshot capture was attempted
+with Playwright but Chromium launch was blocked by macOS sandbox Mach port permissions; the in-app
+browser backend was also unavailable in this session.
 
 ## Notes For Next Run
-- Run `004K2-borrower-360-bank-holder-contract-hardening` next.
-- `004K2` should add a failing-first frontend regression using the backend `account_holder_name`
-  response shape, update the frontend type/normalizer/rendering, and keep bank account numbers
-  masked-only with no reveal affordance.
-- After `004K2`, run `005A-loan-application-draft-create-update`.
-- 005A/005B remain sharpened to start draft application persistence and submit transition without
-  inventing duplicate-bank, eligibility, payment, disbursement, reference-number, or completeness
-  rules outside their owning slices.
+- Run `005A-loan-application-draft-create-update` next.
+- `005A` should implement draft create/read/update only. It must reuse Epic 004 member/bank
+  foundations by ID and masked summaries, preserve `account_holder_name`, and avoid copying full
+  PAN, Aadhaar, bank account numbers, protected token values, or hashes into application responses
+  or audit metadata.
+- `005B` should depend on persisted 005A drafts and implement submit/status transition only; keep
+  reference-number generation, completeness, deficiencies, eligibility, duplicate-bank warnings,
+  disbursement/payment behavior, and appraisal out of scope unless source documents explicitly move
+  one of those responsibilities into the slice.

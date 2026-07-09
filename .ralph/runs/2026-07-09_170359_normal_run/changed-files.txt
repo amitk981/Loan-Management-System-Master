@@ -1,0 +1,10 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/004K2-borrower-360-bank-holder-contract-hardening.md
+ M docs/slices/005A-loan-application-draft-create-update.md
+ M docs/slices/005B-application-submit-and-status-transition.md
+ M docs/working/HANDOFF.md
+ M sfpcl-lms/src/pages/members/Borrower360.test.tsx
+ M sfpcl-lms/src/pages/members/Borrower360.tsx
+ M sfpcl-lms/src/services/memberProfileApi.ts
+?? .ralph/runs/2026-07-09_170359_normal_run/

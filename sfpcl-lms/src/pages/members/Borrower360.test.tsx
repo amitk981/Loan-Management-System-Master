@@ -37,7 +37,7 @@ afterEach(() => {
 describe('borrower 360 API client additions', () => {
   it('loads bank and cancelled-cheque metadata from 004J endpoints without full account numbers', async () => {
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce(listOk([bankAccount]))
+      .mockResolvedValueOnce(listOk([apiBankAccount]))
       .mockResolvedValueOnce(listOk([cancelledCheque]));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -65,6 +65,7 @@ describe('borrower 360 API client additions', () => {
       last4: '9012',
       can_view_full: false,
     });
+    expect(accounts.items[0].account_holder_name).toBe('Ramesh Patil');
     expect(cheques.items[0].account_number.masked).toBe('********9012');
     expect(JSON.stringify(accounts)).not.toContain('123456789012');
     expect(JSON.stringify(cheques)).not.toContain('123456789012');
@@ -84,6 +85,7 @@ describe('Borrower360View', () => {
     expect(html).toContain('123/4');
     expect(html).toContain('grapes');
     expect(html).toContain('Sita Patil');
+    expect(html).toContain('Kiran Bank Holder');
     expect(html).toContain('State Bank of India');
     expect(html).toContain('********9012');
     expect(html).toContain('No loan records are available from the backend yet.');
@@ -252,7 +254,7 @@ const kycProfile: KycProfileDetail = {
 
 const bankAccount: MemberBankAccountDetail = {
   bank_account_id: 'bank-1',
-  holder_name: 'Ramesh Patil',
+  account_holder_name: 'Kiran Bank Holder',
   account_number: { masked: '********9012', last4: '9012', can_view_full: false },
   ifsc: 'SBIN0001234',
   bank_name: 'State Bank of India',
@@ -262,6 +264,11 @@ const bankAccount: MemberBankAccountDetail = {
   signature_verified_flag: true,
   status: 'active',
   created_at: '2026-07-09T08:00:00Z',
+};
+
+const apiBankAccount: MemberBankAccountDetail = {
+  ...bankAccount,
+  account_holder_name: 'Ramesh Patil',
 };
 
 const cancelledCheque: MemberCancelledChequeDetail = {

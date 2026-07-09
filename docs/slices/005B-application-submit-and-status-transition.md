@@ -22,6 +22,10 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
   subresource APIs.
 - Epic 004 sensitive data boundaries remain binding: submit responses and audit/workflow metadata
   must not include full PAN, Aadhaar, full bank account numbers, protected token values, or hashes.
+- 004K2 closed the bank holder-name frontend/API contract mismatch. If 005B returns any
+  application summary that includes selected bank metadata, the holder field must remain
+  `account_holder_name`, with account-number data limited to masked/last-four metadata and
+  `can_view_full: false`.
 - Completeness, reference-number generation, document checklist verification, deficiency workflow,
   eligibility, loan limit, appraisal, sanction, disbursement, and payment initiation remain outside
   005B unless explicitly split into this slice later.

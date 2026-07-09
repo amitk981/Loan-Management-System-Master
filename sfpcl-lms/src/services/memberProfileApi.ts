@@ -188,7 +188,7 @@ export interface KycProfileDetail {
 
 export interface MemberBankAccountDetail {
   bank_account_id: string;
-  holder_name: string;
+  account_holder_name: string;
   account_number: { masked: string | null; last4: string | null; can_view_full: boolean };
   ifsc: string;
   bank_name: string | null;
@@ -654,7 +654,7 @@ const normalizeBankAccounts = (items: MemberBankAccountDetail[]): MemberBankAcco
 
 const normalizeBankAccount = (item: MemberBankAccountDetail): MemberBankAccountDetail => ({
   bank_account_id: String(item?.bank_account_id ?? ''),
-  holder_name: String(item?.holder_name ?? ''),
+  account_holder_name: String(item?.account_holder_name ?? ''),
   account_number: normalizeMaskedAccount(item?.account_number),
   ifsc: String(item?.ifsc ?? ''),
   bank_name: textOrNull(item?.bank_name),

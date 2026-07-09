@@ -1,5 +1,25 @@
 # Ralph Progress Log
 
+## 2026-07-09 17:03:59 - 2026-07-09_170359_normal_run
+- Agent tool used: codex
+- Slice attempted: 004K2-borrower-360-bank-holder-contract-hardening
+- Summary: Closed the Borrower 360 bank-holder DTO contract finding. The frontend bank-account
+  type, normalizer, and Bank & Security tab now consume and render the 004J/backend field
+  `account_holder_name` instead of the old frontend-only `holder_name` alias. Borrower 360 tests
+  now use a backend-shaped API fixture and assert that the holder name normalizes/renders while bank
+  account numbers stay masked-only with no bank reveal affordance. Sharpened 005A/005B to preserve
+  the canonical bank holder field in upcoming loan-application summaries.
+- Tests run: Borrower 360 frontend TDD red/green; frontend `npm run typecheck`; `npm test` (80/80);
+  `npm run lint`; `npm run build`; backend `manage.py check`; backend tests (238/238);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85).
+- Evidence saved: `.ralph/runs/2026-07-09_170359_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus self-contained Bank & Security contract HTML. PNG screenshot
+  capture was attempted with installed Playwright but Chromium launch was blocked by sandbox Mach
+  port permissions; the in-app browser backend was unavailable.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005A-loan-application-draft-create-update`.
+
 ## 2026-07-09 16:58:27 - 2026-07-09_163909_architecture_review
 - Agent tool used: codex
 - Slice attempted: architecture-review
@@ -1631,6 +1651,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_163909_architecture_review/.ralph/runs/2026-07-09_163909_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_163909_architecture_review/.ralph/runs/2026-07-09_163909_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 17:23:02 - 2026-07-09_170359_normal_run
+- Agent tool used: codex
+- Slice attempted: 004K2-borrower-360-bank-holder-contract-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_170359_normal_run/.ralph/runs/2026-07-09_170359_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_170359_normal_run/.ralph/runs/2026-07-09_170359_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
