@@ -55,6 +55,24 @@ export interface StaffApplication {
   submitted_at?: string | null;
   submitted_by_user_id?: string | null;
   terms_acceptance_flag?: boolean;
+  rejection_note?: StaffApplicationRejectionNote | null;
+}
+
+export interface StaffApplicationRejectionNote {
+  rejection_note_id: string;
+  note_status: string;
+  rejection_stage: string;
+  rejection_reason_category: string;
+  reapply_allowed_flag: boolean;
+  prepared_by_user_id: string;
+  approved_by_user_id: string | null;
+  communication_mode: string;
+  communication_id: string | null;
+  sent_by_user_id: string | null;
+  sent_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  updated_by_user_id: string | null;
 }
 
 export interface ApplicationDocumentChecklistItem {

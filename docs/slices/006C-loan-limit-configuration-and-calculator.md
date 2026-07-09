@@ -50,6 +50,9 @@ None for this slice, except updating frontend documentation or fixtures if requi
 - Reuse existing versioned loan-policy configuration if it can express share percentage,
   per-share cap, and scale-of-finance values; otherwise add the smallest source-backed config
   fields needed in this slice and record any policy ambiguity in `ASSUMPTIONS.md`.
+- Require the 006B `eligibility_assessments.overall_result = eligible` path before calculation.
+  If 006B leaves any check pending for missing source-backed evidence, calculation should return a
+  validation/invalid-state response and create no loan-limit assessment, audit, or workflow event.
 - Keep override, appraisal-note create/edit/submit, Credit Manager review, sanction submission,
   and frontend wiring out of scope.
 
@@ -78,6 +81,9 @@ successful calculation evidence.
   `shareholding_based_limit = number_of_shares × configured percentage or per-share cap`;
   `land_based_limit = scale_of_finance_per_acre × land_area_acres`;
   `final_eligible_loan_amount = min(shareholding_based_limit, land_based_limit)`.
+- Request must not broaden object authority: `shareholding_id`, `land_holding_ids`, and
+  `crop_plan_id` must belong to the same member as the loan application. Cross-member facts return
+  validation errors without persisted assessment/audit/workflow evidence.
 - `functional-spec.md` BR-020 requires agricultural land-based limit from scale of finance and
   land area under cultivation.
 - `functional-spec.md` BR-021 requires final eligible amount to be the lower of shareholding and

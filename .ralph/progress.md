@@ -1,5 +1,26 @@
 # Ralph Progress Log
 
+## 2026-07-10 04:41:14 - 2026-07-10_044114_normal_run
+- Agent tool used: codex
+- Slice attempted: 005I2-application-detail-api-state-hardening
+- Summary: Hardened staff Application Detail API/UI state after the architecture-review finding.
+  Staff detail responses now include nullable metadata-only `rejection_note` summary data without
+  changing `application_status`; borrower portal application detail still omits staff rejection-note
+  metadata. Removed the frontend `LO00000035` special case, hardcoded witness rows, and hardcoded
+  nominee sensitive reveal values from `ApplicationDetail.tsx`; missing API-backed facts now render
+  neutral unavailable states using existing visual patterns. Updated API contracts and sharpened
+  `006B`/`006C`.
+- Tests run: backend TDD red/green for rejection-note detail; frontend TDD red/green for
+  Application Detail render regressions; focused loan-application API tests (27/27); backend
+  `manage.py check`; backend tests (278/278); `makemigrations --check --dry-run`; backend coverage
+  95% above 85% floor; frontend lint; frontend typecheck; frontend tests (98/98); frontend build;
+  `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_044114_normal_run/`, including terminal logs and
+  self-contained Application Detail visual evidence HTML.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `006B-default-document-purpose-and-terms-eligibility-checks`.
+
 ## 2026-07-10 02:31:16 - 2026-07-10_023116_normal_run
 - Agent tool used: codex
 - Slice attempted: 005I-application-intake-frontend-wiring
@@ -2259,6 +2280,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_041851_architecture_review/.ralph/runs/2026-07-10_041851_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_041851_architecture_review/.ralph/runs/2026-07-10_041851_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 05:21:29 - 2026-07-10_044114_normal_run
+- Agent tool used: codex
+- Slice attempted: 005I2-application-detail-api-state-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_044114_normal_run/.ralph/runs/2026-07-10_044114_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_044114_normal_run/.ralph/runs/2026-07-10_044114_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

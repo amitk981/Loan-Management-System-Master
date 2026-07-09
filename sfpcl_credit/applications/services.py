@@ -192,6 +192,11 @@ def get_application(application_id):
             "updated_by_user",
             "submitted_by_user",
             "loan_request_register_entry",
+            "rejection_note",
+            "rejection_note__prepared_by_user",
+            "rejection_note__approved_by_user",
+            "rejection_note__sent_by_user",
+            "rejection_note__updated_by_user",
         )
         .filter(loan_application_id=application_id)
         .first()
@@ -1136,6 +1141,7 @@ def serialize_application(application):
         if application.updated_by_user_id
         else None,
         "loan_request_register_entry": _register_summary(register_entry),
+        "rejection_note": _rejection_note_detail_summary(application),
     }
 
 
@@ -1239,6 +1245,37 @@ def serialize_rejection_note(rejection_note):
         "detailed_reason": rejection_note.detailed_reason,
         "reapply_allowed_flag": rejection_note.reapply_allowed_flag,
         "note_status": rejection_note.note_status,
+        "prepared_by_user_id": str(rejection_note.prepared_by_user_id),
+        "approved_by_user_id": str(rejection_note.approved_by_user_id)
+        if rejection_note.approved_by_user_id
+        else None,
+        "communication_mode": rejection_note.communication_mode,
+        "communication_id": str(rejection_note.communication_id)
+        if rejection_note.communication_id
+        else None,
+        "sent_by_user_id": str(rejection_note.sent_by_user_id)
+        if rejection_note.sent_by_user_id
+        else None,
+        "sent_at": _datetime(rejection_note.sent_at),
+        "created_at": _datetime(rejection_note.created_at),
+        "updated_at": _datetime(rejection_note.updated_at),
+        "updated_by_user_id": str(rejection_note.updated_by_user_id)
+        if rejection_note.updated_by_user_id
+        else None,
+    }
+
+
+def _rejection_note_detail_summary(application):
+    try:
+        rejection_note = application.rejection_note
+    except RejectionNote.DoesNotExist:
+        return None
+    return {
+        "rejection_note_id": str(rejection_note.rejection_note_id),
+        "note_status": rejection_note.note_status,
+        "rejection_stage": rejection_note.rejection_stage,
+        "rejection_reason_category": rejection_note.rejection_reason_category,
+        "reapply_allowed_flag": rejection_note.reapply_allowed_flag,
         "prepared_by_user_id": str(rejection_note.prepared_by_user_id),
         "approved_by_user_id": str(rejection_note.approved_by_user_id)
         if rejection_note.approved_by_user_id

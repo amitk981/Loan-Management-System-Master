@@ -1,7 +1,7 @@
 # Slice 005I2: Application Detail API State Hardening
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 005: Loan Application Intake, Documents, Completeness, and Deficiencies
@@ -104,14 +104,14 @@ Medium
 - Permissions, object access, no-audit read behavior, and frontend rendering are tested.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Permissions tested
-- [ ] Visual evidence saved
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Permissions tested
+- [x] Visual evidence saved
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

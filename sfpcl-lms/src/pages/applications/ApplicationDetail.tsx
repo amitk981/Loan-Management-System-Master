@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import {
   ChevronLeft, ExternalLink, AlertOctagon, Clock, Eye, EyeOff,
   CheckCircle2, XCircle, AlertTriangle, User, Users, Shield,
-  FileText, Lock, Download, Plus, MessageSquare, History,
-  ArrowRight, Banknote, Gavel, ClipboardList, BarChart2, Info, Send
+  Lock, Download, MessageSquare, History,
+  ArrowRight, ClipboardList, Info, Send
 } from 'lucide-react';
 import Tabs from '../../components/ui/Tabs';
 import StageStepper from '../../components/ui/StageStepper';
@@ -24,6 +24,7 @@ import {
   type ApplicationDeficiency,
   type ApplicationDocumentChecklistItem,
   type StaffApplication,
+  type StaffApplicationRejectionNote,
 } from '../../services/applicationIntakeApi';
 import type { AuditEvent, DocumentRecord, LoanApplication, Member, SecurityInstrument } from '../../types';
 
@@ -44,21 +45,6 @@ const STAGE_MAP: Record<string, number> = {
   disbursement_ready: 5, sap_customer_code_pending: 5,
   sap_customer_code_confirmed: 5, payment_initiated: 6,
   payment_authorized: 6, transfer_executed: 6, disbursed: 6,
-};
-
-const witnessData = {
-  w1: {
-    name: 'Rajan Marathe', dob: '1975-05-10', age: 49, gender: 'Male',
-    relation: 'Neighbour', mobile: '9821234567', address: 'Village Panchkund, Nashik, MH 422001',
-    identityType: 'Aadhaar', identityNumber: '****-****-7321',
-    signatureObtained: true, date: '2024-09-18', memberNumber: 'FO-0442', shareholderVerification: 'Verified', panStatus: 'Verified', aadhaarStatus: 'Verified', required: true
-  },
-  w2: {
-    name: 'Sunanda Patil', dob: '1968-11-22', age: 55, gender: 'Female',
-    relation: 'Village member', mobile: '9922345678', address: 'Village Panchkund, Nashik, MH 422001',
-    identityType: 'Aadhaar', identityNumber: '****-****-4490',
-    signatureObtained: false, date: null, memberNumber: 'FO-0211', shareholderVerification: 'Pending', panStatus: 'Pending', aadhaarStatus: 'Uploaded', required: false
-  },
 };
 
 const emptyMember: Member = {
@@ -169,22 +155,30 @@ interface ApplicationDetailProps {
   applicationId: string;
   onBack: () => void;
   onNavigateMember: (memberId: string) => void;
+  initialActiveTab?: number;
+  initialData?: {
+    application: StaffApplication;
+    checklistItems: ApplicationDocumentChecklistItem[];
+    deficiencies: ApplicationDeficiency[];
+  };
 }
 
 const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
-  applicationId, onBack, onNavigateMember,
+  applicationId, onBack, onNavigateMember, initialActiveTab = 0, initialData,
 }) => {
   const { can, currentUser } = useRole();
-  const [app, setApp] = useState<LoanApplication>(emptyApplication);
-  const [member, setMember] = useState<Member>(emptyMember);
-  const [appDocs, setAppDocs] = useState<DocumentRecord[]>([]);
+  const [app, setApp] = useState<LoanApplication>(() => initialData ? toDisplayApplication(initialData.application) : emptyApplication);
+  const [member, setMember] = useState<Member>(() => initialData ? toDisplayMember(initialData.application) : emptyMember);
+  const [appDocs, setAppDocs] = useState<DocumentRecord[]>(() => initialData ? toDisplayDocuments(initialData.checklistItems) : []);
   const [appSecurities] = useState<SecurityInstrument[]>([]);
   const [auditEvents] = useState<AuditEvent[]>([]);
-  const [apiDeficiencies, setApiDeficiencies] = useState<ApplicationDeficiency[]>([]);
-  const [loadStatus, setLoadStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [apiDeficiencies, setApiDeficiencies] = useState<ApplicationDeficiency[]>(() => initialData?.deficiencies ?? []);
+  const [rejectionNote, setRejectionNote] = useState<StaffApplicationRejectionNote | null>(() => initialData?.application.rejection_note ?? null);
+  const [loadStatus, setLoadStatus] = useState<'loading' | 'success' | 'error'>(initialData ? 'success' : 'loading');
   const [loadMessage, setLoadMessage] = useState('');
 
   useEffect(() => {
+    if (initialData) return;
     let cancelled = false;
     setLoadStatus('loading');
     Promise.all([
@@ -198,6 +192,7 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
         setMember(toDisplayMember(application));
         setAppDocs(toDisplayDocuments(checklist.items));
         setApiDeficiencies(deficiencies.items);
+        setRejectionNote(application.rejection_note ?? null);
         setLoadStatus('success');
         setLoadMessage('');
       })
@@ -209,24 +204,19 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [applicationId]);
+  }, [applicationId, initialData]);
 
   const isDisbursed = ['completed', 'disbursed', 'transfer_executed'].includes(app.disbursementStatus) || ['disbursed', 'transfer_executed'].includes(app.status);
 
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(initialActiveTab);
   const [panRevealed, setPanRevealed] = useState(false);
   const [aadhaarRevealed, setAadhaarRevealed] = useState(false);
-  const [nomineePanRevealed, setNomineePanRevealed] = useState(false);
-  const [nomineeAadhaarRevealed, setNomineeAadhaarRevealed] = useState(false);
 
   const stageIndex = STAGE_MAP[app.status] ?? 0;
   const isCompletenessReadOnly = stageIndex > 1;
 
-  // Derived state for the specific mock loan LO00000035 as requested
-  const isLO35 = app.applicationNumber === 'LO00000035';
-  
-  // Hardcoded states driven by the prompt's instruction for this specific loan:
-  const docsPending = app.documentationStatus !== 'complete';
+  const pendingDocumentCount = appDocs.filter(doc => doc.requiredFlag !== 'optional' && doc.status !== 'verified').length;
+  const docsPending = pendingDocumentCount > 0;
   const sapMissing = !app.sapCustomerCode;
   
   // Specific role gates
@@ -250,7 +240,7 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
   type StepState = 'not_started' | 'in_progress' | 'completed' | 'blocked' | 'rejected' | 'exception';
   const stageState = (gt: boolean, eq: boolean): StepState => gt ? 'completed' : eq ? 'in_progress' : 'not_started';
   
-  let stages = [
+  const stages = [
     { id: 's1', label: 'Submitted',    state: stageState(stageIndex > 0, stageIndex === 0), meta: '15 Apr 2026' },
     { id: 's2', label: 'Completeness', state: stageState(stageIndex > 1, stageIndex === 1), meta: 'Reference generated' },
     { id: 's3', label: 'Appraisal',    state: stageState(stageIndex > 2, stageIndex === 2), meta: 'Credit reviewed' },
@@ -260,24 +250,15 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
     { id: 's7', label: 'Disbursement', state: (isDisbursed ? 'completed' : app.sapCustomerCode ? 'in_progress' : 'not_started') as StepState, meta: isDisbursed ? 'Disbursed' : 'Pending' },
   ];
 
-  if (isLO35 && docsPending) {
-    stages = stages.map(s => {
-      if (s.id === 's5') return { ...s, state: 'blocked', meta: '11 items pending' };
-      if (s.id === 's6') return { ...s, state: 'not_started', meta: app.sapCustomerCode ? `${app.sapCustomerCode} confirmed` : '' };
-      if (s.id === 's7') return { ...s, state: 'not_started', meta: 'Blocked' };
-      return s;
-    });
-  }
-
   const TABS = [
     { id: 'overview',      label: 'Overview' },
     { id: 'completeness',  label: 'Completeness Check' },
     { id: 'applicant',     label: 'Applicant & Member' },
     { id: 'nominee',       label: 'Nominee' },
-    { id: 'witness',       label: 'Witness', badge: 1 },
+    { id: 'witness',       label: 'Witness' },
     { id: 'eligibility',   label: 'Eligibility & Limit' },
     { id: 'sanction',      label: 'Sanction & Approvals' },
-    { id: 'documents',     label: 'Documents', badge: docsPending ? 11 : undefined },
+    { id: 'documents',     label: 'Documents', badge: pendingDocumentCount || undefined },
     { id: 'security',      label: 'Security' },
     { id: 'disbursement',  label: 'Disbursement' },
     { id: 'audit',         label: 'Audit Trail' },
@@ -287,9 +268,7 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
   const isReadyForPayment = ['sanctioned', 'disbursement_ready', 'sap_customer_code_confirmed'].includes(app.status) && !docsPending && !!app.sapCustomerCode && !isDisbursed;
 
   let statusBadgeLabel = getApplicationStatusLabel(app);
-  if (isLO35 && docsPending) {
-    statusBadgeLabel = 'Sanctioned · Documentation Pending';
-  } else if (['sanctioned', 'documentation_in_progress', 'pending_final_checklist_approvals', 'disbursement_ready', 'sap_customer_code_pending', 'sap_customer_code_confirmed', 'payment_initiated', 'payment_authorized', 'transfer_executed', 'disbursed'].includes(app.status)) {
+  if (['sanctioned', 'documentation_in_progress', 'pending_final_checklist_approvals', 'disbursement_ready', 'sap_customer_code_pending', 'sap_customer_code_confirmed', 'payment_initiated', 'payment_authorized', 'transfer_executed', 'disbursed'].includes(app.status)) {
     if (app.disbursementStatus === 'pending_disbursement' || app.disbursementStatus === 'pending_documentation') {
       statusBadgeLabel = 'Sanctioned · Pending Disbursement';
     } else if (app.disbursementStatus === 'ready_for_payment' || app.disbursementStatus === 'disbursement_ready') {
@@ -302,12 +281,8 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
   }
 
   let computedOwner = app.currentOwner;
-  let nextAction = '';
 
-  if (isLO35 && docsPending) {
-    computedOwner = 'Compliance Team / Company Secretary';
-    nextAction = 'Clear documentation blockers';
-  } else if (stageIndex < 4) {
+  if (stageIndex < 4) {
     computedOwner = app.currentOwner;
   } else if (app.documentationStatus === 'in_progress' || app.documentationStatus === 'documentation_in_progress' || app.documentationStatus === 'not_started') {
     computedOwner = 'Compliance Team';
@@ -318,10 +293,8 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
   } else if (app.documentationStatus === 'complete' && app.sapCustomerCode && !isDisbursed) {
     if (app.disbursementStatus === 'pending_cfc_approval') {
       computedOwner = 'Chief Financial Controller';
-      nextAction = 'Authorise bank transfer';
     } else {
       computedOwner = 'Senior Manager – Finance';
-      nextAction = 'Mark ready for payment';
     }
   } else if (isDisbursed) {
     computedOwner = 'Accounts';
@@ -411,11 +384,6 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
               <p className="text-sm font-semibold text-green-800">Ready for payment: documentation complete, SAP code confirmed and bank verification cleared.</p>
             </div>
           )}
-          {isLO35 && docsPending && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-sm font-semibold text-red-800 flex items-center gap-2"><AlertTriangle size={16}/> Disbursement blocked: 11 documentation items pending. Primary blocker: Borrower PAN / Aadhaar verification.</p>
-            </div>
-          )}
           {['sanctioned', 'disbursement_ready', 'sap_customer_code_pending'].includes(app.status) && !docsPending && sapMissing && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <p className="text-sm font-semibold text-red-800 flex items-center gap-2"><AlertTriangle size={16}/> Disbursement blocked: SAP code pending.</p>
@@ -482,6 +450,29 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
               </div>
               <div className="px-5 py-3 bg-amber-50 border-t border-amber-100">
                 <p className="text-xs text-amber-700 font-medium">Pending: borrower rectification for open deficiency items.</p>
+              </div>
+            </div>
+          )}
+
+          {rejectionNote && (
+            <div className="card p-0 overflow-hidden">
+              <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+                <MessageSquare size={15} className="text-slate-500" />
+                <h3 className="text-sm font-semibold text-slate-800">Rejection Note</h3>
+                <StatusBadge label={rejectionNote.note_status} size="sm" />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5">
+                {[
+                  { label: 'Stage', value: rejectionNote.rejection_stage.replace(/_/g, ' ') },
+                  { label: 'Reason Category', value: rejectionNote.rejection_reason_category.replace(/_/g, ' ') },
+                  { label: 'Communication Mode', value: rejectionNote.communication_mode.replace(/_/g, ' ') },
+                  { label: 'Reapply Allowed', value: rejectionNote.reapply_allowed_flag ? 'Yes' : 'No' },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-slate-50 rounded-lg p-3">
+                    <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{label}</p>
+                    <p className="text-sm font-semibold text-slate-900 mt-0.5 capitalize">{value}</p>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -866,24 +857,24 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
               <h3 className="font-semibold text-slate-800 flex items-center gap-2">
                 <User size={16} className="text-green-600" /> Nominee Details
               </h3>
-              <StatusBadge label="Pending" size="sm" />
+              <StatusBadge label="Unavailable" size="sm" />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {[
-                { label: 'Full Name', value: 'Sudha Patil' },
-                { label: 'Date of Birth', value: '15 March 1980' },
-                { label: 'Age', value: '45 years' },
-                { label: 'Gender', value: 'Female' },
-                { label: 'Relationship to Borrower', value: 'Spouse' },
-                { label: 'Mobile', value: '9900112233' },
-                { label: 'Signature Status', value: 'Pending' },
-                { label: 'PAN Document Status', value: 'Pending' },
-                { label: 'Aadhaar Document Status', value: 'Uploaded' },
-                { label: 'Address', value: 'Sr. No. 88, Igatpuri, Nashik' },
+                { label: 'Full Name', value: 'Not available' },
+                { label: 'Date of Birth', value: 'Not available' },
+                { label: 'Age', value: 'Not available' },
+                { label: 'Gender', value: 'Not available' },
+                { label: 'Relationship to Borrower', value: 'Not available' },
+                { label: 'Mobile', value: 'Not available' },
+                { label: 'Signature Status', value: 'Not available' },
+                { label: 'PAN Document Status', value: 'Not available' },
+                { label: 'Aadhaar Document Status', value: 'Not available' },
+                { label: 'Address', value: 'Not available' },
               ].map(({ label, value }) => (
                 <div key={label} className="bg-slate-50 rounded-lg p-3">
                   <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{label}</p>
-                  <p className={`text-sm font-semibold mt-0.5 ${value === 'Pending' ? 'text-amber-700' : 'text-slate-900'}`}>{value}</p>
+                  <p className="text-sm font-semibold mt-0.5 text-slate-900">{value}</p>
                 </div>
               ))}
             </div>
@@ -892,20 +883,14 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
                 <div className="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-lg p-3">
                   <div className="flex-1">
                     <p className="text-xs text-slate-500">Nominee PAN</p>
-                    <p className="text-sm font-mono font-semibold text-slate-900">{nomineePanRevealed ? 'FGHIJ5678K' : '••••••••••'}</p>
+                    <p className="text-sm font-mono font-semibold text-slate-900">••••••••••</p>
                   </div>
-                  <button onClick={() => handleReveal(setNomineePanRevealed, nomineePanRevealed, 'PAN')} className="text-xs text-amber-700 flex items-center gap-1 hover:underline">
-                    {nomineePanRevealed ? <EyeOff size={12} /> : <Eye size={12} />} {nomineePanRevealed ? 'Hide' : 'Reveal'}
-                  </button>
                 </div>
                 <div className="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-lg p-3">
                   <div className="flex-1">
                     <p className="text-xs text-slate-500">Nominee Aadhaar</p>
-                    <p className="text-sm font-mono font-semibold text-slate-900">{nomineeAadhaarRevealed ? '778944447789' : '••••-••••-••••'}</p>
+                    <p className="text-sm font-mono font-semibold text-slate-900">••••-••••-••••</p>
                   </div>
-                  <button onClick={() => handleReveal(setNomineeAadhaarRevealed, nomineeAadhaarRevealed, 'Aadhaar')} className="text-xs text-amber-700 flex items-center gap-1 hover:underline">
-                    {nomineeAadhaarRevealed ? <EyeOff size={12} /> : <Eye size={12} />} {nomineeAadhaarRevealed ? 'Hide' : 'Reveal'}
-                  </button>
                 </div>
               </div>
             </div>
@@ -914,34 +899,15 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
 
         {/* ── Tab 4: Witness ── */}
         <div className="space-y-4">
-          {[witnessData.w1, witnessData.w2].map((w, i) => (
-            <div key={i} className="card space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-                  <Users size={16} className="text-blue-600" /> Witness {i + 1}
-                  {!w.required && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full ml-2">Optional / Not required</span>}
-                </h3>
-                {w.required && <StatusBadge label={w.signatureObtained ? 'signed' : 'pending'} size="sm" />}
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {[
-                  { label: 'Full Name', value: w.name },
-                  { label: 'Witness Member / Folio', value: w.memberNumber },
-                  { label: 'Shareholder Verification', value: w.shareholderVerification },
-                  { label: 'Relationship', value: w.relation },
-                  { label: 'PAN Document Status', value: w.panStatus },
-                  { label: 'Aadhaar Document Status', value: w.aadhaarStatus },
-                  { label: 'Signature Status', value: w.signatureObtained ? 'Signed' : 'Pending' },
-                  { label: 'Signature Date', value: w.date ? new Date(w.date).toLocaleDateString('en-IN') : 'Pending' },
-                ].map(({ label, value }) => (
-                  <div key={label} className="bg-slate-50 rounded-lg p-3">
-                    <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{label}</p>
-                    <p className={`text-sm font-semibold mt-0.5 ${value === 'Pending' ? 'text-amber-700' : 'text-slate-900'}`}>{value}</p>
-                  </div>
-                ))}
-              </div>
+          <div className="card space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                <Users size={16} className="text-blue-600" /> Witness Details
+              </h3>
+              <StatusBadge label="Unavailable" size="sm" />
             </div>
-          ))}
+            <p className="text-sm text-slate-500">No API-backed witness details are available for this application yet.</p>
+          </div>
         </div>
 
         {/* ── Tab 5: Eligibility & Limit ── */}

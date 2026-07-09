@@ -22,6 +22,10 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - Architecture review `2026-07-10_041851_architecture_review` created corrective slice `005I2`
   because Application Detail still contained hardcoded mock-loan state after 005I. Run 005I2 before
   this slice so the intake detail UI remains backend-owned before eligibility/appraisal state grows.
+- 005I2 should be treated as complete only if staff application detail exposes nullable,
+  metadata-only `rejection_note` on the staff detail response, borrower portal detail still omits
+  staff rejection-note metadata, and `ApplicationDetail.tsx` no longer special-cases `LO00000035`
+  or renders hardcoded witness/nominee sensitive data.
 - 006A created one-to-one `eligibility_assessments` storage and the nested run/read endpoints.
 - 006A currently persists `default_check`, `document_check`, `terms_acceptance_check`,
   `purpose_check`, and `nominee_check` as `pending`; 006B must replace those pending values with
@@ -58,6 +62,16 @@ None for this slice, except updating frontend documentation or fixtures if requi
   `pending_manual_evidence` when active-member manual evidence remains unresolved.
 - Use 005D/005E checklist/application-document metadata for document evidence rather than reading
   raw files or duplicating document storage.
+- Treat existing `Member.default_status = no_default` as the only automatic pass for
+  `default_check`; any active default/default-like value should fail unless a future source-backed
+  override slice implements exception handling.
+- Treat `LoanApplication.terms_acceptance_flag = true` as the only automatic pass for
+  `terms_acceptance_check`.
+- Treat `purpose_category in {crop_production, agriculture_activity}` as pass for `purpose_check`;
+  other values fail without changing application status/stage.
+- For `nominee_check`, use existing nominee facts only where available. If the current application
+  schema cannot identify the submitted nominee, leave the check as a documented pending/manual
+  evidence result rather than inventing a nominee selection rule.
 - Keep loan-limit calculation, appraisal-note create/edit/submit, Credit Manager review, and
   sanction submission out of scope.
 

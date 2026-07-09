@@ -403,3 +403,16 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   Application Detail state, render unavailable/empty states instead of synthetic person data, expose
   optional staff rejection-note summary on the detail response, and add backend/frontend regression
   tests proving a real `LO00000035` reference does not trigger mock status/document overrides.
+
+## Application Detail API State Hardening
+- 005I2 implemented the architecture-review correction. Staff application detail now serializes
+  `rejection_note` as either `null` or a metadata-only summary with IDs, status/stage/category,
+  reapply flag, actor IDs, timestamps, communication mode, and nullable communication ID.
+- Staff detail omits rejection-note `detailed_reason`, leaves `application_status` backend-owned,
+  and read-only detail access writes no success audit/workflow event.
+- Borrower portal application detail continues to omit staff rejection-note metadata.
+- `ApplicationDetail.tsx` no longer special-cases `LO00000035`, no longer forces
+  `Sanctioned · Documentation Pending`, fixed document blocker counts, or Compliance/CS ownership,
+  and no longer renders hardcoded witness rows or hardcoded nominee PAN/Aadhaar reveal values.
+- Missing API-backed nominee/witness facts render neutral unavailable states using existing visual
+  patterns.
