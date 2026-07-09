@@ -1,54 +1,57 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-09_172309_normal_run
+2026-07-09_175511_normal_run
 
 ## Current Status
-`005A-loan-application-draft-create-update` completed successfully.
+`005B-application-submit-and-status-transition` completed successfully.
 
 ## What Completed
-- Added the `sfpcl_credit.applications` Django app and a non-destructive
-  `loan_applications` migration for draft persistence.
-- Implemented `POST /api/v1/loan-applications/`, `GET /api/v1/loan-applications/{id}/`, and
-  `PATCH /api/v1/loan-applications/{id}/`.
-- Drafts store member FK, borrower type snapshot, requested amount, requested tenure, declared
-  purpose, purpose category, optional land/crop/bank/cancelled-cheque references by ID, borrower
-  request notes, status/stage/completeness shell fields, and actor timestamps.
-- Responses include member summaries plus land/crop and masked bank/cancelled-cheque metadata only.
-  They preserve `account_holder_name` and do not expose PAN, Aadhaar, full bank account numbers,
-  protected token values, or hashes.
-- Successful draft create writes metadata-only `applications.loan_application.created` audit plus a
-  `loan_application` workflow event into `draft`; successful patch writes
-  `applications.loan_application.updated` audit and no workflow event because no state transition
-  occurs.
-- Added API regressions for create/read, patch ownership preservation, cross-member reference
-  rejection, permissions, unknown members, malformed UUIDs, and non-positive amount validation.
-- Created `docs/working/digests/epic-005-application-intake.md` and updated API contracts and A-035.
-- Sharpened `005B` and `005C` with concrete source-backed requirements.
+- Added `POST /api/v1/loan-applications/{loan_application_id}/submit/`.
+- Submit requires `applications.loan_application.submit`.
+- Submit permits only `draft -> submitted` and returns `409 INVALID_STATE_TRANSITION` for repeat or
+  non-draft submits.
+- Submit stamps `submitted_at` and `submitted_by_user`, updates `updated_at`/`updated_by_user`, and
+  preserves `current_stage = initial_loan_request`, `completeness_status = not_started`, and
+  nullable `application_reference_number`.
+- Submitted applications remain readable through `GET /api/v1/loan-applications/{id}/`.
+- Draft `PATCH` now rejects submitted applications through the existing draft-only validation path.
+- Submit validates the persisted 005B request facts: borrower member, positive
+  `required_loan_amount`, nonblank `declared_purpose`, and nonblank `purpose_category`.
+- Successful submit writes metadata-only `applications.loan_application.submitted` audit and a
+  `loan_application` workflow event from `draft` to `submitted`.
+- Submit responses and audit metadata preserve 005A/Epic 004 sensitive-data boundaries:
+  no PAN, Aadhaar, full bank account numbers, token values, or hashes; selected bank metadata still
+  uses `account_holder_name`, masked account values, and `can_view_full: false`.
+- Updated `docs/working/API_CONTRACTS.md`, `docs/working/ASSUMPTIONS.md`, and
+  `docs/working/digests/epic-005-application-intake.md`.
+- Sharpened `005C-reference-number-generation-and-loan-request-register` and
+  `005D-application-document-checklist`.
 
 ## Explicit Deferrals
-- Submit/status transition starts in `005B`.
-- Formal `LO...` reference generation and loan request register are deferred to `005C` per A-035.
-- Completeness check, application document checklist/verification, deficiencies, eligibility, loan
-  limit, appraisal, sanction, disbursement, member portal flows, and frontend application wiring
-  remain future slices.
-- Draft save intentionally allows incomplete KYC/documents; submit/completeness blockers own those
-  rules.
-- Duplicate active borrower/bank warnings, bank full-number reveal, bank verification letters,
-  signature mismatch resolution, payment initiation, and disbursement-readiness UI remain deferred.
+- Formal `LO...` reference generation and loan request register remain `005C`.
+- `submission_notes` is accepted as JSON but not persisted; no source-backed column exists yet.
+- Nominee checks, application document placeholders, document checklist, completeness check,
+  deficiencies, eligibility, loan limit, appraisal, sanction, disbursement, payment initiation,
+  member portal flows, and frontend application wiring remain future slices.
+- A-036 records that the broader source submit gate mentions nominee/document placeholders, but
+  005B deliberately leaves those to document/completeness slices.
 
 ## Evidence
-See `.ralph/runs/2026-07-09_172309_normal_run/`.
+See `.ralph/runs/2026-07-09_175511_normal_run/`.
 
 Key artifacts: `execution-plan.md`, `review-packet.md`, `risk-assessment.md`,
-`changed-files.txt`, `final-summary.md`, and gate logs under `evidence/terminal-logs/`.
+`changed-files.txt`, `final-summary.md`, `api-response-examples.md`, and gate logs under
+`evidence/terminal-logs/`.
 
-No visual evidence was required because 005A was backend/API-only.
+No visual evidence was required because 005B was backend/API-only.
 
 ## Notes For Next Run
-- Run `005B-application-submit-and-status-transition` next.
-- `005B` should add `POST /api/v1/loan-applications/{id}/submit/`, permit only
-  `draft -> submitted`, stamp submitted actor/time, write metadata-only audit/workflow evidence,
-  and keep `application_reference_number` nullable for 005C.
+- Run `005C-reference-number-generation-and-loan-request-register` next.
+- 005C must re-check the exact source-backed trigger for formal `LO...` generation because the
+  portal copy says borrowers receive the reference number after submitted details/documents are
+  checked.
+- Keep document checklist verification, completeness, deficiencies, eligibility, appraisal,
+  sanction, disbursement, and frontend wiring out of 005C unless the selected slice is explicitly
+  rewritten.
 - Use `docs/working/digests/epic-005-application-intake.md` before reopening large source docs.
-- Preserve 005A sensitive data boundaries and draft serializer shape in submit responses.

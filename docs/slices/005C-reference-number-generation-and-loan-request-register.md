@@ -18,8 +18,14 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 
 ## Prior Slice Facts
 - 005A created persisted loan-application drafts with nullable `application_reference_number`.
-- 005B should submit the draft and leave formal `LO...` reference generation untouched unless its
-  source pass explicitly changes A-035.
+- 005B implemented `POST /api/v1/loan-applications/{loan_application_id}/submit/` with source-backed
+  permission `applications.loan_application.submit`.
+- 005B permits only `draft -> submitted`, stamps `submitted_at` and `submitted_by_user`, preserves
+  `current_stage = initial_loan_request`, keeps `completeness_status = not_started`, locks direct
+  `PATCH` updates after submit, and leaves `application_reference_number` nullable.
+- 005B recorded A-035/A-036: the member portal source says the formal `LO...` reference is received
+  after submitted details/documents are checked; nominee/document placeholder gates remain future
+  document/completeness work. Re-check the exact reference trigger before implementing 005C.
 - Use `docs/working/digests/epic-005-application-intake.md` before reopening large source docs.
 - Epic 004/005A sensitive data boundaries remain binding: register rows, audit metadata, and
   responses must not include full PAN, Aadhaar, full bank account numbers, token values, or hashes.
@@ -87,12 +93,14 @@ Enforce source-doc business rules and block invalid state transitions.
 
 Specific validation to cover:
 - Reject reference generation for unknown applications.
-- Reject reference generation for draft applications if the chosen transition requires submitted
-  status.
+- Reject reference generation for draft applications if the chosen transition requires at least
+  `submitted` status.
 - Reject duplicate register/reference generation for an application that already has a formal
   reference or register entry.
 - Ensure generated references are unique and zero-padded in the `LO00000001` style.
 - Preserve nullable/no-reference behavior for drafts before the chosen transition.
+- Do not let a failed/duplicate reference attempt create partial register rows, workflow events, or
+  audit entries.
 
 ## Test Cases
 Unit/service/API/permission tests plus frontend tests where UI is touched.

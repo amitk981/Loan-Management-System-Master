@@ -10,11 +10,28 @@ from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.members.models import BankAccount, CancelledCheque, CropPlan, LandHolding, Member
 from sfpcl_credit.workflows.events import record_workflow_event
+from sfpcl_credit.workflows.guard import (
+    TransitionDefinition,
+    evaluate_transition,
+)
 
 
 APPLICATION_READ_PERMISSION = "applications.loan_application.read"
 APPLICATION_CREATE_PERMISSION = "applications.loan_application.create"
 APPLICATION_UPDATE_PERMISSION = "applications.loan_application.update"
+APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
+APPLICATION_TRANSITIONS = (
+    TransitionDefinition(
+        entity_type="loan_application",
+        action_code="submit",
+        from_states=frozenset({LoanApplication.STATUS_DRAFT}),
+        to_state=LoanApplication.STATUS_SUBMITTED,
+        required_permission=APPLICATION_SUBMIT_PERMISSION,
+        audit_action="applications.loan_application.submitted",
+        workflow_name="loan_application",
+        workflow_label="Application submitted for completeness review.",
+    ),
+)
 _CREATE_FIELDS = {
     "member_id",
     "required_loan_amount",
@@ -50,6 +67,10 @@ def user_can_update_applications(user):
     return APPLICATION_UPDATE_PERMISSION in auth_service.effective_permission_codes(user)
 
 
+def user_can_submit_applications(user):
+    return APPLICATION_SUBMIT_PERMISSION in auth_service.effective_permission_codes(user)
+
+
 def get_application(application_id):
     return (
         LoanApplication.objects.select_related(
@@ -60,6 +81,7 @@ def get_application(application_id):
             "cancelled_cheque",
             "created_by_user",
             "updated_by_user",
+            "submitted_by_user",
         )
         .filter(loan_application_id=application_id)
         .first()
@@ -125,6 +147,51 @@ def update_draft(application, payload, actor, request_ip="", request_user_agent=
     return application
 
 
+@transaction.atomic
+def submit_application(
+    application,
+    actor,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+    actor_permissions=None,
+):
+    transition = evaluate_transition(
+        current_state=application.application_status,
+        requested_action="submit",
+        actor_permissions=actor_permissions or auth_service.effective_permission_codes(actor),
+        transitions=APPLICATION_TRANSITIONS,
+    )
+    _validate_submit_facts(application)
+    old_value_json = _audit_snapshot(application)
+    application.application_status = transition.next_state
+    application.submitted_at = timezone.now()
+    application.submitted_by_user = actor
+    application.updated_at = application.submitted_at
+    application.updated_by_user = actor
+    application.save()
+    _audit_application(
+        application,
+        actor,
+        transition.definition.audit_action,
+        old_value_json,
+        request_ip,
+        request_user_agent,
+        request_id,
+    )
+    record_workflow_event(
+        actor=actor,
+        workflow_name=transition.definition.workflow_name,
+        entity_type=transition.definition.entity_type,
+        entity_id=application.loan_application_id,
+        from_state=transition.previous_state,
+        to_state=transition.next_state,
+        trigger_reason=transition.definition.workflow_label,
+        action_code=transition.definition.action_code,
+    )
+    return application
+
+
 def serialize_application(application):
     return {
         "loan_application_id": str(application.loan_application_id),
@@ -149,6 +216,10 @@ def serialize_application(application):
         "created_by_user_id": str(application.created_by_user_id)
         if application.created_by_user_id
         else None,
+        "submitted_at": _datetime(application.submitted_at),
+        "submitted_by_user_id": str(application.submitted_by_user_id)
+        if application.submitted_by_user_id
+        else None,
         "updated_at": _datetime(application.updated_at),
         "updated_by_user_id": str(application.updated_by_user_id)
         if application.updated_by_user_id
@@ -162,6 +233,20 @@ def validation_field_errors(exc):
     if isinstance(exc, LoanApplicationValidationError):
         return exc.field_errors
     return {"non_field_errors": str(exc)}
+
+
+def _validate_submit_facts(application):
+    errors = {}
+    if application.member_id is None:
+        errors["member_id"] = "Borrower member is required."
+    if application.required_loan_amount is None or application.required_loan_amount <= 0:
+        errors["required_loan_amount"] = "Requested amount must be greater than zero."
+    if not application.declared_purpose.strip():
+        errors["declared_purpose"] = "Declared purpose is required before submit."
+    if not application.purpose_category.strip():
+        errors["purpose_category"] = "Purpose category is required before submit."
+    if errors:
+        raise LoanApplicationValidationError(errors)
 
 
 def _clean_update_payload(payload, member):

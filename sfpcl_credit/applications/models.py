@@ -7,6 +7,7 @@ from django.utils import timezone
 
 class LoanApplication(models.Model):
     STATUS_DRAFT = "draft"
+    STATUS_SUBMITTED = "submitted"
     STAGE_INITIAL = "initial_loan_request"
     COMPLETENESS_NOT_STARTED = "not_started"
 
@@ -68,6 +69,13 @@ class LoanApplication(models.Model):
     )
     terms_acceptance_flag = models.BooleanField(default=False)
     submitted_at = models.DateTimeField(blank=True, null=True)
+    submitted_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="submitted_loan_applications",
+    )
     created_at = models.DateTimeField(default=timezone.now)
     created_by_user = models.ForeignKey(
         "identity.User",
@@ -109,10 +117,12 @@ class LoanApplication(models.Model):
             raise ValidationError(
                 {"required_loan_amount": "Requested amount must be greater than zero."}
             )
-        if self.application_status != self.STATUS_DRAFT:
-            raise ValidationError({"application_status": "Only draft status is supported."})
+        if self.application_status not in {self.STATUS_DRAFT, self.STATUS_SUBMITTED}:
+            raise ValidationError({"application_status": "Unsupported application status."})
         if self.current_stage != self.STAGE_INITIAL:
             raise ValidationError({"current_stage": "Only initial loan request stage is supported."})
+        if self.application_status == self.STATUS_SUBMITTED and self.submitted_at is None:
+            raise ValidationError({"submitted_at": "Submitted applications require submitted_at."})
 
     def save(self, *args, **kwargs):
         if self.member_id and not self.borrower_type:

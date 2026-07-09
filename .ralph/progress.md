@@ -1,5 +1,29 @@
 # Ralph Progress Log
 
+## 2026-07-09 18:15:45 - 2026-07-09_175511_normal_run
+- Agent tool used: codex
+- Slice attempted: 005B-application-submit-and-status-transition
+- Summary: Implemented loan-application submit as a backend/API slice. Added
+  `POST /api/v1/loan-applications/{loan_application_id}/submit/`, permitting only
+  `draft -> submitted` through the workflow guard foundation. Submit stamps `submitted_at` and
+  `submitted_by_user`, preserves `current_stage = initial_loan_request`,
+  `completeness_status = not_started`, and nullable `application_reference_number`, and locks
+  draft `PATCH` updates after submit. Successful submit writes metadata-only
+  `applications.loan_application.submitted` audit plus a `loan_application` workflow event from
+  `draft` to `submitted`. Responses preserve 005A member/bank masking boundaries and
+  `account_holder_name`.
+- Tests run: submit TDD red/green; focused loan-application API tests (5/5); backend
+  `manage.py check`; backend tests (243/243); `makemigrations --check --dry-run`; backend coverage
+  96% (floor 85); frontend `npm run lint`; `npm run typecheck`; `npm test` (80/80);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_175511_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus API response examples.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005C-reference-number-generation-and-loan-request-register`; keep document
+  checklist, completeness, deficiencies, eligibility, appraisal, sanction, disbursement, and
+  frontend wiring out of scope.
+
 ## 2026-07-09 17:23:09 - 2026-07-09_172309_normal_run
 - Agent tool used: codex
 - Slice attempted: 005A-loan-application-draft-create-update
@@ -1694,6 +1718,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_172309_normal_run/.ralph/runs/2026-07-09_172309_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_172309_normal_run/.ralph/runs/2026-07-09_172309_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 18:35:19 - 2026-07-09_175511_normal_run
+- Agent tool used: codex
+- Slice attempted: 005B-application-submit-and-status-transition
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_175511_normal_run/.ralph/runs/2026-07-09_175511_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_175511_normal_run/.ralph/runs/2026-07-09_175511_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

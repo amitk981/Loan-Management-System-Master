@@ -244,7 +244,7 @@ Rules:
   encrypted token columns, hash values, or submitted identifier-derived values.
 - Sensitive reveal writes no `WorkflowEvent`.
 
-## Loan Application Draft API (005A)
+## Loan Application Draft and Submit API (005A-005B)
 
 `POST /api/v1/loan-applications/`
 
@@ -273,28 +273,48 @@ Request:
 
 Patch accepts only the draft facts above except `member_id`; borrower ownership is preserved.
 
+`POST /api/v1/loan-applications/{loan_application_id}/submit/`
+
+Request body is accepted as a JSON object. `submission_notes` may be supplied by clients, but 005B
+does not persist notes because no source-backed column exists yet.
+
 Rules:
 - All endpoints require session-bound bearer authentication.
 - `POST` requires `applications.loan_application.create`; `GET` requires
   `applications.loan_application.read`; `PATCH` requires
-  `applications.loan_application.update`.
-- 005A stores draft applications only. `application_status` is `draft`,
-  `current_stage` is `initial_loan_request`, and `completeness_status` is
-  `not_started`.
-- `application_reference_number` is nullable for drafts; formal `LO...`
-  generation starts in a later submit/completeness slice.
+  `applications.loan_application.update`; submit requires
+  `applications.loan_application.submit`.
+- 005A stores draft applications. 005B permits only `draft -> submitted`.
+  `current_stage` remains `initial_loan_request`, `completeness_status` remains
+  `not_started`, and submitted applications are locked from `PATCH`.
+- `application_reference_number` remains nullable through submit; formal
+  `LO...` generation starts in the later reference/completeness slice because
+  the member portal source says the borrower receives the reference number after
+  submitted details and documents are checked.
 - Required draft validation is intentionally narrow: known borrower member,
   well-formed UUID references, subresource references owned by the borrower
   member, and positive requested amount when supplied.
-- Draft saves allow incomplete KYC/documents; submit and completeness blockers
-  are future slices.
+- Draft saves allow incomplete KYC/documents. 005B submit requires the
+  source-backed request facts already persisted by 005A: borrower member,
+  positive `required_loan_amount`, nonblank `declared_purpose`, and nonblank
+  `purpose_category`. Nominee, application-document placeholder, completeness,
+  and deficiency gates remain future slices.
 - Responses include member identity summaries plus land/crop and masked
   bank/cancelled-cheque metadata by ID. They never include PAN, Aadhaar, full
   bank account numbers, encrypted values, protected tokens, or hash fields.
+  005B responses additionally include nullable `submitted_at` and
+  `submitted_by_user_id`.
 - Successful create writes `applications.loan_application.created` audit metadata
   plus one `loan_application` workflow event into `draft`. Successful patch
   writes `applications.loan_application.updated` audit metadata and does not
   create a workflow event because no source-backed state transition occurs.
+  Successful submit writes `applications.loan_application.submitted` audit
+  metadata plus one `loan_application` workflow event from `draft` to
+  `submitted`.
+- Unknown applications return `404 NOT_FOUND`; missing permissions return
+  `403 PERMISSION_DENIED`; invalid submit facts return `400 VALIDATION_ERROR`;
+  re-submit or other non-draft submit attempts return
+  `409 INVALID_STATE_TRANSITION`.
 
 ## Member Bank Account and Cancelled Cheque Metadata API (004J)
 
