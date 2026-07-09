@@ -388,3 +388,18 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   portal route services.
 - New tests prove portal audit payloads remain metadata-only and do not include PAN, Aadhaar, full
   bank account values, OTP values, token hashes, passwords, encrypted values, or raw document data.
+
+## Architecture Review 2026-07-10 04:18 - Application Detail API State Hardening
+- Reviewed slices 005G2, 005H, 005I, and 006A after prior architecture-review commit `353c6df`.
+- 005I successfully moved Application List, New Application, and most Application Detail loading to
+  staff APIs, but `ApplicationDetail.tsx` still contains a frontend-only `LO00000035` special case
+  that can override real backend stage/document/owner/status display, plus hardcoded witness rows
+  and hardcoded nominee sensitive placeholder values.
+- 005I's own slice file requires Application Detail to show API-backed detail state, document
+  checklist state, deficiency state, and 005H rejection-note state where an existing detail slot can
+  support it. The current staff application detail serializer does not expose rejection-note metadata
+  for the UI to render.
+- Corrective slice `005I2-application-detail-api-state-hardening` must remove the hardcoded
+  Application Detail state, render unavailable/empty states instead of synthetic person data, expose
+  optional staff rejection-note summary on the detail response, and add backend/frontend regression
+  tests proving a real `LO00000035` reference does not trigger mock status/document overrides.

@@ -82,3 +82,12 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
   calculation or record the ambiguity instead of inventing the rule.
 - Permission for calculation is `credit.loan_limit.calculate`; override requires
   `credit.loan_limit.override` and is out of scope for 006C.
+
+## Architecture Review 2026-07-10 04:18 - 006A Spot Check
+- 006A implemented only the active-member portion of the eligibility assessment contract and left
+  default, document, terms, purpose, and nominee checks pending for 006B as planned.
+- The review verified 006A preserves the formal `LO...` reference, complete-documentation, and
+  credit-assessment state guard; `credit.eligibility.run`; existing application object access; and
+  no-success-evidence behavior on denied/invalid paths.
+- Full review-run gates passed with 277 backend tests, 95% backend coverage, 95 frontend tests,
+  frontend lint/typecheck/build, backend check, migration sync, and `git diff --check`.

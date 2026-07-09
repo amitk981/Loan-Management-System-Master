@@ -2,6 +2,97 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-10 04:18 - Architecture Review 2026-07-10_041851_architecture_review
+
+Reviewed completed product slices since the prior architecture review commit `353c6df`:
+- `005G2-member-portal-session-and-audit-contract-hardening` (`210a353`)
+- `005H-rejection-note-shell` (`d292f2c`)
+- `005I-application-intake-frontend-wiring` (`261b170`)
+- `006A-active-member-eligibility-service` (`71ef4cb`)
+
+This review focused on the product diff, slice files, run evidence, working API contracts, Epic 005
+and Epic 006 digests, and targeted implementation/test files. Broad `docs/source/` files were not
+re-read because the needed source extracts were already distilled into the reviewed digests and slice
+files.
+
+### Finding 1 - Medium - Application Detail still contains mock-loan state that can override backend data
+
+`005I` correctly removed direct `mockData.ts` imports from Application List, New Application, and
+Application Detail and added staff API client tests. However, `ApplicationDetail.tsx` still contains
+a frontend-only special case for `LO00000035` and hardcoded witness/sensitive nominee display data.
+If a real backend application receives reference `LO00000035`, the UI can force
+`Sanctioned · Documentation Pending`, `11 items pending`, Compliance/CS ownership, and blocked
+documentation/SAP/disbursement stages regardless of the backend response
+(`sfpcl-lms/src/pages/applications/ApplicationDetail.tsx:225-309`). The Witness tab still renders
+synthetic people from `witnessData` (`ApplicationDetail.tsx:49-62`, `ApplicationDetail.tsx:915-940`).
+
+This violates 005I's acceptance criterion that the intake surface runs on backend data and its
+concrete requirement that Application Detail render real status, document checklist state,
+deficiencies, and rejection-note state while preserving existing visual patterns. It is a product
+correctness issue, not only cleanup: a live reference number can hit the old prototype branch.
+
+Corrective action: created
+`docs/slices/005I2-application-detail-api-state-hardening.md`, made `006B` depend on it, and added
+the extract to the Epic 005 digest. The corrective slice must remove the `LO00000035` branch,
+replace hardcoded witnesses/sensitive nominee values with API-backed or empty states, and add a
+frontend regression proving an API-backed `LO00000035` does not receive mock overrides.
+
+### Finding 2 - Low - Rejection-note state is created by 005H but not readable through Application Detail
+
+`005H` added staff-only rejection-note create/send endpoints with meaningful permission, state,
+audit, workflow, and no-side-effect tests. `005I` then asked the staff detail UI to show
+rejection-note state as separate metadata when available. The current detail serializer returns the
+application and register summary only (`sfpcl_credit/applications/services.py:1105-1139`), while
+rejection-note metadata is serialized only in create/send responses
+(`sfpcl_credit/applications/services.py:1233-1259`). The 005I review packet correctly notes this as
+a known follow-up, but the queued work needs an explicit owner before appraisal/eligibility UI state
+accumulates around the same detail page.
+
+Corrective action: included in `005I2`. It should expose nullable, metadata-only `rejection_note`
+summary on the staff application detail response and render it without changing
+`application_status` or adding new visual patterns. Borrower portal application routes must not
+receive staff rejection-note metadata.
+
+### Finding 3 - Pass - Portal session and audit hardening closes the prior high-risk portal findings
+
+`005G2` centralises session-bound portal authority in `validate_portal_session_authority(...)`.
+Existing `/auth/me`, refresh, portal password change, portal own-data, and portal application routes
+now reject already-issued sessions after the linked `PortalAccount` is no longer active, revoking
+the session with `portal_account_status_changed`. The audit action names now match the source portal
+contract for activation, login success/failure, password change, and portal application draft/save/
+submit while staff routes keep internal `applications.loan_application.*` audit actions. Tests cover
+suspended-session denial, source audit action names, staff-vs-portal audit separation, and sensitive
+payload exclusions.
+
+Corrective action: none.
+
+### Finding 4 - Pass - Rejection-note and 006A eligibility backend tests assert real behavior
+
+The reviewed backend tests are substantive rather than coverage padding. `005H` covers create/send,
+permission denial, object-scope denial, portal-token denial, suspended-token rejection, invalid
+states, duplicate create/send, metadata-only audit, and workflow events. `006A` covers the missing
+endpoint red test, successful run/read, verified active-member pass, manual-evidence result, invalid
+state, permission/object denial, no assessment/audit/workflow side effects on denied/invalid paths,
+and one-to-one rerun behavior.
+
+Corrective action: none.
+
+### Finding 5 - Watch - Staff list/register object filtering is correct but not scalable
+
+The new staff list and register APIs preserve object access by filtering the full matched queryset in
+Python before pagination (`sfpcl_credit/applications/services.py:259-352`). This is safe for current
+prototype-sized data and produces visible-row pagination, but it will not scale once the loan
+application table grows. A later operational hardening slice should push object-scope predicates
+into the queryset when assignment/team rules are more complete; no immediate corrective product
+slice is required because the current implementation does not leak data and tests cover the visible
+contract.
+
+Functional-spec spot check: 005G2/005H/005I continue Epic 005 intake/portal/rejection-note
+foundations. 006A starts Epic 006 by implementing M04 eligibility-assessment storage/API and only the
+BR-004 through BR-007 active-member check, explicitly deferring default, document, terms, purpose,
+and nominee checks to 006B. No reviewed slice claims to complete the full M04 appraisal or loan-limit
+workflow.
+
 ## 2026-07-10 01:01 - Architecture Review 2026-07-10_005716_architecture_review
 
 Reviewed completed product slices since the prior architecture review commit `49da479`:

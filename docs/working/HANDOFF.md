@@ -1,62 +1,62 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-10_032758_normal_run
+2026-07-10_041851_architecture_review
 
 ## Current Status
-Completed `006A-active-member-eligibility-service`.
+Completed architecture review for the four-slice window after commit `353c6df`:
+- `005G2-member-portal-session-and-audit-contract-hardening`
+- `005H-rejection-note-shell`
+- `005I-application-intake-frontend-wiring`
+- `006A-active-member-eligibility-service`
 
-What changed:
-- Added `EligibilityAssessment` persistence in `applications` with a one-to-one
-  `eligibility_assessments` row per loan application.
-- Added migration `sfpcl_credit/applications/migrations/0007_eligibilityassessment.py`.
-- Added:
-  - `POST /api/v1/loan-applications/{loan_application_id}/eligibility-assessment/run/`
-  - `GET /api/v1/loan-applications/{loan_application_id}/eligibility-assessment/`
-- Run requires `credit.eligibility.run` plus existing application object access.
-- Read uses existing application read/object access.
-- Run is allowed only for formal `LO...` referenced applications with
-  `application_status = reference_generated`, `completeness_status = complete`, and
-  `current_stage = credit_assessment`.
-- 006A computes only `member_active_check`; default/document/terms/purpose/nominee checks remain
-  `pending` for 006B.
-- Existing verified `Member.active_member_status` facts can produce `pass` or `relaxation`.
-  Otherwise active members without source-backed continuous produce/service history return
-  `manual_evidence_required`; assumption A-046 records this.
-- Successful run writes metadata-only `eligibility.assessed` audit and an
-  `eligibility_assessment` workflow event. Denied and invalid-state paths are tested to create no
-  success evidence.
-- Updated `docs/working/API_CONTRACTS.md`, `docs/working/ASSUMPTIONS.md`, and the Epic 006 digest.
-- Marked 006A complete and sharpened 006B/006C.
+What changed in this review:
+- Appended findings to `docs/working/REVIEW_FINDINGS.md`.
+- Created corrective slice `005I2-application-detail-api-state-hardening`.
+- Made `006B-default-document-purpose-and-terms-eligibility-checks` depend on `005I2`.
+- Added distilled review extracts to the Epic 005 and Epic 006 digests.
+- Reset architecture-review cadence in `.ralph/state.json`.
+
+Primary finding:
+- `005I` moved staff intake screens toward API-backed data, but `ApplicationDetail.tsx` still has a
+  frontend-only `LO00000035` special case and hardcoded witness/sensitive nominee display data.
+  This can override real backend status/document/owner display for a live `LO00000035` reference.
+- The same corrective slice should expose nullable staff rejection-note metadata on application
+  detail so the UI can show 005H rejection-note state separately from `application_status`.
+
+Passes:
+- `005G2` materially closed the prior portal session/audit findings.
+- `005H` and `006A` have meaningful backend behavior tests with no-side-effect assertions.
+- `006A` correctly limits itself to active-member eligibility and leaves default/document/terms/
+  purpose/nominee checks to 006B.
 
 ## Validation
-- Red focused test: run endpoint returned `404` before implementation.
-- Green focused eligibility tests passed: 3 tests.
 - Backend `manage.py check` passed.
-- Backend tests passed: 277 tests.
 - Backend `makemigrations --check --dry-run` passed.
-- Backend coverage passed: 95%, above 85% floor.
+- Backend coverage test run passed: 277 tests.
+- Backend coverage report passed: 95%, above 85% floor.
 - Frontend lint passed.
 - Frontend typecheck passed.
 - Frontend tests passed: 95 tests.
 - Frontend build passed.
 - `git diff --check` passed.
 
-Evidence is in `.ralph/runs/2026-07-10_032758_normal_run/`.
+Evidence is in `.ralph/runs/2026-07-10_041851_architecture_review/`.
 
 ## Next Run
-Architecture review is due before the next implementation slice because
-`slices_completed_since_architecture_review` is now 4.
+Run `005I2-application-detail-api-state-hardening`.
 
-After architecture review, run `006B-default-document-purpose-and-terms-eligibility-checks`.
+Key instructions for 005I2:
+- Remove all `LO00000035` special-case status/document/owner/stage overrides from
+  `ApplicationDetail.tsx`.
+- Remove hardcoded witness rows and hardcoded nominee sensitive values; render API-backed facts or
+  empty/unavailable states using existing visual patterns.
+- Add nullable `rejection_note` metadata to the staff application detail response, with read-only
+  no-audit behavior and existing application read/object access.
+- Do not expose staff rejection-note metadata on borrower portal routes.
+- Add backend tests for detail response with/without rejection note and object denial.
+- Add frontend render regressions proving `LO00000035` does not trigger mock overrides and
+  rejection-note metadata displays when returned.
+- Preserve frontend design rules: existing components/classes only, no new styling.
 
-Key instructions for 006B:
-- Reuse 006A's run/read endpoints and one-to-one assessment row.
-- Replace `default_check`, `document_check`, `terms_acceptance_check`, `purpose_check`, and
-  `nominee_check` pending values with source-backed decisions.
-- Use existing member default status, application document checklist metadata, purpose category,
-  terms flag, and nominee facts where available.
-- Do not implement eligibility override, loan limits, appraisal notes, Credit Manager review, or
-  sanction submission.
-- Preserve 006A permission/object access/state guard and no-success-evidence behavior on denied or
-  invalid paths.
+After 005I2, run `006B-default-document-purpose-and-terms-eligibility-checks`.

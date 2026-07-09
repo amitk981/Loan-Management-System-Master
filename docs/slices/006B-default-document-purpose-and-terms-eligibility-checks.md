@@ -16,8 +16,12 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 
 ## Depends On
 - 006A
+- 005I2
 
 ## Prior Slice Handoff
+- Architecture review `2026-07-10_041851_architecture_review` created corrective slice `005I2`
+  because Application Detail still contained hardcoded mock-loan state after 005I. Run 005I2 before
+  this slice so the intake detail UI remains backend-owned before eligibility/appraisal state grows.
 - 006A created one-to-one `eligibility_assessments` storage and the nested run/read endpoints.
 - 006A currently persists `default_check`, `document_check`, `terms_acceptance_check`,
   `purpose_check`, and `nominee_check` as `pending`; 006B must replace those pending values with
