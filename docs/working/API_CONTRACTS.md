@@ -1692,3 +1692,54 @@ Frontend wiring:
   `GET /api/v1/portal/applications/`.
 - MP10 renders selected application status/detail from
   `GET /api/v1/portal/applications/{loan_application_id}/`.
+
+## Eligibility assessment APIs (006A)
+
+Protected staff endpoints:
+- `POST /api/v1/loan-applications/{loan_application_id}/eligibility-assessment/run/`
+- `GET /api/v1/loan-applications/{loan_application_id}/eligibility-assessment/`
+
+Rules:
+- Run requires `credit.eligibility.run` and the existing loan-application object-access boundary.
+  A user missing the global run permission receives `403 PERMISSION_DENIED`; a user with the
+  permission but outside the application scope receives `403 OBJECT_ACCESS_DENIED`.
+- Read requires the existing `applications.loan_application.read` permission and object-access
+  boundary used by application detail.
+- Missing applications return `404 NOT_FOUND`. Reading before an assessment exists returns
+  `404 NOT_FOUND`.
+- Run is allowed only after formal reference generation: `application_reference_number` starts
+  with `LO`, `application_status = reference_generated`, `completeness_status = complete`, and
+  `current_stage = credit_assessment`. Other states return `409 INVALID_STATE_TRANSITION`.
+- 006A computes only `member_active_check`. `default_check`, `document_check`,
+  `terms_acceptance_check`, `purpose_check`, and `nominee_check` are persisted as `pending` until
+  their owning slices implement source-backed rules.
+- `member_active_check` is:
+  - `pass` only when existing member facts include `active_member_status = active` and an
+    `active_member_verified_at` timestamp.
+  - `relaxation` when existing member facts include `active_member_status = relaxation` and an
+    `active_member_verified_at` timestamp.
+  - `fail` when the member's `membership_status` is not `active`.
+  - `manual_evidence_required` when BR-004 through BR-007 require produce/service history but the
+    current persistence has no source-backed history rows to calculate it.
+- Successful run writes metadata-only `eligibility.assessed` audit and an
+  `eligibility_assessment` workflow event. Denied and invalid-state paths create no assessment,
+  audit row, or workflow event.
+
+Response data fields:
+
+```json
+{
+  "eligibility_assessment_id": "uuid",
+  "loan_application_id": "uuid",
+  "member_active_check": "manual_evidence_required",
+  "default_check": "pending",
+  "document_check": "pending",
+  "terms_acceptance_check": "pending",
+  "purpose_check": "pending",
+  "nominee_check": "pending",
+  "overall_result": "pending_manual_evidence",
+  "assessment_notes": "BR-004 through BR-007 require continuous produce/service history...",
+  "assessed_by_user_id": "uuid",
+  "assessed_at": "2026-07-10T00:00:00Z"
+}
+```

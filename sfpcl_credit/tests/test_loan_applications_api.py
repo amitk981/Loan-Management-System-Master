@@ -19,6 +19,7 @@ APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
 APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_check"
 APPLICATION_DOCUMENT_UPLOAD_PERMISSION = "applications.document.upload"
 APPLICATION_DOCUMENT_VERIFY_PERMISSION = "applications.document.verify"
+ELIGIBILITY_RUN_PERMISSION = "credit.eligibility.run"
 
 
 class LoanApplicationDraftApiTests(TestCase):
@@ -49,6 +50,10 @@ class LoanApplicationDraftApiTests(TestCase):
             APPLICATION_DOCUMENT_VERIFY_PERMISSION,
             "Verify application documents",
         )
+        self.eligibility_run_permission = self._permission(
+            ELIGIBILITY_RUN_PERMISSION,
+            "Run eligibility assessment",
+        )
         self.creator = self._user(
             "applications.creator@sfpcl.example",
             "CreatorPass123!",
@@ -59,6 +64,7 @@ class LoanApplicationDraftApiTests(TestCase):
             self.complete_check_permission,
             self.document_upload_permission,
             self.document_verify_permission,
+            self.eligibility_run_permission,
         )
         self.unrelated_actor = self._user(
             "applications.unrelated@sfpcl.example",
@@ -68,6 +74,7 @@ class LoanApplicationDraftApiTests(TestCase):
             self.submit_permission,
             self.complete_check_permission,
             self.document_upload_permission,
+            self.eligibility_run_permission,
         )
         self.reader = self._user(
             "applications.reader@sfpcl.example",
@@ -257,6 +264,127 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(row["folio_number"], "FOL-005A")
         self.assertEqual(row["requested_amount"], "400000.00")
         self.assertEqual(row["register_status"], "reference_generated")
+
+    def test_eligibility_assessment_run_and_read_persists_manual_evidence_active_member_result(self):
+        application_id = self._reference_generated_application()
+
+        run_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
+            data={},
+            content_type="application/json",
+            headers={
+                **self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+                "X-Request-ID": "req-run-eligibility",
+            },
+        )
+
+        self.assertEqual(run_response.status_code, 200)
+        body = run_response.json()
+        assert_success_envelope(self, body)
+        self.assertEqual(body["meta"]["request_id"], "req-run-eligibility")
+        assessment = body["data"]
+        self.assertEqual(assessment["loan_application_id"], application_id)
+        self.assertEqual(assessment["member_active_check"], "manual_evidence_required")
+        self.assertEqual(assessment["default_check"], "pending")
+        self.assertEqual(assessment["document_check"], "pending")
+        self.assertEqual(assessment["terms_acceptance_check"], "pending")
+        self.assertEqual(assessment["purpose_check"], "pending")
+        self.assertEqual(assessment["nominee_check"], "pending")
+        self.assertEqual(assessment["overall_result"], "pending_manual_evidence")
+        self.assertIn("BR-004", assessment["assessment_notes"])
+        self.assertEqual(assessment["assessed_by_user_id"], str(self.creator.user_id))
+        self.assertIsNotNone(assessment["assessed_at"])
+
+        read_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(read_response.status_code, 200)
+        assert_success_envelope(self, read_response.json())
+        self.assertEqual(read_response.json()["data"], assessment)
+
+        assessment_model = apps.get_model("applications", "EligibilityAssessment")
+        self.assertEqual(assessment_model.objects.filter(loan_application_id=application_id).count(), 1)
+        audit = AuditLog.objects.filter(action="eligibility.assessed").get()
+        self.assertEqual(audit.entity_type, "eligibility_assessment")
+        self.assertEqual(str(audit.new_value_json["loan_application_id"]), application_id)
+        self.assertEqual(audit.new_value_json["member_active_check"], "manual_evidence_required")
+        workflow = WorkflowEvent.objects.filter(
+            entity_type="loan_application",
+            entity_id=application_id,
+            to_state="eligibility_assessed",
+        ).get()
+        self.assertEqual(workflow.workflow_name, "eligibility_assessment")
+
+    def test_eligibility_assessment_uses_existing_verified_active_member_facts_when_available(self):
+        self.member.active_member_status = "active"
+        self.member.active_member_verified_at = timezone.now()
+        self.member.save(update_fields=["active_member_status", "active_member_verified_at"])
+        application_id = self._reference_generated_application()
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        assert_success_envelope(self, body)
+        self.assertEqual(body["data"]["member_active_check"], "pass")
+        self.assertEqual(body["data"]["overall_result"], "pending")
+        self.assertEqual(body["data"]["default_check"], "pending")
+        self.assertIn(
+            "Default, document, terms, purpose, and nominee checks are pending",
+            body["data"]["assessment_notes"],
+        )
+
+    def test_eligibility_assessment_denials_and_invalid_state_create_no_success_evidence(self):
+        draft_response = self.client.post(
+            "/api/v1/loan-applications/",
+            data=self._draft_payload(),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(draft_response.status_code, 200)
+        draft_id = draft_response.json()["data"]["loan_application_id"]
+
+        invalid_state = self.client.post(
+            f"/api/v1/loan-applications/{draft_id}/eligibility-assessment/run/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(invalid_state.status_code, 409)
+        assert_error_envelope(self, invalid_state.json(), "INVALID_STATE_TRANSITION")
+
+        application_id = self._reference_generated_application()
+        no_permission = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
+        )
+        self.assertEqual(no_permission.status_code, 403)
+        assert_error_envelope(self, no_permission.json(), "PERMISSION_DENIED")
+
+        out_of_scope = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.unrelated@sfpcl.example", "UnrelatedPass123!"),
+        )
+        self.assertEqual(out_of_scope.status_code, 403)
+        assert_error_envelope(self, out_of_scope.json(), "OBJECT_ACCESS_DENIED")
+
+        assessment_model = apps.get_model("applications", "EligibilityAssessment")
+        self.assertEqual(assessment_model.objects.count(), 0)
+        self.assertEqual(AuditLog.objects.filter(action="eligibility.assessed").count(), 0)
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="eligibility_assessment").count(),
+            0,
+        )
 
     def test_submit_draft_transitions_to_submitted_and_records_metadata_only_evidence(self):
         create_response = self.client.post(
@@ -2033,6 +2161,18 @@ class LoanApplicationDraftApiTests(TestCase):
             headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
         )
         self.assertEqual(submit_response.status_code, 200)
+        return application_id
+
+    def _reference_generated_application(self, **payload_overrides):
+        application_id = self._create_and_submit_application(**payload_overrides)
+        self._verify_required_application_documents(application_id)
+        generate_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/completeness-check/pass/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(generate_response.status_code, 200)
         return application_id
 
     def _verify_required_application_documents(self, application_id):

@@ -128,6 +128,16 @@ urlpatterns = [
         name="loan-application-completeness-pass",
     ),
     path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/eligibility-assessment/",
+        application_views.loan_application_eligibility_assessment,
+        name="loan-application-eligibility-assessment",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/eligibility-assessment/run/",
+        application_views.loan_application_eligibility_assessment_run,
+        name="loan-application-eligibility-assessment-run",
+    ),
+    path(
         "api/v1/loan-applications/<uuid:loan_application_id>/return-with-deficiencies/",
         application_views.loan_application_return_with_deficiencies,
         name="loan-application-return-with-deficiencies",

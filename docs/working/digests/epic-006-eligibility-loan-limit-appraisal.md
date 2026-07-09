@@ -53,3 +53,32 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - Normal ineligible results must not move the application into appraisal/sanction states. Rejection
   note generation remains the source-backed rejection-note mechanism from 005H or later appraisal
   rejection slices.
+
+## 006C Loan Limit Configuration And Calculator
+- Source endpoint:
+  `POST /api/v1/loan-applications/{loan_application_id}/loan-limit-assessment/calculate/`.
+- Request fields from `api-contracts.md` §23.1:
+  `shareholding_id`, `land_holding_ids`, `crop_plan_id`, `requested_amount`, and
+  `calculation_date`.
+- Response/persistence fields from §23.1 and `loan_limit_assessments` §14.2:
+  `loan_limit_assessment_id`, `member_id`, `shareholding_id`, `number_of_shares`,
+  `valuation_per_share`, `share_limit_percentage`, `per_share_cap_amount`,
+  `shareholding_based_limit_amount`, `land_area_acres`,
+  `scale_of_finance_per_acre_amount`, `land_based_limit_amount`,
+  `final_eligible_loan_amount`, `requested_amount`, `amount_within_limit_flag`,
+  `exception_required_flag`, `calculation_rule_version`, `calculated_by_user_id`, and
+  `calculated_at`.
+- Formula contract from `api-contracts.md` §23.2:
+  `shareholding_based_limit = number_of_shares × configured percentage or per-share cap`;
+  `land_based_limit = scale_of_finance_per_acre × land_area_acres`;
+  `final_eligible_loan_amount = min(shareholding_based_limit, land_based_limit)`.
+- Functional-spec BR-020 requires agricultural land-based limit from scale of finance and land area
+  under cultivation. BR-021 requires final eligible amount to be lower of shareholding and
+  land-based limits.
+- If requested amount exceeds final eligible amount, set exception required and return a
+  `REQUESTED_AMOUNT_EXCEEDS_LIMIT` warning.
+- Source docs still list an open question for the operative shareholding rule: 30%, 10%, or
+  Rs 200/share. 006C must use source-backed loan-policy configuration if present; otherwise block
+  calculation or record the ambiguity instead of inventing the rule.
+- Permission for calculation is `credit.loan_limit.calculate`; override requires
+  `credit.loan_limit.override` and is out of scope for 006C.

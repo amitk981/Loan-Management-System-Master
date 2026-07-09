@@ -17,6 +17,14 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 ## Depends On
 - 006A
 
+## Prior Slice Handoff
+- 006A created one-to-one `eligibility_assessments` storage and the nested run/read endpoints.
+- 006A currently persists `default_check`, `document_check`, `terms_acceptance_check`,
+  `purpose_check`, and `nominee_check` as `pending`; 006B must replace those pending values with
+  source-backed decisions.
+- Preserve 006A's state guard, permission/object access, metadata-only `eligibility.assessed`
+  audit, and no-success-evidence behavior on denied/invalid paths.
+
 ## Source References
 - docs/source/implementation-roadmap.md section 11
 - docs/source/api-contracts.md sections 22-24
@@ -41,6 +49,9 @@ None for this slice, except updating frontend documentation or fixtures if requi
   endpoints; do not add a parallel endpoint.
 - Populate `default_check`, `document_check`, `terms_acceptance_check`, `purpose_check`, and
   `nominee_check` according to source fields in `api-contracts.md` §22.1 and `data-model.md` §14.1.
+- Combine 006A's active-member result with the new checks into `overall_result`: `eligible` only
+  when every implemented check passes, `ineligible` when any blocker fails, and
+  `pending_manual_evidence` when active-member manual evidence remains unresolved.
 - Use 005D/005E checklist/application-document metadata for document evidence rather than reading
   raw files or duplicating document storage.
 - Keep loan-limit calculation, appraisal-note create/edit/submit, Credit Manager review, and

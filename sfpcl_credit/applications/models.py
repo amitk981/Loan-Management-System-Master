@@ -241,6 +241,50 @@ class LoanRequestRegisterEntry(models.Model):
         ]
 
 
+class EligibilityAssessment(models.Model):
+    CHECK_PENDING = "pending"
+    MEMBER_ACTIVE_PASS = "pass"
+    MEMBER_ACTIVE_FAIL = "fail"
+    MEMBER_ACTIVE_RELAXATION = "relaxation"
+    MEMBER_ACTIVE_MANUAL_EVIDENCE_REQUIRED = "manual_evidence_required"
+    OVERALL_ELIGIBLE = "eligible"
+    OVERALL_INELIGIBLE = "ineligible"
+    OVERALL_PENDING_MANUAL_EVIDENCE = "pending_manual_evidence"
+    OVERALL_PENDING = "pending"
+
+    eligibility_assessment_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    loan_application = models.OneToOneField(
+        LoanApplication,
+        on_delete=models.PROTECT,
+        related_name="eligibility_assessment",
+    )
+    member_active_check = models.CharField(max_length=60)
+    default_check = models.CharField(max_length=60, default=CHECK_PENDING)
+    document_check = models.CharField(max_length=60, default=CHECK_PENDING)
+    terms_acceptance_check = models.CharField(max_length=60, default=CHECK_PENDING)
+    purpose_check = models.CharField(max_length=60, default=CHECK_PENDING)
+    nominee_check = models.CharField(max_length=60, default=CHECK_PENDING)
+    overall_result = models.CharField(max_length=60, db_index=True)
+    assessment_notes = models.TextField(blank=True)
+    assessed_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="eligibility_assessments",
+    )
+    assessed_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "eligibility_assessments"
+        indexes = [
+            models.Index(fields=["overall_result"], name="idx_eligibility_result"),
+            models.Index(fields=["assessed_at"], name="idx_eligibility_assessed_at"),
+        ]
+
+
 class ApplicationDocument(models.Model):
     SUBMISSION_PENDING = "pending"
     SUBMISSION_SUBMITTED = "submitted"

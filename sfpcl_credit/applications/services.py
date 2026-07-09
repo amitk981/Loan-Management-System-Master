@@ -9,6 +9,7 @@ from django.utils import timezone
 from sfpcl_credit.applications.models import (
     ApplicationDeficiency,
     ApplicationDocument,
+    EligibilityAssessment,
     LoanApplication,
     LoanRequestRegisterEntry,
     RejectionNote,
@@ -34,6 +35,7 @@ APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
 APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_check"
 APPLICATION_DOCUMENT_UPLOAD_PERMISSION = "applications.document.upload"
 APPLICATION_DOCUMENT_VERIFY_PERMISSION = "applications.document.verify"
+ELIGIBILITY_RUN_PERMISSION = "credit.eligibility.run"
 LOAN_APPLICATION_REFERENCE_SEQUENCE_CODE = "loan_application_reference"
 APPLICATION_DOCUMENT_ATTACH_AUDIT_ACTION = "applications.application_document.attached"
 APPLICATION_DOCUMENT_VERIFY_AUDIT_ACTION = "applications.application_document.verified"
@@ -43,6 +45,7 @@ APPLICATION_RETURN_DEFICIENCIES_AUDIT_ACTION = (
 APPLICATION_DEFICIENCY_RESOLVED_AUDIT_ACTION = "applications.deficiency.resolved"
 APPLICATION_REJECTION_NOTE_CREATED_AUDIT_ACTION = "applications.rejection_note.created"
 APPLICATION_REJECTION_NOTE_SENT_AUDIT_ACTION = "applications.rejection_note.sent"
+ELIGIBILITY_ASSESSED_AUDIT_ACTION = "eligibility.assessed"
 APPLICATION_DOCUMENT_TYPES = {
     "loan_application_form",
     "borrower_pan",
@@ -145,6 +148,10 @@ def user_can_verify_application_documents(user):
     return APPLICATION_DOCUMENT_VERIFY_PERMISSION in auth_service.effective_permission_codes(user)
 
 
+def user_can_run_eligibility(user):
+    return ELIGIBILITY_RUN_PERMISSION in auth_service.effective_permission_codes(user)
+
+
 def evaluate_application_object_access(application, actor, required_permission, actor_permissions=None):
     permissions = actor_permissions or auth_service.effective_permission_codes(actor)
     allow_global = _has_credit_manager_domain_access(application, actor)
@@ -233,6 +240,18 @@ def get_rejection_note(rejection_note_id):
             "sent_by_user",
         )
         .filter(rejection_note_id=rejection_note_id)
+        .first()
+    )
+
+
+def get_eligibility_assessment(application):
+    return (
+        EligibilityAssessment.objects.select_related(
+            "loan_application",
+            "loan_application__member",
+            "assessed_by_user",
+        )
+        .filter(loan_application=application)
         .first()
     )
 
@@ -744,6 +763,21 @@ def completeness_pass_invalid_state_message(application):
     return None
 
 
+def eligibility_run_invalid_state_message(application):
+    if not (application.application_reference_number or "").startswith("LO"):
+        return "Eligibility assessment requires a formal LO application reference."
+    if application.application_status != LoanApplication.STATUS_REFERENCE_GENERATED:
+        return (
+            "Invalid state transition for loan_application: eligibility_assessment.run "
+            f"is not allowed from {application.application_status}."
+        )
+    if application.completeness_status != LoanApplication.COMPLETENESS_COMPLETE:
+        return "Eligibility assessment requires complete application documentation."
+    if application.current_stage != LoanApplication.STAGE_CREDIT_ASSESSMENT:
+        return "Eligibility assessment is allowed only in credit assessment stage."
+    return None
+
+
 def return_deficiencies_invalid_state_message(application):
     if application.application_status != LoanApplication.STATUS_SUBMITTED:
         return (
@@ -955,6 +989,70 @@ def create_rejection_note(
 
 
 @transaction.atomic
+def run_eligibility_assessment(
+    application,
+    actor,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+):
+    application = (
+        LoanApplication.objects.select_for_update()
+        .select_related("member", "created_by_user", "received_by_user")
+        .get(loan_application_id=application.loan_application_id)
+    )
+    invalid_state_message = eligibility_run_invalid_state_message(application)
+    if invalid_state_message:
+        raise LoanApplicationInvalidStateError(invalid_state_message)
+
+    active_result = _active_member_check(application.member)
+    now = timezone.now()
+    assessment = (
+        EligibilityAssessment.objects.select_for_update()
+        .filter(loan_application=application)
+        .first()
+    )
+    old_value_json = (
+        _eligibility_assessment_audit_snapshot(assessment)
+        if assessment is not None
+        else None
+    )
+    if assessment is None:
+        assessment = EligibilityAssessment(loan_application=application)
+    assessment.member_active_check = active_result["member_active_check"]
+    assessment.default_check = EligibilityAssessment.CHECK_PENDING
+    assessment.document_check = EligibilityAssessment.CHECK_PENDING
+    assessment.terms_acceptance_check = EligibilityAssessment.CHECK_PENDING
+    assessment.purpose_check = EligibilityAssessment.CHECK_PENDING
+    assessment.nominee_check = EligibilityAssessment.CHECK_PENDING
+    assessment.overall_result = active_result["overall_result"]
+    assessment.assessment_notes = active_result["assessment_notes"]
+    assessment.assessed_by_user = actor
+    assessment.assessed_at = now
+    assessment.save()
+    _audit_eligibility_assessment(
+        assessment,
+        actor,
+        ELIGIBILITY_ASSESSED_AUDIT_ACTION,
+        old_value_json,
+        request_ip,
+        request_user_agent,
+        request_id,
+    )
+    record_workflow_event(
+        actor=actor,
+        workflow_name="eligibility_assessment",
+        entity_type="loan_application",
+        entity_id=application.loan_application_id,
+        from_state=application.current_stage,
+        to_state="eligibility_assessed",
+        trigger_reason="Eligibility assessment active-member check completed.",
+        action_code="eligibility.assessed",
+    )
+    return assessment
+
+
+@transaction.atomic
 def send_rejection_note(
     rejection_note,
     payload,
@@ -1161,6 +1259,23 @@ def serialize_rejection_note(rejection_note):
     }
 
 
+def serialize_eligibility_assessment(assessment):
+    return {
+        "eligibility_assessment_id": str(assessment.eligibility_assessment_id),
+        "loan_application_id": str(assessment.loan_application_id),
+        "member_active_check": assessment.member_active_check,
+        "default_check": assessment.default_check,
+        "document_check": assessment.document_check,
+        "terms_acceptance_check": assessment.terms_acceptance_check,
+        "purpose_check": assessment.purpose_check,
+        "nominee_check": assessment.nominee_check,
+        "overall_result": assessment.overall_result,
+        "assessment_notes": assessment.assessment_notes,
+        "assessed_by_user_id": str(assessment.assessed_by_user_id),
+        "assessed_at": _datetime(assessment.assessed_at),
+    }
+
+
 def serialize_returned_deficiencies(result):
     application = result["application"]
     return {
@@ -1195,6 +1310,45 @@ def _validate_submit_facts(application):
         errors["purpose_category"] = "Purpose category is required before submit."
     if errors:
         raise LoanApplicationValidationError(errors)
+
+
+def _active_member_check(member):
+    if member.membership_status != "active":
+        return {
+            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_FAIL,
+            "overall_result": EligibilityAssessment.OVERALL_INELIGIBLE,
+            "assessment_notes": (
+                "BR-003 requires active member status or relaxation evidence; "
+                f"member status is {member.membership_status}."
+            ),
+        }
+    if member.active_member_status == "active" and member.active_member_verified_at:
+        return {
+            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_PASS,
+            "overall_result": EligibilityAssessment.OVERALL_PENDING,
+            "assessment_notes": (
+                "Active-member status was verified from existing member facts. "
+                "Default, document, terms, purpose, and nominee checks are pending."
+            ),
+        }
+    if member.active_member_status == "relaxation" and member.active_member_verified_at:
+        return {
+            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_RELAXATION,
+            "overall_result": EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE,
+            "assessment_notes": (
+                "Active-member relaxation is recorded on the member profile. "
+                "Manual evidence remains reviewable for BR-004 through BR-007."
+            ),
+        }
+    return {
+        "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_MANUAL_EVIDENCE_REQUIRED,
+        "overall_result": EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE,
+        "assessment_notes": (
+            "BR-004 through BR-007 require continuous produce/service history or "
+            "relaxation evidence. Current persistence has no source history rows "
+            "for this application, so manual evidence is required."
+        ),
+    }
 
 
 def _clean_update_payload(payload, member):
@@ -1557,6 +1711,29 @@ def _audit_application(
     )
 
 
+def _audit_eligibility_assessment(
+    assessment,
+    actor,
+    action,
+    old_value_json,
+    request_ip,
+    request_user_agent,
+    request_id,
+):
+    new_value_json = _eligibility_assessment_audit_snapshot(assessment)
+    new_value_json["request_id"] = request_id
+    AuditLog.objects.create(
+        actor_user=actor,
+        action=action,
+        entity_type="eligibility_assessment",
+        entity_id=assessment.eligibility_assessment_id,
+        old_value_json=old_value_json,
+        new_value_json=new_value_json,
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+
+
 def _audit_application_document(
     application_document,
     actor,
@@ -1679,6 +1856,22 @@ def _audit_snapshot(application):
         "cancelled_cheque_id": str(application.cancelled_cheque_id)
         if application.cancelled_cheque_id
         else None,
+    }
+
+
+def _eligibility_assessment_audit_snapshot(assessment):
+    return {
+        "eligibility_assessment_id": str(assessment.eligibility_assessment_id),
+        "loan_application_id": str(assessment.loan_application_id),
+        "member_active_check": assessment.member_active_check,
+        "default_check": assessment.default_check,
+        "document_check": assessment.document_check,
+        "terms_acceptance_check": assessment.terms_acceptance_check,
+        "purpose_check": assessment.purpose_check,
+        "nominee_check": assessment.nominee_check,
+        "overall_result": assessment.overall_result,
+        "assessed_by_user_id": str(assessment.assessed_by_user_id),
+        "assessed_at": _datetime(assessment.assessed_at),
     }
 
 
