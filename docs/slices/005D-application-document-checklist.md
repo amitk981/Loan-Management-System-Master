@@ -14,7 +14,7 @@ Deliver this narrow capability as a small, testable Ralph implementation slice.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 005C
+- 005C2
 
 ## Prior Slice Facts
 - 005A created draft loan applications with optional member land/crop/bank/cancelled-cheque
@@ -27,6 +27,9 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
   `system_sequences` row for `loan_application_reference`, and one-to-one
   `loan_request_register_entries`. 005D must not call that endpoint; it prepares the
   application-document/checklist metadata that 005E can evaluate before reference generation.
+- 005C2 must close the architecture-review object-access finding before this slice runs. 005D
+  document/checklist endpoints must reuse the corrected loan-application object-access boundary
+  instead of relying only on global permission codes.
 - Use `docs/working/digests/epic-005-application-intake.md` before reopening large source docs.
 - Epic 004/005 sensitive data boundaries remain binding: document/checklist responses and audits
   must not include full PAN, Aadhaar, bank-account numbers, encrypted token values, hashes, or raw
@@ -92,7 +95,7 @@ Apply the role and object-access rules from `docs/source/auth-permissions.md`; c
 
 Use source-backed application/document permissions:
 - Listing application documents/checklist: require `applications.loan_application.read` plus object
-  access where available.
+  access through the 005C2 application access helper.
 - Uploading application documents: require `applications.document.upload`.
 - Verifying application documents: require `applications.document.verify`.
 - If refresh is implemented as a mutating checklist action, use the narrowest source-backed

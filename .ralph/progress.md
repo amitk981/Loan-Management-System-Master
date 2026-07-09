@@ -1,5 +1,25 @@
 # Ralph Progress Log
 
+## 2026-07-09 19:33:00 - 2026-07-09_190655_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed `004K2`, `005A`, `005B`, and `005C` since prior architecture review commit
+  `dadeefd`. Appended findings to `docs/working/REVIEW_FINDINGS.md`. Found one Medium issue:
+  loan application detail/actions enforce global permission codes but not source-required
+  application object access; a same-permission user can read or act on unrelated applications.
+  Created corrective slice `005C2-application-object-access-hardening`, inserted it before `005D`,
+  updated the slice index, sharpened `005D`/`005E`, and added the object-access extract to the Epic
+  005 digest.
+- Tests run: backend `manage.py check`; backend tests (245/245); `makemigrations --check
+  --dry-run`; backend coverage 95% (floor 85); frontend `npm run typecheck`; `npm run lint`;
+  `npm test` (80/80); `npm run build`; `git diff --check`; protected-path scan.
+- Evidence saved: `.ralph/runs/2026-07-09_190655_architecture_review/`, with review-window,
+  source-extract, and gate logs under `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Low (review/docs-only), with one Medium corrective issue queued.
+- Next action: Run `005C2-application-object-access-hardening`; after it passes, continue with
+  `005D-application-document-checklist`.
+
 ## 2026-07-09 19:05:00 - 2026-07-09_183552_normal_run
 - Agent tool used: codex
 - Slice attempted: 005C-reference-number-generation-and-loan-request-register
@@ -1762,6 +1782,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_183552_normal_run/.ralph/runs/2026-07-09_183552_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_183552_normal_run/.ralph/runs/2026-07-09_183552_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 19:35:25 - 2026-07-09_190655_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_190655_architecture_review/.ralph/runs/2026-07-09_190655_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_190655_architecture_review/.ralph/runs/2026-07-09_190655_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

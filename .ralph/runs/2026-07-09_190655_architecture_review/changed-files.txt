@@ -1,0 +1,10 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/005D-application-document-checklist.md
+ M docs/slices/005E-completeness-workbench.md
+ M docs/working/HANDOFF.md
+ M docs/working/IMPLEMENTATION_SLICE_INDEX.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-005-application-intake.md
+?? .ralph/runs/2026-07-09_190655_architecture_review/
+?? docs/slices/005C2-application-object-access-hardening.md

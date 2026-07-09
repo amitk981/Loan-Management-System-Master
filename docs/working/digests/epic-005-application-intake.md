@@ -111,6 +111,14 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   while the data-model enum table omits that value.
 
 ## Application Documents And Checklist
+- Architecture review `2026-07-09_190655_architecture_review` extracted application object-access
+  requirements before 005D: `auth-permissions.md` §19.2 scopes Field Officers to created/assigned
+  applications, Deputy Manager Finance to credit-assessment queue/assigned applications, and Credit
+  Manager to the credit-assessment domain. The endpoint map marks
+  `GET /loan-applications/{id}/` as `applications.loan_application.read` plus object access, and
+  §37.3 says a Field Officer viewing an unrelated application must be denied. Corrective slice
+  005C2 should integrate the existing 002I object-access helper for application detail/actions
+  before document/checklist and completeness slices build on those endpoints.
 - Source application-document endpoints:
   - `GET /api/v1/loan-applications/{loan_application_id}/application-documents/`
   - `POST /api/v1/loan-applications/{loan_application_id}/application-documents/`

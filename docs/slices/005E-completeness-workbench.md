@@ -27,6 +27,8 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
   vocabulary.
 - 005D should provide `application_documents` and checklist metadata. 005E must build on those
   records instead of inventing document facts or re-uploading documents.
+- 005C2 should already enforce object-level access for loan application detail/actions. 005E must
+  reuse that same application object-access boundary for workbench reads and completeness actions.
 - Use `docs/working/digests/epic-005-application-intake.md` before reopening large source docs.
 
 ## Source References
@@ -82,8 +84,8 @@ Create or update the API contract for this capability.
 Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
 
 Use `applications.loan_application.complete_check` for mutating completeness decisions. Read-only
-workbench data should require `applications.loan_application.read` plus object access where
-available. Do not invent a new completeness permission code.
+workbench data should require `applications.loan_application.read` plus the 005C2 object-access
+boundary. Do not invent a new completeness permission code.
 
 ## Audit Requirements
 Record audit/workflow events for critical create/update/approval/access actions.

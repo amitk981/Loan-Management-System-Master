@@ -1,0 +1,2645 @@
+diff --git a/docs/slices/005D-application-document-checklist.md b/docs/slices/005D-application-document-checklist.md
+index 386eef3..c6dc1d9 100644
+--- a/docs/slices/005D-application-document-checklist.md
++++ b/docs/slices/005D-application-document-checklist.md
+@@ -16,6 +16,22 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
+ ## Depends On
+ - 005C
+ 
++## Prior Slice Facts
++- 005A created draft loan applications with optional member land/crop/bank/cancelled-cheque
++  references and metadata-only masked responses.
++- 005B implemented submit as `draft -> submitted`; submitted applications remain at
++  `current_stage = initial_loan_request`, `completeness_status = not_started`, and formal
++  references remain nullable until the reference/completeness owner.
++- 005C confirmed formal `LO...` generation is source-backed after completeness pass, not submit.
++  It added `POST /api/v1/loan-applications/{loan_application_id}/generate-reference/`, the
++  `system_sequences` row for `loan_application_reference`, and one-to-one
++  `loan_request_register_entries`. 005D must not call that endpoint; it prepares the
++  application-document/checklist metadata that 005E can evaluate before reference generation.
++- Use `docs/working/digests/epic-005-application-intake.md` before reopening large source docs.
++- Epic 004/005 sensitive data boundaries remain binding: document/checklist responses and audits
++  must not include full PAN, Aadhaar, bank-account numbers, encrypted token values, hashes, or raw
++  file bytes.
++
+ ## Source References
+ - docs/source/implementation-roadmap.md section 11
+ - docs/source/api-contracts.md sections 19-21
+@@ -36,24 +52,96 @@ None for this slice, except updating frontend documentation or fixtures if requi
+ ## Backend/API Scope
+ Implement the named backend/API capability only.
+ 
++Concrete 005D scope:
++- Add application-document metadata support for submitted loan applications:
++  `GET /api/v1/loan-applications/{loan_application_id}/application-documents/` and
++  `POST /api/v1/loan-applications/{loan_application_id}/application-documents/`.
++- Add application-document verification:
++  `POST /api/v1/application-documents/{application_document_id}/verify/`.
++- Add a document checklist read/refresh foundation:
++  `GET /api/v1/loan-applications/{loan_application_id}/document-checklist/` and, only if still
++  narrow enough, `POST /api/v1/loan-applications/{loan_application_id}/document-checklist/refresh/`.
++- Store/checklist metadata only and link uploaded items to the existing `documents.DocumentFile`
++  record by UUID where practical. Do not duplicate file bytes or introduce new storage behavior in
++  005D.
++- Required application document types from source: loan application form, borrower PAN, borrower
++  Aadhaar/OVD for individual borrowers, nominee PAN, nominee Aadhaar/OVD, share certificate copy,
++  land document / 7/12 extract, crop plan, and six-month bank statement. Cancelled cheque may be
++  collected at application stage but is required before disbursement, so do not block 005D
++  checklist completion on it unless source review adds a stronger rule.
++- Do not implement deficiency creation/resolution, completeness pass/fail, eligibility, appraisal,
++  sanction, disbursement, frontend document screens, or real file scanning in this slice.
++
+ ## Database/Model Impact
+ Non-destructive model/migration changes for this capability, if needed.
+ 
++Expected model impact:
++- `application_documents` metadata table if not already present, linked to `loan_applications` and
++  optionally to `documents.document_files`.
++- Fields should cover `document_type`, `party_type`, optional `party_id`, `required_flag`,
++  `submission_status`, `verification_status`, verifier actor/time, remarks, created/updated actor
++  timestamps, and a stable UUID primary key.
++- Optional checklist table/items only if the source-backed checklist cannot be represented from
++  `application_documents` metadata within one slice. Keep this to one migration.
++
+ ## API Contracts
+ Create or update the API contract for this capability.
+ 
+ ## Permissions
+ Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+ 
++Use source-backed application/document permissions:
++- Listing application documents/checklist: require `applications.loan_application.read` plus object
++  access where available.
++- Uploading application documents: require `applications.document.upload`.
++- Verifying application documents: require `applications.document.verify`.
++- If refresh is implemented as a mutating checklist action, use the narrowest source-backed
++  checklist/document permission found during the source pass; if no exact permission exists, record
++  the assumption and avoid inventing a new permission code.
++
+ ## Audit Requirements
+ Record audit/workflow events for critical create/update/approval/access actions.
+ 
++Specific audit requirements:
++- Successful upload/metadata attach writes metadata-only audit including application ID, document
++  type, party type/ID, document file ID, submission status, verification status, actor, request ID,
++  IP, and user-agent.
++- Successful verification writes metadata-only audit including old/new verification status and
++  remarks. Do not include file content, OCR values, PAN/Aadhaar full values, tokens, hashes, or bank
++  full numbers.
++- Listing checklist/documents is read-only and should not write workflow events unless source
++  review requires access audits.
++
+ ## Validation Rules
+ Enforce source-doc business rules and block invalid state transitions.
+ 
++Specific validation to cover:
++- Reject unknown loan applications and unknown application-document IDs.
++- Reject upload/attach for draft applications if source review confirms documents are collected
++  only after submit; otherwise record the allowed draft behavior explicitly in assumptions.
++- Require valid `document_type`, `party_type`, and file/document reference.
++- Supported `party_type` values for this slice: `borrower`, `nominee`, and `witness`.
++- Supported verification values: `pending`, `verified`, `rejected`; upload starts as submitted /
++  pending-verification metadata.
++- Duplicate document types should create a new version/history row or reject with a standard
++  duplicate-state error; do not overwrite audit history.
++- Verification must be possible only for submitted document metadata, not missing/pending
++  placeholders.
++
+ ## Test Cases
+ Unit/service/API/permission tests plus frontend tests where UI is touched.
+ 
++Minimum regression tests:
++- List/refresh checklist for a submitted application returns required source document item codes and
++  pending statuses without sensitive identity/bank values.
++- Upload/attach an application document persists metadata, links the existing document file, returns
++  a standard envelope, and writes metadata-only audit.
++- Verify an uploaded document changes verification status, stamps verifier/time, and writes
++  metadata-only audit with old/new status.
++- Unknown applications/document IDs return standard `404 NOT_FOUND`.
++- Users without read/upload/verify permissions receive `403 PERMISSION_DENIED` and no writes.
++- Duplicate upload/version behavior preserves history and never overwrites prior audit facts.
++
+ ## Visual Acceptance Criteria
+ None.
+ 
+diff --git a/docs/slices/005E-completeness-workbench.md b/docs/slices/005E-completeness-workbench.md
+index cb86295..1ed1686 100644
+--- a/docs/slices/005E-completeness-workbench.md
++++ b/docs/slices/005E-completeness-workbench.md
+@@ -16,6 +16,19 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
+ ## Depends On
+ - 005D
+ 
++## Prior Slice Facts
++- 005B implemented `draft -> submitted`; submitted applications remain editable only through
++  future controlled workflow actions, not direct draft `PATCH`.
++- 005C confirmed source behavior: the official `LO...` reference is generated only after all
++  mandatory completeness checks pass. 005C exposed
++  `POST /api/v1/loan-applications/{loan_application_id}/generate-reference/` as the narrow
++  completeness-pass transition, created the `system_sequences` and
++  `loan_request_register_entries` tables, and recorded A-037 for the `reference_generated` status
++  vocabulary.
++- 005D should provide `application_documents` and checklist metadata. 005E must build on those
++  records instead of inventing document facts or re-uploading documents.
++- Use `docs/working/digests/epic-005-application-intake.md` before reopening large source docs.
++
+ ## Source References
+ - docs/source/implementation-roadmap.md section 11
+ - docs/source/api-contracts.md sections 19-21
+@@ -28,32 +41,82 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
+ - sfpcl-lms/src/pages/borrower/portal/applications/*
+ 
+ ## Screens Involved
+-Relevant prototype screen area for this capability.
++Completeness workbench only if the slice remains full-stack after source/code review; otherwise
++backend/API first. Closest prototype reference: `sfpcl-lms/src/pages/applications/*`.
+ 
+ ## Frontend Scope
+-Small UI wiring for the named workflow, if applicable.
++If implemented in 005E, reuse only existing page/table/card/badge/modal patterns per
++`docs/working/FRONTEND_DESIGN_RULES.md`. Do not redesign the application detail screen. Show the
++submitted application facts, checklist rows, pass/fail actions, validation errors, and success
++state from the real backend; no new mock data.
+ 
+ ## Backend/API Scope
+ Implement the named backend/API capability only.
+ 
++Concrete 005E scope:
++- Add a completeness workbench/read endpoint for submitted applications, likely
++  `GET /api/v1/loan-applications/{loan_application_id}/completeness-check/`, returning application
++  summary, required checklist items from 005D, item statuses, missing/deficient reasons where
++  available, and whether reference generation is currently allowed.
++- Add a pass action that verifies all mandatory S12 checklist items are complete/verified and then
++  invokes the existing 005C reference-generation service exactly once. Do not duplicate sequence or
++  register logic.
++- Add a fail/return-with-deficiency placeholder only if source/API sections make it narrow enough;
++  otherwise defer deficiency creation/resolution to 005F and return validation errors listing
++  incomplete checklist item codes.
++- Do not implement eligibility, loan limit, appraisal note creation, sanction, disbursement,
++  member-portal deficiency response, or rejection-note generation in 005E.
++
+ ## Database/Model Impact
+ Non-destructive model/migration changes for this capability, if needed.
+ 
++Expected model impact:
++- Prefer using 005D checklist/application-document metadata plus existing `loan_applications`
++  fields. Add a table only if needed to persist completeness decisions/check history; keep it to
++  one migration and store metadata/status/reason facts only.
++
+ ## API Contracts
+ Create or update the API contract for this capability.
+ 
+ ## Permissions
+ Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+ 
++Use `applications.loan_application.complete_check` for mutating completeness decisions. Read-only
++workbench data should require `applications.loan_application.read` plus object access where
++available. Do not invent a new completeness permission code.
++
+ ## Audit Requirements
+ Record audit/workflow events for critical create/update/approval/access actions.
+ 
+ ## Validation Rules
+ Enforce source-doc business rules and block invalid state transitions.
+ 
++Specific validation to cover:
++- Unknown applications return standard `404 NOT_FOUND`.
++- Draft applications cannot pass completeness or generate references.
++- Applications that already have `application_reference_number` or a loan request register entry
++  cannot pass completeness again.
++- Completeness pass is blocked until all mandatory S12/005D checklist items are present and
++  verified/accepted. Return item-level errors rather than silently generating a reference.
++- Failed validation must not create partial sequence values on the application, register rows,
++  workflow events, or audit rows.
++- Preserve sensitive-data boundaries: responses/audits must not include PAN, Aadhaar, full bank
++  account values, token values, hashes, or raw file bytes.
++
+ ## Test Cases
+ Unit/service/API/permission tests plus frontend tests where UI is touched.
+ 
++Minimum regression tests:
++- Workbench read for a submitted application returns checklist status and `can_generate_reference`
++  false until mandatory items pass.
++- Completeness pass with all mandatory items complete calls the 005C path and returns the generated
++  `LO...` reference plus register summary.
++- Completeness pass with missing/rejected mandatory items returns `400 VALIDATION_ERROR` with item
++  codes and creates no sequence/register/audit/workflow side effects.
++- Draft and duplicate/reference-generated applications return `409 INVALID_STATE_TRANSITION` for
++  completeness pass.
++- Users without read/complete-check permissions receive `403 PERMISSION_DENIED`.
++
+ ## Visual Acceptance Criteria
+ Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.
+ 
+diff --git a/docs/working/API_CONTRACTS.md b/docs/working/API_CONTRACTS.md
+index e3c12ee..f85a38f 100644
+--- a/docs/working/API_CONTRACTS.md
++++ b/docs/working/API_CONTRACTS.md
+@@ -42,7 +42,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
+ | Local demo staff seed | Implemented in slice 002K; corrected in 002K2 | Login, dashboard smoke, admin/tracer permission smoke | `implementation-roadmap.md` §10, §20-22; `technical-architecture.md` §8-12, §17-18; `auth-permissions.md`; `api-contracts.md` §11-12, §43-44 | `python manage.py seed_demo_users` is a guarded local/dev seed path. It refuses unless `SFPCL_DEBUG=true` and `SFPCL_ALLOW_DEMO_SEED=true`, calls `seed_catalogue()`, creates or updates deterministic `demo.*@sfpcl.example` staff users with active primary roles and memberships, and does not alter `e2e.*` users. Demo users authenticate through the real `/auth/login/` and `/auth/me/` endpoints; there is no demo auth bypass. The zero-permission user returns `permissions: []` and `available_actions: []`; the tracer-only user uses the guarded local/dev-only `local_demo_tracer_user` role and returns only `tracer.lifecycle.run`; the shared source-catalogue `sales_team_user` role remains permission-neutral until source documents define grants; system admin preserves canonical action-specific user-admin permissions without broad `manage_users` aliases. |
+ | Role/permission/team catalogue | Seeded in slice 002C; exposed for current user in 002D | None directly | `auth-permissions.md` §12-15, §38 | Canonical `Permission`, `Role`, `Team`, `RolePermission` catalogue seeded idempotently via `python manage.py seed_role_catalogue` (`sfpcl_credit/identity/catalogue.py`). `/api/v1/auth/me/` exposes the authenticated user's effective permission codes from this data. |
+ | Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; shareholding list/create implemented in 004F; land/crop list/create implemented in 004G; KYC profile/document upload/verify implemented in 004H; member bank-account/cancelled-cheque metadata implemented in 004J; Borrower 360 Epic 004 UI wiring implemented in 004K with corrective DTO hardening queued in 004K2 | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3/§15.1-§15.2/§17.1-§18.4; `data-model.md` §10.1-§10.4/§11.1/§11.7-§12.4; `auth-permissions.md` §12.2-§12.3/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/`, `/shareholdings/`, `/land-holdings/`, `/crop-plans/`, `/bank-accounts/`, and `/cancelled-cheques/` are API-backed with their documented validations and metadata-only create audits. `GET/POST/PATCH /api/v1/kyc-profiles/`, KYC document upload, and KYC document verify are implemented for member parties only with KYC permissions. Sensitive bank-account reveal, re-KYC task management, share certificate/demat, bank verification letters, disbursement bank gates, and loan-application/loan-account/repayment/risk/audit Borrower 360 data remain future scope. |
+-| Loan applications | Draft from source | Applications, completeness | `api-contracts.md` | Needs real draft/submit/check endpoints. |
++| Loan applications | Draft create/read/update implemented in 005A; submit/completeness/checks remain draft | Applications, completeness | `api-contracts.md` §19.2-§19.4; `data-model.md` §13.1; `auth-permissions.md` §12.4 and endpoint map | `POST /api/v1/loan-applications/`, `GET /api/v1/loan-applications/{id}/`, and `PATCH /api/v1/loan-applications/{id}/` persist draft facts only with stable UUID IDs, nullable formal reference number, draft status, member summaries, optional land/crop/bank/cancelled-cheque references, masked bank metadata, permissions, audit, and draft-created workflow event. Submit, `LO...` sequence, completeness, documents, deficiencies, eligibility, loan limits, appraisal, sanction, and disbursement are future slices. |
+ | Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
+ | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
+ | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
+@@ -244,6 +244,92 @@ Rules:
+   encrypted token columns, hash values, or submitted identifier-derived values.
+ - Sensitive reveal writes no `WorkflowEvent`.
+ 
++## Loan Application Draft and Submit API (005A-005B)
++
++`POST /api/v1/loan-applications/`
++
++Request:
++
++```json
++{
++  "member_id": "uuid",
++  "required_loan_amount": "400000.00",
++  "requested_tenure_months": 12,
++  "declared_purpose": "Crop production loan for grape cultivation",
++  "purpose_category": "crop_production",
++  "loan_type_requested": "short_term",
++  "land_holding_id": "uuid",
++  "crop_plan_id": "uuid",
++  "bank_account_id": "uuid",
++  "cancelled_cheque_id": "uuid",
++  "borrower_request_notes": "Assisted intake notes",
++  "terms_acceptance_flag": false
++}
++```
++
++`GET /api/v1/loan-applications/{loan_application_id}/`
++
++`PATCH /api/v1/loan-applications/{loan_application_id}/`
++
++Patch accepts only the draft facts above except `member_id`; borrower ownership is preserved.
++
++`POST /api/v1/loan-applications/{loan_application_id}/submit/`
++
++Request body is accepted as a JSON object. `submission_notes` may be supplied by clients, but 005B
++does not persist notes because no source-backed column exists yet.
++
++`POST /api/v1/loan-applications/{loan_application_id}/generate-reference/`
++
++Request body is accepted as a JSON object. In 005C this endpoint represents the successful
++completeness-pass transition only; it does not evaluate document checklist items, nominee rules,
++deficiencies, eligibility, appraisal, sanction, or disbursement.
++
++Rules:
++- All endpoints require session-bound bearer authentication.
++- `POST` requires `applications.loan_application.create`; `GET` requires
++  `applications.loan_application.read`; `PATCH` requires
++  `applications.loan_application.update`; submit requires
++  `applications.loan_application.submit`; reference generation requires
++  `applications.loan_application.complete_check`.
++- 005A stores draft applications. 005B permits only `draft -> submitted`.
++  `current_stage` remains `initial_loan_request`, `completeness_status` remains
++  `not_started`, and submitted applications are locked from `PATCH`.
++- `application_reference_number` remains nullable through submit. 005C generates the formal
++  `LO...` number only from the submitted state at the source-backed completeness-pass point,
++  using the `loan_application_reference` system sequence (`LO` prefix, 8-digit padding, starting
++  at `LO00000001`). On success it sets `application_status = reference_generated`,
++  `current_stage = credit_assessment`, and `completeness_status = complete`.
++- Required draft validation is intentionally narrow: known borrower member,
++  well-formed UUID references, subresource references owned by the borrower
++  member, and positive requested amount when supplied.
++- Draft saves allow incomplete KYC/documents. 005B submit requires the
++  source-backed request facts already persisted by 005A: borrower member,
++  positive `required_loan_amount`, nonblank `declared_purpose`, and nonblank
++  `purpose_category`. Nominee, application-document placeholder, completeness,
++  and deficiency gates remain future slices.
++- Responses include member identity summaries plus land/crop and masked
++  bank/cancelled-cheque metadata by ID. They never include PAN, Aadhaar, full
++  bank account numbers, encrypted values, protected tokens, or hash fields.
++  005B responses additionally include nullable `submitted_at` and
++  `submitted_by_user_id`. 005C responses additionally include nullable
++  `loan_request_register_entry` metadata sourced from the application/member record:
++  register entry ID, loan application ID, reference number, member ID, received/reference dates,
++  received channel, register status, borrower name, folio, member type, requested amount,
++  purpose category, current stage, owner role, and pending downstream statuses.
++- Successful create writes `applications.loan_application.created` audit metadata
++  plus one `loan_application` workflow event into `draft`. Successful patch
++  writes `applications.loan_application.updated` audit metadata and does not
++  create a workflow event because no source-backed state transition occurs.
++  Successful submit writes `applications.loan_application.submitted` audit
++  metadata plus one `loan_application` workflow event from `draft` to
++  `submitted`. Successful reference generation writes
++  `applications.loan_application.reference_generated` audit metadata plus one
++  `loan_application` workflow event from `submitted` to `reference_generated`.
++- Unknown applications return `404 NOT_FOUND`; missing permissions return
++  `403 PERMISSION_DENIED`; invalid submit facts return `400 VALIDATION_ERROR`;
++  re-submit, other non-draft submit, draft reference generation, or duplicate reference attempts return
++  `409 INVALID_STATE_TRANSITION`.
++
+ ## Member Bank Account and Cancelled Cheque Metadata API (004J)
+ 
+ `GET /api/v1/members/{member_id}/bank-accounts/`
+diff --git a/docs/working/ASSUMPTIONS.md b/docs/working/ASSUMPTIONS.md
+index 75aed9b..f916fb7 100644
+--- a/docs/working/ASSUMPTIONS.md
++++ b/docs/working/ASSUMPTIONS.md
+@@ -36,3 +36,6 @@
+ | A-032 | 004G gates land-holding and crop-plan lists with `members.member.read` and creates with `members.member.update`; no new land/crop permission codes are seeded. | `auth-permissions.md` §12.2 and the endpoint map define member, nominee, shareholding, and active-status permissions, but no land/crop-specific codes. The slice requires using the narrowest source-compatible existing member permission rather than inventing codes. | `docs/source/auth-permissions.md` §12.2 and endpoint map; `docs/source/api-contracts.md` §17.1-§17.2; `docs/slices/004G-landholding-and-crop-plan-records.md` | 004G-landholding-and-crop-plan-records and future land/crop permission hardening slices | Medium | Yes | 2026-07-09 | If source docs add exact land/crop permissions, seed them and update `sfpcl_credit.members.services`, backend tests, frontend route/action checks, and this assumption. |
+ | A-033 | 004H lets a KYC document verification result update the member KYC profile/member status and sets re-KYC due two years after a verified result; it does not infer disbursement or appraisal blockers. | Source docs define KYC profile status, document verification, and two-year re-KYC, but do not yet define the required-document rollup rule or blocker workflow. | `docs/source/api-contracts.md` §18.1-§18.4; `docs/source/data-model.md` §12.1-§12.2; `docs/source/screen-spec.md` S17 | 004H-kyc-upload-and-verification and future KYC completeness/disbursement slices | High | Yes | 2026-07-09 | Replace this with a source-backed completeness rule when application completeness/disbursement gates define exact PAN/Aadhaar/photo/CKYC requirements. |
+ | A-034 | 004J gates member bank-account and cancelled-cheque metadata lists with `members.member.read` and creates with `members.member.update`; no new bank-account permission codes are seeded. Full bank-account reveal remains unimplemented and is not granted by PAN/Aadhaar reveal, KYC, document, disbursement, export, or security permissions. | `auth-permissions.md` §12.2 and endpoint map define member read/update plus field-specific PAN/Aadhaar reveal, but no exact bank-account metadata permission. The slice needs a member-profile foundation without broad disbursement/document/security authority. | `docs/source/auth-permissions.md` §12.2, §33, endpoint map; `docs/source/data-model.md` §12.3-§12.4; `docs/slices/004J-bank-account-and-cancelled-cheque-profile-foundation.md` | 004J-bank-account-and-cancelled-cheque-profile-foundation and future bank permission hardening slices | High | Yes | 2026-07-09 | If source docs add exact bank-account metadata read/create/update permissions, seed them and update `sfpcl_credit.members.services`, backend tests, frontend action checks, and this assumption. |
++| A-035 | 005A draft loan applications use a stable UUID primary identifier with nullable `application_reference_number`; `LO...` formal sequence generation is deferred until the source-backed reference/completeness slice. Draft `completeness_status` is stored as `not_started`, and draft updates write audit metadata but no workflow event because no source-backed state transition occurs. | The source API/data model shows formal reference numbers and completeness lifecycle for broader loan origination, while the selected slice explicitly narrows scope to draft create/read/update and forbids submit, reference-number generation, completeness, deficiencies, eligibility, and appraisal. | `docs/source/api-contracts.md` §19.2-§19.4; `docs/source/data-model.md` §13.1 and §28; `docs/source/screen-spec.md` S10; `docs/slices/005A-loan-application-draft-create-update.md` | 005A-loan-application-draft-create-update and 005B+ submit/completeness slices | Medium | Yes | 2026-07-09 | 005B confirmed submit keeps `application_reference_number` nullable because the member portal source says the reference number is issued after submitted details/documents are checked. A later reference/completeness slice owns sequence behavior. |
++| A-036 | 005B submit enforces only the selected slice's persisted request facts: member, positive requested amount, declared purpose, and purpose category. Nominee and application-document placeholder gates from the broader source submit endpoint are deferred to the document/completeness slices. | `api-contracts.md` §19.5 lists broader gate conditions, but the selected 005B slice explicitly excludes completeness, document checklist verification, deficiencies, and nominee/document requirements unless the source pass puts them in 005B. Implementing them now would require models and business rules owned by later slices. | `docs/source/api-contracts.md` §19.5; `docs/source/auth-permissions.md` §20.1; `docs/source/screen-spec-member-portal.md` MP08; `docs/slices/005B-application-submit-and-status-transition.md` | 005B-application-submit-and-status-transition and future document/completeness slices | Medium | Yes | 2026-07-09 | Future document/completeness slices must add exact nominee and document placeholder validations before appraisal/completeness advancement. |
++| A-037 | 005C stores successful reference generation as `application_status = reference_generated` even though the data-model enum table omits that value, because the screen source explicitly says the application status changes to `Reference Generated` when completeness passes and the official `LO...` number is generated. | Source documents conflict: `screen-spec.md` S12 names the output status, while `data-model.md` §28 lists later lifecycle statuses but not `reference_generated`. The slice needs an auditable transition point before appraisal without inventing document/completeness checks. | `docs/source/screen-spec.md` S12; `docs/source/data-model.md` §13.1 and §28; `docs/source/screen-spec-member-portal.md` MP08 | 005C-reference-number-generation-and-loan-request-register and future completeness/appraisal slices | Medium | Yes | 2026-07-09 | Future completeness/appraisal slices should either confirm `reference_generated` as a canonical stored status or map it into `appraisal_in_progress` after the appraisal workbench is implemented. |
+diff --git a/docs/working/digests/epic-005-application-intake.md b/docs/working/digests/epic-005-application-intake.md
+new file mode 100644
+index 0000000..8eedf94
+--- /dev/null
++++ b/docs/working/digests/epic-005-application-intake.md
+@@ -0,0 +1,135 @@
++# Epic 005 Digest: Application Intake, Completeness, and Deficiencies
++
++Sources distilled during slice `005A-loan-application-draft-create-update`:
++- `docs/source/implementation-roadmap.md` §11
++- `docs/source/api-contracts.md` §19.1-§19.4
++- `docs/source/data-model.md` §13.1, §28, §30, §33.1
++- `docs/source/auth-permissions.md` §12.4, §20.1, endpoint permission map
++- `docs/source/screen-spec.md` S10
++- `docs/source/screen-spec-member-portal.md` MP05, MP06, §11, §14.2
++
++Additional sources distilled during slice `005B-application-submit-and-status-transition`:
++- `docs/source/api-contracts.md` §19.5 plus audit/workflow examples in §42.
++- `docs/source/api-contracts.md` §20.1-§20.3 and §27.1-§27.2 for application documents and
++  checklist endpoints.
++- `docs/source/data-model.md` `loan_application_status`, `loan_applications.submitted_at`,
++  `application_documents` fields, and domain event table.
++- `docs/source/auth-permissions.md` §12.4, §20.1, §36 endpoint map.
++- `docs/source/screen-spec.md` S10 required documents/submission validations.
++- `docs/source/screen-spec-member-portal.md` MP07/MP08 submission confirmation and MP10 status
++  language.
++
++## Draft Application Foundation
++- Loan application creation must require an existing member. Data model stores
++  `member_id`, borrower type snapshot, channel/date, requested amount, declared
++  purpose, purpose category, status/stage, completeness status, terms flag, and
++  actor timestamps.
++- Slice 005A narrows the broader source contract to draft persistence only. It
++  deliberately does not generate `LO...` reference numbers, submit, run
++  completeness, verify documents, raise deficiencies, run eligibility, calculate
++  limits, appraise, sanction, or disburse.
++- S10 and MP05/MP06 require draft save/resume for member, requested loan facts,
++  land/crop, bank metadata, and declarations. Required-field completeness
++  blockers belong to submit/completeness slices.
++
++## API Surface
++- Source §19 defines:
++  - `POST /api/v1/loan-applications/`
++  - `GET /api/v1/loan-applications/{loan_application_id}/`
++  - `PATCH /api/v1/loan-applications/{loan_application_id}/`
++  - submit/check/deficiency endpoints for later slices.
++- 005A implements create/read/update of draft facts only using the standard API
++  success/error envelope.
++- Draft responses include member identity and masked Epic 004 bank summaries.
++  They must not serialize PAN, Aadhaar, full bank account numbers, encrypted
++  token values, or hash columns.
++
++## Validation And Permissions
++- Permissions are source-backed:
++  - Create: `applications.loan_application.create`
++  - Read: `applications.loan_application.read`
++  - Update draft: `applications.loan_application.update`
++- Draft state can be edited by Field Officer, Deputy Manager, and Credit Manager
++  once those role grants are applied through the catalogue.
++- Validation for 005A:
++  - Reject missing, malformed, unknown, or deleted borrower `member_id`.
++  - Reject malformed land/crop/bank/cancelled-cheque UUIDs.
++  - Reject land/crop/bank/cancelled-cheque references that do not belong to the
++    selected member.
++  - Reject non-positive requested amount when supplied.
++  - Allow incomplete KYC/documents at draft save time.
++
++## Audit And Workflow
++- Critical application create/update actions require audit rows.
++- Audit metadata must be metadata-only and must not include full sensitive
++  identifiers, token values, or hashes.
++- Existing workflow-event foundation can record the draft-created state without
++  inventing submit/completeness transitions. Draft updates should not create
++  extra workflow transitions unless a source-backed state change occurs.
++
++## Submit Transition Foundation
++- Canonical first submitted status is `submitted`.
++- Source permission is `applications.loan_application.submit`; state permission table allows draft
++  edit/upload/submit for Field Officer, Deputy Manager, and Credit Manager. The endpoint map lists
++  `POST /loan-applications/{id}/submit/` with this permission.
++- 005B owns only `draft -> submitted`. It preserves `current_stage =
++  initial_loan_request`, keeps `completeness_status = not_started`, and does not generate
++  `LO...` references. The portal copy says the reference number is received after submitted
++  details/documents are checked.
++- 005B submit requires the persisted S10/MP06 loan request facts: member, positive requested amount,
++  declared purpose, and purpose category. Nominee, document placeholders, completeness check,
++  deficiencies, eligibility, appraisal, sanction, disbursement, and payment initiation remain later
++  slices.
++- Successful submit should stamp submitted actor/time, lock direct draft edits, write
++  metadata-only `applications.loan_application.submitted` audit, and write a `loan_application`
++  workflow event from `draft` to `submitted`.
++
++## Reference Generation And Loan Request Register
++- Source trigger confirmed in 005C: the official `LO00000001` sequence is assigned after
++  completeness check passes, not at draft creation or submit. Evidence:
++  `screen-spec.md` §4.4 says assigned after completeness check, S12 says generate reference when
++  all mandatory completeness checks pass, and member portal MP08 says the borrower receives the
++  reference number after submitted details/documents are checked.
++- 005C implements a narrow backend action:
++  `POST /api/v1/loan-applications/{loan_application_id}/generate-reference/`. It represents the
++  successful completeness-pass point but does not implement checklist evaluation, nominee gates,
++  document verification, deficiencies, eligibility, appraisal, sanction, disbursement, or frontend
++  wiring.
++- Permission is source-backed `applications.loan_application.complete_check`.
++- Generation is limited to submitted applications. Draft or duplicate generation attempts return
++  a standard invalid-state error and must not create extra register rows, audit rows, workflow
++  events, or sequence-visible application references.
++- The sequence table is `system_sequences` with code `loan_application_reference`, prefix `LO`,
++  current value, 8-digit padding, and last generated value. References start at `LO00000001`.
++- Successful generation sets `application_reference_number`, marks completeness `complete`, moves
++  the stage to `credit_assessment`, writes metadata-only audit/action evidence, records a workflow
++  event from `submitted` to `reference_generated`, and creates exactly one
++  `loan_request_register_entries` row linked one-to-one to the application.
++- Register rows are sourced from existing application/member facts and must not copy PAN, Aadhaar,
++  full bank account values, protected token values, or hashes.
++- A-037 records the source mismatch that S12 names `Reference Generated` as the application status
++  while the data-model enum table omits that value.
++
++## Application Documents And Checklist
++- Source application-document endpoints:
++  - `GET /api/v1/loan-applications/{loan_application_id}/application-documents/`
++  - `POST /api/v1/loan-applications/{loan_application_id}/application-documents/`
++  - `POST /api/v1/application-documents/{application_document_id}/verify/`
++  - `GET /api/v1/loan-applications/{loan_application_id}/document-checklist/`
++  - `POST /api/v1/loan-applications/{loan_application_id}/document-checklist/refresh/`
++- Upload fields: `document_type`, `party_type`, optional `party_id`, `file`, and optional
++  `remarks`. Party types are borrower/nominee/witness. Verification request carries
++  `verification_status` and `remarks`.
++- Data model fields for application documents include loan application FK, document type, party
++  type/ID, document file FK, required flag, submission status, verification status, verifier
++  actor/time, and remarks.
++- Required application-stage documents from source: loan application form, borrower PAN, borrower
++  Aadhaar/OVD for individual borrowers, nominee PAN, nominee Aadhaar/OVD, share certificate copy,
++  land document / 7/12 extract, crop plan, and six-month bank statement. Cancelled cheque may be
++  collected at application stage but is explicitly required before disbursement, so it should not
++  block the 005D application checklist unless the source pass finds stronger language.
++- Document statuses in the portal are `Not Uploaded -> Uploaded -> Under Review -> Accepted /
++  Rejected / Re-upload Required`; backend verification vocabulary can map these to pending /
++  submitted / verified / rejected metadata without exposing sensitive values.
++- Duplicate document types should create a new version/history row or a standard duplicate-state
++  error, but must not overwrite audit history.
+diff --git a/sfpcl-lms/src/pages/members/Borrower360.test.tsx b/sfpcl-lms/src/pages/members/Borrower360.test.tsx
+index 0d1980b..f82f0e0 100644
+--- a/sfpcl-lms/src/pages/members/Borrower360.test.tsx
++++ b/sfpcl-lms/src/pages/members/Borrower360.test.tsx
+@@ -37,7 +37,7 @@ afterEach(() => {
+ describe('borrower 360 API client additions', () => {
+   it('loads bank and cancelled-cheque metadata from 004J endpoints without full account numbers', async () => {
+     const fetchMock = vi.fn()
+-      .mockResolvedValueOnce(listOk([bankAccount]))
++      .mockResolvedValueOnce(listOk([apiBankAccount]))
+       .mockResolvedValueOnce(listOk([cancelledCheque]));
+     vi.stubGlobal('fetch', fetchMock);
+ 
+@@ -65,6 +65,7 @@ describe('borrower 360 API client additions', () => {
+       last4: '9012',
+       can_view_full: false,
+     });
++    expect(accounts.items[0].account_holder_name).toBe('Ramesh Patil');
+     expect(cheques.items[0].account_number.masked).toBe('********9012');
+     expect(JSON.stringify(accounts)).not.toContain('123456789012');
+     expect(JSON.stringify(cheques)).not.toContain('123456789012');
+@@ -84,6 +85,7 @@ describe('Borrower360View', () => {
+     expect(html).toContain('123/4');
+     expect(html).toContain('grapes');
+     expect(html).toContain('Sita Patil');
++    expect(html).toContain('Kiran Bank Holder');
+     expect(html).toContain('State Bank of India');
+     expect(html).toContain('********9012');
+     expect(html).toContain('No loan records are available from the backend yet.');
+@@ -252,7 +254,7 @@ const kycProfile: KycProfileDetail = {
+ 
+ const bankAccount: MemberBankAccountDetail = {
+   bank_account_id: 'bank-1',
+-  holder_name: 'Ramesh Patil',
++  account_holder_name: 'Kiran Bank Holder',
+   account_number: { masked: '********9012', last4: '9012', can_view_full: false },
+   ifsc: 'SBIN0001234',
+   bank_name: 'State Bank of India',
+@@ -264,6 +266,11 @@ const bankAccount: MemberBankAccountDetail = {
+   created_at: '2026-07-09T08:00:00Z',
+ };
+ 
++const apiBankAccount: MemberBankAccountDetail = {
++  ...bankAccount,
++  account_holder_name: 'Ramesh Patil',
++};
++
+ const cancelledCheque: MemberCancelledChequeDetail = {
+   cancelled_cheque_id: 'cheque-1',
+   loan_application_id: null,
+diff --git a/sfpcl-lms/src/pages/members/Borrower360.tsx b/sfpcl-lms/src/pages/members/Borrower360.tsx
+index d4169f4..890c5fb 100644
+--- a/sfpcl-lms/src/pages/members/Borrower360.tsx
++++ b/sfpcl-lms/src/pages/members/Borrower360.tsx
+@@ -452,7 +452,7 @@ const BankSecurityTab: React.FC<{
+         <div key={account.bank_account_id} className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+           <div className="flex items-start justify-between gap-3">
+             <div>
+-              <p className="text-sm font-semibold text-slate-900">{account.holder_name}</p>
++              <p className="text-sm font-semibold text-slate-900">{account.account_holder_name}</p>
+               <p className="text-xs text-slate-500 mt-0.5">{account.bank_name || '-'} · {account.branch_name || '-'}</p>
+             </div>
+             <StatusBadge label={account.verification_status || account.status || 'pending'} size="sm" family={account.verification_status === 'verified' ? 'approved' : undefined} />
+diff --git a/sfpcl-lms/src/services/memberProfileApi.ts b/sfpcl-lms/src/services/memberProfileApi.ts
+index a8edcae..7e9816a 100644
+--- a/sfpcl-lms/src/services/memberProfileApi.ts
++++ b/sfpcl-lms/src/services/memberProfileApi.ts
+@@ -188,7 +188,7 @@ export interface KycProfileDetail {
+ 
+ export interface MemberBankAccountDetail {
+   bank_account_id: string;
+-  holder_name: string;
++  account_holder_name: string;
+   account_number: { masked: string | null; last4: string | null; can_view_full: boolean };
+   ifsc: string;
+   bank_name: string | null;
+@@ -654,7 +654,7 @@ const normalizeBankAccounts = (items: MemberBankAccountDetail[]): MemberBankAcco
+ 
+ const normalizeBankAccount = (item: MemberBankAccountDetail): MemberBankAccountDetail => ({
+   bank_account_id: String(item?.bank_account_id ?? ''),
+-  holder_name: String(item?.holder_name ?? ''),
++  account_holder_name: String(item?.account_holder_name ?? ''),
+   account_number: normalizeMaskedAccount(item?.account_number),
+   ifsc: String(item?.ifsc ?? ''),
+   bank_name: textOrNull(item?.bank_name),
+diff --git a/sfpcl_credit/applications/__init__.py b/sfpcl_credit/applications/__init__.py
+new file mode 100644
+index 0000000..8b13789
+--- /dev/null
++++ b/sfpcl_credit/applications/__init__.py
+@@ -0,0 +1 @@
++
+diff --git a/sfpcl_credit/applications/apps.py b/sfpcl_credit/applications/apps.py
+new file mode 100644
+index 0000000..346a0be
+--- /dev/null
++++ b/sfpcl_credit/applications/apps.py
+@@ -0,0 +1,6 @@
++from django.apps import AppConfig
++
++
++class ApplicationsConfig(AppConfig):
++    default_auto_field = "django.db.models.BigAutoField"
++    name = "sfpcl_credit.applications"
+diff --git a/sfpcl_credit/applications/migrations/0001_initial.py b/sfpcl_credit/applications/migrations/0001_initial.py
+new file mode 100644
+index 0000000..db4f312
+--- /dev/null
++++ b/sfpcl_credit/applications/migrations/0001_initial.py
+@@ -0,0 +1,58 @@
++# Generated by Django 5.0.6 on 2026-07-09 11:58
++
++import django.db.models.deletion
++import django.utils.timezone
++import uuid
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    initial = True
++
++    dependencies = [
++        ('identity', '0002_permission_rolepermission_and_more'),
++        ('members', '0008_cancelledcheque_bankaccount_and_more'),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='LoanApplication',
++            fields=[
++                ('loan_application_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
++                ('application_reference_number', models.CharField(blank=True, max_length=40, null=True, unique=True)),
++                ('borrower_type', models.CharField(db_index=True, max_length=60)),
++                ('application_channel', models.CharField(default='assisted_digital', max_length=60)),
++                ('application_date', models.DateField(db_index=True, default=django.utils.timezone.localdate)),
++                ('required_loan_amount', models.DecimalField(blank=True, decimal_places=2, max_digits=18, null=True)),
++                ('requested_tenure_months', models.PositiveIntegerField(blank=True, null=True)),
++                ('declared_purpose', models.TextField(blank=True)),
++                ('purpose_category', models.CharField(blank=True, db_index=True, max_length=80)),
++                ('loan_type_requested', models.CharField(blank=True, max_length=60)),
++                ('borrower_request_notes', models.TextField(blank=True)),
++                ('current_stage', models.CharField(db_index=True, default='initial_loan_request', max_length=80)),
++                ('application_status', models.CharField(db_index=True, default='draft', max_length=80)),
++                ('completeness_status', models.CharField(db_index=True, default='not_started', max_length=60)),
++                ('terms_acceptance_flag', models.BooleanField(default=False)),
++                ('submitted_at', models.DateTimeField(blank=True, null=True)),
++                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
++                ('updated_at', models.DateTimeField(blank=True, null=True)),
++                ('bank_account', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='loan_applications', to='members.bankaccount')),
++                ('cancelled_cheque', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='loan_applications', to='members.cancelledcheque')),
++                ('created_by_user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='created_loan_applications', to='identity.user')),
++                ('crop_plan', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='loan_applications', to='members.cropplan')),
++                ('land_holding', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='loan_applications', to='members.landholding')),
++                ('member', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='loan_applications', to='members.member')),
++                ('received_by_user', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='received_loan_applications', to='identity.user')),
++                ('updated_by_user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='updated_loan_applications', to='identity.user')),
++            ],
++            options={
++                'db_table': 'loan_applications',
++                'indexes': [models.Index(fields=['application_status', 'current_stage'], name='idx_loan_apps_status_stage'), models.Index(fields=['member'], name='idx_loan_apps_member'), models.Index(fields=['application_date'], name='idx_loan_apps_app_date'), models.Index(fields=['application_reference_number'], name='idx_loan_apps_reference')],
++            },
++        ),
++        migrations.AddConstraint(
++            model_name='loanapplication',
++            constraint=models.CheckConstraint(check=models.Q(('required_loan_amount__isnull', True), ('required_loan_amount__gt', 0), _connector='OR'), name='loan_apps_positive_required_amount'),
++        ),
++    ]
+diff --git a/sfpcl_credit/applications/migrations/0002_loanapplication_submitted_by_user.py b/sfpcl_credit/applications/migrations/0002_loanapplication_submitted_by_user.py
+new file mode 100644
+index 0000000..5c58852
+--- /dev/null
++++ b/sfpcl_credit/applications/migrations/0002_loanapplication_submitted_by_user.py
+@@ -0,0 +1,20 @@
++# Generated by Django 5.0.6 on 2026-07-09 12:29
++
++import django.db.models.deletion
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('applications', '0001_initial'),
++        ('identity', '0002_permission_rolepermission_and_more'),
++    ]
++
++    operations = [
++        migrations.AddField(
++            model_name='loanapplication',
++            name='submitted_by_user',
++            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='submitted_loan_applications', to='identity.user'),
++        ),
++    ]
+diff --git a/sfpcl_credit/applications/migrations/0003_systemsequence_loanrequestregisterentry.py b/sfpcl_credit/applications/migrations/0003_systemsequence_loanrequestregisterentry.py
+new file mode 100644
+index 0000000..aad1c7c
+--- /dev/null
++++ b/sfpcl_credit/applications/migrations/0003_systemsequence_loanrequestregisterentry.py
+@@ -0,0 +1,66 @@
++# Generated by Django 5.0.6 on 2026-07-09 13:11
++
++import django.db.models.deletion
++import django.utils.timezone
++import uuid
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('applications', '0002_loanapplication_submitted_by_user'),
++        ('identity', '0002_permission_rolepermission_and_more'),
++        ('members', '0008_cancelledcheque_bankaccount_and_more'),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='SystemSequence',
++            fields=[
++                ('system_sequence_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
++                ('sequence_code', models.CharField(max_length=80, unique=True)),
++                ('prefix', models.CharField(max_length=20)),
++                ('current_value', models.BigIntegerField(default=0)),
++                ('padding_length', models.PositiveIntegerField(default=8)),
++                ('last_generated_value', models.CharField(blank=True, max_length=80, null=True)),
++                ('updated_at', models.DateTimeField(default=django.utils.timezone.now)),
++            ],
++            options={
++                'db_table': 'system_sequences',
++            },
++        ),
++        migrations.CreateModel(
++            name='LoanRequestRegisterEntry',
++            fields=[
++                ('loan_request_register_entry_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
++                ('application_reference_number', models.CharField(db_index=True, max_length=40)),
++                ('date_received', models.DateField(db_index=True)),
++                ('reference_generated_date', models.DateField(db_index=True)),
++                ('received_channel', models.CharField(max_length=60)),
++                ('register_status', models.CharField(db_index=True, default='reference_generated', max_length=60)),
++                ('requested_amount', models.DecimalField(blank=True, decimal_places=2, max_digits=18, null=True)),
++                ('declared_purpose', models.TextField(blank=True)),
++                ('purpose_category', models.CharField(blank=True, db_index=True, max_length=80)),
++                ('borrower_name', models.CharField(blank=True, max_length=255)),
++                ('folio_number', models.CharField(blank=True, max_length=120)),
++                ('member_type', models.CharField(blank=True, max_length=60)),
++                ('current_stage', models.CharField(blank=True, db_index=True, max_length=80)),
++                ('current_owner_role', models.CharField(blank=True, max_length=120)),
++                ('eligibility_status', models.CharField(db_index=True, default='pending', max_length=60)),
++                ('sanction_status', models.CharField(db_index=True, default='pending', max_length=60)),
++                ('documentation_status', models.CharField(db_index=True, default='pending', max_length=60)),
++                ('disbursement_status', models.CharField(db_index=True, default='pending', max_length=60)),
++                ('original_copy_reference', models.CharField(blank=True, max_length=255)),
++                ('remarks', models.TextField(blank=True)),
++                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
++                ('loan_application', models.OneToOneField(on_delete=django.db.models.deletion.PROTECT, related_name='loan_request_register_entry', to='applications.loanapplication')),
++                ('member', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='loan_request_register_entries', to='members.member')),
++                ('received_by_user', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='received_loan_request_register_entries', to='identity.user')),
++            ],
++            options={
++                'db_table': 'loan_request_register_entries',
++                'indexes': [models.Index(fields=['register_status', 'current_stage'], name='idx_lrr_status_stage'), models.Index(fields=['date_received'], name='idx_lrr_date_received'), models.Index(fields=['reference_generated_date'], name='idx_lrr_ref_gen_date')],
++            },
++        ),
++    ]
+diff --git a/sfpcl_credit/applications/migrations/__init__.py b/sfpcl_credit/applications/migrations/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/sfpcl_credit/applications/models.py b/sfpcl_credit/applications/models.py
+new file mode 100644
+index 0000000..1eb9ffe
+--- /dev/null
++++ b/sfpcl_credit/applications/models.py
+@@ -0,0 +1,238 @@
++import uuid
++
++from django.core.exceptions import ValidationError
++from django.db import models
++from django.utils import timezone
++
++
++class LoanApplication(models.Model):
++    STATUS_DRAFT = "draft"
++    STATUS_SUBMITTED = "submitted"
++    STATUS_REFERENCE_GENERATED = "reference_generated"
++    STAGE_INITIAL = "initial_loan_request"
++    STAGE_CREDIT_ASSESSMENT = "credit_assessment"
++    COMPLETENESS_NOT_STARTED = "not_started"
++    COMPLETENESS_COMPLETE = "complete"
++
++    loan_application_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
++    application_reference_number = models.CharField(
++        max_length=40, blank=True, null=True, unique=True
++    )
++    member = models.ForeignKey(
++        "members.Member", on_delete=models.PROTECT, related_name="loan_applications"
++    )
++    borrower_type = models.CharField(max_length=60, db_index=True)
++    application_channel = models.CharField(max_length=60, default="assisted_digital")
++    application_date = models.DateField(default=timezone.localdate, db_index=True)
++    received_by_user = models.ForeignKey(
++        "identity.User",
++        on_delete=models.PROTECT,
++        related_name="received_loan_applications",
++    )
++    required_loan_amount = models.DecimalField(
++        max_digits=18, decimal_places=2, blank=True, null=True
++    )
++    requested_tenure_months = models.PositiveIntegerField(blank=True, null=True)
++    declared_purpose = models.TextField(blank=True)
++    purpose_category = models.CharField(max_length=80, blank=True, db_index=True)
++    loan_type_requested = models.CharField(max_length=60, blank=True)
++    land_holding = models.ForeignKey(
++        "members.LandHolding",
++        blank=True,
++        null=True,
++        on_delete=models.PROTECT,
++        related_name="loan_applications",
++    )
++    crop_plan = models.ForeignKey(
++        "members.CropPlan",
++        blank=True,
++        null=True,
++        on_delete=models.PROTECT,
++        related_name="loan_applications",
++    )
++    bank_account = models.ForeignKey(
++        "members.BankAccount",
++        blank=True,
++        null=True,
++        on_delete=models.PROTECT,
++        related_name="loan_applications",
++    )
++    cancelled_cheque = models.ForeignKey(
++        "members.CancelledCheque",
++        blank=True,
++        null=True,
++        on_delete=models.PROTECT,
++        related_name="loan_applications",
++    )
++    borrower_request_notes = models.TextField(blank=True)
++    current_stage = models.CharField(max_length=80, default=STAGE_INITIAL, db_index=True)
++    application_status = models.CharField(max_length=80, default=STATUS_DRAFT, db_index=True)
++    completeness_status = models.CharField(
++        max_length=60, default=COMPLETENESS_NOT_STARTED, db_index=True
++    )
++    terms_acceptance_flag = models.BooleanField(default=False)
++    submitted_at = models.DateTimeField(blank=True, null=True)
++    submitted_by_user = models.ForeignKey(
++        "identity.User",
++        blank=True,
++        null=True,
++        on_delete=models.PROTECT,
++        related_name="submitted_loan_applications",
++    )
++    created_at = models.DateTimeField(default=timezone.now)
++    created_by_user = models.ForeignKey(
++        "identity.User",
++        blank=True,
++        null=True,
++        on_delete=models.PROTECT,
++        related_name="created_loan_applications",
++    )
++    updated_at = models.DateTimeField(blank=True, null=True)
++    updated_by_user = models.ForeignKey(
++        "identity.User",
++        blank=True,
++        null=True,
++        on_delete=models.PROTECT,
++        related_name="updated_loan_applications",
++    )
++
++    class Meta:
++        db_table = "loan_applications"
++        indexes = [
++            models.Index(fields=["application_status", "current_stage"], name="idx_loan_apps_status_stage"),
++            models.Index(fields=["member"], name="idx_loan_apps_member"),
++            models.Index(fields=["application_date"], name="idx_loan_apps_app_date"),
++            models.Index(fields=["application_reference_number"], name="idx_loan_apps_reference"),
++        ]
++        constraints = [
++            models.CheckConstraint(
++                check=(
++                    models.Q(required_loan_amount__isnull=True)
++                    | models.Q(required_loan_amount__gt=0)
++                ),
++                name="loan_apps_positive_required_amount",
++            ),
++        ]
++
++    def clean(self):
++        super().clean()
++        if self.required_loan_amount is not None and self.required_loan_amount <= 0:
++            raise ValidationError(
++                {"required_loan_amount": "Requested amount must be greater than zero."}
++            )
++        if self.application_status not in {
++            self.STATUS_DRAFT,
++            self.STATUS_SUBMITTED,
++            self.STATUS_REFERENCE_GENERATED,
++        }:
++            raise ValidationError({"application_status": "Unsupported application status."})
++        if self.current_stage not in {self.STAGE_INITIAL, self.STAGE_CREDIT_ASSESSMENT}:
++            raise ValidationError({"current_stage": "Unsupported current stage."})
++        if self.application_status == self.STATUS_SUBMITTED and self.submitted_at is None:
++            raise ValidationError({"submitted_at": "Submitted applications require submitted_at."})
++        if self.application_status == self.STATUS_REFERENCE_GENERATED:
++            if self.application_reference_number is None:
++                raise ValidationError(
++                    {
++                        "application_reference_number": (
++                            "Reference generated applications require a reference number."
++                        )
++                    }
++                )
++            if self.current_stage != self.STAGE_CREDIT_ASSESSMENT:
++                raise ValidationError(
++                    {"current_stage": "Reference generated applications move to credit assessment."}
++                )
++            if self.completeness_status != self.COMPLETENESS_COMPLETE:
++                raise ValidationError(
++                    {"completeness_status": "Reference generation requires complete status."}
++                )
++
++    def save(self, *args, **kwargs):
++        if self.member_id and not self.borrower_type:
++            self.borrower_type = self.member.member_type
++        self.full_clean()
++        return super().save(*args, **kwargs)
++
++
++class SystemSequence(models.Model):
++    system_sequence_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
++    sequence_code = models.CharField(max_length=80, unique=True)
++    prefix = models.CharField(max_length=20)
++    current_value = models.BigIntegerField(default=0)
++    padding_length = models.PositiveIntegerField(default=8)
++    last_generated_value = models.CharField(max_length=80, blank=True, null=True)
++    updated_at = models.DateTimeField(default=timezone.now)
++
++    class Meta:
++        db_table = "system_sequences"
++
++    def next_value(self):
++        self.current_value += 1
++        self.last_generated_value = f"{self.prefix}{self.current_value:0{self.padding_length}d}"
++        self.updated_at = timezone.now()
++        self.save(update_fields=["current_value", "last_generated_value", "updated_at"])
++        return self.last_generated_value
++
++
++class LoanRequestRegisterEntry(models.Model):
++    STATUS_REFERENCE_GENERATED = "reference_generated"
++
++    loan_request_register_entry_id = models.UUIDField(
++        primary_key=True,
++        default=uuid.uuid4,
++        editable=False,
++    )
++    loan_application = models.OneToOneField(
++        LoanApplication,
++        on_delete=models.PROTECT,
++        related_name="loan_request_register_entry",
++    )
++    application_reference_number = models.CharField(max_length=40, db_index=True)
++    member = models.ForeignKey(
++        "members.Member",
++        on_delete=models.PROTECT,
++        related_name="loan_request_register_entries",
++    )
++    date_received = models.DateField(db_index=True)
++    reference_generated_date = models.DateField(db_index=True)
++    received_channel = models.CharField(max_length=60)
++    received_by_user = models.ForeignKey(
++        "identity.User",
++        on_delete=models.PROTECT,
++        related_name="received_loan_request_register_entries",
++    )
++    register_status = models.CharField(
++        max_length=60,
++        default=STATUS_REFERENCE_GENERATED,
++        db_index=True,
++    )
++    requested_amount = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
++    declared_purpose = models.TextField(blank=True)
++    purpose_category = models.CharField(max_length=80, blank=True, db_index=True)
++    borrower_name = models.CharField(max_length=255, blank=True)
++    folio_number = models.CharField(max_length=120, blank=True)
++    member_type = models.CharField(max_length=60, blank=True)
++    current_stage = models.CharField(max_length=80, blank=True, db_index=True)
++    current_owner_role = models.CharField(max_length=120, blank=True)
++    eligibility_status = models.CharField(max_length=60, default="pending", db_index=True)
++    sanction_status = models.CharField(max_length=60, default="pending", db_index=True)
++    documentation_status = models.CharField(max_length=60, default="pending", db_index=True)
++    disbursement_status = models.CharField(max_length=60, default="pending", db_index=True)
++    original_copy_reference = models.CharField(max_length=255, blank=True)
++    remarks = models.TextField(blank=True)
++    created_at = models.DateTimeField(default=timezone.now)
++
++    class Meta:
++        db_table = "loan_request_register_entries"
++        indexes = [
++            models.Index(
++                fields=["register_status", "current_stage"],
++                name="idx_lrr_status_stage",
++            ),
++            models.Index(fields=["date_received"], name="idx_lrr_date_received"),
++            models.Index(
++                fields=["reference_generated_date"],
++                name="idx_lrr_ref_gen_date",
++            ),
++        ]
+diff --git a/sfpcl_credit/applications/services.py b/sfpcl_credit/applications/services.py
+new file mode 100644
+index 0000000..0935192
+--- /dev/null
++++ b/sfpcl_credit/applications/services.py
+@@ -0,0 +1,759 @@
++import uuid
++from decimal import Decimal, InvalidOperation
++
++from django.core.exceptions import ValidationError
++from django.db import transaction
++from django.utils import timezone
++
++from sfpcl_credit.applications.models import (
++    LoanApplication,
++    LoanRequestRegisterEntry,
++    SystemSequence,
++)
++from sfpcl_credit.identity.models import AuditLog
++from sfpcl_credit.identity.modules import auth_service
++from sfpcl_credit.members.models import BankAccount, CancelledCheque, CropPlan, LandHolding, Member
++from sfpcl_credit.workflows.events import record_workflow_event
++from sfpcl_credit.workflows.guard import (
++    TransitionDefinition,
++    evaluate_transition,
++)
++
++
++APPLICATION_READ_PERMISSION = "applications.loan_application.read"
++APPLICATION_CREATE_PERMISSION = "applications.loan_application.create"
++APPLICATION_UPDATE_PERMISSION = "applications.loan_application.update"
++APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
++APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_check"
++LOAN_APPLICATION_REFERENCE_SEQUENCE_CODE = "loan_application_reference"
++APPLICATION_TRANSITIONS = (
++    TransitionDefinition(
++        entity_type="loan_application",
++        action_code="submit",
++        from_states=frozenset({LoanApplication.STATUS_DRAFT}),
++        to_state=LoanApplication.STATUS_SUBMITTED,
++        required_permission=APPLICATION_SUBMIT_PERMISSION,
++        audit_action="applications.loan_application.submitted",
++        workflow_name="loan_application",
++        workflow_label="Application submitted for completeness review.",
++    ),
++    TransitionDefinition(
++        entity_type="loan_application",
++        action_code="generate_reference",
++        from_states=frozenset({LoanApplication.STATUS_SUBMITTED}),
++        to_state=LoanApplication.STATUS_REFERENCE_GENERATED,
++        required_permission=APPLICATION_COMPLETE_CHECK_PERMISSION,
++        audit_action="applications.loan_application.reference_generated",
++        workflow_name="loan_application",
++        workflow_label="Completeness passed and reference generated.",
++    ),
++)
++_CREATE_FIELDS = {
++    "member_id",
++    "required_loan_amount",
++    "requested_tenure_months",
++    "declared_purpose",
++    "purpose_category",
++    "loan_type_requested",
++    "land_holding_id",
++    "crop_plan_id",
++    "bank_account_id",
++    "cancelled_cheque_id",
++    "borrower_request_notes",
++    "terms_acceptance_flag",
++}
++_UPDATE_FIELDS = _CREATE_FIELDS - {"member_id"}
++
++
++class LoanApplicationValidationError(Exception):
++    def __init__(self, field_errors):
++        self.field_errors = field_errors
++        super().__init__("Loan application payload failed validation.")
++
++
++def user_can_read_applications(user):
++    return APPLICATION_READ_PERMISSION in auth_service.effective_permission_codes(user)
++
++
++def user_can_create_applications(user):
++    return APPLICATION_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
++
++
++def user_can_update_applications(user):
++    return APPLICATION_UPDATE_PERMISSION in auth_service.effective_permission_codes(user)
++
++
++def user_can_submit_applications(user):
++    return APPLICATION_SUBMIT_PERMISSION in auth_service.effective_permission_codes(user)
++
++
++def user_can_complete_check_applications(user):
++    return APPLICATION_COMPLETE_CHECK_PERMISSION in auth_service.effective_permission_codes(user)
++
++
++def get_application(application_id):
++    return (
++        LoanApplication.objects.select_related(
++            "member",
++            "land_holding",
++            "crop_plan",
++            "bank_account",
++            "cancelled_cheque",
++            "created_by_user",
++            "updated_by_user",
++            "submitted_by_user",
++            "loan_request_register_entry",
++        )
++        .filter(loan_application_id=application_id)
++        .first()
++    )
++
++
++@transaction.atomic
++def create_draft(payload, actor, request_ip="", request_user_agent="", request_id=None):
++    cleaned = _clean_payload(payload, require_member=True)
++    application = LoanApplication(
++        member=cleaned["member"],
++        borrower_type=cleaned["member"].member_type,
++        received_by_user=actor,
++        created_by_user=actor,
++        updated_by_user=actor,
++        updated_at=timezone.now(),
++    )
++    _assign_fields(application, cleaned)
++    application.save()
++    _audit_application(
++        application,
++        actor,
++        "applications.loan_application.created",
++        None,
++        request_ip,
++        request_user_agent,
++        request_id,
++    )
++    record_workflow_event(
++        actor=actor,
++        workflow_name="loan_application",
++        entity_type="loan_application",
++        entity_id=application.loan_application_id,
++        from_state=None,
++        to_state=LoanApplication.STATUS_DRAFT,
++        trigger_reason="Draft application created.",
++    )
++    return application
++
++
++@transaction.atomic
++def update_draft(application, payload, actor, request_ip="", request_user_agent="", request_id=None):
++    if application.application_status != LoanApplication.STATUS_DRAFT:
++        raise LoanApplicationValidationError(
++            {"application_status": "Only draft applications can be updated."}
++        )
++    cleaned = _clean_update_payload(payload, application.member)
++    old_value_json = _audit_snapshot(application)
++    for field, value in cleaned.items():
++        setattr(application, field, value)
++    application.updated_by_user = actor
++    application.updated_at = timezone.now()
++    application.save()
++    _audit_application(
++        application,
++        actor,
++        "applications.loan_application.updated",
++        old_value_json,
++        request_ip,
++        request_user_agent,
++        request_id,
++    )
++    return application
++
++
++@transaction.atomic
++def submit_application(
++    application,
++    actor,
++    request_ip="",
++    request_user_agent="",
++    request_id=None,
++    actor_permissions=None,
++):
++    transition = evaluate_transition(
++        current_state=application.application_status,
++        requested_action="submit",
++        actor_permissions=actor_permissions or auth_service.effective_permission_codes(actor),
++        transitions=APPLICATION_TRANSITIONS,
++    )
++    _validate_submit_facts(application)
++    old_value_json = _audit_snapshot(application)
++    application.application_status = transition.next_state
++    application.submitted_at = timezone.now()
++    application.submitted_by_user = actor
++    application.updated_at = application.submitted_at
++    application.updated_by_user = actor
++    application.save()
++    _audit_application(
++        application,
++        actor,
++        transition.definition.audit_action,
++        old_value_json,
++        request_ip,
++        request_user_agent,
++        request_id,
++    )
++    record_workflow_event(
++        actor=actor,
++        workflow_name=transition.definition.workflow_name,
++        entity_type=transition.definition.entity_type,
++        entity_id=application.loan_application_id,
++        from_state=transition.previous_state,
++        to_state=transition.next_state,
++        trigger_reason=transition.definition.workflow_label,
++        action_code=transition.definition.action_code,
++    )
++    return application
++
++
++@transaction.atomic
++def generate_reference_after_completeness_pass(
++    application,
++    actor,
++    request_ip="",
++    request_user_agent="",
++    request_id=None,
++    actor_permissions=None,
++):
++    application = (
++        LoanApplication.objects.select_for_update()
++        .select_related("member", "received_by_user")
++        .get(loan_application_id=application.loan_application_id)
++    )
++    transition = evaluate_transition(
++        current_state=application.application_status,
++        requested_action="generate_reference",
++        actor_permissions=actor_permissions or auth_service.effective_permission_codes(actor),
++        transitions=APPLICATION_TRANSITIONS,
++    )
++    if application.application_reference_number:
++        raise LoanApplicationValidationError(
++            {"application_reference_number": "Application already has a reference number."}
++        )
++    if LoanRequestRegisterEntry.objects.filter(loan_application=application).exists():
++        raise LoanApplicationValidationError(
++            {"loan_request_register_entry": "Loan request register entry already exists."}
++        )
++
++    old_value_json = _audit_snapshot(application)
++    reference_number = _next_loan_application_reference()
++    now = timezone.now()
++    application.application_reference_number = reference_number
++    application.application_status = transition.next_state
++    application.current_stage = LoanApplication.STAGE_CREDIT_ASSESSMENT
++    application.completeness_status = LoanApplication.COMPLETENESS_COMPLETE
++    application.updated_at = now
++    application.updated_by_user = actor
++    application.save()
++    register_entry = LoanRequestRegisterEntry.objects.create(
++        loan_application=application,
++        application_reference_number=reference_number,
++        member=application.member,
++        date_received=application.application_date,
++        reference_generated_date=timezone.localdate(now),
++        received_channel=application.application_channel,
++        received_by_user=application.received_by_user,
++        register_status=LoanRequestRegisterEntry.STATUS_REFERENCE_GENERATED,
++        requested_amount=application.required_loan_amount,
++        declared_purpose=application.declared_purpose,
++        purpose_category=application.purpose_category,
++        borrower_name=application.member.display_name,
++        folio_number=application.member.folio_number,
++        member_type=application.member.member_type,
++        current_stage=application.current_stage,
++        current_owner_role="Deputy Manager / Credit Manager",
++    )
++    _audit_application(
++        application,
++        actor,
++        transition.definition.audit_action,
++        old_value_json,
++        request_ip,
++        request_user_agent,
++        request_id,
++        register_entry=register_entry,
++    )
++    record_workflow_event(
++        actor=actor,
++        workflow_name=transition.definition.workflow_name,
++        entity_type=transition.definition.entity_type,
++        entity_id=application.loan_application_id,
++        from_state=transition.previous_state,
++        to_state=transition.next_state,
++        trigger_reason=transition.definition.workflow_label,
++        action_code=transition.definition.action_code,
++    )
++    application.loan_request_register_entry = register_entry
++    return application
++
++
++def serialize_application(application):
++    register_entry = getattr(application, "loan_request_register_entry", None)
++    return {
++        "loan_application_id": str(application.loan_application_id),
++        "application_reference_number": application.application_reference_number,
++        "member": _member_summary(application.member),
++        "application_date": application.application_date.isoformat(),
++        "required_loan_amount": _money(application.required_loan_amount),
++        "requested_tenure_months": application.requested_tenure_months,
++        "declared_purpose": application.declared_purpose,
++        "purpose_category": application.purpose_category,
++        "loan_type_requested": application.loan_type_requested or None,
++        "land_holding": _land_summary(application.land_holding),
++        "crop_plan": _crop_summary(application.crop_plan),
++        "bank_account": _bank_summary(application.bank_account),
++        "cancelled_cheque": _cheque_summary(application.cancelled_cheque),
++        "borrower_request_notes": application.borrower_request_notes,
++        "application_status": application.application_status,
++        "current_stage": application.current_stage,
++        "completeness_status": application.completeness_status,
++        "terms_acceptance_flag": application.terms_acceptance_flag,
++        "created_at": _datetime(application.created_at),
++        "created_by_user_id": str(application.created_by_user_id)
++        if application.created_by_user_id
++        else None,
++        "submitted_at": _datetime(application.submitted_at),
++        "submitted_by_user_id": str(application.submitted_by_user_id)
++        if application.submitted_by_user_id
++        else None,
++        "updated_at": _datetime(application.updated_at),
++        "updated_by_user_id": str(application.updated_by_user_id)
++        if application.updated_by_user_id
++        else None,
++        "loan_request_register_entry": _register_summary(register_entry),
++    }
++
++
++def validation_field_errors(exc):
++    if hasattr(exc, "message_dict"):
++        return {field: messages[0] for field, messages in exc.message_dict.items()}
++    if isinstance(exc, LoanApplicationValidationError):
++        return exc.field_errors
++    return {"non_field_errors": str(exc)}
++
++
++def _validate_submit_facts(application):
++    errors = {}
++    if application.member_id is None:
++        errors["member_id"] = "Borrower member is required."
++    if application.required_loan_amount is None or application.required_loan_amount <= 0:
++        errors["required_loan_amount"] = "Requested amount must be greater than zero."
++    if not application.declared_purpose.strip():
++        errors["declared_purpose"] = "Declared purpose is required before submit."
++    if not application.purpose_category.strip():
++        errors["purpose_category"] = "Purpose category is required before submit."
++    if errors:
++        raise LoanApplicationValidationError(errors)
++
++
++def _clean_update_payload(payload, member):
++    unknown = set(payload.keys()) - _UPDATE_FIELDS
++    errors = {field: "Unknown field." for field in sorted(unknown)}
++    cleaned = {}
++    if "required_loan_amount" in payload:
++        cleaned["required_loan_amount"] = _optional_positive_decimal(
++            payload.get("required_loan_amount"),
++            "required_loan_amount",
++            errors,
++        )
++    if "requested_tenure_months" in payload:
++        cleaned["requested_tenure_months"] = _optional_positive_int(
++            payload.get("requested_tenure_months"),
++            "requested_tenure_months",
++            errors,
++        )
++    for field in (
++        "declared_purpose",
++        "purpose_category",
++        "loan_type_requested",
++        "borrower_request_notes",
++    ):
++        if field in payload:
++            cleaned[field] = _optional_text(payload.get(field))
++    if "terms_acceptance_flag" in payload:
++        cleaned["terms_acceptance_flag"] = bool(payload.get("terms_acceptance_flag", False))
++    if "land_holding_id" in payload:
++        cleaned["land_holding"] = _member_ref(
++            LandHolding,
++            "land_holding_id",
++            payload.get("land_holding_id"),
++            "land_holding_id",
++            member,
++            errors,
++        )
++    if "crop_plan_id" in payload:
++        cleaned["crop_plan"] = _member_ref(
++            CropPlan,
++            "crop_plan_id",
++            payload.get("crop_plan_id"),
++            "crop_plan_id",
++            member,
++            errors,
++        )
++    if "bank_account_id" in payload:
++        cleaned["bank_account"] = _bank_ref(payload.get("bank_account_id"), member, errors)
++    if "cancelled_cheque_id" in payload:
++        cleaned["cancelled_cheque"] = _member_ref(
++            CancelledCheque,
++            "cancelled_cheque_id",
++            payload.get("cancelled_cheque_id"),
++            "cancelled_cheque_id",
++            member,
++            errors,
++        )
++    if errors:
++        raise LoanApplicationValidationError(errors)
++    return cleaned
++
++
++def _clean_payload(payload, *, require_member):
++    unknown = set(payload.keys()) - _CREATE_FIELDS
++    errors = {field: "Unknown field." for field in sorted(unknown)}
++    member = None
++    member_id = payload.get("member_id")
++    if require_member or member_id is not None:
++        member_uuid = _parse_uuid("member_id", member_id, errors)
++        if member_uuid:
++            member = Member.objects.filter(member_id=member_uuid, is_deleted=False).first()
++            if member is None:
++                errors["member_id"] = "Borrower member was not found."
++
++    amount = _optional_positive_decimal(payload.get("required_loan_amount"), "required_loan_amount", errors)
++    tenure = _optional_positive_int(payload.get("requested_tenure_months"), "requested_tenure_months", errors)
++    cleaned = {
++        "member": member,
++        "required_loan_amount": amount,
++        "requested_tenure_months": tenure,
++        "declared_purpose": _optional_text(payload.get("declared_purpose")),
++        "purpose_category": _optional_text(payload.get("purpose_category")),
++        "loan_type_requested": _optional_text(payload.get("loan_type_requested")),
++        "borrower_request_notes": _optional_text(payload.get("borrower_request_notes")),
++        "terms_acceptance_flag": bool(payload.get("terms_acceptance_flag", False)),
++    }
++    if member:
++        cleaned["land_holding"] = _member_ref(
++            LandHolding,
++            "land_holding_id",
++            payload.get("land_holding_id"),
++            "land_holding_id",
++            member,
++            errors,
++        )
++        cleaned["crop_plan"] = _member_ref(
++            CropPlan,
++            "crop_plan_id",
++            payload.get("crop_plan_id"),
++            "crop_plan_id",
++            member,
++            errors,
++        )
++        cleaned["bank_account"] = _bank_ref(payload.get("bank_account_id"), member, errors)
++        cleaned["cancelled_cheque"] = _member_ref(
++            CancelledCheque,
++            "cancelled_cheque_id",
++            payload.get("cancelled_cheque_id"),
++            "cancelled_cheque_id",
++            member,
++            errors,
++        )
++    if errors:
++        raise LoanApplicationValidationError(errors)
++    return cleaned
++
++
++def _assign_fields(application, cleaned):
++    for field in (
++        "required_loan_amount",
++        "requested_tenure_months",
++        "declared_purpose",
++        "purpose_category",
++        "loan_type_requested",
++        "land_holding",
++        "crop_plan",
++        "bank_account",
++        "cancelled_cheque",
++        "borrower_request_notes",
++        "terms_acceptance_flag",
++    ):
++        setattr(application, field, cleaned[field])
++
++
++def _audit_application(
++    application,
++    actor,
++    action,
++    old_value_json,
++    request_ip,
++    request_user_agent,
++    request_id,
++    register_entry=None,
++):
++    new_value_json = {
++        "loan_application_id": str(application.loan_application_id),
++        "member_id": str(application.member_id),
++        "application_reference_number": application.application_reference_number,
++        "application_status": application.application_status,
++        "current_stage": application.current_stage,
++        "completeness_status": application.completeness_status,
++        "required_loan_amount": _money(application.required_loan_amount),
++        "purpose_category": application.purpose_category or None,
++        "land_holding_id": str(application.land_holding_id)
++        if application.land_holding_id
++        else None,
++        "crop_plan_id": str(application.crop_plan_id) if application.crop_plan_id else None,
++        "bank_account_id": str(application.bank_account_id)
++        if application.bank_account_id
++        else None,
++        "masked_bank_account_number": _masked_last4(application.bank_account.account_number_last4)
++        if application.bank_account_id
++        else None,
++        "cancelled_cheque_id": str(application.cancelled_cheque_id)
++        if application.cancelled_cheque_id
++        else None,
++        "request_id": request_id,
++    }
++    if register_entry is not None:
++        new_value_json["loan_request_register_entry_id"] = str(
++            register_entry.loan_request_register_entry_id
++        )
++    AuditLog.objects.create(
++        actor_user=actor,
++        action=action,
++        entity_type="loan_application",
++        entity_id=application.loan_application_id,
++        old_value_json=old_value_json,
++        new_value_json=new_value_json,
++        ip_address=request_ip,
++        user_agent=request_user_agent,
++    )
++
++
++def _audit_snapshot(application):
++    return {
++        "loan_application_id": str(application.loan_application_id),
++        "member_id": str(application.member_id),
++        "application_reference_number": application.application_reference_number,
++        "application_status": application.application_status,
++        "current_stage": application.current_stage,
++        "completeness_status": application.completeness_status,
++        "required_loan_amount": _money(application.required_loan_amount),
++        "purpose_category": application.purpose_category or None,
++        "land_holding_id": str(application.land_holding_id)
++        if application.land_holding_id
++        else None,
++        "crop_plan_id": str(application.crop_plan_id) if application.crop_plan_id else None,
++        "bank_account_id": str(application.bank_account_id)
++        if application.bank_account_id
++        else None,
++        "cancelled_cheque_id": str(application.cancelled_cheque_id)
++        if application.cancelled_cheque_id
++        else None,
++    }
++
++
++def _next_loan_application_reference():
++    sequence, _created = SystemSequence.objects.select_for_update().get_or_create(
++        sequence_code=LOAN_APPLICATION_REFERENCE_SEQUENCE_CODE,
++        defaults={
++            "prefix": "LO",
++            "current_value": 0,
++            "padding_length": 8,
++        },
++    )
++    return sequence.next_value()
++
++
++def _member_summary(member):
++    return {
++        "member_id": str(member.member_id),
++        "display_name": member.display_name,
++        "member_type": member.member_type,
++        "folio_number": member.folio_number,
++        "membership_status": member.membership_status,
++        "kyc_status": member.kyc_status,
++    }
++
++
++def _land_summary(land):
++    if land is None:
++        return None
++    return {
++        "land_holding_id": str(land.land_holding_id),
++        "survey_number": land.survey_number or None,
++        "village": land.village or None,
++        "area_acres": _money(land.area_acres),
++        "verification_status": land.verification_status,
++    }
++
++
++def _crop_summary(crop):
++    if crop is None:
++        return None
++    return {
++        "crop_plan_id": str(crop.crop_plan_id),
++        "crop_type": crop.crop_type,
++        "season": crop.season or None,
++        "planned_area_acres": _money(crop.planned_area_acres),
++        "loan_purpose_alignment": crop.loan_purpose_alignment,
++        "verification_status": crop.verification_status,
++    }
++
++
++def _bank_summary(bank):
++    if bank is None:
++        return None
++    return {
++        "bank_account_id": str(bank.bank_account_id),
++        "account_holder_name": bank.account_holder_name,
++        "account_number": {
++            "masked": _masked_last4(bank.account_number_last4),
++            "last4": bank.account_number_last4 or None,
++            "can_view_full": False,
++        },
++        "ifsc": bank.ifsc,
++        "bank_name": bank.bank_name or None,
++        "branch_name": bank.branch_name or None,
++        "verification_status": bank.verification_status,
++        "status": bank.status,
++    }
++
++
++def _cheque_summary(cheque):
++    if cheque is None:
++        return None
++    return {
++        "cancelled_cheque_id": str(cheque.cancelled_cheque_id),
++        "document_id": str(cheque.document_id),
++        "account_number": {
++            "masked": _masked_last4(cheque.account_number_last4),
++            "last4": cheque.account_number_last4 or None,
++            "can_view_full": False,
++        },
++        "ifsc": cheque.ifsc,
++        "branch_name": cheque.branch_name or None,
++        "verification_status": cheque.verification_status,
++        "signature_mismatch_flag": cheque.signature_mismatch_flag,
++    }
++
++
++def _register_summary(register_entry):
++    if register_entry is None:
++        return None
++    return {
++        "loan_request_register_entry_id": str(
++            register_entry.loan_request_register_entry_id
++        ),
++        "loan_application_id": str(register_entry.loan_application_id),
++        "application_reference_number": register_entry.application_reference_number,
++        "member_id": str(register_entry.member_id),
++        "date_received": register_entry.date_received.isoformat(),
++        "reference_generated_date": register_entry.reference_generated_date.isoformat(),
++        "received_channel": register_entry.received_channel,
++        "register_status": register_entry.register_status,
++        "borrower_name": register_entry.borrower_name or None,
++        "folio_number": register_entry.folio_number or None,
++        "member_type": register_entry.member_type or None,
++        "requested_amount": _money(register_entry.requested_amount),
++        "purpose_category": register_entry.purpose_category or None,
++        "current_stage": register_entry.current_stage or None,
++        "current_owner_role": register_entry.current_owner_role or None,
++        "eligibility_status": register_entry.eligibility_status,
++        "sanction_status": register_entry.sanction_status,
++        "documentation_status": register_entry.documentation_status,
++        "disbursement_status": register_entry.disbursement_status,
++        "created_at": _datetime(register_entry.created_at),
++    }
++
++
++def _parse_uuid(field, value, errors):
++    if value in (None, ""):
++        errors[field] = "This field is required."
++        return None
++    try:
++        return uuid.UUID(str(value))
++    except (TypeError, ValueError) as exc:
++        errors[field] = "Must be a valid UUID."
++        return None
++
++
++def _optional_uuid(field, value, errors):
++    if value in (None, ""):
++        return None
++    try:
++        return uuid.UUID(str(value))
++    except (TypeError, ValueError):
++        errors[field] = "Must be a valid UUID."
++        return None
++
++
++def _member_ref(model, payload_field, value, pk_field, member, errors):
++    parsed = _optional_uuid(payload_field, value, errors)
++    if parsed is None:
++        return None
++    instance = model.objects.filter(**{pk_field: parsed, "member": member}).first()
++    if instance is None:
++        errors[payload_field] = "Referenced record was not found for this member."
++    return instance
++
++
++def _bank_ref(value, member, errors):
++    parsed = _optional_uuid("bank_account_id", value, errors)
++    if parsed is None:
++        return None
++    bank = BankAccount.objects.filter(
++        bank_account_id=parsed,
++        owner_party_type="member",
++        owner_party_id=member.member_id,
++    ).first()
++    if bank is None:
++        errors["bank_account_id"] = "Referenced record was not found for this member."
++    return bank
++
++
++def _optional_positive_decimal(value, field, errors):
++    if value in (None, ""):
++        return None
++    try:
++        parsed = Decimal(str(value))
++    except (InvalidOperation, TypeError, ValueError):
++        errors[field] = "Must be a valid decimal amount."
++        return None
++    if parsed <= 0:
++        errors[field] = "Requested amount must be greater than zero."
++    return parsed
++
++
++def _optional_positive_int(value, field, errors):
++    if value in (None, ""):
++        return None
++    try:
++        parsed = int(value)
++    except (TypeError, ValueError):
++        errors[field] = "Must be a positive integer."
++        return None
++    if parsed <= 0:
++        errors[field] = "Must be a positive integer."
++    return parsed
++
++
++def _optional_text(value):
++    return value.strip() if isinstance(value, str) else ""
++
++
++def _masked_last4(last4):
++    return f"********{last4}" if last4 else None
++
++
++def _money(value):
++    return f"{value:.2f}" if value is not None else None
++
++
++def _datetime(value):
++    return value.isoformat().replace("+00:00", "Z") if value else None
+diff --git a/sfpcl_credit/applications/views.py b/sfpcl_credit/applications/views.py
+new file mode 100644
+index 0000000..6236199
+--- /dev/null
++++ b/sfpcl_credit/applications/views.py
+@@ -0,0 +1,180 @@
++from django.core.exceptions import ValidationError
++from django.views.decorators.http import require_http_methods
++
++from sfpcl_credit.api import error_response, parse_json_body, request_ip, request_user_agent, success_response
++from sfpcl_credit.applications import services
++from sfpcl_credit.identity.modules import http_auth
++from sfpcl_credit.workflows.guard import InvalidStateTransition
++
++
++@require_http_methods(["POST"])
++def loan_application_collection(request):
++    user, response = http_auth.authenticated_user(request)
++    if response is not None:
++        return response
++    if not services.user_can_create_applications(user):
++        return error_response(
++            request,
++            403,
++            "PERMISSION_DENIED",
++            "You do not have permission to create loan applications.",
++        )
++    try:
++        body = parse_json_body(request)
++        application = services.create_draft(
++            body,
++            user,
++            request_ip(request),
++            request_user_agent(request),
++            request.headers.get("X-Request-ID"),
++        )
++    except services.LoanApplicationValidationError as exc:
++        return error_response(
++            request,
++            400,
++            "VALIDATION_ERROR",
++            "Loan application payload failed validation.",
++            services.validation_field_errors(exc),
++        )
++    except ValidationError as exc:
++        return error_response(
++            request,
++            400,
++            "VALIDATION_ERROR",
++            "Loan application payload failed validation.",
++            services.validation_field_errors(exc),
++        )
++    return success_response(services.serialize_application(application), request)
++
++
++@require_http_methods(["GET", "PATCH"])
++def loan_application_detail(request, loan_application_id):
++    user, response = http_auth.authenticated_user(request)
++    if response is not None:
++        return response
++    if request.method == "GET" and not services.user_can_read_applications(user):
++        return error_response(
++            request,
++            403,
++            "PERMISSION_DENIED",
++            "You do not have permission to read loan applications.",
++        )
++    if request.method == "PATCH":
++        if not services.user_can_update_applications(user):
++            return error_response(
++                request,
++                403,
++                "PERMISSION_DENIED",
++                "You do not have permission to update loan applications.",
++            )
++        application = services.get_application(loan_application_id)
++        if application is None:
++            return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
++        try:
++            body = parse_json_body(request)
++            application = services.update_draft(
++                application,
++                body,
++                user,
++                request_ip(request),
++                request_user_agent(request),
++                request.headers.get("X-Request-ID"),
++            )
++        except services.LoanApplicationValidationError as exc:
++            return error_response(
++                request,
++                400,
++                "VALIDATION_ERROR",
++                "Loan application payload failed validation.",
++                services.validation_field_errors(exc),
++            )
++        except ValidationError as exc:
++            return error_response(
++                request,
++                400,
++                "VALIDATION_ERROR",
++                "Loan application payload failed validation.",
++                services.validation_field_errors(exc),
++            )
++        return success_response(services.serialize_application(application), request)
++
++    application = services.get_application(loan_application_id)
++    if application is None:
++        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
++    return success_response(services.serialize_application(application), request)
++
++
++@require_http_methods(["POST"])
++def loan_application_submit(request, loan_application_id):
++    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
++    if response is not None:
++        return response
++    if not services.user_can_submit_applications(user):
++        return error_response(
++            request,
++            403,
++            "PERMISSION_DENIED",
++            "You do not have permission to submit loan applications.",
++        )
++    application = services.get_application(loan_application_id)
++    if application is None:
++        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
++    try:
++        parse_json_body(request)
++        application = services.submit_application(
++            application,
++            user,
++            request_ip(request),
++            request_user_agent(request),
++            request.headers.get("X-Request-ID"),
++            permissions,
++        )
++    except (services.LoanApplicationValidationError, ValidationError) as exc:
++        return error_response(
++            request,
++            400,
++            "VALIDATION_ERROR",
++            "Loan application payload failed validation.",
++            services.validation_field_errors(exc),
++        )
++    except InvalidStateTransition as exc:
++        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
++    return success_response(services.serialize_application(application), request)
++
++
++@require_http_methods(["POST"])
++def loan_application_generate_reference(request, loan_application_id):
++    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
++    if response is not None:
++        return response
++    if not services.user_can_complete_check_applications(user):
++        return error_response(
++            request,
++            403,
++            "PERMISSION_DENIED",
++            "You do not have permission to complete-check loan applications.",
++        )
++    application = services.get_application(loan_application_id)
++    if application is None:
++        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
++    try:
++        parse_json_body(request)
++        application = services.generate_reference_after_completeness_pass(
++            application,
++            user,
++            request_ip(request),
++            request_user_agent(request),
++            request.headers.get("X-Request-ID"),
++            permissions,
++        )
++    except (services.LoanApplicationValidationError, ValidationError) as exc:
++        return error_response(
++            request,
++            400,
++            "VALIDATION_ERROR",
++            "Loan application payload failed validation.",
++            services.validation_field_errors(exc),
++        )
++    except InvalidStateTransition as exc:
++        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
++    return success_response(services.serialize_application(application), request)
+diff --git a/sfpcl_credit/tests/test_loan_applications_api.py b/sfpcl_credit/tests/test_loan_applications_api.py
+new file mode 100644
+index 0000000..a116eef
+--- /dev/null
++++ b/sfpcl_credit/tests/test_loan_applications_api.py
+@@ -0,0 +1,684 @@
++import json
++from uuid import uuid4
++
++from django.test import Client, TestCase
++from django.apps import apps
++
++from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
++from sfpcl_credit.members.models import BankAccount, CancelledCheque, CropPlan, LandHolding, Member
++from sfpcl_credit.tests.api_contracts import assert_error_envelope, assert_success_envelope
++from sfpcl_credit.workflows.models import WorkflowEvent
++
++
++APPLICATION_READ_PERMISSION = "applications.loan_application.read"
++APPLICATION_CREATE_PERMISSION = "applications.loan_application.create"
++APPLICATION_UPDATE_PERMISSION = "applications.loan_application.update"
++APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
++APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_check"
++
++
++class LoanApplicationDraftApiTests(TestCase):
++    def setUp(self):
++        self.client = Client()
++        self.read_permission = self._permission(APPLICATION_READ_PERMISSION, "View applications")
++        self.create_permission = self._permission(
++            APPLICATION_CREATE_PERMISSION,
++            "Create loan application",
++        )
++        self.update_permission = self._permission(
++            APPLICATION_UPDATE_PERMISSION,
++            "Update draft application",
++        )
++        self.submit_permission = self._permission(
++            APPLICATION_SUBMIT_PERMISSION,
++            "Submit loan application",
++        )
++        self.complete_check_permission = self._permission(
++            APPLICATION_COMPLETE_CHECK_PERMISSION,
++            "Mark completeness result",
++        )
++        self.creator = self._user(
++            "applications.creator@sfpcl.example",
++            "CreatorPass123!",
++            self.read_permission,
++            self.create_permission,
++            self.update_permission,
++            self.submit_permission,
++            self.complete_check_permission,
++        )
++        self.reader = self._user(
++            "applications.reader@sfpcl.example",
++            "ReaderPass123!",
++            self.read_permission,
++        )
++        self.plain = self._user("applications.plain@sfpcl.example", "PlainPass123!")
++        self.member = self._member("005A", "Ramesh Patil")
++        self.other_member = self._member("005A-OTHER", "Sita Farms")
++        self.land = LandHolding.objects.create(
++            member=self.member,
++            document_type="7_12_extract",
++            survey_number="123/4",
++            village="Niphad",
++            area_acres="5.00",
++            document_id=uuid4(),
++        )
++        self.crop = CropPlan.objects.create(
++            member=self.member,
++            crop_type="grapes",
++            season="FY2026 Kharif",
++            planned_area_acres="5.00",
++            estimated_cost_amount="100000.00",
++            loan_purpose_alignment="agriculture_aligned",
++            document_id=uuid4(),
++        )
++        self.cheque = CancelledCheque.objects.create(
++            member=self.member,
++            document_id=uuid4(),
++            account_number_encrypted="cheque-token-123456789012",
++            account_number_hash="cheque-hash-123456789012",
++            account_number_last4="9012",
++            ifsc="HDFC0001234",
++            branch_name="Nashik Road",
++        )
++        self.bank = BankAccount.objects.create(
++            owner_party_type="member",
++            owner_party_id=self.member.member_id,
++            account_holder_name="Ramesh Patil",
++            account_number_encrypted="bank-token-123456789012",
++            account_number_hash="bank-hash-123456789012",
++            account_number_last4="9012",
++            ifsc="HDFC0001234",
++            bank_name="HDFC Bank",
++            branch_name="Nashik Road",
++            cancelled_cheque=self.cheque,
++        )
++
++    def test_create_and_read_draft_returns_metadata_only_response_and_audit(self):
++        response = self.client.post(
++            "/api/v1/loan-applications/",
++            data=self._draft_payload(),
++            content_type="application/json",
++            headers={
++                **self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++                "X-Request-ID": "req-create-loan-draft",
++            },
++        )
++
++        self.assertEqual(response.status_code, 200)
++        body = response.json()
++        assert_success_envelope(self, body)
++        self.assertEqual(body["meta"]["request_id"], "req-create-loan-draft")
++        draft = body["data"]
++        self.assertEqual(draft["application_status"], "draft")
++        self.assertEqual(draft["current_stage"], "initial_loan_request")
++        self.assertIsNone(draft["application_reference_number"])
++        self.assertEqual(draft["member"]["member_id"], str(self.member.member_id))
++        self.assertEqual(draft["member"]["display_name"], "Ramesh Patil")
++        self.assertEqual(draft["required_loan_amount"], "400000.00")
++        self.assertEqual(draft["requested_tenure_months"], 12)
++        self.assertEqual(draft["declared_purpose"], "Crop production loan for grape cultivation")
++        self.assertEqual(draft["purpose_category"], "crop_production")
++        self.assertEqual(draft["land_holding"]["land_holding_id"], str(self.land.land_holding_id))
++        self.assertEqual(draft["crop_plan"]["crop_plan_id"], str(self.crop.crop_plan_id))
++        self.assertEqual(draft["bank_account"]["bank_account_id"], str(self.bank.bank_account_id))
++        self.assertEqual(draft["bank_account"]["account_holder_name"], "Ramesh Patil")
++        self.assertEqual(draft["bank_account"]["account_number"]["masked"], "********9012")
++        self.assertFalse(draft["bank_account"]["account_number"]["can_view_full"])
++        self.assertEqual(
++            draft["cancelled_cheque"]["cancelled_cheque_id"],
++            str(self.cheque.cancelled_cheque_id),
++        )
++
++        read_response = self.client.get(
++            f"/api/v1/loan-applications/{draft['loan_application_id']}/",
++            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
++        )
++
++        self.assertEqual(read_response.status_code, 200)
++        read_body = read_response.json()
++        assert_success_envelope(self, read_body)
++        self.assertEqual(read_body["data"], draft)
++
++        audit = AuditLog.objects.filter(action="applications.loan_application.created").get()
++        self.assertEqual(audit.entity_type, "loan_application")
++        self.assertEqual(str(audit.entity_id), draft["loan_application_id"])
++        self.assertEqual(audit.new_value_json["member_id"], str(self.member.member_id))
++        self.assertEqual(audit.new_value_json["bank_account_id"], str(self.bank.bank_account_id))
++        self.assertEqual(audit.new_value_json["masked_bank_account_number"], "********9012")
++
++        workflow_event = WorkflowEvent.objects.filter(entity_type="loan_application").get()
++        self.assertEqual(str(workflow_event.entity_id), draft["loan_application_id"])
++        self.assertEqual(workflow_event.workflow_name, "loan_application")
++        self.assertIsNone(workflow_event.from_state)
++        self.assertEqual(workflow_event.to_state, "draft")
++
++        flattened = f"{body} {audit.new_value_json}"
++        self.assertNotIn("member-pan-token", flattened)
++        self.assertNotIn("member-aadhaar-token", flattened)
++        self.assertNotIn("bank-token-123456789012", flattened)
++        self.assertNotIn("bank-hash-123456789012", flattened)
++        self.assertNotIn("cheque-token-123456789012", flattened)
++        self.assertNotIn("cheque-hash-123456789012", flattened)
++        self.assertNotIn("123456789012", flattened)
++        self.assertNotIn('"holder_name"', json.dumps(body))
++
++    def test_submit_draft_transitions_to_submitted_and_records_metadata_only_evidence(self):
++        create_response = self.client.post(
++            "/api/v1/loan-applications/",
++            data=self._draft_payload(),
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(create_response.status_code, 200)
++        draft = create_response.json()["data"]
++
++        response = self.client.post(
++            f"/api/v1/loan-applications/{draft['loan_application_id']}/submit/",
++            data={"submission_notes": "Application form signed by applicant."},
++            content_type="application/json",
++            headers={
++                **self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++                "X-Request-ID": "req-submit-loan-application",
++            },
++        )
++
++        self.assertEqual(response.status_code, 200)
++        body = response.json()
++        assert_success_envelope(self, body)
++        submitted = body["data"]
++        self.assertEqual(submitted["loan_application_id"], draft["loan_application_id"])
++        self.assertEqual(submitted["application_status"], "submitted")
++        self.assertEqual(submitted["current_stage"], "initial_loan_request")
++        self.assertEqual(submitted["completeness_status"], "not_started")
++        self.assertIsNone(submitted["application_reference_number"])
++        self.assertIsNotNone(submitted["submitted_at"])
++        self.assertEqual(submitted["submitted_by_user_id"], str(self.creator.user_id))
++        self.assertEqual(submitted["bank_account"]["account_holder_name"], "Ramesh Patil")
++        self.assertEqual(submitted["bank_account"]["account_number"]["masked"], "********9012")
++        self.assertFalse(submitted["bank_account"]["account_number"]["can_view_full"])
++
++        read_response = self.client.get(
++            f"/api/v1/loan-applications/{draft['loan_application_id']}/",
++            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
++        )
++        self.assertEqual(read_response.status_code, 200)
++        self.assertEqual(read_response.json()["data"], submitted)
++
++        audit = AuditLog.objects.filter(action="applications.loan_application.submitted").get()
++        self.assertEqual(str(audit.entity_id), draft["loan_application_id"])
++        self.assertEqual(audit.old_value_json["application_status"], "draft")
++        self.assertEqual(audit.new_value_json["application_status"], "submitted")
++        self.assertEqual(audit.new_value_json["request_id"], "req-submit-loan-application")
++        self.assertEqual(audit.new_value_json["masked_bank_account_number"], "********9012")
++
++        workflow_event = WorkflowEvent.objects.filter(
++            entity_type="loan_application",
++            from_state="draft",
++            to_state="submitted",
++        ).get()
++        self.assertEqual(str(workflow_event.entity_id), draft["loan_application_id"])
++        self.assertEqual(workflow_event.workflow_name, "loan_application")
++
++        flattened = f"{body} {audit.old_value_json} {audit.new_value_json}"
++        self.assertNotIn("member-pan-token", flattened)
++        self.assertNotIn("member-aadhaar-token", flattened)
++        self.assertNotIn("bank-token-123456789012", flattened)
++        self.assertNotIn("bank-hash-123456789012", flattened)
++        self.assertNotIn("cheque-token-123456789012", flattened)
++        self.assertNotIn("cheque-hash-123456789012", flattened)
++        self.assertNotIn("123456789012", flattened)
++
++    def test_generate_reference_after_completeness_pass_creates_register_and_metadata_only_evidence(self):
++        create_response = self.client.post(
++            "/api/v1/loan-applications/",
++            data=self._draft_payload(),
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(create_response.status_code, 200)
++        draft = create_response.json()["data"]
++        submit_response = self.client.post(
++            f"/api/v1/loan-applications/{draft['loan_application_id']}/submit/",
++            data={},
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(submit_response.status_code, 200)
++
++        response = self.client.post(
++            f"/api/v1/loan-applications/{draft['loan_application_id']}/generate-reference/",
++            data={"completeness_result": "complete"},
++            content_type="application/json",
++            headers={
++                **self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++                "X-Request-ID": "req-generate-reference",
++            },
++        )
++
++        self.assertEqual(response.status_code, 200)
++        body = response.json()
++        assert_success_envelope(self, body)
++        generated = body["data"]
++        self.assertEqual(generated["application_reference_number"], "LO00000001")
++        self.assertEqual(generated["application_status"], "reference_generated")
++        self.assertEqual(generated["current_stage"], "credit_assessment")
++        self.assertEqual(generated["completeness_status"], "complete")
++        self.assertEqual(
++            generated["loan_request_register_entry"]["application_reference_number"],
++            "LO00000001",
++        )
++        self.assertEqual(
++            generated["loan_request_register_entry"]["loan_application_id"],
++            draft["loan_application_id"],
++        )
++        self.assertEqual(
++            generated["loan_request_register_entry"]["member_id"],
++            str(self.member.member_id),
++        )
++        self.assertEqual(generated["loan_request_register_entry"]["borrower_name"], "Ramesh Patil")
++        self.assertEqual(generated["loan_request_register_entry"]["folio_number"], "FOL-005A")
++        self.assertEqual(generated["loan_request_register_entry"]["requested_amount"], "400000.00")
++
++        read_response = self.client.get(
++            f"/api/v1/loan-applications/{draft['loan_application_id']}/",
++            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
++        )
++        self.assertEqual(read_response.status_code, 200)
++        self.assertEqual(read_response.json()["data"], generated)
++
++        register_model = apps.get_model("applications", "LoanRequestRegisterEntry")
++        register_entry = register_model.objects.get(
++            loan_application_id=draft["loan_application_id"]
++        )
++        self.assertEqual(register_entry.application_reference_number, "LO00000001")
++        self.assertEqual(str(register_entry.member_id), str(self.member.member_id))
++
++        audit = AuditLog.objects.filter(
++            action="applications.loan_application.reference_generated"
++        ).get()
++        self.assertEqual(audit.old_value_json["application_reference_number"], None)
++        self.assertEqual(audit.new_value_json["application_reference_number"], "LO00000001")
++        self.assertEqual(audit.new_value_json["loan_request_register_entry_id"], str(register_entry.pk))
++        self.assertEqual(audit.new_value_json["request_id"], "req-generate-reference")
++
++        workflow_event = WorkflowEvent.objects.filter(
++            entity_type="loan_application",
++            from_state="submitted",
++            to_state="reference_generated",
++        ).get()
++        self.assertEqual(str(workflow_event.entity_id), draft["loan_application_id"])
++
++        flattened = f"{body} {audit.old_value_json} {audit.new_value_json}"
++        self.assertNotIn("member-pan-token", flattened)
++        self.assertNotIn("member-aadhaar-token", flattened)
++        self.assertNotIn("bank-token-123456789012", flattened)
++        self.assertNotIn("bank-hash-123456789012", flattened)
++        self.assertNotIn("cheque-token-123456789012", flattened)
++        self.assertNotIn("cheque-hash-123456789012", flattened)
++        self.assertNotIn("123456789012", flattened)
++
++    def test_reference_generation_enforces_sequence_permission_state_and_duplicate_guards(self):
++        first_id = self._create_and_submit_application()
++        second_id = self._create_and_submit_application(
++            declared_purpose="Crop production loan for onion cultivation",
++            required_loan_amount="250000.00",
++        )
++
++        first = self.client.post(
++            f"/api/v1/loan-applications/{first_id}/generate-reference/",
++            data={"completeness_result": "complete"},
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        second = self.client.post(
++            f"/api/v1/loan-applications/{second_id}/generate-reference/",
++            data={"completeness_result": "complete"},
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++
++        self.assertEqual(first.status_code, 200)
++        self.assertEqual(second.status_code, 200)
++        self.assertEqual(first.json()["data"]["application_reference_number"], "LO00000001")
++        self.assertEqual(second.json()["data"]["application_reference_number"], "LO00000002")
++
++        duplicate = self.client.post(
++            f"/api/v1/loan-applications/{first_id}/generate-reference/",
++            data={"completeness_result": "complete"},
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(duplicate.status_code, 409)
++        assert_error_envelope(self, duplicate.json(), "INVALID_STATE_TRANSITION")
++
++        draft_response = self.client.post(
++            "/api/v1/loan-applications/",
++            data=self._draft_payload(declared_purpose="Draft only request"),
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(draft_response.status_code, 200)
++        draft_id = draft_response.json()["data"]["loan_application_id"]
++        draft_generate = self.client.post(
++            f"/api/v1/loan-applications/{draft_id}/generate-reference/",
++            data={"completeness_result": "complete"},
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(draft_generate.status_code, 409)
++        assert_error_envelope(self, draft_generate.json(), "INVALID_STATE_TRANSITION")
++
++        missing_application = self.client.post(
++            f"/api/v1/loan-applications/{uuid4()}/generate-reference/",
++            data={"completeness_result": "complete"},
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(missing_application.status_code, 404)
++        assert_error_envelope(self, missing_application.json(), "NOT_FOUND")
++
++        no_permission = self.client.post(
++            f"/api/v1/loan-applications/{second_id}/generate-reference/",
++            data={"completeness_result": "complete"},
++            content_type="application/json",
++            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
++        )
++        self.assertEqual(no_permission.status_code, 403)
++        assert_error_envelope(self, no_permission.json(), "PERMISSION_DENIED")
++
++        register_model = apps.get_model("applications", "LoanRequestRegisterEntry")
++        self.assertEqual(register_model.objects.count(), 2)
++        self.assertEqual(
++            AuditLog.objects.filter(
++                action="applications.loan_application.reference_generated"
++            ).count(),
++            2,
++        )
++        self.assertEqual(
++            WorkflowEvent.objects.filter(
++                entity_type="loan_application",
++                to_state="reference_generated",
++            ).count(),
++            2,
++        )
++
++    def test_patch_updates_allowed_draft_fields_and_rejects_cross_member_references(self):
++        create_response = self.client.post(
++            "/api/v1/loan-applications/",
++            data=self._draft_payload(),
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(create_response.status_code, 200)
++        application_id = create_response.json()["data"]["loan_application_id"]
++        other_bank = BankAccount.objects.create(
++            owner_party_type="member",
++            owner_party_id=self.other_member.member_id,
++            account_holder_name="Sita Farms",
++            account_number_encrypted="other-bank-token-999900001111",
++            account_number_hash="other-bank-hash-999900001111",
++            account_number_last4="1111",
++            ifsc="SBIN0000456",
++        )
++
++        bad_response = self.client.patch(
++            f"/api/v1/loan-applications/{application_id}/",
++            data={"bank_account_id": str(other_bank.bank_account_id)},
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++
++        self.assertEqual(bad_response.status_code, 400)
++        bad_body = bad_response.json()
++        assert_error_envelope(self, bad_body, "VALIDATION_ERROR")
++        self.assertIn("bank_account_id", bad_body["error"]["field_errors"])
++
++        good_response = self.client.patch(
++            f"/api/v1/loan-applications/{application_id}/",
++            data={
++                "required_loan_amount": "450000.00",
++                "requested_tenure_months": 18,
++                "declared_purpose": "Updated crop production loan purpose",
++                "borrower_request_notes": "Updated notes",
++            },
++            content_type="application/json",
++            headers={
++                **self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++                "X-Request-ID": "req-update-loan-draft",
++            },
++        )
++
++        self.assertEqual(good_response.status_code, 200)
++        body = good_response.json()
++        assert_success_envelope(self, body)
++        draft = body["data"]
++        self.assertEqual(draft["loan_application_id"], application_id)
++        self.assertEqual(draft["member"]["member_id"], str(self.member.member_id))
++        self.assertEqual(draft["required_loan_amount"], "450000.00")
++        self.assertEqual(draft["requested_tenure_months"], 18)
++        self.assertEqual(draft["declared_purpose"], "Updated crop production loan purpose")
++        self.assertEqual(draft["borrower_request_notes"], "Updated notes")
++        self.assertEqual(draft["bank_account"]["bank_account_id"], str(self.bank.bank_account_id))
++
++        update_audit = AuditLog.objects.filter(
++            action="applications.loan_application.updated"
++        ).get()
++        self.assertEqual(str(update_audit.entity_id), application_id)
++        self.assertEqual(update_audit.new_value_json["required_loan_amount"], "450000.00")
++        self.assertEqual(update_audit.new_value_json["request_id"], "req-update-loan-draft")
++        self.assertEqual(WorkflowEvent.objects.filter(entity_type="loan_application").count(), 1)
++
++    def test_submit_enforces_permissions_required_facts_and_draft_only_transition(self):
++        draft_response = self.client.post(
++            "/api/v1/loan-applications/",
++            data=self._draft_payload(),
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(draft_response.status_code, 200)
++        application_id = draft_response.json()["data"]["loan_application_id"]
++
++        no_submit_permission = self.client.post(
++            f"/api/v1/loan-applications/{application_id}/submit/",
++            data={},
++            content_type="application/json",
++            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
++        )
++        self.assertEqual(no_submit_permission.status_code, 403)
++        assert_error_envelope(self, no_submit_permission.json(), "PERMISSION_DENIED")
++
++        missing_application = self.client.post(
++            f"/api/v1/loan-applications/{uuid4()}/submit/",
++            data={},
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(missing_application.status_code, 404)
++        assert_error_envelope(self, missing_application.json(), "NOT_FOUND")
++
++        incomplete_response = self.client.post(
++            "/api/v1/loan-applications/",
++            data=self._draft_payload(
++                required_loan_amount="",
++                declared_purpose="",
++                purpose_category="",
++            ),
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(incomplete_response.status_code, 200)
++        incomplete_id = incomplete_response.json()["data"]["loan_application_id"]
++        incomplete_submit = self.client.post(
++            f"/api/v1/loan-applications/{incomplete_id}/submit/",
++            data={},
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(incomplete_submit.status_code, 400)
++        incomplete_body = incomplete_submit.json()
++        assert_error_envelope(self, incomplete_body, "VALIDATION_ERROR")
++        self.assertIn("required_loan_amount", incomplete_body["error"]["field_errors"])
++        self.assertIn("declared_purpose", incomplete_body["error"]["field_errors"])
++        self.assertIn("purpose_category", incomplete_body["error"]["field_errors"])
++
++        first_submit = self.client.post(
++            f"/api/v1/loan-applications/{application_id}/submit/",
++            data={},
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(first_submit.status_code, 200)
++
++        second_submit = self.client.post(
++            f"/api/v1/loan-applications/{application_id}/submit/",
++            data={},
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(second_submit.status_code, 409)
++        assert_error_envelope(self, second_submit.json(), "INVALID_STATE_TRANSITION")
++
++        patch_submitted = self.client.patch(
++            f"/api/v1/loan-applications/{application_id}/",
++            data={"borrower_request_notes": "Attempt edit after submit"},
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(patch_submitted.status_code, 400)
++        patch_body = patch_submitted.json()
++        assert_error_envelope(self, patch_body, "VALIDATION_ERROR")
++        self.assertIn("application_status", patch_body["error"]["field_errors"])
++
++    def test_draft_endpoints_enforce_permissions_and_validation(self):
++        unauthenticated = self.client.post(
++            "/api/v1/loan-applications/",
++            data=self._draft_payload(),
++            content_type="application/json",
++        )
++        self.assertEqual(unauthenticated.status_code, 401)
++        assert_error_envelope(self, unauthenticated.json(), "AUTH_REQUIRED")
++
++        no_create = self.client.post(
++            "/api/v1/loan-applications/",
++            data=self._draft_payload(),
++            content_type="application/json",
++            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
++        )
++        self.assertEqual(no_create.status_code, 403)
++        assert_error_envelope(self, no_create.json(), "PERMISSION_DENIED")
++
++        plain = self.client.get(
++            f"/api/v1/loan-applications/{uuid4()}/",
++            headers=self._headers("applications.plain@sfpcl.example", "PlainPass123!"),
++        )
++        self.assertEqual(plain.status_code, 403)
++        assert_error_envelope(self, plain.json(), "PERMISSION_DENIED")
++
++        cases = [
++            ({"member_id": str(uuid4())}, "member_id"),
++            ({"member_id": "not-a-uuid"}, "member_id"),
++            ({"required_loan_amount": "0"}, "required_loan_amount"),
++            ({"required_loan_amount": "-1.00"}, "required_loan_amount"),
++            ({"land_holding_id": "not-a-uuid"}, "land_holding_id"),
++            ({"crop_plan_id": "not-a-uuid"}, "crop_plan_id"),
++            ({"bank_account_id": "not-a-uuid"}, "bank_account_id"),
++            ({"cancelled_cheque_id": "not-a-uuid"}, "cancelled_cheque_id"),
++        ]
++        for override, field in cases:
++            with self.subTest(override=override):
++                response = self.client.post(
++                    "/api/v1/loan-applications/",
++                    data=self._draft_payload(**override),
++                    content_type="application/json",
++                    headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++                )
++                self.assertEqual(response.status_code, 400)
++                body = response.json()
++                assert_error_envelope(self, body, "VALIDATION_ERROR")
++                self.assertIn(field, body["error"]["field_errors"])
++
++    def _draft_payload(self, **overrides):
++        payload = {
++            "member_id": str(self.member.member_id),
++            "required_loan_amount": "400000.00",
++            "requested_tenure_months": 12,
++            "declared_purpose": "Crop production loan for grape cultivation",
++            "purpose_category": "crop_production",
++            "loan_type_requested": "short_term",
++            "land_holding_id": str(self.land.land_holding_id),
++            "crop_plan_id": str(self.crop.crop_plan_id),
++            "bank_account_id": str(self.bank.bank_account_id),
++            "cancelled_cheque_id": str(self.cheque.cancelled_cheque_id),
++            "borrower_request_notes": "Borrower prefers assisted digital intake.",
++            "terms_acceptance_flag": False,
++        }
++        payload.update(overrides)
++        return payload
++
++    def _create_and_submit_application(self, **payload_overrides):
++        create_response = self.client.post(
++            "/api/v1/loan-applications/",
++            data=self._draft_payload(**payload_overrides),
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(create_response.status_code, 200)
++        application_id = create_response.json()["data"]["loan_application_id"]
++        submit_response = self.client.post(
++            f"/api/v1/loan-applications/{application_id}/submit/",
++            data={},
++            content_type="application/json",
++            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
++        )
++        self.assertEqual(submit_response.status_code, 200)
++        return application_id
++
++    def _permission(self, code, name):
++        return Permission.objects.create(
++            permission_code=code,
++            permission_name=name,
++            module_name=code.split(".")[0],
++            risk_level="high",
++        )
++
++    def _user(self, email, password, *permissions):
++        role = Role.objects.create(
++            role_code=email.split("@")[0].replace(".", "_"),
++            role_name=email,
++            is_system_role=True,
++            status="active",
++        )
++        for permission in permissions:
++            RolePermission.objects.create(role=role, permission=permission)
++        user = User.objects.create(full_name=email, email=email, status="active", primary_role=role)
++        user.set_password(password)
++        user.save()
++        return user
++
++    def _token(self, email, password):
++        response = self.client.post(
++            "/api/v1/auth/login/",
++            data={"email": email, "password": password},
++            content_type="application/json",
++        )
++        self.assertEqual(response.status_code, 200)
++        return response.json()["data"]["access_token"]
++
++    def _headers(self, email, password):
++        return {"Authorization": f"Bearer {self._token(email, password)}"}
++
++    def _member(self, suffix, display_name):
++        return Member.objects.create(
++            member_number=f"MEM-{suffix}",
++            member_type="individual_farmer",
++            legal_name=display_name,
++            display_name=display_name,
++            folio_number=f"FOL-{suffix}",
++            membership_status="active",
++            pan_encrypted=f"{suffix}-member-pan-token",
++            pan_hash=f"{suffix}-member-pan-hash",
++            aadhaar_encrypted=f"{suffix}-member-aadhaar-token",
++            aadhaar_hash=f"{suffix}-member-aadhaar-hash",
++            kyc_status="verified",
++            default_status="no_default",
++        )

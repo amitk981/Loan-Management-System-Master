@@ -1,0 +1,12 @@
+.ralph/progress.md
+.ralph/state.json
+docs/slices/005D-application-document-checklist.md
+docs/slices/005E-completeness-workbench.md
+docs/working/HANDOFF.md
+docs/working/IMPLEMENTATION_SLICE_INDEX.md
+docs/working/REVIEW_FINDINGS.md
+docs/working/digests/epic-005-application-intake.md
+.ralph/runs/2026-07-09_190655_architecture_review/
+docs/slices/005C2-application-object-access-hardening.md
+
+PASS: no protected or forbidden paths modified, including untracked files.

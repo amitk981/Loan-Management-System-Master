@@ -2,6 +2,74 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-09 19:12 - Architecture Review 2026-07-09_190655_architecture_review
+
+Reviewed completed product slices since the prior architecture review commit `dadeefd`:
+- `004K2-borrower-360-bank-holder-contract-hardening` (`0b4018b`)
+- `005A-loan-application-draft-create-update` (`6f07a17`)
+- `005B-application-submit-and-status-transition` (`41da5a6`)
+- `005C-reference-number-generation-and-loan-request-register` (`eb487da`)
+
+This review focused on product diffs, run evidence, the Epic 004/005 digests, the working API
+contract, and targeted source extracts for application object access. Broad source documents were
+not re-read beyond the relevant permission and screen sections needed for the finding below.
+
+### Finding 1 - Medium - Application detail/actions do not enforce object-level application scope
+
+`005A`-`005C` correctly gate loan application create/read/update/submit/reference-generation by the
+source permission codes, and the tests cover missing global permissions, state transitions,
+metadata-only audit rows, masked bank data, and sequence/register behavior. However, the object
+boundary is still global once a user has the permission. `loan_application_detail`,
+`loan_application_submit`, and `loan_application_generate_reference` check only the global
+permission helpers before loading and acting on any application ID
+(`sfpcl_credit/applications/views.py:50-104`, `:107-142`, `:145-160`;
+`sfpcl_credit/applications/services.py:74-90`). The reviewed tests create a separate reader user
+and assert global read permission works, but they do not create a second field officer/credit user
+with the same permission and prove an unrelated application is denied.
+
+The source is explicit that application access is layered, not global CRUD: Field Officers are
+scoped to created/assigned applications, Deputy Managers to the credit queue/assigned applications,
+Credit Managers to the credit-assessment domain (`docs/source/auth-permissions.md:1480-1489`).
+The endpoint map also marks `GET /loan-applications/{id}/` as
+`applications.loan_application.read + object access` (`docs/source/auth-permissions.md:2347-2350`),
+and the source test matrix says "Field Officer views unrelated application" should be denied
+(`docs/source/auth-permissions.md:2522-2528`). Because `002I` already introduced
+`identity.modules.object_permissions.evaluate_object_access`, this is a missed integration seam, not
+a missing foundation.
+
+Corrective action: created
+`docs/slices/005C2-application-object-access-hardening.md`, inserted it before `005D`, and updated
+`005D`/`005E` so document/checklist and completeness work build on the corrected application access
+boundary. The corrective slice should add failing-first regressions for unrelated same-permission
+users, apply the existing object-access helper to read/update/submit/reference/detail actions, and
+record any remaining Credit Manager/global-scope assumption explicitly if the current schema lacks
+queue/domain facts.
+
+### Finding 2 - Pass - 004K2 closes the Borrower 360 bank-holder DTO mismatch
+
+The corrective `004K2` slice changes the frontend bank-account contract from the local
+`holder_name` alias to the backend/API `account_holder_name` field, updates the Borrower 360 render
+path, and adds a regression fixture shaped like the real backend response. The test also preserves
+masked-only account-number behavior and no bank reveal affordance.
+
+Corrective action: none.
+
+### Finding 3 - Pass - Loan application lifecycle tests assert meaningful behavior
+
+The `005A`-`005C` tests assert standard envelopes, persisted state, audit/workflow rows, permission
+denial, invalid-state responses, cross-member subresource rejection, no sensitive values in
+responses/audits/register summaries, and first/second `LO...` sequence values. The red/green
+evidence exists in each run folder under `evidence/terminal-logs/`, and final gates passed for
+backend check/tests/migrations/coverage plus frontend lint/typecheck/tests/build.
+
+Corrective action: none beyond the object-access hardening above.
+
+Functional-spec spot check: the reviewed Epic 005 work implements draft persistence, submit, and
+the successful completeness-pass reference/register transition only. Application documents,
+checklist evaluation, deficiencies, eligibility, appraisal, sanction, disbursement, member portal
+intake/status UI, and staff application UI wiring remain explicitly deferred in the queued 005D+
+slices and assumptions.
+
 ## 2026-07-09 16:39 - Architecture Review 2026-07-09_163909_architecture_review
 
 Reviewed completed product slices since the prior architecture review commit `fef0026`:
