@@ -1,5 +1,29 @@
 # Ralph Progress Log
 
+## 2026-07-10 02:31:16 - 2026-07-10_023116_normal_run
+- Agent tool used: codex
+- Slice attempted: 005I-application-intake-frontend-wiring
+- Summary: Wired staff application intake screens to backend data. Added paginated staff
+  `GET /api/v1/loan-applications/` and `GET /api/v1/loan-request-register/` read endpoints,
+  preserving staff permissions/object access and metadata-only list responses. Added the frontend
+  `applicationIntakeApi` client and rewired Application List, New Application, and Application
+  Detail away from `mockData.ts` application/member rows. Application List now renders backend
+  pagination/filter/search, `incomplete_returned` as borrower rectification work, and the Loan
+  Request Register. New Application searches the member directory API and saves/submits through
+  staff application APIs. Detail loads staff detail, checklist, and deficiency APIs.
+- Tests run: TDD red/green for backend list/register endpoints; TDD red/green for frontend
+  application-intake API client; focused frontend render tests; frontend lint/typecheck/tests/build;
+  backend `manage.py check`; backend tests (274/274); backend migrations check; backend coverage
+  95% above 85% floor; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_023116_normal_run/`, including red/green logs and
+  self-contained visual evidence HTML. Browser screenshots could not be captured because Playwright
+  Chromium launch was blocked by the macOS sandbox (`MachPortRendezvousServer` permission denied).
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `006A-active-member-eligibility-service`, then
+  `006B-default-document-purpose-and-terms-eligibility-checks`; both have been sharpened and the
+  new Epic 006 digest records the source extracts.
+
 ## 2026-07-10 01:57:23 - 2026-07-10_015723_normal_run
 - Agent tool used: codex
 - Slice attempted: 005H-rejection-note-shell
@@ -2173,6 +2197,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_015723_normal_run/.ralph/runs/2026-07-10_015723_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_015723_normal_run/.ralph/runs/2026-07-10_015723_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 03:27:45 - 2026-07-10_023116_normal_run
+- Agent tool used: codex
+- Slice attempted: 005I-application-intake-frontend-wiring
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_023116_normal_run/.ralph/runs/2026-07-10_023116_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_023116_normal_run/.ralph/runs/2026-07-10_023116_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

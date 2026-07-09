@@ -185,6 +185,79 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertNotIn("123456789012", flattened)
         self.assertNotIn('"holder_name"', json.dumps(body))
 
+    def test_list_applications_supports_staff_pagination_filtering_search_and_ordering(self):
+        first_id = self._create_and_submit_application()
+        second_id = self._create_and_submit_application(
+            declared_purpose="Farm pond repair",
+            purpose_category="agriculture_activity",
+            required_loan_amount="250000.00",
+        )
+        second_model = apps.get_model("applications", "LoanApplication").objects.get(
+            pk=second_id
+        )
+        second_model.application_status = "incomplete_returned"
+        second_model.completeness_status = "incomplete"
+        second_model.save(update_fields=["application_status", "completeness_status"])
+
+        response = self.client.get(
+            "/api/v1/loan-applications/"
+            "?search=Ramesh&application_status=incomplete_returned&ordering=-application_date&page=1&page_size=1",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        assert_success_envelope(self, body)
+        self.assertEqual(body["pagination"]["page"], 1)
+        self.assertEqual(body["pagination"]["page_size"], 1)
+        self.assertEqual(body["pagination"]["total_count"], 1)
+        self.assertEqual(len(body["data"]), 1)
+        item = body["data"][0]
+        self.assertEqual(item["loan_application_id"], second_id)
+        self.assertEqual(item["application_reference_number"], None)
+        self.assertEqual(item["member"]["display_name"], "Ramesh Patil")
+        self.assertEqual(item["member"]["folio_number"], "FOL-005A")
+        self.assertEqual(item["required_loan_amount"], "250000.00")
+        self.assertEqual(item["application_status"], "incomplete_returned")
+        self.assertEqual(item["completeness_status"], "incomplete")
+        self.assertEqual(item["assigned_owner"]["user_id"], str(self.creator.user_id))
+        self.assertEqual(item["assigned_owner"]["full_name"], self.creator.full_name)
+        self.assertEqual(item["tat"]["status"], "blocked")
+
+        flattened = json.dumps(body)
+        self.assertNotIn("member-pan-token", flattened)
+        self.assertNotIn("member-aadhaar-token", flattened)
+        self.assertNotIn("bank-token-123456789012", flattened)
+        self.assertNotIn(first_id, flattened)
+
+    def test_loan_request_register_list_returns_generated_reference_rows(self):
+        application_id = self._create_and_submit_application()
+        self._verify_required_application_documents(application_id)
+        generate_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/completeness-check/pass/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(generate_response.status_code, 200)
+
+        response = self.client.get(
+            "/api/v1/loan-request-register/?search=LO00000001&page=1&page_size=20",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        assert_success_envelope(self, body)
+        self.assertEqual(body["pagination"]["total_count"], 1)
+        row = body["data"][0]
+        self.assertEqual(row["loan_application_id"], application_id)
+        self.assertEqual(row["application_reference_number"], "LO00000001")
+        self.assertEqual(row["borrower_name"], "Ramesh Patil")
+        self.assertEqual(row["folio_number"], "FOL-005A")
+        self.assertEqual(row["requested_amount"], "400000.00")
+        self.assertEqual(row["register_status"], "reference_generated")
+
     def test_submit_draft_transitions_to_submitted_and_records_metadata_only_evidence(self):
         create_response = self.client.post(
             "/api/v1/loan-applications/",

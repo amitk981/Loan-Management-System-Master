@@ -1,0 +1,1 @@
+Playwright Chromium screenshot capture failed in this sandbox with MachPortRendezvousServer permission denied. Self-contained visual evidence is saved in evidence/005I-visual-evidence.html with built CSS inlined.

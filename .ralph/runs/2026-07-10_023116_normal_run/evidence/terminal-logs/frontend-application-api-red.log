@@ -1,0 +1,32 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run applicationIntakeApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_023116_normal_run/sfpcl-lms
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/applicationIntakeApi.test.ts [ src/services/applicationIntakeApi.test.ts ]
+Error: Cannot find module './applicationIntakeApi' imported from '/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_023116_normal_run/sfpcl-lms/src/services/applicationIntakeApi.test.ts'
+ ❯ src/services/applicationIntakeApi.test.ts:3:31
+      2| import { clearStoredAuthSession, storedAuthSession } from './authSessi…
+      3| import {
+      4|   createStaffApplicationDraft,
+       |                      ^
+      5|   fetchApplicationDeficiencies,
+      6|   fetchApplicationDetail,
+
+Caused by: Error: Failed to load url ./applicationIntakeApi (resolved id: ./applicationIntakeApi) in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_023116_normal_run/sfpcl-lms/src/services/applicationIntakeApi.test.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51969:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  02:38:06
+   Duration  347ms (transform 55ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 84ms)
+

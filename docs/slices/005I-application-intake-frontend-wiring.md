@@ -1,7 +1,7 @@
 # Slice 005I: Application Intake Frontend Wiring (List, New, Detail)
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 005: Loan Application Intake, Documents, Completeness, and Deficiencies

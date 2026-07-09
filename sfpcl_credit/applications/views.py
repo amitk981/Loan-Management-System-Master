@@ -1,14 +1,39 @@
 from django.core.exceptions import ValidationError
 from django.views.decorators.http import require_http_methods
 
-from sfpcl_credit.api import error_response, parse_json_body, request_ip, request_user_agent, success_response
+from sfpcl_credit.api import (
+    error_response,
+    list_response,
+    parse_json_body,
+    request_ip,
+    request_user_agent,
+    success_response,
+)
 from sfpcl_credit.applications import services
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.workflows.guard import InvalidStateTransition
 
 
-@require_http_methods(["POST"])
+@require_http_methods(["GET", "POST"])
 def loan_application_collection(request):
+    if request.method == "GET":
+        user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+        if response is not None:
+            return response
+        if not services.user_can_read_applications(user):
+            return error_response(
+                request,
+                403,
+                "PERMISSION_DENIED",
+                "You do not have permission to read loan applications.",
+            )
+        items, pagination = services.list_applications_for_staff(
+            request.GET,
+            user,
+            permissions,
+        )
+        return list_response(items, pagination, request)
+
     user, response = http_auth.authenticated_user(request)
     if response is not None:
         return response
@@ -45,6 +70,26 @@ def loan_application_collection(request):
             services.validation_field_errors(exc),
         )
     return success_response(services.serialize_application(application), request)
+
+
+@require_http_methods(["GET"])
+def loan_request_register_collection(request):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    if not services.user_can_read_applications(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read loan applications.",
+        )
+    items, pagination = services.list_loan_request_register_for_staff(
+        request.GET,
+        user,
+        permissions,
+    )
+    return list_response(items, pagination, request)
 
 
 @require_http_methods(["GET", "PATCH"])

@@ -3,7 +3,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import (
@@ -235,6 +235,102 @@ def get_rejection_note(rejection_note_id):
         .filter(rejection_note_id=rejection_note_id)
         .first()
     )
+
+
+def list_applications_for_staff(query_params, actor, actor_permissions):
+    queryset = LoanApplication.objects.select_related(
+        "member",
+        "created_by_user",
+        "received_by_user",
+        "loan_request_register_entry",
+    )
+    search = (query_params.get("search") or "").strip()
+    if search:
+        queryset = queryset.filter(
+            Q(application_reference_number__icontains=search)
+            | Q(member__display_name__icontains=search)
+            | Q(member__legal_name__icontains=search)
+            | Q(member__member_number__icontains=search)
+            | Q(member__folio_number__icontains=search)
+        )
+    application_status = (query_params.get("application_status") or query_params.get("status") or "").strip()
+    if application_status:
+        queryset = queryset.filter(application_status=application_status)
+    current_stage = (query_params.get("current_stage") or "").strip()
+    if current_stage:
+        queryset = queryset.filter(current_stage=current_stage)
+    member_id = (query_params.get("member_id") or "").strip()
+    if member_id:
+        queryset = queryset.filter(member_id=member_id)
+    queryset = queryset.order_by(*_ordering_fields(query_params.get("ordering"), {
+        "application_date",
+        "application_status",
+        "current_stage",
+        "required_loan_amount",
+        "created_at",
+        "updated_at",
+        "loan_application_id",
+    }))
+    visible = [
+        application
+        for application in queryset
+        if evaluate_application_object_access(
+            application,
+            actor,
+            APPLICATION_READ_PERMISSION,
+            actor_permissions,
+        ).allowed
+    ]
+    page_items, pagination = _paginate_items(visible, query_params)
+    return [serialize_application_list_item(item) for item in page_items], pagination
+
+
+def list_loan_request_register_for_staff(query_params, actor, actor_permissions):
+    queryset = LoanRequestRegisterEntry.objects.select_related(
+        "loan_application",
+        "loan_application__member",
+        "loan_application__created_by_user",
+        "loan_application__received_by_user",
+        "member",
+        "received_by_user",
+    )
+    search = (query_params.get("search") or "").strip()
+    if search:
+        queryset = queryset.filter(
+            Q(application_reference_number__icontains=search)
+            | Q(borrower_name__icontains=search)
+            | Q(folio_number__icontains=search)
+            | Q(member__member_number__icontains=search)
+        )
+    register_status = (query_params.get("register_status") or query_params.get("status") or "").strip()
+    if register_status:
+        queryset = queryset.filter(register_status=register_status)
+    current_stage = (query_params.get("current_stage") or "").strip()
+    if current_stage:
+        queryset = queryset.filter(current_stage=current_stage)
+    member_type = (query_params.get("member_type") or "").strip()
+    if member_type:
+        queryset = queryset.filter(member_type=member_type)
+    queryset = queryset.order_by(*_ordering_fields(query_params.get("ordering"), {
+        "date_received",
+        "reference_generated_date",
+        "application_reference_number",
+        "requested_amount",
+        "created_at",
+        "loan_request_register_entry_id",
+    }))
+    visible = [
+        register_entry
+        for register_entry in queryset
+        if evaluate_application_object_access(
+            register_entry.loan_application,
+            actor,
+            APPLICATION_READ_PERMISSION,
+            actor_permissions,
+        ).allowed
+    ]
+    page_items, pagination = _paginate_items(visible, query_params)
+    return [_register_summary(item) for item in page_items], pagination
 
 
 def _has_credit_manager_domain_access(application, actor):
@@ -945,6 +1041,32 @@ def serialize_application(application):
     }
 
 
+def serialize_application_list_item(application):
+    owner = application.received_by_user or application.created_by_user
+    return {
+        "loan_application_id": str(application.loan_application_id),
+        "application_reference_number": application.application_reference_number,
+        "member": _member_summary(application.member),
+        "application_date": application.application_date.isoformat(),
+        "required_loan_amount": _money(application.required_loan_amount),
+        "purpose_category": application.purpose_category,
+        "current_stage": application.current_stage,
+        "application_status": application.application_status,
+        "completeness_status": application.completeness_status,
+        "assigned_owner": _user_summary(owner),
+        "tat": {
+            "due_at": None,
+            "status": _tat_status(application),
+        },
+        "created_at": _datetime(application.created_at),
+        "updated_at": _datetime(application.updated_at),
+        "submitted_at": _datetime(application.submitted_at),
+        "loan_request_register_entry": _register_summary(
+            getattr(application, "loan_request_register_entry", None)
+        ),
+    }
+
+
 def _completeness_checklist_item(item):
     complete = (
         item["submission_status"] == ApplicationDocument.SUBMISSION_SUBMITTED
@@ -1647,6 +1769,72 @@ def _member_summary(member):
         "membership_status": member.membership_status,
         "kyc_status": member.kyc_status,
     }
+
+
+def _user_summary(user):
+    if user is None:
+        return None
+    return {
+        "user_id": str(user.user_id),
+        "full_name": user.full_name,
+    }
+
+
+def _tat_status(application):
+    if application.application_status == LoanApplication.STATUS_DRAFT:
+        return "not_started"
+    if application.application_status == LoanApplication.STATUS_INCOMPLETE_RETURNED:
+        return "blocked"
+    if application.application_status == LoanApplication.STATUS_REFERENCE_GENERATED:
+        return "complete"
+    return "within_tat"
+
+
+def _ordering_fields(raw_ordering, allowed_fields):
+    fields = []
+    for field in (raw_ordering or "-application_date").split(","):
+        field = field.strip()
+        if not field:
+            continue
+        normalized = field[1:] if field.startswith("-") else field
+        if normalized in allowed_fields:
+            fields.append(field)
+    fallback = (
+        "loan_application_id"
+        if "loan_application_id" in allowed_fields
+        else "loan_request_register_entry_id"
+    )
+    return fields or [
+        "-application_date" if "application_date" in allowed_fields else "-created_at",
+        fallback,
+    ]
+
+
+def _paginate_items(items, query_params):
+    page = _positive_int(query_params.get("page"), 1)
+    page_size = min(_positive_int(query_params.get("page_size"), 20), 100)
+    total_count = len(items)
+    total_pages = max(1, (total_count + page_size - 1) // page_size)
+    if page > total_pages:
+        page = total_pages
+    start = (page - 1) * page_size
+    end = start + page_size
+    return items[start:end], {
+        "page": page,
+        "page_size": page_size,
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_previous": page > 1,
+    }
+
+
+def _positive_int(value, default):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    return parsed if parsed > 0 else default
 
 
 def _land_summary(land):

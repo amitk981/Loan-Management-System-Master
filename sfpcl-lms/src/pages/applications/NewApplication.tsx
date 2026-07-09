@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AlertTriangle, Calculator, Check, CheckCircle2, ChevronLeft, ChevronRight,
   FileCheck, FileText, IndianRupee, Save, Shield, Signature, Upload, User
 } from 'lucide-react';
 import { useRole } from '../../contexts/RoleContext';
 import LoanLimitCalculator from '../../components/loan/LoanLimitCalculator';
-import { members } from '../../data/mockData';
-import type { LoanPurpose, LoanType, Member } from '../../types';
+import { fetchMemberDirectory, type MemberDirectoryItem } from '../../services/memberDirectoryApi';
+import {
+  createStaffApplicationDraft,
+  submitStaffApplication,
+  updateStaffApplicationDraft,
+  type StaffApplication,
+} from '../../services/applicationIntakeApi';
+import type { LoanPurpose, LoanType } from '../../types';
 
 interface NewApplicationProps {
   onBack: () => void;
@@ -58,14 +64,54 @@ const formatMemberType = (type: string) => {
 
 const blankDocs = Object.fromEntries(REQUIRED_DOCUMENTS.map(doc => [doc.id, { uploaded: false, selfAttested: false }]));
 
+interface MemberOption {
+  id: string;
+  name: string;
+  folioNumber: string;
+  memberType: string;
+  mobile: string;
+  email: string;
+  address: string;
+  pan: string;
+  aadhaar: string;
+  sharesHeld: number;
+  shareMode: string;
+  activeStatus: string;
+  kycStatus: string;
+  defaultStatus: string;
+}
+
+const toMemberOption = (member: MemberDirectoryItem): MemberOption => ({
+  id: member.member_id,
+  name: member.display_name || member.legal_name,
+  folioNumber: member.folio_number,
+  memberType: member.member_type,
+  mobile: member.mobile_number ?? '',
+  email: member.email ?? '',
+  address: 'Member master address on file',
+  pan: '',
+  aadhaar: '',
+  sharesHeld: member.share_summary.number_of_shares ?? 0,
+  shareMode: member.share_summary.holding_mode ?? 'physical',
+  activeStatus: member.membership_status,
+  kycStatus: member.kyc_status,
+  defaultStatus: member.default_status,
+});
+
 const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks }) => {
   const { can } = useRole();
 
   const [step, setStep] = useState<Step>('member');
   const [selectedMemberId, setSelectedMemberId] = useState('');
   const [memberSearch, setMemberSearch] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [submittedApplication, setSubmittedApplication] = useState<StaffApplication | null>(null);
   const [draftSaved, setDraftSaved] = useState(false);
+  const [draftApplicationId, setDraftApplicationId] = useState('');
+  const [membersStatus, setMembersStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [membersMessage, setMembersMessage] = useState('');
+  const [memberOptions, setMemberOptions] = useState<MemberOption[]>([]);
+  const [submitMessage, setSubmitMessage] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [applicationForm, setApplicationForm] = useState({
     channel: 'Assisted Entry',
     applicantType: 'individual',
@@ -111,12 +157,28 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
   });
   const [documentState, setDocumentState] = useState<Record<string, { uploaded: boolean; selfAttested: boolean }>>(blankDocs);
 
-  const selectedMember = members.find(m => m.id === selectedMemberId);
-  const filteredMembers = members.filter(m =>
-    m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
-    m.folioNumber.toLowerCase().includes(memberSearch.toLowerCase()) ||
-    m.pan.toLowerCase().includes(memberSearch.toLowerCase())
-  );
+  const selectedMember = memberOptions.find(m => m.id === selectedMemberId);
+
+  useEffect(() => {
+    let cancelled = false;
+    setMembersStatus('loading');
+    fetchMemberDirectory({ search: memberSearch, pageSize: 20 })
+      .then(result => {
+        if (cancelled) return;
+        setMemberOptions(result.items.map(toMemberOption));
+        setMembersStatus('success');
+        setMembersMessage('');
+      })
+      .catch(error => {
+        if (cancelled) return;
+        setMemberOptions([]);
+        setMembersStatus('error');
+        setMembersMessage(error instanceof Error ? error.message : 'Unable to load members.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [memberSearch]);
 
   const stepIndex = STEP_ORDER.indexOf(step);
   const shareholdingLimit = applicationForm.sharesHeld * applicationForm.valuationPerShare;
@@ -169,14 +231,14 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
     }));
   };
 
-  const hydrateFromMember = (member: Member) => {
+  const hydrateFromMember = (member: MemberOption) => {
     setSelectedMemberId(member.id);
     setDraftSaved(false);
     setApplicationForm(prev => ({
       ...prev,
       applicantType: member.memberType,
       borrowerName: member.name,
-      memberId: member.id.toUpperCase(),
+      memberId: member.id,
       folioNumber: member.folioNumber,
       contactNumber: member.mobile,
       email: member.email,
@@ -185,8 +247,51 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
       aadhaar: member.aadhaar.replace(/[^0-9]/g, '').slice(-4),
       sharesHeld: member.sharesHeld,
       shareholdingMode: member.shareMode,
-      subsidiaryRepayment: member.subsidiaryLinkage || '',
+      subsidiaryRepayment: '',
     }));
+  };
+
+  const persistDraft = async () => {
+    if (!selectedMember) return null;
+    setIsSaving(true);
+    setSubmitMessage('');
+    try {
+      const payload = {
+        member_id: selectedMember.id,
+        required_loan_amount: applicationForm.requestedAmount || null,
+        requested_tenure_months: applicationForm.tenure || null,
+        declared_purpose: applicationForm.crop ? `${applicationForm.purpose}: ${applicationForm.crop}` : applicationForm.purpose,
+        purpose_category: applicationForm.purpose,
+        loan_type_requested: applicationForm.loanType,
+        borrower_request_notes: applicationForm.season || '',
+        terms_acceptance_flag: allDeclarationsAccepted,
+      };
+      const saved = draftApplicationId
+        ? await updateStaffApplicationDraft(draftApplicationId, payload)
+        : await createStaffApplicationDraft(payload);
+      setDraftApplicationId(saved.loan_application_id);
+      setDraftSaved(true);
+      return saved;
+    } catch (error) {
+      setSubmitMessage(error instanceof Error ? error.message : 'Unable to save draft.');
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    const saved = await persistDraft();
+    if (!saved) return;
+    setIsSaving(true);
+    try {
+      const submitted = await submitStaffApplication(saved.loan_application_id);
+      setSubmittedApplication(submitted);
+    } catch (error) {
+      setSubmitMessage(error instanceof Error ? error.message : 'Unable to submit application.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const validations: Record<Step, { ok: boolean; message: string }> = {
@@ -195,8 +300,8 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
       message: 'Select an active, KYC-verified member with no current default.',
     },
     applicant: {
-      ok: Boolean(applicationForm.borrowerName && applicationForm.memberId && applicationForm.folioNumber && applicationForm.contactNumber && applicationForm.address && panPattern.test(applicationForm.pan) && applicationForm.aadhaar.length >= 4),
-      message: 'Borrower name, member ID, folio, contact, address, valid PAN and Aadhaar last four digits are mandatory.',
+      ok: Boolean(applicationForm.borrowerName && applicationForm.memberId && applicationForm.folioNumber && applicationForm.address),
+      message: 'Borrower name, member ID, folio and address are mandatory.',
     },
     shareholding: {
       ok: applicationForm.sharesHeld > 0 && Boolean(applicationForm.shareholdingMode) && (applicationForm.shareholdingMode !== 'demat' || applicationForm.dematBoId.length > 5),
@@ -260,7 +365,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
     );
   }
 
-  if (submitted) {
+  if (submittedApplication) {
     return (
       <div className="p-6 max-w-2xl mx-auto">
         <div className="card text-center py-12">
@@ -268,7 +373,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
             <Check size={32} className="text-green-600" />
           </div>
           <h2 className="text-xl font-bold text-slate-900 mb-2">Application Submitted for Completeness Check</h2>
-          <p className="text-slate-500 mb-1">Application ID APP-INT-2026-000001 created. Official LO reference will be generated after mandatory checklist verification.</p>
+          <p className="text-slate-500 mb-1">Application ID {submittedApplication.loan_application_id.slice(0, 8)} created. Official LO reference will be generated after mandatory checklist verification.</p>
           <p className="text-xs text-slate-400 mb-6">Member: {applicationForm.borrowerName} · Amount: {fmt(applicationForm.requestedAmount)}</p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
             <button onClick={onBack} className="btn-secondary">Back to Applications</button>
@@ -293,9 +398,9 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
             <p className="text-sm text-slate-500">Assisted entry workflow aligned to borrower portal intake.</p>
           </div>
         </div>
-        <button onClick={() => setDraftSaved(true)} className="btn-secondary flex items-center gap-2 self-start">
+        <button onClick={persistDraft} disabled={isSaving || !selectedMember} className="btn-secondary flex items-center gap-2 self-start disabled:opacity-50 disabled:cursor-not-allowed">
           <Save size={16} />
-          {draftSaved ? 'Draft Saved' : 'Save Draft'}
+          {draftSaved ? 'Draft Saved' : isSaving ? 'Saving…' : 'Save Draft'}
         </button>
       </div>
 
@@ -336,7 +441,16 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
               className="field-input"
             />
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {filteredMembers.map(member => {
+              {membersStatus === 'loading' && (
+                <div className="table-cell text-center text-slate-400 py-8">Loading members…</div>
+              )}
+              {membersStatus === 'error' && (
+                <div className="table-cell text-center text-red-600 py-8">{membersMessage}</div>
+              )}
+              {membersStatus === 'success' && memberOptions.length === 0 && (
+                <div className="table-cell text-center text-slate-400 py-8">No members found.</div>
+              )}
+              {memberOptions.map(member => {
                 const blocked = member.activeStatus !== 'active' || member.defaultStatus !== 'no_default';
                 return (
                   <label
@@ -365,8 +479,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
                       <div className="flex flex-wrap gap-3 mt-1 text-xs text-slate-400">
                         <span>{member.sharesHeld} shares</span>
                         <span>KYC: {formatKyc(member.kycStatus)}</span>
-                        <span>Supply years: {member.supplyYears}</span>
-                        <span>Exposure: {fmt(member.currentExposure)}</span>
+                        <span>Exposure: —</span>
                       </div>
                     </div>
                   </label>
@@ -480,7 +593,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
             {selectedMember && applicationForm.requestedAmount > 0 && (
               <LoanLimitCalculator
                 sharesHeld={applicationForm.sharesHeld || selectedMember.sharesHeld}
-                shareMode={selectedMember.shareMode}
+                shareMode={selectedMember.shareMode as 'physical' | 'demat'}
                 landAreaAcres={applicationForm.landAreaAcres}
                 requestedAmount={applicationForm.requestedAmount}
               />
@@ -627,15 +740,17 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
         )}
       </div>
 
+      {submitMessage && <Warning>{submitMessage}</Warning>}
+
       <div className="flex items-center justify-between">
         <button onClick={goPrev} className="btn-secondary flex items-center gap-2">
           <ChevronLeft size={16} />
           {stepIndex === 0 ? 'Cancel' : 'Back'}
         </button>
         {step === 'review' ? (
-          <button onClick={() => setSubmitted(true)} disabled={!canSubmit} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+          <button onClick={handleSubmit} disabled={!canSubmit || isSaving} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
             <Save size={16} />
-            Submit Application
+            {isSaving ? 'Submitting…' : 'Submit Application'}
           </button>
         ) : (
           <button onClick={goNext} disabled={!validations[step].ok} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">

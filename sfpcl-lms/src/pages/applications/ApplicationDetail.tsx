@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ChevronLeft, ExternalLink, AlertOctagon, Clock, Eye, EyeOff,
   CheckCircle2, XCircle, AlertTriangle, User, Users, Shield,
@@ -14,16 +14,24 @@ import EligibilityChecklist from '../../components/loan/EligibilityChecklist';
 import ApprovalPanel from '../../components/loan/ApprovalPanel';
 import DocumentChecklist from '../../components/loan/DocumentChecklist';
 import AuditTimeline from '../../components/loan/AuditTimeline';
-import { loanApplications, members, securities, auditEvents, documents } from '../../data/mockData';
 import { useRole } from '../../contexts/RoleContext';
 import { COMPLETENESS_CATEGORIES, COMPLETENESS_ITEMS } from './completenessChecklist';
 import { getApplicationReference, getApplicationStatusLabel, hasFormalLoanReference } from '../../utils/applicationDisplay';
+import {
+  fetchApplicationDeficiencies,
+  fetchApplicationDetail,
+  fetchApplicationDocumentChecklist,
+  type ApplicationDeficiency,
+  type ApplicationDocumentChecklistItem,
+  type StaffApplication,
+} from '../../services/applicationIntakeApi';
+import type { AuditEvent, DocumentRecord, LoanApplication, Member, SecurityInstrument } from '../../types';
 
 const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
 
 const STAGE_MAP: Record<string, number> = {
   draft: 0, 
-  submitted: 1, incomplete: 1, deficiency_raised: 1,
+  submitted: 1, incomplete: 1, incomplete_returned: 1, deficiency_raised: 1,
   returned_for_rectification: 1, completeness_check: 1, rejected_completeness: 1,
   reference_generated: 2, appraisal_in_progress: 2, appraisal_pending: 2,
   pending_credit_manager_review: 2, credit_review: 2,
@@ -53,6 +61,110 @@ const witnessData = {
   },
 };
 
+const emptyMember: Member = {
+  id: '',
+  memberType: 'individual',
+  name: 'Loading member',
+  folioNumber: '—',
+  sharesHeld: 0,
+  shareMode: 'physical',
+  aadhaar: '••••-••••-••••',
+  pan: '••••••••••',
+  mobile: '—',
+  email: '—',
+  address: 'Member master address on file',
+  activeStatus: 'active',
+  kycStatus: 'verified',
+  supplyYears: 0,
+  defaultStatus: 'no_default',
+  registeredOn: '',
+  currentExposure: 0,
+};
+
+const emptyApplication: LoanApplication = {
+  id: '',
+  applicationNumber: 'Loading',
+  intakeReference: 'Loading',
+  officialReference: undefined,
+  source: 'assisted_entry',
+  applicationDate: new Date().toISOString().slice(0, 10),
+  memberId: '',
+  memberName: 'Loading member',
+  memberType: 'individual',
+  nomineeId: '',
+  requestedAmount: 0,
+  purpose: 'crop_production',
+  loanType: 'short_term',
+  tenure: 12,
+  sharesHeld: 0,
+  shareMode: 'physical',
+  landAreaAcres: 0,
+  status: 'draft',
+  documentationStatus: 'not_started',
+  disbursementStatus: 'pending_documentation',
+  eligibleAmount: 0,
+  shareholdingLimit: 0,
+  landBasedLimit: 0,
+  isException: false,
+  currentOwner: '—',
+  currentOwnerRole: 'deputy_manager_finance',
+  submittedAt: '',
+  tatDaysRemaining: undefined,
+};
+
+const toDisplayApplication = (application: StaffApplication): LoanApplication => ({
+  ...emptyApplication,
+  id: application.loan_application_id,
+  applicationNumber: application.application_reference_number ?? application.loan_application_id.slice(0, 8),
+  intakeReference: application.application_reference_number ? undefined : application.loan_application_id.slice(0, 8),
+  officialReference: application.application_reference_number ?? undefined,
+  applicationDate: application.application_date,
+  memberId: application.member.member_id,
+  memberName: application.member.display_name,
+  memberType: application.member.member_type === 'fpc' ? 'fpc' : application.member.member_type === 'producer_institution' ? 'producer_institution' : 'individual',
+  requestedAmount: Number(application.required_loan_amount ?? 0),
+  purpose: application.purpose_category === 'agriculture_activity' ? 'agriculture_activity' : 'crop_production',
+  loanType: application.loan_type_requested === 'long_term' ? 'long_term' : 'short_term',
+  tenure: application.requested_tenure_months ?? 12,
+  status: application.application_status as LoanApplication['status'],
+  currentOwner: application.assigned_owner?.full_name ?? '—',
+  submittedAt: application.submitted_at ?? '',
+});
+
+const toDisplayMember = (application: StaffApplication): Member => ({
+  ...emptyMember,
+  id: application.member.member_id,
+  memberType: application.member.member_type === 'fpc' ? 'fpc' : application.member.member_type === 'producer_institution' ? 'producer_institution' : 'individual',
+  name: application.member.display_name,
+  folioNumber: application.member.folio_number,
+  activeStatus: application.member.membership_status === 'active' ? 'active' : 'under_review',
+  kycStatus: application.member.kyc_status === 'verified' ? 'verified' : 'pending',
+});
+
+const toDisplayDocuments = (items: ApplicationDocumentChecklistItem[]): DocumentRecord[] =>
+  items.map((item, index) => ({
+    id: item.latest_application_document_id ?? `${item.document_type}-${index}`,
+    applicationId: '',
+    documentType: mapDocumentType(item.document_type),
+    requiredFlag: item.required_flag === 'optional' ? 'optional' : 'mandatory',
+    status: item.complete ? 'verified' : item.reason_code === 'missing_metadata' ? 'pending_upload' : 'under_review',
+    version: 1,
+  }));
+
+const mapDocumentType = (documentType: string): DocumentRecord['documentType'] => {
+  const map: Record<string, DocumentRecord['documentType']> = {
+    borrower_pan: 'pan',
+    borrower_aadhaar_ovd: 'aadhaar',
+    nominee_pan: 'nominee_pan',
+    nominee_aadhaar_ovd: 'nominee_aadhaar',
+    share_certificate_copy: 'share_certificate',
+    land_document_7_12: 'land_712',
+    crop_plan: 'crop_plan',
+    six_month_bank_statement: 'bank_statement',
+  };
+  return map[documentType] ?? 'loan_agreement';
+};
+
 interface ApplicationDetailProps {
   applicationId: string;
   onBack: () => void;
@@ -62,16 +174,43 @@ interface ApplicationDetailProps {
 const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
   applicationId, onBack, onNavigateMember,
 }) => {
-  const app = loanApplications.find(a =>
-    a.id === applicationId ||
-    a.applicationNumber === applicationId ||
-    a.intakeReference === applicationId ||
-    a.officialReference === applicationId
-  ) || loanApplications[0];
-  const member = members.find(m => m.id === app.memberId);
-  const appDocs = documents.filter(d => d.applicationId === applicationId);
-  const appSecurities = securities.filter(s => s.applicationId === applicationId);
   const { can, currentUser } = useRole();
+  const [app, setApp] = useState<LoanApplication>(emptyApplication);
+  const [member, setMember] = useState<Member>(emptyMember);
+  const [appDocs, setAppDocs] = useState<DocumentRecord[]>([]);
+  const [appSecurities] = useState<SecurityInstrument[]>([]);
+  const [auditEvents] = useState<AuditEvent[]>([]);
+  const [apiDeficiencies, setApiDeficiencies] = useState<ApplicationDeficiency[]>([]);
+  const [loadStatus, setLoadStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [loadMessage, setLoadMessage] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadStatus('loading');
+    Promise.all([
+      fetchApplicationDetail(applicationId),
+      fetchApplicationDocumentChecklist(applicationId),
+      fetchApplicationDeficiencies(applicationId),
+    ])
+      .then(([application, checklist, deficiencies]) => {
+        if (cancelled) return;
+        setApp(toDisplayApplication(application));
+        setMember(toDisplayMember(application));
+        setAppDocs(toDisplayDocuments(checklist.items));
+        setApiDeficiencies(deficiencies.items);
+        setLoadStatus('success');
+        setLoadMessage('');
+      })
+      .catch(error => {
+        if (cancelled) return;
+        setLoadStatus('error');
+        setLoadMessage(error instanceof Error ? error.message : 'Unable to load application.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [applicationId]);
+
   const isDisbursed = ['completed', 'disbursed', 'transfer_executed'].includes(app.disbursementStatus) || ['disbursed', 'transfer_executed'].includes(app.status);
 
   const [activeTab, setActiveTab] = useState(0);
@@ -249,6 +388,12 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
         </div>
       </div>
 
+      {loadStatus === 'loading' && (
+        <AlertBanner type="info" title="Loading application" message="Loading application details from the staff API." />
+      )}
+      {loadStatus === 'error' && (
+        <AlertBanner type="warning" title="Application unavailable" message={loadMessage || 'Unable to load application.'} />
+      )}
       {app.isException && app.exceptionReason && (
         <AlertBanner type="exception" title="Exception Case" message={app.exceptionReason} />
       )}
@@ -309,68 +454,34 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
           </div>
 
           {/* Deficiency Communication Log — shown when deficiency has been raised */}
-          {['deficiency_raised', 'documentation_deficiency_raised', 'returned_for_rectification'].includes(app.status) && (
+          {apiDeficiencies.length > 0 && (
             <div className="card p-0 overflow-hidden">
               <div className="px-5 py-3 bg-amber-50 border-b border-amber-200 flex items-center gap-2">
                 <MessageSquare size={15} className="text-amber-600" />
                 <h3 className="text-sm font-semibold text-amber-800">Deficiency Communication Log</h3>
               </div>
               <div className="divide-y divide-slate-100">
-                {[
-                  {
-                    id: 'dc1',
-                    date: '2026-06-15',
-                    type: 'System Notice',
-                    by: 'Deputy Manager – Finance',
-                    channel: 'Portal + SMS',
-                    message: 'Deficiency notice generated and dispatched. Borrower notified to resubmit: (1) Self-attested PAN copy — blurred image, (2) Land record extract — missing survey number, (3) Bank passbook — last 12 months required.',
-                    status: 'sent',
-                  },
-                  {
-                    id: 'dc2',
-                    date: '2026-06-17',
-                    type: 'Borrower Response',
-                    by: `${app.memberName}`,
-                    channel: 'Portal Upload',
-                    message: 'Borrower uploaded revised PAN copy and bank passbook. Land record extract still pending — borrower indicated it will take 5–7 working days from Talathi office.',
-                    status: 'received',
-                  },
-                  {
-                    id: 'dc3',
-                    date: '2026-06-18',
-                    type: 'Follow-up',
-                    by: 'Deputy Manager – Finance',
-                    channel: 'SMS',
-                    message: 'Follow-up reminder sent. TAT window closing in 4 days. Land record extract to be submitted by 22 Jun 2026.',
-                    status: 'sent',
-                  },
-                ].map(entry => (
-                  <div key={entry.id} className="px-5 py-4">
+                {apiDeficiencies.map(entry => (
+                  <div key={entry.deficiency_id} className="px-5 py-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <span className={`text-xs px-1.5 py-0.5 rounded font-semibold ${
-                            entry.type === 'Borrower Response' ? 'bg-blue-100 text-blue-700' :
-                            entry.type === 'Follow-up' ? 'bg-amber-100 text-amber-700' :
-                            'bg-slate-100 text-slate-600'
-                          }`}>{entry.type}</span>
-                          <span className="text-xs text-slate-400">{entry.channel}</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded font-semibold bg-slate-100 text-slate-600">{entry.item_code.replace(/_/g, ' ')}</span>
+                          <span className="text-xs text-slate-400">{entry.resolution_status}</span>
                         </div>
-                        <p className="text-sm text-slate-700">{entry.message}</p>
-                        <p className="text-xs text-slate-400 mt-1">By: {entry.by}</p>
+                        <p className="text-sm text-slate-700">{entry.description}</p>
+                        {entry.remarks && <p className="text-xs text-slate-400 mt-1">{entry.remarks}</p>}
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-xs text-slate-500">{new Date(entry.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                        <span className={`inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                          entry.status === 'received' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
-                        }`}>{entry.status === 'received' ? 'Received' : 'Sent'}</span>
+                        <p className="text-xs text-slate-500">{entry.raised_at ? new Date(entry.raised_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</p>
+                        <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded font-medium bg-slate-100 text-slate-500">{entry.resolution_status}</span>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
               <div className="px-5 py-3 bg-amber-50 border-t border-amber-100">
-                <p className="text-xs text-amber-700 font-medium">Pending: Land record extract. TAT deadline: 22 Jun 2026. Application will be rejected if not received.</p>
+                <p className="text-xs text-amber-700 font-medium">Pending: borrower rectification for open deficiency items.</p>
               </div>
             </div>
           )}

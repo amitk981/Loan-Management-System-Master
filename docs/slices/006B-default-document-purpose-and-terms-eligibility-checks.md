@@ -8,7 +8,8 @@ Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
 Epic file: `docs/epics/006-eligibility-loan-limit-appraisal.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Extend the eligibility assessment from 006A with default, document, purpose, nominee, and terms
+checks needed before loan-limit/appraisal work begins.
 
 ## User Value
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
@@ -22,6 +23,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - docs/source/data-model.md eligibility/appraisal tables
 - docs/source/functional-spec.md
 - docs/source/test-plan.md
+- docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx
@@ -35,7 +37,14 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+- Reuse the 006A `POST /eligibility-assessment/run/` and `GET /eligibility-assessment/`
+  endpoints; do not add a parallel endpoint.
+- Populate `default_check`, `document_check`, `terms_acceptance_check`, `purpose_check`, and
+  `nominee_check` according to source fields in `api-contracts.md` §22.1 and `data-model.md` §14.1.
+- Use 005D/005E checklist/application-document metadata for document evidence rather than reading
+  raw files or duplicating document storage.
+- Keep loan-limit calculation, appraisal-note create/edit/submit, Credit Manager review, and
+  sanction submission out of scope.
 
 ## Database/Model Impact
 Non-destructive model/migration changes for this capability, if needed.
@@ -44,16 +53,33 @@ Non-destructive model/migration changes for this capability, if needed.
 Create or update the API contract for this capability.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Same as 006A: run requires `credit.eligibility.run`, read follows application read/object access
+unless the codebase already has a narrower read permission. Do not implement
+`credit.eligibility.override`.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+Successful rerun/update writes metadata-only eligibility audit/workflow evidence. Failed validation,
+invalid state, permission denial, and object-scope denial create no success audit/workflow events.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+- BR-008: active/defaulted borrower status blocks normal eligibility unless a source-backed
+  exception/override exists; override is out of scope here.
+- BR-009: nominee must not be a minor.
+- BR-013/BR-014 and S15: borrower/nominee KYC, land document, crop plan, and six-month bank
+  statement are required document evidence.
+- BR-018/S15: purpose category must be crop production/agriculture activity.
+- S15: terms must be accepted.
+- Ineligible result must not advance application status/stage into appraisal or sanction states.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- TDD red/green for a referenced application whose default/document/purpose/terms checks are not
+  yet populated.
+- Eligible path: all checks pass and `overall_result = eligible`.
+- Ineligible paths for active default, missing required checklist evidence, non-agriculture
+  purpose, missing terms acceptance, and invalid/minor nominee where existing nominee facts allow
+  the check.
+- Re-run updates the existing one-to-one assessment instead of creating duplicates.
+- Permission/object-scope/invalid-state failures create no assessment changes and no success audit.
 
 ## Visual Acceptance Criteria
 None.

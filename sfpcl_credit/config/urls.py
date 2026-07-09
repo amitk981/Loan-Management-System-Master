@@ -88,6 +88,11 @@ urlpatterns = [
         name="loan-application-detail",
     ),
     path(
+        "api/v1/loan-request-register/",
+        application_views.loan_request_register_collection,
+        name="loan-request-register-list",
+    ),
+    path(
         "api/v1/loan-applications/<uuid:loan_application_id>/submit/",
         application_views.loan_application_submit,
         name="loan-application-submit",
