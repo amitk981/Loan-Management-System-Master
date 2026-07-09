@@ -1514,3 +1514,29 @@ Rules:
   alert/empty patterns for loading, empty, `401`, `403`, and server/network errors. Frontend link
   translation follows A-024; unknown future links are left inactive instead of creating new routes
   in this dashboard slice.
+
+## Member portal dashboard/profile/supply APIs (005FB)
+
+Protected borrower portal endpoints:
+- `GET /api/v1/portal/dashboard/`
+- `GET /api/v1/portal/profile/`
+- `GET /api/v1/portal/produce-supply/`
+
+Rules:
+- The member scope comes only from the authenticated active `PortalAccount` linked to the bearer
+  token user. Client-supplied `member_id` query values are ignored and never grant authority.
+- Staff or non-portal tokens return `403 PERMISSION_DENIED`; missing/invalid bearer tokens return
+  the standard auth errors.
+- Dashboard returns own member snapshot, own application counts from implemented
+  `loan_applications`, active loan placeholder counts of zero until loan accounts exist, open
+  deficiency pending-action count from `deficiencies`, and zero placeholders for future signature,
+  repayment, KYC-update, and closure actions.
+- Profile returns the existing masked member profile plus own nominees, shareholdings, land
+  holdings, crop plans, KYC profile, bank accounts, and cancelled cheques. Portal profile responses
+  force PAN/Aadhaar `can_view_full = false` and expose no full bank account values.
+- Produce supply returns an empty read-only shell with `source_status = model_not_implemented`
+  because `data-model.md` defines `produce_supply_records` but no backend model exists yet.
+
+Frontend wiring:
+- MP03, MP04, and prototype `MP22_ProduceSupply.tsx` call these endpoints through
+  `sfpcl-lms/src/services/portalApi.ts` with the stored portal bearer session.

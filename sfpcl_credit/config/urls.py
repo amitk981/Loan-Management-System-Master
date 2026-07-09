@@ -18,7 +18,7 @@ from sfpcl_credit.identity.views import (
     portal_password_reset_start,
     refresh,
 )
-from sfpcl_credit.members import views as member_views
+from sfpcl_credit.members import portal_views, views as member_views
 from sfpcl_credit.ops import deep_health, live_health, ready_health
 from sfpcl_credit.tracer import views as tracer_views
 from sfpcl_credit.workflows import event_views
@@ -54,6 +54,13 @@ urlpatterns = [
         "api/v1/portal/auth/password/change/",
         portal_password_change,
         name="portal-password-change",
+    ),
+    path("api/v1/portal/dashboard/", portal_views.portal_dashboard, name="portal-dashboard"),
+    path("api/v1/portal/profile/", portal_views.portal_profile, name="portal-profile"),
+    path(
+        "api/v1/portal/produce-supply/",
+        portal_views.portal_produce_supply,
+        name="portal-produce-supply",
     ),
     path(
         "api/v1/loan-applications/",

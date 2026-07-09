@@ -271,3 +271,22 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   change keeps the current session active and revokes other sessions.
 - OTP delivery remains behind the 003I communication-shell boundary with no real provider call.
   A-042 records the delivery-channel and last-four verification assumptions.
+
+## Member Portal Dashboard, Profile, And Supply View
+- 005FB implements MP03/MP04 and prototype `MP22_ProduceSupply.tsx` as authenticated portal
+  own-data reads:
+  - `GET /api/v1/portal/dashboard/`
+  - `GET /api/v1/portal/profile/`
+  - `GET /api/v1/portal/produce-supply/`
+- Source MP03 requires member summary, pending actions, application/loan summary, repayment shell,
+  notices, and quick actions. 005FB returns implemented application counts and open-deficiency
+  pending-action counts; loan, signature, repayment, KYC-update, closure, and notices stay zero/empty
+  shells until their modules exist.
+- Source MP04 requires own-only member/contact/nominee/shareholding/land/crop/bank/KYC profile
+  visibility. 005FB reuses existing Epic 004 serializers and forces PAN/Aadhaar/full bank values to
+  masked-only portal display with no reveal path.
+- `data-model.md` defines `produce_supply_records`, but no Django model exists yet. A-043 records
+  the empty read-only produce-supply shell until that persistence slice exists.
+- Staff tokens and non-portal users receive `403 PERMISSION_DENIED` on portal own-data APIs. Query
+  `member_id` values are ignored as authority; the linked active `PortalAccount.member_id` is the
+  only scope.

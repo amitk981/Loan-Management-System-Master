@@ -19,6 +19,17 @@ their own application status without staff assistance.
 ## Depends On
 - 005FB
 
+## Prior Slice Facts To Preserve
+- 005FB added `GET /api/v1/portal/dashboard/`, `/api/v1/portal/profile/`, and
+  `/api/v1/portal/produce-supply/`. Reuse the same active `PortalAccount.member_id` scope helper
+  for all 005G portal application endpoints.
+- Do not accept client-supplied `member_id` as authority. Query/path member IDs must not broaden
+  access beyond the authenticated portal member.
+- MP03 currently counts open deficiencies and application totals only; 005G owns the actual MP09
+  application list and MP10 status detail.
+- Preserve masked profile behavior from 005FB. Application responses must not include PAN,
+  Aadhaar, full bank-account numbers, encrypted values, token hashes, or raw document contents.
+
 ## Source References
 - docs/source/implementation-roadmap.md section 11
 - docs/source/api-contracts.md sections 19-21
@@ -53,6 +64,9 @@ their own application status without staff assistance.
   - submit own draft application to the existing `submitted` state;
   - list own applications for MP09;
   - read own application status for MP10.
+- Include returned deficiency facts needed for borrower-facing status: open deficiency count,
+  `application_status = incomplete_returned`, `completeness_status = incomplete`, and
+  `current_stage = initial_loan_request`.
 - Do not accept client-supplied `member_id` as authority. The portal token’s `member_id` is the
   borrower scope.
 - Do not expose staff completeness, reference-generation, return-with-deficiencies, or deficiency

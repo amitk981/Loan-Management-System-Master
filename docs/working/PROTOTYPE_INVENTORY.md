@@ -41,6 +41,14 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
 | `MyProfile` | `GET /api/v1/auth/me/` | API-backed read-only profile | Shows the authenticated user's backend identity, active role, teams, and permissions. Profile editing remains future scope. |
 | `TaskInbox` | None implemented yet | Prototype/mock shell | Source S03 requires actionable assigned/role tasks with filters and workflow actions. 003J added only internal `scheduled_jobs` metadata/services and did not add a task inbox endpoint, dashboard task generation, notification generation rules, or scheduler UI. |
 
+## API-Backed Borrower Portal Screens
+
+| Screen | Backend path | Current status | Notes |
+|---|---|---|---|
+| `MP03_Dashboard` | `GET /api/v1/portal/dashboard/` | API-backed own-data shell | Uses the active portal account member scope, own application counts, open-deficiency pending count, and source-backed zero/empty placeholders for future loan, repayment, signature, KYC-update, closure, and notice modules. |
+| `MP04_MyProfile` | `GET /api/v1/portal/profile/` | API-backed masked profile | Reuses Epic 004 member subresources for profile, nominees, shareholding, land/crop, KYC, bank accounts, and cancelled cheques. PAN/Aadhaar/bank values stay masked; no portal reveal control exists. |
+| `MP22_ProduceSupply` | `GET /api/v1/portal/produce-supply/` | API-backed empty shell | Prototype screen number is supply history, not spec MP22 grievance detail. Returns an empty state until `produce_supply_records` exists in the backend. |
+
 ## Epic 003 Component Status
 
 | Prototype reference | Current implementation status |

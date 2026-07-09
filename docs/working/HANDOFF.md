@@ -1,62 +1,69 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-09_222250_normal_run
+2026-07-09_233958_repair
 
 ## Current Status
-Slice `005FA-member-portal-authentication` completed successfully.
+Slice `005FB-member-portal-dashboard-profile-and-supply-view` completed successfully in repair mode.
+
+Repair diagnosis:
+- The prior validation run used bare `python3`, which loaded an incompatible host
+  `cryptography` wheel; this repair used `/Users/amitkallapa/LMS/.ralph/venv/bin/python` for all
+  backend commands.
+- The leftover `2026-07-09_230232_normal_run` worktree had passing tests but exceeded Ralph diff
+  limits with 2187 changed lines. This repair reimplemented the slice smaller in the active
+  worktree.
 
 What changed:
-- Added portal auth models: `PortalAccount` links one `Member` to one borrower portal `User`;
-  `PortalOtpChallenge` stores activation/reset OTP hashes, status, expiry, and challenge metadata.
-- Added portal endpoints:
-  `/api/v1/portal/auth/activation/start/`,
-  `/api/v1/portal/auth/activation/complete/`,
-  `/api/v1/portal/auth/login/`,
-  `/api/v1/portal/auth/password-reset/start/`,
-  `/api/v1/portal/auth/password-reset/complete/`, and
-  `/api/v1/portal/auth/password/change/`.
-- Borrower access tokens and `/api/v1/auth/me/` now include `member_id`, `portal_account_id`, and
-  `portal_role = borrower_member`. They expose only portal own-data permission codes and do not
-  grant staff completeness, reference generation, return-with-deficiencies, or deficiency
-  resolution authority.
-- Password reset OTPs are single-use and revoke active sessions; MP25 password change revokes
-  other sessions while keeping the current session active.
-- MP00/MP01/MP02/MP25 now call real APIs while preserving existing visual patterns.
-- API contracts, A-042, the Epic 005 digest, and next portal slices were updated with the member
-  scope and OTP-delivery assumptions.
+- Added member-scoped portal APIs:
+  `/api/v1/portal/dashboard/`, `/api/v1/portal/profile/`, and
+  `/api/v1/portal/produce-supply/`.
+- Portal APIs derive scope only from an active `PortalAccount` linked to the authenticated bearer
+  token user. Query `member_id` values are ignored as authority.
+- Staff/non-portal tokens receive `403 PERMISSION_DENIED` on portal own-data APIs.
+- Dashboard returns own member snapshot, own application counts, open-deficiency pending-action
+  count, zero loan placeholders, zero future-action placeholders, and empty notices until those
+  modules exist.
+- Profile reuses existing member, nominee, shareholding, land/crop, KYC, bank-account, and
+  cancelled-cheque serializers. PAN/Aadhaar and bank values stay masked; portal `can_view_full` is
+  forced false.
+- Produce supply returns an empty source-backed shell because `data-model.md` defines
+  `produce_supply_records` but no Django model exists yet. A-043 records this.
+- MP03, MP04, and prototype `MP22_ProduceSupply.tsx` now call real portal APIs through
+  `sfpcl-lms/src/services/portalApi.ts` and keep existing visual patterns.
+- API contracts, prototype inventory/gap report, assumptions, Epic 005 digest, and next slices were
+  updated.
 
 Source facts used:
-- `docs/source/screen-spec-member-portal.md` MP00/MP01/MP02/MP25 require login, activation,
-  OTP/password reset, and security settings.
-- `docs/source/auth-permissions.md` §5 requires JWT session tracking, minimal claims, refresh
-  revocation, and no sensitive token data; borrower portal users are own-record users.
-- `docs/source/security-privacy.md` requires generic invalid-credential/reset handling, OTP/hash
-  protections, failed-login auditability, and session revocation on password reset.
-- `docs/source/api-contracts.md` §11 defines auth envelope conventions.
+- `screen-spec-member-portal.md` MP03 requires own dashboard summary, pending actions, application
+  and loan cards, notices, and quick actions.
+- `screen-spec-member-portal.md` MP04 requires own profile tabs for member, contact, nominee,
+  shareholding, land/crop, bank, and KYC data.
+- `screen-spec-member-portal.md` permissions matrix marks MP03/MP04 as own-only.
+- `data-model.md` §11.6 defines `produce_supply_records`.
+- `api-contracts.md` §13 and §43 guided profile/dashboard envelope conventions.
 
 ## Validation
-- TDD red/green saved for backend portal auth and frontend auth-session API wiring.
-- Focused portal auth backend module passed: 4 tests.
-- Full backend suite passed: 260 tests.
+- TDD red/green saved for backend portal member APIs and frontend portal API/view wiring.
+- Focused backend portal tests passed: 2 tests.
+- Full backend suite passed: 262 tests.
 - Backend coverage passed: 95% total, above 85% floor.
 - Backend `manage.py check` and `makemigrations --check --dry-run` passed.
-- Frontend lint, typecheck, tests (83/83), and build passed.
-- `git diff --check` passed.
-- Visual evidence HTML is saved. Browser screenshots could not be captured in this sandbox because
-  Vite server binding failed with `EPERM`, in-app browser was unavailable, and Playwright Chromium
-  launch failed with macOS Mach port permission denial; logs are in the run folder.
+- Frontend tests passed: 88 tests.
+- Frontend lint, typecheck, and build passed.
+- Playwright screenshot capture failed in this sandbox due macOS Mach port permission denial; the
+  error log is saved. Static self-contained visual evidence HTML is saved in the run folder.
 
-Evidence is in `.ralph/runs/2026-07-09_222250_normal_run/`.
+Evidence is in `.ralph/runs/2026-07-09_233958_repair/`.
 
 ## Next Run
-Run `005FB-member-portal-dashboard-profile-and-supply-view`.
+Run `005G-member-portal-application-start-status`.
 
-Key instructions for 005FB:
-- Consume `member_id` and `portal_role = borrower_member` from the authenticated portal token and
-  `/auth/me`; do not accept arbitrary member IDs from the client as authority.
-- Borrower portal reads should use portal own-data permissions, not staff `members.member.read` or
-  `applications.loan_application.*` grants.
-- Preserve masking for PAN/Aadhaar/full bank values; no portal reveal path exists yet.
-- Dashboard pending actions may count open deficiencies for the member's own applications, but
-  application list/status screens belong to 005G.
+Key instructions for 005G:
+- Reuse the active `PortalAccount.member_id` own-data scope from 005FB; do not accept client
+  `member_id` as authority.
+- MP03 only exposes summary counts. 005G owns MP05/MP09/MP10 application create/list/status wiring.
+- Preserve `incomplete_returned` as borrower rectification work with
+  `completeness_status = incomplete` and `current_stage = initial_loan_request`.
+- Portal application responses must not expose staff completeness/reference/deficiency-resolution
+  actions or sensitive member/bank/document internals.

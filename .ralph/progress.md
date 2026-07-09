@@ -2028,3 +2028,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-10 00:11:39 - 2026-07-09_233958_repair
+- Agent tool used: codex
+- Slice attempted: 005FB-member-portal-dashboard-profile-and-supply-view
+- Summary: Completed repair-mode implementation for member portal MP03 dashboard, MP04 profile,
+  and prototype MP22 produce-supply view. Added own-data portal APIs for dashboard/profile/supply,
+  scoped by active `PortalAccount.member_id`; staff tokens are denied, query `member_id` is ignored
+  as authority, profile values remain masked, and produce supply returns the source-backed empty
+  shell until `produce_supply_records` exists.
+- Tests run: Backend focused portal member red/green, full backend suite, backend coverage,
+  backend check, migrations check, frontend focused API/view red/green, frontend tests, lint,
+  typecheck, and build.
+- Evidence saved: `.ralph/runs/2026-07-09_233958_repair/`
+- Result: Success
+- Risk level: Medium
+- Next action: Run `005G-member-portal-application-start-status`.
+
+## 2026-07-10 00:22:02 - 2026-07-09_233958_repair
+- Agent tool used: codex
+- Slice attempted: 005FB-member-portal-dashboard-profile-and-supply-view
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_233958_repair/.ralph/runs/2026-07-09_233958_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_233958_repair/.ralph/runs/2026-07-09_233958_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
