@@ -1,0 +1,33 @@
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+F.FF.
+======================================================================
+FAIL: test_portal_borrower_can_create_update_submit_list_and_read_own_application_status (sfpcl_credit.tests.test_portal_member_api.PortalMemberApiTests.test_portal_borrower_can_create_update_submit_list_and_read_own_application_status)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_002243_normal_run/sfpcl_credit/tests/test_portal_member_api.py", line 292, in test_portal_borrower_can_create_update_submit_list_and_read_own_application_status
+    self.assertEqual(create_response.status_code, 200)
+AssertionError: 404 != 200
+
+======================================================================
+FAIL: test_portal_status_marks_returned_incomplete_as_borrower_rectification_work (sfpcl_credit.tests.test_portal_member_api.PortalMemberApiTests.test_portal_status_marks_returned_incomplete_as_borrower_rectification_work)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_002243_normal_run/sfpcl_credit/tests/test_portal_member_api.py", line 418, in test_portal_status_marks_returned_incomplete_as_borrower_rectification_work
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+======================================================================
+FAIL: test_staff_token_cannot_call_portal_application_apis (sfpcl_credit.tests.test_portal_member_api.PortalMemberApiTests.test_staff_token_cannot_call_portal_application_apis)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_002243_normal_run/sfpcl_credit/tests/test_portal_member_api.py", line 443, in test_staff_token_cannot_call_portal_application_apis
+    self.assertEqual(response.status_code, 403)
+AssertionError: 404 != 403
+
+----------------------------------------------------------------------
+Ran 5 tests in 5.115s
+
+FAILED (failures=3)
+Destroying test database for alias 'default'...

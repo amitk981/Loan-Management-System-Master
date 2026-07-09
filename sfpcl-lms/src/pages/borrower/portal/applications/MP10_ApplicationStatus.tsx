@@ -1,26 +1,47 @@
-import React, { useState } from 'react';
-import { ArrowLeft, CheckCircle2, Clock, AlertTriangle, ChevronRight, History, Landmark, ClipboardList, Shield, UserRound, Signature, AlertCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, CheckCircle2, Clock, AlertTriangle, History, ClipboardList, Shield, UserRound, Signature, AlertCircle } from 'lucide-react';
 import StatusBadge from '../../../../components/ui/StatusBadge';
+import { AuthSessionError } from '../../../../services/authSession';
+import { fetchPortalApplication, type PortalApplication } from '../../../../services/portalApi';
 
 interface MP10_ApplicationStatusProps {
-  applicationId: string;
+  applicationId: string | null;
   onBack: () => void;
 }
 
 const MP10_ApplicationStatus: React.FC<MP10_ApplicationStatusProps> = ({ applicationId, onBack }) => {
   const [activeTab, setActiveTab] = useState<'progress' | 'data'>('progress');
+  const [application, setApplication] = useState<PortalApplication | null>(null);
+  const [loading, setLoading] = useState(Boolean(applicationId));
+  const [error, setError] = useState<string | null>(null);
 
-  const loanStages = [
-    { label: 'Application Submitted',   done: true,  date: '10 Aug 2024', owner: 'Borrower' },
-    { label: 'Completeness Check',      done: true,  date: '20 Aug 2024', owner: 'Deputy Manager - Finance' },
-    { label: 'Appraisal & Eligibility', done: true,  date: '29 Aug 2024', owner: 'Credit Manager' },
-    { label: 'Sanction Approval',       done: true,  date: '05 Sep 2024', owner: 'Sanction Committee' },
-    { label: 'Documentation',           done: true,  date: '18 Sep 2024', owner: 'Company Secretary' },
-    { label: 'SAP Setup',               done: true,  date: '21 Sep 2024', owner: 'Senior Manager - Finance' },
-    { label: 'Disbursement',            done: true,  date: '22 Sep 2024', owner: 'CFC' },
-    { label: 'Active Loan / Monitoring', done: true, date: 'Ongoing', owner: 'Credit and Accounts' },
-    { label: 'Closure / NOC',           done: false, date: null, owner: 'Compliance and CS' },
-  ];
+  useEffect(() => {
+    if (!applicationId) {
+      setApplication(null);
+      setLoading(false);
+      return;
+    }
+    let mounted = true;
+    setLoading(true);
+    fetchPortalApplication(applicationId)
+      .then(result => {
+        if (!mounted) return;
+        setApplication(result);
+        setError(null);
+      })
+      .catch(err => {
+        if (!mounted) return;
+        setError(err instanceof AuthSessionError ? err.message : 'Application status could not be loaded.');
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [applicationId]);
+
+  const loanStages = buildStages(application);
 
   const applicationFieldSections = [
     {
@@ -28,57 +49,80 @@ const MP10_ApplicationStatus: React.FC<MP10_ApplicationStatusProps> = ({ applica
       icon: UserRound,
       rows: [
         ['Application Channel', 'Digital Portal'],
-        ['Member ID', 'MEM-00042'],
-        ['Full Legal Name', 'Ganesh Thorat'],
-        ['PAN', 'ABCDE1234F'],
-        ['Mobile Number', '+91 98765 43210'],
+        ['Member ID', application?.member?.member_number ?? 'Not available'],
+        ['Full Legal Name', application?.member?.display_name ?? 'Not available'],
+        ['Folio Number', application?.member?.folio_number ?? 'Not available'],
+        ['Member Type', application?.member?.member_type?.replace(/_/g, ' ') ?? 'Not available'],
       ],
     },
     {
       title: 'Membership & Eligibility',
       icon: Shield,
       rows: [
-        ['Member Type', 'Individual Farmer'],
-        ['Shares Held', '5 shares'],
-        ['Produce Supply History', '5 consecutive years'],
-        ['Land Area Under Cultivation', '4.5 acres'],
-        ['Default Flag', 'No default on record'],
+        ['Shares Held', String(application?.member?.share_summary?.number_of_shares ?? 'Not available')],
+        ['Holding Mode', application?.member?.share_summary?.holding_mode ?? 'Not available'],
+        ['KYC Status', application?.member?.kyc_status?.replace(/_/g, ' ') ?? 'Not available'],
+        ['Default Flag', application?.member?.default_status?.replace(/_/g, ' ') ?? 'Not available'],
+        ['Active Member Status', application?.member?.active_member_status?.status ?? 'Not available'],
       ],
     },
     {
       title: 'Loan Request',
       icon: ClipboardList,
       rows: [
-        ['Required Loan Amount', '₹5,00,000'],
-        ['Eligible Amount', '₹5,00,000'],
-        ['Loan Purpose', 'Crop production'],
-        ['Loan Type', 'Short-term'],
-        ['Requested Tenure', '12 months'],
+        ['Required Loan Amount', formatCurrency(application?.required_loan_amount ?? null)],
+        ['Application Reference', application?.application_reference_number ?? 'Pending completeness check'],
+        ['Loan Purpose', application?.declared_purpose || application?.purpose_category?.replace(/_/g, ' ') || 'Not entered'],
+        ['Loan Type', application?.loan_type_requested?.replace(/_/g, ' ') ?? 'Not entered'],
+        ['Requested Tenure', application?.requested_tenure_months ? `${application.requested_tenure_months} months` : 'Not entered'],
       ],
     },
     {
       title: 'Nominee & Signatures',
       icon: Signature,
       rows: [
-        ['Nominee Name', 'Suman Thorat'],
-        ['Relationship', 'Spouse'],
-        ['Nominee PAN', 'FGHIJ5678K'],
-        ['Completeness Status', 'One deficiency open'],
+        ['Application Status', application?.application_status?.replace(/_/g, ' ') ?? 'Not available'],
+        ['Current Stage', application?.current_stage?.replace(/_/g, ' ') ?? 'Not available'],
+        ['Completeness Status', application?.completeness_status?.replace(/_/g, ' ') ?? 'Not available'],
+        ['Open Deficiencies', String(application?.open_deficiency_count ?? 0)],
       ],
     },
   ];
 
-  const validationMessages = [
-    { label: 'Member and folio details captured', status: 'passed' },
-    { label: 'Loan purpose is agriculture / crop production related', status: 'passed' },
-    { label: 'Nominee is not a minor and KYC is attached', status: 'passed' },
-    { label: 'Bank statement pages for February to April must be re-uploaded', status: 'attention' },
-  ];
+  const validationMessages = buildValidationMessages(application);
 
-  const auditSnapshot = [
-    { at: '10 Aug 2024, 10:22 AM', by: 'Ganesh Thorat', role: 'Borrower / Member', action: 'Application submitted', evidence: 'Portal submission v1' },
-    { at: '15 Aug 2024, 11:40 AM', by: 'Suresh Patil', role: 'Deputy Manager - Finance', action: 'Deficiency raised', evidence: 'Bank statement pages missing' },
-  ];
+  const auditSnapshot = application?.timeline ?? [];
+
+  if (!applicationId) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-100 p-6 text-sm text-slate-500">
+        Select an application from My Applications to view status.
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-100 p-6 text-sm text-slate-500">
+        Loading application status...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900">
+          <ArrowLeft size={16} />
+          Back to applications
+        </button>
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+          {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -88,10 +132,12 @@ const MP10_ApplicationStatus: React.FC<MP10_ApplicationStatusProps> = ({ applica
         </button>
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-slate-900">Application {applicationId}</h2>
-            <StatusBadge label="pending" size="sm" />
+            <h2 className="text-xl font-bold text-slate-900">Application {application?.display_reference ?? applicationId}</h2>
+            <StatusBadge label={application?.application_status?.replace(/_/g, ' ') ?? 'pending'} size="sm" />
           </div>
-          <p className="text-sm text-slate-500 mt-1">Crop Loan • ₹5,00,000 • Submitted 10 Aug 2024</p>
+          <p className="text-sm text-slate-500 mt-1">
+            {application?.purpose_category?.replace(/_/g, ' ') || 'Loan Application'} • {formatCurrency(application?.required_loan_amount ?? null)} • {application?.submitted_at ? `Submitted ${formatDate(application.submitted_at)}` : 'Draft'}
+          </p>
         </div>
       </div>
 
@@ -134,8 +180,8 @@ const MP10_ApplicationStatus: React.FC<MP10_ApplicationStatusProps> = ({ applica
                   <div className={`text-sm font-medium ${stage.done ? 'text-slate-900' : 'text-slate-400'}`}>
                     {stage.label}
                   </div>
-                  {stage.date && (
-                    <div className="text-xs text-slate-400 mt-0.5">{stage.date}</div>
+                  {stage.at && (
+                    <div className="text-xs text-slate-400 mt-0.5">{formatDate(stage.at)}</div>
                   )}
                   <div className="text-xs text-slate-500 mt-1">Owner: {stage.owner}</div>
                 </div>
@@ -171,16 +217,12 @@ const MP10_ApplicationStatus: React.FC<MP10_ApplicationStatusProps> = ({ applica
                 ))}
               </div>
               <div className="mt-4 rounded-lg border border-slate-200 p-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Borrower response</label>
-                <textarea
-                  rows={3}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-                  placeholder="Add a note for the officer before uploading the corrected bank statement"
-                />
-                <button className="mt-3 flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                  <ChevronRight size={15} />
-                  Submit Deficiency Response
-                </button>
+                <div className="text-sm font-medium text-slate-700">Borrower action</div>
+                <p className="mt-1 text-sm text-slate-500">
+                  {application?.application_status === 'incomplete_returned'
+                    ? 'Review the returned deficiencies. Upload and resubmission workflow will be available in the deficiency response slice.'
+                    : 'No action is required from you right now.'}
+                </p>
               </div>
             </div>
 
@@ -191,10 +233,9 @@ const MP10_ApplicationStatus: React.FC<MP10_ApplicationStatusProps> = ({ applica
               </h3>
               <div className="space-y-3">
                 {auditSnapshot.map(item => (
-                  <div key={`${item.at}-${item.action}`} className="border-l-2 border-green-200 pl-3 py-1">
-                    <div className="text-sm font-medium text-slate-900">{item.action}</div>
-                    <div className="text-xs text-slate-500 mt-0.5">{item.at} · {item.by} · {item.role}</div>
-                    <div className="text-xs text-slate-400 mt-1">Evidence: {item.evidence}</div>
+                  <div key={`${item.at}-${item.event}`} className="border-l-2 border-green-200 pl-3 py-1">
+                    <div className="text-sm font-medium text-slate-900">{item.event}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">{item.at ? formatDate(item.at) : 'Date pending'} · {item.owner}</div>
                   </div>
                 ))}
               </div>
@@ -229,5 +270,51 @@ const MP10_ApplicationStatus: React.FC<MP10_ApplicationStatusProps> = ({ applica
     </div>
   );
 };
+
+const buildStages = (application: PortalApplication | null) => {
+  const status = application?.application_status;
+  return [
+    { label: 'Draft created', done: Boolean(application), at: application?.created_at ?? null, owner: 'Borrower' },
+    { label: 'Application submitted', done: Boolean(application?.submitted_at), at: application?.submitted_at ?? null, owner: 'Borrower' },
+    { label: 'Completeness Check', done: status === 'reference_generated', at: null, owner: 'SFPCL' },
+    { label: 'Deficiency Raised', done: status === 'incomplete_returned', at: application?.updated_at ?? null, owner: 'SFPCL' },
+    { label: 'Appraisal & Eligibility', done: application?.current_stage === 'credit_assessment', at: null, owner: 'Credit Manager' },
+    { label: 'Sanction Approval', done: false, at: null, owner: 'Sanction Committee' },
+    { label: 'Documentation', done: false, at: null, owner: 'Company Secretary' },
+    { label: 'SAP Setup', done: false, at: null, owner: 'Senior Manager - Finance' },
+    { label: 'Disbursement', done: false, at: null, owner: 'CFC' },
+  ];
+};
+
+const buildValidationMessages = (application: PortalApplication | null) => {
+  const messages = [
+    { label: 'Member and folio details captured', status: application?.member ? 'passed' : 'attention' },
+    { label: 'Loan purpose is agriculture / crop production related', status: application?.purpose_category ? 'passed' : 'attention' },
+  ];
+  if (application?.application_status === 'incomplete_returned') {
+    return [
+      ...messages,
+      ...((application.deficiencies ?? []).map(item => ({
+        label: item.description,
+        status: 'attention',
+      }))),
+    ];
+  }
+  return [
+    ...messages,
+    { label: application?.borrower_action ?? 'No action required', status: 'passed' },
+  ];
+};
+
+const formatCurrency = (value: string | null) => {
+  if (!value) return 'Not entered';
+  return `₹${Number(value).toLocaleString('en-IN')}`;
+};
+
+const formatDate = (value: string) => new Intl.DateTimeFormat('en-IN', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+}).format(new Date(value));
 
 export default MP10_ApplicationStatus;

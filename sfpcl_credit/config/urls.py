@@ -63,6 +63,21 @@ urlpatterns = [
         name="portal-produce-supply",
     ),
     path(
+        "api/v1/portal/applications/",
+        portal_views.portal_applications,
+        name="portal-applications",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/",
+        portal_views.portal_application_detail,
+        name="portal-application-detail",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/submit/",
+        portal_views.portal_application_submit,
+        name="portal-application-submit",
+    ),
+    path(
         "api/v1/loan-applications/",
         application_views.loan_application_collection,
         name="loan-application-list-create",

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>005G Portal Application Visual Evidence</title>
+  <style>
+    body { margin: 0; background: #f8fafc; color: #0f172a; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    main { max-width: 1120px; margin: 0 auto; padding: 32px; }
+    h1 { font-size: 24px; margin: 0 0 6px; }
+    h2 { font-size: 18px; margin: 0; }
+    p { margin: 0; color: #64748b; font-size: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+    .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+    .label { color: #64748b; font-size: 12px; }
+    .value { color: #0f172a; font-weight: 650; font-size: 14px; margin-top: 4px; }
+    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 8px; background: #f1f5f9; border: 1px solid #e2e8f0; color: #334155; font-size: 12px; font-weight: 650; }
+    .badge.warn { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+    .button { display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; padding: 10px 14px; background: #16a34a; color: white; font-size: 14px; font-weight: 650; }
+    .outline { background: white; color: #334155; border: 1px solid #e2e8f0; }
+    .section { margin-top: 28px; }
+    .step { display: flex; gap: 12px; padding-bottom: 14px; }
+    .dot { width: 28px; height: 28px; border-radius: 999px; background: #16a34a; color: white; display: grid; place-items: center; font-size: 13px; font-weight: 700; flex: none; }
+    .dot.todo { background: #f1f5f9; color: #94a3b8; }
+    .alert { border: 1px solid #fecaca; background: #fef2f2; color: #991b1b; border-radius: 8px; padding: 12px; font-size: 14px; }
+    .empty { border: 1px solid #e2e8f0; background: white; border-radius: 12px; padding: 20px; color: #64748b; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>005G Member Portal Application Start and Status</h1>
+    <p>Static evidence fallback because Vite dev server failed with <code>listen EPERM 127.0.0.1:5173</code> in this sandbox.</p>
+
+    <section class="section card">
+      <div class="row" style="margin-top:0">
+        <div>
+          <h2>MP05 New Loan Application</h2>
+          <p>Draft save and submit now call portal application APIs.</p>
+        </div>
+        <span class="button outline">Draft saved</span>
+      </div>
+      <div class="grid">
+        <div><div class="label">Requested Amount</div><div class="value">Rs. 3,00,000</div></div>
+        <div><div class="label">Purpose</div><div class="value">crop production</div></div>
+      </div>
+      <div class="row">
+        <span class="button outline">Save Draft</span>
+        <span class="button">Submit Application</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>MP09 My Applications</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="row" style="margin-top:0">
+            <div>
+              <div class="value">crop production</div>
+              <p>00000000</p>
+            </div>
+            <span class="badge">submitted</span>
+          </div>
+          <div class="grid">
+            <div><div class="label">Requested Amount</div><div class="value">Rs. 3,00,000</div></div>
+            <div><div class="label">Applied On</div><div class="value">10 Jul 2026</div></div>
+          </div>
+          <div class="row"><div><div class="label">Current Stage</div><div class="value">initial loan request</div></div><p>SFPCL</p></div>
+        </div>
+        <div class="card">
+          <div class="row" style="margin-top:0">
+            <div>
+              <div class="value">crop production</div>
+              <p>APP-RETURN</p>
+            </div>
+            <span class="badge warn">Action Needed</span>
+          </div>
+          <div class="grid">
+            <div><div class="label">Requested Amount</div><div class="value">Rs. 2,50,000</div></div>
+            <div><div class="label">Applied On</div><div class="value">10 Jul 2026</div></div>
+          </div>
+          <div class="row"><div><div class="label">Current Stage</div><div class="value">Review deficiencies</div></div><p>Borrower</p></div>
+        </div>
+      </div>
+      <div class="section empty">Empty state: No loan applications have been started yet.</div>
+      <div class="section alert">Error state: Portal access denied.</div>
+    </section>
+
+    <section class="section card">
+      <h2>MP10 Application Status</h2>
+      <p>Selected application detail reads from the own-application status endpoint.</p>
+      <div class="section">
+        <div class="step"><div class="dot">1</div><div><div class="value">Draft created</div><p>Owner: Borrower</p></div></div>
+        <div class="step"><div class="dot">2</div><div><div class="value">Application submitted</div><p>Owner: Borrower</p></div></div>
+        <div class="step"><div class="dot todo">3</div><div><div class="value">Completeness Check</div><p>Owner: SFPCL</p></div></div>
+      </div>
+      <div class="section alert">Returned-incomplete detail shows open deficiency metadata but no submit-response control in this slice.</div>
+    </section>
+  </main>
+</body>
+</html>

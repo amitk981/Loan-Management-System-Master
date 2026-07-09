@@ -3,8 +3,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { MP03DashboardView } from './MP03_Dashboard';
 import { MP04ProfileView } from './MP04_MyProfile';
+import { MP09ApplicationsView } from './applications/MP09_MyApplications';
 import { MP22ProduceSupplyView } from './supply/MP22_ProduceSupply';
-import type { PortalDashboard, PortalProduceSupply, PortalProfile } from '../../../services/portalApi';
+import type { PortalApplication, PortalDashboard, PortalProduceSupply, PortalProfile } from '../../../services/portalApi';
 
 describe('member portal backend-backed views', () => {
   it('renders MP03 dashboard counts and pending actions from the portal API', () => {
@@ -33,6 +34,27 @@ describe('member portal backend-backed views', () => {
     expect(html).toContain('Produce Supply History');
     expect(html).toContain('No produce supply records are available yet.');
     expect(html).toContain('model not implemented');
+  });
+
+  it('renders MP09 loading, empty, error, and returned-incomplete application states', () => {
+    expect(renderToStaticMarkup(
+      <MP09ApplicationsView applications={[]} loading error={null} onNavigateToApplication={vi.fn()} onNavigateToNew={vi.fn()} />
+    )).toContain('Loading applications');
+
+    expect(renderToStaticMarkup(
+      <MP09ApplicationsView applications={[]} loading={false} error={null} onNavigateToApplication={vi.fn()} onNavigateToNew={vi.fn()} />
+    )).toContain('No loan applications have been started yet.');
+
+    expect(renderToStaticMarkup(
+      <MP09ApplicationsView applications={[]} loading={false} error="Portal access denied." onNavigateToApplication={vi.fn()} onNavigateToNew={vi.fn()} />
+    )).toContain('Portal access denied.');
+
+    const html = renderToStaticMarkup(
+      <MP09ApplicationsView applications={[returnedApplication]} loading={false} error={null} onNavigateToApplication={vi.fn()} onNavigateToNew={vi.fn()} />
+    );
+    expect(html).toContain('Action Needed');
+    expect(html).toContain('Review deficiencies');
+    expect(html).toContain('APP-RETURN');
   });
 });
 
@@ -79,4 +101,24 @@ const produceSupply: PortalProduceSupply = {
   records: [],
   summary: {},
   source_status: 'model_not_implemented',
+};
+
+const returnedApplication: PortalApplication = {
+  loan_application_id: 'app-returned',
+  application_reference_number: null,
+  display_reference: 'APP-RETURN',
+  application_date: '2026-07-10',
+  submitted_at: '2026-07-10T08:00:00Z',
+  required_loan_amount: '250000.00',
+  declared_purpose: 'Crop production',
+  purpose_category: 'crop_production',
+  loan_type_requested: 'short_term',
+  application_status: 'incomplete_returned',
+  current_stage: 'initial_loan_request',
+  completeness_status: 'incomplete',
+  pending_with: 'Borrower',
+  borrower_action: 'Review deficiencies',
+  open_deficiency_count: 1,
+  created_at: '2026-07-10T07:00:00Z',
+  updated_at: '2026-07-10T09:00:00Z',
 };

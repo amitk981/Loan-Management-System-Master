@@ -1,69 +1,70 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-09_233958_repair
+2026-07-10_002243_normal_run
 
 ## Current Status
-Slice `005FB-member-portal-dashboard-profile-and-supply-view` completed successfully in repair mode.
-
-Repair diagnosis:
-- The prior validation run used bare `python3`, which loaded an incompatible host
-  `cryptography` wheel; this repair used `/Users/amitkallapa/LMS/.ralph/venv/bin/python` for all
-  backend commands.
-- The leftover `2026-07-09_230232_normal_run` worktree had passing tests but exceeded Ralph diff
-  limits with 2187 changed lines. This repair reimplemented the slice smaller in the active
-  worktree.
+Slice `005G-member-portal-application-start-status` completed successfully in normal mode.
 
 What changed:
-- Added member-scoped portal APIs:
-  `/api/v1/portal/dashboard/`, `/api/v1/portal/profile/`, and
-  `/api/v1/portal/produce-supply/`.
-- Portal APIs derive scope only from an active `PortalAccount` linked to the authenticated bearer
-  token user. Query `member_id` values are ignored as authority.
-- Staff/non-portal tokens receive `403 PERMISSION_DENIED` on portal own-data APIs.
-- Dashboard returns own member snapshot, own application counts, open-deficiency pending-action
-  count, zero loan placeholders, zero future-action placeholders, and empty notices until those
-  modules exist.
-- Profile reuses existing member, nominee, shareholding, land/crop, KYC, bank-account, and
-  cancelled-cheque serializers. PAN/Aadhaar and bank values stay masked; portal `can_view_full` is
-  forced false.
-- Produce supply returns an empty source-backed shell because `data-model.md` defines
-  `produce_supply_records` but no Django model exists yet. A-043 records this.
-- MP03, MP04, and prototype `MP22_ProduceSupply.tsx` now call real portal APIs through
-  `sfpcl-lms/src/services/portalApi.ts` and keep existing visual patterns.
-- API contracts, prototype inventory/gap report, assumptions, Epic 005 digest, and next slices were
+- Added borrower portal application APIs:
+  - `GET/POST /api/v1/portal/applications/`
+  - `GET/PATCH /api/v1/portal/applications/{loan_application_id}/`
+  - `POST /api/v1/portal/applications/{loan_application_id}/submit/`
+- Portal application scope comes only from the active `PortalAccount.member_id`. Payload/query/path
+  member IDs cannot broaden authority. Cross-member existing application attempts return
+  `403 OBJECT_ACCESS_DENIED`; staff/non-portal tokens receive `403 PERMISSION_DENIED`.
+- Draft create/update/submit reuse existing 005A/005B application services, metadata-only audit,
+  and workflow behavior with the linked portal user as actor.
+- Submitted portal applications can appear without an official `LO...` reference until staff
+  completeness pass generates it.
+- Returned-incomplete applications serialize borrower rectification state:
+  `application_status = incomplete_returned`, `completeness_status = incomplete`,
+  `current_stage = initial_loan_request`, `pending_with = Borrower`, open deficiency count, and
+  open deficiency metadata.
+- MP05 saves/submits through the portal APIs. MP09 lists real own applications and covers loading,
+  empty, error, and returned-incomplete states. MP10 reads selected own application status detail.
+- Staff application screens must continue to use staff `/api/v1/loan-applications/` APIs, not the
+  portal routes.
+- API contracts, prototype inventory/gap report, Epic 005 digest, and next slices 005H/005I were
   updated.
 
 Source facts used:
-- `screen-spec-member-portal.md` MP03 requires own dashboard summary, pending actions, application
-  and loan cards, notices, and quick actions.
-- `screen-spec-member-portal.md` MP04 requires own profile tabs for member, contact, nominee,
-  shareholding, land/crop, bank, and KYC data.
-- `screen-spec-member-portal.md` permissions matrix marks MP03/MP04 as own-only.
-- `data-model.md` §11.6 defines `produce_supply_records`.
-- `api-contracts.md` §13 and §43 guided profile/dashboard envelope conventions.
+- `screen-spec-member-portal.md` MP05/MP06/MP08 require own draft create/save/resume and submit.
+- `screen-spec-member-portal.md` MP09/MP10 require own application list/status, pending owner,
+  deficiency/status facts, and borrower next steps.
+- `screen-spec-member-portal.md` permissions matrix marks MP05/MP09/MP10 as own-only.
+- `api-contracts.md` §19 defines loan application create/read/update/submit behavior; §21 defines
+  deficiency metadata.
+- `data-model.md` includes `incomplete_returned` in application status and `deficiencies` linked
+  to applications.
 
 ## Validation
-- TDD red/green saved for backend portal member APIs and frontend portal API/view wiring.
-- Focused backend portal tests passed: 2 tests.
-- Full backend suite passed: 262 tests.
+- Backend TDD red saved: portal application endpoints initially returned `404`.
+- Focused backend portal tests passed: 5 tests.
+- Full backend suite passed: 265 tests.
 - Backend coverage passed: 95% total, above 85% floor.
 - Backend `manage.py check` and `makemigrations --check --dry-run` passed.
-- Frontend tests passed: 88 tests.
+- Frontend portal API red/green tests passed.
+- Frontend portal view tests passed, including MP09 loading/empty/error/returned-incomplete states.
+- Frontend full tests passed: 90 tests.
 - Frontend lint, typecheck, and build passed.
-- Playwright screenshot capture failed in this sandbox due macOS Mach port permission denial; the
-  error log is saved. Static self-contained visual evidence HTML is saved in the run folder.
+- Live screenshot capture could not run because this sandbox blocked the Vite dev server with
+  `listen EPERM 127.0.0.1:5173`. The error log and static self-contained visual evidence HTML are
+  saved in the run folder.
 
-Evidence is in `.ralph/runs/2026-07-09_233958_repair/`.
+Evidence is in `.ralph/runs/2026-07-10_002243_normal_run/`.
 
 ## Next Run
-Run `005G-member-portal-application-start-status`.
+Architecture review is due (`slices_completed_since_architecture_review = 4`).
 
-Key instructions for 005G:
-- Reuse the active `PortalAccount.member_id` own-data scope from 005FB; do not accept client
-  `member_id` as authority.
-- MP03 only exposes summary counts. 005G owns MP05/MP09/MP10 application create/list/status wiring.
-- Preserve `incomplete_returned` as borrower rectification work with
-  `completeness_status = incomplete` and `current_stage = initial_loan_request`.
-- Portal application responses must not expose staff completeness/reference/deficiency-resolution
-  actions or sensitive member/bank/document internals.
+After architecture review, run `005H-rejection-note-shell`.
+
+Key instructions for 005H:
+- Keep rejection-note work staff-only. Borrower portal tokens must not create/send rejection notes.
+- Reuse staff application object-access boundaries from 005C2 and later slices.
+- Rejection-note create/send must not generate `LO...` references, register rows, sequence values,
+  or appraisal/sanction/disbursement state.
+- Preserve `incomplete_returned` as distinct borrower rectification work; do not use rejection
+  notes to repeat-return deficiencies.
+- Update API contracts and add metadata-only audit/workflow tests.

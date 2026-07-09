@@ -2054,3 +2054,27 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-10 00:43:00 - 2026-07-10_002243_normal_run
+- Agent tool used: codex
+- Slice attempted: 005G-member-portal-application-start-status
+- Summary: Completed member portal application start/list/status wiring. Added own-scoped portal
+  application APIs for draft create/update/read, submit, list, and status detail; MP05/MP09/MP10
+  now use real portal APIs; returned-incomplete applications render as borrower rectification work.
+- Tests run: Backend focused red/green portal API tests, full backend suite, backend coverage,
+  backend check, migrations check, frontend API/view red/green tests, frontend full tests,
+  typecheck, lint, and build.
+- Evidence saved: `.ralph/runs/2026-07-10_002243_normal_run/`
+- Result: Success
+- Risk level: Medium
+- Next action: Architecture review is due before the next implementation slice.
+
+## 2026-07-10 00:57:05 - 2026-07-10_002243_normal_run
+- Agent tool used: codex
+- Slice attempted: 005G-member-portal-application-start-status
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_002243_normal_run/.ralph/runs/2026-07-10_002243_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_002243_normal_run/.ralph/runs/2026-07-10_002243_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

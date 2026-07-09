@@ -65,21 +65,76 @@ export interface PortalProduceSupply {
   source_status: string;
 }
 
+export interface PortalApplication {
+  loan_application_id: string;
+  application_reference_number: string | null;
+  display_reference: string;
+  application_date: string;
+  submitted_at: string | null;
+  required_loan_amount: string | null;
+  declared_purpose: string;
+  purpose_category: string;
+  loan_type_requested: string | null;
+  application_status: string;
+  current_stage: string;
+  completeness_status: string;
+  pending_with: string;
+  borrower_action: string;
+  open_deficiency_count: number;
+  created_at: string | null;
+  updated_at: string | null;
+  member?: PortalMember;
+  requested_tenure_months?: number | null;
+  borrower_request_notes?: string;
+  terms_acceptance_flag?: boolean;
+  timeline?: { event: string; at: string | null; owner: string }[];
+  deficiencies?: {
+    deficiency_id: string;
+    item_code: string;
+    deficiency_type: string;
+    description: string;
+    resolution_status: string;
+    raised_at: string | null;
+  }[];
+}
+
+export interface PortalApplicationList {
+  items: PortalApplication[];
+}
+
+export interface PortalApplicationDraftPayload {
+  required_loan_amount?: string;
+  requested_tenure_months?: number | null;
+  declared_purpose?: string;
+  purpose_category?: string;
+  loan_type_requested?: string;
+  borrower_request_notes?: string;
+  terms_acceptance_flag?: boolean;
+}
+
 export const fetchPortalDashboard = () => request<PortalDashboard>('/api/v1/portal/dashboard/');
 export const fetchPortalProfile = () => request<PortalProfile>('/api/v1/portal/profile/');
 export const fetchPortalProduceSupply = () => request<PortalProduceSupply>('/api/v1/portal/produce-supply/');
+export const fetchPortalApplications = () => request<PortalApplicationList>('/api/v1/portal/applications/');
+export const fetchPortalApplication = (applicationId: string) => request<PortalApplication>(`/api/v1/portal/applications/${applicationId}/`);
+export const createPortalApplicationDraft = (payload: PortalApplicationDraftPayload) => request<PortalApplication>('/api/v1/portal/applications/', { method: 'POST', body: payload });
+export const updatePortalApplicationDraft = (applicationId: string, payload: PortalApplicationDraftPayload) => request<PortalApplication>(`/api/v1/portal/applications/${applicationId}/`, { method: 'PATCH', body: payload });
+export const submitPortalApplication = (applicationId: string) => request<PortalApplication>(`/api/v1/portal/applications/${applicationId}/submit/`, { method: 'POST', body: {} });
 
-async function request<T>(path: string): Promise<T> {
+async function request<T>(path: string, options: { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown } = {}): Promise<T> {
   const session = loadStoredAuthSession();
   if (!session) {
     throw new AuthSessionError('AUTH_REQUIRED', 'Member portal session is required.', 401);
   }
+  const method = options.method ?? 'GET';
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'GET',
+    method,
     headers: {
       Accept: 'application/json',
       Authorization: `Bearer ${session.accessToken}`,
+      ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' }),
     },
+    ...(method === 'GET' ? {} : { body: JSON.stringify(options.body ?? {}) }),
   });
   const envelope = await response.json() as ApiEnvelope<T>;
   if (!response.ok || !envelope.success || !envelope.data) {

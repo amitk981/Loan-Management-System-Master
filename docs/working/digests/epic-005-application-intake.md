@@ -290,3 +290,28 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
 - Staff tokens and non-portal users receive `403 PERMISSION_DENIED` on portal own-data APIs. Query
   `member_id` values are ignored as authority; the linked active `PortalAccount.member_id` is the
   only scope.
+
+## Member Portal Application Start And Status
+- 005G implements MP05/MP09/MP10 application start, own list, and own status detail:
+  - `GET/POST /api/v1/portal/applications/`
+  - `GET/PATCH /api/v1/portal/applications/{loan_application_id}/`
+  - `POST /api/v1/portal/applications/{loan_application_id}/submit/`
+- Source MP05/MP06/MP08 require borrowers to create/save/resume a draft and submit it to SFPCL.
+  Source MP09/MP10 require own application list/status with pending owner, lifecycle stage,
+  deficiencies, next steps, and no edit after submit unless returned.
+- Portal application scope is only the active `PortalAccount.member_id`. Payload/query/path
+  `member_id` cannot broaden authority. Staff/non-portal tokens receive `403 PERMISSION_DENIED`;
+  cross-member existing application attempts receive `403 OBJECT_ACCESS_DENIED` with no create,
+  audit, workflow, register, reference, or sequence side effects.
+- The portal endpoints reuse the 005A/005B draft/update/submit services. Submit still requires
+  own member, positive requested amount, declared purpose, and purpose category. Draft save may
+  remain incomplete.
+- Submitted applications can appear without an `LO...` reference; reference generation remains
+  staff completeness-pass behavior from 005C/005E.
+- Returned applications serialize borrower rectification state as
+  `application_status = incomplete_returned`, `completeness_status = incomplete`,
+  `current_stage = initial_loan_request`, `pending_with = Borrower`, open deficiency count, and
+  open deficiency metadata. Deficiency response/re-upload/resubmission remains out of scope.
+- Portal responses intentionally omit staff completeness/reference/return/resolve actions, PAN,
+  Aadhaar, full bank-account values, encrypted values, token hashes, raw document contents, and
+  staff-only document internals.

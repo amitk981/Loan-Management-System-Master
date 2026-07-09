@@ -1,3 +1,4 @@
+from sfpcl_credit.applications import services as application_services
 from sfpcl_credit.applications.models import ApplicationDeficiency, LoanApplication
 from sfpcl_credit.identity.models import PortalAccount
 from sfpcl_credit.members import services as member_services
@@ -5,6 +6,7 @@ from sfpcl_credit.members.models import BankAccount, KycProfile
 
 
 PORTAL_PERMISSION_ERROR = "Borrower portal data is available only to active member portal users."
+PORTAL_OBJECT_ACCESS_ERROR = "This application does not belong to the authenticated portal member."
 
 
 def portal_member_for_user(user):
@@ -83,6 +85,74 @@ def produce_supply(member):
     }
 
 
+class PortalObjectAccessError(Exception):
+    pass
+
+
+def list_applications(member):
+    applications = (
+        LoanApplication.objects.select_related("member")
+        .filter(member=member)
+        .order_by("-updated_at", "-created_at", "-loan_application_id")
+    )
+    return {"items": [_portal_application_summary(application) for application in applications]}
+
+
+def get_application_for_member(member, loan_application_id):
+    application = application_services.get_application(loan_application_id)
+    if application is None:
+        return None
+    if application.member_id != member.member_id:
+        raise PortalObjectAccessError(PORTAL_OBJECT_ACCESS_ERROR)
+    return application
+
+
+def create_application(member, payload, actor, request_ip="", request_user_agent="", request_id=None):
+    requested_member_id = payload.get("member_id")
+    if requested_member_id and str(requested_member_id) != str(member.member_id):
+        raise PortalObjectAccessError(PORTAL_OBJECT_ACCESS_ERROR)
+    scoped_payload = {**payload, "member_id": str(member.member_id)}
+    application = application_services.create_draft(
+        scoped_payload,
+        actor,
+        request_ip,
+        request_user_agent,
+        request_id,
+    )
+    return _portal_application_detail(application)
+
+
+def update_application(application, payload, actor, request_ip="", request_user_agent="", request_id=None):
+    if "member_id" in payload and str(payload["member_id"]) != str(application.member_id):
+        raise PortalObjectAccessError(PORTAL_OBJECT_ACCESS_ERROR)
+    scoped_payload = {key: value for key, value in payload.items() if key != "member_id"}
+    application = application_services.update_draft(
+        application,
+        scoped_payload,
+        actor,
+        request_ip,
+        request_user_agent,
+        request_id,
+    )
+    return _portal_application_detail(application)
+
+
+def submit_application(application, actor, request_ip="", request_user_agent="", request_id=None):
+    application = application_services.submit_application(
+        application,
+        actor,
+        request_ip,
+        request_user_agent,
+        request_id,
+        actor_permissions=[application_services.APPLICATION_SUBMIT_PERMISSION],
+    )
+    return _portal_application_detail(application)
+
+
+def application_detail(application):
+    return _portal_application_detail(application)
+
+
 def _member_snapshot(member):
     serialized = member_services.serialize_member(member)
     return {
@@ -113,3 +183,103 @@ def _kyc_profile(member):
         .first()
     )
     return member_services.serialize_kyc_profile(profile) if profile else None
+
+
+def _portal_application_summary(application):
+    return {
+        "loan_application_id": str(application.loan_application_id),
+        "application_reference_number": application.application_reference_number,
+        "display_reference": application.application_reference_number
+        or str(application.loan_application_id)[:8].upper(),
+        "application_date": application.application_date.isoformat(),
+        "submitted_at": _datetime(application.submitted_at),
+        "required_loan_amount": _money(application.required_loan_amount),
+        "declared_purpose": application.declared_purpose,
+        "purpose_category": application.purpose_category,
+        "loan_type_requested": application.loan_type_requested or None,
+        "application_status": application.application_status,
+        "current_stage": application.current_stage,
+        "completeness_status": application.completeness_status,
+        "pending_with": _pending_with(application),
+        "borrower_action": _borrower_action(application),
+        "open_deficiency_count": _open_deficiency_count(application),
+        "created_at": _datetime(application.created_at),
+        "updated_at": _datetime(application.updated_at),
+    }
+
+
+def _portal_application_detail(application):
+    summary = _portal_application_summary(application)
+    deficiencies = [
+        application_services.serialize_application_deficiency(deficiency)
+        for deficiency in application_services.list_application_deficiencies(application)
+        if deficiency.resolution_status == ApplicationDeficiency.STATUS_OPEN
+    ]
+    return {
+        **summary,
+        "member": _member_snapshot(application.member),
+        "requested_tenure_months": application.requested_tenure_months,
+        "borrower_request_notes": application.borrower_request_notes,
+        "terms_acceptance_flag": application.terms_acceptance_flag,
+        "timeline": _application_timeline(application),
+        "deficiencies": deficiencies,
+    }
+
+
+def _pending_with(application):
+    if application.application_status in {
+        LoanApplication.STATUS_DRAFT,
+        LoanApplication.STATUS_INCOMPLETE_RETURNED,
+    }:
+        return "Borrower"
+    return "SFPCL"
+
+
+def _borrower_action(application):
+    if application.application_status == LoanApplication.STATUS_DRAFT:
+        return "Continue draft"
+    if application.application_status == LoanApplication.STATUS_INCOMPLETE_RETURNED:
+        return "Review deficiencies"
+    return "No action required"
+
+
+def _open_deficiency_count(application):
+    return ApplicationDeficiency.objects.filter(
+        loan_application=application,
+        resolution_status=ApplicationDeficiency.STATUS_OPEN,
+    ).count()
+
+
+def _application_timeline(application):
+    events = [
+        {
+            "event": "Draft created",
+            "at": _datetime(application.created_at),
+            "owner": "Borrower",
+        }
+    ]
+    if application.submitted_at:
+        events.append(
+            {
+                "event": "Application submitted",
+                "at": _datetime(application.submitted_at),
+                "owner": "Borrower",
+            }
+        )
+    if application.application_status == LoanApplication.STATUS_INCOMPLETE_RETURNED:
+        events.append(
+            {
+                "event": "Deficiency raised",
+                "at": _datetime(application.updated_at),
+                "owner": "SFPCL",
+            }
+        )
+    return events
+
+
+def _money(value):
+    return f"{value:.2f}" if value is not None else None
+
+
+def _datetime(value):
+    return value.isoformat().replace("+00:00", "Z") if value else None

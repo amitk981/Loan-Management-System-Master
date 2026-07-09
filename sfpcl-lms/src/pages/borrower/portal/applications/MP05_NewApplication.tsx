@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
 import { ClipboardList, Save, CheckCircle2, AlertTriangle, ChevronLeft, ChevronRight, UserRound, Shield, IndianRupee, Signature, Upload, FileCheck } from 'lucide-react';
 import { useRole } from '../../../../contexts/RoleContext';
+import { AuthSessionError } from '../../../../services/authSession';
+import {
+  createPortalApplicationDraft,
+  submitPortalApplication,
+  updatePortalApplicationDraft,
+  type PortalApplication,
+} from '../../../../services/portalApi';
 
 type ApplicationStep = 'applicant' | 'shareholding' | 'loan' | 'nominee' | 'documents' | 'declarations' | 'review';
 
 interface MP05_NewApplicationProps {
-  onNavigateToApplication: () => void;
+  onNavigateToApplication: (id: string) => void;
 }
 
 const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToApplication }) => {
@@ -13,6 +20,9 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
   const [applicationStep, setApplicationStep] = useState<ApplicationStep>('applicant');
   const [applicationSubmitted, setApplicationSubmitted] = useState(false);
   const [applicationDraftSaved, setApplicationDraftSaved] = useState(false);
+  const [savedApplication, setSavedApplication] = useState<PortalApplication | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [apiMessage, setApiMessage] = useState<string | null>(null);
   
   const [borrowerApplication, setBorrowerApplication] = useState({
     applicantType: 'individual_farmer',
@@ -94,11 +104,13 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
 
   const updateApplication = (field: string, value: string | number | boolean) => {
     setApplicationDraftSaved(false);
+    setApiMessage(null);
     setBorrowerApplication(prev => ({ ...prev, [field]: value }));
   };
 
   const updateDeclaration = (field: keyof typeof borrowerApplication.declarations, value: boolean) => {
     setApplicationDraftSaved(false);
+    setApiMessage(null);
     setBorrowerApplication(prev => ({
       ...prev,
       declarations: { ...prev.declarations, [field]: value },
@@ -107,6 +119,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
 
   const toggleDocument = (docId: string, field: 'uploaded' | 'selfAttested') => {
     setApplicationDraftSaved(false);
+    setApiMessage(null);
     setApplicationDocs(prev => ({
       ...prev,
       [docId]: { ...prev[docId], [field]: !prev[docId]?.[field] },
@@ -168,6 +181,48 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
 
   const canSubmitApplication = completenessItems.every(([, complete]) => complete);
 
+  const portalDraftPayload = () => ({
+    required_loan_amount: String(borrowerApplication.requestedAmount),
+    declared_purpose: borrowerApplication.loanPurpose.replace(/_/g, ' '),
+    purpose_category: borrowerApplication.loanPurpose,
+    loan_type_requested: borrowerApplication.loanType,
+    borrower_request_notes: `${borrowerApplication.crop} ${borrowerApplication.season}`.trim(),
+    terms_acceptance_flag: allDeclarationsAccepted,
+  });
+
+  const saveDraft = async () => {
+    setSaving(true);
+    setApiMessage(null);
+    try {
+      const draft = savedApplication
+        ? await updatePortalApplicationDraft(savedApplication.loan_application_id, portalDraftPayload())
+        : await createPortalApplicationDraft(portalDraftPayload());
+      setSavedApplication(draft);
+      setApplicationDraftSaved(true);
+    } catch (error) {
+      setApiMessage(error instanceof AuthSessionError ? error.message : 'Draft could not be saved.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const submitApplication = async () => {
+    setSaving(true);
+    setApiMessage(null);
+    try {
+      const draft = savedApplication
+        ? await updatePortalApplicationDraft(savedApplication.loan_application_id, portalDraftPayload())
+        : await createPortalApplicationDraft(portalDraftPayload());
+      const submitted = await submitPortalApplication(draft.loan_application_id);
+      setSavedApplication(submitted);
+      setApplicationSubmitted(true);
+    } catch (error) {
+      setApiMessage(error instanceof AuthSessionError ? error.message : 'Application could not be submitted.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-xl border border-slate-100 p-5">
@@ -184,11 +239,12 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
           <div className="flex items-center gap-2">
             {applicationDraftSaved && <span className="text-xs font-medium text-green-700">Draft saved</span>}
             <button
-              onClick={() => setApplicationDraftSaved(true)}
+              onClick={saveDraft}
+              disabled={saving}
               className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
             >
               <Save size={15} />
-              Save Draft
+              {saving ? 'Saving...' : 'Save Draft'}
             </button>
           </div>
         </div>
@@ -224,7 +280,11 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
             Application ID APP-2026-000001 has been submitted. The official LO reference will be generated only after the Deputy Manager - Finance completes the mandatory checklist.
           </p>
           <div className="mt-5 flex flex-col sm:flex-row justify-center gap-3">
-            <button onClick={onNavigateToApplication} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm">
+            <button
+              onClick={() => savedApplication && onNavigateToApplication(savedApplication.loan_application_id)}
+              disabled={!savedApplication}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+            >
               View Application Status
             </button>
             <button onClick={() => setApplicationSubmitted(false)} className="border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">
@@ -541,6 +601,13 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
             </div>
           )}
 
+          {apiMessage && (
+            <div className="mt-5 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+              <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+              {apiMessage}
+            </div>
+          )}
+
           <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-slate-100 pt-4">
             <button
               onClick={goApplicationPrev}
@@ -552,12 +619,12 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
             </button>
             {applicationStep === 'review' ? (
               <button
-                onClick={() => setApplicationSubmitted(true)}
-                disabled={!canSubmitApplication}
+                onClick={submitApplication}
+                disabled={!canSubmitApplication || saving}
                 className="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-green-700 transition-colors shadow-sm"
               >
                 <ChevronRight size={15} />
-                Submit Application
+                {saving ? 'Submitting...' : 'Submit Application'}
               </button>
             ) : (
               <button

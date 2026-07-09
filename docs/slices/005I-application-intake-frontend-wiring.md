@@ -16,6 +16,16 @@ Staff create, review, and track real loan applications in the screens they alrea
 ## Depends On
 - 005H
 
+## Prior Slice Facts To Preserve
+- 005G portal application endpoints are borrower own-data APIs only; staff screens must use the
+  existing staff `/api/v1/loan-applications/` APIs and staff object-access rules, not portal routes.
+- Submitted applications may have no `LO...` reference until completeness pass generates it.
+- Returned applications must display `application_status = incomplete_returned`,
+  `completeness_status = incomplete`, and `current_stage = initial_loan_request` without treating
+  them as plain submitted applications.
+- Do not reintroduce `mockData.ts` application rows into Application List, New Application, or
+  Application Detail once a screen is wired to backend data.
+
 ## Source References
 - docs/source/screen-spec.md screens S10 (New Loan Application), S11 (Application Draft Review), S13 (Loan Request Register)
 - docs/source/api-contracts.md section 19 (loan application APIs), 20 (application document APIs), 21 (deficiency/rejection APIs)
@@ -33,6 +43,9 @@ Staff create, review, and track real loan applications in the screens they alrea
 3. Wire `ApplicationDetail.tsx` to the detail API: stage stepper from real status, document checklist state, deficiency list and resolution status (005F), rejection note state (005H).
 4. Loan Request Register view (S13) renders from the register API (005C) inside the existing list patterns.
 5. Loading, empty, validation-error, unauthorized, and success states throughout.
+6. Preserve portal/staff separation: MP05/MP09/MP10 remain on portal APIs; staff intake screens
+   remain on staff APIs and must surface `403 OBJECT_ACCESS_DENIED` distinctly from missing
+   permissions where the backend returns it.
 
 ## Test Cases
 - List pagination/filter/sort round-trips against seeded data.

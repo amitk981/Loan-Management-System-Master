@@ -1,9 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearStoredAuthSession, storedAuthSession } from './authSession';
 import {
+  createPortalApplicationDraft,
+  fetchPortalApplication,
+  fetchPortalApplications,
   fetchPortalDashboard,
   fetchPortalProduceSupply,
   fetchPortalProfile,
+  submitPortalApplication,
+  updatePortalApplicationDraft,
 } from './portalApi';
 
 const storage = new Map<string, string>();
@@ -47,14 +52,55 @@ describe('portal member API client', () => {
 
     await expect(fetchPortalDashboard()).rejects.toMatchObject({ code: 'PERMISSION_DENIED', status: 403 });
   });
+
+  it('creates, updates, submits, lists, and reads portal applications with the stored bearer token', async () => {
+    const application = {
+      loan_application_id: 'app-1',
+      display_reference: 'APP-1',
+      application_status: 'draft',
+      required_loan_amount: '250000.00',
+      pending_with: 'Borrower',
+      open_deficiency_count: 0,
+      timeline: [],
+      deficiencies: [],
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(ok(application))
+      .mockResolvedValueOnce(ok({ ...application, required_loan_amount: '300000.00' }))
+      .mockResolvedValueOnce(ok({ ...application, application_status: 'submitted', pending_with: 'SFPCL' }))
+      .mockResolvedValueOnce(ok({ items: [application] }))
+      .mockResolvedValueOnce(ok(application));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createPortalApplicationDraft({ required_loan_amount: '250000.00', declared_purpose: 'Crop production', purpose_category: 'crop_production' })).resolves.toMatchObject({ loan_application_id: 'app-1' });
+    await expect(updatePortalApplicationDraft('app-1', { required_loan_amount: '300000.00' })).resolves.toMatchObject({ required_loan_amount: '300000.00' });
+    await expect(submitPortalApplication('app-1')).resolves.toMatchObject({ application_status: 'submitted', pending_with: 'SFPCL' });
+    await expect(fetchPortalApplications()).resolves.toMatchObject({ items: [{ loan_application_id: 'app-1' }] });
+    await expect(fetchPortalApplication('app-1')).resolves.toMatchObject({ display_reference: 'APP-1' });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:8000/api/v1/portal/applications/', request('POST', {
+      required_loan_amount: '250000.00',
+      declared_purpose: 'Crop production',
+      purpose_category: 'crop_production',
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://127.0.0.1:8000/api/v1/portal/applications/app-1/', request('PATCH', {
+      required_loan_amount: '300000.00',
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://127.0.0.1:8000/api/v1/portal/applications/app-1/submit/', request('POST', {}));
+    expect(fetchMock).toHaveBeenNthCalledWith(4, 'http://127.0.0.1:8000/api/v1/portal/applications/', request());
+    expect(fetchMock).toHaveBeenNthCalledWith(5, 'http://127.0.0.1:8000/api/v1/portal/applications/app-1/', request());
+  });
 });
 
-const request = () => expect.objectContaining({
-  method: 'GET',
+const request = (method = 'GET', body?: unknown) => expect.objectContaining({
+  method,
   headers: expect.objectContaining({
     Accept: 'application/json',
     Authorization: 'Bearer portal-access-token',
+    ...(body ? { 'Content-Type': 'application/json' } : {}),
   }),
+  ...(body ? { body: JSON.stringify(body) } : {}),
 });
 
 function ok(data: unknown): Response {

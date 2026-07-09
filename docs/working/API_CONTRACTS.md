@@ -1540,3 +1540,61 @@ Rules:
 Frontend wiring:
 - MP03, MP04, and prototype `MP22_ProduceSupply.tsx` call these endpoints through
   `sfpcl-lms/src/services/portalApi.ts` with the stored portal bearer session.
+
+## Member portal application APIs (005G)
+
+Protected borrower portal endpoints:
+- `GET /api/v1/portal/applications/`
+- `POST /api/v1/portal/applications/`
+- `GET /api/v1/portal/applications/{loan_application_id}/`
+- `PATCH /api/v1/portal/applications/{loan_application_id}/`
+- `POST /api/v1/portal/applications/{loan_application_id}/submit/`
+
+Rules:
+- Scope comes only from the authenticated active `PortalAccount.member_id`. Query/path/payload
+  member IDs cannot broaden access.
+- Staff or non-portal tokens return `403 PERMISSION_DENIED`; cross-member create/read/update/submit
+  returns `403 OBJECT_ACCESS_DENIED` and creates no application, audit row, workflow event, register
+  row, reference, or visible sequence side effect.
+- Create/update/submit reuse the existing 005A/005B application service behavior, metadata-only
+  audit rows, and workflow events with the linked portal user as actor.
+- Draft save can be incomplete. Submit requires existing 005B persisted facts: own member, positive
+  requested amount, declared purpose, and purpose category.
+- Submitted applications remain without an `LO...` reference until staff completeness pass
+  generates it.
+- Returned-incomplete applications serialize borrower-facing rectification state:
+  `application_status = incomplete_returned`, `completeness_status = incomplete`,
+  `current_stage = initial_loan_request`, `pending_with = Borrower`, open deficiency count, and
+  open deficiency item metadata.
+- Responses expose portal-safe application summary/detail fields only: application IDs/reference
+  display, dates, requested amount, purpose, status/stage/completeness, pending owner, borrower
+  action, open deficiency count, member snapshot, timeline, and open deficiency metadata.
+- Responses do not expose staff completeness/reference-generation/return/resolve actions, PAN,
+  Aadhaar, full bank-account values, encrypted values, token hashes, raw document contents, or
+  staff-only document internals.
+
+Example detail response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "loan_application_id": "uuid",
+    "application_reference_number": null,
+    "display_reference": "A1B2C3D4",
+    "application_status": "submitted",
+    "current_stage": "initial_loan_request",
+    "completeness_status": "not_started",
+    "pending_with": "SFPCL",
+    "borrower_action": "No action required",
+    "open_deficiency_count": 0
+  }
+}
+```
+
+Frontend wiring:
+- MP05 saves/submits through these endpoints.
+- MP09 renders list, loading, empty, error, and returned-incomplete states from
+  `GET /api/v1/portal/applications/`.
+- MP10 renders selected application status/detail from
+  `GET /api/v1/portal/applications/{loan_application_id}/`.
