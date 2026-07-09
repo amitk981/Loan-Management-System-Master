@@ -41,7 +41,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | API contract test harness | Implemented in slice 002J | None | `api-contracts.md` §6.1-6.4, §7.1-7.3, §44 | Test-only assertions live in `sfpcl_credit/tests/api_contracts.py`. Future endpoint slices should use them to prove standard success envelopes, error envelopes, top-level list pagination, and target §44 `available_actions` item shapes without importing test utilities from production code. The harness regression tests cover `/auth/me/`, admin users pagination, `401 AUTH_REQUIRED`, revoked-session `401 INVALID_TOKEN`, `403 PERMISSION_DENIED`, partial-admin write denial, and tracer `409 INVALID_STATE_TRANSITION`. A-016 records that current `/auth/me/` still returns flat permission-code strings for `available_actions`; the object shape is asserted against an internal sample for future detail endpoints. |
 | Local demo staff seed | Implemented in slice 002K; corrected in 002K2 | Login, dashboard smoke, admin/tracer permission smoke | `implementation-roadmap.md` §10, §20-22; `technical-architecture.md` §8-12, §17-18; `auth-permissions.md`; `api-contracts.md` §11-12, §43-44 | `python manage.py seed_demo_users` is a guarded local/dev seed path. It refuses unless `SFPCL_DEBUG=true` and `SFPCL_ALLOW_DEMO_SEED=true`, calls `seed_catalogue()`, creates or updates deterministic `demo.*@sfpcl.example` staff users with active primary roles and memberships, and does not alter `e2e.*` users. Demo users authenticate through the real `/auth/login/` and `/auth/me/` endpoints; there is no demo auth bypass. The zero-permission user returns `permissions: []` and `available_actions: []`; the tracer-only user uses the guarded local/dev-only `local_demo_tracer_user` role and returns only `tracer.lifecycle.run`; the shared source-catalogue `sales_team_user` role remains permission-neutral until source documents define grants; system admin preserves canonical action-specific user-admin permissions without broad `manage_users` aliases. |
 | Role/permission/team catalogue | Seeded in slice 002C; exposed for current user in 002D | None directly | `auth-permissions.md` §12-15, §38 | Canonical `Permission`, `Role`, `Team`, `RolePermission` catalogue seeded idempotently via `python manage.py seed_role_catalogue` (`sfpcl_credit/identity/catalogue.py`). `/api/v1/auth/me/` exposes the authenticated user's effective permission codes from this data. |
-| Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; shareholding list/create implemented in 004F; land/crop list/create implemented in 004G; profile mutations/KYC remain draft | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3/§15.1-§15.2/§17.1-§17.2; `data-model.md` §10.1-§10.4/§11.1/§11.7-§11.8; `auth-permissions.md` §12.2/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/`, `/shareholdings/`, `/land-holdings/`, and `/crop-plans/` are API-backed with their documented validations and metadata-only create audits. Create/update/KYC/share certificate/demat/borrower-360 behavior and §13.5 sensitive reveal remain future scope. |
+| Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; shareholding list/create implemented in 004F; land/crop list/create implemented in 004G; KYC profile/document upload/verify implemented in 004H | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3/§15.1-§15.2/§17.1-§18.4; `data-model.md` §10.1-§10.4/§11.1/§11.7-§12.2; `auth-permissions.md` §12.2-§12.3/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/`, `/shareholdings/`, `/land-holdings/`, and `/crop-plans/` are API-backed with their documented validations and metadata-only create audits. `GET/POST/PATCH /api/v1/kyc-profiles/`, KYC document upload, and KYC document verify are implemented for member parties only with KYC permissions. Sensitive reveal, re-KYC task management, share certificate/demat, and borrower-360 behavior remain future scope. |
 | Loan applications | Draft from source | Applications, completeness | `api-contracts.md` | Needs real draft/submit/check endpoints. |
 | Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
@@ -353,6 +353,49 @@ Rules:
   `members.crop_plan.created` audit metadata without a workflow event.
 - Detail/update endpoints, verification actions, loan-limit calculations, scale-of-finance,
   eligibility blockers, and purpose decisions are deferred to later application/eligibility slices.
+
+## Member KYC Profile and Document API (004H)
+
+`GET /api/v1/kyc-profiles/?party_type=member&party_id={member_id}`
+
+Rules:
+- Requires a session-bound bearer token and `kyc.profile.read`.
+- 004H supports `party_type=member` only. Unknown or soft-deleted members return `404 NOT_FOUND`.
+- Success returns one profile object with status, CKYC consent, beneficial-ownership flag, risk
+  rating, last verification fields, re-KYC due date, rejection reason, and embedded KYC document
+  metadata. `ckyc_identifier_encrypted` and sensitive identity values are never serialized.
+
+`POST /api/v1/kyc-profiles/` and `PATCH /api/v1/kyc-profiles/{kyc_profile_id}/`
+
+Rules:
+- Create requires `kyc.profile.create`; patch requires `kyc.profile.update`.
+- Create requires `party_type`, `party_id`, and `ckyc_consent_flag`; risk rating is limited to
+  `low`, `medium`, or `high`.
+- Successful create/update writes `kyc.profile.created` / `kyc.profile.updated` audit metadata only.
+
+`POST /api/v1/kyc-profiles/{kyc_profile_id}/documents/`
+
+Multipart fields: `document_type`, `file`, `self_attested_flag`.
+
+Rules:
+- Requires `kyc.document.upload`.
+- `document_type` is limited to `pan`, `aadhaar`, `photo`, and `ckyc_consent`.
+- PAN and Aadhaar require `self_attested_flag=true`.
+- The uploaded file is stored as a restricted `document_files` row and returned through KYC document
+  metadata only; no document download endpoint is added by 004H.
+- Successful upload writes `kyc.document.uploaded` audit metadata and no workflow event.
+
+`POST /api/v1/kyc-documents/{kyc_document_id}/verify/`
+
+Rules:
+- Requires `kyc.document.verify`.
+- `verification_status` is limited to `verified` or `rejected`; remarks are optional metadata.
+- Successful verification updates the KYC document verifier/timestamp and, per A-033, updates the
+  profile/member KYC status and a two-year re-KYC due date for verified results.
+- Successful verification writes `kyc.document.verified` audit metadata only. Audit rows exclude
+  PAN/Aadhaar plaintext, identity hashes, encrypted CKYC identifiers, and file bytes.
+- Re-KYC review endpoints (§18.5), KYC deficiencies, sensitive reveal, CKYC provider integration,
+  appraisal/disbursement blockers, and nominee/witness/signatory KYC remain deferred.
 
 ## Shared response envelope (002C2)
 

@@ -8,7 +8,7 @@ from django.utils import timezone
 class Member(models.Model):
     MEMBER_TYPES = {"individual_farmer", "fpc", "producer_institution"}
     MEMBERSHIP_STATUSES = {"active", "inactive", "pending_verification"}
-    KYC_STATUSES = {"verified", "missing", "rekyc_due", "pending"}
+    KYC_STATUSES = {"verified", "missing", "rekyc_due", "pending", "rejected"}
     DEFAULT_STATUSES = {"no_default", "existing_default", "past_default"}
 
     member_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -374,3 +374,120 @@ class CropPlan(models.Model):
 
     def __str__(self):
         return f"{self.crop_type} ({self.planned_area_acres} acres)"
+
+
+class KycProfile(models.Model):
+    PARTY_TYPES = {"member"}
+    KYC_STATUSES = {"pending", "verified", "rejected", "rekyc_due"}
+    RISK_RATINGS = {"low", "medium", "high"}
+
+    kyc_profile_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    party_type = models.CharField(max_length=60, db_index=True)
+    party_id = models.UUIDField(db_index=True)
+    kyc_status = models.CharField(max_length=60, default="pending", db_index=True)
+    ckyc_identifier_encrypted = models.TextField(blank=True, null=True)
+    ckyc_consent_flag = models.BooleanField()
+    beneficial_ownership_verified_flag = models.BooleanField(blank=True, null=True)
+    risk_rating = models.CharField(max_length=60, blank=True, null=True)
+    last_verified_at = models.DateTimeField(blank=True, null=True)
+    last_verified_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="last_verified_kyc_profiles",
+    )
+    rekyc_due_date = models.DateField(blank=True, null=True, db_index=True)
+    rejection_reason = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = "kyc_profiles"
+        indexes = [
+            models.Index(fields=["party_type", "party_id"], name="idx_kyc_profiles_party"),
+            models.Index(fields=["kyc_status"], name="idx_kyc_profiles_status"),
+            models.Index(fields=["rekyc_due_date"], name="idx_kyc_profiles_rekyc_due"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["party_type", "party_id"],
+                name="kyc_profiles_unique_party",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.party_type not in self.PARTY_TYPES:
+            raise ValidationError({"party_type": "Unsupported party type."})
+        if self.kyc_status not in self.KYC_STATUSES:
+            raise ValidationError({"kyc_status": "Unsupported KYC status."})
+        if self.risk_rating and self.risk_rating not in self.RISK_RATINGS:
+            raise ValidationError({"risk_rating": "Unsupported risk rating."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.party_type}:{self.party_id}"
+
+
+class KycDocument(models.Model):
+    DOCUMENT_TYPES = {"pan", "aadhaar", "photo", "ckyc_consent"}
+    SELF_ATTESTED_REQUIRED_TYPES = {"pan", "aadhaar"}
+    VERIFICATION_STATUSES = {"pending", "verified", "rejected"}
+
+    kyc_document_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    kyc_profile = models.ForeignKey(
+        KycProfile, on_delete=models.CASCADE, related_name="documents"
+    )
+    document_type = models.CharField(max_length=80, db_index=True)
+    document_file = models.ForeignKey(
+        "documents.DocumentFile",
+        on_delete=models.PROTECT,
+        related_name="kyc_documents",
+    )
+    self_attested_flag = models.BooleanField()
+    verification_status = models.CharField(max_length=60, default="pending", db_index=True)
+    verified_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="verified_kyc_documents",
+    )
+    verified_at = models.DateTimeField(blank=True, null=True)
+    remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "kyc_documents"
+        indexes = [
+            models.Index(fields=["kyc_profile"], name="idx_kyc_documents_profile"),
+            models.Index(fields=["document_type"], name="idx_kyc_documents_type"),
+            models.Index(fields=["verification_status"], name="idx_kyc_documents_status"),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.document_type not in self.DOCUMENT_TYPES:
+            raise ValidationError({"document_type": "Unsupported KYC document type."})
+        if self.verification_status not in self.VERIFICATION_STATUSES:
+            raise ValidationError(
+                {"verification_status": "Unsupported verification status."}
+            )
+        if (
+            self.document_type in self.SELF_ATTESTED_REQUIRED_TYPES
+            and not self.self_attested_flag
+        ):
+            raise ValidationError(
+                {"self_attested_flag": "Self-attestation is required for PAN and Aadhaar."}
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.document_type}:{self.kyc_document_id}"

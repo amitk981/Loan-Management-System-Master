@@ -5,15 +5,29 @@ import uuid
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from math import ceil
+from pathlib import Path
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Q, Sum
+from django.utils import timezone
 from django.utils.dateparse import parse_date
 
+from sfpcl_credit.api import request_ip, request_user_agent
+from sfpcl_credit.documents.models import DocumentFile
+from sfpcl_credit.documents.storage import LocalDocumentStorage
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.members.models import CropPlan, LandHolding, Member, Nominee, Shareholding
+from sfpcl_credit.members.models import (
+    CropPlan,
+    KycDocument,
+    KycProfile,
+    LandHolding,
+    Member,
+    Nominee,
+    Shareholding,
+)
 
 
 MEMBER_READ_PERMISSION = "members.member.read"
@@ -23,6 +37,11 @@ SHAREHOLDING_READ_PERMISSION = "members.shareholding.read"
 SHAREHOLDING_CREATE_PERMISSION = "members.shareholding.create"
 LAND_CROP_READ_PERMISSION = MEMBER_READ_PERMISSION
 LAND_CROP_CREATE_PERMISSION = "members.member.update"
+KYC_PROFILE_READ_PERMISSION = "kyc.profile.read"
+KYC_PROFILE_CREATE_PERMISSION = "kyc.profile.create"
+KYC_PROFILE_UPDATE_PERMISSION = "kyc.profile.update"
+KYC_DOCUMENT_UPLOAD_PERMISSION = "kyc.document.upload"
+KYC_DOCUMENT_VERIFY_PERMISSION = "kyc.document.verify"
 _DEFAULT_PAGE_SIZE = 20
 _MAX_PAGE_SIZE = 100
 _LEGAL_MAJORITY_AGE = 18
@@ -65,6 +84,26 @@ def user_can_read_land_crop(user):
 
 def user_can_create_land_crop(user):
     return LAND_CROP_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_read_kyc_profiles(user):
+    return KYC_PROFILE_READ_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_create_kyc_profiles(user):
+    return KYC_PROFILE_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_update_kyc_profiles(user):
+    return KYC_PROFILE_UPDATE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_upload_kyc_documents(user):
+    return KYC_DOCUMENT_UPLOAD_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_verify_kyc_documents(user):
+    return KYC_DOCUMENT_VERIFY_PERMISSION in auth_service.effective_permission_codes(user)
 
 
 def paginated_members(query_params):
@@ -529,6 +568,243 @@ def serialize_crop_plan(crop_plan):
     }
 
 
+def get_kyc_profile_for_member(party_type, party_id):
+    if party_type != "member":
+        raise ValidationError({"party_type": "Only member KYC profiles are supported."})
+    parsed_party_id = _required_uuid(party_id, "party_id")
+    member = get_accessible_member(parsed_party_id)
+    if member is None:
+        return None, None
+    profile = (
+        KycProfile.objects.prefetch_related("documents__document_file")
+        .filter(party_type="member", party_id=member.member_id)
+        .first()
+    )
+    return member, profile
+
+
+def create_kyc_profile(payload, actor_user, request_ip="", request_user_agent=""):
+    values = _validated_kyc_profile_payload(payload, partial=False)
+    member = get_accessible_member(values["party_id"])
+    if member is None:
+        return None
+    with transaction.atomic():
+        profile = KycProfile.objects.create(
+            party_type="member",
+            party_id=member.member_id,
+            kyc_status="pending",
+            ckyc_consent_flag=values["ckyc_consent_flag"],
+            beneficial_ownership_verified_flag=values[
+                "beneficial_ownership_verified_flag"
+            ],
+            risk_rating=values["risk_rating"],
+        )
+        member.kyc_status = "pending"
+        member.save(update_fields=["kyc_status"])
+        AuditLog.objects.create(
+            actor_user=actor_user,
+            action="kyc.profile.created",
+            entity_type="kyc_profile",
+            entity_id=profile.kyc_profile_id,
+            new_value_json=_kyc_profile_audit_metadata(profile),
+            ip_address=request_ip,
+            user_agent=request_user_agent,
+        )
+    return profile
+
+
+def update_kyc_profile(profile_id, payload, actor_user, request_ip="", request_user_agent=""):
+    profile = KycProfile.objects.filter(kyc_profile_id=profile_id).first()
+    if profile is None:
+        return None
+    values = _validated_kyc_profile_payload(payload, partial=True)
+    old_metadata = _kyc_profile_audit_metadata(profile)
+    for field, value in values.items():
+        setattr(profile, field, value)
+    profile.updated_at = timezone.now()
+    profile.save()
+    AuditLog.objects.create(
+        actor_user=actor_user,
+        action="kyc.profile.updated",
+        entity_type="kyc_profile",
+        entity_id=profile.kyc_profile_id,
+        old_value_json=old_metadata,
+        new_value_json=_kyc_profile_audit_metadata(profile),
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+    return profile
+
+
+def upload_kyc_document(profile_id, request, actor_user):
+    profile = KycProfile.objects.filter(kyc_profile_id=profile_id).first()
+    if profile is None:
+        return None
+    values = _validated_kyc_document_upload(request.POST, request.FILES)
+    uploaded_file = values["file"]
+    storage = LocalDocumentStorage()
+    stored = storage.store(uploaded_file)
+    file_name = uploaded_file.name
+    file_extension = Path(file_name).suffix or None
+    with transaction.atomic():
+        document_file = DocumentFile.objects.create(
+            file_name=file_name,
+            file_extension=file_extension,
+            mime_type=getattr(uploaded_file, "content_type", "") or None,
+            file_size_bytes=stored.file_size_bytes,
+            storage_provider=stored.storage_provider,
+            storage_key=stored.storage_key,
+            checksum_sha256=stored.checksum_sha256,
+            uploaded_by_user=actor_user,
+            sensitivity_level=DocumentFile.SENSITIVITY_RESTRICTED,
+        )
+        kyc_document = KycDocument.objects.create(
+            kyc_profile=profile,
+            document_type=values["document_type"],
+            document_file=document_file,
+            self_attested_flag=values["self_attested_flag"],
+            verification_status="pending",
+        )
+        AuditLog.objects.create(
+            actor_user=actor_user,
+            action="kyc.document.uploaded",
+            entity_type="kyc_document",
+            entity_id=kyc_document.kyc_document_id,
+            new_value_json={
+                "kyc_document_id": str(kyc_document.kyc_document_id),
+                "kyc_profile_id": str(profile.kyc_profile_id),
+                "party_type": profile.party_type,
+                "party_id": str(profile.party_id),
+                "document_type": kyc_document.document_type,
+                "document_id": str(document_file.document_id),
+                "self_attested_flag": kyc_document.self_attested_flag,
+                "verification_status": kyc_document.verification_status,
+                "file_name": document_file.file_name,
+                "mime_type": document_file.mime_type,
+                "file_size_bytes": document_file.file_size_bytes,
+                "sensitivity_level": document_file.sensitivity_level,
+            },
+            ip_address=request_ip(request),
+            user_agent=request_user_agent(request),
+        )
+    return kyc_document
+
+
+def verify_kyc_document(document_id, payload, actor_user, request_ip="", request_user_agent=""):
+    kyc_document = KycDocument.objects.select_related("kyc_profile").filter(
+        kyc_document_id=document_id
+    ).first()
+    if kyc_document is None:
+        return None
+    status = str(payload.get("verification_status") or "").strip()
+    if status not in {"verified", "rejected"}:
+        raise ValidationError(
+            {"verification_status": "Must be verified or rejected."}
+        )
+    remarks = str(payload.get("remarks") or "").strip()
+    now = timezone.now()
+    with transaction.atomic():
+        kyc_document.verification_status = status
+        kyc_document.remarks = remarks
+        kyc_document.verified_by_user = actor_user
+        kyc_document.verified_at = now
+        kyc_document.save()
+
+        profile = kyc_document.kyc_profile
+        profile.kyc_status = status
+        profile.last_verified_by_user = actor_user
+        profile.last_verified_at = now if status == "verified" else None
+        profile.rekyc_due_date = _two_years_after(now.date()) if status == "verified" else None
+        profile.rejection_reason = remarks if status == "rejected" else None
+        profile.updated_at = now
+        profile.save()
+
+        member = get_accessible_member(profile.party_id)
+        if member is not None:
+            member.kyc_status = status
+            member.rekyc_due_date = profile.rekyc_due_date
+            member.save(update_fields=["kyc_status", "rekyc_due_date"])
+
+        AuditLog.objects.create(
+            actor_user=actor_user,
+            action="kyc.document.verified",
+            entity_type="kyc_document",
+            entity_id=kyc_document.kyc_document_id,
+            new_value_json={
+                "kyc_document_id": str(kyc_document.kyc_document_id),
+                "kyc_profile_id": str(profile.kyc_profile_id),
+                "party_type": profile.party_type,
+                "party_id": str(profile.party_id),
+                "document_type": kyc_document.document_type,
+                "document_id": str(kyc_document.document_file_id),
+                "verification_status": kyc_document.verification_status,
+                "verified_by_user_id": str(actor_user.user_id),
+                "verified_at": kyc_document.verified_at.isoformat().replace("+00:00", "Z"),
+                "remarks": kyc_document.remarks,
+                "profile_kyc_status": profile.kyc_status,
+                "rekyc_due_date": (
+                    profile.rekyc_due_date.isoformat() if profile.rekyc_due_date else None
+                ),
+            },
+            ip_address=request_ip,
+            user_agent=request_user_agent,
+        )
+    return kyc_document
+
+
+def serialize_kyc_profile(profile):
+    return {
+        "kyc_profile_id": str(profile.kyc_profile_id),
+        "party_type": profile.party_type,
+        "party_id": str(profile.party_id),
+        "kyc_status": profile.kyc_status,
+        "ckyc_consent_flag": profile.ckyc_consent_flag,
+        "beneficial_ownership_verified_flag": profile.beneficial_ownership_verified_flag,
+        "risk_rating": profile.risk_rating,
+        "last_verified_at": (
+            profile.last_verified_at.isoformat().replace("+00:00", "Z")
+            if profile.last_verified_at
+            else None
+        ),
+        "last_verified_by_user_id": (
+            str(profile.last_verified_by_user_id)
+            if profile.last_verified_by_user_id
+            else None
+        ),
+        "rekyc_due_date": profile.rekyc_due_date.isoformat() if profile.rekyc_due_date else None,
+        "rejection_reason": profile.rejection_reason,
+        "documents": [serialize_kyc_document(document) for document in profile.documents.all()],
+    }
+
+
+def serialize_kyc_document(kyc_document):
+    document = kyc_document.document_file
+    return {
+        "kyc_document_id": str(kyc_document.kyc_document_id),
+        "kyc_profile_id": str(kyc_document.kyc_profile_id),
+        "document_type": kyc_document.document_type,
+        "document_id": str(document.document_id),
+        "file_name": document.file_name,
+        "mime_type": document.mime_type,
+        "file_size_bytes": document.file_size_bytes,
+        "sensitivity_level": document.sensitivity_level,
+        "self_attested_flag": kyc_document.self_attested_flag,
+        "verification_status": kyc_document.verification_status,
+        "verified_by_user_id": (
+            str(kyc_document.verified_by_user_id)
+            if kyc_document.verified_by_user_id
+            else None
+        ),
+        "verified_at": (
+            kyc_document.verified_at.isoformat().replace("+00:00", "Z")
+            if kyc_document.verified_at
+            else None
+        ),
+        "remarks": kyc_document.remarks,
+        "created_at": kyc_document.created_at.isoformat().replace("+00:00", "Z"),
+    }
+
+
 def _validate_query(query_params):
     unknown = set(query_params.keys()) - _ALLOWED_PARAMS
     if unknown:
@@ -718,6 +994,119 @@ def _validated_crop_plan_payload(payload):
         "loan_purpose_alignment": loan_purpose_alignment,
         "document_id": _optional_uuid(payload.get("document_id"), "document_id"),
     }
+
+
+def _validated_kyc_profile_payload(payload, partial):
+    field_errors = {}
+    values = {}
+    if not partial or "party_type" in payload:
+        party_type = str(payload.get("party_type") or "").strip()
+        if party_type != "member":
+            field_errors["party_type"] = "Only member KYC profiles are supported."
+        values["party_type"] = party_type
+    if not partial or "party_id" in payload:
+        try:
+            values["party_id"] = _required_uuid(payload.get("party_id"), "party_id")
+        except ValidationError as exc:
+            field_errors.update(validation_field_errors(exc))
+    if not partial or "ckyc_consent_flag" in payload:
+        if payload.get("ckyc_consent_flag") is None:
+            field_errors["ckyc_consent_flag"] = "This field is required."
+        else:
+            values["ckyc_consent_flag"] = bool(payload.get("ckyc_consent_flag"))
+    if "beneficial_ownership_verified_flag" in payload or not partial:
+        raw_beneficial = payload.get("beneficial_ownership_verified_flag")
+        values["beneficial_ownership_verified_flag"] = (
+            None if raw_beneficial in ("", None) else bool(raw_beneficial)
+        )
+    if "risk_rating" in payload or not partial:
+        risk_rating = str(payload.get("risk_rating") or "").strip().lower()
+        if risk_rating and risk_rating not in KycProfile.RISK_RATINGS:
+            field_errors["risk_rating"] = "Unsupported risk rating."
+        values["risk_rating"] = risk_rating or None
+    if "rejection_reason" in payload:
+        values["rejection_reason"] = str(payload.get("rejection_reason") or "").strip() or None
+
+    if partial:
+        values.pop("party_type", None)
+        values.pop("party_id", None)
+    if field_errors:
+        raise ValidationError(field_errors)
+    return values
+
+
+def _validated_kyc_document_upload(post_data, files):
+    field_errors = {}
+    document_type = str(post_data.get("document_type") or "").strip().lower()
+    if not document_type:
+        field_errors["document_type"] = "This field is required."
+    elif document_type not in KycDocument.DOCUMENT_TYPES:
+        field_errors["document_type"] = "Unsupported KYC document type."
+
+    uploaded_file = files.get("file")
+    if uploaded_file is None:
+        field_errors["file"] = "This field is required."
+
+    self_attested_flag = _parse_bool(post_data.get("self_attested_flag"))
+    if (
+        document_type in KycDocument.SELF_ATTESTED_REQUIRED_TYPES
+        and self_attested_flag is not True
+    ):
+        field_errors["self_attested_flag"] = (
+            "Self-attestation is required for PAN and Aadhaar."
+        )
+    if self_attested_flag is None:
+        self_attested_flag = False
+
+    if field_errors:
+        raise ValidationError(field_errors)
+    return {
+        "document_type": document_type,
+        "file": uploaded_file,
+        "self_attested_flag": self_attested_flag,
+    }
+
+
+def _parse_bool(value):
+    if isinstance(value, bool):
+        return value
+    normalized = str(value or "").strip().lower()
+    if normalized in {"true", "1", "yes", "on"}:
+        return True
+    if normalized in {"false", "0", "no", "off"}:
+        return False
+    return None
+
+
+def _kyc_profile_audit_metadata(profile):
+    return {
+        "kyc_profile_id": str(profile.kyc_profile_id),
+        "party_type": profile.party_type,
+        "party_id": str(profile.party_id),
+        "kyc_status": profile.kyc_status,
+        "ckyc_consent_flag": profile.ckyc_consent_flag,
+        "beneficial_ownership_verified_flag": profile.beneficial_ownership_verified_flag,
+        "risk_rating": profile.risk_rating,
+        "last_verified_at": (
+            profile.last_verified_at.isoformat().replace("+00:00", "Z")
+            if profile.last_verified_at
+            else None
+        ),
+        "last_verified_by_user_id": (
+            str(profile.last_verified_by_user_id)
+            if profile.last_verified_by_user_id
+            else None
+        ),
+        "rekyc_due_date": profile.rekyc_due_date.isoformat() if profile.rekyc_due_date else None,
+        "rejection_reason": profile.rejection_reason,
+    }
+
+
+def _two_years_after(value):
+    try:
+        return value.replace(year=value.year + 2)
+    except ValueError:
+        return value.replace(month=2, day=28, year=value.year + 2)
 
 
 def _required_non_negative_int(value, field):
@@ -910,11 +1299,18 @@ __all__ = [
     "SHAREHOLDING_READ_PERMISSION",
     "LAND_CROP_CREATE_PERMISSION",
     "LAND_CROP_READ_PERMISSION",
+    "KYC_DOCUMENT_UPLOAD_PERMISSION",
+    "KYC_DOCUMENT_VERIFY_PERMISSION",
+    "KYC_PROFILE_CREATE_PERMISSION",
+    "KYC_PROFILE_READ_PERMISSION",
+    "KYC_PROFILE_UPDATE_PERMISSION",
     "create_crop_plan",
+    "create_kyc_profile",
     "create_land_holding",
     "create_nominee",
     "create_shareholding",
     "get_accessible_member",
+    "get_kyc_profile_for_member",
     "get_member_profile",
     "paginated_crop_plans",
     "paginated_land_holdings",
@@ -922,16 +1318,26 @@ __all__ = [
     "paginated_members",
     "paginated_shareholdings",
     "serialize_crop_plan",
+    "serialize_kyc_document",
+    "serialize_kyc_profile",
     "serialize_land_holding",
     "serialize_nominee",
     "serialize_member_profile",
     "serialize_shareholding",
     "user_can_create_land_crop",
+    "user_can_create_kyc_profiles",
     "user_can_create_nominees",
     "user_can_create_shareholdings",
+    "user_can_read_kyc_profiles",
     "user_can_read_land_crop",
     "user_can_read_members",
     "user_can_read_nominees",
     "user_can_read_shareholdings",
+    "user_can_update_kyc_profiles",
+    "user_can_upload_kyc_documents",
+    "user_can_verify_kyc_documents",
+    "update_kyc_profile",
+    "upload_kyc_document",
+    "verify_kyc_document",
     "validation_field_errors",
 ]

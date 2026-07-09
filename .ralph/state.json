@@ -47,17 +47,18 @@
     "004D-nominee-validation-and-ui",
     "004D2-member-profile-and-nominee-contract-hardening",
     "004F-shareholding-and-share-certificate-records",
-    "004G-landholding-and-crop-plan-records"
+    "004G-landholding-and-crop-plan-records",
+    "004H-kyc-upload-and-verification"
   ],
   "failed_slices": [],
   "blocked_slices": [
     "004E-witness-shareholder-validation"
   ],
   "last_successful_commit": "56d89dd",
-  "last_run_id": "2026-07-09_125944_normal_run",
+  "last_run_id": "2026-07-09_132917_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 3,
-  "architecture_review_due": false,
+  "slices_completed_since_architecture_review": 4,
+  "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null

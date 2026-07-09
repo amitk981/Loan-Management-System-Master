@@ -127,6 +127,26 @@ urlpatterns = [
         name="member-crop-plans",
     ),
     path(
+        "api/v1/kyc-profiles/",
+        member_views.kyc_profiles,
+        name="kyc-profile-list-create",
+    ),
+    path(
+        "api/v1/kyc-profiles/<uuid:kyc_profile_id>/",
+        member_views.kyc_profile_detail,
+        name="kyc-profile-detail",
+    ),
+    path(
+        "api/v1/kyc-profiles/<uuid:kyc_profile_id>/documents/",
+        member_views.kyc_profile_documents,
+        name="kyc-profile-documents",
+    ),
+    path(
+        "api/v1/kyc-documents/<uuid:kyc_document_id>/verify/",
+        member_views.kyc_document_verify,
+        name="kyc-document-verify",
+    ),
+    path(
         "api/v1/document-files/",
         document_views.upload_document_file,
         name="document-file-upload",

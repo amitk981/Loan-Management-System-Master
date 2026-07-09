@@ -284,3 +284,165 @@ def member_crop_plans(request, member_id):
             services.validation_field_errors(exc),
         )
     return success_response(services.serialize_crop_plan(crop_plan), request)
+
+
+@require_http_methods(["GET", "POST"])
+def kyc_profiles(request):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if request.method == "GET" and not services.user_can_read_kyc_profiles(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read KYC profiles.",
+        )
+    if request.method == "POST" and not services.user_can_create_kyc_profiles(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to create KYC profiles.",
+        )
+
+    if request.method == "GET":
+        try:
+            party_type = request.GET.get("party_type")
+            party_id = request.GET.get("party_id")
+            if not party_type or not party_id:
+                raise ValidationError(
+                    {
+                        "party_type": "This field is required.",
+                        "party_id": "This field is required.",
+                    }
+                )
+            member, profile = services.get_kyc_profile_for_member(party_type, party_id)
+        except ValidationError as exc:
+            return error_response(
+                request,
+                400,
+                "VALIDATION_ERROR",
+                "KYC profile query failed validation.",
+                services.validation_field_errors(exc),
+            )
+        if member is None:
+            return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+        if profile is None:
+            return error_response(request, 404, "NOT_FOUND", "KYC profile was not found.")
+        return success_response(services.serialize_kyc_profile(profile), request)
+
+    try:
+        body = parse_json_body(request)
+        profile = services.create_kyc_profile(
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "KYC profile payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    if profile is None:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+    return success_response(services.serialize_kyc_profile(profile), request)
+
+
+@require_http_methods(["PATCH"])
+def kyc_profile_detail(request, kyc_profile_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if not services.user_can_update_kyc_profiles(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to update KYC profiles.",
+        )
+    try:
+        body = parse_json_body(request)
+        profile = services.update_kyc_profile(
+            kyc_profile_id,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "KYC profile payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    if profile is None:
+        return error_response(request, 404, "NOT_FOUND", "KYC profile was not found.")
+    return success_response(services.serialize_kyc_profile(profile), request)
+
+
+@require_http_methods(["POST"])
+def kyc_profile_documents(request, kyc_profile_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if not services.user_can_upload_kyc_documents(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to upload KYC documents.",
+        )
+    try:
+        document = services.upload_kyc_document(kyc_profile_id, request, user)
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "KYC document upload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    if document is None:
+        return error_response(request, 404, "NOT_FOUND", "KYC profile was not found.")
+    return success_response(services.serialize_kyc_document(document), request)
+
+
+@require_http_methods(["POST"])
+def kyc_document_verify(request, kyc_document_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if not services.user_can_verify_kyc_documents(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to verify KYC documents.",
+        )
+    try:
+        body = parse_json_body(request)
+        document = services.verify_kyc_document(
+            kyc_document_id,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "KYC document verification failed validation.",
+            services.validation_field_errors(exc),
+        )
+    if document is None:
+        return error_response(request, 404, "NOT_FOUND", "KYC document was not found.")
+    return success_response(services.serialize_kyc_document(document), request)

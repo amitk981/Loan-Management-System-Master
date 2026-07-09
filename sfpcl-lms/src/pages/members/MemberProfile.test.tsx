@@ -12,6 +12,8 @@ import {
   fetchMemberNominees,
   fetchMemberProfile,
   fetchMemberShareholdings,
+  type KycDocumentDetail,
+  type KycProfileDetail,
   type MemberCropPlanDetail,
   type MemberLandHoldingDetail,
   type MemberNomineeDetail,
@@ -228,6 +230,7 @@ describe('member profile API client', () => {
       }),
     );
   });
+
 });
 
 describe('MemberProfileView', () => {
@@ -387,6 +390,42 @@ describe('MemberProfileView', () => {
     expect(html).toContain('Value must be greater than zero.');
     expect(html).not.toContain('Land Area Under Cultivation');
     expect(html).not.toContain('Primary Crop');
+  });
+
+  it('renders KYC tab loading, empty, error, validation, success, and document metadata states from the API', () => {
+    expect(renderProfile('success', member, 5, '', { kycStatus: 'loading' })).toContain('Loading KYC records');
+    expect(renderProfile('success', member, 5, '', { kycStatus: 'empty', kycProfile: null })).toContain('No KYC profile is available from the backend yet.');
+    expect(renderProfile('success', member, 5, '', { kycStatus: 'error', kycMessage: 'KYC records could not be loaded.' })).toContain('KYC records could not be loaded.');
+    const html = renderProfile('success', member, 5, '', {
+      kycStatus: 'success',
+      kycProfile,
+      kycCreateMessage: 'KYC profile saved.',
+      kycDocumentMessage: 'KYC document uploaded.',
+      kycVerifyMessage: 'KYC document verified.',
+    });
+
+    expect(html).toContain('KYC Profile');
+    expect(html).toContain('CKYC Consent');
+    expect(html).toContain('Low');
+    expect(html).toContain('borrower-pan.pdf');
+    expect(html).toContain('Self Attested');
+    expect(html).toContain('KYC profile saved.');
+    expect(html).toContain('KYC document uploaded.');
+    expect(html).toContain('KYC document verified.');
+    expect(html).not.toContain('KYC document records are not available from the backend yet.');
+    expect(html).not.toContain('ABCDE1234F');
+    expect(html).not.toContain('123412341234');
+
+    const validationHtml = renderProfile('success', member, 5, '', {
+      kycStatus: 'success',
+      kycProfile,
+      kycCreateFieldErrors: { ckyc_consent_flag: 'This field is required.' },
+      kycDocumentFieldErrors: { self_attested_flag: 'Self-attestation is required for PAN and Aadhaar.' },
+      kycVerifyFieldErrors: { verification_status: 'Must be verified or rejected.' },
+    });
+    expect(validationHtml).toContain('This field is required.');
+    expect(validationHtml).toContain('Self-attestation is required for PAN and Aadhaar.');
+    expect(validationHtml).toContain('Must be verified or rejected.');
   });
 
   it('renders loading, empty, and auth/error states using existing profile layout patterns', () => {
@@ -565,6 +604,38 @@ const cropPlanRequest = {
   document_id: '33333333-3333-4333-8333-333333333333',
 };
 
+const kycDocument: KycDocumentDetail = {
+  kyc_document_id: 'kyc-document-1',
+  kyc_profile_id: 'kyc-profile-1',
+  document_type: 'pan',
+  document_id: '44444444-4444-4444-8444-444444444444',
+  file_name: 'borrower-pan.pdf',
+  mime_type: 'application/pdf',
+  file_size_bytes: 128,
+  sensitivity_level: 'restricted',
+  self_attested_flag: true,
+  verification_status: 'pending',
+  verified_by_user_id: null,
+  verified_at: null,
+  remarks: null,
+  created_at: '2026-07-09T08:00:00Z',
+};
+
+const kycProfile: KycProfileDetail = {
+  kyc_profile_id: 'kyc-profile-1',
+  party_type: 'member',
+  party_id: 'member-1',
+  kyc_status: 'pending',
+  ckyc_consent_flag: true,
+  beneficial_ownership_verified_flag: false,
+  risk_rating: 'low',
+  last_verified_at: null,
+  last_verified_by_user_id: null,
+  rekyc_due_date: null,
+  rejection_reason: null,
+  documents: [kycDocument],
+};
+
 const renderProfile = (
   status: React.ComponentProps<typeof MemberProfileView>['status'],
   profile: MemberProfileDetail | null,
@@ -583,6 +654,10 @@ const renderProfile = (
     onCreateShareholding={vi.fn()}
     onCreateLandHolding={vi.fn()}
     onCreateCropPlan={vi.fn()}
+    onCreateKycProfile={vi.fn()}
+    onUpdateKycProfile={vi.fn()}
+    onUploadKycDocument={vi.fn()}
+    onVerifyKycDocument={vi.fn()}
     {...overrides}
   />,
 );

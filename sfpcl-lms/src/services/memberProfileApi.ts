@@ -154,6 +154,38 @@ export interface MemberCropPlanList {
   pagination: Pagination;
 }
 
+export interface KycDocumentDetail {
+  kyc_document_id: string;
+  kyc_profile_id: string;
+  document_type: string;
+  document_id: string;
+  file_name: string;
+  mime_type: string | null;
+  file_size_bytes: number | null;
+  sensitivity_level: string;
+  self_attested_flag: boolean;
+  verification_status: string;
+  verified_by_user_id: string | null;
+  verified_at: string | null;
+  remarks: string | null;
+  created_at: string;
+}
+
+export interface KycProfileDetail {
+  kyc_profile_id: string;
+  party_type: string;
+  party_id: string;
+  kyc_status: string;
+  ckyc_consent_flag: boolean;
+  beneficial_ownership_verified_flag: boolean | null;
+  risk_rating: string | null;
+  last_verified_at: string | null;
+  last_verified_by_user_id: string | null;
+  rekyc_due_date: string | null;
+  rejection_reason: string | null;
+  documents: KycDocumentDetail[];
+}
+
 export interface CreateMemberNomineePayload {
   nominee_name: string;
   date_of_birth: string;
@@ -193,6 +225,30 @@ export interface CreateMemberCropPlanPayload {
   estimated_cost_amount: string;
   loan_purpose_alignment: string;
   document_id: string;
+}
+
+export interface CreateMemberKycProfilePayload {
+  ckyc_consent_flag: boolean;
+  beneficial_ownership_verified_flag: boolean;
+  risk_rating: string;
+}
+
+export interface UpdateMemberKycProfilePayload {
+  ckyc_consent_flag?: boolean;
+  beneficial_ownership_verified_flag?: boolean;
+  risk_rating?: string;
+  rejection_reason?: string;
+}
+
+export interface UploadMemberKycDocumentPayload {
+  document_type: string;
+  self_attested_flag: boolean;
+  file: Blob;
+}
+
+export interface VerifyMemberKycDocumentPayload {
+  verification_status: 'verified' | 'rejected';
+  remarks: string;
 }
 
 export const fetchMemberProfile = async (memberId: string): Promise<MemberProfileDetail> => {
@@ -285,22 +341,88 @@ export const createMemberCropPlan = async (
   return normalizeCropPlan(envelope.data);
 };
 
+export const fetchMemberKycProfile = async (memberId: string): Promise<KycProfileDetail> => {
+  const envelope = await request<KycProfileDetail>(
+    `/api/v1/kyc-profiles/?party_type=member&party_id=${encodeURIComponent(memberId)}`,
+    'GET',
+  );
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalizeKycProfile(envelope.data);
+};
+
+export const createMemberKycProfile = async (
+  memberId: string,
+  payload: CreateMemberKycProfilePayload,
+): Promise<KycProfileDetail> => {
+  const envelope = await request<KycProfileDetail>(
+    '/api/v1/kyc-profiles/',
+    'POST',
+    { party_type: 'member', party_id: memberId, ...payload },
+  );
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalizeKycProfile(envelope.data);
+};
+
+export const updateMemberKycProfile = async (
+  kycProfileId: string,
+  payload: UpdateMemberKycProfilePayload,
+): Promise<KycProfileDetail> => {
+  const envelope = await request<KycProfileDetail>(
+    `/api/v1/kyc-profiles/${kycProfileId}/`,
+    'PATCH',
+    payload,
+  );
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalizeKycProfile(envelope.data);
+};
+
+export const uploadMemberKycDocument = async (
+  kycProfileId: string,
+  payload: UploadMemberKycDocumentPayload,
+): Promise<KycDocumentDetail> => {
+  const formData = new FormData();
+  formData.append('document_type', payload.document_type);
+  formData.append('self_attested_flag', String(payload.self_attested_flag));
+  formData.append('file', payload.file);
+  const envelope = await request<KycDocumentDetail>(
+    `/api/v1/kyc-profiles/${kycProfileId}/documents/`,
+    'POST',
+    formData,
+  );
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalizeKycDocument(envelope.data);
+};
+
+export const verifyMemberKycDocument = async (
+  kycDocumentId: string,
+  payload: VerifyMemberKycDocumentPayload,
+): Promise<KycDocumentDetail> => {
+  const envelope = await request<KycDocumentDetail>(
+    `/api/v1/kyc-documents/${kycDocumentId}/verify/`,
+    'POST',
+    payload,
+  );
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalizeKycDocument(envelope.data);
+};
+
 const request = async <T>(
   path: string,
-  method: 'GET' | 'POST',
+  method: 'GET' | 'POST' | 'PATCH',
   body?: unknown,
 ): Promise<ApiEnvelope<T>> => {
   const session = loadStoredAuthSession();
   if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
     headers: {
       Accept: 'application/json',
       Authorization: `Bearer ${session.accessToken}`,
-      ...(method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
+      ...(method !== 'GET' && !isFormData ? { 'Content-Type': 'application/json' } : {}),
     },
-    ...(method === 'POST' ? { body: JSON.stringify(body ?? {}) } : {}),
+    ...(method !== 'GET' ? { body: isFormData ? body : JSON.stringify(body ?? {}) } : {}),
   });
   const envelope = await response.json() as ApiEnvelope<T>;
   if (!response.ok || !envelope.success) {
@@ -414,8 +536,44 @@ const normalizeCropPlan = (item: MemberCropPlanDetail): MemberCropPlanDetail => 
   created_at: String(item?.created_at ?? ''),
 });
 
+const normalizeKycProfile = (profile: KycProfileDetail): KycProfileDetail => ({
+  kyc_profile_id: String(profile?.kyc_profile_id ?? ''),
+  party_type: String(profile?.party_type ?? ''),
+  party_id: String(profile?.party_id ?? ''),
+  kyc_status: String(profile?.kyc_status ?? ''),
+  ckyc_consent_flag: Boolean(profile?.ckyc_consent_flag),
+  beneficial_ownership_verified_flag: booleanOrNull(profile?.beneficial_ownership_verified_flag),
+  risk_rating: textOrNull(profile?.risk_rating),
+  last_verified_at: textOrNull(profile?.last_verified_at),
+  last_verified_by_user_id: textOrNull(profile?.last_verified_by_user_id),
+  rekyc_due_date: textOrNull(profile?.rekyc_due_date),
+  rejection_reason: textOrNull(profile?.rejection_reason),
+  documents: Array.isArray(profile?.documents) ? profile.documents.map(normalizeKycDocument) : [],
+});
+
+const normalizeKycDocument = (item: KycDocumentDetail): KycDocumentDetail => ({
+  kyc_document_id: String(item?.kyc_document_id ?? ''),
+  kyc_profile_id: String(item?.kyc_profile_id ?? ''),
+  document_type: String(item?.document_type ?? ''),
+  document_id: String(item?.document_id ?? ''),
+  file_name: String(item?.file_name ?? ''),
+  mime_type: textOrNull(item?.mime_type),
+  file_size_bytes: numberOrNull(item?.file_size_bytes),
+  sensitivity_level: String(item?.sensitivity_level ?? ''),
+  self_attested_flag: Boolean(item?.self_attested_flag),
+  verification_status: String(item?.verification_status ?? ''),
+  verified_by_user_id: textOrNull(item?.verified_by_user_id),
+  verified_at: textOrNull(item?.verified_at),
+  remarks: textOrNull(item?.remarks),
+  created_at: String(item?.created_at ?? ''),
+});
+
 const numberOrZero = (value: unknown): number => (
   Number.isFinite(Number(value)) ? Number(value) : 0
+);
+
+const booleanOrNull = (value: unknown): boolean | null => (
+  value === null || value === undefined || value === '' ? null : Boolean(value)
 );
 
 const normalizeFieldErrors = (fieldErrors?: Record<string, unknown>): Record<string, string> | undefined => {

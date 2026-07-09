@@ -18,18 +18,29 @@ import Tabs from '../../components/ui/Tabs';
 import { AuthSessionError } from '../../services/authSession';
 import {
   createMemberCropPlan,
+  createMemberKycProfile,
   createMemberLandHolding,
   createMemberShareholding,
   createMemberNominee,
   fetchMemberCropPlans,
+  fetchMemberKycProfile,
   fetchMemberLandHoldings,
   fetchMemberNominees,
   fetchMemberProfile,
   fetchMemberShareholdings,
+  updateMemberKycProfile,
+  uploadMemberKycDocument,
+  verifyMemberKycDocument,
+  type CreateMemberKycProfilePayload,
   type CreateMemberCropPlanPayload,
   type CreateMemberLandHoldingPayload,
   type CreateMemberNomineePayload,
   type CreateMemberShareholdingPayload,
+  type KycDocumentDetail,
+  type KycProfileDetail,
+  type UpdateMemberKycProfilePayload,
+  type UploadMemberKycDocumentPayload,
+  type VerifyMemberKycDocumentPayload,
   type MemberCropPlanDetail,
   type MemberLandHoldingDetail,
   type MemberNomineeDetail,
@@ -41,6 +52,7 @@ type ProfileStatus = 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidd
 type NomineeStatus = 'idle' | 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
 type ShareholdingStatus = 'idle' | 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
 type LandCropStatus = 'idle' | 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
+type KycStatus = 'idle' | 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
 
 interface MemberProfileProps {
   memberId: string;
@@ -74,6 +86,18 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
   const [cropCreateFieldErrors, setCropCreateFieldErrors] = useState<Record<string, string>>({});
   const [cropCreateMessage, setCropCreateMessage] = useState('');
   const [cropCreateSubmitting, setCropCreateSubmitting] = useState(false);
+  const [kycStatus, setKycStatus] = useState<KycStatus>('idle');
+  const [kycMessage, setKycMessage] = useState('');
+  const [kycProfile, setKycProfile] = useState<KycProfileDetail | null>(null);
+  const [kycCreateFieldErrors, setKycCreateFieldErrors] = useState<Record<string, string>>({});
+  const [kycCreateMessage, setKycCreateMessage] = useState('');
+  const [kycCreateSubmitting, setKycCreateSubmitting] = useState(false);
+  const [kycDocumentFieldErrors, setKycDocumentFieldErrors] = useState<Record<string, string>>({});
+  const [kycDocumentMessage, setKycDocumentMessage] = useState('');
+  const [kycDocumentSubmitting, setKycDocumentSubmitting] = useState(false);
+  const [kycVerifyFieldErrors, setKycVerifyFieldErrors] = useState<Record<string, string>>({});
+  const [kycVerifyMessage, setKycVerifyMessage] = useState('');
+  const [kycVerifySubmitting, setKycVerifySubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,6 +122,15 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
     setLandCreateMessage('');
     setCropCreateFieldErrors({});
     setCropCreateMessage('');
+    setKycStatus('idle');
+    setKycMessage('');
+    setKycProfile(null);
+    setKycCreateFieldErrors({});
+    setKycCreateMessage('');
+    setKycDocumentFieldErrors({});
+    setKycDocumentMessage('');
+    setKycVerifyFieldErrors({});
+    setKycVerifyMessage('');
     fetchMemberProfile(memberId)
       .then(result => {
         if (!cancelled) {
@@ -165,6 +198,30 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
       cancelled = true;
     };
   }, [activeTab, landCropStatus, memberId, status]);
+
+  useEffect(() => {
+    if (status !== 'success' || activeTab !== 5 || kycStatus !== 'idle') return;
+    let cancelled = false;
+    setKycStatus('loading');
+    setKycMessage('');
+    fetchMemberKycProfile(memberId)
+      .then(result => {
+        if (!cancelled) {
+          setKycProfile(result);
+          setKycStatus('success');
+        }
+      })
+      .catch(error => {
+        if (!cancelled) {
+          const next = errorState(error);
+          setKycStatus(next.status === 'empty' ? 'empty' : next.status);
+          setKycMessage(next.message);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, kycStatus, memberId, status]);
 
   useEffect(() => {
     if (status !== 'success' || activeTab !== 7 || nomineeStatus !== 'idle') return;
@@ -274,6 +331,96 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
     }
   };
 
+  const handleCreateKycProfile = async (payload: CreateMemberKycProfilePayload) => {
+    setKycCreateSubmitting(true);
+    setKycCreateFieldErrors({});
+    setKycCreateMessage('');
+    try {
+      const created = await createMemberKycProfile(memberId, payload);
+      setKycProfile(created);
+      setKycStatus('success');
+      setKycCreateMessage('KYC profile saved.');
+    } catch (error) {
+      if (error instanceof AuthSessionError) {
+        setKycCreateFieldErrors(error.fieldErrors ?? {});
+        setKycCreateMessage(error.message);
+      } else {
+        setKycCreateMessage(error instanceof Error ? error.message : 'KYC profile could not be saved.');
+      }
+    } finally {
+      setKycCreateSubmitting(false);
+    }
+  };
+
+  const handleUpdateKycProfile = async (payload: UpdateMemberKycProfilePayload) => {
+    if (!kycProfile) return;
+    setKycCreateSubmitting(true);
+    setKycCreateFieldErrors({});
+    setKycCreateMessage('');
+    try {
+      const updated = await updateMemberKycProfile(kycProfile.kyc_profile_id, payload);
+      setKycProfile(updated);
+      setKycStatus('success');
+      setKycCreateMessage('KYC profile saved.');
+    } catch (error) {
+      if (error instanceof AuthSessionError) {
+        setKycCreateFieldErrors(error.fieldErrors ?? {});
+        setKycCreateMessage(error.message);
+      } else {
+        setKycCreateMessage(error instanceof Error ? error.message : 'KYC profile could not be saved.');
+      }
+    } finally {
+      setKycCreateSubmitting(false);
+    }
+  };
+
+  const handleUploadKycDocument = async (payload: UploadMemberKycDocumentPayload) => {
+    if (!kycProfile) return;
+    setKycDocumentSubmitting(true);
+    setKycDocumentFieldErrors({});
+    setKycDocumentMessage('');
+    try {
+      const uploaded = await uploadMemberKycDocument(kycProfile.kyc_profile_id, payload);
+      setKycProfile(current => current ? {
+        ...current,
+        documents: [uploaded, ...current.documents.filter(item => item.kyc_document_id !== uploaded.kyc_document_id)],
+      } : current);
+      setKycDocumentMessage('KYC document uploaded.');
+    } catch (error) {
+      if (error instanceof AuthSessionError) {
+        setKycDocumentFieldErrors(error.fieldErrors ?? {});
+        setKycDocumentMessage(error.message);
+      } else {
+        setKycDocumentMessage(error instanceof Error ? error.message : 'KYC document could not be uploaded.');
+      }
+    } finally {
+      setKycDocumentSubmitting(false);
+    }
+  };
+
+  const handleVerifyKycDocument = async (kycDocumentId: string, payload: VerifyMemberKycDocumentPayload) => {
+    setKycVerifySubmitting(true);
+    setKycVerifyFieldErrors({});
+    setKycVerifyMessage('');
+    try {
+      const verified = await verifyMemberKycDocument(kycDocumentId, payload);
+      setKycProfile(current => current ? {
+        ...current,
+        documents: current.documents.map(item => item.kyc_document_id === verified.kyc_document_id ? verified : item),
+      } : current);
+      setKycVerifyMessage('KYC document verified.');
+    } catch (error) {
+      if (error instanceof AuthSessionError) {
+        setKycVerifyFieldErrors(error.fieldErrors ?? {});
+        setKycVerifyMessage(error.message);
+      } else {
+        setKycVerifyMessage(error instanceof Error ? error.message : 'KYC document could not be verified.');
+      }
+    } finally {
+      setKycVerifySubmitting(false);
+    }
+  };
+
   return (
     <MemberProfileView
       status={status}
@@ -308,6 +455,22 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
       cropCreateSubmitting={cropCreateSubmitting}
       onCreateLandHolding={handleCreateLandHolding}
       onCreateCropPlan={handleCreateCropPlan}
+      kycStatus={kycStatus}
+      kycMessage={kycMessage}
+      kycProfile={kycProfile}
+      kycCreateFieldErrors={kycCreateFieldErrors}
+      kycCreateMessage={kycCreateMessage}
+      kycCreateSubmitting={kycCreateSubmitting}
+      kycDocumentFieldErrors={kycDocumentFieldErrors}
+      kycDocumentMessage={kycDocumentMessage}
+      kycDocumentSubmitting={kycDocumentSubmitting}
+      kycVerifyFieldErrors={kycVerifyFieldErrors}
+      kycVerifyMessage={kycVerifyMessage}
+      kycVerifySubmitting={kycVerifySubmitting}
+      onCreateKycProfile={handleCreateKycProfile}
+      onUpdateKycProfile={handleUpdateKycProfile}
+      onUploadKycDocument={handleUploadKycDocument}
+      onVerifyKycDocument={handleVerifyKycDocument}
     />
   );
 };
@@ -345,6 +508,22 @@ interface MemberProfileViewProps {
   cropCreateSubmitting?: boolean;
   onCreateLandHolding?: (payload: CreateMemberLandHoldingPayload) => void | Promise<void>;
   onCreateCropPlan?: (payload: CreateMemberCropPlanPayload) => void | Promise<void>;
+  kycStatus?: KycStatus;
+  kycMessage?: string;
+  kycProfile?: KycProfileDetail | null;
+  kycCreateFieldErrors?: Record<string, string>;
+  kycCreateMessage?: string;
+  kycCreateSubmitting?: boolean;
+  kycDocumentFieldErrors?: Record<string, string>;
+  kycDocumentMessage?: string;
+  kycDocumentSubmitting?: boolean;
+  kycVerifyFieldErrors?: Record<string, string>;
+  kycVerifyMessage?: string;
+  kycVerifySubmitting?: boolean;
+  onCreateKycProfile?: (payload: CreateMemberKycProfilePayload) => void | Promise<void>;
+  onUpdateKycProfile?: (payload: UpdateMemberKycProfilePayload) => void | Promise<void>;
+  onUploadKycDocument?: (payload: UploadMemberKycDocumentPayload) => void | Promise<void>;
+  onVerifyKycDocument?: (kycDocumentId: string, payload: VerifyMemberKycDocumentPayload) => void | Promise<void>;
 }
 
 export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
@@ -380,6 +559,22 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
   cropCreateSubmitting = false,
   onCreateLandHolding,
   onCreateCropPlan,
+  kycStatus = 'idle',
+  kycMessage = '',
+  kycProfile = null,
+  kycCreateFieldErrors = {},
+  kycCreateMessage = '',
+  kycCreateSubmitting = false,
+  kycDocumentFieldErrors = {},
+  kycDocumentMessage = '',
+  kycDocumentSubmitting = false,
+  kycVerifyFieldErrors = {},
+  kycVerifyMessage = '',
+  kycVerifySubmitting = false,
+  onCreateKycProfile,
+  onUpdateKycProfile,
+  onUploadKycDocument,
+  onVerifyKycDocument,
 }) => {
   if (status !== 'success' || !profile) {
     return <ProfileState status={status} message={message} onBack={onBack} />;
@@ -480,7 +675,25 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
           onCreateLandHolding={onCreateLandHolding}
           onCreateCropPlan={onCreateCropPlan}
         />
-        <KycTab profile={profile} />
+        <KycTab
+          profile={profile}
+          status={kycStatus}
+          message={kycMessage}
+          kycProfile={kycProfile}
+          createFieldErrors={kycCreateFieldErrors}
+          createMessage={kycCreateMessage}
+          createSubmitting={kycCreateSubmitting}
+          documentFieldErrors={kycDocumentFieldErrors}
+          documentMessage={kycDocumentMessage}
+          documentSubmitting={kycDocumentSubmitting}
+          verifyFieldErrors={kycVerifyFieldErrors}
+          verifyMessage={kycVerifyMessage}
+          verifySubmitting={kycVerifySubmitting}
+          onCreateKycProfile={onCreateKycProfile}
+          onUpdateKycProfile={onUpdateKycProfile}
+          onUploadKycDocument={onUploadKycDocument}
+          onVerifyKycDocument={onVerifyKycDocument}
+        />
         <DeferredTab title="Loans" message="No loan records are available from the backend yet." />
         <NomineeTab
           status={nomineeStatus}
@@ -982,19 +1195,264 @@ const CropPlanCreateForm: React.FC<{
   );
 };
 
-const KycTab: React.FC<{ profile: MemberProfileDetail }> = ({ profile }) => (
-  <div className="card space-y-4">
-    <div className="flex items-center justify-between">
-      <h3 className="font-semibold text-slate-800">KYC Status</h3>
-      <StatusBadge label={profile.kyc_status === 'verified' ? 'KYC verified' : profile.kyc_status} family={profile.kyc_status === 'verified' ? 'approved' : undefined} />
+const KycTab: React.FC<{
+  profile: MemberProfileDetail;
+  status: KycStatus;
+  message: string;
+  kycProfile: KycProfileDetail | null;
+  createFieldErrors: Record<string, string>;
+  createMessage: string;
+  createSubmitting: boolean;
+  documentFieldErrors: Record<string, string>;
+  documentMessage: string;
+  documentSubmitting: boolean;
+  verifyFieldErrors: Record<string, string>;
+  verifyMessage: string;
+  verifySubmitting: boolean;
+  onCreateKycProfile?: (payload: CreateMemberKycProfilePayload) => void | Promise<void>;
+  onUpdateKycProfile?: (payload: UpdateMemberKycProfilePayload) => void | Promise<void>;
+  onUploadKycDocument?: (payload: UploadMemberKycDocumentPayload) => void | Promise<void>;
+  onVerifyKycDocument?: (kycDocumentId: string, payload: VerifyMemberKycDocumentPayload) => void | Promise<void>;
+}> = ({
+  profile,
+  status,
+  message,
+  kycProfile,
+  createFieldErrors,
+  createMessage,
+  createSubmitting,
+  documentFieldErrors,
+  documentMessage,
+  documentSubmitting,
+  verifyFieldErrors,
+  verifyMessage,
+  verifySubmitting,
+  onCreateKycProfile,
+  onUpdateKycProfile,
+  onUploadKycDocument,
+  onVerifyKycDocument,
+}) => (
+  <div className="card space-y-5">
+    <div className="flex items-center justify-between gap-3">
+      <h3 className="font-semibold text-slate-800">KYC Profile</h3>
+      <StatusBadge label={kycProfile?.kyc_status || profile.kyc_status || 'pending'} family={(kycProfile?.kyc_status || profile.kyc_status) === 'verified' ? 'approved' : undefined} />
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <SensitiveTile label="PAN" value={profile.pan.masked} />
       <SensitiveTile label="Aadhaar" value={profile.aadhaar.masked} />
     </div>
-    <EmptyPanel icon={<Shield size={18} className="text-slate-500 flex-shrink-0" />} title="KYC document records are not available from the backend yet." />
+    {createMessage && (
+      <AlertBanner
+        type={Object.keys(createFieldErrors).length > 0 ? 'error' : 'success'}
+        title={Object.keys(createFieldErrors).length > 0 ? 'KYC profile validation failed' : 'KYC profile update'}
+        message={createMessage}
+      />
+    )}
+    {documentMessage && (
+      <AlertBanner
+        type={Object.keys(documentFieldErrors).length > 0 ? 'error' : 'success'}
+        title={Object.keys(documentFieldErrors).length > 0 ? 'KYC document validation failed' : 'KYC document update'}
+        message={documentMessage}
+      />
+    )}
+    {verifyMessage && (
+      <AlertBanner
+        type={Object.keys(verifyFieldErrors).length > 0 ? 'error' : 'success'}
+        title={Object.keys(verifyFieldErrors).length > 0 ? 'KYC verification failed' : 'KYC verification update'}
+        message={verifyMessage}
+      />
+    )}
+    <KycProfileState status={status} message={message} kycProfile={kycProfile} />
+    <KycProfileForm
+      kycProfile={kycProfile}
+      fieldErrors={createFieldErrors}
+      submitting={createSubmitting}
+      onCreateKycProfile={onCreateKycProfile}
+      onUpdateKycProfile={onUpdateKycProfile}
+    />
+    {kycProfile && (
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 border-t border-slate-100 pt-4">
+        <KycDocumentUploadForm
+          fieldErrors={documentFieldErrors}
+          submitting={documentSubmitting}
+          onUploadKycDocument={onUploadKycDocument}
+        />
+        <KycDocumentVerifyForm
+          documents={kycProfile.documents}
+          fieldErrors={verifyFieldErrors}
+          submitting={verifySubmitting}
+          onVerifyKycDocument={onVerifyKycDocument}
+        />
+      </div>
+    )}
   </div>
 );
+
+const KycProfileState: React.FC<{
+  status: KycStatus;
+  message: string;
+  kycProfile: KycProfileDetail | null;
+}> = ({ status, message, kycProfile }) => {
+  if (status === 'idle' || status === 'loading') {
+    return <EmptyPanel icon={<Clock size={18} className="text-slate-500 flex-shrink-0" />} title="Loading KYC records" />;
+  }
+  if (status === 'unauthorized' || status === 'forbidden' || status === 'error') {
+    return <EmptyPanel icon={<AlertTriangle size={18} className="text-slate-500 flex-shrink-0" />} title={message || 'KYC records could not be loaded.'} />;
+  }
+  if (status === 'empty' || !kycProfile) {
+    return <EmptyPanel icon={<Shield size={18} className="text-slate-500 flex-shrink-0" />} title={message || 'No KYC profile is available from the backend yet.'} />;
+  }
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <InfoTile label="CKYC Consent" value={kycProfile.ckyc_consent_flag ? 'Yes' : 'No'} />
+        <InfoTile label="Beneficial Ownership" value={kycProfile.beneficial_ownership_verified_flag === null ? '-' : kycProfile.beneficial_ownership_verified_flag ? 'Yes' : 'No'} />
+        <InfoTile label="Risk Rating" value={titleCase(kycProfile.risk_rating || '-')} />
+        <InfoTile label="Re-KYC Due" value={formatDate(kycProfile.rekyc_due_date)} />
+      </div>
+      <div className="space-y-3">
+        <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">KYC Documents</p>
+        {kycProfile.documents.length === 0 && <EmptyPanel icon={<FileText size={18} className="text-slate-500 flex-shrink-0" />} title="No KYC document records are available from the backend yet." />}
+        {kycProfile.documents.map(document => (
+          <div key={document.kyc_document_id} className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">{document.file_name || document.document_type}</p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {titleCase(document.document_type)} · {document.self_attested_flag ? 'Self Attested' : 'Not self attested'}
+                </p>
+              </div>
+              <StatusBadge label={document.verification_status || 'pending'} size="sm" family={document.verification_status === 'verified' ? 'approved' : undefined} />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <InfoTile label="Document ID" value={document.document_id} />
+              <InfoTile label="Sensitivity" value={titleCase(document.sensitivity_level)} />
+              <InfoTile label="File Size" value={document.file_size_bytes === null ? '-' : `${document.file_size_bytes} bytes`} />
+              <InfoTile label="Remarks" value={document.remarks || '-'} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const KycProfileForm: React.FC<{
+  kycProfile: KycProfileDetail | null;
+  fieldErrors: Record<string, string>;
+  submitting: boolean;
+  onCreateKycProfile?: (payload: CreateMemberKycProfilePayload) => void | Promise<void>;
+  onUpdateKycProfile?: (payload: UpdateMemberKycProfilePayload) => void | Promise<void>;
+}> = ({ kycProfile, fieldErrors, submitting, onCreateKycProfile, onUpdateKycProfile }) => {
+  const [form, setForm] = useState<CreateMemberKycProfilePayload>({
+    ckyc_consent_flag: kycProfile?.ckyc_consent_flag ?? true,
+    beneficial_ownership_verified_flag: kycProfile?.beneficial_ownership_verified_flag ?? false,
+    risk_rating: kycProfile?.risk_rating ?? 'low',
+  });
+  const setField = (field: keyof CreateMemberKycProfilePayload, value: string | boolean) => {
+    setForm(current => ({ ...current, [field]: value }));
+  };
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (kycProfile) {
+      await onUpdateKycProfile?.(form);
+    } else {
+      await onCreateKycProfile?.(form);
+    }
+  };
+  return (
+    <form className="border-t border-slate-100 pt-4 space-y-4" onSubmit={submit}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Field label="Risk rating" error={fieldErrors.risk_rating}>
+          <select className="field-select" value={form.risk_rating} onChange={event => setField('risk_rating', event.target.value)}>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </Field>
+        <label className="flex items-center gap-2 text-sm text-slate-700 pt-6">
+          <input
+            type="checkbox"
+            className="accent-green-600"
+            checked={form.ckyc_consent_flag}
+            onChange={event => setField('ckyc_consent_flag', event.target.checked)}
+          />
+          CKYC consent
+        </label>
+        <label className="flex items-center gap-2 text-sm text-slate-700 pt-6">
+          <input
+            type="checkbox"
+            className="accent-green-600"
+            checked={form.beneficial_ownership_verified_flag}
+            onChange={event => setField('beneficial_ownership_verified_flag', event.target.checked)}
+          />
+          Beneficial ownership verified
+        </label>
+      </div>
+      {fieldErrors.ckyc_consent_flag && <span className="text-xs text-red-600 block">{fieldErrors.ckyc_consent_flag}</span>}
+      <button className="btn-primary" disabled={submitting || (!kycProfile && !onCreateKycProfile) || (Boolean(kycProfile) && !onUpdateKycProfile)} type="submit">
+        {submitting ? 'Saving KYC profile' : 'Save KYC profile'}
+      </button>
+    </form>
+  );
+};
+
+const KycDocumentUploadForm: React.FC<{
+  fieldErrors: Record<string, string>;
+  submitting: boolean;
+  onUploadKycDocument?: (payload: UploadMemberKycDocumentPayload) => void | Promise<void>;
+}> = ({ fieldErrors, submitting, onUploadKycDocument }) => {
+  const [documentType, setDocumentType] = useState('pan');
+  const [selfAttested, setSelfAttested] = useState(true);
+  const [file, setFile] = useState<Blob | null>(null);
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!file) return;
+    await onUploadKycDocument?.({ document_type: documentType, self_attested_flag: selfAttested, file });
+  };
+  return (
+    <form className="space-y-4" onSubmit={submit}>
+      <h4 className="text-sm font-semibold text-slate-800">Upload KYC Document</h4>
+      <Field label="Document type" error={fieldErrors.document_type}><select className="field-select" value={documentType} onChange={event => setDocumentType(event.target.value)}><option value="pan">PAN</option><option value="aadhaar">Aadhaar</option><option value="photo">Photo</option><option value="ckyc_consent">CKYC Consent</option></select></Field>
+      <Field label="File" error={fieldErrors.file}><input className="field-input" type="file" onChange={event => setFile(event.target.files?.[0] ?? null)} /></Field>
+      <label className="flex items-center gap-2 text-sm text-slate-700">
+        <input type="checkbox" className="accent-green-600" checked={selfAttested} onChange={event => setSelfAttested(event.target.checked)} />
+        Self attested
+      </label>
+      {fieldErrors.self_attested_flag && <span className="text-xs text-red-600 block">{fieldErrors.self_attested_flag}</span>}
+      <button className="btn-primary" disabled={submitting || !onUploadKycDocument} type="submit">
+        {submitting ? 'Uploading KYC document' : 'Upload KYC document'}
+      </button>
+    </form>
+  );
+};
+
+const KycDocumentVerifyForm: React.FC<{
+  documents: KycDocumentDetail[];
+  fieldErrors: Record<string, string>;
+  submitting: boolean;
+  onVerifyKycDocument?: (kycDocumentId: string, payload: VerifyMemberKycDocumentPayload) => void | Promise<void>;
+}> = ({ documents, fieldErrors, submitting, onVerifyKycDocument }) => {
+  const [documentId, setDocumentId] = useState(documents[0]?.kyc_document_id ?? '');
+  const [verificationStatus, setVerificationStatus] = useState<'verified' | 'rejected'>('verified');
+  const [remarks, setRemarks] = useState('');
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!documentId) return;
+    await onVerifyKycDocument?.(documentId, { verification_status: verificationStatus, remarks });
+  };
+  return (
+    <form className="space-y-4" onSubmit={submit}>
+      <h4 className="text-sm font-semibold text-slate-800">Verify KYC Document</h4>
+      <Field label="Document" error={fieldErrors.kyc_document_id}><select className="field-select" value={documentId} onChange={event => setDocumentId(event.target.value)}>{documents.map(document => <option key={document.kyc_document_id} value={document.kyc_document_id}>{document.file_name || document.document_type}</option>)}</select></Field>
+      <Field label="Verification status" error={fieldErrors.verification_status}><select className="field-select" value={verificationStatus} onChange={event => setVerificationStatus(event.target.value as 'verified' | 'rejected')}><option value="verified">Verified</option><option value="rejected">Rejected</option></select></Field>
+      <Field label="Remarks" error={fieldErrors.remarks}><input className="field-input" value={remarks} onChange={event => setRemarks(event.target.value)} /></Field>
+      <button className="btn-primary" disabled={submitting || !onVerifyKycDocument || documents.length === 0} type="submit">
+        {submitting ? 'Saving verification' : 'Save verification'}
+      </button>
+    </form>
+  );
+};
 
 const NomineeTab: React.FC<{
   status: NomineeStatus;

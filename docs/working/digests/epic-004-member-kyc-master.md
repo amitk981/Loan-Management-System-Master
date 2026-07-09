@@ -219,3 +219,25 @@ before implementation.
   states using existing Member Profile card, empty-panel, alert, and form patterns. It does not show
   per-acre scale of finance or land-based eligible amount because no source-backed calculation
   endpoint exists yet.
+
+## 004H KYC Upload and Verification Extracts
+- 004H implements member-party KYC only:
+  `GET/POST /api/v1/kyc-profiles/`, `PATCH /api/v1/kyc-profiles/{kyc_profile_id}/`,
+  `POST /api/v1/kyc-profiles/{kyc_profile_id}/documents/`, and
+  `POST /api/v1/kyc-documents/{kyc_document_id}/verify/`.
+- `kyc_profiles` stores party type/id, status, CKYC consent, optional beneficial-ownership flag,
+  risk rating, verification user/timestamp, re-KYC due date, and rejection reason. One profile is
+  allowed per member party.
+- `kyc_documents` stores profile FK, allowed document type (`pan`, `aadhaar`, `photo`,
+  `ckyc_consent`), restricted `document_files` FK, self-attestation flag, verification status,
+  verifier/timestamp, remarks, and created timestamp.
+- Permissions are source KYC codes only: profile read/create/update, document upload, and document
+  verify. No `kyc.document.download`, `kyc.sensitive.reveal`, or `kyc.rekyc.manage` behavior is
+  implemented.
+- PAN and Aadhaar uploads require self-attestation. KYC upload/verify audits are metadata-only and
+  exclude identity plaintext, identity hashes, encrypted CKYC identifiers, and file bytes.
+- A-033 records the temporary status rollup: document verification updates profile/member KYC status
+  and sets re-KYC due two years after verified results until source-backed completeness rules exist.
+- Member Profile's KYC tab is API-backed with loading/empty/error/list/validation/success states
+  using existing profile card, empty-panel, alert, field, and status-badge patterns. Sensitive reveal
+  remains deferred to 004I.

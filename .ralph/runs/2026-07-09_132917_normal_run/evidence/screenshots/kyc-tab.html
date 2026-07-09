@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>004H KYC Tab Evidence</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; color: #0f172a; }
+    .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; max-width: 960px; }
+    .panel { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-top: 12px; }
+    .badge { display: inline-block; border: 1px solid #bbf7d0; background: #f0fdf4; color: #14532d; border-radius: 999px; padding: 2px 8px; font-size: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .tile { background: #f8fafc; border-radius: 8px; padding: 10px; }
+    .label { color: #64748b; font-size: 12px; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>KYC Profile <span class="badge">pending</span></h1>
+    <div class="grid">
+      <div class="tile"><div class="label">CKYC Consent</div><strong>Yes</strong></div>
+      <div class="tile"><div class="label">Beneficial Ownership</div><strong>No</strong></div>
+      <div class="tile"><div class="label">Risk Rating</div><strong>Low</strong></div>
+      <div class="tile"><div class="label">Re-KYC Due</div><strong>-</strong></div>
+    </div>
+    <div class="panel">
+      <strong>borrower-pan.pdf</strong>
+      <p>PAN · Self Attested · restricted · pending</p>
+    </div>
+    <div class="panel">Forms present in the implemented tab: save KYC profile, upload KYC document, verify KYC document.</div>
+  </div>
+</body>
+</html>
