@@ -10,6 +10,7 @@ class LoanApplication(models.Model):
     STATUS_SUBMITTED = "submitted"
     STATUS_INCOMPLETE_RETURNED = "incomplete_returned"
     STATUS_REFERENCE_GENERATED = "reference_generated"
+    STATUS_SUBMITTED_TO_SANCTION = "submitted_to_sanction_committee"
     STAGE_INITIAL = "initial_loan_request"
     STAGE_CREDIT_ASSESSMENT = "credit_assessment"
     COMPLETENESS_NOT_STARTED = "not_started"
@@ -134,6 +135,7 @@ class LoanApplication(models.Model):
             self.STATUS_SUBMITTED,
             self.STATUS_INCOMPLETE_RETURNED,
             self.STATUS_REFERENCE_GENERATED,
+            self.STATUS_SUBMITTED_TO_SANCTION,
         }:
             raise ValidationError({"application_status": "Unsupported application status."})
         if self.current_stage not in {self.STAGE_INITIAL, self.STAGE_CREDIT_ASSESSMENT}:

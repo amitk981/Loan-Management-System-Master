@@ -419,3 +419,26 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - Epic 006 remains incomplete. M04-FR-004 through M04-FR-011 are implemented through 006E3 except
   sanction submission itself, which remains 006G; M04-FR-001/M04-FR-002 remain explicitly owned by
   012EA under A-053, and M04-FR-003 keeps the A-054 receipt-time proxy pending source confirmation.
+
+## 006G Submit To Sanction
+
+- `POST /api/v1/loan-applications/{id}/submit-to-sanction-committee/` accepts exactly non-blank
+  `remarks` and requires active Credit Manager authority, the independent
+  `credit.appraisal.submit_sanction` permission, and credit-domain object scope.
+- The application-first transaction locks application, appraisal, ordered immutable review rows,
+  then the approval-case namespace. Submission requires reviewed state, verified complete frozen
+  prerequisite projections, complete risk/appraisal facts, and a latest immutable review row that
+  exactly matches every latest appraisal review projection.
+- Success creates one unique pending approval-case shell, copies the frozen exception-required
+  flag for later Epic 007 routing, and transitions application/appraisal status to
+  `submitted_to_sanction_committee`. It preserves all recommendation, risk, TAT, prerequisite,
+  reviewer/comment, history, and rejection-note facts.
+- Approval-matrix selection, approver assignment/actions, exception decisions, meetings,
+  documents, communication, and sanction decisions remain Epic 007. A-059 requires 007B to enrich
+  the existing unique case instead of creating a duplicate.
+- Metadata-only audit/workflow evidence contains application/appraisal/case/latest-review IDs,
+  states, actor/time, request ID, and exception flag; it excludes request remarks, comments,
+  summaries, detailed rejection text, and risk notes.
+- The SQLite functional suite covers strict validation, permissions/scope, invalid/rejected/
+  missing/repeated/inconsistent states, rollback, and preservation. A PostgreSQL-only competing
+  submission test exists; AFK sandbox socket denial is environment evidence, not concurrency proof.

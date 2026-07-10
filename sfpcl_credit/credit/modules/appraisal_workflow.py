@@ -7,6 +7,7 @@ from decimal import Decimal, InvalidOperation
 from django.db import transaction
 from django.utils import timezone
 
+from sfpcl_credit.approvals.models import ApprovalCase
 from sfpcl_credit.applications.modules.rejection_notes import (
     RejectionNoteInvalidStateError,
     RejectionNoteModule,
@@ -39,12 +40,14 @@ APPRAISAL_CREATE_PERMISSION = "credit.appraisal.create"
 APPRAISAL_UPDATE_PERMISSION = "credit.appraisal.update"
 APPRAISAL_SUBMIT_PERMISSION = "credit.appraisal.submit_review"
 APPRAISAL_REVIEW_PERMISSION = "credit.appraisal.review"
+APPRAISAL_SANCTION_SUBMIT_PERMISSION = "credit.appraisal.submit_sanction"
 RISK_MANAGE_PERMISSION = "credit.risk_assessment.manage"
 APPRAISAL_READ_PERMISSIONS = {
     APPRAISAL_CREATE_PERMISSION,
     APPRAISAL_UPDATE_PERMISSION,
     APPRAISAL_SUBMIT_PERMISSION,
     APPRAISAL_REVIEW_PERMISSION,
+    APPRAISAL_SANCTION_SUBMIT_PERMISSION,
 }
 
 
@@ -665,8 +668,169 @@ class AppraisalWorkflow:
             snapshot["rejection_note"] = rejection_note.snapshot
         return AppraisalNoteResult(snapshot=snapshot)
 
-    def submit_to_sanction(self, *, actor, application_id):
-        raise NotImplementedError("Sanction submission is owned by slice 006G.")
+    @transaction.atomic
+    def submit_to_sanction(
+        self,
+        *,
+        actor,
+        application_id,
+        payload,
+        request_meta=None,
+        actor_permissions=None,
+    ):
+        permissions = require_permission(
+            actor,
+            APPRAISAL_SANCTION_SUBMIT_PERMISSION,
+            "You do not have permission to submit appraisals for sanction.",
+            actor_permissions,
+        )
+        if "credit_manager" not in actor.role_codes():
+            raise CreditModulePermissionDenied(
+                "Only an active Credit Manager may submit appraisals for sanction."
+            )
+        unknown = sorted(set(payload) - {"remarks"})
+        errors = {field: "Unknown field." for field in unknown}
+        if not isinstance(payload.get("remarks"), str) or not payload["remarks"].strip():
+            errors["remarks"] = "This field must not be blank."
+        if errors:
+            raise CreditModuleValidationError(errors)
+
+        application = (
+            LoanApplication.objects.select_for_update(of=("self",))
+            .select_related("created_by_user", "received_by_user")
+            .filter(loan_application_id=application_id)
+            .first()
+        )
+        if application is None:
+            raise CreditModuleNotFound("Loan application was not found.")
+        require_application_access(
+            application,
+            actor,
+            APPRAISAL_SANCTION_SUBMIT_PERMISSION,
+            permissions,
+        )
+        note = (
+            LoanAppraisalNote.objects.select_for_update(of=("self",))
+            .select_related(
+                "risk_assessment",
+                "prepared_by_user",
+                "reviewed_by_user",
+            )
+            .filter(loan_application=application)
+            .first()
+        )
+        if note is None:
+            raise CreditModuleInvalidStateError(
+                "A reviewed appraisal note is required for sanction submission."
+            )
+        if note.appraisal_status != LoanAppraisalNote.STATUS_REVIEWED:
+            raise CreditModuleInvalidStateError(
+                "Only a reviewed appraisal note can be submitted for sanction."
+            )
+        if note.prerequisite_provenance != "verified":
+            raise CreditModuleInvalidStateError(
+                "Sanction submission requires verified prerequisite snapshots."
+            )
+        if _submission_errors(note):
+            raise CreditModuleInvalidStateError(
+                "Sanction submission requires a complete appraisal and risk assessment."
+            )
+        _require_complete_frozen_prerequisites(note)
+
+        history = list(
+            note.review_decisions.select_for_update(of=("self",))
+            .select_related("reviewer_user")
+            .order_by("decided_at", "appraisal_review_decision_id")
+        )
+        if not history or not _latest_review_matches_note(note, history[-1]):
+            raise CreditModuleInvalidStateError(
+                "The latest immutable review decision does not match the reviewed appraisal."
+            )
+        latest_review = history[-1]
+
+        # Approval-case access deliberately happens after application, appraisal, and
+        # immutable history locks. The appraisal lock serializes the initially empty case.
+        if (
+            ApprovalCase.objects.select_for_update(of=("self",))
+            .filter(loan_application=application)
+            .exists()
+        ):
+            raise CreditModuleInvalidStateError(
+                "The appraisal has already been submitted for sanction."
+            )
+
+        now = timezone.now()
+        exception_required = (
+            note.loan_limit_snapshot_json.get("exception_required_flag") is True
+        )
+        approval_case = ApprovalCase.objects.create(
+            loan_application=application,
+            loan_appraisal_note=note,
+            exception_required_flag=exception_required,
+            submission_remarks=payload["remarks"].strip(),
+            submitted_by_user=actor,
+            submitted_at=now,
+        )
+        previous_application_status = application.application_status
+        application.application_status = LoanApplication.STATUS_SUBMITTED_TO_SANCTION
+        application.save(update_fields=["application_status"])
+        previous_appraisal_status = note.appraisal_status
+        note.appraisal_status = LoanAppraisalNote.STATUS_SUBMITTED_TO_SANCTION
+        note.save(update_fields=["appraisal_status"])
+
+        request_meta = normalize_request_meta(request_meta)
+        AuditLog.objects.create(
+            actor_user=actor,
+            action="appraisal.submitted_to_sanction",
+            entity_type="loan_appraisal_note",
+            entity_id=note.pk,
+            old_value_json={
+                "application_status": previous_application_status,
+                "appraisal_status": previous_appraisal_status,
+            },
+            new_value_json={
+                "approval_case_id": str(approval_case.pk),
+                "loan_application_id": str(application.pk),
+                "loan_appraisal_note_id": str(note.pk),
+                "appraisal_review_decision_id": str(latest_review.pk),
+                "application_status": application.application_status,
+                "appraisal_status": note.appraisal_status,
+                "submission_status": approval_case.current_status,
+                "exception_required_flag": exception_required,
+                "submitted_by_user_id": str(actor.pk),
+                "submitted_at": timezone.localtime(now).isoformat(),
+                "request_id": request_meta.request_id,
+            },
+            ip_address=request_meta.ip_address,
+            user_agent=request_meta.user_agent,
+        )
+        record_workflow_event(
+            actor=actor,
+            workflow_name="sanction_submission",
+            entity_type="loan_application",
+            entity_id=application.pk,
+            from_state=previous_appraisal_status,
+            to_state=note.appraisal_status,
+            trigger_reason=(
+                f"Appraisal {note.pk} submitted as approval case {approval_case.pk} "
+                f"from review decision {latest_review.pk}."
+            ),
+            action_code="appraisal.submitted_to_sanction",
+        )
+        return AppraisalNoteResult(
+            snapshot={
+                "approval_case_id": str(approval_case.pk),
+                "loan_application_id": str(application.pk),
+                "loan_appraisal_note_id": str(note.pk),
+                "submission_status": approval_case.current_status,
+                "exception_required_flag": exception_required,
+                "submitted_by": {
+                    "user_id": str(actor.pk),
+                    "full_name": actor.full_name,
+                },
+                "submitted_at": timezone.localtime(now).isoformat(),
+            }
+        )
 
 
 def _lock_appraisal_after_application(appraisal_id):
@@ -779,6 +943,46 @@ def appraisal_note_snapshot(note):
 
 def _tat_status(at, due_at):
     return LoanAppraisalNote.TAT_WITHIN if at <= due_at else LoanAppraisalNote.TAT_BREACHED
+
+
+def _require_complete_frozen_prerequisites(note):
+    eligibility = note.eligibility_snapshot_json
+    loan_limit = note.loan_limit_snapshot_json
+    consistent = (
+        isinstance(eligibility, dict)
+        and isinstance(loan_limit, dict)
+        and eligibility.get("eligibility_assessment_id")
+        == str(note.eligibility_assessment_id_snapshot)
+        and eligibility.get("loan_application_id") == str(note.loan_application_id)
+        and eligibility.get("overall_result") == "eligible"
+        and loan_limit.get("loan_limit_assessment_id")
+        == str(note.loan_limit_assessment_id_snapshot)
+        and loan_limit.get("loan_application_id") == str(note.loan_application_id)
+        and isinstance(loan_limit.get("exception_required_flag"), bool)
+    )
+    if not consistent:
+        raise CreditModuleInvalidStateError(
+            "Sanction submission requires complete frozen eligibility and loan-limit snapshots."
+        )
+
+
+def _latest_review_matches_note(note, latest_review):
+    return (
+        note.last_review_decision == "reviewed"
+        and note.reviewed_by_user_id is not None
+        and note.reviewed_at is not None
+        and bool(note.review_comments.strip())
+        and latest_review.decision == note.last_review_decision
+        and latest_review.reviewer_user_id == note.reviewed_by_user_id
+        and latest_review.decided_at == note.reviewed_at
+        and latest_review.review_comments == note.review_comments
+        and latest_review.to_state == LoanAppraisalNote.STATUS_REVIEWED
+        and latest_review.history_provenance
+        in {
+            AppraisalReviewDecision.PROVENANCE_NATIVE,
+            AppraisalReviewDecision.PROVENANCE_LEGACY_LATEST_ONLY,
+        }
+    )
 
 
 def _submission_errors(note):

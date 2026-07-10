@@ -757,6 +757,38 @@ def appraisal_note_revalidate_prerequisites(request, loan_appraisal_note_id):
 
 
 @require_http_methods(["POST"])
+def loan_application_submit_to_sanction(request, loan_application_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    try:
+        result = AppraisalWorkflow().submit_to_sanction(
+            actor=user,
+            application_id=loan_application_id,
+            payload=parse_json_body(request),
+            request_meta=_credit_request_meta(request),
+            actor_permissions=permissions,
+        )
+    except CreditModuleValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Sanction submission failed validation.",
+            exc.field_errors,
+        )
+    except CreditModuleInvalidStateError as exc:
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
+    except (
+        CreditModuleNotFound,
+        CreditModuleObjectAccessDenied,
+        CreditModulePermissionDenied,
+    ) as exc:
+        return _credit_module_error_response(request, exc)
+    return success_response(result.snapshot, request)
+
+
+@require_http_methods(["POST"])
 def loan_application_return_with_deficiencies(request, loan_application_id):
     user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:

@@ -1,5 +1,21 @@
 # Ralph Progress Log
 
+## 2026-07-10 - 2026-07-10_201119_normal_run
+- Agent tool used: codex.
+- Slice attempted: `006G-submit-to-sanction`.
+- Summary: Added strict Credit Manager submission of a reviewed appraisal to one unique pending
+  sanction case with verified immutable-review provenance, frozen exception flagging,
+  application-first locking, source statuses, and metadata-only evidence.
+- Tests run: TDD red/green; 9 final focused sanction/migration tests; 372 backend tests with five
+  PostgreSQL-only skips at 93% coverage; Django check and migration sync; frontend lint/typecheck,
+  107 tests, and build; diff checks. The PostgreSQL-only sanction race could not connect because
+  the AFK sandbox denied the live socket before test creation; this is residual validation, not
+  concurrency proof.
+- Evidence saved: `.ralph/runs/2026-07-10_201119_normal_run/`.
+- Result: Success on all configured gates.
+- Risk level: High (standing approval; no veto).
+- Next action: Run sharpened 006H frontend integration, then 006X Epic 006 tracer.
+
 ## 2026-07-10 19:15 - 2026-07-10_190455_architecture_review
 - Agent tool used: codex.
 - Slice attempted: `architecture-review`.
@@ -2827,6 +2843,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_195330_normal_run/.ralph/runs/2026-07-10_195330_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_195330_normal_run/.ralph/runs/2026-07-10_195330_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 20:30:18 - 2026-07-10_201119_normal_run
+- Agent tool used: codex
+- Slice attempted: 006G-submit-to-sanction
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/.ralph/runs/2026-07-10_201119_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/.ralph/runs/2026-07-10_201119_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

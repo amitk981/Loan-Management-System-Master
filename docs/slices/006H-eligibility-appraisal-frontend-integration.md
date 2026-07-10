@@ -19,6 +19,14 @@ assessment workflow instead of acting on sample calculations or statuses.
 ## Depends On
 - 006G
 
+## Prior Slice Handoff
+- 006G returns `approval_case_id`, application/appraisal IDs, `submission_status = pending`, frozen
+  `exception_required_flag`, submitter summary, and timestamp. It moves both statuses to
+  `submitted_to_sanction_committee`; repeated/stale calls return `409`.
+- The UI must never infer a sanction case from appraisal review alone. Show the submitted state
+  only from the 006G response or a subsequent server read, retain the case UUID for Epic 007
+  navigation, and do not synthesize approvers or exception decisions.
+
 ## Source References
 - docs/source/implementation-roadmap.md section 11
 - docs/source/api-contracts.md sections 22-24
@@ -46,6 +54,9 @@ assessment workflow instead of acting on sample calculations or statuses.
   submit-to-sanction actions. Render an action only when the current user's permission set and the
   loaded server state allow it; always surface the server's standard error when a stale action is
   rejected.
+- Send the sanction action as exactly `{ remarks }`; on success replace local appraisal/application
+  status with the returned server state and display the pending case ID using the existing success
+  pattern. Never retry the POST automatically after a timeout or `409`.
 - Render loading, missing-assessment/empty, validation blocker, unauthorized/object-denied, API
   error, and success/updated states with existing alert/empty/loading patterns. Preserve ordered
   immutable `review_history` reasons across return/resubmit cycles.

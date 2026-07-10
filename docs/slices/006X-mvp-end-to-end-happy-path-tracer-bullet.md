@@ -8,10 +8,13 @@ Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
 Epic file: `docs/epics/006-eligibility-loan-limit-appraisal.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Prove one real Epic 006 path from an already-complete application through eligibility, loan-limit
+calculation, appraisal preparation/review, and one pending sanction case, using the real backend and
+006H UI without bypassing any action boundary.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Provides a reviewable cross-role proof that the credit-assessment feature works as one system before
+Epic 007 adds committee decisions.
 
 ## Depends On
 - 006H
@@ -35,7 +38,11 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Connect the minimum backend path: member, application, completeness, limit, sanction, documentation readiness, loan account, disbursement, repayment, closure.
+Use only existing APIs to seed or create one complete reference-generated application, run eligible
+assessment, calculate an in-limit loan limit, create and submit an appraisal, record an independent
+Credit Manager `reviewed` decision, and submit once to the pending sanction case. Add no duplicate
+workflow service and no sanction decision, documentation, account, disbursement, repayment, or
+closure behavior owned by later epics.
 
 ## Database/Model Impact
 Use only already-created MVP tables; add no broad new schema unless required by the tracer.
@@ -44,16 +51,24 @@ Use only already-created MVP tables; add no broad new schema unless required by 
 Use existing APIs from prior slices and add only narrow missing glue contracts.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Use distinct Deputy Manager Finance and Credit Manager sessions. Assert the preparer cannot review,
+review permission cannot submit sanction, and sanction permission cannot bypass reviewed state.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+Assert the existing eligibility, loan-limit, appraisal submit/review, and sanction-submission
+metadata evidence forms one ID-linked chain and contains no appraisal/review/request free text.
 
 ## Validation Rules
-Only the minimum happy-path gates; do not include every exception, document, report, or compliance edge case.
+Use an amount within the frozen limit (`exception_required_flag = false`) and exact source request
+fields. Finish at one `pending` approval case and `submitted_to_sanction_committee`; committee
+approval is explicitly not part of this tracer.
 
 ## Test Cases
-One integration/E2E smoke path plus targeted API checks.
+- One backend integration test chaining the public module/API boundaries with the same application,
+  assessment, appraisal, review-decision, and approval-case UUIDs.
+- One Playwright path through the 006H workbench using the two real roles and no `mockData` credit
+  facts; capture the reviewed and pending-sanction states.
+- One repeat-submit regression proving the case/audit/workflow counts remain one.
 
 ## Visual Acceptance Criteria
 None.

@@ -1998,3 +1998,51 @@ ordered immutable `review_history[]`, and
 `appraisal_status = draft|review_pending|reviewed|rejected`. A successful rejected-review response
 also includes the nested existing rejection-note representation and links its UUID to the appraisal
 audit metadata.
+
+## Submit appraisal to Sanction Committee API (006G)
+
+Protected Credit Manager endpoint:
+
+- `POST /api/v1/loan-applications/{loan_application_id}/submit-to-sanction-committee/`
+
+Request is exactly `{ "remarks": "non-blank reason" }`. Missing/blank remarks or any unknown field
+returns `400 VALIDATION_ERROR`. The action requires active `credit_manager` role authority,
+`credit.appraisal.submit_sanction`, and the existing Credit Manager credit-domain object boundary;
+permission/role failures return `403 PERMISSION_DENIED` and out-of-domain applications return
+`403 OBJECT_ACCESS_DENIED`.
+
+Submission requires one `reviewed` appraisal with verified frozen prerequisite projections, a
+complete linked risk assessment, populated latest review facts, and at least one immutable review
+row. The latest ordered row must be `native|legacy_latest_only` and exactly match the appraisal's
+`reviewed` decision, reviewer, time, comments, and `to_state`. Missing, draft, review-pending,
+returned, rejected, inconsistent, or repeated paths return `409 INVALID_STATE_TRANSITION` without
+case, state, audit, workflow, history, or rejection-note side effects.
+
+The mutation locks application, appraisal, immutable review history, then the case namespace. It
+atomically creates one unique pending sanction case, copies only the frozen loan-limit exception
+flag, and changes both application and appraisal status to
+`submitted_to_sanction_committee`. It does not evaluate the approval matrix, assign approvers,
+create an exception decision, or perform a committee action.
+
+Response data:
+
+```json
+{
+  "approval_case_id": "uuid",
+  "loan_application_id": "uuid",
+  "loan_appraisal_note_id": "uuid",
+  "submission_status": "pending",
+  "exception_required_flag": false,
+  "submitted_by": {
+    "user_id": "uuid",
+    "full_name": "Credit Manager"
+  },
+  "submitted_at": "2026-07-10T20:30:00+00:00"
+}
+```
+
+Successful submission writes one `appraisal.submitted_to_sanction` audit record and one
+`sanction_submission` workflow event with application/appraisal/case/latest-review IDs, states,
+actor/time, exception flag, and request ID. Generic evidence excludes request remarks, review
+comments, appraisal summaries, risk notes, and rejection text. Approval-case storage retains the
+trimmed request remarks as the action reason.

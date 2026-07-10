@@ -1,34 +1,38 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-10_195330_normal_run
+2026-07-10_201119_normal_run
 
 ## Current Status
-`006F3-appraisal-lock-order-and-postgresql-concurrency-closure` failed its mandatory PostgreSQL
-acceptance gate and remains `Not Started`; it must not be committed, merged, or treated as complete.
+`006G-submit-to-sanction` is complete through the backend/API path.
 
-- The ungated worktree contains a candidate private `AppraisalWorkflow` lock implementation using
-  application -> appraisal -> existing review history -> optional rejection-note work. Submit,
-  prerequisite revalidation, review, create, and update use the same application-first order.
-- Two PostgreSQL-only public-interface transaction tests cover rejected review versus stale draft
-  PATCH and competing terminal decisions. They assert deterministic serialization, one native
-  winning history row, one optional rejection note, matching audit/workflow UUIDs, unchanged
-  pre-race history, and no loser success evidence.
-- PostgreSQL row locks that join nullable related users use `FOR UPDATE OF self`; the same necessary
-  correction was applied to the application lock exercised by the unchanged 006D2C loan-limit
-  concurrency tests.
+- A Credit Manager with independent `credit.appraisal.submit_sanction` authority can submit one
+  reviewed, provenance-verified appraisal through the strict source §24.5 endpoint.
+- The mutation preserves the established application -> appraisal -> immutable review history ->
+  approval-case lock order, validates exact latest review consistency, creates one unique pending
+  approval-case shell, and moves application/appraisal status to
+  `submitted_to_sanction_committee`.
+- Frozen exception-required input is flagged on the case; approval-matrix selection, approver
+  assignment/actions, exception decisions, meetings, and sanction decisions remain Epic 007.
+- Metadata-only audit/workflow evidence excludes request remarks, review comments, appraisal
+  summaries, risk notes, and rejection text. Rejected submissions preserve the unsent rejection
+  note byte-for-byte.
+- The previously stale 006F3 handoff is superseded: repository state and commit `b022c83` record
+  006F3 complete, which is why the orchestrator selected 006G.
 
 ## Validation
-Standard gates passed: 365 default backend tests with four PostgreSQL-only skips, 94% coverage,
-Django check, migration sync, frontend lint/typecheck, 107 tests, build, and diff checks. The
-mandatory combined PostgreSQL command found four tests but executed none because the AFK sandbox
-denied the live PostgreSQL 14 Unix socket with `Operation not permitted`. An isolated server could
-not bootstrap because the same sandbox forbids PostgreSQL's required SysV shared-memory segment.
-Evidence is in `.ralph/runs/2026-07-10_195330_normal_run/`.
+Configured gates passed: 372 backend tests with five PostgreSQL-only skips, 93% coverage (85%
+floor), Django check, migration sync, frontend lint/typecheck, 107 tests, build, and diff checks.
+Focused sanction/migration tests passed. TDD red/green, API examples, and all terminal output are in
+`.ralph/runs/2026-07-10_201119_normal_run/evidence/`.
+
+The new sanction duplicate-submission concurrency test was collected but could not execute against
+PostgreSQL because the AFK sandbox denied the live Unix socket before database creation with
+`Operation not permitted`. This is explicitly recorded as residual validation, not PostgreSQL
+proof; independent host validation should run it with
+`--settings=sfpcl_credit.config.postgres_test_settings`.
 
 ## Next Run
-Run Ralph repair for `006F3` in an agent environment permitted to connect to PostgreSQL. Start by
-reading the failed run packet, then execute the exact combined four-test command with zero skips;
-diagnose any real PostgreSQL failures before reusing the candidate worktree changes. Only after a
-green authoritative run and all standard gates may 006F3 complete. `006G` and `006H` were sharpened
-but remain downstream and must not start first.
+Run `006H-eligibility-appraisal-frontend-integration`. It has been sharpened with the exact 006G
+response/state handoff. Then run the sharpened `006X` tracer only through the Epic 006 boundary,
+ending at one pending sanction case without implementing later-epic committee or servicing work.
