@@ -73,6 +73,7 @@ run_gate() {
   } > "$file"
   if [[ ! -d "$project_path" ]]; then
     echo "Project directory not found: $project_path" >> "$file"
+    failed_gate_logs+=("${name}-results.md")
     return 1
   fi
   if [[ -n "$node_bin_dir" ]]; then
@@ -80,7 +81,10 @@ run_gate() {
     echo >> "$file"
     command="export PATH=\"$node_bin_dir:\$PATH\"; $command"
   fi
-  (cd "$project_path" && bash -lc "$command") >> "$file" 2>&1
+  if ! (cd "$project_path" && bash -lc "$command") >> "$file" 2>&1; then
+    failed_gate_logs+=("${name}-results.md")
+    return 1
+  fi
 }
 
 write_skipped() {
@@ -94,6 +98,9 @@ write_skipped() {
 }
 
 failures=0
+# Results files of gates that failed, for the compact failure-summary.md that
+# repair mode reads instead of multi-MB terminal logs.
+failed_gate_logs=()
 backend_dir="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | tr -d '"' | xargs || true)"
 postgres_acceptance_passed=0
 
@@ -192,6 +199,7 @@ if [[ "$mode" == "normal_run" && "$slice_id" == "006F4-postgresql-credit-concurr
     postgres_acceptance_passed=1
   else
     failures=$((failures + 1))
+    failed_gate_logs+=("postgresql-acceptance-results.md")
   fi
 fi
 
@@ -235,7 +243,10 @@ run_backend_gate() {
     echo "Command: $command"
     echo
   } > "$file"
-  (cd "$worktree_dir" && bash -lc "$command") >> "$file" 2>&1
+  if ! (cd "$worktree_dir" && bash -lc "$command") >> "$file" 2>&1; then
+    failed_gate_logs+=("${name}-results.md")
+    return 1
+  fi
 }
 
 if [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
@@ -453,8 +464,73 @@ if command -v ruby >/dev/null 2>&1; then
   ruby -e 'require "yaml"; YAML.load_file(ARGV[0])' "$config" >/dev/null 2>&1 && echo "- PASS: config.yaml is parseable." >> "$artifact_file" || { echo "- FAIL: config.yaml invalid." >> "$artifact_file"; failures=$((failures + 1)); }
 fi
 
+# Agent-declared result: if the agent's own review packet says the run failed,
+# is blocked, or must not be committed/merged, the run must not pass validation
+# even when every mechanical gate is green. (006F3 lesson: the committed packet
+# said "Failed acceptance; do not commit or merge" while the run reported
+# Success and merged.)
+declared_file="$run_dir/agent-declared-result-check.md"
+{
+  echo "# Agent-Declared Result Check"
+  echo
+} > "$declared_file"
+review_packet="$run_dir/review-packet.md"
+if [[ "$mode" != "normal_run" && "$mode" != "repair" ]]; then
+  echo "- SKIP: mode $mode (architecture-review packets may quote failure phrases from findings)." >> "$declared_file"
+elif [[ -f "$review_packet" ]]; then
+  declared_result="$(awk '/^## Result/{while ((getline line) > 0) { if (line !~ /^[[:space:]]*$/) { print line; exit } }}' "$review_packet" | xargs || true)"
+  if printf '%s' "$declared_result" | grep -qiE 'fail|blocked' \
+     || grep -qiE 'do not (commit|merge)' "$review_packet"; then
+    echo "- FAIL: the agent's review-packet.md declares this run failed or unmergeable (Result: ${declared_result:-<none>})." >> "$declared_file"
+    echo "  Validation honours the agent's own verdict; passing gates do not override it." >> "$declared_file"
+    failures=$((failures + 1))
+    failed_gate_logs+=("review-packet.md")
+  else
+    echo "- PASS: review-packet.md declares no failed/blocked/unmergeable result (Result: ${declared_result:-In Progress})." >> "$declared_file"
+  fi
+else
+  echo "- SKIP: review-packet.md missing (reported by the artifact check)." >> "$declared_file"
+fi
+
 if (( failures > 0 )); then
-  echo "Validation failed with $failures issue(s)." >> "$artifact_file"
+  # Compact failure summary: repair mode reads this file FIRST instead of
+  # re-ingesting multi-MB gate logs (the historical cause of repair runs
+  # peaking at 93-94% of the model context window).
+  {
+    echo "# Failure Summary"
+    echo
+    echo "- Run: $run_id"
+    echo "- Mode: $mode"
+    echo "- Slice: ${slice_id:-n/a}"
+    echo "- Failed checks: $failures"
+    echo
+    echo "Repair mode: diagnose from this file first; open the full gate logs in this run"
+    echo "folder only when a tail below is insufficient."
+    echo
+    echo "## All FAIL markers"
+    echo
+    echo '```'
+    grep -H -iE '(^|- )FAIL' "$run_dir"/*.md 2>/dev/null | grep -v 'failure-summary.md' | sed "s|$run_dir/||" | head -40 || echo "(none in check files)"
+    echo '```'
+    echo
+    if (( ${#failed_gate_logs[@]} > 0 )); then
+      for gate_log in ${failed_gate_logs[@]+"${failed_gate_logs[@]}"}; do
+        [[ -f "$run_dir/$gate_log" ]] || continue
+        echo "## Last 50 lines: $gate_log"
+        echo
+        echo '```'
+        tail -n 50 "$run_dir/$gate_log"
+        echo '```'
+        echo
+      done
+    fi
+    echo "## Changed files (git status)"
+    echo
+    echo '```'
+    printf '%s\n' "${changed_paths:-<unavailable>}"
+    echo '```'
+  } > "$run_dir/failure-summary.md"
+  echo "Validation failed with $failures issue(s). See failure-summary.md." >> "$artifact_file"
   exit 1
 fi
 

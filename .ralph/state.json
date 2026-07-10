@@ -93,9 +93,7 @@
     "006F4-postgresql-credit-concurrency-acceptance"
   ],
   "failed_slices": [],
-  "blocked_slices": [
-    "004E-witness-shareholder-validation"
-  ],
+  "blocked_slices": [],
   "last_successful_commit": "9f9ae0b",
   "last_run_id": "2026-07-10_230547_repair",
   "last_run_status": "success",

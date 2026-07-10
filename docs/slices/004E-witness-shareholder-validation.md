@@ -1,7 +1,7 @@
 # Slice 004E: Witness Shareholder Validation
 
 ## Status
-Blocked
+Not Started
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master
@@ -34,14 +34,10 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Do not start this slice until `004D2-member-profile-and-nominee-contract-hardening` is complete; the
-member module must first remove premature loan-start action availability and sensitive nominee audit
-hashes.
-
-This slice is blocked until both prerequisites exist:
-
-- `004F` or an equivalent completed slice has persisted shareholding/shareholder facts.
-- `005A` or an equivalent completed slice has an owning loan-application table/API boundary.
+Unblocked 2026-07-10 (owner audit): all three prerequisites are Complete — `004D2` removed the
+premature loan-start availability and nominee audit hashes, `004F` persisted
+shareholding/shareholder facts, and `005A` established the owning loan-application table/API
+boundary. Implement witness capture against those real tables.
 
 `data-model.md` §10.5 and `screen-spec.md` S09 make witnesses application documentation records,
 not member-profile records. Implement witness capture only against a real loan application and real
