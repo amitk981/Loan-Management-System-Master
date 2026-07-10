@@ -1,39 +1,43 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-10_184709_normal_run
+2026-07-10_190455_architecture_review
 
 ## Current Status
-Completed `006F2-credit-manager-appraisal-rejection` under standing High-risk approval.
 
-- Extended the existing review interface with `decision = rejected`; `reviewed` and `returned`
-  retain their 006F behavior. Rejection uses the same review permission, Credit Manager object
-  scope, maker-checker, pending-state, verified-provenance, and row-lock guards.
-- Rejected requests require the source 005H category/reason/reapply/communication fields while the
-  workflow fixes `rejection_stage = credit_assessment`. Unknown/blank/missing fields write nothing.
-- Added `applications.modules.rejection_notes.RejectionNoteModule` as the public cross-domain seam.
-  It shields the credit module from the legacy applications service/model and reuses 005H
-  validation, persistence, serialization, audit, and workflow rules.
-- A successful rejection atomically stores reviewer facts, sets terminal appraisal state
-  `rejected`, creates exactly one draft note with `communication_status = not_sent`, and writes both
-  metadata evidence streams. It never sends communication or creates a sanction/approval case.
-- Appraisal evidence contains note ID/category/state but no review comments or detailed reason.
-  Forced note-audit and appraisal-workflow failures roll back every appraisal/note/evidence write.
+Architecture review completed for product slices `006D2C`, `006E2`, `006F`, and `006F2` since
+review commit `d29f697`.
+
+- High provenance finding: 006E2 migration 0003 labels legacy rows verified when it finds no later
+  audit, but does not require positive pre-appraisal success audits for both prerequisite IDs.
+  Corrective 006E3 downgrades unproven rows and retains explicit revalidation.
+- High authority finding: review enforces `credit.appraisal.review` and generic object access but
+  not the source's actual Credit Manager role rule. A permissioned non-Credit-Manager owner can
+  review. 006E3 adds the missing negative authority regression and role gate.
+- High history finding: returned `review_comments` are overwritten by the next review, while
+  metadata-only audit intentionally excludes them. ADR-0004 and 006E3 add immutable appraisal-owned
+  decision history and keep the existing appraisal fields as latest projections.
+- High acceptance finding: 006D2C was merged without executing its mandatory PostgreSQL concurrency
+  tests; committed evidence contains a missing-driver failure and two SQLite skips. The driver is
+  now installed, but this sandbox has no reachable server and cannot initialise one because shared
+  memory is denied.
+- Architecture finding: rejected review locks appraisal before the rejection-note seam locks the
+  application, inverse to draft create/update. Corrective 006F3 normalizes application → appraisal
+  → rejection/history lock order and requires real PostgreSQL outcome tests with zero skips.
+- No material scope creep was found. Most frozen-snapshot, authority-denial, state, redaction,
+  uniqueness, and rollback tests contain substantive assertions. No production code changed.
 
 ## Validation
-Backend check and migration sync passed. Full default suite: 361 tests ran successfully with two
-explicit PostgreSQL-only concurrency skips; coverage 95% (floor 85%). Frontend lint/typecheck, 107
-tests, and build passed. Evidence is in `.ralph/runs/2026-07-10_184709_normal_run/`. The first full
-suite exposed a direct legacy-service import boundary failure; the public module seam repaired it,
-and the complete suite then passed.
 
-The calculator locking implementation did not change. Preserve the existing independent
-PostgreSQL gate whenever future appraisal/calculator imports or projections change:
-`/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests --settings=sfpcl_credit.config.postgres_test_settings -v 2`
-from `sfpcl_credit/`; SQLite skips are not concurrency proof.
+Django check and migration sync passed. The full default backend suite ran 361 tests successfully
+with the two explicit PostgreSQL-only skips; coverage is 95% (floor 85%). Frontend lint/typecheck,
+107 tests, and build passed. Evidence is in
+`.ralph/runs/2026-07-10_190455_architecture_review/`.
 
 ## Next Run
-The four-slice architecture review is now due. Run it before product work. After review, run the
-sharpened `006G-submit-to-sanction`: only fully `reviewed` appraisals may create one pending sanction
-case; terminal `rejected` appraisals must return `409` without altering their linked unsent note or
-any rejection evidence.
+
+Run `006E3-appraisal-history-and-review-authority-hardening`, then
+`006F3-appraisal-lock-order-and-postgresql-concurrency-closure`. 006F3 must not complete or merge
+without executing both the existing loan-limit and new appraisal concurrency suites on PostgreSQL
+with zero skips. After both corrections pass, run sharpened `006G-submit-to-sanction`; it must
+consume verified frozen projections and immutable review history and must preserve rejected notes.

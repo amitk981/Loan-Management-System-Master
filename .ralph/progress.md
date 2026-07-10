@@ -1,5 +1,28 @@
 # Ralph Progress Log
 
+## 2026-07-10 19:15 - 2026-07-10_190455_architecture_review
+- Agent tool used: codex.
+- Slice attempted: `architecture-review`.
+- Summary: Independently reviewed `006D2C`, `006E2`, `006F`, and `006F2` from pinned base
+  `d29f697` along separate Standards and Spec axes. Found that legacy appraisal rows can be called
+  verified without positive prerequisite audit evidence; non-Credit-Manager application owners can
+  review if granted the permission; returned review reasons are overwritten by later review; and
+  006D2C merged with only SQLite skips despite its mandatory PostgreSQL acceptance condition.
+- Architecture finding: 006F2 also reverses application/appraisal lock order on rejection, leaving
+  a deadlock seam. Contract overview/digest summaries lag the detailed implemented review contract.
+- Corrective work: accepted ADR-0004; created High-risk 006E3 for positive provenance proof,
+  Credit-Manager-only authority, and append-only review history; created High-risk 006F3 for one
+  lock order plus zero-skip PostgreSQL loan-limit/appraisal concurrency proof; made 006G depend on
+  006F3; updated Epic 006 digest and REVIEW_FINDINGS.
+- Production changes: none. Source/protected files: untouched.
+- Tests run: backend check and migration sync; 361 backend tests under coverage with two explicit
+  PostgreSQL-only skips; 95% coverage above 85%; frontend lint/typecheck, 107 tests, build; diff and
+  state checks. `psycopg 3.3.4` is installed, but no PostgreSQL server is reachable and sandboxed
+  `initdb` is denied shared memory, so the authoritative gate remains owned by 006F3.
+- Evidence saved: `.ralph/runs/2026-07-10_190455_architecture_review/`.
+- Result: Success, pending orchestrator validation. Risk: Low review/docs-only; corrective slices
+  are High risk. Next: `006E3`, then `006F3`, then `006G`.
+
 ## 2026-07-10 18:15 - 2026-07-10_175450_normal_run
 - Agent tool used: codex.
 - Slice attempted: `006D2C-loan-limit-concurrency-and-boundary-regression`.
@@ -2742,6 +2765,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_184709_normal_run/.ralph/runs/2026-07-10_184709_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_184709_normal_run/.ralph/runs/2026-07-10_184709_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 19:36:00 - 2026-07-10_190455_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_190455_architecture_review/.ralph/runs/2026-07-10_190455_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_190455_architecture_review/.ralph/runs/2026-07-10_190455_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

@@ -2,6 +2,99 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-10 19:15 - Architecture Review 2026-07-10_190455_architecture_review
+
+Reviewed completed product slices since architecture-review commit `d29f697`:
+- `006D2C-loan-limit-concurrency-and-boundary-regression` (`9dd5386`)
+- `006E2-appraisal-source-contract-and-snapshot-hardening` (`d5753d1`)
+- `006F-credit-manager-review` (`2684996`)
+- `006F2-credit-manager-appraisal-rejection` (`3f7f386`)
+
+The review checked `git diff d29f697...HEAD`, all four slice/run packets, implementation, migrations,
+tests, Epic 006 and its digest, and the cited source sections. Standards and spec fidelity were
+reviewed independently. No material scope creep was found.
+
+### Finding 1 - High - Legacy appraisals are labelled verified without positive audit proof
+
+006E2 permits a legacy projection copy only when audit chronology proves the current assessment was
+the appraisal's original input. Migration 0003 instead treats absence of a later audit as proof: if
+the source timestamps predate preparation and no later success row is found, it copies the current
+rows and writes `prerequisite_provenance = verified`. Its “safe” migration fixture creates no
+eligibility or loan-limit success audit at all, so the test enshrines missing evidence as proof.
+
+That can silently bless manually imported, partially audited, or historically incomplete current
+assessment rows as the decision basis, contrary to ADR-0003 and the slice's conservative legacy
+contract. Corrective action: accepted ADR-0004 for the related review-history design and created
+High-risk `006E3-appraisal-history-and-review-authority-hardening`. Its forward repair requires
+positive pre-appraisal success evidence for both exact prerequisite IDs, downgrades every
+unproven/later-rerun row to `legacy_unverified`, and keeps explicit revalidation as the only repair.
+
+### Finding 2 - High - Review authority is permissioned but not Credit-Manager-only
+
+Source auth §25.3 says appraisal review requires `credit.appraisal.review` and “User must be Credit
+Manager”; 006F likewise requires the Credit Manager credit-domain boundary. `review()` checks the
+permission and then the generic application object-access helper. That helper grants owner access,
+so a non-Credit-Manager application creator/receiver who is granted the permission can review their
+in-scope application. Existing tests cover maker-checker, no permission, and an out-of-scope user,
+but not an in-scope non-Credit-Manager permission holder.
+
+Corrective action: 006E3 requires both the exact permission and `credit_manager` role membership,
+with a negative owner/receiver regression and no-success-evidence assertions. Role is not inferred
+from a permission grant.
+
+### Finding 3 - High - A returned review reason is overwritten by the next review
+
+006F requires a non-blank returned reason and explicitly says not to lose it and to retain prior
+return history. The implementation stores only latest `review_comments`/`last_review_decision` on
+the appraisal. When the maker revises/resubmits and the Credit Manager reviews again, the second
+decision overwrites the original return reason. Generic audit correctly omits comments, so neither
+audit nor workflow can recover it. The return/resubmit/re-review test asserts state and event counts
+but never asserts that the first reason survives.
+
+Corrective action: ADR-0004 makes an immutable appraisal-owned decision record the historical
+source while the existing fields remain a latest projection. 006E3 adds/backfills that record,
+keeps reason text outside generic audit JSON, and proves returned and final decisions both survive.
+
+### Finding 4 - High - Mandatory PostgreSQL concurrency evidence was skipped before merge
+
+006D2C says its competing-calculation proof is authoritative only on PostgreSQL and explicitly says
+not to commit/merge if the command does not pass. The committed evidence contains a missing-driver
+failure and two SQLite skips; its own review packet says “Success pending required PostgreSQL
+independent validation.” Nevertheless the slice is Complete and was merged. This review confirmed
+`psycopg 3.3.4` is now installed, but no PostgreSQL server is reachable and sandboxed `initdb`
+cannot allocate the required shared-memory segment, so there is still no green transaction outcome.
+
+The new 006F2 rejection path also exposes an inverse lock order: draft creation/update locks
+application then appraisal, while rejected review locks appraisal and then the rejection-note seam
+locks application. Concurrent stale PATCH/reject requests can deadlock rather than cleanly serialize.
+
+Corrective action: created High-risk `006F3-appraisal-lock-order-and-postgresql-concurrency-closure`.
+It normalizes application → appraisal → rejection/history lock order, adds public-interface
+competing-review regressions, and must execute both the new cases and the existing 006D2C cases on
+real PostgreSQL with zero skips. 006G now depends on 006F3.
+
+### Finding 5 - Medium - Contract summaries contradict the detailed implemented section
+
+`docs/working/API_CONTRACTS.md`'s top-level appraisal row still says Credit Manager review is queued,
+while its detailed 006F/006F2 section correctly documents reviewed/returned/rejected behavior. The
+Epic 006 digest likewise retains an older requirement-status paragraph alongside newer implemented
+sections. Corrective action: 006E3 must reconcile both summaries while updating the history contract.
+
+### Finding 6 - Pass - Most tests have substantive outcome and rollback assertions
+
+006D2C's PostgreSQL test design checks row/UUID cardinality, complete projections, deterministic
+ordering, and matching audit/workflow outcomes; the failure is that it never executed on PostgreSQL.
+006E2 covers frozen same-UUID projections, strict required fields, safe/ambiguous migration shapes,
+revalidation scope, and rollback. 006F/006F2 cover state, maker-checker, permission/object denial,
+rejection-note uniqueness, redaction, frozen facts, and forced cross-domain rollback. The findings
+above are precise missing cases, not coverage-number complaints.
+
+Functional-ID spot check: Epic 006 is not Complete. M04-FR-008/M04-FR-009 facts are implemented;
+M04-FR-010 has review behavior but sanction gating remains 006G; M04-FR-011 rejection is reachable
+but awaits 006E3 authority/history and 006F3 concurrency correction. M04-FR-001/M04-FR-002 remain
+explicitly deferred to 012EA under A-053, and M04-FR-003 retains the explicit A-054 TAT-anchor
+assumption. No completed epic is being falsely marked complete.
+
 ## 2026-07-10 17:33 - Architecture Review 2026-07-10_173305_architecture_review
 
 Reviewed completed product slices since architecture-review commit `18d403e`:

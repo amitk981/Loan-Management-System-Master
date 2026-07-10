@@ -15,7 +15,7 @@ Committee, creating the source-backed approval case once without implementing co
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 006F2
+- 006F3
 
 ## Prior Slice Handoff
 - 006E persists one appraisal/risk package, prerequisite assessment UUID snapshots, recommendation,
@@ -26,6 +26,10 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
   eligibility/loan-limit models or recalculating stored facts.
 - 006E2 owns immutable appraisal prerequisite projections and 006F2 owns the terminal rejected
   branch. Submit must use the frozen projections and must reject `appraisal_status = rejected`.
+- 006E3 owns positively proven legacy provenance, Credit-Manager-only review authority, and
+  append-only decision history. 006F3 owns the single application/appraisal/rejection lock order and
+  the mandatory PostgreSQL concurrency evidence. Sanction submission must preserve those seams and
+  must not collapse immutable decision history back into latest-state fields.
 - Approval-matrix configuration and committee decision actions remain owned by Epic 007; 006G
   creates only the pending sanction submission/case shell required to hand off the reviewed pack.
 

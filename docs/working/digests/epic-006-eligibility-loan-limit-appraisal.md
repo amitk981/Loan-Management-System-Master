@@ -329,6 +329,24 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - Rejection consumes no current eligibility/loan-limit model. The frozen projections,
   recommendation/terms, repayment/submission facts, linked risk assessment, and TAT remain unchanged.
 
+## Architecture Review 2026-07-10 19:15 - Appraisal Historical And Concurrency Corrections
+
+- Migration 0003's legacy “safe copy” is not conservative enough: it requires no later success
+  audit but does not require positive pre-appraisal success audits for both exact prerequisite IDs.
+  006E3 must downgrade every unproven row to `legacy_unverified`; absence of evidence is not proof.
+- Source auth §25.3 requires both `credit.appraisal.review` and actual Credit Manager role authority.
+  Generic owner/receiver object access must not let another role exercise review merely because it
+  was granted the permission.
+- Latest `LoanAppraisalNote.review_comments` cannot serve as review history. A return reason is lost
+  when a later review overwrites it, while metadata-only audit intentionally excludes the text.
+  ADR-0004 and 006E3 require one immutable appraisal-owned decision record per review action.
+- 006D2C merged without its mandatory PostgreSQL execution: committed evidence contains only a
+  missing-driver failure and SQLite skips. 006F3 must execute those existing tests on PostgreSQL,
+  normalize application → appraisal → rejection/history lock order, and add competing appraisal
+  review/rejection outcomes before 006G.
+- The top-level API-contract appraisal status and the older requirement-status paragraph in this
+  digest are stale beside the later implemented 006F/006F2 sections. 006E3 owns reconciliation.
+
 ## Architecture Review 2026-07-10 04:18 - 006A Spot Check
 - 006A implemented only the active-member portion of the eligibility assessment contract and left
   default, document, terms, purpose, and nominee checks pending for 006B as planned.
