@@ -297,6 +297,21 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - A review return uses the source `draft` state to permit maker revision/resubmission while storing
   the returned decision/reason and evidence; `reviewed` is the terminal 006F state consumed by 006G.
 
+## 006F Credit Manager Review
+- `POST /api/v1/appraisal-notes/{id}/review/` accepts only `decision` and non-blank
+  `review_comments`; 006F supports `reviewed` and `returned` while terminal rejection remains 006F2.
+- `AppraisalWorkflow.review(...)` owns permission, Credit Manager object scope, row locking,
+  maker-checker, state/provenance validation, review persistence, and atomic metadata-only evidence.
+- `reviewed` moves `review_pending -> reviewed`; `returned` stores the reviewer/time/comments and
+  decision while moving `review_pending -> draft` for maker revision and explicit resubmission.
+- Review requires `credit.appraisal.review`, a different user from `prepared_by_user`, and verified
+  frozen prerequisite provenance. Preparation/submit permissions do not imply review authority.
+- Review never queries current eligibility/loan-limit rows or invokes prerequisite revalidation.
+  Same-UUID current-assessment changes cannot alter the frozen appraisal projections,
+  recommendation, repayment/submission facts, risk assessment, or TAT.
+- Successful decisions write `appraisal.reviewed`/`appraisal.returned` audit and workflow evidence;
+  free-text review comments and financial/risk projections remain only on the appraisal row.
+
 ## Architecture Review 2026-07-10 04:18 - 006A Spot Check
 - 006A implemented only the active-member portion of the eligibility assessment contract and left
   default, document, terms, purpose, and nominee checks pending for 006B as planned.

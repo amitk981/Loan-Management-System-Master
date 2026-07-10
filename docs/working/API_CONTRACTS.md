@@ -1888,7 +1888,7 @@ Response data fields:
 }
 ```
 
-## Appraisal-note draft, snapshot, revalidation, and submit APIs (006E/006E2)
+## Appraisal-note preparation and Credit Manager review APIs (006E/006E2/006F)
 
 Protected staff endpoints:
 - `POST /api/v1/loan-applications/{loan_application_id}/appraisal-note/`
@@ -1896,6 +1896,7 @@ Protected staff endpoints:
 - `PATCH /api/v1/loan-applications/{loan_application_id}/appraisal-note/`
 - `POST /api/v1/appraisal-notes/{loan_appraisal_note_id}/submit-for-review/`
 - `POST /api/v1/appraisal-notes/{loan_appraisal_note_id}/revalidate-prerequisites/`
+- `POST /api/v1/appraisal-notes/{loan_appraisal_note_id}/review/`
 
 Rules:
 - Create requires `credit.appraisal.create`, `credit.risk_assessment.manage`, and the existing
@@ -1935,8 +1936,22 @@ Rules:
   mitigation notes, repayment-capacity notes, and submit remarks are never copied into evidence
   JSON. Submit audit metadata records only `submission_reason_exists` and its appraisal owner ID;
   revalidation metadata records projection UUIDs and provenance only.
+- Review accepts exactly `decision` and non-blank `review_comments`; `decision` is `reviewed` or
+  `returned`. It requires `credit.appraisal.review`, Credit Manager credit-domain object access,
+  `review_pending` state, `prerequisite_provenance = verified`, and a reviewer other than the
+  preparer. Missing permission and object scope return their existing distinct `403` codes.
+- `reviewed` transitions to terminal appraisal state `reviewed`. `returned` records the same
+  reviewer/time/comment/decision facts and transitions to `draft`, where the maker must revise and
+  resubmit before another review. Draft, reviewed, repeated, and other non-pending review attempts
+  return `409 INVALID_STATE_TRANSITION`.
+- Review never reads current eligibility or loan-limit rows. It preserves the appraisal-owned
+  projections, recommendation/terms, repayment-capacity and submission reasons, linked risk, and
+  TAT facts. Successful decisions atomically write `appraisal.reviewed` or `appraisal.returned`
+  audit/workflow evidence containing only IDs, state, decision, actor/time, and request ID; free
+  text review comments and appraisal/risk projections are excluded.
 
 Response data includes appraisal/application/prerequisite IDs, exact `eligibility_snapshot` and
 `loan_limit_snapshot`, `prerequisite_provenance = verified|legacy_unverified`, prepared-user
 summary/time, immutable TAT due/status, `repayment_capacity_notes`, all stored recommendation-term
-facts, linked risk assessment, recommendation, and `appraisal_status = draft|review_pending`.
+facts, linked risk assessment, recommendation, review decision/comments/reviewer/time, and
+`appraisal_status = draft|review_pending|reviewed`.

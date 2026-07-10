@@ -1,0 +1,31 @@
+{
+  "reviewed_request": {
+    "decision": "reviewed",
+    "review_comments": "Reviewed and recommended for Sanction Committee."
+  },
+  "reviewed_response_data": {
+    "loan_appraisal_note_id": "<uuid>",
+    "loan_application_id": "<uuid>",
+    "appraisal_status": "reviewed",
+    "decision": "reviewed",
+    "reviewed_by": {
+      "user_id": "<credit-manager-uuid>",
+      "full_name": "Credit Manager"
+    },
+    "reviewed_at": "<iso-8601-timestamp>",
+    "review_comments": "Reviewed and recommended for Sanction Committee."
+  },
+  "returned_request": {
+    "decision": "returned",
+    "review_comments": "Clarify the seasonal repayment assumptions."
+  },
+  "returned_response_state": {
+    "appraisal_status": "draft",
+    "decision": "returned"
+  },
+  "evidence_redaction": {
+    "audit_actions": ["appraisal.reviewed", "appraisal.returned"],
+    "review_comments_in_audit_json": false,
+    "financial_or_risk_projections_in_audit_json": false
+  }
+}

@@ -13,6 +13,7 @@ from sfpcl_credit.credit.modules.common import (
     APPLICATION_READ_PERMISSION,
     CreditModuleInvalidStateError,
     CreditModuleNotFound,
+    CreditModulePermissionDenied,
     CreditModuleValidationError,
     normalize_request_meta,
     require_application_access,
@@ -509,8 +510,117 @@ class AppraisalWorkflow:
         )
         return AppraisalNoteResult(snapshot=appraisal_note_snapshot(note))
 
-    def review(self, *, actor, appraisal_id, decision, comments):
-        raise NotImplementedError("Appraisal review is owned by slice 006F.")
+    @transaction.atomic
+    def review(
+        self,
+        *,
+        actor,
+        appraisal_id,
+        decision,
+        comments,
+        request_meta=None,
+        actor_permissions=None,
+        payload_fields=None,
+    ):
+        permissions = require_permission(
+            actor,
+            APPRAISAL_REVIEW_PERMISSION,
+            "You do not have permission to review appraisal notes.",
+            actor_permissions,
+        )
+        errors = {}
+        unknown = sorted(set(payload_fields or ()) - {"decision", "review_comments"})
+        errors.update({field: "Unknown field." for field in unknown})
+        if decision not in {"reviewed", "returned"}:
+            errors["decision"] = "Must be reviewed or returned."
+        if not isinstance(comments, str) or not comments.strip():
+            errors["review_comments"] = "This field must not be blank."
+        if errors:
+            raise CreditModuleValidationError(errors)
+        note = (
+            LoanAppraisalNote.objects.select_for_update()
+            .select_related(
+                "loan_application__created_by_user",
+                "loan_application__received_by_user",
+                "risk_assessment",
+                "prepared_by_user",
+                "reviewed_by_user",
+            )
+            .filter(loan_appraisal_note_id=appraisal_id)
+            .first()
+        )
+        if note is None:
+            raise CreditModuleNotFound("Appraisal note was not found.")
+        require_application_access(
+            note.loan_application,
+            actor,
+            APPRAISAL_REVIEW_PERMISSION,
+            permissions,
+        )
+        if note.appraisal_status != LoanAppraisalNote.STATUS_REVIEW_PENDING:
+            raise CreditModuleInvalidStateError(
+                "Only a review-pending appraisal note can be reviewed."
+            )
+        if note.prerequisite_provenance != "verified":
+            raise CreditModuleInvalidStateError(
+                "Appraisal review requires verified prerequisite snapshots."
+            )
+        if note.prepared_by_user_id == actor.pk:
+            raise CreditModulePermissionDenied(
+                "The appraisal preparer cannot review their own appraisal note."
+            )
+
+        from_state = note.appraisal_status
+        now = timezone.now()
+        note.appraisal_status = (
+            LoanAppraisalNote.STATUS_REVIEWED
+            if decision == "reviewed"
+            else LoanAppraisalNote.STATUS_DRAFT
+        )
+        note.reviewed_by_user = actor
+        note.reviewed_at = now
+        note.review_comments = comments.strip()
+        note.last_review_decision = decision
+        note.save(
+            update_fields=(
+                "appraisal_status",
+                "reviewed_by_user",
+                "reviewed_at",
+                "review_comments",
+                "last_review_decision",
+            )
+        )
+        request_meta = normalize_request_meta(request_meta)
+        action = f"appraisal.{decision}"
+        AuditLog.objects.create(
+            actor_user=actor,
+            action=action,
+            entity_type="loan_appraisal_note",
+            entity_id=note.pk,
+            old_value_json={"appraisal_status": from_state},
+            new_value_json={
+                "loan_appraisal_note_id": str(note.pk),
+                "loan_application_id": str(note.loan_application_id),
+                "appraisal_status": note.appraisal_status,
+                "decision": decision,
+                "reviewed_by_user_id": str(actor.pk),
+                "reviewed_at": timezone.localtime(now).isoformat(),
+                "request_id": request_meta.request_id,
+            },
+            ip_address=request_meta.ip_address,
+            user_agent=request_meta.user_agent,
+        )
+        record_workflow_event(
+            actor=actor,
+            workflow_name="appraisal_note",
+            entity_type="loan_appraisal_note",
+            entity_id=note.pk,
+            from_state=from_state,
+            to_state=note.appraisal_status,
+            trigger_reason=f"Appraisal review decision recorded as {decision}.",
+            action_code=action,
+        )
+        return AppraisalNoteResult(snapshot=appraisal_note_snapshot(note))
 
     def submit_to_sanction(self, *, actor, application_id):
         raise NotImplementedError("Sanction submission is owned by slice 006G.")
@@ -531,8 +641,21 @@ def appraisal_note_snapshot(note):
             "full_name": note.prepared_by_user.full_name,
         },
         "prepared_at": timezone.localtime(note.prepared_at).isoformat(),
-        "reviewed_by": None,
-        "reviewed_at": None,
+        "reviewed_by": (
+            {
+                "user_id": str(note.reviewed_by_user_id),
+                "full_name": note.reviewed_by_user.full_name,
+            }
+            if note.reviewed_by_user_id
+            else None
+        ),
+        "reviewed_at": (
+            timezone.localtime(note.reviewed_at).isoformat()
+            if note.reviewed_at
+            else None
+        ),
+        "decision": note.last_review_decision or None,
+        "review_comments": note.review_comments or None,
         "tat_due_at": timezone.localtime(note.tat_due_at).isoformat(),
         "tat_status": note.tat_status,
         "borrower_summary": note.borrower_summary,

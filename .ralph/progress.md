@@ -2698,3 +2698,27 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-10 - 2026-07-10_183302_normal_run
+- Agent tool used: codex
+- Slice attempted: 006F-credit-manager-review
+- Summary: Added source §24.4 Credit Manager reviewed/returned decisions through the public
+  appraisal workflow, persisted review facts, enforced maker-checker/permission/object scope and
+  verified frozen provenance, and wrote atomic metadata-only evidence.
+- Tests run: TDD red/green; 47 focused appraisal/module tests; backend check and migration sync;
+  358 backend tests with two PostgreSQL-only skips at 95% coverage; frontend lint/typecheck, 107
+  tests, and build; git diff checks.
+- Evidence saved: `.ralph/runs/2026-07-10_183302_normal_run/`
+- Result: Success
+- Risk level: High (standing approval; no veto)
+- Next action: Run sharpened 006F2 Credit Manager appraisal rejection, then 006G.
+
+## 2026-07-10 18:46:36 - 2026-07-10_183302_normal_run
+- Agent tool used: codex
+- Slice attempted: 006F-credit-manager-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_183302_normal_run/.ralph/runs/2026-07-10_183302_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_183302_normal_run/.ralph/runs/2026-07-10_183302_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

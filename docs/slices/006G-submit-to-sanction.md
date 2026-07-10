@@ -21,8 +21,9 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - 006E persists one appraisal/risk package, prerequisite assessment UUID snapshots, recommendation,
   and immutable TAT facts through `credit.modules.appraisal_workflow.AppraisalWorkflow`.
 - 006F owns `review_pending -> reviewed` and maker-checker review facts. 006G must consume the
-  reviewed appraisal interface/state without importing concrete eligibility/loan-limit models or
-  recalculating stored facts.
+  reviewed appraisal interface/state with non-blank `last_review_decision = reviewed`, populated
+  `reviewed_by_user`/`reviewed_at`, and stored `review_comments`, without importing concrete
+  eligibility/loan-limit models or recalculating stored facts.
 - 006E2 owns immutable appraisal prerequisite projections and 006F2 owns the terminal rejected
   branch. Submit must use the frozen projections and must reject `appraisal_status = rejected`.
 - Approval-matrix configuration and committee decision actions remain owned by Epic 007; 006G
@@ -51,8 +52,8 @@ None for this slice, except updating frontend documentation or fixtures if requi
   through `AppraisalWorkflow.submit_to_sanction(...)`; request accepts only required non-blank
   `remarks` from source §24.5.
 - Require one stored appraisal with `appraisal_status = reviewed`, nullable review fields now
-  populated, and a complete linked risk assessment. Do not rerun eligibility/loan limit or rewrite
-  recommendation/TAT/review facts.
+  populated, `prerequisite_provenance = verified`, and a complete linked risk assessment. Do not
+  rerun eligibility/loan limit, call revalidation, or rewrite recommendation/TAT/review facts.
 - Atomically create one pending approval-case/sanction-submission record linked to the application
   and appraisal, transition the appraisal/application to the source sanction-review state, and
   return the case/application/appraisal IDs and status. A repeated call must not create a second

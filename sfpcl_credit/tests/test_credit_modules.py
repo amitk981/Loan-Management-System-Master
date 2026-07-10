@@ -318,6 +318,7 @@ class CreditEligibilityModuleTests(TestCase):
         self.assertFalse(
             self._imports_from(appraisal_tree, "sfpcl_credit.applications.services")
         )
+        self.assertIn("AppraisalWorkflow().review(", views_source)
         self.assertFalse(
             self._imports_from_module(
                 appraisal_tree,
@@ -442,6 +443,7 @@ class AppraisalWorkflow:
     def create_or_update(self): pass
     def get(self): pass
     def submit_for_review(self): pass
+    def review(self): pass
     def additional_public_refactor(self): pass
 """
 
@@ -460,7 +462,9 @@ class AppraisalWorkflow:
             if isinstance(node, ast.FunctionDef)
         }
         self.assertTrue(
-            {"create_or_update", "get", "submit_for_review"}.issubset(public_methods)
+            {"create_or_update", "get", "submit_for_review", "review"}.issubset(
+                public_methods
+            )
         )
 
     def test_loan_limit_calculates_through_module_with_one_public_audit_projection(self):

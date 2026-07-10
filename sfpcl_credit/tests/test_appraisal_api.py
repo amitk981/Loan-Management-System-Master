@@ -432,6 +432,406 @@ class AppraisalApiTests(TestCase):
         self.assertEqual(patch.status_code, 409)
         self.assertEqual(AuditLog.objects.filter(action="appraisal.submitted_for_review").count(), 1)
 
+    def test_credit_manager_reviews_submitted_appraisal_with_metadata_only_evidence(self):
+        created = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data=self._payload(),
+            content_type="application/json",
+            headers=self._headers(),
+        ).json()["data"]
+        self.client.post(
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/submit-for-review/",
+            data={"remarks": "Ready for independent review."},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        reviewer = self._user(
+            "credit.manager@sfpcl.example",
+            self._permission("credit.appraisal.review", "Review appraisal"),
+        )
+        login = self.client.post(
+            "/api/v1/auth/login/",
+            data={"email": reviewer.email, "password": "AppraisalPass123!"},
+            content_type="application/json",
+        )
+
+        response = self.client.post(
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/review/",
+            data={
+                "decision": "reviewed",
+                "review_comments": "Reviewed and recommended for Sanction Committee.",
+            },
+            content_type="application/json",
+            headers={
+                "Authorization": f"Bearer {login.json()['data']['access_token']}",
+                "X-Request-ID": "review-tracer-006f",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        reviewed = response.json()["data"]
+        self.assertEqual(reviewed["loan_appraisal_note_id"], created["loan_appraisal_note_id"])
+        self.assertEqual(reviewed["loan_application_id"], str(self.application.pk))
+        self.assertEqual(reviewed["appraisal_status"], "reviewed")
+        self.assertEqual(reviewed["decision"], "reviewed")
+        self.assertEqual(
+            reviewed["review_comments"],
+            "Reviewed and recommended for Sanction Committee.",
+        )
+        self.assertEqual(
+            reviewed["reviewed_by"],
+            {"user_id": str(reviewer.pk), "full_name": reviewer.full_name},
+        )
+        self.assertIsNotNone(reviewed["reviewed_at"])
+
+        audit = AuditLog.objects.get(action="appraisal.reviewed")
+        self.assertEqual(audit.new_value_json["decision"], "reviewed")
+        self.assertEqual(audit.new_value_json["request_id"], "review-tracer-006f")
+        self.assertNotIn("review_comments", audit.new_value_json)
+        self.assertNotIn("Sanction Committee", str(audit.new_value_json))
+        workflow = WorkflowEvent.objects.get(
+            workflow_name="appraisal_note",
+            to_state="reviewed",
+        )
+        self.assertEqual(workflow.from_state, "review_pending")
+        self.assertNotIn("Sanction Committee", workflow.trigger_reason)
+
+    def test_returned_appraisal_can_be_revised_resubmitted_and_reviewed(self):
+        created = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data=self._payload(),
+            content_type="application/json",
+            headers=self._headers(),
+        ).json()["data"]
+        submit_url = (
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/"
+            "submit-for-review/"
+        )
+        review_url = (
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/review/"
+        )
+        self.client.post(
+            submit_url,
+            data={"remarks": "Initial submission."},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        reviewer = self._user(
+            "credit.manager@sfpcl.example",
+            self._permission("credit.appraisal.review", "Review appraisal"),
+        )
+        login = self.client.post(
+            "/api/v1/auth/login/",
+            data={"email": reviewer.email, "password": "AppraisalPass123!"},
+            content_type="application/json",
+        )
+        review_headers = {
+            "Authorization": f"Bearer {login.json()['data']['access_token']}"
+        }
+
+        returned_response = self.client.post(
+            review_url,
+            data={
+                "decision": "returned",
+                "review_comments": "Clarify the seasonal repayment assumptions.",
+            },
+            content_type="application/json",
+            headers=review_headers,
+        )
+
+        self.assertEqual(returned_response.status_code, 200)
+        returned = returned_response.json()["data"]
+        self.assertEqual(returned["appraisal_status"], "draft")
+        self.assertEqual(returned["decision"], "returned")
+        self.assertEqual(
+            returned["review_comments"],
+            "Clarify the seasonal repayment assumptions.",
+        )
+        returned_audit = AuditLog.objects.get(action="appraisal.returned")
+        self.assertNotIn("review_comments", returned_audit.new_value_json)
+        self.assertNotIn("seasonal repayment", str(returned_audit.new_value_json))
+
+        revised = self.client.patch(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data={
+                "repayment_capacity_notes": (
+                    "Seasonal crop proceeds and monthly deductions cover repayment."
+                )
+            },
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        self.assertEqual(revised.status_code, 200)
+        resubmitted = self.client.post(
+            submit_url,
+            data={"remarks": "Repayment assumptions clarified."},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        self.assertEqual(resubmitted.status_code, 200)
+        self.assertEqual(resubmitted.json()["data"]["appraisal_status"], "review_pending")
+        reviewed = self.client.post(
+            review_url,
+            data={"decision": "reviewed", "review_comments": "Clarification accepted."},
+            content_type="application/json",
+            headers=review_headers,
+        )
+        self.assertEqual(reviewed.status_code, 200)
+        self.assertEqual(reviewed.json()["data"]["appraisal_status"], "reviewed")
+        self.assertEqual(AuditLog.objects.filter(action="appraisal.returned").count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="appraisal.reviewed").count(), 1)
+
+    def test_review_enforces_independent_permission_object_scope_and_maker_checker(self):
+        created = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data=self._payload(),
+            content_type="application/json",
+            headers=self._headers(),
+        ).json()["data"]
+        self.client.post(
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/submit-for-review/",
+            data={"remarks": "Ready for review."},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        review_url = (
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/review/"
+        )
+        workflow_count_before_denials = WorkflowEvent.objects.filter(
+            workflow_name="appraisal_note"
+        ).count()
+        payload = {"decision": "reviewed", "review_comments": "Independent review."}
+        review_permission = self._permission(
+            "credit.appraisal.review",
+            "Review appraisal",
+        )
+        maker_review_link = RolePermission.objects.create(
+            role=self.actor.primary_role,
+            permission=review_permission,
+        )
+
+        maker_denied = self.client.post(
+            review_url,
+            data=payload,
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        self.assertEqual(maker_denied.status_code, 403)
+        self.assertEqual(maker_denied.json()["error"]["code"], "PERMISSION_DENIED")
+
+        maker_review_link.delete()
+        missing_permission = self.client.post(
+            review_url,
+            data=payload,
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        self.assertEqual(missing_permission.status_code, 403)
+        self.assertEqual(
+            missing_permission.json()["error"]["code"],
+            "PERMISSION_DENIED",
+        )
+
+        outsider = self._user(
+            "other.reviewer@sfpcl.example",
+            review_permission,
+        )
+        login = self.client.post(
+            "/api/v1/auth/login/",
+            data={"email": outsider.email, "password": "AppraisalPass123!"},
+            content_type="application/json",
+        )
+        out_of_scope = self.client.post(
+            review_url,
+            data=payload,
+            content_type="application/json",
+            headers={
+                "Authorization": f"Bearer {login.json()['data']['access_token']}"
+            },
+        )
+        self.assertEqual(out_of_scope.status_code, 403)
+        self.assertEqual(out_of_scope.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
+        note = apps.get_model("credit", "LoanAppraisalNote").objects.get()
+        self.assertEqual(note.appraisal_status, "review_pending")
+        self.assertFalse(
+            AuditLog.objects.filter(
+                action__in=("appraisal.reviewed", "appraisal.returned")
+            ).exists()
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="appraisal_note").count(),
+            workflow_count_before_denials,
+        )
+
+    def test_review_validates_payload_provenance_and_state_without_success_evidence(self):
+        created = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data=self._payload(),
+            content_type="application/json",
+            headers=self._headers(),
+        ).json()["data"]
+        submit_url = (
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/"
+            "submit-for-review/"
+        )
+        review_url = (
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/review/"
+        )
+        self.client.post(
+            submit_url,
+            data={"remarks": "Ready for validation checks."},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        _, review_headers = self._credit_manager_headers()
+
+        invalid_payloads = (
+            ({"decision": "returned", "review_comments": "   "}, "review_comments"),
+            ({"decision": "approved", "review_comments": "Checked."}, "decision"),
+            (
+                {
+                    "decision": "reviewed",
+                    "review_comments": "Checked.",
+                    "approval_case": "not-in-this-slice",
+                },
+                "approval_case",
+            ),
+        )
+        for payload, expected_field in invalid_payloads:
+            with self.subTest(expected_field=expected_field):
+                response = self.client.post(
+                    review_url,
+                    data=payload,
+                    content_type="application/json",
+                    headers=review_headers,
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.json()["error"]["code"], "VALIDATION_ERROR")
+                self.assertIn(expected_field, response.json()["error"]["field_errors"])
+
+        note = apps.get_model("credit", "LoanAppraisalNote").objects.get()
+        note.prerequisite_provenance = "legacy_unverified"
+        note.save(update_fields=["prerequisite_provenance"])
+        unverified = self.client.post(
+            review_url,
+            data={"decision": "reviewed", "review_comments": "Checked."},
+            content_type="application/json",
+            headers=review_headers,
+        )
+        self.assertEqual(unverified.status_code, 409)
+        note.refresh_from_db()
+        self.assertEqual(note.appraisal_status, "review_pending")
+
+        note.prerequisite_provenance = "verified"
+        note.appraisal_status = "draft"
+        note.save(update_fields=["prerequisite_provenance", "appraisal_status"])
+        draft_review = self.client.post(
+            review_url,
+            data={"decision": "reviewed", "review_comments": "Checked."},
+            content_type="application/json",
+            headers=review_headers,
+        )
+        self.assertEqual(draft_review.status_code, 409)
+        self.assertFalse(
+            AuditLog.objects.filter(
+                action__in=("appraisal.reviewed", "appraisal.returned")
+            ).exists()
+        )
+
+    def test_review_preserves_frozen_appraisal_facts_and_rolls_back_evidence_failure(self):
+        created = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data=self._payload(),
+            content_type="application/json",
+            headers=self._headers(),
+        ).json()["data"]
+        self.client.post(
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/submit-for-review/",
+            data={"remarks": "Snapshot facts are final for review."},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        _, review_headers = self._credit_manager_headers()
+        review_url = (
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/review/"
+        )
+
+        self.eligibility.overall_result = EligibilityAssessment.OVERALL_INELIGIBLE
+        self.eligibility.default_check = "default_found"
+        self.eligibility.save(update_fields=["overall_result", "default_check"])
+        self.loan_limit.final_eligible_loan_amount = Decimal("700000.00")
+        self.loan_limit.exception_required_flag = True
+        self.loan_limit.save(
+            update_fields=["final_eligible_loan_amount", "exception_required_flag"]
+        )
+        note = apps.get_model("credit", "LoanAppraisalNote").objects.get()
+        preserved = {
+            "eligibility_snapshot": note.eligibility_snapshot_json,
+            "loan_limit_snapshot": note.loan_limit_snapshot_json,
+            "recommended_amount": note.recommended_amount,
+            "tat_due_at": note.tat_due_at,
+            "tat_status": note.tat_status,
+            "repayment_capacity_notes": note.repayment_capacity_notes,
+            "submission_remarks": note.submission_remarks,
+            "recommendation": note.recommendation,
+            "risk": {
+                "overall": note.risk_assessment.overall_risk_rating,
+                "notes": note.risk_assessment.risk_mitigation_notes,
+            },
+        }
+
+        with patch(
+            "sfpcl_credit.credit.modules.appraisal_workflow.record_workflow_event",
+            side_effect=RuntimeError("workflow unavailable"),
+        ):
+            with self.assertRaisesMessage(RuntimeError, "workflow unavailable"):
+                self.client.post(
+                    review_url,
+                    data={"decision": "reviewed", "review_comments": "Checked."},
+                    content_type="application/json",
+                    headers=review_headers,
+                )
+        note.refresh_from_db()
+        self.assertEqual(note.appraisal_status, "review_pending")
+        self.assertIsNone(note.reviewed_by_user_id)
+        self.assertFalse(AuditLog.objects.filter(action="appraisal.reviewed").exists())
+
+        response = self.client.post(
+            review_url,
+            data={"decision": "reviewed", "review_comments": "Checked."},
+            content_type="application/json",
+            headers=review_headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        reviewed = response.json()["data"]
+        self.assertEqual(reviewed["eligibility_snapshot"], preserved["eligibility_snapshot"])
+        self.assertEqual(reviewed["loan_limit_snapshot"], preserved["loan_limit_snapshot"])
+        note.refresh_from_db()
+        self.assertEqual(note.recommended_amount, preserved["recommended_amount"])
+        self.assertEqual(note.tat_due_at, preserved["tat_due_at"])
+        self.assertEqual(note.tat_status, preserved["tat_status"])
+        self.assertEqual(note.repayment_capacity_notes, preserved["repayment_capacity_notes"])
+        self.assertEqual(note.submission_remarks, preserved["submission_remarks"])
+        self.assertEqual(note.recommendation, preserved["recommendation"])
+        self.assertEqual(note.risk_assessment.overall_risk_rating, preserved["risk"]["overall"])
+        self.assertEqual(note.risk_assessment.risk_mitigation_notes, preserved["risk"]["notes"])
+        repeated = self.client.post(
+            review_url,
+            data={"decision": "returned", "review_comments": "Attempted repeat."},
+            content_type="application/json",
+            headers=review_headers,
+        )
+        self.assertEqual(repeated.status_code, 409)
+        self.assertEqual(AuditLog.objects.filter(action="appraisal.reviewed").count(), 1)
+        self.assertFalse(AuditLog.objects.filter(action="appraisal.returned").exists())
+        locked_edit = self.client.patch(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data={"repayment_capacity_notes": "Attempted post-review edit."},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        self.assertEqual(locked_edit.status_code, 409)
+
     def test_create_requires_only_appraisal_create_and_risk_manage_permissions(self):
         RolePermission.objects.filter(
             role=self.actor.primary_role,
@@ -978,6 +1378,21 @@ class AppraisalApiTests(TestCase):
         )
         self.assertEqual(login.status_code, 200)
         return {"Authorization": f"Bearer {login.json()['data']['access_token']}"}
+
+    def _credit_manager_headers(self):
+        reviewer = self._user(
+            "credit.manager@sfpcl.example",
+            self._permission("credit.appraisal.review", "Review appraisal"),
+        )
+        login = self.client.post(
+            "/api/v1/auth/login/",
+            data={"email": reviewer.email, "password": "AppraisalPass123!"},
+            content_type="application/json",
+        )
+        self.assertEqual(login.status_code, 200)
+        return reviewer, {
+            "Authorization": f"Bearer {login.json()['data']['access_token']}"
+        }
 
     @staticmethod
     def _permission(code, name):

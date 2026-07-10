@@ -14,6 +14,16 @@ rejection and creating the existing source-backed rejection-note draft without s
 ## Depends On
 - 006F
 
+## Prior Slice Handoff
+- 006F persists `review_comments`, `last_review_decision`, `reviewed_by_user`, and `reviewed_at` on
+  the existing `LoanAppraisalNote` through `AppraisalWorkflow.review(...)` under one row lock and
+  atomic metadata-only audit/workflow evidence.
+- Its accepted decisions are currently exactly `reviewed` and `returned`; add `rejected` without
+  changing the `returned -> draft` revision/resubmission contract or the `reviewed` terminal state.
+- Reuse 006F's `credit.appraisal.review`, Credit Manager credit-domain scope, maker-checker,
+  `review_pending`, and `prerequisite_provenance = verified` guards. Do not invoke revalidation or
+  query concrete eligibility/loan-limit models.
+
 ## Source / Review References
 - `docs/source/functional-spec.md` M04-FR-011 and §9.8
 - `docs/source/api-contracts.md` §24.4 and §21.3
@@ -31,7 +41,8 @@ rejection and creating the existing source-backed rejection-note draft without s
 - Enforce the same `credit.appraisal.review`, Credit Manager object scope, and maker-checker rules
   as 006F. Review/create/update/submit permissions never imply rejection authority.
 - Atomically persist reviewer/time/comments/decision, transition appraisal to terminal `rejected`,
-  and create exactly one linked 005H rejection-note draft. Do not send a communication.
+  and create exactly one linked 005H rejection-note draft with `communication_status = not_sent`.
+  Do not send a communication or create an approval/sanction case.
 - Reuse a public rejection-note module/service seam; do not duplicate rejection-note validation,
   serialization, audit, or workflow rules in the credit view.
 - Metadata-only appraisal evidence may record IDs/category/state but must not copy free-text review

@@ -82,16 +82,17 @@
     "006D3-credit-assessment-model-ownership-state-migration",
     "006E-appraisal-note-create-edit-submit",
     "006D2C-loan-limit-concurrency-and-boundary-regression",
-    "006E2-appraisal-source-contract-and-snapshot-hardening"
+    "006E2-appraisal-source-contract-and-snapshot-hardening",
+    "006F-credit-manager-review"
   ],
   "failed_slices": [],
   "blocked_slices": [
     "004E-witness-shareholder-validation"
   ],
   "last_successful_commit": "9f9ae0b",
-  "last_run_id": "2026-07-10_181310_normal_run",
+  "last_run_id": "2026-07-10_183302_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 2,
+  "slices_completed_since_architecture_review": 3,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

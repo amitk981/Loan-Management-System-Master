@@ -150,6 +150,7 @@ class RiskAssessment(models.Model):
 class LoanAppraisalNote(models.Model):
     STATUS_DRAFT = "draft"
     STATUS_REVIEW_PENDING = "review_pending"
+    STATUS_REVIEWED = "reviewed"
     TAT_WITHIN = "within_tat"
     TAT_BREACHED = "breached"
 
@@ -177,6 +178,8 @@ class LoanAppraisalNote(models.Model):
     )
     prepared_at = models.DateTimeField(default=timezone.now)
     reviewed_at = models.DateTimeField(blank=True, null=True)
+    review_comments = models.TextField(blank=True)
+    last_review_decision = models.CharField(max_length=60, blank=True)
     tat_due_at = models.DateTimeField(db_index=True)
     tat_status = models.CharField(max_length=60, db_index=True)
     eligibility_assessment_id_snapshot = models.UUIDField()
