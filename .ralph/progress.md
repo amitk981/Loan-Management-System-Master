@@ -3063,3 +3063,27 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-11 - 2026-07-11_031517_normal_run
+- Agent tool used: codex
+- Slice attempted: 002J2-forbidden-permission-error-contract-alignment
+- Summary: Aligned every authenticated global-permission denial with `403 FORBIDDEN` through the
+  shared envelope boundary and typed object-access seam, migrated all production callers, and
+  preserved auth, object, sensitive-field, approval-authority, grant, scope, and side-effect rules.
+- Tests run: failing-first 23-test contract/object suite; green 24-test focused suite; 168-test
+  representative endpoint sweep; Django check and migration sync; 389 backend tests at 94%
+  coverage; frontend build, typecheck, lint, and 130 tests.
+- Evidence saved: `.ralph/runs/2026-07-11_031517_normal_run/`
+- Result: Success
+- Risk level: Medium
+- Next action: Run sharpened 004E2, then 006G3.
+
+## 2026-07-11 03:27:11 - 2026-07-11_031517_normal_run
+- Agent tool used: codex
+- Slice attempted: 002J2-forbidden-permission-error-contract-alignment
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_031517_normal_run/.ralph/runs/2026-07-11_031517_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_031517_normal_run/.ralph/runs/2026-07-11_031517_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

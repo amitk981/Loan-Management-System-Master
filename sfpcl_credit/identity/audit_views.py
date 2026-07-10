@@ -23,7 +23,7 @@ def audit_log_list(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read audit logs.",
         )
     try:

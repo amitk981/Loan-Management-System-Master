@@ -1,5 +1,16 @@
 # API Contracts
 
+## Shared authenticated permission denial (002J2)
+
+Authenticated users who lack a required global permission receive HTTP `403` with error code
+`FORBIDDEN`, matching `docs/source/api-contracts.md` §7.1. The shared envelope boundary also
+normalizes the retired `PERMISSION_DENIED` code for compatibility, while production callers and the
+typed object-access seam emit `FORBIDDEN` directly. Authentication/token errors and the specialized
+`OBJECT_ACCESS_DENIED`, `SENSITIVE_FIELD_ACCESS_DENIED`, and `APPROVAL_AUTHORITY_REQUIRED` codes are
+unchanged. This is a response-contract alignment only: permission grants, role assignments, object
+scope, status codes, messages, successful payloads, audit behavior, and workflow behavior did not
+change.
+
 Source contract baseline: `docs/source/api-contracts.md`.
 
 This working file tracks implementation status and slice-level decisions. It must be updated whenever a slice changes frontend/backend assumptions.
@@ -36,9 +47,9 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 |---|---|---|---|---|
 | Backend health endpoints | Implemented in slice 002A; envelope unified in 002C2 | None | `technical-architecture.md` R1 health checks; standard response envelope from `api-contracts.md` §6.1 | `GET /api/v1/health/live/`, `/ready/`, and `/deep/` return `{ success, data, meta }` via the shared envelope helper; `meta` now includes `request_id`, `timestamp`, and `api_version: "v1"`. Ready/deep include database connectivity status. |
 | Authentication and current user | Current-user implemented through slice 002D; frontend shell wired in 002E; member portal auth implemented in 005FA | Login, dashboards, MP00, MP01, MP02, MP25 | `docs/source/api-contracts.md`, `auth-permissions.md`, `screen-spec-member-portal.md` | Implemented `POST /api/v1/auth/login/`, `/refresh/`, `/logout/`, and `GET /api/v1/auth/me/` with standard envelopes, active-user-only access, refresh rotation, session revocation, role/team token claims, effective role permissions, current action availability, and auth audit logs for login/refresh/logout. 005FA adds portal activation/login/password-reset/password-change endpoints under `/api/v1/portal/auth/`; borrower access tokens and `/auth/me` include `member_id`, `portal_account_id`, and `portal_role = borrower_member` while exposing only portal own-data permissions, not staff completeness/deficiency permissions. The React shell now logs in staff through `/auth/login/`, member portal users through `/portal/auth/login/`, stores bearer/refresh tokens in local browser storage, loads `/auth/me/` before rendering protected navigation, clears local state on `TOKEN_EXPIRED`/`INVALID_TOKEN`, and posts the refresh token to `/auth/logout/`. Admin session controls remain future slices. |
-| Admin user management | Implemented in slice 002G; action-specific permission gating added in 002G2 | Admin User Management | `api-contracts.md` §6-7, §11.4, §12; `auth-permissions.md` §12.1, §15.12, §19 | `GET /api/v1/admin/users/`, `GET /api/v1/admin/users/{user_id}/`, and assignment action endpoints bind existing `Role`/`Team` catalogue rows only. All routes require session-bound bearer auth. Since 002G2 each action requires the specific canonical user-admin permission (`auth-permissions.md` §12.1), not just any user-admin grant: list/detail read requires `users.user.read` OR any write user-admin permission (read fallback per A-015 because seeded `system_admin` lacks `users.user.read`); role assignment and team add/remove require `users.user.update`; suspending a user requires `users.user.disable`; restoring a user to active requires `users.user.update`. A partial-permission actor receives `403 PERMISSION_DENIED` with no `AuditLog` write and no session revocation. Order of checks: `401` (auth) → `403` (permission) → `400`/`404`. Successful role/team/status changes write `AuditLog`; suspending a user revokes active sessions; changing/suspending the last active `system_admin` is blocked per A-014. The frontend continues to map the write user-admin permissions to prototype `manage_users` for nav/route visibility. |
+| Admin user management | Implemented in slice 002G; action-specific permission gating added in 002G2 | Admin User Management | `api-contracts.md` §6-7, §11.4, §12; `auth-permissions.md` §12.1, §15.12, §19 | `GET /api/v1/admin/users/`, `GET /api/v1/admin/users/{user_id}/`, and assignment action endpoints bind existing `Role`/`Team` catalogue rows only. All routes require session-bound bearer auth. Since 002G2 each action requires the specific canonical user-admin permission (`auth-permissions.md` §12.1), not just any user-admin grant: list/detail read requires `users.user.read` OR any write user-admin permission (read fallback per A-015 because seeded `system_admin` lacks `users.user.read`); role assignment and team add/remove require `users.user.update`; suspending a user requires `users.user.disable`; restoring a user to active requires `users.user.update`. A partial-permission actor receives `403 FORBIDDEN` with no `AuditLog` write and no session revocation. Order of checks: `401` (auth) → `403` (permission) → `400`/`404`. Successful role/team/status changes write `AuditLog`; suspending a user revokes active sessions; changing/suspending the last active `system_admin` is blocked per A-014. The frontend continues to map the write user-admin permissions to prototype `manage_users` for nav/route visibility. |
 | Early end-to-end tracer | Implemented in slice 002EX | Staff Tracer screen | `docs/source/api-contracts.md` §3-6; `docs/source/data-model.md` §26.1-26.2 | Thin dev proof only. Protected by session-bound bearer auth and explicit `tracer.lifecycle.run` permission. Endpoints: `POST /api/v1/tracer/members/`, `POST /api/v1/tracer/members/{member_id}/loan-applications/`, `POST /api/v1/tracer/loan-applications/{loan_application_id}/sanction/`, `POST /api/v1/tracer/loan-applications/{loan_application_id}/loan-account/`, `POST /api/v1/tracer/loan-accounts/{loan_account_id}/disburse/`, `POST /api/v1/tracer/loan-accounts/{loan_account_id}/repayments/`, `POST /api/v1/tracer/loan-accounts/{loan_account_id}/close/`. Minimal models only; every transition writes `audit_logs` and `workflow_events`; invalid state transitions return `409 INVALID_STATE_TRANSITION`; missing/revoked auth returns the standard `401` envelope before domain writes. |
-| API contract test harness | Implemented in slice 002J | None | `api-contracts.md` §6.1-6.4, §7.1-7.3, §44 | Test-only assertions live in `sfpcl_credit/tests/api_contracts.py`. Future endpoint slices should use them to prove standard success envelopes, error envelopes, top-level list pagination, and target §44 `available_actions` item shapes without importing test utilities from production code. The harness regression tests cover `/auth/me/`, admin users pagination, `401 AUTH_REQUIRED`, revoked-session `401 INVALID_TOKEN`, `403 PERMISSION_DENIED`, partial-admin write denial, and tracer `409 INVALID_STATE_TRANSITION`. A-016 records that current `/auth/me/` still returns flat permission-code strings for `available_actions`; the object shape is asserted against an internal sample for future detail endpoints. |
+| API contract test harness | Implemented in slice 002J | None | `api-contracts.md` §6.1-6.4, §7.1-7.3, §44 | Test-only assertions live in `sfpcl_credit/tests/api_contracts.py`. Future endpoint slices should use them to prove standard success envelopes, error envelopes, top-level list pagination, and target §44 `available_actions` item shapes without importing test utilities from production code. The harness regression tests cover `/auth/me/`, admin users pagination, `401 AUTH_REQUIRED`, revoked-session `401 INVALID_TOKEN`, `403 FORBIDDEN`, partial-admin write denial, and tracer `409 INVALID_STATE_TRANSITION`. A-016 records that current `/auth/me/` still returns flat permission-code strings for `available_actions`; the object shape is asserted against an internal sample for future detail endpoints. |
 | Local demo staff seed | Implemented in slice 002K; corrected in 002K2 | Login, dashboard smoke, admin/tracer permission smoke | `implementation-roadmap.md` §10, §20-22; `technical-architecture.md` §8-12, §17-18; `auth-permissions.md`; `api-contracts.md` §11-12, §43-44 | `python manage.py seed_demo_users` is a guarded local/dev seed path. It refuses unless `SFPCL_DEBUG=true` and `SFPCL_ALLOW_DEMO_SEED=true`, calls `seed_catalogue()`, creates or updates deterministic `demo.*@sfpcl.example` staff users with active primary roles and memberships, and does not alter `e2e.*` users. Demo users authenticate through the real `/auth/login/` and `/auth/me/` endpoints; there is no demo auth bypass. The zero-permission user returns `permissions: []` and `available_actions: []`; the tracer-only user uses the guarded local/dev-only `local_demo_tracer_user` role and returns only `tracer.lifecycle.run`; the shared source-catalogue `sales_team_user` role remains permission-neutral until source documents define grants; system admin preserves canonical action-specific user-admin permissions without broad `manage_users` aliases. |
 | Role/permission/team catalogue | Seeded in slice 002C; exposed for current user in 002D | None directly | `auth-permissions.md` §12-15, §38 | Canonical `Permission`, `Role`, `Team`, `RolePermission` catalogue seeded idempotently via `python manage.py seed_role_catalogue` (`sfpcl_credit/identity/catalogue.py`). `/api/v1/auth/me/` exposes the authenticated user's effective permission codes from this data. |
 | Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; shareholding list/create implemented in 004F; land/crop list/create implemented in 004G; KYC profile/document upload/verify implemented in 004H; member bank-account/cancelled-cheque metadata implemented in 004J; Borrower 360 Epic 004 UI wiring implemented in 004K with corrective DTO hardening queued in 004K2 | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3/§15.1-§15.2/§17.1-§18.4; `data-model.md` §10.1-§10.4/§11.1/§11.7-§12.4; `auth-permissions.md` §12.2-§12.3/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/`, `/shareholdings/`, `/land-holdings/`, `/crop-plans/`, `/bank-accounts/`, and `/cancelled-cheques/` are API-backed with their documented validations and metadata-only create audits. `GET/POST/PATCH /api/v1/kyc-profiles/`, KYC document upload, and KYC document verify are implemented for member parties only with KYC permissions. Sensitive bank-account reveal, re-KYC task management, share certificate/demat, bank verification letters, disbursement bank gates, and loan-application/loan-account/repayment/risk/audit Borrower 360 data remain future scope. |
@@ -89,7 +100,7 @@ The 002EX tracer is a deliberately thin integration proof, not the final member/
 Rules:
 - All endpoints require `Authorization: Bearer <access_token>`.
 - The access token must validate through the session-bound auth path used by `/auth/me/`; logout/revocation returns `401 INVALID_TOKEN`.
-- The authenticated user's effective permission list must include `tracer.lifecycle.run`; otherwise the API returns `403 PERMISSION_DENIED`.
+- The authenticated user's effective permission list must include `tracer.lifecycle.run`; otherwise the API returns `403 FORBIDDEN`.
 - Amounts must be positive decimal strings and are serialized as strings.
 - Allowed status path: member `active`; application `draft -> sanctioned`; account `pending_disbursement -> active -> closed`; repayment `posted`.
 - Every successful transition writes one `audit_logs` row whose action starts with `tracer.` and one `workflow_events` row.
@@ -111,7 +122,7 @@ Implemented endpoints:
 
 Rules:
 - Missing bearer token returns `401 AUTH_REQUIRED`; malformed or revoked session-bound access tokens return the existing `401 INVALID_TOKEN`/`TOKEN_EXPIRED` envelope.
-- Authenticated users without canonical user-admin permission return `403 PERMISSION_DENIED`.
+- Authenticated users without canonical user-admin permission return `403 FORBIDDEN`.
 - Unknown role/team codes and unsupported statuses return `400 VALIDATION_ERROR` with `field_errors`.
 - A-014 lock-out guard: any role or status change that would leave zero active users whose primary role is `system_admin` returns `400 VALIDATION_ERROR`.
 - Role-permission catalogue entries are not edited by this API; this slice binds existing `Role`/`Team` rows only.
@@ -167,7 +178,7 @@ Success data uses the standard top-level list envelope from source §6.2. Each i
 ```
 
 Rules:
-- Missing bearer token returns `401 AUTH_REQUIRED`; users without `members.member.read` return `403 PERMISSION_DENIED`.
+- Missing bearer token returns `401 AUTH_REQUIRED`; users without `members.member.read` return `403 FORBIDDEN`.
 - Unknown query parameters or unsupported enum values return `400 VALIDATION_ERROR` with `field_errors`.
 - The directory response never includes PAN or Aadhaar fields. `mobile_number` is masked to last four digits.
 - Read-only list access writes no audit/workflow event. Exports, create/update, nominee, witness, KYC verification, share certificate, demat, land/crop, loan application, and Borrower 360 behavior are explicitly deferred.
@@ -178,7 +189,7 @@ Rules:
 
 Rules:
 - Requires a session-bound bearer token and `members.member.read`; missing auth returns
-  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and a valid UUID that is
+  `401 AUTH_REQUIRED`, missing permission returns `403 FORBIDDEN`, and a valid UUID that is
   unknown or soft-deleted returns `404 NOT_FOUND`.
 - Returns the standard success envelope with member identifiers, status fields, masked mobile,
   registered address, share and active-member shell fields, `pan`/`aadhaar` as
@@ -240,7 +251,7 @@ Rules:
   `members.sensitive.reveal_aadhaar` for `aadhaar`. Broad member read, KYC, document, admin, or
   export permissions do not grant reveal.
 - Missing auth returns `401 AUTH_REQUIRED` without a reveal audit because no actor is known. Missing
-  base read returns `403 PERMISSION_DENIED`; missing field-specific permission returns
+  base read returns `403 FORBIDDEN`; missing field-specific permission returns
   `403 SENSITIVE_FIELD_ACCESS_DENIED`; unsupported/missing `field_name`, blank `reason`, or an
   unavailable source value return `400 VALIDATION_ERROR`; unknown or soft-deleted members return
   `404 NOT_FOUND`.
@@ -538,7 +549,7 @@ Rules:
 - 005H rejection-note create/send requires `applications.loan_application.complete_check` because
   no narrower source-backed rejection-note permission exists yet. Both endpoints reuse the same
   application object-access boundary after global permission and `404` checks. Borrower portal
-  tokens have only portal own-data permissions and receive `403 PERMISSION_DENIED` on staff
+  tokens have only portal own-data permissions and receive `403 FORBIDDEN` on staff
   rejection-note routes; suspended portal sessions receive `401 INVALID_TOKEN` before any
   rejection-note side effect.
 - Return-with-deficiencies is limited to submitted applications that do not yet have an
@@ -617,7 +628,7 @@ Rules:
   `applications.loan_application.reference_generated` audit metadata plus one
   `loan_application` workflow event from `submitted` to `reference_generated`.
 - Unknown applications return `404 NOT_FOUND`; missing global permissions return
-  `403 PERMISSION_DENIED`; object-scope mismatches return `403 OBJECT_ACCESS_DENIED`; invalid submit
+  `403 FORBIDDEN`; object-scope mismatches return `403 OBJECT_ACCESS_DENIED`; invalid submit
   facts return `400 VALIDATION_ERROR`; re-submit, other non-draft submit, draft reference generation,
   or duplicate reference attempts return `409 INVALID_STATE_TRANSITION`. Object-access denials do
   not write success audit rows, workflow events, register rows, application references, or visible
@@ -708,7 +719,7 @@ Rules:
 - Application-scoped endpoints return `404 NOT_FOUND` for unknown applications before object-scope
   checks, then use `applications.services.evaluate_application_object_access(...)`. Same-permission
   actors outside the application scope receive `403 OBJECT_ACCESS_DENIED`; missing global permission
-  returns `403 PERMISSION_DENIED`.
+  returns `403 FORBIDDEN`.
 - Upload links metadata to an existing `documents.DocumentFile` by `document_file_id`; 005D does not
   upload or duplicate file bytes. Upload is accepted only after application submit and creates a new
   version row for duplicate document type/party combinations instead of overwriting prior history.
@@ -728,7 +739,7 @@ Rules:
 
 Rules:
 - Requires a session-bound bearer token and `members.member.read` under A-034; missing auth returns
-  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and an unknown or
+  `401 AUTH_REQUIRED`, missing permission returns `403 FORBIDDEN`, and an unknown or
   soft-deleted member returns `404 NOT_FOUND`.
 - Returns the standard top-level list envelope. Each item contains `bank_account_id`,
   `owner_party_type`, `owner_party_id`, `account_holder_name`, masked `account_number` as
@@ -815,7 +826,7 @@ Rules:
 
 Rules:
 - Requires a session-bound bearer token and `members.nominee.read`; missing auth returns
-  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and an unknown or
+  `401 AUTH_REQUIRED`, missing permission returns `403 FORBIDDEN`, and an unknown or
   soft-deleted member returns `404 NOT_FOUND`.
 - Returns the standard top-level list envelope. Each nominee item contains `nominee_id`,
   `nominee_name`, nullable `date_of_birth`, `age_at_application`, `gender`, nullable
@@ -859,7 +870,7 @@ Rules:
 
 Rules:
 - Requires a session-bound bearer token and `members.shareholding.read`; missing auth returns
-  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and an unknown or
+  `401 AUTH_REQUIRED`, missing permission returns `403 FORBIDDEN`, and an unknown or
   soft-deleted member returns `404 NOT_FOUND`.
 - Returns the standard top-level list envelope. Each item contains `shareholding_id`,
   `folio_number`, `number_of_shares`, `holding_mode`, nullable `valuation_per_share`, nullable
@@ -904,7 +915,7 @@ Rules:
 
 Rules:
 - Requires a session-bound bearer token and `members.member.read` per A-032; missing auth returns
-  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and an unknown or
+  `401 AUTH_REQUIRED`, missing permission returns `403 FORBIDDEN`, and an unknown or
   soft-deleted member returns `404 NOT_FOUND`.
 - Returns the standard top-level list envelope. Each item contains `land_holding_id`,
   `document_type`, nullable location/survey fields, `area_acres`, `document_id`,
@@ -1131,7 +1142,7 @@ Rules:
 - `old_value`/`new_value` surface the stored `old_value_json`/`new_value_json` values; `user_agent`
   is intentionally not exposed (not part of §42.1).
 - Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session → `401 INVALID_TOKEN`;
-  authenticated user without the audit-read permission → `403 PERMISSION_DENIED`.
+  authenticated user without the audit-read permission → `403 FORBIDDEN`.
 
 ## Workflow event foundation (003B)
 
@@ -1196,7 +1207,7 @@ Rules:
 - Permission: `audit.workflow_event.read` (002C catalogue). No new workflow-event permission code is invented.
 - `triggered_by_user` is `null` for system/no-actor rows.
 - Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session → `401 INVALID_TOKEN`;
-  authenticated user without `audit.workflow_event.read` → `403 PERMISSION_DENIED`.
+  authenticated user without `audit.workflow_event.read` → `403 FORBIDDEN`.
 - Response examples are saved in `.ralph/runs/2026-07-05_083910_normal_run/evidence/api-responses/workflow-events-api-response.txt`.
 
 ## Versioned loan-policy configuration (003E)
@@ -1248,7 +1259,7 @@ Permissions:
 - list/read requires `config.loan_policy.read`;
 - create/update/activate require `config.loan_policy.manage`;
 - missing bearer token returns `401 AUTH_REQUIRED`; authenticated users without the required
-  permission return `403 PERMISSION_DENIED` with no config/audit/version write.
+  permission return `403 FORBIDDEN` with no config/audit/version write.
 
 `GET /api/v1/version-histories/`
 
@@ -1324,7 +1335,7 @@ Rules:
 - Permission: `documents.file.upload` from the seeded source catalogue.
 - Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session →
   `401 INVALID_TOKEN`; authenticated user without `documents.file.upload` →
-  `403 PERMISSION_DENIED`.
+  `403 FORBIDDEN`.
 - Missing `file`, `document_category`, or `sensitivity_level` returns `400 VALIDATION_ERROR` with
   field-level errors and no file, metadata, or audit write.
 - Invalid `sensitivity_level` or `related_entity_id` returns `400 VALIDATION_ERROR`.
@@ -1372,7 +1383,7 @@ Rules:
   create a true external signed URL. Default expiry is 15 minutes from issuance.
 - Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session →
   `401 INVALID_TOKEN`; authenticated user without `documents.file.download` →
-  `403 PERMISSION_DENIED`.
+  `403 FORBIDDEN`.
 - Unknown `document_id` returns `404 NOT_FOUND` without file name, storage key, provider details, or
   checksum information.
 - The response body contains only `download_url` and `expires_at`; it never exposes `storage_key`,
@@ -1439,7 +1450,7 @@ Rules:
 - List responses use the standard top-level pagination envelope with `page` and `page_size`
   query parameters only; unknown query parameters return `400 VALIDATION_ERROR`.
 - Missing bearer token returns `401 AUTH_REQUIRED`; revoked/invalid token returns the existing
-  auth `401`; authenticated users without content-template permission return `403 PERMISSION_DENIED`
+  auth `401`; authenticated users without content-template permission return `403 FORBIDDEN`
   before any database write.
 - Permission assumption A-022: read requires `communications.content_template.read` or
   `communications.content_template.manage`; writes require `communications.content_template.manage`.
@@ -1506,7 +1517,7 @@ List query parameters:
 Rules:
 - Missing bearer token returns `401 AUTH_REQUIRED`; revoked/invalid token returns the existing auth
   `401`; authenticated users without the relevant communication permission return
-  `403 PERMISSION_DENIED` before any write.
+  `403 FORBIDDEN` before any write.
 - Permission assumption A-025: list/read requires `communications.communication.read` or
   `communications.communication.send`; send requires `communications.communication.send`. These
   narrow codes are used instead of broad report, document-template, or config permissions.
@@ -1559,7 +1570,7 @@ Request:
 Rules:
 - Missing bearer token returns `401 AUTH_REQUIRED`; revoked/invalid token returns the existing auth
   `401`; authenticated users without `communications.notification.read` return
-  `403 PERMISSION_DENIED`.
+  `403 FORBIDDEN`.
 - List and mark-read are scoped to notifications addressed directly to the current user, to the
   current user's active primary role code, or to one of the current user's active team codes.
   Other users' notifications are excluded from list results and return `404 NOT_FOUND` on mark-read.
@@ -1612,7 +1623,7 @@ Rules:
 - No query parameters are supported. Any query parameter returns `400 VALIDATION_ERROR` with the
   unknown parameter in `field_errors`.
 - Missing bearer token returns `401 AUTH_REQUIRED`; revoked/invalid token returns `401`; an
-  authenticated user without the dashboard scope returns `403 PERMISSION_DENIED`.
+  authenticated user without the dashboard scope returns `403 FORBIDDEN`.
 - Permission assumption A-023: dashboard read requires `management_readonly`, the source §19.1
   dashboard/summary scope. This is used instead of broad report/export permissions or an invented
   `dashboard.read` code.
@@ -1649,7 +1660,7 @@ Rules:
 - If the linked `PortalAccount` becomes suspended/inactive after token issuance, the shared
   session-bound auth validator revokes the active session with reason
   `portal_account_status_changed` and these endpoints return `401 INVALID_TOKEN`.
-- Staff or non-portal tokens return `403 PERMISSION_DENIED`; missing/invalid bearer tokens return
+- Staff or non-portal tokens return `403 FORBIDDEN`; missing/invalid bearer tokens return
   the standard auth errors.
 - Dashboard returns own member snapshot, own application counts from implemented
   `loan_applications`, active loan placeholder counts of zero until loan accounts exist, open
@@ -1682,7 +1693,7 @@ Rules:
   `portal_account_status_changed`; old-token portal application calls return
   `401 INVALID_TOKEN` before creating applications, audit rows, workflow events, register rows,
   references, or visible sequence side effects.
-- Staff or non-portal tokens return `403 PERMISSION_DENIED`; cross-member create/read/update/submit
+- Staff or non-portal tokens return `403 FORBIDDEN`; cross-member create/read/update/submit
   returns `403 OBJECT_ACCESS_DENIED` and creates no application, audit row, workflow event, register
   row, reference, or visible sequence side effect.
 - Create/update/submit reuse the existing 005A/005B application service behavior and workflow
@@ -1746,7 +1757,7 @@ Protected staff endpoints:
 
 Rules:
 - Run requires `credit.eligibility.run` and the existing loan-application object-access boundary.
-  A user missing the global run permission receives `403 PERMISSION_DENIED`; a user with the
+  A user missing the global run permission receives `403 FORBIDDEN`; a user with the
   permission but outside the application scope receives `403 OBJECT_ACCESS_DENIED`.
 - Read requires the existing `applications.loan_application.read` permission and object-access
   boundary used by application detail.
@@ -1956,7 +1967,7 @@ Rules:
   `credit_manager`, Credit Manager credit-domain object access, `review_pending` state,
   `prerequisite_provenance = verified`, and a reviewer other than the preparer. Permission granted
   to another role and owner/receiver scope do not confer review authority. Missing role/permission
-  returns `403 PERMISSION_DENIED`; an actual Credit Manager outside the domain returns the distinct
+  returns `403 FORBIDDEN`; an actual Credit Manager outside the domain returns the distinct
   `403 OBJECT_ACCESS_DENIED`.
 - `reviewed` transitions to terminal appraisal state `reviewed`. `returned` records the same
   reviewer/time/comment/decision facts and transitions to `draft`, where the maker must revise and
@@ -2016,7 +2027,7 @@ Protected Credit Manager endpoint:
 POST request is exactly `{ "remarks": "non-blank reason" }`. Malformed JSON, a non-object body,
 missing/blank remarks, or any unknown field returns `400 VALIDATION_ERROR`. The action requires active `credit_manager` role authority,
 `credit.appraisal.submit_sanction`, and the existing Credit Manager credit-domain object boundary;
-permission/role failures return `403 PERMISSION_DENIED` and out-of-domain applications return
+permission/role failures return `403 FORBIDDEN` and out-of-domain applications return
 `403 OBJECT_ACCESS_DENIED`.
 
 Submission requires one `reviewed` appraisal with verified frozen prerequisite projections, a

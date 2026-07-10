@@ -22,7 +22,7 @@ def member_collection(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read members.",
         )
     try:
@@ -47,7 +47,7 @@ def member_detail(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read members.",
         )
     member = services.get_member_profile(member_id)
@@ -100,7 +100,7 @@ def reveal_sensitive_field(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read members.",
         )
 
@@ -179,14 +179,14 @@ def member_nominees(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read nominees.",
         )
     if request.method == "POST" and not services.user_can_create_nominees(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create nominees.",
         )
 
@@ -238,14 +238,14 @@ def member_shareholdings(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read shareholdings.",
         )
     if request.method == "POST" and not services.user_can_create_shareholdings(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create shareholdings.",
         )
 
@@ -295,14 +295,14 @@ def member_land_holdings(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read member land and crop records.",
         )
     if request.method == "POST" and not services.user_can_create_land_crop(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create member land and crop records.",
         )
 
@@ -352,14 +352,14 @@ def member_crop_plans(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read member land and crop records.",
         )
     if request.method == "POST" and not services.user_can_create_land_crop(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create member land and crop records.",
         )
 
@@ -409,14 +409,14 @@ def member_bank_accounts(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read member bank account metadata.",
         )
     if request.method == "POST" and not services.user_can_create_bank_metadata(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create member bank account metadata.",
         )
 
@@ -466,14 +466,14 @@ def member_cancelled_cheques(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read member cancelled cheque metadata.",
         )
     if request.method == "POST" and not services.user_can_create_bank_metadata(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create member cancelled cheque metadata.",
         )
 
@@ -523,14 +523,14 @@ def kyc_profiles(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read KYC profiles.",
         )
     if request.method == "POST" and not services.user_can_create_kyc_profiles(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create KYC profiles.",
         )
 
@@ -590,7 +590,7 @@ def kyc_profile_detail(request, kyc_profile_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to update KYC profiles.",
         )
     try:
@@ -624,7 +624,7 @@ def kyc_profile_documents(request, kyc_profile_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to upload KYC documents.",
         )
     try:
@@ -651,7 +651,7 @@ def kyc_document_verify(request, kyc_document_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to verify KYC documents.",
         )
     try:

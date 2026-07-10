@@ -990,7 +990,7 @@ class AppraisalApiTests(TestCase):
         self.assertEqual(delegated_denied.status_code, 403)
         self.assertEqual(
             delegated_denied.json()["error"]["code"],
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
         )
         self.assertEqual(
             apps.get_model("credit", "AppraisalReviewDecision").objects.count(),
@@ -1014,7 +1014,7 @@ class AppraisalApiTests(TestCase):
             headers=self._headers(),
         )
         self.assertEqual(maker_denied.status_code, 403)
-        self.assertEqual(maker_denied.json()["error"]["code"], "PERMISSION_DENIED")
+        self.assertEqual(maker_denied.json()["error"]["code"], "FORBIDDEN")
 
         maker_review_link.delete()
         missing_permission = self.client.post(
@@ -1026,7 +1026,7 @@ class AppraisalApiTests(TestCase):
         self.assertEqual(missing_permission.status_code, 403)
         self.assertEqual(
             missing_permission.json()["error"]["code"],
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
         )
 
         non_manager_outsider = self._user(
@@ -1047,7 +1047,7 @@ class AppraisalApiTests(TestCase):
             },
         )
         self.assertEqual(out_of_scope.status_code, 403)
-        self.assertEqual(out_of_scope.json()["error"]["code"], "PERMISSION_DENIED")
+        self.assertEqual(out_of_scope.json()["error"]["code"], "FORBIDDEN")
         note = apps.get_model("credit", "LoanAppraisalNote").objects.get()
         self.assertEqual(note.appraisal_status, "review_pending")
         self.assertFalse(

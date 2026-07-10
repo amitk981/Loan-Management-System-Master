@@ -58,7 +58,7 @@ class ObjectPermissionHelperTests(SimpleTestCase):
 
         self.assertFalse(result.allowed)
         self.assertEqual(result.reason, object_permissions.ACCESS_MISSING_PERMISSION)
-        self.assertEqual(result.error_code, object_permissions.PERMISSION_DENIED)
+        self.assertEqual(result.error_code, object_permissions.FORBIDDEN)
 
     def test_owner_mismatch_with_no_matching_team_is_denied(self):
         result = object_permissions.evaluate_object_access(
@@ -132,7 +132,7 @@ class ObjectPermissionHelperTests(SimpleTestCase):
 
         self.assertFalse(result.allowed)
         self.assertEqual(result.reason, object_permissions.ACCESS_MISSING_PERMISSION)
-        self.assertEqual(result.error_code, object_permissions.PERMISSION_DENIED)
+        self.assertEqual(result.error_code, object_permissions.FORBIDDEN)
 
 
 class ObjectPermissionHarnessIntegrationTests(IdentityTestCase):

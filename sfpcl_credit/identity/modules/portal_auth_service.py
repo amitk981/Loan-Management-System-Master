@@ -403,7 +403,7 @@ def complete_password_reset(data, request):
 @transaction.atomic
 def change_password(user, session, data, request):
     if not hasattr(user, "portal_account"):
-        raise PortalAuthError("PERMISSION_DENIED", "Portal account is required.", status=403)
+        raise PortalAuthError("FORBIDDEN", "Portal account is required.", status=403)
     errors = _password_field_errors(
         data.get("new_password", ""),
         data.get("confirm_password", ""),

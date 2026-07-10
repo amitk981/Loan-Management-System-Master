@@ -35,7 +35,7 @@ def loan_application_collection(request):
             return error_response(
                 request,
                 403,
-                "PERMISSION_DENIED",
+                "FORBIDDEN",
                 "You do not have permission to read loan applications.",
             )
         items, pagination = services.list_applications_for_staff(
@@ -52,7 +52,7 @@ def loan_application_collection(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create loan applications.",
         )
     try:
@@ -92,7 +92,7 @@ def loan_request_register_collection(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read loan applications.",
         )
     items, pagination = services.list_loan_request_register_for_staff(
@@ -112,7 +112,7 @@ def loan_application_detail(request, loan_application_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read loan applications.",
         )
     if request.method == "PATCH":
@@ -120,7 +120,7 @@ def loan_application_detail(request, loan_application_id):
             return error_response(
                 request,
                 403,
-                "PERMISSION_DENIED",
+                "FORBIDDEN",
                 "You do not have permission to update loan applications.",
             )
         application = services.get_application(loan_application_id)
@@ -192,7 +192,7 @@ def loan_application_witnesses(request, loan_application_id):
         else services.user_can_create_witnesses(user)
     )
     if not has_permission:
-        return error_response(request, 403, "PERMISSION_DENIED", "You do not have permission to access witnesses.")
+        return error_response(request, 403, "FORBIDDEN", "You do not have permission to access witnesses.")
     application = services.get_application(loan_application_id)
     if application is None:
         return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
@@ -239,7 +239,7 @@ def loan_application_submit(request, loan_application_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to submit loan applications.",
         )
     application = services.get_application(loan_application_id)
@@ -285,7 +285,7 @@ def loan_application_generate_reference(request, loan_application_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to complete-check loan applications.",
         )
     application = services.get_application(loan_application_id)
@@ -331,14 +331,14 @@ def loan_application_documents(request, loan_application_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read loan applications.",
         )
     if request.method == "POST" and not services.user_can_upload_application_documents(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to upload application documents.",
         )
 
@@ -399,7 +399,7 @@ def application_document_verify(request, application_document_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to verify application documents.",
         )
     application_document = services.get_application_document(application_document_id)
@@ -443,7 +443,7 @@ def loan_application_document_checklist(request, loan_application_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read loan applications.",
         )
     application = services.get_application(loan_application_id)
@@ -480,7 +480,7 @@ def loan_application_completeness_check(request, loan_application_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read loan applications.",
         )
     application = services.get_application(loan_application_id)
@@ -506,7 +506,7 @@ def loan_application_completeness_pass(request, loan_application_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to complete-check loan applications.",
         )
     application = services.get_application(loan_application_id)
@@ -888,7 +888,7 @@ def loan_application_return_with_deficiencies(request, loan_application_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to complete-check loan applications.",
         )
     application = services.get_application(loan_application_id)
@@ -942,7 +942,7 @@ def loan_application_deficiencies(request, loan_application_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read loan applications.",
         )
     application = services.get_application(loan_application_id)
@@ -975,7 +975,7 @@ def application_deficiency_resolve(request, deficiency_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to complete-check loan applications.",
         )
     deficiency = services.get_application_deficiency(deficiency_id)
@@ -1019,7 +1019,7 @@ def loan_application_rejection_note(request, loan_application_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to complete-check loan applications.",
         )
     application = services.get_application(loan_application_id)
@@ -1065,7 +1065,7 @@ def rejection_note_send(request, rejection_note_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to complete-check loan applications.",
         )
     rejection_note = services.get_rejection_note(rejection_note_id)
@@ -1121,7 +1121,7 @@ def _credit_module_error_response(request, exc):
     if isinstance(exc, CreditModuleObjectAccessDenied):
         return _object_access_denied_response(request, exc.object_access)
     if isinstance(exc, CreditModulePermissionDenied):
-        return error_response(request, 403, "PERMISSION_DENIED", exc.message)
+        return error_response(request, 403, "FORBIDDEN", exc.message)
     if isinstance(exc, CreditModuleNotFound):
         return error_response(request, 404, "NOT_FOUND", exc.message)
     raise exc

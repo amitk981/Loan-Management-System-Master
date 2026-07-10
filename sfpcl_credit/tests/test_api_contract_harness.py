@@ -1,7 +1,10 @@
+import ast
+from pathlib import Path
 import uuid
 
 from django.test import Client, TestCase
 
+from sfpcl_credit.api import public_error_code
 from sfpcl_credit.identity.models import Permission, Role, RolePermission, User
 from sfpcl_credit.tests.api_contracts import (
     assert_available_actions_shape,
@@ -13,6 +16,31 @@ from sfpcl_credit.tests.base import IdentityTestCase
 
 
 class ApiContractHarnessUnitTests(TestCase):
+    def test_error_code_translation_preserves_specialized_denials(self):
+        for code in (
+            "OBJECT_ACCESS_DENIED",
+            "SENSITIVE_FIELD_ACCESS_DENIED",
+            "APPROVAL_AUTHORITY_REQUIRED",
+            "AUTH_REQUIRED",
+            "INVALID_TOKEN",
+        ):
+            with self.subTest(code=code):
+                self.assertEqual(public_error_code(code), code)
+
+    def test_production_code_does_not_use_legacy_permission_denied_literal(self):
+        backend_root = Path(__file__).resolve().parents[1]
+        offenders = []
+        for path in backend_root.rglob("*.py"):
+            if "tests" in path.parts or "migrations" in path.parts or path.name == "api.py":
+                continue
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            if any(
+                isinstance(node, ast.Constant) and node.value == "PERMISSION_DENIED"
+                for node in ast.walk(tree)
+            ):
+                offenders.append(str(path.relative_to(backend_root)))
+        self.assertEqual(offenders, [], f"legacy permission literals: {offenders}")
+
     def test_success_envelope_reports_missing_meta_field(self):
         incomplete_payload = {
             "success": True,
@@ -269,7 +297,7 @@ class ApiContractEndpointRegressionTests(IdentityTestCase):
                     self, response.json(), expected_code="INVALID_TOKEN"
                 )
 
-    def test_admin_users_without_permission_satisfies_permission_denied_contract(self):
+    def test_admin_users_without_permission_satisfies_forbidden_contract(self):
         access_token, _refresh_token = self._access_token(
             "credit.manager@sfpcl.example", "CorrectHorse123!"
         )
@@ -280,9 +308,9 @@ class ApiContractEndpointRegressionTests(IdentityTestCase):
         )
 
         self.assertEqual(response.status_code, 403)
-        assert_error_envelope(self, response.json(), expected_code="PERMISSION_DENIED")
+        assert_error_envelope(self, response.json(), expected_code="FORBIDDEN")
 
-    def test_partial_admin_denied_write_satisfies_permission_denied_contract(self):
+    def test_partial_admin_denied_write_satisfies_forbidden_contract(self):
         headers = self._partial_admin_headers(
             "contract_user_creator",
             ["users.user.create"],
@@ -296,7 +324,7 @@ class ApiContractEndpointRegressionTests(IdentityTestCase):
         )
 
         self.assertEqual(response.status_code, 403)
-        assert_error_envelope(self, response.json(), expected_code="PERMISSION_DENIED")
+        assert_error_envelope(self, response.json(), expected_code="FORBIDDEN")
 
     def test_tracer_invalid_state_satisfies_state_transition_contract(self):
         headers = self._admin_headers()

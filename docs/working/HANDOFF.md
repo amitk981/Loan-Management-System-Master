@@ -1,42 +1,30 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-11_030117_architecture_review
+2026-07-11_031517_normal_run
 
 ## Current Status
 
-The due independent review covered `006E4`, `006F4`, `004E`, `006G2`, and `006H2` from fixed point
-`6efe1a8`. Production code was not changed. 006E4's remediation/history behavior and 006F4's twice-
-green five-race PostgreSQL execution are substantive. Four corrective slices now precede the visual
-restoration and Epic 006 tracer:
+002J2 is complete. Authenticated missing-global-permission responses now use the source-standard
+`403 FORBIDDEN` code across identity, members/applications/credit, witness, audit, configuration,
+portal/staff, documents, communications, dashboard, workflows, and tracer endpoint families. The
+shared API envelope contains the only documented legacy-code compatibility translation, and a
+static regression rejects new production literals elsewhere. Authentication/token,
+`OBJECT_ACCESS_DENIED`, `SENSITIVE_FIELD_ACCESS_DENIED`, and `APPROVAL_AUTHORITY_REQUIRED` codes are
+unchanged. No permission grants, role assignments, object scope, statuses, success payloads, audit
+writes, or workflow writes changed.
 
-- 002J2 aligns authenticated missing-permission errors with source-standard `403 FORBIDDEN` while
-  preserving object/sensitive/approval denial codes and all authorization decisions.
-- 004E2 envelopes malformed witness bodies, snapshots the exact qualifying shareholding/folio,
-  conservatively handles legacy rows, removes redundant indexes, and moves witness list composition
-  behind its application-owned seam.
-- 006G3 removes the `credit -> approvals -> credit` cycle, moves sanction workflow-event creation
-  into the atomic approvals handoff, and reruns the five PostgreSQL races with exact evidence
-  assertions.
-- 006H4 replaces the Workbench's global-permission union with authoritative resource actions and
-  adds real default-container interaction tests for every action/denial/reload path.
-
-006H3 now depends on 006H4 and continues to own prototype visual fidelity and deterministic
-Playwright screenshots. 006X remains behind 006H3. M02-FR-009/BR-010 remains open until 004E2;
-M04-FR-010/011 UI confidence remains open until 006H4. M04-FR-001/002 stay explicitly deferred to
-012EA under A-053; M04-FR-003 retains A-054.
-
-`docs/working/CONTEXT.md` still describes the repository truthfully. `.ralph/state.json` has no
-Blocked slices, so no stale prerequisites required reopening.
+004E2 and 006G3 received concrete implementation-anchor sharpening. The remaining corrective order
+is 004E2 -> 006G3 -> 006H4 -> 006H3 -> 006X.
 
 ## Validation
 
-Architecture-review evidence and configured gate logs are under
-`.ralph/runs/2026-07-11_030117_architecture_review/`. Review findings are newest-first in
-`docs/working/REVIEW_FINDINGS.md`. No source, production, or protected file was edited.
+TDD, representative contract, and configured gate logs are under
+`.ralph/runs/2026-07-11_031517_normal_run/`. The full backend suite passed 389 tests with five
+expected skips at 94% coverage; frontend build/typecheck/lint and 130 tests passed.
 
 ## Next Run
 
-Run `002J2-forbidden-permission-error-contract-alignment`, then 004E2, 006G3, 006H4, 006H3, and
-006X in dependency order. Do not treat the current Workbench action UI or witness verification
-history as accepted until their corrective slices pass.
+Run `004E2-witness-evidence-snapshot-and-input-hardening`, then 006G3, 006H4, 006H3, and 006X in
+dependency order. Do not treat witness verification history, sanction dependency ownership, or the
+current Workbench action UI as accepted until their corrective slices pass.

@@ -1,7 +1,7 @@
 # Slice 002J2: Forbidden Permission Error Contract Alignment
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 002: Platform Foundation and Authentication
@@ -57,3 +57,11 @@ Medium
 - Missing global permission consistently returns source-standard `403 FORBIDDEN`.
 - Object/sensitive/approval denial semantics and all authorization decisions remain unchanged.
 
+## Done Checklist
+
+- [x] Execution plan and failing-first tests saved
+- [x] Shared translation and production callers migrated
+- [x] Specialized denial codes and no-side-effect regressions preserved
+- [x] API contracts and evidence updated
+- [x] Backend/frontend configured gates passed
+- [x] Risk, review, state, progress, and handoff completed

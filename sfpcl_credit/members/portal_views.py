@@ -17,7 +17,7 @@ def _portal_member_or_response(request):
         return None, None, error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             portal_services.PORTAL_PERMISSION_ERROR,
         )
     return member, user, None

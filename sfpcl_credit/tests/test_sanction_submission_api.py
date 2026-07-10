@@ -261,7 +261,7 @@ class SanctionSubmissionApiTests(TestCase):
         )
         role_denied = self._submit({"remarks": "Ready."}, actor=non_manager)
         self.assertEqual(role_denied.status_code, 403)
-        self.assertEqual(role_denied.json()["error"]["code"], "PERMISSION_DENIED")
+        self.assertEqual(role_denied.json()["error"]["code"], "FORBIDDEN")
 
         permission_link = RolePermission.objects.get(
             role=self.reviewer.primary_role,
@@ -273,7 +273,7 @@ class SanctionSubmissionApiTests(TestCase):
             {"remarks": "Ready."}, actor=missing_permission_manager
         )
         self.assertEqual(permission_denied.status_code, 403)
-        self.assertEqual(permission_denied.json()["error"]["code"], "PERMISSION_DENIED")
+        self.assertEqual(permission_denied.json()["error"]["code"], "FORBIDDEN")
         RolePermission.objects.create(
             role=self.reviewer.primary_role,
             permission=self.submit_permission,

@@ -64,3 +64,12 @@ High
 - The app dependency graph follows §36.2 with no credit/approvals cycle.
 - One approvals-owned atomic handoff produces the durable case and exact workflow event.
 
+## Sharpened Implementation Anchors (2026-07-11)
+
+- Treat `approvals.modules.sanction_handoff` as the owning public seam; remove the production import
+  from `credit.modules.appraisal_workflow` and keep `applications.views` limited to public-module
+  coordination and envelope translation.
+- Return the created workflow-event UUID directly from the atomic handoff result and serialize that
+  stored identity on both submit and sanction-case reload; never recover it with a latest-event query.
+- The PostgreSQL acceptance must execute the existing five races twice after the dependency change,
+  with exact case/event/audit identity assertions and zero skips in both saved logs.

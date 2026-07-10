@@ -15,7 +15,7 @@ def dashboard_summary(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read dashboard summaries.",
         )
     try:

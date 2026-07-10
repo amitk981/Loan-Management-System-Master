@@ -62,3 +62,11 @@ Medium
 - Witness reads expose immutable verification-time shareholding evidence.
 - Every malformed body is enveloped, and the witness schema contains no redundant indexes.
 
+## Sharpened Implementation Anchors (2026-07-11)
+
+- Extend `applications.models.Witness` with a protected nullable verification-time shareholding FK
+  and immutable folio snapshot; the single migration owns both schema and conservative backfill.
+- Drive red/green coverage through `loan_application_witnesses`, `create_witness`, and
+  `serialize_witness`; list composition must leave the view and remain in `applications.services`.
+- The migration/schema regression must name the retained application and identity-hash indexes so
+  duplicate implicit FK/explicit indexes cannot silently return.

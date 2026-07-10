@@ -16,7 +16,7 @@ def content_template_collection(request):
             return error_response(
                 request,
                 403,
-                "PERMISSION_DENIED",
+                "FORBIDDEN",
                 "You do not have permission to read content templates.",
             )
         try:
@@ -35,7 +35,7 @@ def content_template_collection(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to manage content templates.",
         )
     try:
@@ -61,7 +61,7 @@ def content_template_detail(request, content_template_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to manage content templates.",
         )
     try:
@@ -93,7 +93,7 @@ def communication_collection(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read communications.",
         )
     try:
@@ -118,7 +118,7 @@ def communication_send(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to send communications.",
         )
     try:
@@ -144,7 +144,7 @@ def notification_collection(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read notifications.",
         )
     try:
@@ -169,7 +169,7 @@ def notification_mark_read(request, notification_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read notifications.",
         )
     try:
