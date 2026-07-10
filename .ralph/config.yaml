@@ -2,11 +2,10 @@ agent:
   default_tool: codex
   allowed_tools:
     - codex
-    - claude
-  # When the active agent exhausts its usage limit mid-loop, the loop switches
-  # to the other allowed tool and retries the slice; when both are exhausted it
-  # stops cleanly (completed slices are already committed) for a later rerun.
-  limit_fallback: true
+  # codex-only: on usage-limit exhaustion the loop stops cleanly (completed
+  # slices are already committed) for a rerun after the limit resets. To
+  # restore the codex<->claude switch, re-add claude above and set this true.
+  limit_fallback: false
 
   codex:
     default_profile: default
