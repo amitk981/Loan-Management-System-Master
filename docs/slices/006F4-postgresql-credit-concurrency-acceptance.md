@@ -1,7 +1,7 @@
 # Slice 006F4: PostgreSQL Credit Concurrency Acceptance
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
@@ -68,3 +68,14 @@ High
 
 - The five authoritative races pass twice on real PostgreSQL with zero skips.
 - The slice is not marked Complete and must not merge if PostgreSQL execution is unavailable.
+
+## Done Checklist
+
+- [x] Execution plan written before product/test edits.
+- [x] Existing five-test PostgreSQL command executed unchanged and red output saved.
+- [x] PostgreSQL-only fixture binding and canonical workflow assertions repaired.
+- [x] Eligibility application lock restricted to the base table row.
+- [x] Five authoritative races passed twice on PostgreSQL with zero skips.
+- [x] Fail-closed run-packet verifier completed a red/green cycle and accepted both final logs.
+- [x] PostgreSQL environment facts and all configured gate output saved.
+- [x] Risk, review, state, progress, handoff, digest, and next-slice artifacts updated.

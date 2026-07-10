@@ -460,8 +460,8 @@ class SanctionSubmissionApiTests(TestCase):
 )
 class SanctionSubmissionConcurrencyTests(TransactionTestCase):
     setUp = SanctionSubmissionApiTests.setUp
-    _permission = SanctionSubmissionApiTests._permission
-    _user = SanctionSubmissionApiTests._user
+    _permission = staticmethod(SanctionSubmissionApiTests._permission)
+    _user = staticmethod(SanctionSubmissionApiTests._user)
 
     def test_duplicate_submissions_serialize_to_one_case_and_one_evidence_set(self):
         from sfpcl_credit.approvals.models import ApprovalCase

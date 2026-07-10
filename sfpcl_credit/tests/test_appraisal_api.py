@@ -2277,8 +2277,8 @@ class AppraisalApiTests(TestCase):
 class AppraisalConcurrencyTests(TransactionTestCase):
     setUp = AppraisalApiTests.setUp
     _payload = AppraisalApiTests._payload
-    _permission = AppraisalApiTests._permission
-    _user = AppraisalApiTests._user
+    _permission = staticmethod(AppraisalApiTests._permission)
+    _user = staticmethod(AppraisalApiTests._user)
 
     def test_rejected_review_serializes_before_stale_draft_patch_without_deadlock(self):
         from sfpcl_credit.credit.models import (
@@ -2425,11 +2425,13 @@ class AppraisalConcurrencyTests(TransactionTestCase):
             appraisal_audit.new_value_json["rejection_note_id"],
             str(rejection_note_model.objects.get().pk),
         )
-        appraisal_event = WorkflowEvent.objects.get(action_code="appraisal.rejected")
-        self.assertEqual(
-            appraisal_event.metadata["appraisal_review_decision_id"],
-            str(history.pk),
+        appraisal_event = WorkflowEvent.objects.get(
+            workflow_name="appraisal_note",
+            entity_id=note.pk,
+            from_state="review_pending",
+            to_state="rejected",
         )
+        self.assertIn(str(history.pk), appraisal_event.trigger_reason)
         self.assertFalse(AuditLog.objects.filter(action="appraisal.updated").exists())
         self.assertEqual(
             ordering,
@@ -2621,15 +2623,24 @@ class AppraisalConcurrencyTests(TransactionTestCase):
             str(winning_history["appraisal_review_decision_id"]),
         )
         winning_event = WorkflowEvent.objects.get(
-            action_code="appraisal.rejected",
-            metadata__appraisal_review_decision_id=str(
-                winning_history["appraisal_review_decision_id"]
-            ),
+            workflow_name="appraisal_note",
+            entity_id=note.pk,
+            from_state="review_pending",
+            to_state="rejected",
+        )
+        self.assertIn(
+            str(winning_history["appraisal_review_decision_id"]),
+            winning_event.trigger_reason,
         )
         self.assertEqual(winning_event.from_state, "review_pending")
         self.assertEqual(winning_event.to_state, "rejected")
         self.assertFalse(AuditLog.objects.filter(action="appraisal.reviewed").exists())
-        self.assertFalse(WorkflowEvent.objects.filter(action_code="appraisal.reviewed").exists())
+        self.assertFalse(
+            WorkflowEvent.objects.filter(
+                workflow_name="appraisal_note",
+                to_state="reviewed",
+            ).exists()
+        )
         self.assertEqual(
             ordering,
             [

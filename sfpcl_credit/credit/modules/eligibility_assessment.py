@@ -67,7 +67,7 @@ class EligibilityAssessmentModule:
         )
         request_meta = normalize_request_meta(request_meta)
         application = (
-            LoanApplication.objects.select_for_update()
+            LoanApplication.objects.select_for_update(of=("self",))
             .select_related("member", "nominee", "created_by_user", "received_by_user")
             .filter(loan_application_id=application_id)
             .first()

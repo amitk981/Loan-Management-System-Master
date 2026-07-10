@@ -894,9 +894,9 @@ class LoanLimitConcurrencyTests(TransactionTestCase):
     _shareholding = CreditEligibilityModuleTests._shareholding
     _calculator_fixture = CreditEligibilityModuleTests._calculator_fixture
     _loan_limit_payload = CreditEligibilityModuleTests._loan_limit_payload
-    _permission = CreditEligibilityModuleTests._permission
-    _active_loan_policy = CreditEligibilityModuleTests._active_loan_policy
-    _user = CreditEligibilityModuleTests._user
+    _permission = staticmethod(CreditEligibilityModuleTests._permission)
+    _active_loan_policy = staticmethod(CreditEligibilityModuleTests._active_loan_policy)
+    _user = staticmethod(CreditEligibilityModuleTests._user)
 
     def test_competing_valid_reruns_serialize_complete_snapshots_and_evidence(self):
         from sfpcl_credit.credit.modules.loan_limit_calculator import LoanLimitCalculator

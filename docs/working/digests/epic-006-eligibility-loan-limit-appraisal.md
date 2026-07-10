@@ -1,5 +1,23 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006F4 PostgreSQL Credit Concurrency Acceptance
+
+- PostgreSQL 14.20 executed the two loan-limit, two appraisal/rejection, and one sanction-submission
+  race twice through the public module interfaces. Both runs found and ran five tests, reported
+  `OK`, and had zero skips; deterministic ordering showed the application row serializes each loser
+  before payload/state mutation.
+- Real PostgreSQL exposed acceptance-harness defects hidden by SQLite skips: inherited static
+  fixture helpers were rebound as instance methods, appraisal assertions queried retired
+  workflow-event fields instead of the canonical workflow projection, and eligibility attempted to
+  lock nullable joined rows. The first two were corrected without weakening outcome assertions;
+  eligibility now uses `select_for_update(of=("self",))` for its application lock.
+- A run-packet verifier rejects missing markers, fewer/more than two logs, collection-only output,
+  skips, non-PostgreSQL output, zero-test runs, connection/setup failures, and failed output.
+- No formula, endpoint, state, permission, schema, migration, dependency, or frontend behavior
+  changed. The earlier normal run failed only because the independent environment probe imported
+  the package from the backend directory and then queried a non-existent application database;
+  repair evidence records server facts through PostgreSQL's maintenance database instead.
+
 ## 006E4 Legacy Appraisal Remediation and History Backfill
 
 - Corrective migration 0006 considers only `legacy_unverified` appraisals with a complete latest

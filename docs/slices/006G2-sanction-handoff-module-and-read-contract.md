@@ -51,6 +51,20 @@ reload-safe backend contract for the canonical case and submitted statuses.
 - Static dependency test rejects `credit -> approvals.models` imports; transaction tests call the
   module interface and retain the PostgreSQL duplicate-submission proof from 006F4.
 
+## Sharpened Contract Details
+
+- The submit adapter remains `POST /api/v1/loan-applications/{id}/submit-to-sanction-committee/`
+  with exactly one trimmed, non-blank `remarks` field; malformed JSON, arrays, and unknown keys are
+  `400 VALIDATION_ERROR` and create no case, audit, or workflow row.
+- Both submit and reload projections return the same `approval_case_id`, `loan_application_id`,
+  `loan_appraisal_note_id`, latest review-decision UUID,
+  `application_status = submitted_to_sanction_committee`,
+  `appraisal_status = submitted_to_sanction_committee`, and pending case status.
+- The approvals module owns case create/get/serialization and returns the created workflow-event
+  UUID; credit may consume that interface but must not import `approvals.models`.
+- After the approvals-module extraction, rerun the exact 006F4 five-race PostgreSQL command twice;
+  SQLite skips or collection without execution do not preserve the concurrency acceptance.
+
 ## Evidence Required
 
 TDD red/green output, API examples for POST/read/error paths, dependency graph/static check, and all

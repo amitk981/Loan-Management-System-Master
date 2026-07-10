@@ -47,6 +47,18 @@ request fields, and consume canonical server state/case identity without local w
 - Regression asserts writable projection keys exactly and rejects response-only fields.
 - Static no-mock/no-formula checks remain, but do not substitute for interaction tests.
 
+## Sharpened UI Contract Details
+
+- The writable appraisal projection is an allowlist of borrower/eligibility/loan-limit/security
+  summaries, recommendation terms, repayment-capacity notes, recommendation, and nested risk
+  ratings/mitigation only. IDs, prerequisite snapshots/provenance, status, TAT, reviewer/comments,
+  history, rejection summary, pending case, and `available_actions` are never PATCHed.
+- The real workbench container must cover loading, error, unauthorized/object-denied, validation,
+  stale `409`, success, returned-draft, and sanction-reload states using only existing alert,
+  checklist, calculator, panel, badge, and page patterns from the binding frontend rules.
+- On sanction success and reload, display/navigate with the exact 006G2 case UUID and server statuses;
+  do not derive a status from the clicked action or retain a client-only case identifier.
+
 ## Evidence Required
 
 TDD red/green interaction output, exact request examples, and all configured gates.

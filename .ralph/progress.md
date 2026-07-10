@@ -2934,3 +2934,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-10 - 2026-07-10_230547_repair
+- Agent tool used: codex
+- Slice attempted: 006F4-postgresql-credit-concurrency-acceptance
+- Summary: Rebuilt the orphaned normal run from fresh red evidence, corrected PostgreSQL-only
+  fixture/canonical-event acceptance defects, and restricted eligibility application locking to the
+  base row. PostgreSQL 14.20 ran all five public-interface races twice with deterministic ordering,
+  one winning terminal outcome, complete evidence, and no loser success writes.
+- Tests run: Exact five-race PostgreSQL command across four red/green iterations plus two final
+  zero-skip passes; fail-closed run-packet verifier red/green; Django check; migration sync; 378
+  backend tests with five expected SQLite skips at 94% coverage; frontend lint/typecheck, 126 tests,
+  and build; diff/protected/artifact checks.
+- Evidence saved: `.ralph/runs/2026-07-10_230547_repair/`
+- Result: Success
+- Risk level: High (standing approval; no veto)
+- Next action: Run sharpened 006G2 and preserve the exact five-race PostgreSQL acceptance after the
+  approvals-module extraction; then run 006H2 and 006H3.
+
+## 2026-07-10 23:18:37 - 2026-07-10_230547_repair
+- Agent tool used: codex
+- Slice attempted: 006F4-postgresql-credit-concurrency-acceptance
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_230547_repair/.ralph/runs/2026-07-10_230547_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_230547_repair/.ralph/runs/2026-07-10_230547_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
