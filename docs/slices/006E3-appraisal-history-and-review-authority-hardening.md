@@ -1,7 +1,7 @@
 # Slice 006E3: Appraisal History and Review Authority Hardening
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
@@ -88,12 +88,12 @@ High
 - The public appraisal module remains the only mutation seam.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Failing tests and red evidence saved first
-- [ ] Additive migration and data repair implemented
-- [ ] Review authority and append-only history implemented
-- [ ] API contracts and Epic 006 digest updated
-- [ ] Full gates passed
-- [ ] Risk assessment and handoff updated
-- [ ] State updated
-- [ ] Commit delegated to orchestrator only after passing gates
+- [x] Execution plan written
+- [x] Failing tests and red evidence saved first
+- [x] Additive migration and data repair implemented
+- [x] Review authority and append-only history implemented
+- [x] API contracts and Epic 006 digest updated
+- [x] Full gates passed
+- [x] Risk assessment and handoff updated
+- [x] State updated
+- [x] Commit delegated to orchestrator only after passing gates

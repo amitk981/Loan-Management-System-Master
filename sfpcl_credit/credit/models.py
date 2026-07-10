@@ -216,3 +216,48 @@ class LoanAppraisalNote(models.Model):
             models.Index(fields=["recommendation"], name="idx_appraisal_recommend"),
             models.Index(fields=["appraisal_status"], name="idx_appraisal_status"),
         ]
+
+
+class AppraisalReviewDecision(models.Model):
+    PROVENANCE_NATIVE = "native"
+    PROVENANCE_LEGACY_LATEST_ONLY = "legacy_latest_only"
+
+    appraisal_review_decision_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    loan_appraisal_note = models.ForeignKey(
+        LoanAppraisalNote,
+        on_delete=models.PROTECT,
+        related_name="review_decisions",
+    )
+    decision = models.CharField(max_length=60)
+    review_comments = models.TextField()
+    reviewer_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="appraisal_review_decisions",
+    )
+    decided_at = models.DateTimeField(default=timezone.now)
+    from_state = models.CharField(max_length=60)
+    to_state = models.CharField(max_length=60)
+    history_provenance = models.CharField(
+        max_length=60,
+        default=PROVENANCE_NATIVE,
+    )
+
+    class Meta:
+        db_table = "appraisal_review_decisions"
+        ordering = ["decided_at", "appraisal_review_decision_id"]
+        indexes = [
+            models.Index(
+                fields=["loan_appraisal_note", "decided_at"],
+                name="idx_appraisal_review_time",
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValueError("Appraisal review decisions are immutable.")
+        return super().save(*args, **kwargs)

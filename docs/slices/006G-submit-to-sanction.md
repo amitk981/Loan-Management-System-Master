@@ -58,6 +58,10 @@ None for this slice, except updating frontend documentation or fixtures if requi
 - Require one stored appraisal with `appraisal_status = reviewed`, nullable review fields now
   populated, `prerequisite_provenance = verified`, and a complete linked risk assessment. Do not
   rerun eligibility/loan limit, call revalidation, or rewrite recommendation/TAT/review facts.
+- Require at least one immutable review-history row whose latest decision UUID, decision,
+  reviewer, time, comments, and `to_state = reviewed` agree with the appraisal's latest-decision
+  projection. Both `native` and migration-labelled `legacy_latest_only` are acceptable only when
+  this complete consistency check passes; missing or inconsistent history blocks submission.
 - Atomically create one pending approval-case/sanction-submission record linked to the application
   and appraisal, transition the appraisal/application to the source sanction-review state, and
   return the case/application/appraisal IDs and status. A repeated call must not create a second
@@ -83,8 +87,10 @@ submission. Missing permission is `403 PERMISSION_DENIED`; out-of-scope is
 
 ## Audit Requirements
 Successful submission writes metadata-only appraisal/sanction audit and workflow evidence with
-IDs, state change, actor/time, and request ID. Never copy appraisal summaries, risk notes, review
-comments, or request remarks into audit JSON. Denied/invalid/repeated paths write none.
+application/appraisal/approval-case IDs, the latest immutable review-decision ID, state change,
+actor/time, and request ID. Never copy appraisal summaries, risk notes, review comments, detailed
+rejection text, or request remarks into audit/workflow JSON. Denied/invalid/repeated paths write
+none.
 
 ## Validation Rules
 - Only a `reviewed` appraisal can submit; missing, draft, review-pending, returned, or already
@@ -106,7 +112,8 @@ comments, or request remarks into audit JSON. Denied/invalid/repeated paths writ
 - `credit.appraisal.submit_sanction` and object scope are independently enforced; review permission
   alone cannot submit.
 - Stored eligibility/loan-limit IDs, recommendation, risk, TAT, reviewer, and comments remain
-  unchanged; exception-required input is flagged without creating an exception decision.
+  unchanged; the full ordered review history remains unchanged; exception-required input is
+  flagged without creating an exception decision.
 - Forced audit/case failure rolls back every state/evidence write.
 
 ## Visual Acceptance Criteria

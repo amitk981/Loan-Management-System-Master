@@ -2778,3 +2778,27 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-10 - 2026-07-10_193616_normal_run
+- Agent tool used: codex
+- Slice attempted: 006E3-appraisal-history-and-review-authority-hardening
+- Summary: Added immutable appraisal-owned review history, enforced active Credit Manager role
+  authority in addition to permission/object scope, and conservatively repaired legacy prerequisite
+  provenance using positive exact audit chronology.
+- Tests run: Three TDD red/green cycles; 36 focused appraisal/migration tests; backend check and
+  migration sync; 363 backend tests with two pre-existing PostgreSQL-only skips at 95% coverage;
+  frontend lint/typecheck, 107 tests, and build; git diff checks.
+- Evidence saved: `.ralph/runs/2026-07-10_193616_normal_run/`
+- Result: Success
+- Risk level: High (standing approval; no veto)
+- Next action: Run 006F3 with mandatory zero-skip PostgreSQL concurrency evidence, then 006G.
+
+## 2026-07-10 19:53:13 - 2026-07-10_193616_normal_run
+- Agent tool used: codex
+- Slice attempted: 006E3-appraisal-history-and-review-authority-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_193616_normal_run/.ralph/runs/2026-07-10_193616_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_193616_normal_run/.ralph/runs/2026-07-10_193616_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

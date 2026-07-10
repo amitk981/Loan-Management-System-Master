@@ -1,0 +1,83 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+FFFFFFF
+======================================================================
+FAIL: test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only (sfpcl_credit.tests.test_appraisal_api.AppraisalHistoryHardeningMigrationTests.test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only) (label='missing_eligibility_audit')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_193616_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 2038, in test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only
+    self.assertEqual(appraisal.prerequisite_provenance, provenance)
+AssertionError: 'verified' != 'legacy_unverified'
+- verified
++ legacy_unverified
+
+
+======================================================================
+FAIL: test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only (sfpcl_credit.tests.test_appraisal_api.AppraisalHistoryHardeningMigrationTests.test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only) (label='missing_both_audits')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_193616_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 2038, in test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only
+    self.assertEqual(appraisal.prerequisite_provenance, provenance)
+AssertionError: 'verified' != 'legacy_unverified'
+- verified
++ legacy_unverified
+
+
+======================================================================
+FAIL: test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only (sfpcl_credit.tests.test_appraisal_api.AppraisalHistoryHardeningMigrationTests.test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only) (label='later_eligibility_rerun')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_193616_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 2038, in test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only
+    self.assertEqual(appraisal.prerequisite_provenance, provenance)
+AssertionError: 'verified' != 'legacy_unverified'
+- verified
++ legacy_unverified
+
+
+======================================================================
+FAIL: test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only (sfpcl_credit.tests.test_appraisal_api.AppraisalHistoryHardeningMigrationTests.test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only) (label='source_after_preparation')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_193616_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 2038, in test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only
+    self.assertEqual(appraisal.prerequisite_provenance, provenance)
+AssertionError: 'verified' != 'legacy_unverified'
+- verified
++ legacy_unverified
+
+
+======================================================================
+FAIL: test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only (sfpcl_credit.tests.test_appraisal_api.AppraisalHistoryHardeningMigrationTests.test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only) (label='mismatched_application')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_193616_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 2038, in test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only
+    self.assertEqual(appraisal.prerequisite_provenance, provenance)
+AssertionError: 'verified' != 'legacy_unverified'
+- verified
++ legacy_unverified
+
+
+======================================================================
+FAIL: test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only (sfpcl_credit.tests.test_appraisal_api.AppraisalHistoryHardeningMigrationTests.test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_193616_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 2043, in test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only
+    self.assertEqual(len(decisions), 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_reverse_drops_history_without_relabeling_unproven_provenance (sfpcl_credit.tests.test_appraisal_api.AppraisalHistoryHardeningMigrationTests.test_reverse_drops_history_without_relabeling_unproven_provenance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_193616_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 2057, in test_reverse_drops_history_without_relabeling_unproven_provenance
+    self.assertEqual(
+AssertionError: 'verified' != 'legacy_unverified'
+- verified
++ legacy_unverified
+
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.304s
+
+FAILED (failures=7)
+Destroying test database for alias 'default'...

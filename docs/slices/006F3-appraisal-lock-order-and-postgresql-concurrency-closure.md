@@ -36,6 +36,10 @@ required but did not produce before merge.
   rejected review versus stale draft PATCH and concurrent duplicate review/rejection. Prove no
   deadlock escapes as a server error, exactly one valid terminal decision wins, no duplicate note or
   review history appears, and loser paths add no success evidence.
+- Lock the existing appraisal review-decision queryset only after application and appraisal locks;
+  never update an existing history row. The winning transaction must persist one `native` history
+  row whose UUID matches its appraisal audit/workflow evidence and whose from/to states match the
+  terminal appraisal transition.
 - Run the existing 006D2C `LoanLimitConcurrencyTests` unchanged on PostgreSQL in the same acceptance
   session. A missing driver/server, connection failure, SQLite skip, mocked lock assertion, or test
   collection without execution is a failed slice, not a deferral.
@@ -47,7 +51,8 @@ required but did not produce before merge.
 - Rejected review and a stale concurrent PATCH serialize in the documented order without deadlock;
   rejection wins and the invalid update writes nothing.
 - Two concurrent review/rejection attempts yield one terminal decision and one complete matching
-  history/audit/workflow set; no duplicate rejection note is possible.
+  history/audit/workflow set; the losing transaction leaves the pre-race history byte-for-byte
+  unchanged and no duplicate rejection note is possible.
 - Existing reviewed/returned/rejected state, maker-checker, role/permission, rollback, frozen-fact,
   and static import suites remain green.
 - PostgreSQL valid/valid and valid/invalid loan-limit tests both execute and print their deterministic

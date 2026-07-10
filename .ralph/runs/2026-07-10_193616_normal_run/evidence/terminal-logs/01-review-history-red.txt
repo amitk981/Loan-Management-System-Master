@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_returned_appraisal_can_be_revised_resubmitted_and_reviewed (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_returned_appraisal_can_be_revised_resubmitted_and_reviewed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_193616_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 854, in test_returned_appraisal_can_be_revised_resubmitted_and_reviewed
+    [item["decision"] for item in reviewed_data["review_history"]],
+                                  ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+KeyError: 'review_history'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.046s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

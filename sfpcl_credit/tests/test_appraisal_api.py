@@ -483,9 +483,20 @@ class AppraisalApiTests(TestCase):
             {"user_id": str(reviewer.pk), "full_name": reviewer.full_name},
         )
         self.assertIsNotNone(reviewed["reviewed_at"])
+        self.assertEqual(len(reviewed["review_history"]), 1)
+        history = reviewed["review_history"][0]
+        self.assertEqual(history["decision"], "reviewed")
+        self.assertEqual(
+            history["review_comments"],
+            "Reviewed and recommended for Sanction Committee.",
+        )
 
         audit = AuditLog.objects.get(action="appraisal.reviewed")
         self.assertEqual(audit.new_value_json["decision"], "reviewed")
+        self.assertEqual(
+            audit.new_value_json["appraisal_review_decision_id"],
+            history["appraisal_review_decision_id"],
+        )
         self.assertEqual(audit.new_value_json["request_id"], "review-tracer-006f")
         self.assertNotIn("review_comments", audit.new_value_json)
         self.assertNotIn("Sanction Committee", str(audit.new_value_json))
@@ -494,7 +505,9 @@ class AppraisalApiTests(TestCase):
             to_state="reviewed",
         )
         self.assertEqual(workflow.from_state, "review_pending")
+        self.assertIn(history["appraisal_review_decision_id"], workflow.trigger_reason)
         self.assertNotIn("Sanction Committee", workflow.trigger_reason)
+        self.assertNotIn("risk", workflow.trigger_reason.lower())
 
     def test_credit_manager_rejects_appraisal_and_creates_one_unsent_rejection_note(self):
         created = self.client.post(
@@ -537,6 +550,13 @@ class AppraisalApiTests(TestCase):
         self.assertEqual(rejection_note["communication_status"], "not_sent")
         self.assertEqual(rejection_note["prepared_by_user_id"], str(reviewer.pk))
         self.assertIsNone(rejection_note["sent_at"])
+        self.assertEqual(len(rejected["review_history"]), 1)
+        rejection_history = rejected["review_history"][0]
+        self.assertEqual(rejection_history["decision"], "rejected")
+        self.assertEqual(
+            rejection_history["review_comments"],
+            "Independent credit review completed.",
+        )
 
         rejection_note_model = apps.get_model("applications", "RejectionNote")
         self.assertEqual(rejection_note_model.objects.count(), 1)
@@ -548,6 +568,10 @@ class AppraisalApiTests(TestCase):
         self.assertEqual(
             appraisal_audit.new_value_json["rejection_note_id"],
             rejection_note["rejection_note_id"],
+        )
+        self.assertEqual(
+            appraisal_audit.new_value_json["appraisal_review_decision_id"],
+            rejection_history["appraisal_review_decision_id"],
         )
         self.assertEqual(appraisal_audit.new_value_json["request_id"], "reject-tracer-006f2")
         self.assertNotIn("review_comments", appraisal_audit.new_value_json)
@@ -588,6 +612,10 @@ class AppraisalApiTests(TestCase):
         self.assertEqual(repeated.status_code, 409)
         self.assertEqual(rejection_note_model.objects.count(), 1)
         self.assertEqual(AuditLog.objects.filter(action="appraisal.rejected").count(), 1)
+        self.assertEqual(
+            apps.get_model("credit", "AppraisalReviewDecision").objects.count(),
+            1,
+        )
 
     def test_rejected_review_requires_explicit_source_rejection_note_fields(self):
         created = self.client.post(
@@ -729,6 +757,10 @@ class AppraisalApiTests(TestCase):
         self.assertEqual(note.appraisal_status, "review_pending")
         self.assertIsNone(note.reviewed_by_user_id)
         self.assertEqual(apps.get_model("applications", "RejectionNote").objects.count(), 0)
+        self.assertEqual(
+            apps.get_model("credit", "AppraisalReviewDecision").objects.count(),
+            0,
+        )
         self.assertFalse(AuditLog.objects.filter(action="appraisal.rejected").exists())
 
         with patch(
@@ -745,6 +777,10 @@ class AppraisalApiTests(TestCase):
         note.refresh_from_db()
         self.assertEqual(note.appraisal_status, "review_pending")
         self.assertEqual(apps.get_model("applications", "RejectionNote").objects.count(), 0)
+        self.assertEqual(
+            apps.get_model("credit", "AppraisalReviewDecision").objects.count(),
+            0,
+        )
         self.assertFalse(AuditLog.objects.filter(action="appraisal.rejected").exists())
         self.assertFalse(
             AuditLog.objects.filter(action="applications.rejection_note.created").exists()
@@ -846,7 +882,49 @@ class AppraisalApiTests(TestCase):
             headers=review_headers,
         )
         self.assertEqual(reviewed.status_code, 200)
-        self.assertEqual(reviewed.json()["data"]["appraisal_status"], "reviewed")
+        reviewed_data = reviewed.json()["data"]
+        self.assertEqual(reviewed_data["appraisal_status"], "reviewed")
+        self.assertEqual(reviewed_data["decision"], "reviewed")
+        self.assertEqual(reviewed_data["review_comments"], "Clarification accepted.")
+        self.assertEqual(
+            [item["decision"] for item in reviewed_data["review_history"]],
+            ["returned", "reviewed"],
+        )
+        self.assertEqual(
+            [item["review_comments"] for item in reviewed_data["review_history"]],
+            [
+                "Clarify the seasonal repayment assumptions.",
+                "Clarification accepted.",
+            ],
+        )
+        self.assertEqual(
+            [item["from_state"] for item in reviewed_data["review_history"]],
+            ["review_pending", "review_pending"],
+        )
+        self.assertEqual(
+            [item["to_state"] for item in reviewed_data["review_history"]],
+            ["draft", "reviewed"],
+        )
+        self.assertTrue(
+            all(
+                item["reviewer"]
+                == {"user_id": str(reviewer.pk), "full_name": reviewer.full_name}
+                for item in reviewed_data["review_history"]
+            )
+        )
+        self.assertTrue(
+            all(item["history_provenance"] == "native" for item in reviewed_data["review_history"])
+        )
+        history_model = apps.get_model("credit", "AppraisalReviewDecision")
+        persisted = list(history_model.objects.order_by("decided_at", "pk"))
+        self.assertEqual(len(persisted), 2)
+        original_return_time = persisted[0].decided_at
+        original_return_reviewer = persisted[0].reviewer_user_id
+        self.assertEqual(persisted[0].review_comments, "Clarify the seasonal repayment assumptions.")
+        persisted[0].refresh_from_db()
+        self.assertEqual(persisted[0].decided_at, original_return_time)
+        self.assertEqual(persisted[0].reviewer_user_id, original_return_reviewer)
+        self.assertEqual(persisted[0].review_comments, "Clarify the seasonal repayment assumptions.")
         self.assertEqual(AuditLog.objects.filter(action="appraisal.returned").count(), 1)
         self.assertEqual(AuditLog.objects.filter(action="appraisal.reviewed").count(), 1)
 
@@ -881,6 +959,45 @@ class AppraisalApiTests(TestCase):
             "credit.appraisal.review",
             "Review appraisal",
         )
+        in_scope_non_manager = self._user(
+            "delegated.reviewer@sfpcl.example",
+            review_permission,
+        )
+        self.application.received_by_user = in_scope_non_manager
+        self.application.save(update_fields=["received_by_user"])
+        delegated_login = self.client.post(
+            "/api/v1/auth/login/",
+            data={
+                "email": in_scope_non_manager.email,
+                "password": "AppraisalPass123!",
+            },
+            content_type="application/json",
+        )
+        delegated_denied = self.client.post(
+            review_url,
+            data=payload,
+            content_type="application/json",
+            headers={
+                "Authorization": (
+                    f"Bearer {delegated_login.json()['data']['access_token']}"
+                )
+            },
+        )
+        self.assertEqual(delegated_denied.status_code, 403)
+        self.assertEqual(
+            delegated_denied.json()["error"]["code"],
+            "PERMISSION_DENIED",
+        )
+        self.assertEqual(
+            apps.get_model("credit", "AppraisalReviewDecision").objects.count(),
+            0,
+        )
+        self.assertEqual(apps.get_model("applications", "RejectionNote").objects.count(), 0)
+        self.assertFalse(AuditLog.objects.filter(action="appraisal.rejected").exists())
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="appraisal_note").count(),
+            workflow_count_before_denials,
+        )
         maker_review_link = RolePermission.objects.create(
             role=self.actor.primary_role,
             permission=review_permission,
@@ -908,13 +1025,13 @@ class AppraisalApiTests(TestCase):
             "PERMISSION_DENIED",
         )
 
-        outsider = self._user(
+        non_manager_outsider = self._user(
             "other.reviewer@sfpcl.example",
             review_permission,
         )
         login = self.client.post(
             "/api/v1/auth/login/",
-            data={"email": outsider.email, "password": "AppraisalPass123!"},
+            data={"email": non_manager_outsider.email, "password": "AppraisalPass123!"},
             content_type="application/json",
         )
         out_of_scope = self.client.post(
@@ -926,7 +1043,7 @@ class AppraisalApiTests(TestCase):
             },
         )
         self.assertEqual(out_of_scope.status_code, 403)
-        self.assertEqual(out_of_scope.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
+        self.assertEqual(out_of_scope.json()["error"]["code"], "PERMISSION_DENIED")
         note = apps.get_model("credit", "LoanAppraisalNote").objects.get()
         self.assertEqual(note.appraisal_status, "review_pending")
         self.assertFalse(
@@ -942,6 +1059,67 @@ class AppraisalApiTests(TestCase):
         self.assertEqual(
             WorkflowEvent.objects.filter(workflow_name="appraisal_note").count(),
             workflow_count_before_denials,
+        )
+
+        credit_manager_role = Role.objects.create(
+            role_code="credit_manager",
+            role_name="Credit Manager",
+            is_system_role=True,
+            status="active",
+        )
+        RolePermission.objects.create(
+            role=credit_manager_role,
+            permission=review_permission,
+        )
+        credit_manager = User.objects.create(
+            full_name="Credit Manager",
+            email="authority.credit-manager@sfpcl.example",
+            status="active",
+            primary_role=credit_manager_role,
+        )
+        credit_manager.set_password("AppraisalPass123!")
+        credit_manager.save()
+        manager_login = self.client.post(
+            "/api/v1/auth/login/",
+            data={"email": credit_manager.email, "password": "AppraisalPass123!"},
+            content_type="application/json",
+        )
+        manager_headers = {
+            "Authorization": f"Bearer {manager_login.json()['data']['access_token']}"
+        }
+        LoanApplication.objects.filter(pk=self.application.pk).update(
+            current_stage=LoanApplication.STAGE_INITIAL
+        )
+        manager_out_of_scope = self.client.post(
+            review_url,
+            data=payload,
+            content_type="application/json",
+            headers=manager_headers,
+        )
+        self.assertEqual(manager_out_of_scope.status_code, 403)
+        self.assertEqual(
+            manager_out_of_scope.json()["error"]["code"],
+            "OBJECT_ACCESS_DENIED",
+        )
+        self.assertEqual(
+            apps.get_model("credit", "AppraisalReviewDecision").objects.count(),
+            0,
+        )
+
+        LoanApplication.objects.filter(pk=self.application.pk).update(
+            current_stage=LoanApplication.STAGE_CREDIT_ASSESSMENT
+        )
+        manager_succeeds = self.client.post(
+            review_url,
+            data=payload,
+            content_type="application/json",
+            headers=manager_headers,
+        )
+        self.assertEqual(manager_succeeds.status_code, 200)
+        self.assertEqual(manager_succeeds.json()["data"]["appraisal_status"], "rejected")
+        self.assertEqual(
+            apps.get_model("credit", "AppraisalReviewDecision").objects.count(),
+            1,
         )
 
     def test_review_validates_payload_provenance_and_state_without_success_evidence(self):
@@ -1075,6 +1253,10 @@ class AppraisalApiTests(TestCase):
         note.refresh_from_db()
         self.assertEqual(note.appraisal_status, "review_pending")
         self.assertIsNone(note.reviewed_by_user_id)
+        self.assertEqual(
+            apps.get_model("credit", "AppraisalReviewDecision").objects.count(),
+            0,
+        )
         self.assertFalse(AuditLog.objects.filter(action="appraisal.reviewed").exists())
 
         response = self.client.post(
@@ -1855,4 +2037,248 @@ class AppraisalSnapshotMigrationTests(TransactionTestCase):
                     entity_id=loan_limit.pk,
                     created_at=base_time + timedelta(hours=2),
                 )
+        return identifiers
+
+
+class AppraisalHistoryHardeningMigrationTests(TransactionTestCase):
+    migrate_from = [("credit", "0004_appraisal_review_facts")]
+    migrate_to = [("credit", "0005_appraisalreviewdecision")]
+
+    def setUp(self):
+        super().setUp()
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate(self.migrate_from)
+        old_apps = self.executor.loader.project_state(self.migrate_from).apps
+        self.ids = self._create_hardening_fixtures(old_apps)
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only(self):
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate(self.migrate_to)
+        migrated_apps = self.executor.loader.project_state(self.migrate_to).apps
+        Appraisal = migrated_apps.get_model("credit", "LoanAppraisalNote")
+        Decision = migrated_apps.get_model("credit", "AppraisalReviewDecision")
+
+        expected = {
+            "positive": "verified",
+            "missing_eligibility_audit": "legacy_unverified",
+            "missing_both_audits": "legacy_unverified",
+            "later_eligibility_rerun": "legacy_unverified",
+            "source_after_preparation": "legacy_unverified",
+            "mismatched_application": "legacy_unverified",
+            "existing_legacy_unverified": "legacy_unverified",
+        }
+        for label, provenance in expected.items():
+            with self.subTest(label=label):
+                appraisal = Appraisal.objects.get(pk=self.ids[label])
+                self.assertEqual(appraisal.prerequisite_provenance, provenance)
+                self.assertEqual(appraisal.eligibility_snapshot_json["untrusted"], label)
+                self.assertEqual(appraisal.loan_limit_snapshot_json["untrusted"], label)
+
+        decisions = list(Decision.objects.all())
+        self.assertEqual(len(decisions), 1)
+        decision = decisions[0]
+        self.assertEqual(decision.loan_appraisal_note_id, self.ids["positive"])
+        self.assertEqual(decision.decision, "reviewed")
+        self.assertEqual(decision.review_comments, "Legacy latest review only.")
+        self.assertEqual(decision.from_state, "review_pending")
+        self.assertEqual(decision.to_state, "reviewed")
+        self.assertEqual(decision.history_provenance, "legacy_latest_only")
+
+    def test_reverse_drops_history_without_relabeling_unproven_provenance(self):
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate(self.migrate_to)
+        migrated_apps = self.executor.loader.project_state(self.migrate_to).apps
+        Appraisal = migrated_apps.get_model("credit", "LoanAppraisalNote")
+        self.assertEqual(
+            Appraisal.objects.get(pk=self.ids["missing_both_audits"]).prerequisite_provenance,
+            "legacy_unverified",
+        )
+
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate(self.migrate_from)
+        reversed_apps = self.executor.loader.project_state(self.migrate_from).apps
+        ReversedAppraisal = reversed_apps.get_model("credit", "LoanAppraisalNote")
+        self.assertEqual(
+            ReversedAppraisal.objects.get(
+                pk=self.ids["missing_both_audits"]
+            ).prerequisite_provenance,
+            "legacy_unverified",
+        )
+        with self.assertRaises(LookupError):
+            reversed_apps.get_model("credit", "AppraisalReviewDecision")
+
+    def _create_hardening_fixtures(self, old_apps):
+        Role = old_apps.get_model("identity", "Role")
+        UserModel = old_apps.get_model("identity", "User")
+        MemberModel = old_apps.get_model("members", "Member")
+        Application = old_apps.get_model("applications", "LoanApplication")
+        Eligibility = old_apps.get_model("credit", "EligibilityAssessment")
+        LoanLimit = old_apps.get_model("credit", "LoanLimitAssessment")
+        Risk = old_apps.get_model("credit", "RiskAssessment")
+        Appraisal = old_apps.get_model("credit", "LoanAppraisalNote")
+        Audit = old_apps.get_model("identity", "AuditLog")
+
+        role = Role.objects.create(role_code="migration_reviewer", role_name="Migration Reviewer")
+        user = UserModel.objects.create(
+            full_name="Synthetic Migration Reviewer",
+            email="migration-reviewer@sfpcl.example",
+            primary_role=role,
+            password_hash="not-a-real-password",
+        )
+        base_time = timezone.now() - timedelta(days=5)
+        prepared_at = base_time + timedelta(hours=2)
+        identifiers = {}
+
+        def create_case(
+            label,
+            *,
+            eligibility_audit=True,
+            loan_limit_audit=True,
+            later_eligibility_audit=False,
+            source_after=False,
+            mismatch=False,
+            provenance="verified",
+            latest_review=False,
+        ):
+            suffix = label.upper().replace("_", "-")[:24]
+            member = MemberModel.objects.create(
+                member_number=f"MEM-HARD-{suffix}",
+                member_type="individual_farmer",
+                legal_name=f"Synthetic {label} member",
+                display_name=f"Synthetic {label} member",
+                folio_number=f"FOL-HARD-{suffix}",
+                membership_status="active",
+                kyc_status="verified",
+                default_status="no_default",
+            )
+            application = Application.objects.create(
+                member=member,
+                borrower_type="individual_farmer",
+                received_by_user=user,
+                created_by_user=user,
+            )
+            source_application = application
+            if mismatch:
+                source_member = MemberModel.objects.create(
+                    member_number=f"MEM-HARD-{suffix}-SRC",
+                    member_type="individual_farmer",
+                    legal_name=f"Synthetic {label} source member",
+                    display_name=f"Synthetic {label} source member",
+                    folio_number=f"FOL-HARD-{suffix}-SRC",
+                    membership_status="active",
+                    kyc_status="verified",
+                    default_status="no_default",
+                )
+                source_application = Application.objects.create(
+                    member=source_member,
+                    borrower_type="individual_farmer",
+                    received_by_user=user,
+                    created_by_user=user,
+                )
+            source_time = prepared_at + timedelta(minutes=1) if source_after else base_time
+            eligibility = Eligibility.objects.create(
+                loan_application=source_application,
+                member_active_check="pass",
+                default_check="no_default",
+                document_check="complete",
+                terms_acceptance_check="accepted",
+                purpose_check="agriculture_aligned",
+                nominee_check="valid",
+                overall_result="eligible",
+                assessment_notes="Synthetic proof.",
+                assessed_by_user=user,
+                assessed_at=source_time,
+            )
+            loan_limit = LoanLimit.objects.create(
+                loan_application=source_application,
+                member=source_application.member,
+                number_of_shares=100,
+                valuation_per_share=Decimal("1000.00"),
+                share_limit_percentage=Decimal("30.0000"),
+                per_share_cap_amount=Decimal("200.00"),
+                shareholding_based_limit_amount=Decimal("20000.00"),
+                land_area_acres=Decimal("1.00"),
+                scale_of_finance_per_acre_amount=Decimal("20000.00"),
+                land_based_limit_amount=Decimal("20000.00"),
+                final_eligible_loan_amount=Decimal("20000.00"),
+                requested_amount=Decimal("20000.00"),
+                amount_within_limit_flag=True,
+                exception_required_flag=False,
+                calculation_rule_version="legacy-proof-v1",
+                calculated_by_user=user,
+                calculated_at=source_time,
+            )
+            risk = Risk.objects.create(
+                loan_application=application,
+                market_risk_rating="low",
+                operational_risk_rating="low",
+                borrower_risk_rating="low",
+                overall_risk_rating="low",
+                assessed_by_user=user,
+                assessed_at=base_time,
+            )
+            appraisal = Appraisal.objects.create(
+                loan_application=application,
+                prepared_by_user=user,
+                reviewed_by_user=user if latest_review else None,
+                prepared_at=prepared_at,
+                reviewed_at=prepared_at + timedelta(minutes=30) if latest_review else None,
+                review_comments="Legacy latest review only." if latest_review else "",
+                last_review_decision="reviewed" if latest_review else "",
+                tat_due_at=prepared_at + timedelta(days=2),
+                tat_status="within_tat",
+                eligibility_assessment_id_snapshot=eligibility.pk,
+                loan_limit_assessment_id_snapshot=loan_limit.pk,
+                eligibility_snapshot_json={"untrusted": label},
+                loan_limit_snapshot_json={"untrusted": label},
+                prerequisite_provenance=provenance,
+                borrower_summary="Synthetic borrower summary.",
+                eligibility_summary="Synthetic eligibility summary.",
+                loan_limit_summary="Synthetic limit summary.",
+                recommended_amount=Decimal("20000.00"),
+                recommended_security_summary="Synthetic security.",
+                repayment_capacity_notes="Synthetic repayment capacity.",
+                risk_assessment=risk,
+                recommendation="approve",
+                appraisal_status="reviewed" if latest_review else "draft",
+            )
+            audit_time = base_time + timedelta(hours=1)
+            if eligibility_audit:
+                Audit.objects.create(
+                    actor_user=user,
+                    action="eligibility.assessed",
+                    entity_type="eligibility_assessment",
+                    entity_id=eligibility.pk,
+                    created_at=audit_time,
+                )
+            if loan_limit_audit:
+                Audit.objects.create(
+                    actor_user=user,
+                    action="loan_limit.calculated",
+                    entity_type="loan_limit_assessment",
+                    entity_id=loan_limit.pk,
+                    created_at=audit_time,
+                )
+            if later_eligibility_audit:
+                Audit.objects.create(
+                    actor_user=user,
+                    action="eligibility.assessed",
+                    entity_type="eligibility_assessment",
+                    entity_id=eligibility.pk,
+                    created_at=prepared_at + timedelta(hours=1),
+                )
+            identifiers[label] = appraisal.pk
+
+        create_case("positive", latest_review=True)
+        create_case("missing_eligibility_audit", eligibility_audit=False)
+        create_case("missing_both_audits", eligibility_audit=False, loan_limit_audit=False)
+        create_case("later_eligibility_rerun", later_eligibility_audit=True)
+        create_case("source_after_preparation", source_after=True)
+        create_case("mismatched_application", mismatch=True)
+        create_case("existing_legacy_unverified", provenance="legacy_unverified")
         return identifiers

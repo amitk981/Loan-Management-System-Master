@@ -347,6 +347,28 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - The top-level API-contract appraisal status and the older requirement-status paragraph in this
   digest are stale beside the later implemented 006F/006F2 sections. 006E3 owns reconciliation.
 
+## 006E3 Appraisal History And Review Authority Hardening
+
+- `AppraisalWorkflow.review(...)` now requires both `credit.appraisal.review` and active
+  `credit_manager` primary-role membership before object scope. Another-role permission holders,
+  including in-scope application owners/receivers, receive `PERMISSION_DENIED` with no writes. A
+  real Credit Manager retains all-applications access inside the credit-assessment domain and the
+  distinct `OBJECT_ACCESS_DENIED` result outside it.
+- Every successful reviewed/returned/rejected action appends one appraisal-owned immutable review
+  decision in the same transaction as latest appraisal projections, optional rejection note,
+  audit, and workflow evidence. API `review_history` is chronological and retains decision,
+  comments, reviewer/time, from/to states, and `native|legacy_latest_only` provenance. Generic
+  evidence references the history UUID but excludes comments, detailed rejection reason, and
+  frozen financial/risk free text.
+- Migration 0005 keeps a legacy appraisal `verified` only when both exact same-application
+  prerequisite UUIDs have their matching success audits at/before preparation, neither has a later
+  success audit, and both source timestamps are at/before preparation. Every other formerly
+  verified row is relabelled `legacy_unverified` without rewriting copied JSON or decision facts.
+  Existing unverified rows stay unverified; explicit draft revalidation remains the repair path.
+- The migration backfills at most one complete latest known legacy review decision and labels it
+  `legacy_latest_only`; it never fabricates prior cycles. Reverse schema migration drops this
+  derived table but deliberately does not relabel unproven prerequisites as verified.
+
 ## Architecture Review 2026-07-10 04:18 - 006A Spot Check
 - 006A implemented only the active-member portion of the eligibility assessment contract and left
   default, document, terms, purpose, and nominee checks pending for 006B as planned.
@@ -377,6 +399,6 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
   its UUID and complete old/new audit metadata. The source one-to-one data model and reviewed slice
   require that behavior; passive policy/source changes do not alter GET. Treat versioned recalculation
   as a watch item and prohibit future appraisal code from bypassing stored snapshots.
-- Epic 006 did not complete in this window. M04-FR-004 through M04-FR-007 are the implemented/under-
-  correction subset; M04-FR-001-003 and M04-FR-008-011 remain owned by queued 006E-006G and are not
-  claimed complete.
+- Epic 006 remains incomplete. M04-FR-004 through M04-FR-011 are implemented through 006E3 except
+  sanction submission itself, which remains 006G; M04-FR-001/M04-FR-002 remain explicitly owned by
+  012EA under A-053, and M04-FR-003 keeps the A-054 receipt-time proxy pending source confirmation.

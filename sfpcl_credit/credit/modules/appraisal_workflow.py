@@ -13,7 +13,11 @@ from sfpcl_credit.applications.modules.rejection_notes import (
     RejectionNoteValidationError,
 )
 from sfpcl_credit.applications.models import LoanApplication
-from sfpcl_credit.credit.models import LoanAppraisalNote, RiskAssessment
+from sfpcl_credit.credit.models import (
+    AppraisalReviewDecision,
+    LoanAppraisalNote,
+    RiskAssessment,
+)
 from sfpcl_credit.credit.modules.common import (
     APPLICATION_READ_PERMISSION,
     CreditModuleInvalidStateError,
@@ -533,6 +537,10 @@ class AppraisalWorkflow:
             "You do not have permission to review appraisal notes.",
             actor_permissions,
         )
+        if "credit_manager" not in actor.role_codes():
+            raise CreditModulePermissionDenied(
+                "Only an active Credit Manager may review appraisal notes."
+            )
         errors = {}
         payload = payload_fields or {}
         allowed_fields = {"decision", "review_comments"}
@@ -632,6 +640,15 @@ class AppraisalWorkflow:
                 "last_review_decision",
             )
         )
+        review_decision = AppraisalReviewDecision.objects.create(
+            loan_appraisal_note=note,
+            decision=decision,
+            review_comments=comments.strip(),
+            reviewer_user=actor,
+            decided_at=now,
+            from_state=from_state,
+            to_state=note.appraisal_status,
+        )
         request_meta = normalize_request_meta(request_meta)
         action = f"appraisal.{decision}"
         AuditLog.objects.create(
@@ -645,6 +662,7 @@ class AppraisalWorkflow:
                 "loan_application_id": str(note.loan_application_id),
                 "appraisal_status": note.appraisal_status,
                 "decision": decision,
+                "appraisal_review_decision_id": str(review_decision.pk),
                 "reviewed_by_user_id": str(actor.pk),
                 "reviewed_at": timezone.localtime(now).isoformat(),
                 "request_id": request_meta.request_id,
@@ -672,8 +690,11 @@ class AppraisalWorkflow:
             entity_id=note.pk,
             from_state=from_state,
             to_state=note.appraisal_status,
-            trigger_reason=f"Appraisal review decision recorded as {decision}.",
+            trigger_reason=(
+                f"Appraisal review decision {review_decision.pk} recorded as {decision}."
+            ),
             action_code=action,
+            metadata={"appraisal_review_decision_id": str(review_decision.pk)},
         )
         snapshot = appraisal_note_snapshot(note)
         if rejection_note is not None:
@@ -686,6 +707,22 @@ class AppraisalWorkflow:
 
 def appraisal_note_snapshot(note):
     risk = note.risk_assessment
+    review_history = [
+        {
+            "appraisal_review_decision_id": str(item.pk),
+            "decision": item.decision,
+            "review_comments": item.review_comments,
+            "reviewer": {
+                "user_id": str(item.reviewer_user_id),
+                "full_name": item.reviewer_user.full_name,
+            },
+            "decided_at": timezone.localtime(item.decided_at).isoformat(),
+            "from_state": item.from_state,
+            "to_state": item.to_state,
+            "history_provenance": item.history_provenance,
+        }
+        for item in note.review_decisions.select_related("reviewer_user").all()
+    ]
     return {
         "loan_appraisal_note_id": str(note.pk),
         "loan_application_id": str(note.loan_application_id),
@@ -714,6 +751,7 @@ def appraisal_note_snapshot(note):
         ),
         "decision": note.last_review_decision or None,
         "review_comments": note.review_comments or None,
+        "review_history": review_history,
         "tat_due_at": timezone.localtime(note.tat_due_at).isoformat(),
         "tat_status": note.tat_status,
         "borrower_summary": note.borrower_summary,

@@ -1,43 +1,39 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-10_190455_architecture_review
+2026-07-10_193616_normal_run
 
 ## Current Status
+Completed `006E3-appraisal-history-and-review-authority-hardening` under standing High-risk
+approval.
 
-Architecture review completed for product slices `006D2C`, `006E2`, `006F`, and `006F2` since
-review commit `d29f697`.
-
-- High provenance finding: 006E2 migration 0003 labels legacy rows verified when it finds no later
-  audit, but does not require positive pre-appraisal success audits for both prerequisite IDs.
-  Corrective 006E3 downgrades unproven rows and retains explicit revalidation.
-- High authority finding: review enforces `credit.appraisal.review` and generic object access but
-  not the source's actual Credit Manager role rule. A permissioned non-Credit-Manager owner can
-  review. 006E3 adds the missing negative authority regression and role gate.
-- High history finding: returned `review_comments` are overwritten by the next review, while
-  metadata-only audit intentionally excludes them. ADR-0004 and 006E3 add immutable appraisal-owned
-  decision history and keep the existing appraisal fields as latest projections.
-- High acceptance finding: 006D2C was merged without executing its mandatory PostgreSQL concurrency
-  tests; committed evidence contains a missing-driver failure and two SQLite skips. The driver is
-  now installed, but this sandbox has no reachable server and cannot initialise one because shared
-  memory is denied.
-- Architecture finding: rejected review locks appraisal before the rejection-note seam locks the
-  application, inverse to draft create/update. Corrective 006F3 normalizes application → appraisal
-  → rejection/history lock order and requires real PostgreSQL outcome tests with zero skips.
-- No material scope creep was found. Most frozen-snapshot, authority-denial, state, redaction,
-  uniqueness, and rollback tests contain substantive assertions. No production code changed.
+- Every successful `reviewed`, `returned`, or `rejected` action now creates one immutable
+  appraisal-owned `AppraisalReviewDecision` inside the existing `AppraisalWorkflow.review(...)`
+  transaction. The appraisal's existing review fields remain the latest projection; API
+  `review_history` retains all reasons, reviewers, times, and from/to states.
+- Review requires both `credit.appraisal.review` and active `credit_manager` primary-role
+  membership. An in-scope owner/receiver with only the permission receives `PERMISSION_DENIED` and
+  writes nothing. A real Credit Manager retains domain-wide credit-assessment scope and the
+  distinct `OBJECT_ACCESS_DENIED` result outside that domain.
+- Migration 0005 keeps legacy provenance verified only with positive pre-preparation success audits
+  for both exact same-application prerequisite UUIDs, safe source timestamps, and no later success
+  audit. All other formerly verified rows become `legacy_unverified`; copied JSON, UUIDs, rejection
+  notes, and latest decision facts are untouched.
+- The migration backfills at most one complete latest legacy review decision with
+  `legacy_latest_only` provenance. Reversing drops the derived history table without falsely
+  upgrading unproven prerequisites.
+- Generic audit/workflow evidence references the decision UUID and excludes review comments,
+  detailed rejection reason, and frozen appraisal/risk free text.
 
 ## Validation
-
-Django check and migration sync passed. The full default backend suite ran 361 tests successfully
-with the two explicit PostgreSQL-only skips; coverage is 95% (floor 85%). Frontend lint/typecheck,
-107 tests, and build passed. Evidence is in
-`.ralph/runs/2026-07-10_190455_architecture_review/`.
+Three public-behavior TDD RED/GREEN cycles and the full 36-test appraisal suite passed. Django check
+and migration sync passed. The full default backend suite ran 363 tests successfully with the two
+pre-existing PostgreSQL-only skips; coverage is 95% (floor 85%). Frontend lint/typecheck, 107 tests,
+and build passed. Evidence is in `.ralph/runs/2026-07-10_193616_normal_run/`.
 
 ## Next Run
-
-Run `006E3-appraisal-history-and-review-authority-hardening`, then
-`006F3-appraisal-lock-order-and-postgresql-concurrency-closure`. 006F3 must not complete or merge
+Run `006F3-appraisal-lock-order-and-postgresql-concurrency-closure`. It must not complete or merge
 without executing both the existing loan-limit and new appraisal concurrency suites on PostgreSQL
-with zero skips. After both corrections pass, run sharpened `006G-submit-to-sanction`; it must
-consume verified frozen projections and immutable review history and must preserve rejected notes.
+with zero skips. Then run sharpened `006G-submit-to-sanction`; it must require a latest immutable
+history row consistent with the reviewed projection and preserve the entire history and rejected
+notes unchanged.
