@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
+source "$repo_root/scripts/lib/ralph-exit-protocol.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -79,7 +80,7 @@ Result: Success
 No eligible slice was found.
 EOF
     echo "No eligible slice found."
-    exit 0
+    exit "$RALPH_EXIT_QUEUE_EMPTY"
   fi
   slice_id="${slice_file%.md}"
 fi
@@ -89,7 +90,7 @@ if [[ "$mode" != "architecture_review" ]]; then
   approvals_file="docs/working/HIGH_RISK_APPROVALS.md"
   if grep -qF -- "[revoked] $slice_id" "$approvals_file" 2>/dev/null; then
     echo "Slice $slice_id has been vetoed by the owner in $approvals_file; refusing to run it." >&2
-    exit 3
+    exit "$RALPH_EXIT_OWNER_VETO"
   fi
   if [[ "$risk_level" == "High" ]]; then
     echo "High-risk slice $slice_id proceeding under the owner's standing approval (see $approvals_file)."
@@ -183,7 +184,7 @@ Core requirements:
 - Implement only the selected vertical slice.
 - Read only the required context files first.
 - Do not modify docs/source.
-- Never modify protected files: scripts/, .ralph/config.yaml, .ralph/permissions.json, AGENTS.md, CLAUDE.md, .gitignore, docs/working/HIGH_RISK_APPROVALS.md, docs/working/DECISION_POLICY.md. Validation fails the run if you do.
+- Never modify protected files: scripts/, .ralph/config.yaml, .ralph/permissions.json, .codex/config.toml, AGENTS.md, CLAUDE.md, .gitignore, docs/working/HIGH_RISK_APPROVALS.md, docs/working/DECISION_POLICY.md. Validation fails the run if you do.
 - Write execution-plan.md before coding.
 - Check permissions before editing files.
 - TDD is mandatory for backend and business logic: write the failing test first, then implement, and save red/green output to evidence/terminal-logs/.
@@ -282,6 +283,10 @@ agent_rc=0
   MODE="$mode" \
   AGENT_TIMEOUT_SECONDS="${agent_timeout:-7200}" || agent_rc=$?
 if (( agent_rc != 0 )); then
+  if (( agent_rc == RALPH_EXIT_AGENT_LIMIT )); then
+    echo "Agent usage limit exhausted; returning the structured limit outcome to the outer loop." >&2
+    exit "$RALPH_EXIT_AGENT_LIMIT"
+  fi
   echo "WARN: agent adapter exited $agent_rc; proceeding to independent validation — the gates decide pass or fail." >&2
 fi
 
@@ -411,7 +416,7 @@ if (( committed == 1 )) && (( no_worktree == 0 )); then
       # made the loop rerun the slice from scratch (silent duplicate work) while
       # the finished branch sat stranded. Fail loudly instead; the loop stops.
       echo "MERGE_FAILED: auto-merge into $integration_branch failed; branch $branch_name kept with the completed work." >&2
-      exit 4
+      exit "$RALPH_EXIT_MERGE_FAILED"
     fi
   else
     echo "auto_merge is disabled; review and merge branch $branch_name manually." >&2

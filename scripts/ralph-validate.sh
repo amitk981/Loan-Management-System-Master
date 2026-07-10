@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
+source "$repo_root/scripts/lib/ralph-postgresql-acceptance.sh"
 
 run_id=""
 worktree_dir="$repo_root"
@@ -93,6 +94,106 @@ write_skipped() {
 }
 
 failures=0
+backend_dir="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | tr -d '"' | xargs || true)"
+postgres_acceptance_passed=0
+
+run_postgresql_acceptance_once() {
+  local ordinal="$1"
+  local log="$run_dir/evidence/terminal-logs/postgresql-acceptance-validation-${ordinal}.txt"
+  local rc=0
+  mkdir -p "$(dirname "$log")"
+  {
+    echo "Command:"
+    echo "$venv_python manage.py test sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests --settings=sfpcl_credit.config.postgres_test_settings -v 2"
+    echo
+    echo "Working directory: $backend_dir/"
+    echo
+  } > "$log"
+  if (
+    cd "$worktree_dir/$backend_dir"
+    "$venv_python" manage.py test \
+      sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests \
+      sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests \
+      sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests \
+      --settings=sfpcl_credit.config.postgres_test_settings -v 2
+  ) >> "$log" 2>&1; then
+    rc=0
+  else
+    rc=$?
+  fi
+  echo >> "$log"
+  echo "Exit code: $rc" >> "$log"
+  (( rc == 0 )) && postgresql_acceptance_log_passes "$log"
+}
+
+write_postgresql_environment() {
+  local file="$run_dir/evidence/postgresql-environment-validation.md"
+  if (
+    cd "$worktree_dir/$backend_dir"
+    DJANGO_SETTINGS_MODULE=sfpcl_credit.config.postgres_test_settings "$venv_python" - <<'PY'
+import django
+
+django.setup()
+from django.db import connection
+
+config = connection.settings_dict
+print(f"- Engine: {config.get('ENGINE', '')}")
+print(f"- Database: {config.get('NAME', '')}")
+print(f"- Test database: {config.get('TEST', {}).get('NAME', '')}")
+print(f"- Host: {config.get('HOST') or '(local Unix socket)'}")
+print(f"- Port: {config.get('PORT') or '5432'}")
+cursor = connection.cursor()
+cursor.execute("SHOW server_version")
+print(f"- PostgreSQL server version: {cursor.fetchone()[0]}")
+cursor.close()
+connection.close()
+PY
+  ) > "$file.tmp" 2>&1; then
+    {
+      echo "# PostgreSQL Validation Environment"
+      echo
+      cat "$file.tmp"
+      echo "- Credentials: intentionally omitted"
+    } > "$file"
+    rm -f "$file.tmp"
+    return 0
+  fi
+  {
+    echo "# PostgreSQL Validation Environment"
+    echo
+    echo "FAIL: unable to query the configured PostgreSQL server without exposing credentials."
+    cat "$file.tmp"
+  } > "$file"
+  rm -f "$file.tmp"
+  return 1
+}
+
+# 006F4 is an evidence-only acceptance slice. Its authoritative races must be
+# executed independently by the orchestrator, not trusted from agent-authored
+# artifacts. Run both repetitions even when the first fails so the packet is
+# explicit about each required attempt.
+if [[ "$mode" == "normal_run" && "$slice_id" == "006F4-postgresql-credit-concurrency-acceptance" ]]; then
+  postgres_first=0
+  postgres_second=0
+  postgres_environment=0
+  run_postgresql_acceptance_once 1 && postgres_first=1
+  run_postgresql_acceptance_once 2 && postgres_second=1
+  if (( postgres_first == 1 && postgres_second == 1 )); then
+    write_postgresql_environment && postgres_environment=1
+  fi
+  {
+    echo "# PostgreSQL Acceptance Results"
+    echo
+    (( postgres_first == 1 )) && echo "- PASS: first independent run executed all five tests successfully." || echo "- FAIL: first independent run did not satisfy all acceptance predicates."
+    (( postgres_second == 1 )) && echo "- PASS: second independent run executed all five tests successfully." || echo "- FAIL: second independent run did not satisfy all acceptance predicates."
+    (( postgres_environment == 1 )) && echo "- PASS: PostgreSQL server and non-secret connection facts were recorded." || echo "- FAIL: PostgreSQL environment evidence is missing."
+  } > "$run_dir/postgresql-acceptance-results.md"
+  if (( postgres_first == 1 && postgres_second == 1 && postgres_environment == 1 )); then
+    postgres_acceptance_passed=1
+  else
+    failures=$((failures + 1))
+  fi
+fi
 
 if [[ "$(enabled build)" == "true" ]]; then
   run_gate build "npm run build" || failures=$((failures + 1))
@@ -124,7 +225,6 @@ else
   write_skipped test "disabled in .ralph/config.yaml"
 fi
 
-backend_dir="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | tr -d '"' | xargs || true)"
 run_backend_gate() {
   local name="$1"
   local command="$2"
@@ -186,6 +286,7 @@ protected_paths=(
   ".github/"
   ".ralph/config.yaml"
   ".ralph/permissions.json"
+  ".codex/config.toml"
   "AGENTS.md"
   "CLAUDE.md"
   ".gitignore"
@@ -247,13 +348,22 @@ if [[ "$mode" == "normal_run" ]]; then
   noop_file="$run_dir/no-op-check-results.md"
   agent_changes="$(printf '%s\n' "$changed_paths" | grep -v '^\.ralph/' | grep -v '^$' || true)"
   if [[ -z "$agent_changes" ]]; then
-    {
-      echo "# No-Op Check Results"
-      echo
-      echo "FAIL: the agent produced no changes outside .ralph/ bookkeeping."
-      echo "A normal run cannot complete a slice with zero product/doc changes."
-    } > "$noop_file"
-    failures=$((failures + 1))
+    if [[ "$slice_id" == "006F4-postgresql-credit-concurrency-acceptance" && "$postgres_acceptance_passed" == "1" ]]; then
+      {
+        echo "# No-Op Check Results"
+        echo
+        echo "PASS: verified acceptance-only slice completed through the independent PostgreSQL gate."
+        echo "No product change is required when both authoritative runs and environment evidence pass."
+      } > "$noop_file"
+    else
+      {
+        echo "# No-Op Check Results"
+        echo
+        echo "FAIL: the agent produced no changes outside .ralph/ bookkeeping."
+        echo "A normal run cannot complete a slice with zero product/doc changes."
+      } > "$noop_file"
+      failures=$((failures + 1))
+    fi
   else
     {
       echo "# No-Op Check Results"

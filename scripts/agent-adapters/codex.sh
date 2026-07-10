@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/../lib/ralph-exit-protocol.sh"
+
 for assignment in "$@"; do
   export "$assignment"
 done
@@ -9,6 +12,7 @@ done
 : "${RUN_DIR:?RUN_DIR is required}"
 : "${WORKTREE_DIR:?WORKTREE_DIR is required}"
 : "${PROMPT_FILE:?PROMPT_FILE is required}"
+SELECTED_SLICE="${SELECTED_SLICE:-}"
 
 if ! command -v codex >/dev/null 2>&1; then
   echo "codex command is not installed." >&2
@@ -26,6 +30,12 @@ CODEX_APPROVAL_MODE="${CODEX_APPROVAL_MODE:-never}"
 CODEX_SANDBOX="${CODEX_SANDBOX:-workspace-write}"
 CODEX_MODEL="${CODEX_MODEL:-}"
 CODEX_ADDITIONAL_ARGS="${CODEX_ADDITIONAL_ARGS:-exec}"
+CODEX_PERMISSION_PROFILE=""
+if [[ "$SELECTED_SLICE" == "006F4-postgresql-credit-concurrency-acceptance" ]]; then
+  CODEX_PERMISSION_PROFILE="ralph-postgres"
+fi
+codex_sandbox_label="$CODEX_SANDBOX"
+[[ -n "$CODEX_PERMISSION_PROFILE" ]] && codex_sandbox_label="permission-profile"
 
 mkdir -p "$RUN_DIR/evidence/terminal-logs"
 
@@ -41,7 +51,8 @@ cat > "$RUN_DIR/codex-settings.md" <<EOF
 - Actual reasoning effort if known: unknown
 - Verbosity setting: $CODEX_VERBOSITY
 - Approval mode: $CODEX_APPROVAL_MODE
-- Sandbox mode: $CODEX_SANDBOX
+- Sandbox mode: $codex_sandbox_label
+- Permission profile: ${CODEX_PERMISSION_PROFILE:-none}
 - Fallback used: no
 - Config source: .ralph/config.yaml and environment overrides
 EOF
@@ -55,7 +66,18 @@ fi
 args+=(-c "model_reasoning_effort=$CODEX_REASONING_EFFORT")
 args+=(-c "model_verbosity=$CODEX_VERBOSITY")
 args+=(--ask-for-approval "$CODEX_APPROVAL_MODE")
-args+=(--sandbox "$CODEX_SANDBOX")
+if [[ -n "$CODEX_PERMISSION_PROFILE" ]]; then
+  # Permission profiles and --sandbox are mutually exclusive. This profile
+  # preserves workspace isolation while allowing only PostgreSQL's test socket.
+  # Repeat the profile as launch overrides so dynamic nested worktree trust
+  # discovery cannot cause Codex to ignore the project-scoped definition.
+  args+=(-c 'permissions.ralph-postgres.extends=":workspace"')
+  args+=(-c 'permissions.ralph-postgres.network.enabled=true')
+  args+=(-c 'permissions.ralph-postgres.network.unix_sockets={"/tmp/.s.PGSQL.5432"="allow"}')
+  args+=(-c "default_permissions=\"$CODEX_PERMISSION_PROFILE\"")
+else
+  args+=(--sandbox "$CODEX_SANDBOX")
+fi
 
 # Watchdog: a hung agent must fail the run (into the repair path), not
 # stall the loop forever. Pure bash — macOS has no GNU timeout.
@@ -107,6 +129,7 @@ if (( status != 0 )) && tail -n 40 "$log" | grep -qiE "usage limit|rate limit|li
     echo
     echo "codex exited $status; the log tail names a usage/rate limit. See evidence/terminal-logs/codex.log."
   } > "$RUN_DIR/agent-limit-exhausted.md"
+  exit "$RALPH_EXIT_AGENT_LIMIT"
 fi
 
 exit "$status"

@@ -1,0 +1,12 @@
+# Ralph normally uses Codex's workspace sandbox. The exceptional 006F4 slice
+# selects this profile explicitly so its concurrency tests can reach only the
+# local PostgreSQL Unix socket without enabling general network access.
+[permissions.ralph-postgres]
+description = "Ralph workspace access plus the local PostgreSQL test socket."
+extends = ":workspace"
+
+[permissions.ralph-postgres.network]
+enabled = true
+
+[permissions.ralph-postgres.network.unix_sockets]
+"/tmp/.s.PGSQL.5432" = "allow"

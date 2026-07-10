@@ -10,6 +10,7 @@ set -uo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
+source "$repo_root/scripts/lib/ralph-exit-protocol.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -48,10 +49,6 @@ active_tool="${AGENT_TOOL:-${default_tool:-codex}}"
 limit_fallback="$(awk -F': *' '/^[[:space:]]*limit_fallback:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' .ralph/config.yaml | xargs || true)"
 limit_fallback="${limit_fallback:-true}"
 exhausted_tools=""
-
-limit_exhausted() {
-  grep -q "AGENT_LIMIT_EXHAUSTED" "$last_out"
-}
 
 # Advisory context-occupancy monitor. After a run, report the agent's PEAK
 # per-call context vs the model window and record a note when it enters the
@@ -110,7 +107,7 @@ for ((i = 1; i <= max_iterations; i++)); do
     review_status=$?
     context_tripwire_check
     if (( review_status != 0 )); then
-      if limit_exhausted; then
+      if (( review_status == RALPH_EXIT_AGENT_LIMIT )); then
         switch_agent_or_stop
         continue
       fi
@@ -122,27 +119,27 @@ for ((i = 1; i <= max_iterations; i++)); do
   status=$?
   context_tripwire_check
 
-  if grep -q "No eligible slice found" "$last_out"; then
-    echo "Queue complete: no eligible slices remain. Ralph loop finished." | tee -a "$loop_log"
-    exit 0
-  fi
-
-  if grep -q "has been vetoed by the owner" "$last_out"; then
-    echo "Stopping: the next slice is vetoed. Remove the [revoked] line or run another slice with --slice." | tee -a "$loop_log"
-    exit 2
-  fi
-
-  if grep -q "MERGE_FAILED" "$last_out"; then
-    echo "Stopping: a completed run could not merge into staging (staging moved during the run)." | tee -a "$loop_log"
-    echo "The finished work is kept on its ralph/* branch — ask an agent in a chat session to merge it, then rerun the loop. Do not rerun the slice." | tee -a "$loop_log"
-    exit 1
-  fi
-
-  if (( status != 0 )) && limit_exhausted; then
-    switch_agent_or_stop
-    echo "The interrupted slice will rerun with $active_tool." | tee -a "$loop_log"
-    continue
-  fi
+  outcome="$(ralph_outcome_for_status "$status")"
+  case "$outcome" in
+    queue_empty)
+      echo "Queue complete: no eligible slices remain. Ralph loop finished." | tee -a "$loop_log"
+      exit 0
+      ;;
+    owner_veto)
+      echo "Stopping: the next slice is vetoed. Remove the [revoked] line or run another slice with --slice." | tee -a "$loop_log"
+      exit 2
+      ;;
+    merge_failed)
+      echo "Stopping: a completed run could not merge into staging (staging moved during the run)." | tee -a "$loop_log"
+      echo "The finished work is kept on its ralph/* branch — ask an agent in a chat session to merge it, then rerun the loop. Do not rerun the slice." | tee -a "$loop_log"
+      exit 1
+      ;;
+    agent_limit)
+      switch_agent_or_stop
+      echo "The interrupted slice will rerun with $active_tool." | tee -a "$loop_log"
+      continue
+      ;;
+  esac
 
   if (( status != 0 )); then
     total_failures=$((total_failures + 1))
@@ -150,7 +147,7 @@ for ((i = 1; i <= max_iterations; i++)); do
 
     run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair
     repair_status=$?
-    if (( repair_status != 0 )) && limit_exhausted; then
+    if (( repair_status == RALPH_EXIT_AGENT_LIMIT )); then
       switch_agent_or_stop
       echo "Retrying the repair run with $active_tool." | tee -a "$loop_log"
       run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair
