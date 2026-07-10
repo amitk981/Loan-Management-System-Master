@@ -1,5 +1,24 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006E4 Legacy Appraisal Remediation and History Backfill
+
+- Corrective migration 0006 considers only `legacy_unverified` appraisals with a complete latest
+  review projection. It derives `to_state` from `reviewed -> reviewed`, `returned -> draft`, or
+  `rejected -> rejected`, adds at most one missing `legacy_latest_only` decision, preserves earlier
+  native cycles, skips an exact existing latest decision and incomplete projections, preserves
+  history on reverse, and is idempotent on a second forward run.
+- `POST /api/v1/appraisal-notes/{id}/revalidate-prerequisites/` remains the single explicit repair
+  seam with empty-object payload, appraisal-update plus risk-management permissions, and object
+  scope. Draft stays draft; review-pending stays pending; reviewed returns to draft and clears only
+  mutable latest-review authority. Immutable history and all caller-authored appraisal/risk/TAT
+  facts remain unchanged.
+- Rejected and sanction-submitted legacy rows return `409` with governed-manual-repair wording.
+  Malformed JSON/unknown fields, permission/object denial, and forced audit/workflow failures write
+  no remediation state or success evidence.
+- Audit/workflow evidence names the remediation and prior/new state. Audit metadata includes source
+  UUIDs and whether review authority was invalidated, but omits review comments, recommendation,
+  financial values, and risk/free-text facts.
+
 Sources distilled during slice `005I-application-intake-frontend-wiring` while sharpening 006A/006B:
 - `docs/source/api-contracts.md` §22.1-§22.3
 - `docs/source/data-model.md` §14.1

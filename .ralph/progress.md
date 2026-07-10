@@ -1,5 +1,21 @@
 # Ralph Progress Log
 
+## 2026-07-10 22:06 - 2026-07-10_215124_normal_run
+- Agent tool used: codex.
+- Slice attempted: `006E4-legacy-appraisal-remediation-and-history-backfill`.
+- Summary: Added forward-only corrective migration 0006 to retain one missing, complete latest
+  legacy appraisal review projection after return/resubmit or review/sanction state advances. The
+  explicit revalidation action now repairs draft and review-pending rows in place; reviewed rows
+  reopen to draft with mutable review authority cleared while immutable history and authored facts
+  remain intact. Rejected/submitted rows stay quarantined. Malformed JSON is enveloped.
+- Tests run: six focused TDD/regression cycles; 44 appraisal/migration tests collected (42 passed,
+  two PostgreSQL-only skips); Django check and migration sync; 378 backend tests with five skips at 93%
+  coverage; frontend lint/typecheck, 126 tests, and build; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_215124_normal_run/`.
+- Result: Success, pending orchestrator validation. Risk: High under standing approval. Next:
+  `006F4-postgresql-credit-concurrency-acceptance`; its five races must execute twice on PostgreSQL
+  with zero skips before continuing to 006G2.
+
 ## 2026-07-10 21:39 - 2026-07-10_213352_architecture_review
 - Agent tool used: codex.
 - Slice attempted: `architecture-review`.
@@ -2905,6 +2921,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_213352_architecture_review/.ralph/runs/2026-07-10_213352_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_213352_architecture_review/.ralph/runs/2026-07-10_213352_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 22:08:57 - 2026-07-10_215124_normal_run
+- Agent tool used: codex
+- Slice attempted: 006E4-legacy-appraisal-remediation-and-history-backfill
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_215124_normal_run/.ralph/runs/2026-07-10_215124_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_215124_normal_run/.ralph/runs/2026-07-10_215124_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

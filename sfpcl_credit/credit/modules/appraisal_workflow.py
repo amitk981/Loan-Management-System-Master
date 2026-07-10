@@ -423,9 +423,13 @@ class AppraisalWorkflow:
             APPRAISAL_UPDATE_PERMISSION,
             permissions,
         )
-        if note.appraisal_status != LoanAppraisalNote.STATUS_DRAFT:
+        if note.appraisal_status not in {
+            LoanAppraisalNote.STATUS_DRAFT,
+            LoanAppraisalNote.STATUS_REVIEW_PENDING,
+            LoanAppraisalNote.STATUS_REVIEWED,
+        }:
             raise CreditModuleInvalidStateError(
-                "Only a draft appraisal note can revalidate prerequisites."
+                "Rejected or sanction-submitted appraisal notes require governed manual repair."
             )
         if note.prerequisite_provenance != "legacy_unverified":
             raise CreditModuleInvalidStateError(
@@ -446,6 +450,7 @@ class AppraisalWorkflow:
             application_id=note.loan_application_id,
             actor_permissions=projection_permissions,
         ).snapshot
+        prior_state = note.appraisal_status
         note.eligibility_assessment_id_snapshot = eligibility[
             "eligibility_assessment_id"
         ]
@@ -455,24 +460,45 @@ class AppraisalWorkflow:
         note.eligibility_snapshot_json = eligibility
         note.loan_limit_snapshot_json = loan_limit
         note.prerequisite_provenance = "verified"
-        note.save(
-            update_fields=(
-                "eligibility_assessment_id_snapshot",
-                "loan_limit_assessment_id_snapshot",
-                "eligibility_snapshot_json",
-                "loan_limit_snapshot_json",
-                "prerequisite_provenance",
+        review_authority_invalidated = prior_state == LoanAppraisalNote.STATUS_REVIEWED
+        if review_authority_invalidated:
+            note.appraisal_status = LoanAppraisalNote.STATUS_DRAFT
+            note.reviewed_by_user = None
+            note.reviewed_at = None
+            note.review_comments = ""
+            note.last_review_decision = ""
+        update_fields = [
+            "eligibility_assessment_id_snapshot",
+            "loan_limit_assessment_id_snapshot",
+            "eligibility_snapshot_json",
+            "loan_limit_snapshot_json",
+            "prerequisite_provenance",
+        ]
+        if review_authority_invalidated:
+            update_fields.extend(
+                [
+                    "appraisal_status",
+                    "reviewed_by_user",
+                    "reviewed_at",
+                    "review_comments",
+                    "last_review_decision",
+                ]
             )
-        )
+        note.save(update_fields=update_fields)
         request_meta = normalize_request_meta(request_meta)
         AuditLog.objects.create(
             actor_user=actor,
             action="appraisal.prerequisites_revalidated",
             entity_type="loan_appraisal_note",
             entity_id=note.pk,
-            old_value_json={"prerequisite_provenance": "legacy_unverified"},
+            old_value_json={
+                "prerequisite_provenance": "legacy_unverified",
+                "appraisal_status": prior_state,
+            },
             new_value_json={
                 "prerequisite_provenance": "verified",
+                "appraisal_status": note.appraisal_status,
+                "review_authority_invalidated": review_authority_invalidated,
                 "eligibility_assessment_id": str(
                     note.eligibility_assessment_id_snapshot
                 ),
@@ -489,7 +515,7 @@ class AppraisalWorkflow:
             workflow_name="appraisal_note",
             entity_type="loan_appraisal_note",
             entity_id=note.pk,
-            from_state=note.appraisal_status,
+            from_state=prior_state,
             to_state=note.appraisal_status,
             trigger_reason="Appraisal prerequisite projections revalidated.",
             action_code="appraisal.prerequisites_revalidated",

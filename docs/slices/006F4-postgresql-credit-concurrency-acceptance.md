@@ -42,6 +42,15 @@ PostgreSQL and correcting any outcome that does not serialize exactly as the pub
 ## Test Cases
 
 - Existing five PostgreSQL tests execute unchanged first; save their initial output.
+- The exact combined command is
+  `/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test
+  sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests
+  sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests
+  sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests
+  --settings=sfpcl_credit.config.postgres_test_settings -v 2`; run it twice from `sfpcl_credit/`.
+- Each saved output must say `Found 5 test(s)`, `Ran 5 tests`, and `OK`, with no `skipped`,
+  connection-error, or setup-failure line. Record the PostgreSQL server version and the non-secret
+  database name/host/port settings used; never record credentials.
 - If a real race fails, save red evidence before the correction and green output after it.
 - Repeat the combined acceptance command at least once to expose timing-dependent flakiness.
 - Full SQLite/default regression may retain explicit PostgreSQL skips, but those skips never count

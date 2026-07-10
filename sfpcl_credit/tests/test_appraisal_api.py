@@ -1575,6 +1575,186 @@ class AppraisalApiTests(TestCase):
         )
         self.assertEqual(submitted.status_code, 200)
 
+    def test_legacy_review_pending_revalidation_pins_facts_and_stays_pending(self):
+        created = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data=self._payload(),
+            content_type="application/json",
+            headers=self._headers(),
+        ).json()["data"]
+        appraisal_id = created["loan_appraisal_note_id"]
+        submitted = self.client.post(
+            f"/api/v1/appraisal-notes/{appraisal_id}/submit-for-review/",
+            data={"remarks": "Ready for review."},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        self.assertEqual(submitted.status_code, 200)
+        note = apps.get_model("credit", "LoanAppraisalNote").objects.get(pk=appraisal_id)
+        note.prerequisite_provenance = "legacy_unverified"
+        note.eligibility_snapshot_json = {}
+        note.loan_limit_snapshot_json = {}
+        note.save(
+            update_fields=(
+                "prerequisite_provenance",
+                "eligibility_snapshot_json",
+                "loan_limit_snapshot_json",
+            )
+        )
+
+        response = self.client.post(
+            f"/api/v1/appraisal-notes/{appraisal_id}/revalidate-prerequisites/",
+            data={},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        remediated = response.json()["data"]
+        self.assertEqual(remediated["appraisal_status"], "review_pending")
+        self.assertEqual(remediated["prerequisite_provenance"], "verified")
+        self.assertEqual(
+            remediated["eligibility_snapshot"]["eligibility_assessment_id"],
+            str(self.eligibility.pk),
+        )
+        audit = AuditLog.objects.get(action="appraisal.prerequisites_revalidated")
+        self.assertEqual(audit.old_value_json["appraisal_status"], "review_pending")
+        self.assertEqual(audit.new_value_json["appraisal_status"], "review_pending")
+        self.assertNotIn("recommended_amount", str(audit.new_value_json))
+        event = WorkflowEvent.objects.get(
+            workflow_name="appraisal_note",
+            entity_id=appraisal_id,
+            trigger_reason="Appraisal prerequisite projections revalidated.",
+        )
+        self.assertEqual(event.from_state, "review_pending")
+        self.assertEqual(event.to_state, "review_pending")
+
+    def test_legacy_reviewed_revalidation_requires_fresh_review_before_sanction(self):
+        created = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data=self._payload(),
+            content_type="application/json",
+            headers=self._headers(),
+        ).json()["data"]
+        appraisal_id = created["loan_appraisal_note_id"]
+        submit_url = f"/api/v1/appraisal-notes/{appraisal_id}/submit-for-review/"
+        review_url = f"/api/v1/appraisal-notes/{appraisal_id}/review/"
+        self.client.post(
+            submit_url,
+            data={"remarks": "Ready for initial review."},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        reviewer, review_headers = self._credit_manager_headers()
+        sanction_permission = self._permission(
+            "credit.appraisal.submit_sanction",
+            "Submit appraisal to sanction",
+        )
+        RolePermission.objects.create(
+            role=reviewer.primary_role,
+            permission=sanction_permission,
+        )
+        initially_reviewed = self.client.post(
+            review_url,
+            data={"decision": "reviewed", "review_comments": "Initial review."},
+            content_type="application/json",
+            headers=review_headers,
+        )
+        self.assertEqual(initially_reviewed.status_code, 200)
+        note_model = apps.get_model("credit", "LoanAppraisalNote")
+        history_model = apps.get_model("credit", "AppraisalReviewDecision")
+        note = note_model.objects.get(pk=appraisal_id)
+        original_history = list(
+            history_model.objects.filter(loan_appraisal_note=note).values()
+        )
+        authored_facts = {
+            "recommendation": note.recommendation,
+            "repayment_capacity_notes": note.repayment_capacity_notes,
+            "risk_assessment_id": note.risk_assessment_id,
+            "tat_due_at": note.tat_due_at,
+        }
+        note.prerequisite_provenance = "legacy_unverified"
+        note.eligibility_snapshot_json = {}
+        note.loan_limit_snapshot_json = {}
+        note.save(
+            update_fields=(
+                "prerequisite_provenance",
+                "eligibility_snapshot_json",
+                "loan_limit_snapshot_json",
+            )
+        )
+
+        remediated_response = self.client.post(
+            f"/api/v1/appraisal-notes/{appraisal_id}/revalidate-prerequisites/",
+            data={},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+
+        self.assertEqual(remediated_response.status_code, 200)
+        remediated = remediated_response.json()["data"]
+        self.assertEqual(remediated["appraisal_status"], "draft")
+        self.assertIsNone(remediated["decision"])
+        self.assertIsNone(remediated["reviewed_by"])
+        self.assertIsNone(remediated["reviewed_at"])
+        self.assertIsNone(remediated["review_comments"])
+        self.assertEqual(remediated["review_history"], initially_reviewed.json()["data"]["review_history"])
+        note.refresh_from_db()
+        self.assertEqual(note.recommendation, authored_facts["recommendation"])
+        self.assertEqual(
+            note.repayment_capacity_notes,
+            authored_facts["repayment_capacity_notes"],
+        )
+        self.assertEqual(note.risk_assessment_id, authored_facts["risk_assessment_id"])
+        self.assertEqual(note.tat_due_at, authored_facts["tat_due_at"])
+        self.assertEqual(
+            list(history_model.objects.filter(loan_appraisal_note=note).values()),
+            original_history,
+        )
+        remediation_audit = AuditLog.objects.get(
+            action="appraisal.prerequisites_revalidated"
+        )
+        self.assertEqual(remediation_audit.old_value_json["appraisal_status"], "reviewed")
+        self.assertEqual(remediation_audit.new_value_json["appraisal_status"], "draft")
+        self.assertTrue(remediation_audit.new_value_json["review_authority_invalidated"])
+        self.assertNotIn("Initial review", str(remediation_audit.new_value_json))
+
+        sanction_url = (
+            f"/api/v1/loan-applications/{self.application.pk}/"
+            "submit-to-sanction-committee/"
+        )
+        blocked = self.client.post(
+            sanction_url,
+            data={"remarks": "Must not reuse the old review."},
+            content_type="application/json",
+            headers=review_headers,
+        )
+        self.assertEqual(blocked.status_code, 409)
+        self.assertFalse(apps.get_model("approvals", "ApprovalCase").objects.exists())
+
+        resubmitted = self.client.post(
+            submit_url,
+            data={"remarks": "Revalidated facts ready for fresh review."},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        self.assertEqual(resubmitted.status_code, 200)
+        freshly_reviewed = self.client.post(
+            review_url,
+            data={"decision": "reviewed", "review_comments": "Fresh independent review."},
+            content_type="application/json",
+            headers=review_headers,
+        )
+        self.assertEqual(freshly_reviewed.status_code, 200)
+        self.assertEqual(len(freshly_reviewed.json()["data"]["review_history"]), 2)
+        sanctioned = self.client.post(
+            sanction_url,
+            data={"remarks": "Fresh review completed."},
+            content_type="application/json",
+            headers=review_headers,
+        )
+        self.assertEqual(sanctioned.status_code, 200)
+
     def test_revalidation_requires_both_scopes_and_rolls_back_workflow_failure(self):
         created = self.client.post(
             f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
@@ -1646,6 +1826,205 @@ class AppraisalApiTests(TestCase):
         self.assertEqual(note.loan_limit_snapshot_json, {})
         self.assertFalse(
             AuditLog.objects.filter(action="appraisal.prerequisites_revalidated").exists()
+        )
+
+    def test_revalidation_rejects_malformed_scope_and_terminal_states_without_writes(self):
+        created = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data=self._payload(),
+            content_type="application/json",
+            headers=self._headers(),
+        ).json()["data"]
+        appraisal_id = created["loan_appraisal_note_id"]
+        endpoint = (
+            f"/api/v1/appraisal-notes/{appraisal_id}/revalidate-prerequisites/"
+        )
+        note = apps.get_model("credit", "LoanAppraisalNote").objects.get(pk=appraisal_id)
+        note.prerequisite_provenance = "legacy_unverified"
+        note.eligibility_snapshot_json = {}
+        note.loan_limit_snapshot_json = {}
+        note.save(
+            update_fields=(
+                "prerequisite_provenance",
+                "eligibility_snapshot_json",
+                "loan_limit_snapshot_json",
+            )
+        )
+        baseline = {
+            "audit": AuditLog.objects.filter(
+                action="appraisal.prerequisites_revalidated"
+            ).count(),
+            "workflow": WorkflowEvent.objects.filter(
+                workflow_name="appraisal_note",
+                trigger_reason="Appraisal prerequisite projections revalidated.",
+            ).count(),
+        }
+
+        malformed = self.client.post(
+            endpoint,
+            data="{",
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        self.assertEqual(malformed.status_code, 400)
+        self.assertEqual(malformed.json()["error"]["code"], "VALIDATION_ERROR")
+        unknown = self.client.post(
+            endpoint,
+            data={"silently_bless": True},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        self.assertEqual(unknown.status_code, 400)
+        self.assertIn("silently_bless", unknown.json()["error"]["field_errors"])
+
+        outsider = self._user(
+            "legacy.remediation.outsider@sfpcl.example",
+            Permission.objects.get(permission_code="credit.appraisal.update"),
+            Permission.objects.get(permission_code="credit.risk_assessment.manage"),
+        )
+        outsider_login = self.client.post(
+            "/api/v1/auth/login/",
+            data={"email": outsider.email, "password": "AppraisalPass123!"},
+            content_type="application/json",
+        )
+        denied = self.client.post(
+            endpoint,
+            data={},
+            content_type="application/json",
+            headers={
+                "Authorization": (
+                    f"Bearer {outsider_login.json()['data']['access_token']}"
+                )
+            },
+        )
+        self.assertIn(denied.status_code, {403, 404})
+
+        for terminal_state in ("rejected", "submitted_to_sanction_committee"):
+            with self.subTest(terminal_state=terminal_state):
+                note.appraisal_status = terminal_state
+                note.save(update_fields=["appraisal_status"])
+                quarantined = self.client.post(
+                    endpoint,
+                    data={},
+                    content_type="application/json",
+                    headers=self._headers(),
+                )
+                self.assertEqual(quarantined.status_code, 409)
+                self.assertIn(
+                    "governed manual repair",
+                    quarantined.json()["error"]["message"],
+                )
+                note.refresh_from_db()
+                self.assertEqual(note.appraisal_status, terminal_state)
+                self.assertEqual(note.prerequisite_provenance, "legacy_unverified")
+                self.assertEqual(note.eligibility_snapshot_json, {})
+                self.assertEqual(note.loan_limit_snapshot_json, {})
+
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="appraisal.prerequisites_revalidated"
+            ).count(),
+            baseline["audit"],
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                workflow_name="appraisal_note",
+                trigger_reason="Appraisal prerequisite projections revalidated.",
+            ).count(),
+            baseline["workflow"],
+        )
+
+    def test_reviewed_revalidation_rolls_back_authority_clear_on_evidence_failure(self):
+        created = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data=self._payload(),
+            content_type="application/json",
+            headers=self._headers(),
+        ).json()["data"]
+        appraisal_id = created["loan_appraisal_note_id"]
+        self.client.post(
+            f"/api/v1/appraisal-notes/{appraisal_id}/submit-for-review/",
+            data={"remarks": "Ready for review."},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        _, review_headers = self._credit_manager_headers()
+        self.client.post(
+            f"/api/v1/appraisal-notes/{appraisal_id}/review/",
+            data={"decision": "reviewed", "review_comments": "Immutable review."},
+            content_type="application/json",
+            headers=review_headers,
+        )
+        note_model = apps.get_model("credit", "LoanAppraisalNote")
+        history_model = apps.get_model("credit", "AppraisalReviewDecision")
+        note = note_model.objects.get(pk=appraisal_id)
+        note.prerequisite_provenance = "legacy_unverified"
+        note.eligibility_snapshot_json = {}
+        note.loan_limit_snapshot_json = {}
+        note.save(
+            update_fields=(
+                "prerequisite_provenance",
+                "eligibility_snapshot_json",
+                "loan_limit_snapshot_json",
+            )
+        )
+        endpoint = (
+            f"/api/v1/appraisal-notes/{appraisal_id}/revalidate-prerequisites/"
+        )
+        preserved_history = list(
+            history_model.objects.filter(loan_appraisal_note=note).values()
+        )
+        evidence_count = AuditLog.objects.filter(
+            action="appraisal.prerequisites_revalidated"
+        ).count()
+
+        with patch.object(
+            AuditLog.objects,
+            "create",
+            side_effect=RuntimeError("audit unavailable"),
+        ):
+            with self.assertRaisesMessage(RuntimeError, "audit unavailable"):
+                self.client.post(
+                    endpoint,
+                    data={},
+                    content_type="application/json",
+                    headers=self._headers(),
+                )
+        note.refresh_from_db()
+        self.assertEqual(note.appraisal_status, "reviewed")
+        self.assertEqual(note.last_review_decision, "reviewed")
+        self.assertEqual(note.review_comments, "Immutable review.")
+        self.assertEqual(note.prerequisite_provenance, "legacy_unverified")
+        self.assertEqual(note.eligibility_snapshot_json, {})
+        self.assertEqual(note.loan_limit_snapshot_json, {})
+
+        with patch(
+            "sfpcl_credit.credit.modules.appraisal_workflow.record_workflow_event",
+            side_effect=RuntimeError("workflow unavailable"),
+        ):
+            with self.assertRaisesMessage(RuntimeError, "workflow unavailable"):
+                self.client.post(
+                    endpoint,
+                    data={},
+                    content_type="application/json",
+                    headers=self._headers(),
+                )
+        note.refresh_from_db()
+        self.assertEqual(note.appraisal_status, "reviewed")
+        self.assertEqual(note.last_review_decision, "reviewed")
+        self.assertEqual(note.review_comments, "Immutable review.")
+        self.assertEqual(note.prerequisite_provenance, "legacy_unverified")
+        self.assertEqual(note.eligibility_snapshot_json, {})
+        self.assertEqual(note.loan_limit_snapshot_json, {})
+        self.assertEqual(
+            list(history_model.objects.filter(loan_appraisal_note=note).values()),
+            preserved_history,
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="appraisal.prerequisites_revalidated"
+            ).count(),
+            evidence_count,
         )
 
     def test_existing_exception_flag_allows_recommendation_above_stored_limit(self):
@@ -2657,3 +3036,241 @@ class AppraisalHistoryHardeningMigrationTests(TransactionTestCase):
         create_case("mismatched_application", mismatch=True)
         create_case("existing_legacy_unverified", provenance="legacy_unverified")
         return identifiers
+
+
+class LegacyAppraisalRemediationMigrationTests(TransactionTestCase):
+    migrate_from = [("credit", "0005_appraisalreviewdecision")]
+    migrate_to = [("credit", "0006_legacy_appraisal_history_remediation")]
+
+    def setUp(self):
+        super().setUp()
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate(self.migrate_from)
+        self.old_apps = self.executor.loader.project_state(self.migrate_from).apps
+        self.user = self._create_actor(self.old_apps)
+        self.ids = {
+            "returned_resubmitted": self._create_case(
+                "returned-resubmitted",
+                decision="returned",
+                appraisal_status="review_pending",
+                comments="Correct the repayment evidence.",
+            ),
+            "reviewed_submitted": self._create_case(
+                "reviewed-submitted",
+                decision="reviewed",
+                appraisal_status="submitted_to_sanction_committee",
+            ),
+            "already_backfilled": self._create_case(
+                "already-backfilled",
+                decision="returned",
+                appraisal_status="review_pending",
+                existing_latest=True,
+            ),
+            "incomplete": self._create_case(
+                "incomplete",
+                decision="returned",
+                appraisal_status="review_pending",
+                comments="",
+            ),
+            "multiple_cycles": self._create_case(
+                "multiple-cycles",
+                decision="returned",
+                appraisal_status="review_pending",
+                existing_earlier=True,
+            ),
+            "verified_unrelated": self._create_case(
+                "verified-unrelated",
+                decision="returned",
+                appraisal_status="review_pending",
+                provenance="verified",
+            ),
+        }
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_forward_backfills_returned_projection_after_resubmission(self):
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate(self.migrate_to)
+        migrated_apps = self.executor.loader.project_state(self.migrate_to).apps
+        Decision = migrated_apps.get_model("credit", "AppraisalReviewDecision")
+
+        decision = Decision.objects.get(
+            loan_appraisal_note_id=self.ids["returned_resubmitted"]
+        )
+        self.assertEqual(decision.decision, "returned")
+        self.assertEqual(decision.review_comments, "Correct the repayment evidence.")
+        self.assertEqual(decision.from_state, "review_pending")
+        self.assertEqual(decision.to_state, "draft")
+        self.assertEqual(decision.history_provenance, "legacy_latest_only")
+
+    def test_forward_is_selective_preserves_cycles_and_is_idempotent(self):
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate(self.migrate_to)
+        migrated_apps = self.executor.loader.project_state(self.migrate_to).apps
+        Decision = migrated_apps.get_model("credit", "AppraisalReviewDecision")
+
+        reviewed = Decision.objects.get(
+            loan_appraisal_note_id=self.ids["reviewed_submitted"]
+        )
+        self.assertEqual(reviewed.decision, "reviewed")
+        self.assertEqual(reviewed.to_state, "reviewed")
+        self.assertEqual(reviewed.history_provenance, "legacy_latest_only")
+        self.assertEqual(
+            Decision.objects.filter(
+                loan_appraisal_note_id=self.ids["already_backfilled"]
+            ).count(),
+            1,
+        )
+        self.assertFalse(
+            Decision.objects.filter(
+                loan_appraisal_note_id=self.ids["incomplete"]
+            ).exists()
+        )
+        multiple = Decision.objects.filter(
+            loan_appraisal_note_id=self.ids["multiple_cycles"]
+        ).order_by("decided_at")
+        self.assertEqual(multiple.count(), 2)
+        self.assertEqual(
+            list(multiple.values_list("history_provenance", flat=True)),
+            ["native", "legacy_latest_only"],
+        )
+        self.assertFalse(
+            Decision.objects.filter(
+                loan_appraisal_note_id=self.ids["verified_unrelated"]
+            ).exists()
+        )
+
+        counts_before = {
+            appraisal_id: Decision.objects.filter(
+                loan_appraisal_note_id=appraisal_id
+            ).count()
+            for appraisal_id in self.ids.values()
+        }
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate(self.migrate_from)
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate(self.migrate_to)
+        rerun_apps = self.executor.loader.project_state(self.migrate_to).apps
+        RerunDecision = rerun_apps.get_model("credit", "AppraisalReviewDecision")
+        self.assertEqual(
+            {
+                appraisal_id: RerunDecision.objects.filter(
+                    loan_appraisal_note_id=appraisal_id
+                ).count()
+                for appraisal_id in self.ids.values()
+            },
+            counts_before,
+        )
+
+    def _create_actor(self, old_apps):
+        Role = old_apps.get_model("identity", "Role")
+        UserModel = old_apps.get_model("identity", "User")
+        role = Role.objects.create(
+            role_code="legacy_remediation_reviewer",
+            role_name="Legacy Remediation Reviewer",
+        )
+        return UserModel.objects.create(
+            full_name="Synthetic Legacy Reviewer",
+            email="legacy-remediation@sfpcl.example",
+            primary_role=role,
+            password_hash="not-a-real-password",
+        )
+
+    def _create_case(
+        self,
+        label,
+        *,
+        decision,
+        appraisal_status,
+        comments="Legacy latest decision.",
+        provenance="legacy_unverified",
+        existing_latest=False,
+        existing_earlier=False,
+    ):
+        old_apps = self.old_apps
+        MemberModel = old_apps.get_model("members", "Member")
+        Application = old_apps.get_model("applications", "LoanApplication")
+        Risk = old_apps.get_model("credit", "RiskAssessment")
+        Appraisal = old_apps.get_model("credit", "LoanAppraisalNote")
+        Decision = old_apps.get_model("credit", "AppraisalReviewDecision")
+
+        suffix = label.upper()
+        member = MemberModel.objects.create(
+            member_number=f"MEM-LEGACY-{suffix}",
+            member_type="individual_farmer",
+            legal_name=f"Synthetic {label} Member",
+            display_name=f"Synthetic {label} Member",
+            folio_number=f"FOL-LEGACY-{suffix}",
+            membership_status="active",
+            kyc_status="verified",
+            default_status="no_default",
+        )
+        application = Application.objects.create(
+            member=member,
+            borrower_type="individual_farmer",
+            received_by_user=self.user,
+            created_by_user=self.user,
+        )
+        decided_at = timezone.now() - timedelta(days=1)
+        risk = Risk.objects.create(
+            loan_application=application,
+            market_risk_rating="low",
+            operational_risk_rating="low",
+            borrower_risk_rating="low",
+            overall_risk_rating="low",
+            assessed_by_user=self.user,
+            assessed_at=decided_at,
+        )
+        appraisal = Appraisal.objects.create(
+            loan_application=application,
+            prepared_by_user=self.user,
+            reviewed_by_user=self.user,
+            reviewed_at=decided_at,
+            review_comments=comments,
+            last_review_decision=decision,
+            tat_due_at=decided_at + timedelta(days=2),
+            tat_status="within_tat",
+            eligibility_assessment_id_snapshot=uuid4(),
+            loan_limit_assessment_id_snapshot=uuid4(),
+            eligibility_snapshot_json={},
+            loan_limit_snapshot_json={},
+            prerequisite_provenance=provenance,
+            borrower_summary="Synthetic borrower summary.",
+            eligibility_summary="Synthetic eligibility summary.",
+            loan_limit_summary="Synthetic limit summary.",
+            recommended_amount=Decimal("20000.00"),
+            recommended_security_summary="Synthetic security.",
+            repayment_capacity_notes="Synthetic repayment capacity.",
+            risk_assessment=risk,
+            recommendation="approve",
+            appraisal_status=appraisal_status,
+        )
+        destination = {"returned": "draft", "reviewed": "reviewed", "rejected": "rejected"}[
+            decision
+        ]
+        if existing_earlier:
+            Decision.objects.create(
+                loan_appraisal_note=appraisal,
+                decision="returned",
+                review_comments="Earlier immutable cycle.",
+                reviewer_user=self.user,
+                decided_at=decided_at - timedelta(days=1),
+                from_state="review_pending",
+                to_state="draft",
+                history_provenance="native",
+            )
+        if existing_latest:
+            Decision.objects.create(
+                loan_appraisal_note=appraisal,
+                decision=decision,
+                review_comments=comments,
+                reviewer_user=self.user,
+                decided_at=decided_at,
+                from_state="review_pending",
+                to_state=destination,
+                history_provenance="legacy_latest_only",
+            )
+        return appraisal.pk

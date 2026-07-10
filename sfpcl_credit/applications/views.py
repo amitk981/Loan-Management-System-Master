@@ -745,6 +745,14 @@ def appraisal_note_revalidate_prerequisites(request, loan_appraisal_note_id):
             "Appraisal prerequisite revalidation failed validation.",
             exc.field_errors,
         )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Appraisal prerequisite revalidation failed validation.",
+            services.validation_field_errors(exc),
+        )
     except CreditModuleInvalidStateError as exc:
         return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
     except (
