@@ -1,7 +1,7 @@
 # Slice 004E: Witness Shareholder Validation
 
 ## Status
-Not Started
+Blocked
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master
@@ -14,7 +14,8 @@ Deliver this narrow capability as a small, testable Ralph implementation slice.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 004D
+- 004F
+- 005A
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11
@@ -33,25 +34,47 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+Do not start this slice until `004D2-member-profile-and-nominee-contract-hardening` is complete; the
+member module must first remove premature loan-start action availability and sensitive nominee audit
+hashes.
+
+This slice is blocked until both prerequisites exist:
+
+- `004F` or an equivalent completed slice has persisted shareholding/shareholder facts.
+- `005A` or an equivalent completed slice has an owning loan-application table/API boundary.
+
+`data-model.md` §10.5 and `screen-spec.md` S09 make witnesses application documentation records,
+not member-profile records. Implement witness capture only against a real loan application and real
+member/shareholding records; do not create a member-level witness API or boolean-only verification
+stub.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
+Add the data-model §10.5 witness fields only when their required loan-application FK can reference
+an implemented table: application FK, optional member FK, name, encrypted+hashed PAN/Aadhaar,
+shareholder verification flag/status, verifier/time, and created time.
 
 ## API Contracts
 Create or update the API contract for this capability.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Apply application object access and the exact witness permission available at run time. Source roles
+allow Credit/Compliance capture and read-only audit access, but no exact witness endpoint permission
+code was confirmed in the source pass; record/stub this gap rather than borrowing nominee,
+shareholding, or KYC permissions.
 
 ## Audit Requirements
 Record audit/workflow events for critical create/update/approval/access actions.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+Witness must resolve to an existing SFPCL shareholder/member or folio and requires KYC. Documentation
+completion must not treat the witness as complete until verification is complete. Do not accept a
+caller-supplied `shareholder_verified_flag` without checking persisted shareholding facts.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+TDD only after the prerequisites exist: existing-shareholder success, non-shareholder rejection,
+missing application/member, permission/object-access denial, encrypted identity persistence/no
+plaintext response leakage, and verification metadata. If application/shareholding prerequisites are
+still absent, keep this slice blocked instead of implementing an unverifiable witness shell.
 
 ## Visual Acceptance Criteria
 None.

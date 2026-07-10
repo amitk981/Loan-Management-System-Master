@@ -1,0 +1,543 @@
+"""Deep module for appraisal-note preparation and review transitions."""
+
+from dataclasses import dataclass
+from datetime import timedelta
+from decimal import Decimal, InvalidOperation
+
+from django.db import transaction
+from django.utils import timezone
+
+from sfpcl_credit.applications.models import LoanApplication
+from sfpcl_credit.credit.models import LoanAppraisalNote, RiskAssessment
+from sfpcl_credit.credit.modules.common import (
+    APPLICATION_READ_PERMISSION,
+    CreditModuleInvalidStateError,
+    CreditModuleNotFound,
+    CreditModuleValidationError,
+    normalize_request_meta,
+    require_application_access,
+    require_permission,
+)
+from sfpcl_credit.credit.modules.eligibility_assessment import EligibilityAssessmentModule
+from sfpcl_credit.credit.modules.loan_limit_calculator import LoanLimitCalculator
+from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.workflows.events import record_workflow_event
+
+
+APPRAISAL_CREATE_PERMISSION = "credit.appraisal.create"
+APPRAISAL_UPDATE_PERMISSION = "credit.appraisal.update"
+APPRAISAL_SUBMIT_PERMISSION = "credit.appraisal.submit_review"
+APPRAISAL_REVIEW_PERMISSION = "credit.appraisal.review"
+RISK_MANAGE_PERMISSION = "credit.risk_assessment.manage"
+APPRAISAL_READ_PERMISSIONS = {
+    APPRAISAL_CREATE_PERMISSION,
+    APPRAISAL_UPDATE_PERMISSION,
+    APPRAISAL_SUBMIT_PERMISSION,
+    APPRAISAL_REVIEW_PERMISSION,
+}
+
+
+@dataclass(frozen=True)
+class AppraisalNoteResult:
+    snapshot: dict
+
+
+class AppraisalWorkflow:
+    @transaction.atomic
+    def create_or_update(
+        self,
+        *,
+        actor,
+        application_id,
+        payload,
+        partial=False,
+        request_meta=None,
+        actor_permissions=None,
+    ):
+        permission = APPRAISAL_UPDATE_PERMISSION if partial else APPRAISAL_CREATE_PERMISSION
+        permissions = require_permission(
+            actor,
+            permission,
+            "You do not have permission to update appraisal notes."
+            if partial
+            else "You do not have permission to create appraisal notes.",
+            actor_permissions,
+        )
+        if not partial or "risk_assessment" in payload:
+            require_permission(
+                actor,
+                RISK_MANAGE_PERMISSION,
+                "You do not have permission to manage risk assessments.",
+                permissions,
+            )
+        application = (
+            LoanApplication.objects.select_for_update()
+            .select_related("created_by_user", "received_by_user")
+            .filter(loan_application_id=application_id)
+            .first()
+        )
+        if application is None:
+            raise CreditModuleNotFound("Loan application was not found.")
+        require_application_access(application, actor, permission, permissions)
+        payload = _clean_payload(payload, partial=partial)
+        projection_permissions = set(permissions) | {APPLICATION_READ_PERMISSION}
+
+        try:
+            eligibility = EligibilityAssessmentModule().get(
+                actor=actor,
+                application_id=application_id,
+                actor_permissions=projection_permissions,
+            ).snapshot
+        except CreditModuleNotFound as exc:
+            raise CreditModuleInvalidStateError(
+                "A stored eligible eligibility assessment is required before appraisal."
+            ) from exc
+        if eligibility["overall_result"] != "eligible":
+            raise CreditModuleInvalidStateError(
+                "Appraisal creation requires eligibility overall_result eligible."
+            )
+        try:
+            loan_limit = LoanLimitCalculator().get_assessment(
+                actor=actor,
+                application_id=application_id,
+                actor_permissions=projection_permissions,
+            ).snapshot
+        except CreditModuleNotFound as exc:
+            raise CreditModuleInvalidStateError(
+                "A stored loan-limit assessment is required before appraisal."
+            ) from exc
+        if (
+            "recommended_amount" in payload
+            and payload["recommended_amount"]
+            > Decimal(loan_limit["final_eligible_loan_amount"])
+            and not loan_limit["exception_required_flag"]
+        ):
+            raise CreditModuleValidationError(
+                {
+                    "recommended_amount": (
+                        "Cannot exceed the stored final eligible amount unless the stored "
+                        "loan-limit assessment already requires an exception."
+                    )
+                }
+            )
+
+        current = (
+            LoanAppraisalNote.objects.select_for_update()
+            .select_related("risk_assessment", "prepared_by_user", "reviewed_by_user")
+            .filter(loan_application=application)
+            .first()
+        )
+        if partial:
+            if current is None:
+                raise CreditModuleNotFound("Appraisal note was not found.")
+            if current.appraisal_status != LoanAppraisalNote.STATUS_DRAFT:
+                raise CreditModuleInvalidStateError("Only draft appraisal notes can be updated.")
+            changed_fields = []
+            for field in (
+                "borrower_summary",
+                "eligibility_summary",
+                "loan_limit_summary",
+                "recommended_amount",
+                "recommended_tenure_months",
+                "recommended_interest_type",
+                "recommended_security_summary",
+                "recommendation",
+            ):
+                if field in payload:
+                    value = payload[field]
+                    if field == "recommended_amount":
+                        value = Decimal(str(value))
+                    setattr(current, field, value)
+                    changed_fields.append(field)
+            risk_payload = payload.get("risk_assessment", {})
+            for field in (
+                "market_risk_rating",
+                "operational_risk_rating",
+                "borrower_risk_rating",
+                "overall_risk_rating",
+                "risk_mitigation_notes",
+            ):
+                if field in risk_payload:
+                    setattr(current.risk_assessment, field, risk_payload[field])
+                    changed_fields.append(f"risk_assessment.{field}")
+            if risk_payload:
+                current.risk_assessment.assessed_by_user = actor
+                current.risk_assessment.assessed_at = timezone.now()
+                current.risk_assessment.save()
+            current.save()
+            request_meta = normalize_request_meta(request_meta)
+            AuditLog.objects.create(
+                actor_user=actor,
+                action="appraisal.updated",
+                entity_type="loan_appraisal_note",
+                entity_id=current.pk,
+                old_value_json={"appraisal_status": current.appraisal_status},
+                new_value_json={
+                    "appraisal_status": current.appraisal_status,
+                    "changed_fields": sorted(changed_fields),
+                    "request_id": request_meta.request_id,
+                },
+                ip_address=request_meta.ip_address,
+                user_agent=request_meta.user_agent,
+            )
+            record_workflow_event(
+                actor=actor,
+                workflow_name="appraisal_note",
+                entity_type="loan_appraisal_note",
+                entity_id=current.pk,
+                from_state=current.appraisal_status,
+                to_state=current.appraisal_status,
+                trigger_reason="Appraisal note draft updated.",
+                action_code="appraisal.updated",
+            )
+            return AppraisalNoteResult(snapshot=appraisal_note_snapshot(current))
+        if current is not None:
+            raise CreditModuleInvalidStateError(
+                "An appraisal note already exists for this loan application."
+            )
+
+        now = timezone.now()
+        risk_payload = payload["risk_assessment"]
+        risk = RiskAssessment.objects.create(
+            loan_application=application,
+            market_risk_rating=risk_payload["market_risk_rating"],
+            operational_risk_rating=risk_payload["operational_risk_rating"],
+            borrower_risk_rating=risk_payload["borrower_risk_rating"],
+            overall_risk_rating=risk_payload["overall_risk_rating"],
+            risk_mitigation_notes=risk_payload.get("risk_mitigation_notes", ""),
+            assessed_by_user=actor,
+            assessed_at=now,
+        )
+        due_at = application.created_at + timedelta(days=2)
+        note = LoanAppraisalNote.objects.create(
+            loan_application=application,
+            prepared_by_user=actor,
+            prepared_at=now,
+            tat_due_at=due_at,
+            tat_status=_tat_status(now, due_at),
+            eligibility_assessment_id_snapshot=eligibility["eligibility_assessment_id"],
+            loan_limit_assessment_id_snapshot=loan_limit["loan_limit_assessment_id"],
+            borrower_summary=payload["borrower_summary"],
+            eligibility_summary=payload["eligibility_summary"],
+            loan_limit_summary=payload["loan_limit_summary"],
+            recommended_amount=payload["recommended_amount"],
+            recommended_tenure_months=payload.get("recommended_tenure_months"),
+            recommended_interest_type=payload.get("recommended_interest_type", ""),
+            recommended_security_summary=payload["recommended_security_summary"],
+            risk_assessment=risk,
+            recommendation=payload["recommendation"],
+            appraisal_status=LoanAppraisalNote.STATUS_DRAFT,
+        )
+        request_meta = normalize_request_meta(request_meta)
+        AuditLog.objects.create(
+            actor_user=actor,
+            action="appraisal.created",
+            entity_type="loan_appraisal_note",
+            entity_id=note.loan_appraisal_note_id,
+            old_value_json=None,
+            new_value_json={
+                "loan_appraisal_note_id": str(note.pk),
+                "loan_application_id": str(application.pk),
+                "risk_assessment_id": str(risk.pk),
+                "eligibility_assessment_id": str(note.eligibility_assessment_id_snapshot),
+                "loan_limit_assessment_id": str(note.loan_limit_assessment_id_snapshot),
+                "appraisal_status": note.appraisal_status,
+                "request_id": request_meta.request_id,
+            },
+            ip_address=request_meta.ip_address,
+            user_agent=request_meta.user_agent,
+        )
+        record_workflow_event(
+            actor=actor,
+            workflow_name="appraisal_note",
+            entity_type="loan_appraisal_note",
+            entity_id=note.pk,
+            from_state="not_started",
+            to_state=note.appraisal_status,
+            trigger_reason="Appraisal note draft created.",
+            action_code="appraisal.created",
+        )
+        return AppraisalNoteResult(snapshot=appraisal_note_snapshot(note))
+
+    def get(self, *, actor, application_id, actor_permissions=None):
+        permissions = actor_permissions or auth_service.effective_permission_codes(actor)
+        permission = next(
+            (code for code in APPRAISAL_READ_PERMISSIONS if code in permissions),
+            None,
+        )
+        if permission is None:
+            require_permission(
+                actor,
+                APPRAISAL_CREATE_PERMISSION,
+                "You do not have permission to read appraisal notes.",
+                permissions,
+            )
+        application = (
+            LoanApplication.objects.select_related("created_by_user", "received_by_user")
+            .filter(loan_application_id=application_id)
+            .first()
+        )
+        if application is None:
+            raise CreditModuleNotFound("Loan application was not found.")
+        require_application_access(application, actor, permission, permissions)
+        note = (
+            LoanAppraisalNote.objects.select_related(
+                "risk_assessment",
+                "prepared_by_user",
+                "reviewed_by_user",
+            )
+            .filter(loan_application=application)
+            .first()
+        )
+        if note is None:
+            raise CreditModuleNotFound("Appraisal note was not found.")
+        return AppraisalNoteResult(snapshot=appraisal_note_snapshot(note))
+
+    @transaction.atomic
+    def submit_for_review(
+        self,
+        *,
+        actor,
+        appraisal_id,
+        payload,
+        request_meta=None,
+        actor_permissions=None,
+    ):
+        permissions = require_permission(
+            actor,
+            APPRAISAL_SUBMIT_PERMISSION,
+            "You do not have permission to submit appraisal notes for review.",
+            actor_permissions,
+        )
+        unknown = sorted(set(payload) - {"remarks"})
+        errors = {field: "Unknown field." for field in unknown}
+        if not isinstance(payload.get("remarks"), str) or not payload["remarks"].strip():
+            errors["remarks"] = "This field must not be blank."
+        if errors:
+            raise CreditModuleValidationError(errors)
+        note = (
+            LoanAppraisalNote.objects.select_for_update()
+            .select_related(
+                "loan_application__created_by_user",
+                "loan_application__received_by_user",
+                "risk_assessment",
+                "prepared_by_user",
+                "reviewed_by_user",
+            )
+            .filter(loan_appraisal_note_id=appraisal_id)
+            .first()
+        )
+        if note is None:
+            raise CreditModuleNotFound("Appraisal note was not found.")
+        require_application_access(
+            note.loan_application,
+            actor,
+            APPRAISAL_SUBMIT_PERMISSION,
+            permissions,
+        )
+        if note.appraisal_status != LoanAppraisalNote.STATUS_DRAFT:
+            raise CreditModuleInvalidStateError(
+                "Only a draft appraisal note can be submitted for review."
+            )
+        submission_errors = _submission_errors(note)
+        if submission_errors:
+            raise CreditModuleValidationError(submission_errors)
+        now = timezone.now()
+        note.appraisal_status = LoanAppraisalNote.STATUS_REVIEW_PENDING
+        note.tat_status = _tat_status(now, note.tat_due_at)
+        note.save(update_fields=["appraisal_status", "tat_status"])
+        request_meta = normalize_request_meta(request_meta)
+        AuditLog.objects.create(
+            actor_user=actor,
+            action="appraisal.submitted_for_review",
+            entity_type="loan_appraisal_note",
+            entity_id=note.pk,
+            old_value_json={"appraisal_status": LoanAppraisalNote.STATUS_DRAFT},
+            new_value_json={
+                "appraisal_status": note.appraisal_status,
+                "tat_status": note.tat_status,
+                "request_id": request_meta.request_id,
+            },
+            ip_address=request_meta.ip_address,
+            user_agent=request_meta.user_agent,
+        )
+        record_workflow_event(
+            actor=actor,
+            workflow_name="appraisal_note",
+            entity_type="loan_appraisal_note",
+            entity_id=note.pk,
+            from_state=LoanAppraisalNote.STATUS_DRAFT,
+            to_state=note.appraisal_status,
+            trigger_reason="Appraisal note submitted for Credit Manager review.",
+            action_code="appraisal.submitted_for_review",
+        )
+        return AppraisalNoteResult(snapshot=appraisal_note_snapshot(note))
+
+    def review(self, *, actor, appraisal_id, decision, comments):
+        raise NotImplementedError("Appraisal review is owned by slice 006F.")
+
+    def submit_to_sanction(self, *, actor, application_id):
+        raise NotImplementedError("Sanction submission is owned by slice 006G.")
+
+
+def appraisal_note_snapshot(note):
+    risk = note.risk_assessment
+    return {
+        "loan_appraisal_note_id": str(note.pk),
+        "loan_application_id": str(note.loan_application_id),
+        "eligibility_assessment_id": str(note.eligibility_assessment_id_snapshot),
+        "loan_limit_assessment_id": str(note.loan_limit_assessment_id_snapshot),
+        "prepared_by": {
+            "user_id": str(note.prepared_by_user_id),
+            "full_name": note.prepared_by_user.full_name,
+        },
+        "prepared_at": timezone.localtime(note.prepared_at).isoformat(),
+        "reviewed_by": None,
+        "reviewed_at": None,
+        "tat_due_at": timezone.localtime(note.tat_due_at).isoformat(),
+        "tat_status": note.tat_status,
+        "borrower_summary": note.borrower_summary,
+        "eligibility_summary": note.eligibility_summary,
+        "loan_limit_summary": note.loan_limit_summary,
+        "recommended_amount": f"{note.recommended_amount:.2f}",
+        "recommended_tenure_months": note.recommended_tenure_months,
+        "recommended_interest_type": note.recommended_interest_type or None,
+        "recommended_security_summary": note.recommended_security_summary,
+        "risk_assessment": {
+            "risk_assessment_id": str(risk.pk),
+            "market_risk_rating": risk.market_risk_rating,
+            "operational_risk_rating": risk.operational_risk_rating,
+            "borrower_risk_rating": risk.borrower_risk_rating,
+            "overall_risk_rating": risk.overall_risk_rating,
+            "risk_mitigation_notes": risk.risk_mitigation_notes,
+            "assessed_by_user_id": str(risk.assessed_by_user_id),
+            "assessed_at": timezone.localtime(risk.assessed_at).isoformat(),
+        },
+        "recommendation": note.recommendation,
+        "appraisal_status": note.appraisal_status,
+    }
+
+
+def _tat_status(at, due_at):
+    return LoanAppraisalNote.TAT_WITHIN if at <= due_at else LoanAppraisalNote.TAT_BREACHED
+
+
+def _submission_errors(note):
+    errors = {}
+    for field in (
+        "borrower_summary",
+        "eligibility_summary",
+        "loan_limit_summary",
+        "recommended_security_summary",
+    ):
+        if not getattr(note, field).strip():
+            errors[field] = "This field must not be blank."
+    if note.recommended_amount <= 0:
+        errors["recommended_amount"] = "Must be greater than zero."
+    if note.recommended_tenure_months is not None and note.recommended_tenure_months <= 0:
+        errors["recommended_tenure_months"] = "Must be a positive integer."
+    if note.recommended_interest_type and note.recommended_interest_type != "floating":
+        errors["recommended_interest_type"] = "Must be floating when supplied."
+    if note.recommendation not in {"approve", "reject", "conditions"}:
+        errors["recommendation"] = "Must be approve, reject, or conditions."
+    for field in (
+        "market_risk_rating",
+        "operational_risk_rating",
+        "borrower_risk_rating",
+        "overall_risk_rating",
+    ):
+        if getattr(note.risk_assessment, field) not in {"low", "medium", "high"}:
+            errors[f"risk_assessment.{field}"] = "Must be low, medium, or high."
+    return errors
+
+
+def _clean_payload(payload, *, partial):
+    payload = dict(payload)
+    allowed = {
+        "borrower_summary",
+        "eligibility_summary",
+        "loan_limit_summary",
+        "recommended_amount",
+        "recommended_tenure_months",
+        "recommended_interest_type",
+        "recommended_security_summary",
+        "risk_assessment",
+        "recommendation",
+    }
+    unknown = sorted(set(payload) - allowed)
+    if unknown:
+        raise CreditModuleValidationError(
+            {field: "Unknown field." for field in unknown}
+        )
+    required_summaries = {
+        "borrower_summary",
+        "eligibility_summary",
+        "loan_limit_summary",
+        "recommended_security_summary",
+    }
+    errors = {}
+    for field in required_summaries:
+        if field not in payload:
+            if not partial:
+                errors[field] = "This field is required."
+        elif not isinstance(payload[field], str) or not payload[field].strip():
+            errors[field] = "This field must not be blank."
+    if "recommendation" not in payload:
+        if not partial:
+            errors["recommendation"] = "This field is required."
+    elif payload["recommendation"] not in {"approve", "reject", "conditions"}:
+        errors["recommendation"] = "Must be approve, reject, or conditions."
+    if "recommended_amount" not in payload:
+        if not partial:
+            errors["recommended_amount"] = "This field is required."
+    else:
+        try:
+            amount = Decimal(str(payload["recommended_amount"]))
+        except (InvalidOperation, TypeError, ValueError):
+            errors["recommended_amount"] = "Must be a valid amount."
+        else:
+            if not amount.is_finite() or amount <= 0:
+                errors["recommended_amount"] = "Must be greater than zero."
+            else:
+                payload["recommended_amount"] = amount
+    if "recommended_tenure_months" in payload:
+        tenure = payload["recommended_tenure_months"]
+        if isinstance(tenure, bool) or not isinstance(tenure, int) or tenure <= 0:
+            errors["recommended_tenure_months"] = "Must be a positive integer."
+    if "recommended_interest_type" in payload and payload["recommended_interest_type"] != "floating":
+        errors["recommended_interest_type"] = "Must be floating when supplied."
+    if "risk_assessment" not in payload:
+        if not partial:
+            errors["risk_assessment"] = "This field is required."
+    elif not isinstance(payload["risk_assessment"], dict):
+        errors["risk_assessment"] = "Must be an object."
+    else:
+        risk = payload["risk_assessment"]
+        allowed_risk = {
+            "market_risk_rating",
+            "operational_risk_rating",
+            "borrower_risk_rating",
+            "overall_risk_rating",
+            "risk_mitigation_notes",
+        }
+        for field in sorted(set(risk) - allowed_risk):
+            errors[f"risk_assessment.{field}"] = "Unknown field."
+        for field in (
+            "market_risk_rating",
+            "operational_risk_rating",
+            "borrower_risk_rating",
+            "overall_risk_rating",
+        ):
+            if field not in risk:
+                if not partial:
+                    errors[f"risk_assessment.{field}"] = "This field is required."
+            elif risk[field] not in {"low", "medium", "high"}:
+                errors[f"risk_assessment.{field}"] = "Must be low, medium, or high."
+        if "risk_mitigation_notes" in risk and not isinstance(
+            risk["risk_mitigation_notes"], str
+        ):
+            errors["risk_assessment.risk_mitigation_notes"] = "Must be text."
+    if errors:
+        raise CreditModuleValidationError(errors)
+    return payload

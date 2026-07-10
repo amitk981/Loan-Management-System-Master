@@ -1,0 +1,56 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 8 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, communications, configurations, contenttypes, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying documents.0001_initial... OK
+  Applying members.0007_kycprofile_kycdocument_and_more... OK
+  Applying members.0008_cancelledcheque_bankaccount_and_more... OK
+  Applying identity.0003_portal_member_auth... OK
+  Applying applications.0001_initial... OK
+  Applying applications.0002_loanapplication_submitted_by_user... OK
+  Applying applications.0003_systemsequence_loanrequestregisterentry... OK
+  Applying applications.0004_applicationdocument_and_more... OK
+  Applying applications.0005_application_deficiency... OK
+  Applying applications.0006_rejection_note... OK
+  Applying applications.0007_eligibilityassessment... OK
+  Applying applications.0008_loanlimitassessment... OK
+  Applying applications.0009_loan_limit_policy_snapshot... OK
+  Applying applications.0010_loanapplication_nominee... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying scheduler.0001_initial... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_eligibility_assessment_run_and_read_persists_manual_evidence_active_member_result (tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_eligibility_assessment_run_and_read_persists_manual_evidence_active_member_result) ... ok
+test_eligibility_assessment_uses_existing_verified_active_member_facts_when_available (tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_eligibility_assessment_uses_existing_verified_active_member_facts_when_available) ... ok
+test_eligibility_assessment_marks_application_eligible_when_all_source_checks_pass (tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_eligibility_assessment_marks_application_eligible_when_all_source_checks_pass) ... ok
+test_eligibility_uses_dob_to_reject_legacy_selected_minor (tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_eligibility_uses_dob_to_reject_legacy_selected_minor) ... ok
+test_eligibility_assessment_marks_blockers_ineligible_without_advancing_application (tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_eligibility_assessment_marks_blockers_ineligible_without_advancing_application) ... ok
+test_eligibility_assessment_missing_terms_is_ineligible (tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_eligibility_assessment_missing_terms_is_ineligible) ... ok
+test_eligibility_assessment_rerun_updates_existing_assessment (tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_eligibility_assessment_rerun_updates_existing_assessment) ... ok
+test_eligibility_assessment_denials_and_invalid_state_create_no_success_evidence (tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_eligibility_assessment_denials_and_invalid_state_create_no_success_evidence) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 1.437s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

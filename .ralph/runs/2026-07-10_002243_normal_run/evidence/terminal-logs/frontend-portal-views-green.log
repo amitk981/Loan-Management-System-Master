@@ -1,0 +1,39 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/borrower/portal/PortalMemberViews.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_002243_normal_run/sfpcl-lms
+
+ ❯ src/pages/borrower/portal/PortalMemberViews.test.tsx (4 tests | 1 failed) 39ms
+   ✓ member portal backend-backed views > renders MP03 dashboard counts and pending actions from the portal API 9ms
+   ✓ member portal backend-backed views > renders MP04 profile tabs with masked sensitive values from the portal API 3ms
+   ✓ member portal backend-backed views > renders MP22 produce supply empty shell when the backend model is not implemented 2ms
+   × member portal backend-backed views > renders MP09 loading, empty, error, and returned-incomplete application states 24ms
+     → expected '<div class="space-y-6"><div class="fl…' to contain 'Action needed'
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/borrower/portal/PortalMemberViews.test.tsx > member portal backend-backed views > renders MP09 loading, empty, error, and returned-incomplete application states
+AssertionError: expected '<div class="space-y-6"><div class="fl…' to contain 'Action needed'
+
+Expected: "Action needed"
+Received: "<div class="space-y-6"><div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"><div><h2 class="text-xl font-bold text-slate-900">My Applications</h2><p class="text-sm text-slate-500 mt-1">Track your loan applications and their current status.</p></div><button class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New Loan Application</button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="bg-white rounded-xl border border-slate-100 p-5 hover:border-green-200 hover:shadow-md transition-all cursor-pointer group"><div class="flex items-start justify-between mb-4"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-amber-50 text-amber-600"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg></div><div><h3 class="font-semibold text-slate-900 group-hover:text-green-700 transition-colors">crop production</h3><div class="text-xs text-slate-500 mt-0.5">APP-RETURN</div></div></div><span class="inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200 text-xs px-2 py-0.5 h-5"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle></svg>Action Needed</span></div><div class="grid grid-cols-2 gap-4 mb-4"><div><p class="text-xs text-slate-500">Requested Amount</p><p class="text-sm font-semibold text-slate-900 mt-0.5">₹2,50,000</p></div><div><p class="text-xs text-slate-500">Applied On</p><p class="text-sm font-medium text-slate-900 mt-0.5">10 Jul 2026</p></div></div><div class="pt-4 border-t border-slate-50 flex items-center justify-between"><div><p class="text-xs text-slate-500">Current Stage</p><p class="text-sm font-medium text-slate-700 mt-0.5 flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-list text-slate-400" aria-hidden="true"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 16h4"></path><path d="M8 11h.01"></path><path d="M8 16h.01"></path></svg>Review deficiencies</p></div><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right text-slate-300 group-hover:text-green-500 transition-colors" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></div></div></div></div>"
+
+ ❯ src/pages/borrower/portal/PortalMemberViews.test.tsx:55:18
+     53|       <MP09ApplicationsView applications={[returnedApplication]} loadi…
+     54|     );
+     55|     expect(html).toContain('Action needed');
+       |                  ^
+     56|     expect(html).toContain('Review deficiencies');
+     57|     expect(html).toContain('APP-RETURN');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  00:32:38
+   Duration  670ms (transform 141ms, setup 0ms, collect 228ms, tests 39ms, environment 0ms, prepare 48ms)
+

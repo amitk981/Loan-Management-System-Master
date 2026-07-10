@@ -1,7 +1,14 @@
 from django.core.exceptions import ValidationError
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_http_methods
 
-from sfpcl_credit.api import error_response, list_response, success_response
+from sfpcl_credit.api import (
+    error_response,
+    list_response,
+    parse_json_body,
+    request_ip,
+    request_user_agent,
+    success_response,
+)
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.members import services
 
@@ -47,3 +54,623 @@ def member_detail(request, member_id):
     if member is None:
         return error_response(request, 404, "NOT_FOUND", "Member was not found.")
     return success_response(services.serialize_member_profile(member, user), request)
+
+
+@require_http_methods(["POST"])
+def reveal_sensitive_field(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    body = {}
+    try:
+        body = parse_json_body(request)
+        field_name, reason = services.validate_sensitive_reveal_payload(body)
+    except ValidationError as exc:
+        audit_field_name = body.get("field_name") if isinstance(body.get("field_name"), str) else None
+        audit_reason = body.get("reason") if isinstance(body.get("reason"), str) else None
+        services.audit_sensitive_reveal_denied(
+            user,
+            member_id,
+            audit_field_name,
+            audit_reason,
+            "validation_failed",
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Sensitive reveal payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+
+    if not services.user_can_read_members(user):
+        services.audit_sensitive_reveal_denied(
+            user,
+            member_id,
+            field_name,
+            reason,
+            "missing_base_read_permission",
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read members.",
+        )
+
+    member = services.get_accessible_member(member_id)
+    if member is None:
+        services.audit_sensitive_reveal_denied(
+            user,
+            member_id,
+            field_name,
+            reason,
+            "member_not_found",
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+
+    if not services.user_can_reveal_sensitive_field(user, field_name):
+        services.audit_sensitive_reveal_denied(
+            user,
+            member.member_id,
+            field_name,
+            reason,
+            "missing_field_permission",
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+        return error_response(
+            request,
+            403,
+            "SENSITIVE_FIELD_ACCESS_DENIED",
+            "You do not have permission to reveal this sensitive field.",
+        )
+
+    try:
+        data = services.reveal_member_sensitive_field(
+            member,
+            field_name,
+            reason,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+    except ValidationError as exc:
+        services.audit_sensitive_reveal_denied(
+            user,
+            member.member_id,
+            field_name,
+            reason,
+            "source_value_unavailable",
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Sensitive reveal payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    response = success_response(data, request)
+    response["Cache-Control"] = "no-store"
+    response["Pragma"] = "no-cache"
+    return response
+
+
+@require_http_methods(["GET", "POST"])
+def member_nominees(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if request.method == "GET" and not services.user_can_read_nominees(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read nominees.",
+        )
+    if request.method == "POST" and not services.user_can_create_nominees(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to create nominees.",
+        )
+
+    member = services.get_accessible_member(member_id)
+    if member is None:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+
+    if request.method == "GET":
+        try:
+            data, pagination = services.paginated_nominees(member, request.GET)
+        except ValidationError as exc:
+            return error_response(
+                request,
+                400,
+                "VALIDATION_ERROR",
+                "Nominee query failed validation.",
+                services.validation_field_errors(exc),
+            )
+        return list_response(data, pagination, request)
+
+    try:
+        body = parse_json_body(request)
+        nominee = services.create_nominee(
+            member,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except services.NomineeValidationError as exc:
+        return error_response(request, 400, exc.code, exc.message, exc.field_errors)
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Nominee payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return success_response(services.serialize_nominee(nominee), request)
+
+
+@require_http_methods(["GET", "POST"])
+def member_shareholdings(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if request.method == "GET" and not services.user_can_read_shareholdings(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read shareholdings.",
+        )
+    if request.method == "POST" and not services.user_can_create_shareholdings(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to create shareholdings.",
+        )
+
+    member = services.get_accessible_member(member_id)
+    if member is None:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+
+    if request.method == "GET":
+        try:
+            data, pagination = services.paginated_shareholdings(member, request.GET)
+        except ValidationError as exc:
+            return error_response(
+                request,
+                400,
+                "VALIDATION_ERROR",
+                "Shareholding query failed validation.",
+                services.validation_field_errors(exc),
+            )
+        return list_response(data, pagination, request)
+
+    try:
+        body = parse_json_body(request)
+        shareholding = services.create_shareholding(
+            member,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Shareholding payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return success_response(services.serialize_shareholding(shareholding), request)
+
+
+@require_http_methods(["GET", "POST"])
+def member_land_holdings(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if request.method == "GET" and not services.user_can_read_land_crop(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read member land and crop records.",
+        )
+    if request.method == "POST" and not services.user_can_create_land_crop(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to create member land and crop records.",
+        )
+
+    member = services.get_accessible_member(member_id)
+    if member is None:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+
+    if request.method == "GET":
+        try:
+            data, pagination = services.paginated_land_holdings(member, request.GET)
+        except ValidationError as exc:
+            return error_response(
+                request,
+                400,
+                "VALIDATION_ERROR",
+                "Land holding query failed validation.",
+                services.validation_field_errors(exc),
+            )
+        return list_response(data, pagination, request)
+
+    try:
+        body = parse_json_body(request)
+        land_holding = services.create_land_holding(
+            member,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Land holding payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return success_response(services.serialize_land_holding(land_holding), request)
+
+
+@require_http_methods(["GET", "POST"])
+def member_crop_plans(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if request.method == "GET" and not services.user_can_read_land_crop(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read member land and crop records.",
+        )
+    if request.method == "POST" and not services.user_can_create_land_crop(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to create member land and crop records.",
+        )
+
+    member = services.get_accessible_member(member_id)
+    if member is None:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+
+    if request.method == "GET":
+        try:
+            data, pagination = services.paginated_crop_plans(member, request.GET)
+        except ValidationError as exc:
+            return error_response(
+                request,
+                400,
+                "VALIDATION_ERROR",
+                "Crop plan query failed validation.",
+                services.validation_field_errors(exc),
+            )
+        return list_response(data, pagination, request)
+
+    try:
+        body = parse_json_body(request)
+        crop_plan = services.create_crop_plan(
+            member,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Crop plan payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return success_response(services.serialize_crop_plan(crop_plan), request)
+
+
+@require_http_methods(["GET", "POST"])
+def member_bank_accounts(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if request.method == "GET" and not services.user_can_read_bank_metadata(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read member bank account metadata.",
+        )
+    if request.method == "POST" and not services.user_can_create_bank_metadata(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to create member bank account metadata.",
+        )
+
+    member = services.get_accessible_member(member_id)
+    if member is None:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+
+    if request.method == "GET":
+        try:
+            data, pagination = services.paginated_bank_accounts(member, request.GET)
+        except ValidationError as exc:
+            return error_response(
+                request,
+                400,
+                "VALIDATION_ERROR",
+                "Bank account query failed validation.",
+                services.validation_field_errors(exc),
+            )
+        return list_response(data, pagination, request)
+
+    try:
+        body = parse_json_body(request)
+        bank_account = services.create_bank_account(
+            member,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Bank account payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return success_response(services.serialize_bank_account(bank_account), request)
+
+
+@require_http_methods(["GET", "POST"])
+def member_cancelled_cheques(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if request.method == "GET" and not services.user_can_read_bank_metadata(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read member cancelled cheque metadata.",
+        )
+    if request.method == "POST" and not services.user_can_create_bank_metadata(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to create member cancelled cheque metadata.",
+        )
+
+    member = services.get_accessible_member(member_id)
+    if member is None:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+
+    if request.method == "GET":
+        try:
+            data, pagination = services.paginated_cancelled_cheques(member, request.GET)
+        except ValidationError as exc:
+            return error_response(
+                request,
+                400,
+                "VALIDATION_ERROR",
+                "Cancelled cheque query failed validation.",
+                services.validation_field_errors(exc),
+            )
+        return list_response(data, pagination, request)
+
+    try:
+        body = parse_json_body(request)
+        cancelled_cheque = services.create_cancelled_cheque(
+            member,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Cancelled cheque payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    return success_response(services.serialize_cancelled_cheque(cancelled_cheque), request)
+
+
+@require_http_methods(["GET", "POST"])
+def kyc_profiles(request):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if request.method == "GET" and not services.user_can_read_kyc_profiles(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to read KYC profiles.",
+        )
+    if request.method == "POST" and not services.user_can_create_kyc_profiles(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to create KYC profiles.",
+        )
+
+    if request.method == "GET":
+        try:
+            party_type = request.GET.get("party_type")
+            party_id = request.GET.get("party_id")
+            if not party_type or not party_id:
+                raise ValidationError(
+                    {
+                        "party_type": "This field is required.",
+                        "party_id": "This field is required.",
+                    }
+                )
+            member, profile = services.get_kyc_profile_for_member(party_type, party_id)
+        except ValidationError as exc:
+            return error_response(
+                request,
+                400,
+                "VALIDATION_ERROR",
+                "KYC profile query failed validation.",
+                services.validation_field_errors(exc),
+            )
+        if member is None:
+            return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+        if profile is None:
+            return error_response(request, 404, "NOT_FOUND", "KYC profile was not found.")
+        return success_response(services.serialize_kyc_profile(profile), request)
+
+    try:
+        body = parse_json_body(request)
+        profile = services.create_kyc_profile(
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "KYC profile payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    if profile is None:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+    return success_response(services.serialize_kyc_profile(profile), request)
+
+
+@require_http_methods(["PATCH"])
+def kyc_profile_detail(request, kyc_profile_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if not services.user_can_update_kyc_profiles(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to update KYC profiles.",
+        )
+    try:
+        body = parse_json_body(request)
+        profile = services.update_kyc_profile(
+            kyc_profile_id,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "KYC profile payload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    if profile is None:
+        return error_response(request, 404, "NOT_FOUND", "KYC profile was not found.")
+    return success_response(services.serialize_kyc_profile(profile), request)
+
+
+@require_http_methods(["POST"])
+def kyc_profile_documents(request, kyc_profile_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if not services.user_can_upload_kyc_documents(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to upload KYC documents.",
+        )
+    try:
+        document = services.upload_kyc_document(kyc_profile_id, request, user)
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "KYC document upload failed validation.",
+            services.validation_field_errors(exc),
+        )
+    if document is None:
+        return error_response(request, 404, "NOT_FOUND", "KYC profile was not found.")
+    return success_response(services.serialize_kyc_document(document), request)
+
+
+@require_http_methods(["POST"])
+def kyc_document_verify(request, kyc_document_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if not services.user_can_verify_kyc_documents(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to verify KYC documents.",
+        )
+    try:
+        body = parse_json_body(request)
+        document = services.verify_kyc_document(
+            kyc_document_id,
+            body,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "KYC document verification failed validation.",
+            services.validation_field_errors(exc),
+        )
+    if document is None:
+        return error_response(request, 404, "NOT_FOUND", "KYC document was not found.")
+    return success_response(services.serialize_kyc_document(document), request)

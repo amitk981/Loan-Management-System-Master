@@ -1,0 +1,18 @@
+ .ralph/progress.md                                 |  18 ++
+ .ralph/state.json                                  |   9 +-
+ docs/slices/004D-nominee-validation-and-ui.md      |  26 +--
+ docs/slices/004E-witness-shareholder-validation.md |  18 +-
+ ...F-shareholding-and-share-certificate-records.md |  32 ++-
+ docs/working/API_CONTRACTS.md                      |  46 +++-
+ docs/working/ASSUMPTIONS.md                        |   1 +
+ docs/working/HANDOFF.md                            |  51 +++--
+ docs/working/digests/epic-004-member-kyc-master.md |  39 ++++
+ sfpcl-lms/src/pages/members/MemberProfile.test.tsx | 129 ++++++++++-
+ sfpcl-lms/src/pages/members/MemberProfile.tsx      | 245 ++++++++++++++++++++-
+ sfpcl-lms/src/services/authSession.ts              |   4 +-
+ sfpcl-lms/src/services/memberProfileApi.ts         | 128 ++++++++++-
+ sfpcl_credit/config/urls.py                        |   5 +
+ sfpcl_credit/members/models.py                     |  32 +++
+ sfpcl_credit/members/services.py                   | 238 +++++++++++++++++++-
+ sfpcl_credit/members/views.py                      |  70 +++++-
+ 17 files changed, 1016 insertions(+), 75 deletions(-)

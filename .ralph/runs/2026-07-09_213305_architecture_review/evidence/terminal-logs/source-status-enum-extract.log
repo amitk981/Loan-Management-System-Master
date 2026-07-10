@@ -1,0 +1,9 @@
+   262	## `loan_application_status`
+   263	
+   264	| Value |
+   265	|---|
+   266	| `draft` |
+   267	| `submitted` |
+   268	| `completeness_check_pending` |
+   269	| `incomplete_returned` |
+   270	| `appraisal_in_progress` |

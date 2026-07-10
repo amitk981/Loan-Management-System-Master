@@ -1,0 +1,22 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/005FB-member-portal-dashboard-profile-and-supply-view.md
+ M docs/slices/005G-member-portal-application-start-status.md
+ M docs/slices/005H-rejection-note-shell.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/PROTOTYPE_GAP_REPORT.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M docs/working/digests/epic-005-application-intake.md
+ M sfpcl-lms/src/pages/borrower/portal/MP03_Dashboard.tsx
+ M sfpcl-lms/src/pages/borrower/portal/MP04_MyProfile.tsx
+ M sfpcl-lms/src/pages/borrower/portal/supply/MP22_ProduceSupply.tsx
+ M sfpcl_credit/config/urls.py
+?? .ralph/runs/2026-07-09_233958_repair/
+?? sfpcl-lms/src/pages/borrower/portal/PortalMemberViews.test.tsx
+?? sfpcl-lms/src/services/portalApi.test.ts
+?? sfpcl-lms/src/services/portalApi.ts
+?? sfpcl_credit/members/portal_services.py
+?? sfpcl_credit/members/portal_views.py
+?? sfpcl_credit/tests/test_portal_member_api.py

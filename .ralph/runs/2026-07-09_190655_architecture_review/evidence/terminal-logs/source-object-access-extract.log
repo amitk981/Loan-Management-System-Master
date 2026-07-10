@@ -1,0 +1,39 @@
+docs/source/auth-permissions.md:502:applications.loan_application.create
+docs/source/auth-permissions.md:503:applications.loan_application.submit
+docs/source/auth-permissions.md:597:| `applications.loan_application.read` | View applications | Medium |
+docs/source/auth-permissions.md:598:| `applications.loan_application.create` | Create loan application | High |
+docs/source/auth-permissions.md:599:| `applications.loan_application.update` | Update draft application | High |
+docs/source/auth-permissions.md:600:| `applications.loan_application.submit` | Submit application | High |
+docs/source/auth-permissions.md:601:| `applications.loan_application.complete_check` | Mark completeness result | High |
+docs/source/auth-permissions.md:602:| `applications.loan_application.return_deficiency` | Return application with deficiencies | High |
+docs/source/auth-permissions.md:603:| `applications.loan_application.cancel` | Cancel application | High |
+docs/source/auth-permissions.md:849:- View application status for assigned applications.
+docs/source/auth-permissions.md:869:- `applications.loan_application.create`
+docs/source/auth-permissions.md:870:- `applications.loan_application.update`
+docs/source/auth-permissions.md:905:- `applications.loan_application.read`
+docs/source/auth-permissions.md:906:- `applications.loan_application.complete_check`
+docs/source/auth-permissions.md:953:- `applications.loan_application.read`
+docs/source/auth-permissions.md:954:- `applications.loan_application.create`
+docs/source/auth-permissions.md:955:- `applications.loan_application.complete_check`
+docs/source/auth-permissions.md:1484:| Field Officer | Created / assigned applications |
+docs/source/auth-permissions.md:1485:| Deputy Manager – Finance | Credit Assessment queue / assigned applications |
+docs/source/auth-permissions.md:1755:| `/applications` | `applications.loan_application.read` |
+docs/source/auth-permissions.md:1756:| `/applications/new` | `applications.loan_application.create` |
+docs/source/auth-permissions.md:1839:| Create application | `applications.loan_application.create` | Member must exist |
+docs/source/auth-permissions.md:1840:| Submit application | `applications.loan_application.submit` | Required fields and docs |
+docs/source/auth-permissions.md:1841:| Completeness check | `applications.loan_application.complete_check` | Submitted state |
+docs/source/auth-permissions.md:1842:| Return deficiency | `applications.loan_application.return_deficiency` | Deficiency details required |
+docs/source/auth-permissions.md:1843:| Cancel application | `applications.loan_application.cancel` | Not disbursed |
+docs/source/auth-permissions.md:2245:For each API list endpoint, backend should filter by user scope.
+docs/source/auth-permissions.md:2333:| `GET /members/{id}/` | `members.member.read` + object access |
+docs/source/auth-permissions.md:2334:| `PATCH /members/{id}/` | `members.member.update` + object access |
+docs/source/auth-permissions.md:2347:| `GET /loan-applications/` | `applications.loan_application.read` |
+docs/source/auth-permissions.md:2348:| `POST /loan-applications/` | `applications.loan_application.create` |
+docs/source/auth-permissions.md:2349:| `GET /loan-applications/{id}/` | `applications.loan_application.read` + object access |
+docs/source/auth-permissions.md:2350:| `PATCH /loan-applications/{id}/` | `applications.loan_application.update` + workflow state |
+docs/source/auth-permissions.md:2351:| `POST /loan-applications/{id}/submit/` | `applications.loan_application.submit` |
+docs/source/auth-permissions.md:2352:| `POST /loan-applications/{id}/complete-check/` | `applications.loan_application.complete_check` |
+docs/source/auth-permissions.md:2353:| `POST /loan-applications/{id}/return-with-deficiencies/` | `applications.loan_application.return_deficiency` |
+docs/source/auth-permissions.md:2354:| `POST /loan-applications/{id}/cancel/` | `applications.loan_application.cancel` |
+docs/source/auth-permissions.md:2528:| Field Officer views unrelated application | Denied |
+docs/source/auth-permissions.md:2633:- Use object access service for object-level checks.

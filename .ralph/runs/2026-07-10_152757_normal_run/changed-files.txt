@@ -1,0 +1,14 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006D2A-credit-eligibility-module-and-configuration-seam.md
+ M docs/slices/006D2B-credit-loan-limit-calculator-and-appraisal-seam.md
+ M docs/slices/006E-appraisal-note-create-edit-submit.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M sfpcl_credit/applications/services.py
+ M sfpcl_credit/applications/views.py
+ M sfpcl_credit/config/settings.py
+?? .ralph/runs/2026-07-10_152757_normal_run/
+?? sfpcl_credit/configurations/modules/
+?? sfpcl_credit/credit/
+?? sfpcl_credit/tests/test_credit_modules.py

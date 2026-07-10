@@ -1,0 +1,4 @@
+Migrations for 'applications':
+  sfpcl_credit/applications/migrations/0001_initial.py
+    - Create model LoanApplication
+    - Create constraint loan_apps_positive_required_amount on model loanapplication

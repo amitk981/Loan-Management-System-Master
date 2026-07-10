@@ -1,0 +1,20 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_nominee_validation (unittest.loader._FailedTest.test_nominee_validation)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_nominee_validation
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_160331_normal_run/sfpcl_credit/tests/test_nominee_validation.py", line 6, in <module>
+    from sfpcl_credit.applications.modules.nominee_validation import evaluate_nominee_selection
+ModuleNotFoundError: No module named 'sfpcl_credit.applications.modules'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

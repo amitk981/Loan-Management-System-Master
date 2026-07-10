@@ -1,0 +1,15 @@
+ .ralph/progress.md                                 | 21 +++++
+ .ralph/state.json                                  |  7 +-
+ ...-deficiency-return-status-contract-hardening.md | 24 +++---
+ docs/slices/005FA-member-portal-authentication.md  | 11 ++-
+ ...ber-portal-dashboard-profile-and-supply-view.md | 12 ++-
+ docs/working/API_CONTRACTS.md                      | 15 ++--
+ docs/working/ASSUMPTIONS.md                        |  1 +
+ docs/working/HANDOFF.md                            | 95 ++++++++++------------
+ .../working/digests/epic-005-application-intake.md | 12 ++-
+ sfpcl_credit/applications/models.py                |  2 +
+ sfpcl_credit/applications/services.py              |  4 +-
+ sfpcl_credit/tests/test_loan_applications_api.py   | 54 +++++++++++-
+ 12 files changed, 173 insertions(+), 85 deletions(-)
+
+Changed tracked file count:       12

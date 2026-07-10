@@ -1,0 +1,4 @@
+PASS state-json
+No changes detected
+PASS git-diff-check
+PASS protected-paths

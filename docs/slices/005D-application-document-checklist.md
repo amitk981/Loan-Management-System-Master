@@ -1,7 +1,7 @@
 # Slice 005D: Application Document Checklist
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 005: Loan Application Intake, Documents, Completeness, and Deficiencies
@@ -14,7 +14,30 @@ Deliver this narrow capability as a small, testable Ralph implementation slice.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 005C
+- 005C2
+
+## Prior Slice Facts
+- 005A created draft loan applications with optional member land/crop/bank/cancelled-cheque
+  references and metadata-only masked responses.
+- 005B implemented submit as `draft -> submitted`; submitted applications remain at
+  `current_stage = initial_loan_request`, `completeness_status = not_started`, and formal
+  references remain nullable until the reference/completeness owner.
+- 005C confirmed formal `LO...` generation is source-backed after completeness pass, not submit.
+  It added `POST /api/v1/loan-applications/{loan_application_id}/generate-reference/`, the
+  `system_sequences` row for `loan_application_reference`, and one-to-one
+  `loan_request_register_entries`. 005D must not call that endpoint; it prepares the
+  application-document/checklist metadata that 005E can evaluate before reference generation.
+- 005C2 must close the architecture-review object-access finding before this slice runs. 005D
+  document/checklist endpoints must reuse the corrected loan-application object-access boundary
+  instead of relying only on global permission codes.
+- 005C2 implemented that boundary in `applications.services.evaluate_application_object_access(...)`:
+  created/received actors are the current owner facts, `credit_manager` is allowed only for
+  applications in `current_stage = credit_assessment`, and unrelated same-permission actors receive
+  `403 OBJECT_ACCESS_DENIED` with no success audit/workflow/register/sequence side effects.
+- Use `docs/working/digests/epic-005-application-intake.md` before reopening large source docs.
+- Epic 004/005 sensitive data boundaries remain binding: document/checklist responses and audits
+  must not include full PAN, Aadhaar, bank-account numbers, encrypted token values, hashes, or raw
+  file bytes.
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11
@@ -36,8 +59,37 @@ None for this slice, except updating frontend documentation or fixtures if requi
 ## Backend/API Scope
 Implement the named backend/API capability only.
 
+Concrete 005D scope:
+- Add application-document metadata support for submitted loan applications:
+  `GET /api/v1/loan-applications/{loan_application_id}/application-documents/` and
+  `POST /api/v1/loan-applications/{loan_application_id}/application-documents/`.
+- Add application-document verification:
+  `POST /api/v1/application-documents/{application_document_id}/verify/`.
+- Add a document checklist read/refresh foundation:
+  `GET /api/v1/loan-applications/{loan_application_id}/document-checklist/` and, only if still
+  narrow enough, `POST /api/v1/loan-applications/{loan_application_id}/document-checklist/refresh/`.
+- Store/checklist metadata only and link uploaded items to the existing `documents.DocumentFile`
+  record by UUID where practical. Do not duplicate file bytes or introduce new storage behavior in
+  005D.
+- Required application document types from source: loan application form, borrower PAN, borrower
+  Aadhaar/OVD for individual borrowers, nominee PAN, nominee Aadhaar/OVD, share certificate copy,
+  land document / 7/12 extract, crop plan, and six-month bank statement. Cancelled cheque may be
+  collected at application stage but is required before disbursement, so do not block 005D
+  checklist completion on it unless source review adds a stronger rule.
+- Do not implement deficiency creation/resolution, completeness pass/fail, eligibility, appraisal,
+  sanction, disbursement, frontend document screens, or real file scanning in this slice.
+
 ## Database/Model Impact
 Non-destructive model/migration changes for this capability, if needed.
+
+Expected model impact:
+- `application_documents` metadata table if not already present, linked to `loan_applications` and
+  optionally to `documents.document_files`.
+- Fields should cover `document_type`, `party_type`, optional `party_id`, `required_flag`,
+  `submission_status`, `verification_status`, verifier actor/time, remarks, created/updated actor
+  timestamps, and a stable UUID primary key.
+- Optional checklist table/items only if the source-backed checklist cannot be represented from
+  `application_documents` metadata within one slice. Keep this to one migration.
 
 ## API Contracts
 Create or update the API contract for this capability.
@@ -45,14 +97,62 @@ Create or update the API contract for this capability.
 ## Permissions
 Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
 
+Use source-backed application/document permissions:
+- Listing application documents/checklist: require `applications.loan_application.read` plus object
+  access through the 005C2 application access helper. Unknown application IDs should still return
+  `404 NOT_FOUND` before object-access denial; missing global permission remains
+  `403 PERMISSION_DENIED`; scope mismatch returns `403 OBJECT_ACCESS_DENIED`.
+- Uploading application documents: require `applications.document.upload`.
+- Verifying application documents: require `applications.document.verify`.
+- If refresh is implemented as a mutating checklist action, use the narrowest source-backed
+  checklist/document permission found during the source pass; if no exact permission exists, record
+  the assumption and avoid inventing a new permission code.
+
 ## Audit Requirements
 Record audit/workflow events for critical create/update/approval/access actions.
+
+Specific audit requirements:
+- Successful upload/metadata attach writes metadata-only audit including application ID, document
+  type, party type/ID, document file ID, submission status, verification status, actor, request ID,
+  IP, and user-agent.
+- Successful verification writes metadata-only audit including old/new verification status and
+  remarks. Do not include file content, OCR values, PAN/Aadhaar full values, tokens, hashes, or bank
+  full numbers.
+- Listing checklist/documents is read-only and should not write workflow events unless source
+  review requires access audits.
 
 ## Validation Rules
 Enforce source-doc business rules and block invalid state transitions.
 
+Specific validation to cover:
+- Reject unknown loan applications and unknown application-document IDs.
+- Reject upload/attach for draft applications if source review confirms documents are collected
+  only after submit; otherwise record the allowed draft behavior explicitly in assumptions.
+- Require valid `document_type`, `party_type`, and file/document reference.
+- Supported `party_type` values for this slice: `borrower`, `nominee`, and `witness`.
+- Supported verification values: `pending`, `verified`, `rejected`; upload starts as submitted /
+  pending-verification metadata.
+- Duplicate document types should create a new version/history row or reject with a standard
+  duplicate-state error; do not overwrite audit history.
+- Verification must be possible only for submitted document metadata, not missing/pending
+  placeholders.
+
 ## Test Cases
 Unit/service/API/permission tests plus frontend tests where UI is touched.
+
+Minimum regression tests:
+- List/refresh checklist for a submitted application returns required source document item codes and
+  pending statuses without sensitive identity/bank values.
+- Upload/attach an application document persists metadata, links the existing document file, returns
+  a standard envelope, and writes metadata-only audit.
+- Verify an uploaded document changes verification status, stamps verifier/time, and writes
+  metadata-only audit with old/new status.
+- Unknown applications/document IDs return standard `404 NOT_FOUND`.
+- Users without read/upload/verify permissions receive `403 PERMISSION_DENIED` and no writes.
+- Same-permission users outside the 005C2 application object scope receive
+  `403 OBJECT_ACCESS_DENIED` for list/checklist/upload paths and create no document metadata or
+  audit rows.
+- Duplicate upload/version behavior preserves history and never overwrites prior audit facts.
 
 ## Visual Acceptance Criteria
 None.

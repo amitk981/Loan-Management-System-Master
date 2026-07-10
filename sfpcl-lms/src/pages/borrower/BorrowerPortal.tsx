@@ -63,6 +63,7 @@ const myDocuments = [
 const BorrowerPortal: React.FC<{ onLogout?: () => void }> = ({ onLogout }) => {
   const { currentUser } = useRole();
   const [activeTab, setActiveTab] = useState<BorrowerTab>('overview');
+  const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
   const tabs: { id: BorrowerTab; label: string; }[] = [
@@ -98,12 +99,20 @@ const BorrowerPortal: React.FC<{ onLogout?: () => void }> = ({ onLogout }) => {
 
         {/* Tab content */}
         {activeTab === 'newApplication' && (
-          <MP05_NewApplication onNavigateToApplication={() => setActiveTab('application')} />
+          <MP05_NewApplication
+            onNavigateToApplication={(id) => {
+              setSelectedApplicationId(id);
+              setActiveTab('application');
+            }}
+          />
         )}
 
         {activeTab === 'myApplications' && (
           <MP09_MyApplications
-            onNavigateToApplication={() => setActiveTab('application')}
+            onNavigateToApplication={(id) => {
+              setSelectedApplicationId(id);
+              setActiveTab('application');
+            }}
             onNavigateToNew={() => setActiveTab('newApplication')}
           />
         )}
@@ -118,8 +127,8 @@ const BorrowerPortal: React.FC<{ onLogout?: () => void }> = ({ onLogout }) => {
 
         {activeTab === 'application' && (
           <MP10_ApplicationStatus 
-            applicationId="APP-2024-0042" 
-            onBack={() => setActiveTab('overview')} 
+            applicationId={selectedApplicationId}
+            onBack={() => setActiveTab('myApplications')}
           />
         )}
 

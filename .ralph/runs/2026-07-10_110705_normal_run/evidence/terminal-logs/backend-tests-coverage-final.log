@@ -1,0 +1,46 @@
+/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/coverage/core.py:107: CoverageWarning: Couldn't import C tracer: dlopen(/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/coverage/tracer.cpython-311-darwin.so, 0x0002): tried: '/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/coverage/tracer.cpython-311-darwin.so' (mach-o file, but is an incompatible architecture (have 'arm64', need 'x86_64')), '/System/Volumes/Preboot/Cryptexes/OS/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/coverage/tracer.cpython-311-darwin.so' (no such file), '/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/coverage/tracer.cpython-311-darwin.so' (mach-o file, but is an incompatible architecture (have 'arm64', need 'x86_64')) (no-ctracer); see https://coverage.readthedocs.io/en/7.14.3/messages.html#warning-no-ctracer
+  warn(f"Couldn't import C tracer: {IMPORT_ERROR}", slug="no-ctracer", once=True)
+Creating test database for alias 'default'...
+Found 296 test(s).
+System check identified no issues (0 silenced).
+.........................................................................Catalogue seeded: 177 permissions, 20 roles, 8 teams, 161 role-permission links.
+Catalogue seeded: 177 permissions, 20 roles, 8 teams, 161 role-permission links.
+......................................................................F.....................F............................................................................Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+...Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+........................................
+======================================================================
+FAIL: test_generate_reference_after_completeness_pass_creates_register_and_metadata_only_evidence (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_generate_reference_after_completeness_pass_creates_register_and_metadata_only_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_110705_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 1661, in test_generate_reference_after_completeness_pass_creates_register_and_metadata_only_evidence
+    self.assertEqual(read_response.json()["data"], generated)
+AssertionError: {'loa[3334 chars] None, 'assigned_owner': {'user_id': '4e953914[102 chars]: []} != {'loa[3334 chars] None}
+Diff is 5099 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_submit_draft_transitions_to_submitted_and_records_metadata_only_evidence (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_submit_draft_transitions_to_submitted_and_records_metadata_only_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_110705_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 1579, in test_submit_draft_transitions_to_submitted_and_records_metadata_only_evidence
+    self.assertEqual(read_response.json()["data"], submitted)
+AssertionError: {'loa[2494 chars] None, 'assigned_owner': {'user_id': '83c6952a[102 chars]: []} != {'loa[2494 chars] None}
+Diff is 3534 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 296 tests in 653.854s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

@@ -1,0 +1,28 @@
+Creating test database for alias 'default'...
+Found 9 test(s).
+System check identified no issues (0 silenced).
+E.E......
+======================================================================
+ERROR: test_application_layer_uses_only_public_credit_and_configuration_seams (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_application_layer_uses_only_public_credit_and_configuration_seams)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_162322_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 250, in test_application_layer_uses_only_public_credit_and_configuration_seams
+    application_services.resolve_effective_loan_policy,
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'sfpcl_credit.applications.services' has no attribute 'resolve_effective_loan_policy'
+
+======================================================================
+ERROR: test_configuration_resolver_rejects_overlapping_effective_policies (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_configuration_resolver_rejects_overlapping_effective_policies)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_162322_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 229, in test_configuration_resolver_rejects_overlapping_effective_policies
+    resolve_effective_loan_policy(calculation_date=timezone.localdate())
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_162322_normal_run/sfpcl_credit/configurations/modules/configuration_resolver.py", line 25, in resolve_effective_loan_policy
+    raise ConfigurationResolutionError(
+sfpcl_credit.configurations.modules.configuration_resolver.ConfigurationResolutionError: Configuration resolution failed validation.
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.189s
+
+FAILED (errors=2)
+Destroying test database for alias 'default'...

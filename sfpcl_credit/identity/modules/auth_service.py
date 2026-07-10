@@ -14,7 +14,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
-from sfpcl_credit.identity.models import AuditLog, Permission, User, UserSession
+from sfpcl_credit.identity.models import AuditLog, Permission, PortalAccount, User, UserSession
 from sfpcl_credit.identity.modules.tokens import (
     TokenError,
     access_claims,
@@ -116,6 +116,7 @@ def validate_refresh_session(refresh_token):
     if not session.user.can_authenticate():
         session.revoke("user_status_changed")
         raise TokenError("INVALID_TOKEN", "User is not active.")
+    validate_portal_session_authority(session)
     return session
 
 
@@ -157,7 +158,34 @@ def validate_access_session(access_token):
     if not session.user.can_authenticate():
         session.revoke("user_status_changed")
         raise TokenError("INVALID_TOKEN", "User is not active.")
+    validate_portal_session_authority(session)
     return session
+
+
+def active_portal_account_for_user(user):
+    return (
+        PortalAccount.objects.select_related("member")
+        .filter(
+            user=user,
+            status=PortalAccount.STATUS_ACTIVE,
+            member__is_deleted=False,
+        )
+        .first()
+    )
+
+
+def validate_portal_session_authority(session):
+    account = (
+        PortalAccount.objects.select_related("member")
+        .filter(user=session.user)
+        .first()
+    )
+    if account is None:
+        return None
+    if account.status != PortalAccount.STATUS_ACTIVE or account.member.is_deleted:
+        session.revoke("portal_account_status_changed")
+        raise TokenError("INVALID_TOKEN", "Portal account is not active.")
+    return account
 
 
 def effective_permission_codes(user):
@@ -199,7 +227,7 @@ def current_user_payload(user):
     permissions = effective_permission_codes(user)
     roles = role_payload(user)
     teams = team_payload(user)
-    return {
+    payload = {
         "user_id": str(user.user_id),
         "full_name": user.full_name,
         "email": user.email,
@@ -212,6 +240,27 @@ def current_user_payload(user):
         "permissions": permissions,
         "available_actions": permissions,
     }
+    portal_account = active_portal_account_for_user(user)
+    if portal_account is not None:
+        portal_permissions = [
+            "portal.member.profile.read_own",
+            "portal.loan_application.read_own",
+            "portal.document.read_own",
+            "portal.loan_account.read_own",
+            "portal.notice.read_own",
+            "portal.grievance.manage_own",
+        ]
+        payload.update(
+            {
+                "member_id": str(portal_account.member_id),
+                "portal_account_id": str(portal_account.portal_account_id),
+                "portal_role": "borrower_member",
+                "member_display_name": portal_account.member.display_name,
+                "permissions": portal_permissions,
+                "available_actions": portal_permissions,
+            }
+        )
+    return payload
 
 
 def current_user_payload_for_access_token(access_token):

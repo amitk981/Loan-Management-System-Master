@@ -1,0 +1,17 @@
+   368	            content_type="application/json",
+   369	            headers={"Authorization": f"Bearer {token}"},
+   370	        )
+   371	        self.assertEqual(cross_create.status_code, 403)
+   372	        assert_error_envelope(self, cross_create.json(), "OBJECT_ACCESS_DENIED")
+   373	        self.assertEqual(LoanApplication.objects.filter(member=self.other_member).count(), 1)
+   374	
+   375	        self.assertEqual(
+   376	            AuditLog.objects.filter(action="applications.loan_application.created").count(),
+   377	            1,
+   378	        )
+   379	        self.assertEqual(
+   380	            AuditLog.objects.filter(action="applications.loan_application.submitted").count(),
+   381	            1,
+   382	        )
+   383	        self.assertEqual(
+   384	            WorkflowEvent.objects.filter(entity_type="loan_application", to_state="submitted").count(),

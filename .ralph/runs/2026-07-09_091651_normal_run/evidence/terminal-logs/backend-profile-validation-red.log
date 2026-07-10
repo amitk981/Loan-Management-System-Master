@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 7 test(s).
+System check identified no issues (0 silenced).
+......F
+======================================================================
+FAIL: test_profile_models_reject_member_type_mismatches (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_profile_models_reject_member_type_mismatches)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_091651_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 246, in test_profile_models_reject_member_type_mismatches
+    with self.assertRaises(ValidationError):
+AssertionError: ValidationError not raised
+
+----------------------------------------------------------------------
+Ran 7 tests in 7.144s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

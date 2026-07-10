@@ -7,7 +7,13 @@ import {
   logoutSession,
   mapBackendUserToFrontendUser,
   mapCanonicalPermissions,
+  portalLoginAndLoadCurrentUser,
   restoreCurrentUserFromStoredSession,
+  startPortalActivation,
+  completePortalActivation,
+  startPortalPasswordReset,
+  completePortalPasswordReset,
+  changePortalPassword,
   storedAuthSession,
 } from './authSession';
 
@@ -42,6 +48,26 @@ const currentUserEnvelope = {
     team_codes: ['ignored_if_teams_present'],
     permissions: ['applications.loan_application.read', 'finance.loan_account.read', 'reports.export'],
     available_actions: ['applications.loan_application.read'],
+  },
+  meta: { api_version: 'v1' },
+};
+
+const portalCurrentUserEnvelope = {
+  success: true,
+  data: {
+    user_id: 'portal-user-1',
+    full_name: 'Ganesh Thorat',
+    email: 'ganesh.thorat@sfpcl.example',
+    mobile_number: '+919800000042',
+    status: 'active',
+    roles: [{ role_code: 'borrower_portal_user', role_name: 'Borrower Portal User' }],
+    teams: [],
+    permissions: ['portal.loan_application.read_own'],
+    available_actions: ['portal.loan_application.read_own'],
+    member_id: 'member-42',
+    portal_account_id: 'portal-account-42',
+    portal_role: 'borrower_member',
+    member_display_name: 'Ganesh Thorat',
   },
   meta: { api_version: 'v1' },
 };
@@ -129,6 +155,92 @@ describe('auth session API flow', () => {
       }),
     );
     expect(loadStoredAuthSession()).toBeNull();
+  });
+});
+
+describe('member portal auth API flow', () => {
+  it('posts portal credentials, stores tokens, and maps borrower member scope from /auth/me/', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(200, loginEnvelope))
+      .mockResolvedValueOnce(response(200, portalCurrentUserEnvelope));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const user = await portalLoginAndLoadCurrentUser({
+      identifier: 'ganesh.thorat@sfpcl.example',
+      password: 'CorrectPortal123!',
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://127.0.0.1:8000/api/v1/portal/auth/login/',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ identifier: 'ganesh.thorat@sfpcl.example', password: 'CorrectPortal123!' }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://127.0.0.1:8000/api/v1/auth/me/',
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer access-token-1' }),
+      }),
+    );
+    expect(user.role).toBe('borrower');
+    expect(user.memberId).toBe('member-42');
+    expect(user.portalRole).toBe('borrower_member');
+    expect(user.permissions).toEqual(['portal.loan_application.read_own']);
+    expect(loadStoredAuthSession()).toEqual({ accessToken: 'access-token-1', refreshToken: 'refresh-token-1' });
+  });
+
+  it('calls portal activation and password reset endpoints using standard envelopes', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(200, { success: true, data: { challenge_id: 'activation-challenge', masked_contact: 'ga***@sfpcl.example' }, meta: {} }))
+      .mockResolvedValueOnce(response(200, { success: true, data: { portal_account: { member_id: 'member-42', status: 'active' } }, meta: {} }))
+      .mockResolvedValueOnce(response(200, { success: true, data: { challenge_id: 'reset-challenge', masked_contact: 'ga***@sfpcl.example' }, meta: {} }))
+      .mockResolvedValueOnce(response(200, { success: true, data: { reset: true }, meta: {} }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(startPortalActivation({
+      folioOrMemberId: 'FOLIO-42',
+      contact: 'ganesh.thorat@sfpcl.example',
+      panLast4: '234F',
+      aadhaarLast4: '9012',
+    })).resolves.toMatchObject({ challengeId: 'activation-challenge' });
+    await expect(completePortalActivation({
+      challengeId: 'activation-challenge',
+      otp: '246810',
+      password: 'CorrectPortal123!',
+      confirmPassword: 'CorrectPortal123!',
+    })).resolves.toMatchObject({ memberId: 'member-42', status: 'active' });
+    await expect(startPortalPasswordReset({ identifier: 'ganesh.thorat@sfpcl.example' })).resolves.toMatchObject({ challengeId: 'reset-challenge' });
+    await expect(completePortalPasswordReset({
+      challengeId: 'reset-challenge',
+      otp: '246810',
+      password: 'NewPortal123!',
+      confirmPassword: 'NewPortal123!',
+    })).resolves.toEqual({ reset: true });
+  });
+
+  it('posts portal password changes with the stored bearer token', async () => {
+    storedAuthSession({ accessToken: 'portal-access-token', refreshToken: 'portal-refresh-token' });
+    const fetchMock = vi.fn().mockResolvedValueOnce(response(200, { success: true, data: { password_changed: true }, meta: {} }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(changePortalPassword({
+      currentPassword: 'CorrectPortal123!',
+      newPassword: 'ChangedPortal123!',
+      confirmPassword: 'ChangedPortal123!',
+    })).resolves.toEqual({ passwordChanged: true });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://127.0.0.1:8000/api/v1/portal/auth/password/change/',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({ Authorization: 'Bearer portal-access-token' }),
+      }),
+    );
   });
 });
 

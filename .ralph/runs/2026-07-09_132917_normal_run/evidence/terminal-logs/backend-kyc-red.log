@@ -1,0 +1,89 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 5 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: communications, configurations, contenttypes, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying documents.0001_initial... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying scheduler.0001_initial... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_kyc_document_can_be_uploaded_and_verified_with_metadata_only_audit (sfpcl_credit.tests.test_member_kyc_api.MemberKycApiTests.test_kyc_document_can_be_uploaded_and_verified_with_metadata_only_audit) ... FAIL
+test_kyc_document_upload_validates_permission_type_file_and_self_attestation (sfpcl_credit.tests.test_member_kyc_api.MemberKycApiTests.test_kyc_document_upload_validates_permission_type_file_and_self_attestation) ... FAIL
+test_kyc_document_verification_supports_rejection_and_requires_verify_permission (sfpcl_credit.tests.test_member_kyc_api.MemberKycApiTests.test_kyc_document_verification_supports_rejection_and_requires_verify_permission) ... FAIL
+test_kyc_profile_can_be_created_read_and_updated_for_member_party (sfpcl_credit.tests.test_member_kyc_api.MemberKycApiTests.test_kyc_profile_can_be_created_read_and_updated_for_member_party) ... FAIL
+test_kyc_profile_requires_auth_permission_member_party_and_existing_member (sfpcl_credit.tests.test_member_kyc_api.MemberKycApiTests.test_kyc_profile_requires_auth_permission_member_party_and_existing_member) ... FAIL
+
+======================================================================
+FAIL: test_kyc_document_can_be_uploaded_and_verified_with_metadata_only_audit (sfpcl_credit.tests.test_member_kyc_api.MemberKycApiTests.test_kyc_document_can_be_uploaded_and_verified_with_metadata_only_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_132917_normal_run/sfpcl_credit/tests/test_member_kyc_api.py", line 171, in test_kyc_document_can_be_uploaded_and_verified_with_metadata_only_audit
+    profile_id = self._create_profile_id()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_132917_normal_run/sfpcl_credit/tests/test_member_kyc_api.py", line 316, in _create_profile_id
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+======================================================================
+FAIL: test_kyc_document_upload_validates_permission_type_file_and_self_attestation (sfpcl_credit.tests.test_member_kyc_api.MemberKycApiTests.test_kyc_document_upload_validates_permission_type_file_and_self_attestation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_132917_normal_run/sfpcl_credit/tests/test_member_kyc_api.py", line 231, in test_kyc_document_upload_validates_permission_type_file_and_self_attestation
+    profile_id = self._create_profile_id()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_132917_normal_run/sfpcl_credit/tests/test_member_kyc_api.py", line 316, in _create_profile_id
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+======================================================================
+FAIL: test_kyc_document_verification_supports_rejection_and_requires_verify_permission (sfpcl_credit.tests.test_member_kyc_api.MemberKycApiTests.test_kyc_document_verification_supports_rejection_and_requires_verify_permission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_132917_normal_run/sfpcl_credit/tests/test_member_kyc_api.py", line 265, in test_kyc_document_verification_supports_rejection_and_requires_verify_permission
+    profile_id = self._create_profile_id()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_132917_normal_run/sfpcl_credit/tests/test_member_kyc_api.py", line 316, in _create_profile_id
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+======================================================================
+FAIL: test_kyc_profile_can_be_created_read_and_updated_for_member_party (sfpcl_credit.tests.test_member_kyc_api.MemberKycApiTests.test_kyc_profile_can_be_created_read_and_updated_for_member_party)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_132917_normal_run/sfpcl_credit/tests/test_member_kyc_api.py", line 95, in test_kyc_profile_can_be_created_read_and_updated_for_member_party
+    self.assertEqual(create_response.status_code, 200)
+AssertionError: 404 != 200
+
+======================================================================
+FAIL: test_kyc_profile_requires_auth_permission_member_party_and_existing_member (sfpcl_credit.tests.test_member_kyc_api.MemberKycApiTests.test_kyc_profile_requires_auth_permission_member_party_and_existing_member)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_132917_normal_run/sfpcl_credit/tests/test_member_kyc_api.py", line 131, in test_kyc_profile_requires_auth_permission_member_party_and_existing_member
+    self.assertEqual(unauthenticated.status_code, 401)
+AssertionError: 404 != 401
+
+----------------------------------------------------------------------
+Ran 5 tests in 11.700s
+
+FAILED (failures=5)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

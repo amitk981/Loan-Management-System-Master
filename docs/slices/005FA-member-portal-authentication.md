@@ -1,7 +1,7 @@
 # Slice 005FA: Member Portal Authentication (Login, Activation, Recovery, Security Settings)
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 005: Loan Application Intake, Documents, Completeness, and Deficiencies (member portal entry)
@@ -14,7 +14,34 @@ Give borrowers/members a real way into the portal: portal login (MP00), first-ti
 A member invited to the portal can activate their account, log in securely, recover access, and manage their password — the front door for every borrower self-service feature.
 
 ## Depends On
-- 005F
+- 005F2
+
+## Prior Slice Facts To Preserve
+- MP08 copy says a borrower receives the official `LO...` reference only after submitted details
+  and documents are checked. Portal status screens must therefore handle submitted applications
+  with no reference number.
+- 005E generates references only after staff completeness pass. Borrower auth must not grant access
+  to staff completeness/pass endpoints.
+- 005F is expected to create structured deficiency records before borrower deficiency response
+  screens are wired; portal tokens introduced here must carry enough member/object scope for later
+  own-application deficiency reads and responses.
+- 005F implemented structured deficiency records and staff endpoints:
+  `POST /api/v1/loan-applications/{loan_application_id}/return-with-deficiencies/`,
+  `GET /api/v1/loan-applications/{loan_application_id}/deficiencies/`, and
+  `POST /api/v1/deficiencies/{deficiency_id}/resolve/`. Borrower portal auth must not grant those
+  staff complete-check actions, but it must expose a member scope that future portal endpoints can
+  use to read/respond only to the borrower's own returned applications.
+- 005F2 corrected returned deficiency applications to the source-backed `application_status =
+  incomplete_returned`, kept `completeness_status = incomplete`, and kept `current_stage =
+  initial_loan_request`. Portal auth must not depend on returned applications still looking like
+  plain `submitted` applications.
+- 005F2 blocks repeat staff return attempts from `incomplete_returned` until a future source-backed
+  borrower resubmission flow defines the transition back to submitted/completeness review. Portal
+  auth must provide member scope only; it must not grant borrowers staff complete-check or repeat
+  return authority.
+- Member portal source access boundaries say borrowers can access their own profile, own loan
+  applications, own documents, own loan accounts/repayments, own notices, and own grievances only.
+  Treat every cross-member portal read/write as object-access denied.
 
 ## Source References
 - docs/source/screen-spec-member-portal.md screens MP00, MP01, MP02, MP25 (including OTP and activation rules)
@@ -32,6 +59,8 @@ A member invited to the portal can activate their account, log in securely, reco
 ## Concrete Requirements
 1. Backend: portal account model linked one-to-one to a Member record; activation flow validating member identity per MP01 spec; login/refresh/logout reusing the 002B/002B2 JWT foundation with the Borrower role; password reset flow per MP02. If the docs do not specify an OTP delivery channel, implement the mechanism behind the 003I notification adapter shell and log the channel choice in ASSUMPTIONS.md — do not invent a provider.
 2. Borrower tokens must carry the member/borrower object scope so every portal API can enforce own-data-only access.
+   Token/session payloads should include the linked `member_id` and a borrower/member portal role
+   marker, not staff role grants.
 3. Frontend: wire MP00/MP01/MP02/MP25 to the real APIs; protected portal routes redirect to MP00 when unauthenticated; loading, error, invalid-credential, expired-link, and success states covered per existing prototype patterns.
 4. All auth events (activation, login success/failure, reset, password change, session revocation) create audit events.
 
@@ -53,15 +82,15 @@ High
 - All gates pass; screenshots of MP00/MP01/MP02/MP25 states saved.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Visual evidence saved
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Visual evidence saved
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

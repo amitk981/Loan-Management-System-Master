@@ -1,8 +1,37 @@
 import React, { useState } from 'react';
 import { CheckCircle2, Lock, ShieldCheck, Smartphone } from 'lucide-react';
+import { changePortalPassword } from '../../../../services/authSession';
 
 const MP25_SecuritySettings: React.FC = () => {
   const [saved, setSaved] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fields = [
+    ['Current Password', currentPassword, setCurrentPassword],
+    ['New Password', newPassword, setNewPassword],
+    ['Confirm New Password', confirmPassword, setConfirmPassword],
+  ] as const;
+
+  const handleChangePassword = async () => {
+    setSaved(false);
+    setError('');
+    setIsSubmitting(true);
+    try {
+      await changePortalPassword({ currentPassword, newPassword, confirmPassword });
+      setSaved(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Password could not be updated.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -18,15 +47,20 @@ const MP25_SecuritySettings: React.FC = () => {
             Change Password
           </h3>
           <div className="space-y-4">
-            {['Current Password', 'New Password', 'Confirm New Password'].map(label => (
+            {fields.map(([label, value, setValue]) => (
               <div key={label}>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
-                <input type="password" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+                <input type="password" value={value} onChange={event => setValue(event.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
               </div>
             ))}
-            <button onClick={() => setSaved(true)} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
-              Update Password
+            <button onClick={handleChangePassword} disabled={isSubmitting} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
+              {isSubmitting ? 'Updating...' : 'Update Password'}
             </button>
+            {error && (
+              <div className="text-sm text-red-700">
+                {error}
+              </div>
+            )}
             {saved && (
               <div className="flex items-center gap-2 text-sm text-green-700">
                 <CheckCircle2 size={15} />

@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AlertTriangle, Calculator, Check, CheckCircle2, ChevronLeft, ChevronRight,
   FileCheck, FileText, IndianRupee, Save, Shield, Signature, Upload, User
 } from 'lucide-react';
 import { useRole } from '../../contexts/RoleContext';
 import LoanLimitCalculator from '../../components/loan/LoanLimitCalculator';
-import { members } from '../../data/mockData';
-import type { LoanPurpose, LoanType, Member } from '../../types';
+import { AuthSessionError } from '../../services/authSession';
+import { fetchMemberDirectory, type MemberDirectoryItem } from '../../services/memberDirectoryApi';
+import { fetchMemberNominees, type MemberNomineeDetail } from '../../services/memberProfileApi';
+import {
+  createStaffApplicationDraft,
+  submitStaffApplication,
+  updateStaffApplicationDraft,
+  type StaffApplication,
+} from '../../services/applicationIntakeApi';
+import type { LoanPurpose, LoanType } from '../../types';
 
 interface NewApplicationProps {
   onBack: () => void;
@@ -40,8 +48,6 @@ const REQUIRED_DOCUMENTS = [
 ];
 
 const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
-const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
-
 const formatKyc = (status: string) => {
   if (status === 'rekyc_due') return 'Re-KYC Due';
   if (status === 'verified') return 'Verified';
@@ -58,14 +64,57 @@ const formatMemberType = (type: string) => {
 
 const blankDocs = Object.fromEntries(REQUIRED_DOCUMENTS.map(doc => [doc.id, { uploaded: false, selfAttested: false }]));
 
+interface MemberOption {
+  id: string;
+  name: string;
+  folioNumber: string;
+  memberType: string;
+  mobile: string;
+  email: string;
+  address: string;
+  pan: string;
+  aadhaar: string;
+  sharesHeld: number;
+  shareMode: string;
+  activeStatus: string;
+  kycStatus: string;
+  defaultStatus: string;
+}
+
+const toMemberOption = (member: MemberDirectoryItem): MemberOption => ({
+  id: member.member_id,
+  name: member.display_name || member.legal_name,
+  folioNumber: member.folio_number,
+  memberType: member.member_type,
+  mobile: member.mobile_number ?? '',
+  email: member.email ?? '',
+  address: 'Member master address on file',
+  pan: '',
+  aadhaar: '',
+  sharesHeld: member.share_summary.number_of_shares ?? 0,
+  shareMode: member.share_summary.holding_mode ?? 'physical',
+  activeStatus: member.membership_status,
+  kycStatus: member.kyc_status,
+  defaultStatus: member.default_status,
+});
+
 const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks }) => {
   const { can } = useRole();
 
   const [step, setStep] = useState<Step>('member');
   const [selectedMemberId, setSelectedMemberId] = useState('');
   const [memberSearch, setMemberSearch] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [submittedApplication, setSubmittedApplication] = useState<StaffApplication | null>(null);
   const [draftSaved, setDraftSaved] = useState(false);
+  const [draftApplicationId, setDraftApplicationId] = useState('');
+  const [membersStatus, setMembersStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [membersMessage, setMembersMessage] = useState('');
+  const [memberOptions, setMemberOptions] = useState<MemberOption[]>([]);
+  const [submitMessage, setSubmitMessage] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [nomineeOptions, setNomineeOptions] = useState<MemberNomineeDetail[]>([]);
+  const [selectedNomineeId, setSelectedNomineeId] = useState('');
+  const [nomineesStatus, setNomineesStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [applicationForm, setApplicationForm] = useState({
     channel: 'Assisted Entry',
     applicantType: 'individual',
@@ -90,15 +139,6 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
     loanType: 'short_term' as LoanType,
     tenure: 12,
     subsidiaryRepayment: '',
-    nomineeName: '',
-    nomineeDob: '',
-    nomineeAge: 0,
-    nomineeGender: '',
-    nomineeRelationship: '',
-    nomineeMobile: '',
-    nomineeAddress: '',
-    nomineePan: '',
-    nomineeAadhaar: '',
     borrowerSignature: false,
     nomineeSignature: false,
     declarations: {
@@ -111,12 +151,54 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
   });
   const [documentState, setDocumentState] = useState<Record<string, { uploaded: boolean; selfAttested: boolean }>>(blankDocs);
 
-  const selectedMember = members.find(m => m.id === selectedMemberId);
-  const filteredMembers = members.filter(m =>
-    m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
-    m.folioNumber.toLowerCase().includes(memberSearch.toLowerCase()) ||
-    m.pan.toLowerCase().includes(memberSearch.toLowerCase())
-  );
+  const selectedMember = memberOptions.find(m => m.id === selectedMemberId);
+  const selectedNominee = nomineeOptions.find(item => item.nominee_id === selectedNomineeId);
+
+  useEffect(() => {
+    let cancelled = false;
+    setMembersStatus('loading');
+    fetchMemberDirectory({ search: memberSearch, pageSize: 20 })
+      .then(result => {
+        if (cancelled) return;
+        setMemberOptions(result.items.map(toMemberOption));
+        setMembersStatus('success');
+        setMembersMessage('');
+      })
+      .catch(error => {
+        if (cancelled) return;
+        setMemberOptions([]);
+        setMembersStatus('error');
+        setMembersMessage(error instanceof Error ? error.message : 'Unable to load members.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [memberSearch]);
+
+  useEffect(() => {
+    if (!selectedMemberId) {
+      setNomineeOptions([]);
+      setSelectedNomineeId('');
+      setNomineesStatus('idle');
+      return;
+    }
+    let cancelled = false;
+    setNomineesStatus('loading');
+    fetchMemberNominees(selectedMemberId)
+      .then(result => {
+        if (cancelled) return;
+        setNomineeOptions(result.items);
+        setSelectedNomineeId(current => result.items.some(item => item.nominee_id === current) ? current : '');
+        setNomineesStatus('success');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setNomineeOptions([]);
+        setSelectedNomineeId('');
+        setNomineesStatus('error');
+      });
+    return () => { cancelled = true; };
+  }, [selectedMemberId]);
 
   const stepIndex = STEP_ORDER.indexOf(step);
   const shareholdingLimit = applicationForm.sharesHeld * applicationForm.valuationPerShare;
@@ -135,22 +217,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
 
   const updateField = (field: string, value: string | number | boolean) => {
     setDraftSaved(false);
-    setApplicationForm(prev => {
-      const next = { ...prev, [field]: value };
-      if (field === 'nomineeDob' && typeof value === 'string') {
-        const birthDate = new Date(value);
-        if (!isNaN(birthDate.getTime())) {
-          const today = new Date();
-          let age = today.getFullYear() - birthDate.getFullYear();
-          const m = today.getMonth() - birthDate.getMonth();
-          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-          }
-          next.nomineeAge = age > 0 ? age : 0;
-        }
-      }
-      return next;
-    });
+    setApplicationForm(prev => ({ ...prev, [field]: value }));
   };
 
   const updateDeclaration = (field: keyof typeof applicationForm.declarations, value: boolean) => {
@@ -169,14 +236,15 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
     }));
   };
 
-  const hydrateFromMember = (member: Member) => {
+  const hydrateFromMember = (member: MemberOption) => {
     setSelectedMemberId(member.id);
+    setSelectedNomineeId('');
     setDraftSaved(false);
     setApplicationForm(prev => ({
       ...prev,
       applicantType: member.memberType,
       borrowerName: member.name,
-      memberId: member.id.toUpperCase(),
+      memberId: member.id,
       folioNumber: member.folioNumber,
       contactNumber: member.mobile,
       email: member.email,
@@ -185,8 +253,54 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
       aadhaar: member.aadhaar.replace(/[^0-9]/g, '').slice(-4),
       sharesHeld: member.sharesHeld,
       shareholdingMode: member.shareMode,
-      subsidiaryRepayment: member.subsidiaryLinkage || '',
+      subsidiaryRepayment: '',
     }));
+  };
+
+  const persistDraft = async () => {
+    if (!selectedMember) return null;
+    setIsSaving(true);
+    setSubmitMessage('');
+    try {
+      const payload = {
+        member_id: selectedMember.id,
+        nominee_id: selectedNomineeId || null,
+        required_loan_amount: applicationForm.requestedAmount || null,
+        requested_tenure_months: applicationForm.tenure || null,
+        declared_purpose: applicationForm.crop ? `${applicationForm.purpose}: ${applicationForm.crop}` : applicationForm.purpose,
+        purpose_category: applicationForm.purpose,
+        loan_type_requested: applicationForm.loanType,
+        borrower_request_notes: applicationForm.season || '',
+        terms_acceptance_flag: allDeclarationsAccepted,
+      };
+      const saved = draftApplicationId
+        ? await updateStaffApplicationDraft(draftApplicationId, payload)
+        : await createStaffApplicationDraft(payload);
+      setDraftApplicationId(saved.loan_application_id);
+      setDraftSaved(true);
+      return saved;
+    } catch (error) {
+      setSubmitMessage(error instanceof AuthSessionError
+        ? error.fieldErrors?.nominee_id ?? error.message
+        : 'Unable to save draft.');
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    const saved = await persistDraft();
+    if (!saved) return;
+    setIsSaving(true);
+    try {
+      const submitted = await submitStaffApplication(saved.loan_application_id);
+      setSubmittedApplication(submitted);
+    } catch (error) {
+      setSubmitMessage(error instanceof Error ? error.message : 'Unable to submit application.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const validations: Record<Step, { ok: boolean; message: string }> = {
@@ -195,8 +309,8 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
       message: 'Select an active, KYC-verified member with no current default.',
     },
     applicant: {
-      ok: Boolean(applicationForm.borrowerName && applicationForm.memberId && applicationForm.folioNumber && applicationForm.contactNumber && applicationForm.address && panPattern.test(applicationForm.pan) && applicationForm.aadhaar.length >= 4),
-      message: 'Borrower name, member ID, folio, contact, address, valid PAN and Aadhaar last four digits are mandatory.',
+      ok: Boolean(applicationForm.borrowerName && applicationForm.memberId && applicationForm.folioNumber && applicationForm.address),
+      message: 'Borrower name, member ID, folio and address are mandatory.',
     },
     shareholding: {
       ok: applicationForm.sharesHeld > 0 && Boolean(applicationForm.shareholdingMode) && (applicationForm.shareholdingMode !== 'demat' || applicationForm.dematBoId.length > 5),
@@ -207,8 +321,8 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
       message: 'Requested amount must be within the permissible limit and purpose must be crop/agriculture related.',
     },
     nominee: {
-      ok: applicationForm.applicantType !== 'individual' || (Boolean(applicationForm.nomineeName && applicationForm.nomineeGender && applicationForm.nomineePan && applicationForm.nomineeAadhaar) && applicationForm.nomineeAge >= 18 && panPattern.test(applicationForm.nomineePan)),
-      message: applicationForm.applicantType !== 'individual' ? '' : 'Nominee name, adult age, gender, PAN and Aadhaar last four digits are mandatory.',
+      ok: Boolean(selectedNomineeId),
+      message: 'Select an existing nominee for this member.',
     },
     documents: {
       ok: allDocsComplete,
@@ -229,7 +343,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
     ['Applicant identity and KYC fields complete', validations.applicant.ok],
     ['Shareholding and security inputs complete', validations.shareholding.ok],
     ['Requested amount and crop/agriculture purpose valid', validations.loan.ok],
-    ['Nominee complete and not a minor', validations.nominee.ok],
+    ['Nominee selected', validations.nominee.ok],
     ['Mandatory documents uploaded and self-attested', validations.documents.ok],
     ['Borrower and nominee signatures captured', applicationForm.borrowerSignature && applicationForm.nomineeSignature],
     ['Declarations accepted', allDeclarationsAccepted],
@@ -260,7 +374,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
     );
   }
 
-  if (submitted) {
+  if (submittedApplication) {
     return (
       <div className="p-6 max-w-2xl mx-auto">
         <div className="card text-center py-12">
@@ -268,7 +382,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
             <Check size={32} className="text-green-600" />
           </div>
           <h2 className="text-xl font-bold text-slate-900 mb-2">Application Submitted for Completeness Check</h2>
-          <p className="text-slate-500 mb-1">Application ID APP-INT-2026-000001 created. Official LO reference will be generated after mandatory checklist verification.</p>
+          <p className="text-slate-500 mb-1">Application ID {submittedApplication.loan_application_id.slice(0, 8)} created. Official LO reference will be generated after mandatory checklist verification.</p>
           <p className="text-xs text-slate-400 mb-6">Member: {applicationForm.borrowerName} · Amount: {fmt(applicationForm.requestedAmount)}</p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
             <button onClick={onBack} className="btn-secondary">Back to Applications</button>
@@ -293,9 +407,9 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
             <p className="text-sm text-slate-500">Assisted entry workflow aligned to borrower portal intake.</p>
           </div>
         </div>
-        <button onClick={() => setDraftSaved(true)} className="btn-secondary flex items-center gap-2 self-start">
+        <button onClick={persistDraft} disabled={isSaving || !selectedMember} className="btn-secondary flex items-center gap-2 self-start disabled:opacity-50 disabled:cursor-not-allowed">
           <Save size={16} />
-          {draftSaved ? 'Draft Saved' : 'Save Draft'}
+          {draftSaved ? 'Draft Saved' : isSaving ? 'Saving…' : 'Save Draft'}
         </button>
       </div>
 
@@ -336,7 +450,16 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
               className="field-input"
             />
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {filteredMembers.map(member => {
+              {membersStatus === 'loading' && (
+                <div className="table-cell text-center text-slate-400 py-8">Loading members…</div>
+              )}
+              {membersStatus === 'error' && (
+                <div className="table-cell text-center text-red-600 py-8">{membersMessage}</div>
+              )}
+              {membersStatus === 'success' && memberOptions.length === 0 && (
+                <div className="table-cell text-center text-slate-400 py-8">No members found.</div>
+              )}
+              {memberOptions.map(member => {
                 const blocked = member.activeStatus !== 'active' || member.defaultStatus !== 'no_default';
                 return (
                   <label
@@ -365,8 +488,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
                       <div className="flex flex-wrap gap-3 mt-1 text-xs text-slate-400">
                         <span>{member.sharesHeld} shares</span>
                         <span>KYC: {formatKyc(member.kycStatus)}</span>
-                        <span>Supply years: {member.supplyYears}</span>
-                        <span>Exposure: {fmt(member.currentExposure)}</span>
+                        <span>Exposure: —</span>
                       </div>
                     </div>
                   </label>
@@ -480,7 +602,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
             {selectedMember && applicationForm.requestedAmount > 0 && (
               <LoanLimitCalculator
                 sharesHeld={applicationForm.sharesHeld || selectedMember.sharesHeld}
-                shareMode={selectedMember.shareMode}
+                shareMode={selectedMember.shareMode as 'physical' | 'demat'}
                 landAreaAcres={applicationForm.landAreaAcres}
                 requestedAmount={applicationForm.requestedAmount}
               />
@@ -495,34 +617,14 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
           <>
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Nominee Details</h2>
-              <p className="text-sm text-slate-500">Nominee name, adult age, gender, PAN and Aadhaar last four digits are mandatory.</p>
+              <p className="text-sm text-slate-500">Select an existing adult nominee from the member master.</p>
             </div>
-            {applicationForm.applicantType !== 'individual' ? (
-              <Warning>Authorised signatory flow gap: Nominee details are not applicable for institutional borrowers. Please proceed to the next step.</Warning>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <TextField label="Nominee Full Name" value={applicationForm.nomineeName} onChange={v => updateField('nomineeName', v)} />
-                <Field label="Date of Birth">
-                  <input type="date" value={applicationForm.nomineeDob} onChange={e => updateField('nomineeDob', e.target.value)} className="field-input" />
-                </Field>
-                <NumberField label="Age" value={applicationForm.nomineeAge} readOnly />
-                <Field label="Gender">
-                  <select value={applicationForm.nomineeGender} onChange={e => updateField('nomineeGender', e.target.value)} className="field-select">
-                    <option value="">Select gender</option>
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                    <option value="other">Other</option>
-                  </select>
-                </Field>
-                <TextField label="Relationship to Borrower" value={applicationForm.nomineeRelationship} onChange={v => updateField('nomineeRelationship', v)} />
-                <TextField label="Mobile Number" value={applicationForm.nomineeMobile} onChange={v => updateField('nomineeMobile', v)} />
-                <TextField label="PAN" value={applicationForm.nomineePan} onChange={v => updateField('nomineePan', v.toUpperCase())} />
-                <TextField label="Aadhaar last four digits" value={applicationForm.nomineeAadhaar} onChange={v => updateField('nomineeAadhaar', v)} />
-                <Field label="Nominee Address" className="sm:col-span-2">
-                  <textarea value={applicationForm.nomineeAddress} onChange={e => updateField('nomineeAddress', e.target.value)} rows={3} className="field-input resize-none" />
-                </Field>
-              </div>
-            )}
+            <StaffNomineeSelectionView
+              nominees={nomineeOptions}
+              selectedNomineeId={selectedNomineeId}
+              status={nomineesStatus}
+              onSelect={setSelectedNomineeId}
+            />
           </>
         )}
 
@@ -605,7 +707,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
                 <SummaryRow label="Requested Amount" value={applicationForm.requestedAmount ? fmt(applicationForm.requestedAmount) : '—'} />
                 <SummaryRow label="Eligible Limit" value={maximumPermissibleLimit ? fmt(maximumPermissibleLimit) : '—'} />
                 <SummaryRow label="Purpose" value={applicationForm.purpose.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} />
-                <SummaryRow label="Nominee" value={applicationForm.applicantType !== 'individual' ? 'Not Applicable' : `${applicationForm.nomineeName || '—'} · Age ${applicationForm.nomineeAge || '—'}`} />
+                <SummaryRow label="Nominee" value={selectedNominee ? `${selectedNominee.nominee_name} · Age ${selectedNominee.age_at_application ?? '—'}` : 'Not selected'} />
               </div>
               <div className="border border-slate-200 rounded-lg p-4">
                 <h3 className="font-semibold text-slate-900 mb-3">Completeness Checklist</h3>
@@ -627,15 +729,17 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
         )}
       </div>
 
+      {submitMessage && <Warning>{submitMessage}</Warning>}
+
       <div className="flex items-center justify-between">
         <button onClick={goPrev} className="btn-secondary flex items-center gap-2">
           <ChevronLeft size={16} />
           {stepIndex === 0 ? 'Cancel' : 'Back'}
         </button>
         {step === 'review' ? (
-          <button onClick={() => setSubmitted(true)} disabled={!canSubmit} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+          <button onClick={handleSubmit} disabled={!canSubmit || isSaving} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
             <Save size={16} />
-            Submit Application
+            {isSaving ? 'Submitting…' : 'Submit Application'}
           </button>
         ) : (
           <button onClick={goNext} disabled={!validations[step].ok} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -699,5 +803,30 @@ const Warning: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <span>{children}</span>
   </div>
 );
+
+export const StaffNomineeSelectionView: React.FC<{
+  nominees: MemberNomineeDetail[];
+  selectedNomineeId: string;
+  status: 'idle' | 'loading' | 'success' | 'error';
+  onSelect: (nomineeId: string) => void;
+}> = ({ nominees, selectedNomineeId, status, onSelect }) => {
+  const selected = nominees.find(item => item.nominee_id === selectedNomineeId);
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <Field label="Select Member Nominee" className="sm:col-span-2">
+        <select value={selectedNomineeId} onChange={event => onSelect(event.target.value)} className="field-select" disabled={status === 'loading'}>
+          <option value="">{status === 'loading' ? 'Loading nominees…' : 'Select nominee'}</option>
+          {nominees.map(nominee => <option key={nominee.nominee_id} value={nominee.nominee_id}>{nominee.nominee_name} · {nominee.relationship_to_borrower || 'Relationship not recorded'}</option>)}
+        </select>
+      </Field>
+      {status === 'success' && nominees.length === 0 && <Warning>No nominees are available for this member.</Warning>}
+      {status === 'error' && <Warning>Nominees could not be loaded.</Warning>}
+      {selected && <>
+        <SummaryRow label="Age" value={String(selected.age_at_application ?? 'Not recorded')} />
+        <SummaryRow label="KYC Status" value={formatKyc(selected.kyc_status)} />
+      </>}
+    </div>
+  );
+};
 
 export default NewApplication;

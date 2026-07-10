@@ -1,0 +1,14 @@
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/applicationIntakeApi.test.ts src/services/portalApi.test.ts src/pages/applications/ApplicationDetail.test.tsx
+
+RUN  v3.2.6
+
+✓ src/services/portalApi.test.ts (3 tests)
+✓ src/services/applicationIntakeApi.test.ts (3 tests)
+✓ src/pages/applications/ApplicationDetail.test.tsx (4 tests)
+
+Test Files  3 passed (3)
+Tests  10 passed (10)

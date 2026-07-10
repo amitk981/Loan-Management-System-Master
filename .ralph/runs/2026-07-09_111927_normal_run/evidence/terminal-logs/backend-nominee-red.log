@@ -1,0 +1,140 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 6 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: communications, configurations, contenttypes, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying documents.0001_initial... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying scheduler.0001_initial... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_member_nominee_create_audits_metadata_without_plaintext_identity_values (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_audits_metadata_without_plaintext_identity_values) ... FAIL
+test_member_nominee_create_rejects_minor_and_missing_birth_date (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_rejects_minor_and_missing_birth_date) ... 
+  test_member_nominee_create_rejects_minor_and_missing_birth_date (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_rejects_minor_and_missing_birth_date) (code='MISSING_REQUIRED_FIELD') ... FAIL
+  test_member_nominee_create_rejects_minor_and_missing_birth_date (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_rejects_minor_and_missing_birth_date) (code='NOMINEE_MINOR_NOT_ALLOWED') ... FAIL
+test_member_nominee_create_rejects_missing_and_invalid_identity_fields (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_rejects_missing_and_invalid_identity_fields) ... 
+  test_member_nominee_create_rejects_missing_and_invalid_identity_fields (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_rejects_missing_and_invalid_identity_fields) (field='pan', code='MISSING_REQUIRED_FIELD') ... FAIL
+  test_member_nominee_create_rejects_missing_and_invalid_identity_fields (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_rejects_missing_and_invalid_identity_fields) (field='aadhaar', code='MISSING_REQUIRED_FIELD') ... FAIL
+  test_member_nominee_create_rejects_missing_and_invalid_identity_fields (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_rejects_missing_and_invalid_identity_fields) (field='pan', code='INVALID_PAN_FORMAT') ... FAIL
+  test_member_nominee_create_rejects_missing_and_invalid_identity_fields (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_rejects_missing_and_invalid_identity_fields) (field='aadhaar', code='INVALID_AADHAAR_FORMAT') ... FAIL
+test_member_nominees_can_be_created_and_listed_with_masked_identifiers (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominees_can_be_created_and_listed_with_masked_identifiers) ... FAIL
+test_member_nominees_require_authentication_and_separate_read_create_permissions (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominees_require_authentication_and_separate_read_create_permissions) ... FAIL
+test_member_nominees_return_not_found_for_unknown_or_deleted_member (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominees_return_not_found_for_unknown_or_deleted_member) ... 
+  test_member_nominees_return_not_found_for_unknown_or_deleted_member (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominees_return_not_found_for_unknown_or_deleted_member) (member_id=UUID('dfd50438-e5c5-45f1-bf0f-257a9219ab66')) ... ERROR
+  test_member_nominees_return_not_found_for_unknown_or_deleted_member (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominees_return_not_found_for_unknown_or_deleted_member) (member_id=UUID('3ea48067-edf8-4f01-839c-f20ab55af4a3')) ... ERROR
+
+======================================================================
+ERROR: test_member_nominees_return_not_found_for_unknown_or_deleted_member (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominees_return_not_found_for_unknown_or_deleted_member) (member_id=UUID('dfd50438-e5c5-45f1-bf0f-257a9219ab66'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/sfpcl_credit/tests/test_member_nominees_api.py", line 144, in test_member_nominees_return_not_found_for_unknown_or_deleted_member
+    assert_error_envelope(self, response.json(), "NOT_FOUND")
+                                ^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 882, in _parse_json
+    raise ValueError(
+ValueError: Content-Type header is "text/html; charset=utf-8", not "application/json"
+
+======================================================================
+ERROR: test_member_nominees_return_not_found_for_unknown_or_deleted_member (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominees_return_not_found_for_unknown_or_deleted_member) (member_id=UUID('3ea48067-edf8-4f01-839c-f20ab55af4a3'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/sfpcl_credit/tests/test_member_nominees_api.py", line 144, in test_member_nominees_return_not_found_for_unknown_or_deleted_member
+    assert_error_envelope(self, response.json(), "NOT_FOUND")
+                                ^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 882, in _parse_json
+    raise ValueError(
+ValueError: Content-Type header is "text/html; charset=utf-8", not "application/json"
+
+======================================================================
+FAIL: test_member_nominee_create_audits_metadata_without_plaintext_identity_values (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_audits_metadata_without_plaintext_identity_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/sfpcl_credit/tests/test_member_nominees_api.py", line 197, in test_member_nominee_create_audits_metadata_without_plaintext_identity_values
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+======================================================================
+FAIL: test_member_nominee_create_rejects_minor_and_missing_birth_date (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_rejects_minor_and_missing_birth_date) (code='MISSING_REQUIRED_FIELD')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/sfpcl_credit/tests/test_member_nominees_api.py", line 184, in test_member_nominee_create_rejects_minor_and_missing_birth_date
+    self.assertEqual(response.status_code, 400)
+AssertionError: 404 != 400
+
+======================================================================
+FAIL: test_member_nominee_create_rejects_minor_and_missing_birth_date (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_rejects_minor_and_missing_birth_date) (code='NOMINEE_MINOR_NOT_ALLOWED')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/sfpcl_credit/tests/test_member_nominees_api.py", line 184, in test_member_nominee_create_rejects_minor_and_missing_birth_date
+    self.assertEqual(response.status_code, 400)
+AssertionError: 404 != 400
+
+======================================================================
+FAIL: test_member_nominee_create_rejects_missing_and_invalid_identity_fields (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_rejects_missing_and_invalid_identity_fields) (field='pan', code='MISSING_REQUIRED_FIELD')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/sfpcl_credit/tests/test_member_nominees_api.py", line 164, in test_member_nominee_create_rejects_missing_and_invalid_identity_fields
+    self.assertEqual(response.status_code, 400)
+AssertionError: 404 != 400
+
+======================================================================
+FAIL: test_member_nominee_create_rejects_missing_and_invalid_identity_fields (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_rejects_missing_and_invalid_identity_fields) (field='aadhaar', code='MISSING_REQUIRED_FIELD')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/sfpcl_credit/tests/test_member_nominees_api.py", line 164, in test_member_nominee_create_rejects_missing_and_invalid_identity_fields
+    self.assertEqual(response.status_code, 400)
+AssertionError: 404 != 400
+
+======================================================================
+FAIL: test_member_nominee_create_rejects_missing_and_invalid_identity_fields (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_rejects_missing_and_invalid_identity_fields) (field='pan', code='INVALID_PAN_FORMAT')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/sfpcl_credit/tests/test_member_nominees_api.py", line 164, in test_member_nominee_create_rejects_missing_and_invalid_identity_fields
+    self.assertEqual(response.status_code, 400)
+AssertionError: 404 != 400
+
+======================================================================
+FAIL: test_member_nominee_create_rejects_missing_and_invalid_identity_fields (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_rejects_missing_and_invalid_identity_fields) (field='aadhaar', code='INVALID_AADHAAR_FORMAT')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/sfpcl_credit/tests/test_member_nominees_api.py", line 164, in test_member_nominee_create_rejects_missing_and_invalid_identity_fields
+    self.assertEqual(response.status_code, 400)
+AssertionError: 404 != 400
+
+======================================================================
+FAIL: test_member_nominees_can_be_created_and_listed_with_masked_identifiers (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominees_can_be_created_and_listed_with_masked_identifiers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/sfpcl_credit/tests/test_member_nominees_api.py", line 75, in test_member_nominees_can_be_created_and_listed_with_masked_identifiers
+    self.assertEqual(create_response.status_code, 200)
+AssertionError: 404 != 200
+
+======================================================================
+FAIL: test_member_nominees_require_authentication_and_separate_read_create_permissions (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominees_require_authentication_and_separate_read_create_permissions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/sfpcl_credit/tests/test_member_nominees_api.py", line 108, in test_member_nominees_require_authentication_and_separate_read_create_permissions
+    self.assertEqual(unauthenticated.status_code, 401)
+AssertionError: 404 != 401
+
+----------------------------------------------------------------------
+Ran 6 tests in 11.723s
+
+FAILED (failures=9, errors=2)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

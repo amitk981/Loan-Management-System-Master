@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "data": {
+    "loan_application_id": "00000000-0000-0000-0000-000000000001",
+    "application_reference_number": null,
+    "application_status": "draft",
+    "current_stage": "initial_loan_request",
+    "assigned_owner": {
+      "user_id": "00000000-0000-0000-0000-000000000002",
+      "full_name": "Application Owner"
+    },
+    "available_actions": [
+      {
+        "action_code": "submit",
+        "label": "Submit Application",
+        "enabled": false,
+        "disabled_reason": "Complete required application facts before submit.",
+        "required_permission": "applications.loan_application.submit"
+      }
+    ]
+  }
+}

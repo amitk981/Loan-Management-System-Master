@@ -1,0 +1,73 @@
+Creating test database for alias 'default'...
+Found 4 test(s).
+System check identified no issues (0 silenced).
+EEEE
+======================================================================
+ERROR: test_authenticated_user_can_retrieve_masked_member_profile_detail (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_authenticated_user_can_retrieve_masked_member_profile_detail)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_091651_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 64, in setUp
+    IndividualMemberProfile.objects.create(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 677, in create
+    obj = self.model(**kwargs)
+          ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 567, in __init__
+    raise TypeError(
+TypeError: IndividualMemberProfile() got unexpected keyword arguments: 'first_name', 'middle_name', 'last_name', 'gender', 'date_of_birth', 'occupation', 'employment_or_service_years'
+
+======================================================================
+ERROR: test_masked_profile_read_does_not_create_audit_or_workflow_events (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_masked_profile_read_does_not_create_audit_or_workflow_events)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_091651_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 64, in setUp
+    IndividualMemberProfile.objects.create(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 677, in create
+    obj = self.model(**kwargs)
+          ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 567, in __init__
+    raise TypeError(
+TypeError: IndividualMemberProfile() got unexpected keyword arguments: 'first_name', 'middle_name', 'last_name', 'gender', 'date_of_birth', 'occupation', 'employment_or_service_years'
+
+======================================================================
+ERROR: test_member_profile_requires_authentication_and_member_read_permission (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_requires_authentication_and_member_read_permission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_091651_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 64, in setUp
+    IndividualMemberProfile.objects.create(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 677, in create
+    obj = self.model(**kwargs)
+          ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 567, in __init__
+    raise TypeError(
+TypeError: IndividualMemberProfile() got unexpected keyword arguments: 'first_name', 'middle_name', 'last_name', 'gender', 'date_of_birth', 'occupation', 'employment_or_service_years'
+
+======================================================================
+ERROR: test_member_profile_returns_not_found_for_unknown_or_deleted_member (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_returns_not_found_for_unknown_or_deleted_member)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_091651_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 64, in setUp
+    IndividualMemberProfile.objects.create(
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 677, in create
+    obj = self.model(**kwargs)
+          ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 567, in __init__
+    raise TypeError(
+TypeError: IndividualMemberProfile() got unexpected keyword arguments: 'first_name', 'middle_name', 'last_name', 'gender', 'date_of_birth', 'occupation', 'employment_or_service_years'
+
+----------------------------------------------------------------------
+Ran 4 tests in 2.757s
+
+FAILED (errors=4)
+Destroying test database for alias 'default'...

@@ -1,0 +1,11 @@
+
+> sfpcl-lms@1.0.0 dev
+> vite --port 5173 --host 127.0.0.1
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+error when starting dev server:
+Error: listen EPERM: operation not permitted 127.0.0.1:5173
+    at Server.setupListenHandle [as _listen2] (node:net:1800:21)
+    at listenInCluster (node:net:1865:12)
+    at doListen (node:net:2014:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:83:21)

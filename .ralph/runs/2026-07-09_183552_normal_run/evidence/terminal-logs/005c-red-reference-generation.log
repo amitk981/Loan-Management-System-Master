@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_generate_reference_after_completeness_pass_creates_register_and_metadata_only_evidence (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_generate_reference_after_completeness_pass_creates_register_and_metadata_only_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_183552_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 258, in test_generate_reference_after_completeness_pass_creates_register_and_metadata_only_evidence
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 2.215s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

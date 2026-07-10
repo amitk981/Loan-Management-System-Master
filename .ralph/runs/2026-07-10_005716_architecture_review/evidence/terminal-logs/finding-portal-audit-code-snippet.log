@@ -1,0 +1,40 @@
+   146	@require_POST
+   147	def portal_login(request):
+   148	    try:
+   149	        data = parse_json_body(request)
+   150	    except ValidationError as exc:
+   151	        return error_response(request, 400, "VALIDATION_ERROR", str(exc))
+   152	    identifier = str(data.get("identifier", "")).strip().lower()
+   153	    password = data.get("password", "")
+   154	    if not identifier or not password:
+   155	        return error_response(
+   156	            request,
+   157	            400,
+   158	            "MISSING_REQUIRED_FIELD",
+   159	            "Identifier and password are required.",
+   160	            {
+   161	                "identifier": "This field is required." if not identifier else "",
+   162	                "password": "This field is required." if not password else "",
+   163	            },
+   164	        )
+   165	    try:
+   166	        user = portal_auth_service.authenticate_portal_user(identifier, password)
+   167	    except CredentialError as exc:
+   168	        auth_service.record_auth_event(
+   169	            request,
+   170	            "portal.auth.login.failed",
+   171	            user=exc.user,
+   172	            outcome=exc.outcome,
+   173	            email=identifier,
+   174	        )
+   175	        return error_response(
+   176	            request, 401, "INVALID_CREDENTIALS", "Identifier or password is incorrect."
+   177	        )
+   178	    session, payload = portal_auth_service.issue_portal_login(user, request)
+   179	    auth_service.record_auth_event(
+   180	        request,
+   181	        "portal.auth.login.succeeded",
+   182	        user=user,
+   183	        session=session,
+   184	        outcome="success",
+   185	    )

@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_staff_create_and_detail_persist_safe_same_member_nominee_selection (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_staff_create_and_detail_persist_safe_same_member_nominee_selection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_100050_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 220, in test_staff_create_and_detail_persist_safe_same_member_nominee_selection
+    self.assertEqual(response.status_code, 200)
+AssertionError: 400 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 1.773s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

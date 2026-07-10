@@ -1,0 +1,10 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006D2B-credit-loan-limit-calculator-and-appraisal-seam.md
+ M docs/slices/006E-appraisal-note-create-edit-submit.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-005-application-intake.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+?? .ralph/runs/2026-07-10_154638_architecture_review/
+?? docs/slices/005I5-application-ownership-and-nominee-authority-hardening.md

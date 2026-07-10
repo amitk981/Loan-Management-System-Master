@@ -1,0 +1,7 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/004E-witness-shareholder-validation.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+?? .ralph/runs/2026-07-09_114836_architecture_review/
+?? docs/slices/004D2-member-profile-and-nominee-contract-hardening.md

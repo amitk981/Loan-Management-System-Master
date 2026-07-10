@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>005I2 Application Detail Visual Evidence</title>
+  <style>
+    body { margin: 0; font-family: Inter, Arial, sans-serif; background: #f8fafc; color: #0f172a; }
+    main { max-width: 1100px; margin: 0 auto; padding: 28px; }
+    h1 { font-size: 22px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 0 0 12px; }
+    .screen { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 18px 0; }
+    .top { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 16px; }
+    .ref { font-size: 20px; font-weight: 700; color: #14532d; }
+    .badge { display: inline-block; border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 700; margin-left: 8px; }
+    .muted { color: #64748b; font-size: 13px; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .cell { background: #f8fafc; border-radius: 8px; padding: 12px; }
+    .label { color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .value { margin-top: 4px; font-weight: 700; font-size: 14px; }
+    .note { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-top: 16px; }
+    .note-head { background: #f8fafc; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-weight: 700; }
+    .empty { color: #64748b; font-size: 14px; padding: 14px 0 0; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>005I2 Application Detail API State Hardening</h1>
+  <p class="muted">Self-contained evidence mirrors the existing Application Detail card, badge, and empty-state patterns. The regression tests render the same states from API-shaped data.</p>
+
+  <section class="screen">
+    <h2>API-backed LO00000035 without rejection note or witness facts</h2>
+    <div class="top">
+      <div>
+        <span class="ref">LO00000035</span><span class="badge">Pending Completeness</span>
+        <div class="muted">Ramesh Patil · ₹2,50,000 requested · Applied 10/7/2026</div>
+      </div>
+      <div class="muted">Owner: <strong>Deputy Manager Finance</strong></div>
+    </div>
+    <div class="grid">
+      <div class="cell"><div class="label">Requested Amount</div><div class="value">₹2,50,000</div></div>
+      <div class="cell"><div class="label">Loan Type</div><div class="value">Short Term</div></div>
+      <div class="cell"><div class="label">Tenure</div><div class="value">12 months</div></div>
+      <div class="cell"><div class="label">Purpose</div><div class="value">crop production</div></div>
+    </div>
+    <p class="empty">Witness Details: No API-backed witness details are available for this application yet.</p>
+    <p class="empty">Nominee Details: Not available; masked identifiers remain masked-only.</p>
+  </section>
+
+  <section class="screen">
+    <h2>API-backed detail with staff rejection-note metadata</h2>
+    <div class="top">
+      <div>
+        <span class="ref">app-1</span><span class="badge">Pending Completeness</span>
+        <div class="muted">Ramesh Patil · ₹2,50,000 requested · Applied 10/7/2026</div>
+      </div>
+      <div class="muted">Owner: <strong>Deputy Manager Finance</strong></div>
+    </div>
+    <div class="note">
+      <div class="note-head">Rejection Note <span class="badge">Draft</span></div>
+      <div class="grid" style="padding: 16px;">
+        <div class="cell"><div class="label">Stage</div><div class="value">credit assessment</div></div>
+        <div class="cell"><div class="label">Reason Category</div><div class="value">eligibility</div></div>
+        <div class="cell"><div class="label">Communication Mode</div><div class="value">email</div></div>
+        <div class="cell"><div class="label">Reapply Allowed</div><div class="value">Yes</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

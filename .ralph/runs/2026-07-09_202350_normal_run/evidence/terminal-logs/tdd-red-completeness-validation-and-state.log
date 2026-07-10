@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_completeness_pass_blocks_incomplete_draft_and_duplicate_without_partial_side_effects (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_completeness_pass_blocks_incomplete_draft_and_duplicate_without_partial_side_effects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_202350_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 919, in test_completeness_pass_blocks_incomplete_draft_and_duplicate_without_partial_side_effects
+    self.assertEqual(draft_pass.status_code, 409)
+AssertionError: 400 != 409
+
+----------------------------------------------------------------------
+Ran 1 test in 3.205s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

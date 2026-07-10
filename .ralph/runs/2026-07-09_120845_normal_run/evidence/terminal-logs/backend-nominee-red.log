@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 6 test(s).
+System check identified no issues (0 silenced).
+F.....
+======================================================================
+FAIL: test_member_nominee_create_audits_metadata_without_identity_values_or_hashes (sfpcl_credit.tests.test_member_nominees_api.MemberNomineeApiTests.test_member_nominee_create_audits_metadata_without_identity_values_or_hashes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_120845_normal_run/sfpcl_credit/tests/test_member_nominees_api.py", line 219, in test_member_nominee_create_audits_metadata_without_identity_values_or_hashes
+    self.assertNotIn(forbidden_key, audit.new_value_json)
+AssertionError: 'pan_hash' unexpectedly found in {'member_id': '66406ffc-cb85-499c-9772-0747f6fc05f5', 'nominee_id': '5592f032-d898-43ed-b1d5-53aef9e63a6c', 'nominee_name': 'Sita Patil', 'age_at_application': 41, 'minor_flag': False, 'kyc_status': 'pending', 'signature_required_flag': True, 'pan_hash': 'bc1fc56f912c9ccc848d2ab44809116a2d32fe2ccfbefbc98ebbbca22b8f4756', 'aadhaar_hash': 'ec1856c3d34530468d0c4022a8143c30147275c5dce186dcc1f8d276f321cc8e'}
+
+----------------------------------------------------------------------
+Ran 6 tests in 13.085s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,15 +1,35 @@
-import React from 'react';
-import { Leaf, Calendar, Scale, IndianRupee, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AlertTriangle, Calendar, CheckCircle2, IndianRupee, Leaf, Scale } from 'lucide-react';
 import StatusBadge from '../../../../components/ui/StatusBadge';
+import { AuthSessionError } from '../../../../services/authSession';
+import { fetchPortalProduceSupply, type PortalProduceSupply } from '../../../../services/portalApi';
 
 const MP22_ProduceSupply: React.FC = () => {
-  const supplyHistory = [
-    { season: 'Kharif 2024', crop: 'Tomato', quantity: '12.5 MT', value: 250000, status: 'completed' },
-    { season: 'Rabi 2023', crop: 'Grapes', quantity: '8.2 MT', value: 320000, status: 'completed' },
-    { season: 'Kharif 2023', crop: 'Tomato', quantity: '11.0 MT', value: 220000, status: 'completed' },
-    { season: 'Rabi 2022', crop: 'Grapes', quantity: '7.5 MT', value: 280000, status: 'completed' },
-    { season: 'Kharif 2022', crop: 'Tomato', quantity: '10.5 MT', value: 200000, status: 'completed' },
-  ];
+  const [supply, setSupply] = useState<PortalProduceSupply | null>(null);
+  const [message, setMessage] = useState('Loading produce supply history...');
+
+  useEffect(() => {
+    let mounted = true;
+    fetchPortalProduceSupply()
+      .then(data => {
+        if (mounted) setSupply(data);
+      })
+      .catch((error: AuthSessionError) => {
+        if (mounted) setMessage(error.message || 'Produce supply history could not be loaded.');
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!supply) {
+    return <SupplyPanel title="Produce supply unavailable" message={message} />;
+  }
+  return <MP22ProduceSupplyView supply={supply} />;
+};
+
+export const MP22ProduceSupplyView: React.FC<{ supply: PortalProduceSupply }> = ({ supply }) => {
+  const hasRecords = supply.records.length > 0;
 
   return (
     <div className="space-y-6">
@@ -20,38 +40,14 @@ const MP22_ProduceSupply: React.FC = () => {
         </div>
         <div className="bg-green-50 border border-green-200 px-4 py-2 rounded-lg flex items-center gap-2">
           <CheckCircle2 size={18} className="text-green-600" />
-          <span className="text-sm font-medium text-green-800">4-Year Rule Met</span>
+          <span className="text-sm font-medium text-green-800">{formatLabel(supply.source_status)}</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-slate-100 p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 text-blue-600">
-            <Calendar size={24} />
-          </div>
-          <div>
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Continuous Supply</p>
-            <p className="text-xl font-bold text-slate-900 mt-0.5">5 Years</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-100 p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0 text-amber-600">
-            <Scale size={24} />
-          </div>
-          <div>
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Total Volume</p>
-            <p className="text-xl font-bold text-slate-900 mt-0.5">49.7 MT</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-100 p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0 text-green-600">
-            <IndianRupee size={24} />
-          </div>
-          <div>
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Total Value</p>
-            <p className="text-xl font-bold text-slate-900 mt-0.5">₹12.7L</p>
-          </div>
-        </div>
+        <Metric icon={<Calendar size={24} />} label="Continuous Supply" value={supply.summary.continuous_supply_years || 'Not recorded'} color="text-blue-600" bg="bg-blue-50" />
+        <Metric icon={<Scale size={24} />} label="Total Volume" value={supply.summary.total_quantity || 'Not recorded'} color="text-amber-600" bg="bg-amber-50" />
+        <Metric icon={<IndianRupee size={24} />} label="Total Value" value={supply.summary.total_value || 'Not recorded'} color="text-green-600" bg="bg-green-50" />
       </div>
 
       <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
@@ -62,7 +58,7 @@ const MP22_ProduceSupply: React.FC = () => {
           <table className="w-full text-sm">
             <thead className="bg-white border-b border-slate-200">
               <tr>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Season</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Financial Year</th>
                 <th className="text-left px-4 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Crop</th>
                 <th className="text-right px-4 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Quantity</th>
                 <th className="text-right px-4 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Value Delivered</th>
@@ -70,36 +66,60 @@ const MP22_ProduceSupply: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {supplyHistory.map((row, i) => (
-                <tr key={i} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-slate-800 whitespace-nowrap">{row.season}</td>
+              {hasRecords ? supply.records.map(row => (
+                <tr key={`${row.financial_year}-${row.crop_type || 'crop'}`} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 font-medium text-slate-800 whitespace-nowrap">{row.financial_year}</td>
                   <td className="px-4 py-4 text-slate-600 whitespace-nowrap flex items-center gap-2">
                     <Leaf size={14} className="text-green-600" />
-                    {row.crop}
+                    {row.crop_type || 'Not recorded'}
                   </td>
-                  <td className="px-4 py-4 text-right font-medium text-slate-700 whitespace-nowrap">{row.quantity}</td>
-                  <td className="px-4 py-4 text-right text-slate-600 whitespace-nowrap">₹{row.value.toLocaleString('en-IN')}</td>
-                  <td className="px-6 py-4 text-center whitespace-nowrap">
-                    <StatusBadge label={row.status} size="sm" />
-                  </td>
+                  <td className="px-4 py-4 text-right font-medium text-slate-700 whitespace-nowrap">{row.quantity || 'Not recorded'}</td>
+                  <td className="px-4 py-4 text-right text-slate-600 whitespace-nowrap">{row.value_amount || 'Not recorded'}</td>
+                  <td className="px-6 py-4 text-center whitespace-nowrap"><StatusBadge label={row.verified_flag ? 'verified' : 'pending'} size="sm" /></td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-6 text-sm text-slate-500">No produce supply records are available yet.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
-      
+
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 text-sm text-blue-800">
         <div className="mt-0.5">
           <CheckCircle2 size={18} className="text-blue-600" />
         </div>
         <div>
           <span className="font-semibold block mb-1">Eligibility Note</span>
-          SFPCL credit policy requires continuous produce supply for 4 consecutive years to be eligible for maximum loan limit enhancements. You currently fulfill this criteria.
+          Supply records will display here after the documented produce-supply model is implemented and verified.
         </div>
       </div>
     </div>
   );
 };
+
+const Metric: React.FC<{ icon: React.ReactNode; label: string; value: string; color: string; bg: string }> = ({ icon, label, value, color, bg }) => (
+  <div className="bg-white rounded-xl border border-slate-100 p-5 flex items-center gap-4">
+    <div className={`w-12 h-12 rounded-full ${bg} flex items-center justify-center flex-shrink-0 ${color}`}>{icon}</div>
+    <div>
+      <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">{label}</p>
+      <p className="text-xl font-bold text-slate-900 mt-0.5">{value}</p>
+    </div>
+  </div>
+);
+
+const SupplyPanel: React.FC<{ title: string; message: string }> = ({ title, message }) => (
+  <div className="bg-white rounded-xl border border-slate-100 p-6">
+    <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
+      <AlertTriangle size={16} className="text-amber-600" />
+      {title}
+    </h3>
+    <p className="text-sm text-slate-500">{message}</p>
+  </div>
+);
+
+const formatLabel = (value: string) => value.replace(/_/g, ' ');
 
 export default MP22_ProduceSupply;

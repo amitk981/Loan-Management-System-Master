@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_create_requires_eligible_and_loan_limit_snapshots (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_create_requires_eligible_and_loan_limit_snapshots)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_170303_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 247, in test_create_requires_eligible_and_loan_limit_snapshots
+    self.assertEqual(missing_eligibility.status_code, 409)
+AssertionError: 404 != 409
+
+----------------------------------------------------------------------
+Ran 1 test in 0.016s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

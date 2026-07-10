@@ -19,6 +19,11 @@ CODEX_PROFILE="${CODEX_PROFILE:-default}"
 CODEX_REASONING_EFFORT="${CODEX_REASONING_EFFORT:-medium}"
 CODEX_VERBOSITY="${CODEX_VERBOSITY:-medium}"
 CODEX_APPROVAL_MODE="${CODEX_APPROVAL_MODE:-never}"
+# Headless AFK runs need a writable worktree but no network and no git-metadata
+# writes. codex's `workspace-write` sandbox is exactly that. Newer codex releases
+# default `exec` to `read-only`, which — with approval `never` — blocks every
+# write (even the mandatory execution-plan.md) and dead-ends the run.
+CODEX_SANDBOX="${CODEX_SANDBOX:-workspace-write}"
 CODEX_MODEL="${CODEX_MODEL:-}"
 CODEX_ADDITIONAL_ARGS="${CODEX_ADDITIONAL_ARGS:-exec}"
 
@@ -36,6 +41,7 @@ cat > "$RUN_DIR/codex-settings.md" <<EOF
 - Actual reasoning effort if known: unknown
 - Verbosity setting: $CODEX_VERBOSITY
 - Approval mode: $CODEX_APPROVAL_MODE
+- Sandbox mode: $CODEX_SANDBOX
 - Fallback used: no
 - Config source: .ralph/config.yaml and environment overrides
 EOF
@@ -49,6 +55,7 @@ fi
 args+=(-c "model_reasoning_effort=$CODEX_REASONING_EFFORT")
 args+=(-c "model_verbosity=$CODEX_VERBOSITY")
 args+=(--ask-for-approval "$CODEX_APPROVAL_MODE")
+args+=(--sandbox "$CODEX_SANDBOX")
 
 # Watchdog: a hung agent must fail the run (into the repair path), not
 # stall the loop forever. Pure bash — macOS has no GNU timeout.

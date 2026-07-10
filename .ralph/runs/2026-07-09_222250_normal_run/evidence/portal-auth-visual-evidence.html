@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>005FA Portal Auth Visual Evidence</title>
+    <style>
+      body { margin: 0; font-family: Inter, Arial, sans-serif; background: #f8fafc; color: #0f172a; }
+      .page { min-height: 100vh; display: grid; place-items: center; padding: 48px 24px; }
+      .grid { width: min(1200px, 100%); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+      .screen { border: 1px solid #e2e8f0; background: #fff; border-radius: 16px; box-shadow: 0 20px 45px rgba(15, 23, 42, .08); overflow: hidden; }
+      .bar { padding: 18px 22px; border-bottom: 1px solid #f1f5f9; }
+      .bar h2 { margin: 0; font-size: 20px; }
+      .bar p { margin: 6px 0 0; color: #64748b; font-size: 13px; }
+      .body { padding: 24px; }
+      label { display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 7px; }
+      input { box-sizing: border-box; width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 8px; padding: 11px 12px; font-size: 14px; margin-bottom: 16px; }
+      button { border: 0; background: #16a34a; color: #fff; border-radius: 8px; padding: 11px 14px; font-weight: 700; font-size: 14px; }
+      .secondary { background: #fff; color: #334155; border: 1px solid #e2e8f0; }
+      .hint { border: 1px solid #dcfce7; background: #f0fdf4; color: #166534; border-radius: 12px; padding: 14px; font-size: 13px; margin-top: 18px; }
+      .error { border: 1px solid #fee2e2; background: #fef2f2; color: #b91c1c; border-radius: 8px; padding: 10px; font-size: 13px; margin-bottom: 16px; }
+      .success { color: #15803d; font-size: 13px; margin-top: 12px; font-weight: 600; }
+      .steps { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; color: #16a34a; font-size: 12px; font-weight: 700; }
+      .dot { width: 30px; height: 30px; border-radius: 999px; background: #dcfce7; display: grid; place-items: center; }
+      .line { flex: 1; height: 4px; border-radius: 999px; background: #22c55e; }
+      .split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+      .settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+      .panel { border: 1px solid #f1f5f9; border-radius: 12px; padding: 18px; }
+      .row { display: flex; justify-content: space-between; border-bottom: 1px solid #f8fafc; padding: 9px 0; font-size: 13px; }
+      .row span:first-child { color: #64748b; }
+      @media (max-width: 800px) { .grid, .settings { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="grid">
+        <article class="screen">
+          <div class="bar"><h2>MP00 Member Portal Login</h2><p>Real API-backed password login, generic error state, activation and recovery links.</p></div>
+          <div class="body">
+            <div class="error">Identifier or password is incorrect.</div>
+            <label>Mobile Number or Email</label><input value="ganesh.thorat@sfpcl.example" />
+            <label>Password</label><input value="••••••••••••" />
+            <button>Sign in securely</button>
+            <div class="hint"><strong>First time here?</strong><br />Activate Account opens MP01. No PAN or bank details are displayed on login.</div>
+          </div>
+        </article>
+        <article class="screen">
+          <div class="bar"><h2>MP01 Account Activation</h2><p>Member/contact/last-four verification, OTP challenge, password setup.</p></div>
+          <div class="body">
+            <div class="steps"><span class="dot">1</span><span class="line"></span><span class="dot">2</span><span class="line"></span><span class="dot">3</span></div>
+            <label>Folio Number / Member ID</label><input value="FOLIO-42" />
+            <label>Registered Mobile or Email</label><input value="ganesh.thorat@sfpcl.example" />
+            <div class="split"><div><label>PAN (Last 4)</label><input value="234F" /></div><div><label>Aadhaar (Last 4)</label><input value="9012" /></div></div>
+            <button>Find My Record</button>
+          </div>
+        </article>
+        <article class="screen">
+          <div class="bar"><h2>MP02 Forgot Password</h2><p>OTP reset challenge, new password, single-use replay protection.</p></div>
+          <div class="body">
+            <label>Mobile Number or Email</label><input value="ganesh.thorat@sfpcl.example" />
+            <button>Send OTP</button>
+            <div class="hint">An OTP is sent to masked contact ga***@sfpcl.example. Successful reset revokes active sessions.</div>
+          </div>
+        </article>
+        <article class="screen">
+          <div class="bar"><h2>MP25 Security Settings</h2><p>Password change calls the real backend and revokes other sessions.</p></div>
+          <div class="body settings">
+            <div class="panel">
+              <label>Current Password</label><input value="••••••••••••" />
+              <label>New Password</label><input value="••••••••••••" />
+              <label>Confirm New Password</label><input value="••••••••••••" />
+              <button>Update Password</button>
+              <div class="success">Security settings saved.</div>
+            </div>
+            <div class="panel">
+              <div class="row"><span>Registered Mobile</span><strong>+91 98***42</strong></div>
+              <div class="row"><span>Registered Email</span><strong>ga***@sfpcl.example</strong></div>
+              <div class="row"><span>OTP Login</span><strong>Configured later</strong></div>
+              <div class="row"><span>Last Login</span><strong>Session tracked</strong></div>
+              <div class="hint">Sensitive changes are audited as portal auth events.</div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

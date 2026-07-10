@@ -1,0 +1,8 @@
+  1217	### Deficiency Flow
+  1218	
+  1219	If incomplete:
+  1220	
+  1221	- User selects deficiency reasons.
+  1222	- System generates deficiency / rejection communication.
+  1223	- Application status becomes `Incomplete - Returned to Applicant` or `Rejected at Completeness`, depending on business decision.
+  1224	- Borrower may resubmit after rectification.

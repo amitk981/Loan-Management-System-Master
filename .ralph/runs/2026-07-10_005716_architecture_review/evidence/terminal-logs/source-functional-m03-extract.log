@@ -1,0 +1,41 @@
+   832	Capture loan requests from borrowers through offline, assisted or digital channels and ensure complete application intake.
+   833	
+   834	### Functional Requirements
+   835	
+   836	| Req ID | Requirement |
+   837	|---|---|
+   838	| M03-FR-001 | System shall allow application initiation by borrower, field officer, Credit Manager or Deputy Manager – Finance. |
+   839	| M03-FR-002 | System shall capture application channel as offline, digital portal or assisted entry. |
+   840	| M03-FR-003 | System shall capture folio number, share count, requested loan amount, purpose and nominee details. |
+   841	| M03-FR-004 | System shall show system-calculated maximum permissible loan limit after required data is available. |
+   842	| M03-FR-005 | System shall require applicant and nominee signatures, either digital or scanned physical copy. |
+   843	| M03-FR-006 | System shall require borrower and nominee KYC uploads. |
+   844	| M03-FR-007 | System shall require share certificate, 7/12 extract, crop plan and six-month bank statement. |
+   845	| M03-FR-008 | System shall allow save-as-draft before submission. |
+   846	| M03-FR-009 | System shall validate mandatory fields before submission. |
+   847	| M03-FR-010 | System shall route submitted application to Deputy Manager – Finance for completeness check. |
+   848	| M03-FR-011 | System shall generate deficiency list for incomplete applications. |
+   849	| M03-FR-012 | System shall generate unique application number only after completeness passes. |
+   850	
+   851	### Application Reference Number
+   852	
+   853	The system must support the sequence:
+   854	
+   855	```text
+   856	LO00000001
+   857	LO00000002
+   858	LO00000003
+   859	...
+   860	```
+   861	
+   862	The sequence must be unique, non-repeating and auditable. Cancelled or rejected applications should not result in reused numbers.
+   863	
+   864	### Deficiency Flow
+   865	
+   866	1. Deputy Manager – Finance reviews submitted application.
+   867	2. Missing fields / documents are marked.
+   868	3. System generates deficiency note or Rejection Note as applicable.
+   869	4. Borrower is notified through configured channel.
+   870	5. Application enters `INCOMPLETE` state.
+   871	6. Borrower / field officer resubmits.
+   872	7. System keeps deficiency history.

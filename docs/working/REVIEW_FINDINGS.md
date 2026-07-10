@@ -2,6 +2,796 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-10 17:33 - Architecture Review 2026-07-10_173305_architecture_review
+
+Reviewed completed product slices since architecture-review commit `18d403e`:
+- `005I5-application-ownership-and-nominee-authority-hardening` (`8016ca1`)
+- `006D2B-credit-loan-limit-calculator-and-appraisal-seam` (`95f9bd4`)
+- `006D3-credit-assessment-model-ownership-state-migration` (`007777b`)
+- `006E-appraisal-note-create-edit-submit` (`14c1978`)
+
+The review checked `git diff 18d403e...HEAD`, all four slice/run packets, implementation/tests,
+Epic 005/006 digests, and the cited primary-source sections for disputed requirements.
+
+### Finding 1 - High - Appraisal UUIDs do not freeze the financial decision basis
+
+006E records only `eligibility_assessment_id_snapshot` and `loan_limit_assessment_id_snapshot`
+plus caller-authored summaries. The reviewed 006D contract deliberately permits an explicit rerun
+to replace the current assessment while retaining the same UUID. After such a rerun, an appraisal
+cannot prove the cultivated acreage, policy version, share/land/final limits, eligibility checks,
+or exception flag used for its recommendation. PATCH also rereads the current loan-limit row, so a
+later rerun can change an existing draft's amount/exception boundary.
+
+This fails API §3's snapshot-decision principle and 006E's handoff to consume stored 006B/006D
+facts. Corrective action: accepted ADR-0003 and created High-risk `006E2-appraisal-source-contract-
+and-snapshot-hardening`. It freezes canonical redacted projections on the appraisal, preserves IDs
+only as provenance, and defines safe handling for legacy rows whose history is ambiguous.
+
+### Finding 2 - High - Required appraisal reasons/repayment facts are accepted incompletely
+
+Functional §9.8 and M04-FR-009 require repayment-capacity notes; 006E stores risk ratings and
+mitigation but no required repayment-capacity field. The §24.3 submit endpoint also requires
+`remarks`, yet the workflow validates and discards them: neither appraisal-owned state nor an
+append-only submission record retains the compliance reason. The slice correctly keeps free text
+out of audit JSON, but metadata-only audit does not justify losing the source request fact.
+
+Corrective action: 006E2 adds exact `repayment_capacity_notes`, persists submission remarks outside
+audit JSON, and adds rollback/redaction tests before Credit Manager review. M04-FR-008's amount,
+tenure, interest/rate basis, and security facts remain implemented; no undocumented repayment
+formula was invented.
+
+### Finding 3 - High / owned deferral - Appraisal task, assignment, and rejection requirements lack current behavior
+
+M04-FR-001/M04-FR-002 require one appraisal task after application-number generation assigned to
+Deputy Manager – Finance. 006E creates an appraisal only when a caller POSTs and records that caller
+as preparer; it does not persist assignment. The repository already intentionally deferred the
+generic task engine to 012EA, so this review sharpened 012EA with the exact appraisal create,
+role-assignment, close/reopen, idempotency, and backfill contract and recorded A-053. `prepared_by`
+must never be relabelled as assignment.
+
+M04-FR-011 separately requires Credit Manager rejection and a Rejection Note. 006F owns reviewed
+and returned-for-revision only, while 006G owns sanction submission. Created High-risk 006F2 for a
+terminal rejected decision that atomically creates one unsent 005H rejection-note draft; 006G now
+depends on that correction.
+
+### Finding 4 - Medium - Financial concurrency and static-boundary tests are incomplete
+
+006D2B substantially improves its AST regression, but the appraisal concrete-model check examines
+only `from sfpcl_credit.credit.models import ...`. A package import such as
+`import sfpcl_credit.credit.models as credit_models` can bypass it, and the public calculator check
+uses `issubset`, so removing the required import entirely satisfies the assertion. This does not
+currently mask a production bypass, but it does not fully enforce the slice's promised boundary.
+Its lock test also mocks each manager and asserts `select_for_update` was called; that proves the
+requested API, not the competing-transaction outcome required for financial modules by
+codebase-design §26.3.
+
+Corrective action: created High-risk `006D2C-loan-limit-concurrency-and-boundary-regression` before
+006E2. It adds an independent-connection transactional outcome proof and rejects both import forms/
+aliases while avoiding brittle exact-full-method-set assertions.
+
+### Finding 5 - Pass - The reviewed corrections have substantive tests
+
+005I5 proves neutral owner projection, shared adult-nominee outcomes, invalid mutation
+preservation, safe portal facts, and production-controller browser paths (browser execution remains
+the recorded A-013 optional-gate limitation). 006D2B covers calculation branches, Decimal acreage,
+locked source selection, canonical public/audit projection, rollback, and failed-rerun preservation.
+006D3 proves forward/reverse state ownership with unchanged rows/UUID/FKs/evidence. 006E covers
+strict create/PATCH/submit validation, permissions/object scope, TAT boundaries, prerequisite
+gates, and create rollback; the gaps above are specific source/history omissions, not padding.
+
+### Finding 6 - Watch - TAT anchor and risk cardinality remain explicit source tensions
+
+006E uses `application.created_at + 2 days`, matching data-model §14.4's receipt wording and the
+reviewed slice, while M04-FR-003 also names completeness confirmation and the model has no such
+timestamp. A-054 retains `created_at` as the available receipt proxy until governance chooses an
+anchor; historical due dates must not be silently rewritten. Risk is one-to-one in 006E although
+§14.3 expresses a plain application FK; no current workflow requires multiple concurrent risk rows,
+so this is watched rather than changed before review.
+
+Functional-ID spot check: neither parent epic is Complete. M03-FR-003/M03-FR-009 behavior reviewed
+in 005I5 is reachable. M04-FR-003-007 are implemented; M04-FR-008 is present through recommendation
+amount/tenure/interest/security; M04-FR-009 is partial until 006E2; M04-FR-010 remains in 006F/006G;
+M04-FR-011 is now owned by 006F2; and M04-FR-001/002 are explicitly deferred to 012EA by A-053.
+
+## 2026-07-10 15:46 - Architecture Review 2026-07-10_154638_architecture_review
+
+Reviewed completed product slices since architecture-review commit `c25fcfc`:
+- `005I3-application-nominee-selection-contract` (`261641c`)
+- `005I4-application-detail-backend-state-hardening` (`c20b72f`)
+- `006C2-cultivated-acreage-source-hardening` (`7023475`)
+- `006D2A-credit-eligibility-module-and-configuration-seam` (`5c6866a`)
+
+Intervening E2E-baseline, owner configuration/slice-split, and owner capability-map commits were
+inspected as context but excluded from product-slice findings. The review checked the pinned
+`git diff c25fcfc...HEAD`, slice/run packets, implementation/tests, Epic 005/006 digests, and only
+the cited primary-source sections needed to verify disputed requirements.
+
+### Finding 1 - High - Intake actors are presented as assigned application owners
+
+005I4 removed React's role/status owner inference, but the backend replacement still synthesizes
+`assigned_owner` as `received_by_user or created_by_user`. Those fields record intake/audit actors;
+they are not a persisted queue/task assignment. This is especially unsafe for member-portal drafts:
+the portal user can become `received_by_user`, so staff detail can display the borrower as the
+internal current owner. The backend test asserts this fallback, while the later-stage frontend test
+injects an arbitrary owner DTO and never proves a real backend assignment.
+
+This contradicts 005I4's requirement to render a backend-owned assignment or neutral absence and
+source API §19.1's explicit assigned-owner fact. Corrective action: created
+`005I5-application-ownership-and-nominee-authority-hardening`. Until an assignment/task model exists,
+staff list/detail must return `assigned_owner = null`; receiver/creator remain distinct audit facts.
+
+### Finding 2 - Medium - The portal nominee detail contract is incomplete
+
+005I3's API/DTO safely returns nominee ID, name, age, minor flag, KYC, relationship, and signature
+required status. MP10 renders name, relationship, age, KYC, and signature status but omits nominee
+ID and minor/adult status. Its new frontend tests exercise only extracted selector views, not the
+portal application-detail page, so the partial implementation remained green.
+
+Corrective action: 005I5 must render every safe selected-nominee fact in portal detail and assert
+that PAN/Aadhaar values, hashes, tokens, and reveal controls stay absent.
+
+### Finding 3 - Medium - Nominee minority is decided independently in two React pages
+
+Both staff and portal application forms added their own current-date/age-snapshot
+`hasAdultNomineeEvidence` implementations and use them to decide step/submission availability.
+This duplicates the backend intake and credit checks, already differs in evaluation shape, and
+violates `codebase-design.md` §§23.3/42.3: React should render backend facts/errors rather than own
+business decisions. The reviewed tests also omit invalid staff PATCH and portal
+cross-member/unknown/minor/missing-age create/PATCH preservation paths required by 005I3.
+
+Corrective action: 005I5 removes frontend age/minority calculations, establishes one public backend
+nominee-validation seam for intake/completeness/eligibility, and adds the missing mutation/no-success-
+evidence regressions.
+
+### Finding 4 - Medium - Interface boundary tests do not yet enforce the intended architecture
+
+006D2A moved eligibility behavior behind the source-named module and added meaningful direct tests,
+including transaction rollback. However, its boundary regression checks runtime object identity and
+the absence of old attribute names; it cannot catch aliased private imports. The new configuration
+resolver also imports `CreditModuleValidationError`, creating a reverse
+`configurations -> credit` dependency. The resolver function shape itself is an acceptable narrow
+slice interface, but its error contract should not couple the configuration bounded context to a
+consumer.
+
+Corrective action: sharpened the already queued 006D2B to replace the weak check with static
+AST/import-boundary coverage, remove the reverse dependency, prohibit direct policy queries, and
+lock all mutable financial snapshot sources inside the calculator transaction. No new ADR is
+needed because this follows the existing source module boundaries and ADR-0002.
+
+### Finding 5 - Pass / owned follow-up - Cultivated-acreage correctness is substantive
+
+006C2 blocks mismatched, unverified, cross-application, and rejected acreage evidence before
+assessment/audit/workflow writes. Its tests cover Decimal-equivalent values, the nullable-profile
+two-source path, and failed-rerun preservation of UUID/payload/evidence. The calculation still lives
+in the generic application service and its tests are HTTP-heavy, but that is the explicit,
+immediately queued 006D2B extraction rather than an unowned finding.
+
+### Finding 6 - Watch - 005I4 tests split the production controller from the rendered view
+
+The loader is tested with mocked HTTP and the view has substantive submitted/later-stage/neutral
+assertions, but success/error data are injected into exported `ApplicationDetailView`; no test runs
+the mounted production component's async success/error or submit-refresh path. 005I5 owns this
+remaining test-seam correction and may use the existing E2E harness or a pinned dev-only DOM test
+dependency.
+
+Functional-spec spot check: neither Epic 005 nor Epic 006 is marked Complete. M03-FR-003 nominee
+capture is backend-reachable but its portal presentation/authority regressions remain owned by
+005I5; existing assumptions continue to own M03 signature/document deferrals. M04-FR-004 through
+M04-FR-007 remain implemented or under the already queued deep-module extraction, while
+M04-FR-001-003 and M04-FR-008-011 remain assigned to 006E-006G. No completed epic falsely claims
+full requirement-ID coverage.
+
+## 2026-07-10 09:32 - Architecture Review 2026-07-10_092630_architecture_review
+
+Reviewed completed product slices since architecture-review commit `1e2d873`:
+- `005I2-application-detail-api-state-hardening` (`e016d2a`)
+- `006B-default-document-purpose-and-terms-eligibility-checks` (`c181819`)
+- `006C-loan-limit-configuration-and-calculator` (`3f066cf`)
+- `006D-loan-limit-snapshot-storage` (`9f9ae0b`)
+
+The product review excluded config-only commit `c578e87` from findings. It checked the pinned
+`git diff 1e2d873...HEAD`, four slice/run packets, implementation/tests, working contracts, Epic
+005/006 digests, and only the cited primary-source sections needed for disputed requirements.
+
+### Finding 1 - High - Application nominee selection is not reachable through the public contract
+
+Source `api-contracts.md` §19.2 requires `nominee_id` when creating a loan application and §19.3
+returns the selected nominee. The implemented application model/API stores no nominee. The member
+nominee API intentionally creates member-level nominees without `loan_application_id`, so a real
+staff or portal client cannot produce 006B's normal eligible nominee result. Instead, 006B reverse-
+queries nullable legacy rows, orders them, and chooses `.first()`; its green test directly inserts a
+linked nominee through the ORM. Multiple linked rows or absent age/DOB evidence are not tested.
+
+This is an end-to-end blocker, not coverage padding: 006C requires `overall_result = eligible`, but
+the intended API path cannot establish that result. Corrective action: created
+`005I3-application-nominee-selection-contract` to persist/validate source §19.2 `nominee_id`, wire
+staff/portal draft flows, make submit enforce the selected adult nominee, and make 006B use only
+that deterministic application fact.
+
+### Finding 2 - High - BR-020 can calculate from owned acreage rather than evidenced cultivated acreage
+
+006C sums every selected `LandHolding.area_acres` and multiplies that total by scale of finance.
+The selected `CropPlan.planned_area_acres` is checked only for owner/application/alignment, while
+the profile's explicit `land_area_under_cultivation_acres` is unused. Functional-spec BR-020 says
+the financial limit is based on acreage under cultivation. A borrower owning 20 acres with a
+5-acre crop plan can therefore receive a 20-acre land limit. The test fixtures use equal 5-acre
+facts, masking this edge case.
+
+The source does not define precedence among the three acreage fields, so this review did not invent
+a min/max rule. Corrective action: created `006C2-cultivated-acreage-source-hardening` and A-049.
+Until source confirmation, applicable verified acreage facts must agree or calculation is blocked
+without changing a stored snapshot/audit/workflow evidence.
+
+### Finding 3 - Medium - Application Detail still invents later-stage workflow and ownership facts
+
+005I2 correctly removed the `LO00000035` special branch, fake witnesses, nominee secrets, and added
+staff-only rejection-note metadata. However, `ApplicationDetail.tsx` still spreads synthetic
+documentation/disbursement defaults, shows fixed dates and completion claims in the stage stepper,
+overwrites the backend `assigned_owner` with hardcoded department roles for later stages, and
+computes payment readiness in React. Its new test injects `initialData` through a production-only
+prop and checks only a submitted application, so none of the later-stage drift is exercised.
+
+Corrective action: created `005I4-application-detail-backend-state-hardening`. It must render
+backend state/actions or neutral absence, remove frontend workflow decisions, and test via mocked
+HTTP using the same seam as production.
+
+### Finding 4 - Medium - Credit business logic is deepening the generic application monolith
+
+The reviewed changes put eligibility rules, loan-limit calculation, configuration selection,
+persistence, serialization, and audit projection into `applications.services`, now 2,789 lines;
+the combined application HTTP test file is 3,305 lines. This contradicts codebase-design §§12/26,
+which name `credit.modules.eligibility_assessment`, `credit.modules.loan_limit_calculator`, and
+`configurations.modules.configuration_resolver` as the deep seams. Public response and audit
+snapshot projections also duplicate nearly the same loan-limit field mapping.
+
+Corrective action: created `006D2-credit-assessment-deep-module-boundary` before 006E. It must
+extract the source-named module interfaces, configuration resolver, focused module tests, and a
+single snapshot projection without changing the reviewed behavior or destructively migrating data.
+
+### Finding 5 - Pass - Financial/access tests have real assertions and useful failure coverage
+
+006B covers each named blocker, pending nominee evidence, one-to-one rerun, no stage advancement,
+and denied/invalid no-success-evidence paths. 006C/006D cover both lower-of-two branches,
+below/equal/above limits, missing/ambiguous policy, cross-member facts, permission/object scope,
+stored read immutability, complete old/new rerun audit, and preservation after four failed-rerun
+classes. These are substantive behavior assertions, not coverage-only tests. The gaps above are
+specific untested source mismatches rather than a generally weak suite.
+
+### Finding 6 - Watch - Explicit reruns replace the current one-to-one snapshot
+
+The standards pass flagged same-UUID rerun replacement against the design statement that historical
+assessments do not change. The source data model also defines one assessment per application, and
+006D explicitly requires an authorized successful rerun to replace the current snapshot with full
+old/new audit while passive source/policy changes leave GET unchanged. No corrective slice was
+created for that documented behavior. Future appraisal work must consume stored snapshots and must
+not make recalculation an implicit read or review side effect.
+
+Functional-spec spot check: no parent epic changed to `Complete` in this window. For the Epic 005
+correction, M03-FR-003 remains incomplete until 005I3 supplies the public nominee selection; prior
+assumptions own other documented intake deferrals. Epic 006 is still in progress: M04-FR-004-007
+are implemented or queued for correction, while M04-FR-001-003 and M04-FR-008-011 remain assigned
+to 006E-006G. No completed epic is falsely claiming full requirement-ID coverage.
+
+## 2026-07-10 04:18 - Architecture Review 2026-07-10_041851_architecture_review
+
+Reviewed completed product slices since the prior architecture review commit `353c6df`:
+- `005G2-member-portal-session-and-audit-contract-hardening` (`210a353`)
+- `005H-rejection-note-shell` (`d292f2c`)
+- `005I-application-intake-frontend-wiring` (`261b170`)
+- `006A-active-member-eligibility-service` (`71ef4cb`)
+
+This review focused on the product diff, slice files, run evidence, working API contracts, Epic 005
+and Epic 006 digests, and targeted implementation/test files. Broad `docs/source/` files were not
+re-read because the needed source extracts were already distilled into the reviewed digests and slice
+files.
+
+### Finding 1 - Medium - Application Detail still contains mock-loan state that can override backend data
+
+`005I` correctly removed direct `mockData.ts` imports from Application List, New Application, and
+Application Detail and added staff API client tests. However, `ApplicationDetail.tsx` still contains
+a frontend-only special case for `LO00000035` and hardcoded witness/sensitive nominee display data.
+If a real backend application receives reference `LO00000035`, the UI can force
+`Sanctioned · Documentation Pending`, `11 items pending`, Compliance/CS ownership, and blocked
+documentation/SAP/disbursement stages regardless of the backend response
+(`sfpcl-lms/src/pages/applications/ApplicationDetail.tsx:225-309`). The Witness tab still renders
+synthetic people from `witnessData` (`ApplicationDetail.tsx:49-62`, `ApplicationDetail.tsx:915-940`).
+
+This violates 005I's acceptance criterion that the intake surface runs on backend data and its
+concrete requirement that Application Detail render real status, document checklist state,
+deficiencies, and rejection-note state while preserving existing visual patterns. It is a product
+correctness issue, not only cleanup: a live reference number can hit the old prototype branch.
+
+Corrective action: created
+`docs/slices/005I2-application-detail-api-state-hardening.md`, made `006B` depend on it, and added
+the extract to the Epic 005 digest. The corrective slice must remove the `LO00000035` branch,
+replace hardcoded witnesses/sensitive nominee values with API-backed or empty states, and add a
+frontend regression proving an API-backed `LO00000035` does not receive mock overrides.
+
+### Finding 2 - Low - Rejection-note state is created by 005H but not readable through Application Detail
+
+`005H` added staff-only rejection-note create/send endpoints with meaningful permission, state,
+audit, workflow, and no-side-effect tests. `005I` then asked the staff detail UI to show
+rejection-note state as separate metadata when available. The current detail serializer returns the
+application and register summary only (`sfpcl_credit/applications/services.py:1105-1139`), while
+rejection-note metadata is serialized only in create/send responses
+(`sfpcl_credit/applications/services.py:1233-1259`). The 005I review packet correctly notes this as
+a known follow-up, but the queued work needs an explicit owner before appraisal/eligibility UI state
+accumulates around the same detail page.
+
+Corrective action: included in `005I2`. It should expose nullable, metadata-only `rejection_note`
+summary on the staff application detail response and render it without changing
+`application_status` or adding new visual patterns. Borrower portal application routes must not
+receive staff rejection-note metadata.
+
+### Finding 3 - Pass - Portal session and audit hardening closes the prior high-risk portal findings
+
+`005G2` centralises session-bound portal authority in `validate_portal_session_authority(...)`.
+Existing `/auth/me`, refresh, portal password change, portal own-data, and portal application routes
+now reject already-issued sessions after the linked `PortalAccount` is no longer active, revoking
+the session with `portal_account_status_changed`. The audit action names now match the source portal
+contract for activation, login success/failure, password change, and portal application draft/save/
+submit while staff routes keep internal `applications.loan_application.*` audit actions. Tests cover
+suspended-session denial, source audit action names, staff-vs-portal audit separation, and sensitive
+payload exclusions.
+
+Corrective action: none.
+
+### Finding 4 - Pass - Rejection-note and 006A eligibility backend tests assert real behavior
+
+The reviewed backend tests are substantive rather than coverage padding. `005H` covers create/send,
+permission denial, object-scope denial, portal-token denial, suspended-token rejection, invalid
+states, duplicate create/send, metadata-only audit, and workflow events. `006A` covers the missing
+endpoint red test, successful run/read, verified active-member pass, manual-evidence result, invalid
+state, permission/object denial, no assessment/audit/workflow side effects on denied/invalid paths,
+and one-to-one rerun behavior.
+
+Corrective action: none.
+
+### Finding 5 - Watch - Staff list/register object filtering is correct but not scalable
+
+The new staff list and register APIs preserve object access by filtering the full matched queryset in
+Python before pagination (`sfpcl_credit/applications/services.py:259-352`). This is safe for current
+prototype-sized data and produces visible-row pagination, but it will not scale once the loan
+application table grows. A later operational hardening slice should push object-scope predicates
+into the queryset when assignment/team rules are more complete; no immediate corrective product
+slice is required because the current implementation does not leak data and tests cover the visible
+contract.
+
+Functional-spec spot check: 005G2/005H/005I continue Epic 005 intake/portal/rejection-note
+foundations. 006A starts Epic 006 by implementing M04 eligibility-assessment storage/API and only the
+BR-004 through BR-007 active-member check, explicitly deferring default, document, terms, purpose,
+and nominee checks to 006B. No reviewed slice claims to complete the full M04 appraisal or loan-limit
+workflow.
+
+## 2026-07-10 01:01 - Architecture Review 2026-07-10_005716_architecture_review
+
+Reviewed completed product slices since the prior architecture review commit `49da479`:
+- `005F2-deficiency-return-status-contract-hardening` (`1edc65a`)
+- `005FA-member-portal-authentication` (`6c259f9`)
+- `005FB-member-portal-dashboard-profile-and-supply-view` (`da34735`)
+- `005G-member-portal-application-start-status` (`d1a12cf`)
+
+This review focused on the product diff, run evidence, the Epic 005 digest, working API contracts,
+and targeted source extracts for member-portal login/access, portal audit events, and M03 intake
+requirements. Broad source documents were not re-read beyond the sections needed to verify the
+findings below.
+
+### Finding 1 - High - Suspended portal accounts can still expose portal claims through existing sessions
+
+`005FA` correctly blocks a fresh login when `PortalAccount.can_authenticate()` is false, and
+`005FB`/`005G` portal data routes require an active portal account through
+`portal_member_for_user(...)`. The gap is the shared session/current-user path: `/auth/me` validates
+only the underlying `UserSession` and `User.status`, then `current_user_payload(...)` adds
+`member_id`, `portal_account_id`, `portal_role = borrower_member`, and portal own-data permissions
+for any linked `portal_account` regardless of account status
+(`sfpcl_credit/identity/modules/auth_service.py:138-240`). Access-token construction does the same
+(`sfpcl_credit/identity/modules/tokens.py:69-73`), and portal password change checks only
+`hasattr(user, "portal_account")` before allowing the action
+(`sfpcl_credit/identity/modules/portal_auth_service.py:403-432`).
+
+The source MP00 validation says inactive/suspended portal users are blocked
+(`docs/source/screen-spec-member-portal.md:231-233`), and §14.1 says inactive or unauthorised portal
+accounts are blocked (`docs/source/screen-spec-member-portal.md:1464-1469`). The reviewed tests
+cover login denial indirectly through `PortalAccount.can_authenticate()`, but do not suspend an
+account after login and prove the old access token loses `/auth/me`, password-change, and portal
+own-data authority.
+
+Corrective action: created
+`docs/slices/005G2-member-portal-session-and-audit-contract-hardening.md`, made `005H` depend on it,
+and added the session-status extract to the Epic 005 digest. The corrective slice should add
+failing-first tests for an active portal session whose `PortalAccount.status` changes to
+`suspended`, then centralise portal-session validity so old sessions are revoked or denied before
+portal claims/actions are returned.
+
+### Finding 2 - Medium - Portal audit rows use implementation action names instead of the source portal event contract
+
+The portal implementation writes meaningful metadata-only audit rows, but the action names diverge
+from the portal source table. Source §11 names `portal.login.success`, `portal.login.failed`,
+`portal.account.activated`, `portal.application.draft_created`, `portal.application.saved`,
+`portal.application.submitted`, and `portal.password.changed`
+(`docs/source/screen-spec-member-portal.md:1408-1428`). The current code/tests instead assert
+`portal.auth.activation.completed`, `portal.auth.login.succeeded`,
+`portal.auth.password_changed`, and reused internal `applications.loan_application.created` /
+`applications.loan_application.submitted` for borrower portal draft and submit
+(`sfpcl_credit/identity/views.py:168-182`,
+`sfpcl_credit/identity/modules/portal_auth_service.py:268-276`,
+`sfpcl_credit/applications/services.py:241-318`,
+`sfpcl_credit/tests/test_portal_member_api.py:375-381`).
+
+Reusing the internal application service is the right architecture, but audit action codes are part
+of the compliance/reporting contract. Without source-backed portal action names, later audit
+explorer, notices, and borrower self-service reviews cannot distinguish "borrower acted in the
+portal" from "staff acted through internal intake" without inferring from actor role.
+
+Corrective action: included this in `005G2`. The slice should keep staff routes on existing
+`applications.*` audit names, but let portal routes override or add source-backed portal audit
+actions for activation, login, password change, draft create/save, and submit. Tests should assert
+the source names and continue checking sensitive values, OTPs, token hashes, and raw document data
+are absent from audit payloads.
+
+### Finding 3 - Pass - Portal own-data object boundaries are carried through the reviewed slices
+
+The reviewed portal own-data endpoints consistently derive authority from the active
+`PortalAccount.member_id`, not client-supplied `member_id` values. `005FB` ignores query member IDs
+for dashboard/profile/supply, `005G` rejects cross-member existing applications with
+`403 OBJECT_ACCESS_DENIED`, and staff/non-portal tokens receive `403 PERMISSION_DENIED`. The tests
+include own/cross-member assertions and no-side-effect checks for cross-member create/read attempts.
+
+Corrective action: none beyond the session-status hardening in Finding 1.
+
+### Finding 4 - Pass - Test quality and source sequencing are substantive
+
+The reviewed runs include real red/green evidence and meaningful assertions: 005F2 covers
+persisted/API/audit/workflow returned-incomplete status and repeat-return side effects; 005FA covers
+activation, login claims, password-reset replay, session revocation, and password change; 005FB
+covers member-scoped profile/dashboard/supply masking; 005G covers own create/update/submit/list,
+cross-member denial, nullable reference numbers, and returned-incomplete portal status. Full gates
+passed in all reviewed runs.
+
+Corrective action: none.
+
+Functional-spec spot check: M03-FR-001/M03-FR-002/M03-FR-008/M03-FR-009 are now partially
+implemented for borrower portal initiation/save/submit and staff-created drafts; M03-FR-010 is
+represented by submitted state and SFPCL pending owner but still needs task-inbox/assignment work;
+M03-FR-011/M03-FR-012 were implemented by the previously reviewed completeness/deficiency slices
+and preserved by 005F2/005G. M03-FR-003 through M03-FR-007 remain partially deferred for nominee,
+signature, document upload, loan-limit, and full frontend intake wiring in queued slices and
+assumptions.
+
+## 2026-07-09 21:38 - Architecture Review 2026-07-09_213305_architecture_review
+
+Reviewed completed product slices since the prior architecture review commit `1f30ed6`:
+- `005C2-application-object-access-hardening` (`5f3dd0c`)
+- `005D-application-document-checklist` (`ec33d63`)
+- `005E-completeness-workbench` (`f282820`)
+- `005F-deficiency-creation-and-resolution` (`39477f0`)
+
+This review focused on the product diff, run evidence, the Epic 005 digest, working API contracts,
+and targeted source extracts for application document, completeness, deficiency, and status rules.
+Broad source documents were not re-read beyond the sections needed to verify the finding below.
+
+### Finding 1 - Medium - Deficiency return hides the source-backed returned-incomplete application state
+
+`005F` correctly creates structured deficiency rows from the current blocking completeness checklist,
+keeps returned applications out of credit assessment, and proves no `LO...` reference, loan request
+register row, or visible sequence is created. However, the return action keeps
+`application_status = submitted` and only sets `completeness_status = incomplete`
+(`sfpcl_credit/applications/services.py:651-660`; asserted in
+`sfpcl_credit/tests/test_loan_applications_api.py:1040-1042`). That means downstream status
+surfaces and portal slices can see a returned application as merely submitted unless they infer state
+from deficiency rows or completeness status.
+
+The source status model includes a dedicated `incomplete_returned` application status
+(`docs/source/data-model.md:262-270`). The functional deficiency flow says the application enters
+the incomplete state and keeps deficiency history (`docs/source/functional-spec.md:864-872`), and
+S12 says returned applications become `Incomplete - Returned to Applicant` or rejected depending on
+business decision (`docs/source/screen-spec.md:1217-1224`). 005F recorded A-040 for the
+`items[].item_code` request shape, but did not record an assumption for replacing the
+source-backed returned status with plain `submitted`.
+
+Corrective action: created
+`docs/slices/005F2-deficiency-return-status-contract-hardening.md`, made `005FA` depend on it, and
+sharpened `005FA`/`005FB` plus the Epic 005 digest so portal auth/dashboard work builds on
+`application_status = incomplete_returned`. The corrective slice should add failing-first backend
+regressions for response/persisted status, audit/workflow old/new state, repeat-return handling, and
+the existing no-reference/no-register/no-sequence side-effect guarantees.
+
+### Finding 2 - Pass - Prior object-access finding was closed and carried forward
+
+`005C2` integrates `applications.services.evaluate_application_object_access(...)` into detail,
+patch, submit, and reference generation, with tests for unrelated same-permission denial and no
+side effects. `005D`, `005E`, and `005F` reuse the same application boundary for document/checklist,
+completeness, and deficiency endpoints, preserving the order `404` for missing records, then
+`403 PERMISSION_DENIED` for missing global permission, then `403 OBJECT_ACCESS_DENIED` for
+same-permission out-of-scope actors. This directly closes the prior architecture-review finding.
+
+Corrective action: none.
+
+### Finding 3 - Pass with evidence note - Tests assert behavior, but 005F TDD snippets are not self-contained
+
+The reviewed backend tests are substantive: they assert permission/object-scope denials, metadata-only
+audit payloads, version history, checklist blocking reasons, completeness pass delegation to the
+existing reference-generation path, deficiency validation, deficiency resolve behavior, and no
+partial sequence/register/audit/workflow side effects. Full gates passed in every reviewed run.
+
+One evidence-quality gap remains: the 005F targeted TDD red/green files
+(`tdd-red-return-with-deficiencies.log`, `tdd-green-return-with-deficiencies.log`, and
+`deficiency-targeted-tests.log`) contain only startup lines, not the failure/pass result. The 005F
+gate summary and full backend `-v 2` results are sufficient to verify the final state, but future
+runs should save targeted red/green output with enough verbosity to be self-contained.
+
+Corrective action: none for product code; noted in this review packet.
+
+Functional-spec spot check: the reviewed Epic 005 work implements application object-access
+hardening, application-document/checklist metadata, completeness read/pass, and deficiency
+return/list/resolve. M03-FR-006, M03-FR-007, M03-FR-011, and M03-FR-012 are partially implemented
+for the backend/API slices reviewed here; member portal intake/status, borrower deficiency
+response/resubmission, rejection notes, eligibility, appraisal, sanction, disbursement, and frontend
+intake wiring remain explicitly deferred in queued slices and assumptions.
+
+## 2026-07-09 19:12 - Architecture Review 2026-07-09_190655_architecture_review
+
+Reviewed completed product slices since the prior architecture review commit `dadeefd`:
+- `004K2-borrower-360-bank-holder-contract-hardening` (`0b4018b`)
+- `005A-loan-application-draft-create-update` (`6f07a17`)
+- `005B-application-submit-and-status-transition` (`41da5a6`)
+- `005C-reference-number-generation-and-loan-request-register` (`eb487da`)
+
+This review focused on product diffs, run evidence, the Epic 004/005 digests, the working API
+contract, and targeted source extracts for application object access. Broad source documents were
+not re-read beyond the relevant permission and screen sections needed for the finding below.
+
+### Finding 1 - Medium - Application detail/actions do not enforce object-level application scope
+
+`005A`-`005C` correctly gate loan application create/read/update/submit/reference-generation by the
+source permission codes, and the tests cover missing global permissions, state transitions,
+metadata-only audit rows, masked bank data, and sequence/register behavior. However, the object
+boundary is still global once a user has the permission. `loan_application_detail`,
+`loan_application_submit`, and `loan_application_generate_reference` check only the global
+permission helpers before loading and acting on any application ID
+(`sfpcl_credit/applications/views.py:50-104`, `:107-142`, `:145-160`;
+`sfpcl_credit/applications/services.py:74-90`). The reviewed tests create a separate reader user
+and assert global read permission works, but they do not create a second field officer/credit user
+with the same permission and prove an unrelated application is denied.
+
+The source is explicit that application access is layered, not global CRUD: Field Officers are
+scoped to created/assigned applications, Deputy Managers to the credit queue/assigned applications,
+Credit Managers to the credit-assessment domain (`docs/source/auth-permissions.md:1480-1489`).
+The endpoint map also marks `GET /loan-applications/{id}/` as
+`applications.loan_application.read + object access` (`docs/source/auth-permissions.md:2347-2350`),
+and the source test matrix says "Field Officer views unrelated application" should be denied
+(`docs/source/auth-permissions.md:2522-2528`). Because `002I` already introduced
+`identity.modules.object_permissions.evaluate_object_access`, this is a missed integration seam, not
+a missing foundation.
+
+Corrective action: created
+`docs/slices/005C2-application-object-access-hardening.md`, inserted it before `005D`, and updated
+`005D`/`005E` so document/checklist and completeness work build on the corrected application access
+boundary. The corrective slice should add failing-first regressions for unrelated same-permission
+users, apply the existing object-access helper to read/update/submit/reference/detail actions, and
+record any remaining Credit Manager/global-scope assumption explicitly if the current schema lacks
+queue/domain facts.
+
+### Finding 2 - Pass - 004K2 closes the Borrower 360 bank-holder DTO mismatch
+
+The corrective `004K2` slice changes the frontend bank-account contract from the local
+`holder_name` alias to the backend/API `account_holder_name` field, updates the Borrower 360 render
+path, and adds a regression fixture shaped like the real backend response. The test also preserves
+masked-only account-number behavior and no bank reveal affordance.
+
+Corrective action: none.
+
+### Finding 3 - Pass - Loan application lifecycle tests assert meaningful behavior
+
+The `005A`-`005C` tests assert standard envelopes, persisted state, audit/workflow rows, permission
+denial, invalid-state responses, cross-member subresource rejection, no sensitive values in
+responses/audits/register summaries, and first/second `LO...` sequence values. The red/green
+evidence exists in each run folder under `evidence/terminal-logs/`, and final gates passed for
+backend check/tests/migrations/coverage plus frontend lint/typecheck/tests/build.
+
+Corrective action: none beyond the object-access hardening above.
+
+Functional-spec spot check: the reviewed Epic 005 work implements draft persistence, submit, and
+the successful completeness-pass reference/register transition only. Application documents,
+checklist evaluation, deficiencies, eligibility, appraisal, sanction, disbursement, member portal
+intake/status UI, and staff application UI wiring remain explicitly deferred in the queued 005D+
+slices and assumptions.
+
+## 2026-07-09 16:39 - Architecture Review 2026-07-09_163909_architecture_review
+
+Reviewed completed product slices since the prior architecture review commit `fef0026`:
+- `004H2-kyc-profile-duplicate-create-contract-hardening` (`1544e88`)
+- `004I-sensitive-masking-and-reveal-audit` (`06d8655`)
+- `004J-bank-account-and-cancelled-cheque-profile-foundation` (`127bf9d`)
+- `004K-borrower-360-kyc-panel-and-masking-ui-wiring` (`9327696`)
+
+This review focused on product diffs, run evidence, the Epic 004 digest, and the working API
+contract. Broad source documents were not re-read because the digest covered the reviewed
+requirements.
+
+### Finding 1 - Medium - Borrower 360 drops the bank-account holder name returned by the API
+
+`004J` serializes member bank-account responses with `account_holder_name`
+(`sfpcl_credit/members/services.py:749-755`), and the working API contract records the same response
+field (`docs/working/API_CONTRACTS.md:255-259`). `004K` then introduced a frontend
+`MemberBankAccountDetail` shape with `holder_name` (`sfpcl-lms/src/services/memberProfileApi.ts:189-191`)
+and normalizes only `item?.holder_name` (`sfpcl-lms/src/services/memberProfileApi.ts:655-658`).
+Borrower 360 renders that normalized field in the Bank & Security card
+(`sfpcl-lms/src/pages/members/Borrower360.tsx:451-456`), so a real 004J backend response will render
+the holder as blank even though the API returned it.
+
+The test missed this because its bank-account fixture uses the frontend-only `holder_name` shape and
+asserts masking/endpoint behavior but not holder-name contract fidelity
+(`sfpcl-lms/src/pages/members/Borrower360.test.tsx:37-70` and `:253-256`). This is user-visible
+data loss on the Epic 004 Borrower 360 screen and a DTO drift between the backend contract and
+frontend client.
+
+Corrective action: created
+`docs/slices/004K2-borrower-360-bank-holder-contract-hardening.md` and made `005A` depend on it.
+The corrective slice must add a failing-first frontend regression using `account_holder_name`,
+update the frontend DTO/normalizer/rendering to consume that canonical field, and keep bank account
+numbers masked-only with no reveal control.
+
+### Finding 2 - Pass - 004H2 closes the prior KYC duplicate-create issue
+
+The corrective `004H2` slice adds a public API regression for duplicate member-party KYC profile
+creates, returns a standard `400 VALIDATION_ERROR` with `field_errors.party_id`, leaves exactly one
+profile and one `kyc.profile.created` audit row, and preserves the 004H read/update/document
+behavior. The red/green evidence demonstrates the test failed against the database constraint shape
+first and passed after the service-level validation was added.
+
+Corrective action: none.
+
+### Finding 3 - Pass - Sensitive reveal and bank metadata keep sensitive values bounded
+
+`004I` keeps member profile reads masked, requires `members.member.read` plus the exact PAN/Aadhaar
+field permission, returns full values only in the immediate no-store reveal response, and writes
+metadata-only success/denial audit rows without workflow events. `004J` stores bank account numbers
+as protected token/hash/last-four values, exposes only `{masked,last4,can_view_full:false}`, tests
+permission separation under A-034, and keeps duplicate-bank, signature-mismatch, disbursement, and
+bank reveal behavior deferred.
+
+Corrective action: none.
+
+Functional-spec spot check: the reviewed Epic 004 work still implements member-master foundations
+and staff UI visibility rather than a complete lending module ID set. Loan application persistence,
+submit/reference generation, completeness, deficiencies, eligibility, appraisal, sanction,
+disbursement, repayment, communication history, risk/exception, and audit timeline data remain
+explicitly deferred to Epic 005 and later slices.
+
+## 2026-07-09 14:18 - Architecture Review 2026-07-09_141049_architecture_review
+
+Reviewed completed product slices since the prior architecture review commit `7c97efc`:
+- `004D2-member-profile-and-nominee-contract-hardening` (`187096b`)
+- `004F-shareholding-and-share-certificate-records` (`38b575f`)
+- `004G-landholding-and-crop-plan-records` (`75ad4b5`)
+- `004H-kyc-upload-and-verification` (`bac6359`)
+
+This review focused on product diffs plus the run evidence and Epic 004 digest/source extracts.
+
+### Finding 1 - Medium - Duplicate KYC profile creates can fall through to an unhandled database error
+
+`004H` correctly added a unique database constraint for one `kyc_profiles` row per member party
+(`sfpcl_credit/members/models.py:412-416`), and the Epic 004 digest says one profile is allowed per
+member party (`docs/working/digests/epic-004-member-kyc-master.md:228-230`). However,
+`create_kyc_profile()` always calls `KycProfile.objects.create(...)` after confirming the member
+exists (`sfpcl_credit/members/services.py:586-613`) and does not check whether a profile already
+exists or catch the uniqueness failure. The API test covers first create/read/update and validation
+for auth, party type, missing member, and missing consent (`sfpcl_credit/tests/test_member_kyc_api.py:37-114`),
+but it does not exercise a second create for the same member. The likely user-visible behavior is a
+500-style server error instead of the standard `VALIDATION_ERROR` envelope expected across this API.
+
+Corrective action: created
+`docs/slices/004H2-kyc-profile-duplicate-create-contract-hardening.md` and made `004I` depend on it.
+The corrective slice must add a failing-first duplicate-create regression, return a standard
+validation envelope before the database constraint raises, and prove no second profile/audit row is
+created.
+
+### Finding 2 - Pass - Prior architecture-review findings were closed cleanly
+
+`004D2` removes nominee identity hashes/encrypted-token keys from nominee create audit metadata and
+adds explicit tests that the audit payload excludes the submitted identifiers, hash keys, and hash
+values while preserving protected storage for duplicate/search support. It also neutralizes member
+profile `available_actions[]` to `[]`, so member/KYC/default status no longer invents
+loan-application eligibility before 005A and later eligibility slices own that behavior. This
+matches the prior corrective slice scope.
+
+Corrective action: none.
+
+### Finding 3 - Pass - Shareholding and land/crop foundations stay within their documented boundaries
+
+`004F` implements only shareholding list/create and defers share certificates/PATCH/update.
+Tests cover permission separation, count validation, available-share derivation, create audit
+metadata, member share-summary refresh, and no workflow event. `004G` implements only land-holding
+and crop-plan list/create, records A-032 for the source permission gap, tests positive-acreage and
+UUID validation, and avoids loan-limit, application-blocker, and purpose-eligibility decisions.
+Frontend tests for both tabs assert backend-backed loading/empty/error/validation/success states
+using existing Member Profile patterns rather than restoring mock rows.
+
+Corrective action: none.
+
+### Finding 4 - Pass with queue sharpening - Bank-account work needed concrete source boundaries
+
+`004I` was already sharpened for member PAN/Aadhaar reveal, but `004J` still had generic placeholder
+scope. This review opened only the targeted bank-account source sections and sharpened `004J` with
+bank account, cancelled cheque, encrypted-account-number, masking, audit, and disbursement/mismatch
+deferral requirements. The extracted requirements were added to the Epic 004 digest so the next
+agent does not need to re-read broad source files.
+
+Corrective action: sharpened `docs/slices/004J-bank-account-and-cancelled-cheque-profile-foundation.md`
+and updated `docs/working/digests/epic-004-member-kyc-master.md`.
+
+Functional-spec spot check: the reviewed Epic 004 work still implements foundations rather than a
+complete functional module ID set. Member shareholding, land/crop, and member-party KYC records are
+implemented with explicit deferrals for share certificates, witness validation, sensitive reveal,
+bank-account foundations, KYC completeness/disbursement blockers, and loan application intake.
+
+## 2026-07-09 11:48 - Architecture Review 2026-07-09_114836_architecture_review
+
+Reviewed completed product slices since the prior architecture review commit `e370720`:
+- `004A-member-directory-api-and-ui` (`caa3d36`)
+- `004B-member-profile-api-and-ui` (`8bcf160`, repaired by `2026-07-08_094146_repair`)
+- `004C-individual-farmer-and-fpc-profile-details` (`79f2b77`)
+- `004D-nominee-validation-and-ui` (`56d89dd`)
+
+Also noted intervening automation/docs commits in the diff window, but this review focused on the
+four product slices counted by Ralph state.
+
+### Finding 1 - Medium - Nominee create audit stores sensitive identity hashes despite the contract
+
+`004D` correctly masks nominee PAN/Aadhaar in API responses and tests that plaintext values are not
+stored in the create audit. However, `create_nominee()` still writes `pan_hash` and `aadhaar_hash`
+into `AuditLog.new_value_json` (`sfpcl_credit/members/services.py:213-223`). The local contract says
+responses and audit logs must not include `pan_encrypted`, `aadhaar_encrypted`, `pan_hash`, or
+`aadhaar_hash` fields for nominee create (`docs/working/API_CONTRACTS.md:230-235`), and the source
+audit rule says sensitive data values should not be stored in audit logs while masked values or
+metadata are acceptable (`docs/source/auth-permissions.md` §30.3). The current test only asserts the
+raw PAN/Aadhaar strings are absent (`sfpcl_credit/tests/test_member_nominees_api.py:189-206`), so it
+misses hashed identifiers that are still linkable sensitive metadata.
+
+Corrective action: created
+`docs/slices/004D2-member-profile-and-nominee-contract-hardening.md`. It must add a failing-first
+audit regression that forbids identity hash keys/values in nominee audit metadata, remove those
+fields from the audit payload, and keep responses masked.
+
+### Finding 2 - Medium - Member profile `available_actions[]` invents loan-start eligibility
+
+`004B` was scoped to masked read-only profile detail and explicitly said not to implement loan
+application start or invent eligibility, KYC approval, active-member, default, or loan-application
+business rules (`docs/slices/004B-member-profile-api-and-ui.md:56-59` and `:87-90`). The
+implementation nevertheless enables `create_loan_application` only when the user has
+`applications.loan_application.create` and the member is active, KYC verified, and not in default
+(`sfpcl_credit/members/services.py:459-476`). Source §13.3 shows `available_actions[]` as part of
+the member-detail shape, and §44 allows detail endpoints to return action availability, but the
+actual workflow gates belong to later application/eligibility slices. This hard-codes a business
+decision before the loan-application endpoint and eligibility service exist, and the test locks in
+the happy path (`sfpcl_credit/tests/test_member_profile_api.py:163-165`) rather than proving the
+action is neutral/deferred.
+
+Corrective action: same `004D2` slice. It must remove or neutralize the profile action until the
+loan-application slice owns the endpoint and source-backed gate, with tests proving member
+KYC/default status alone no longer decides action availability in the profile read service.
+
+### Finding 3 - Pass - Directory/profile UI wiring removed mock fallback without visual drift
+
+`004A` and `004B` removed the backend-wired Member Directory/Profile dependency on `mockData`,
+added API clients, and tested loading, success, empty, auth/permission, and error states. The tests
+assert mock-only fields and rows are absent from the wired paths, and the generated visual HTML uses
+existing table/card/tab/empty/alert classes. The old `Borrower360` prototype still imports mock data
+and contains the synthetic `Sudha Patil` nominee, but it is outside the reviewed backend-wired
+Member Profile path and remains future scope.
+
+Corrective action: none.
+
+### Finding 4 - Pass with queue sharpening - 004E still must not implement witness records early
+
+The Epic 004 digest/source extracts already warn that witnesses belong to loan applications and must
+resolve to real shareholder/shareholding facts. `004E` was sharpened again to depend on the new
+contract-hardening slice and to stop/reorder rather than create a member-level witness endpoint if
+loan application and shareholding prerequisites are still absent.
+
+Corrective action: `004D2` inserted before `004E`; `004E` dependency sharpened.
+
 ## 2026-07-07 21:08 - Architecture Review 2026-07-07_210824_architecture_review
 
 Reviewed commits since the prior architecture review (`e26ed12`):

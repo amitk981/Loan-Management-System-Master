@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_eligibility_assessment_run_and_read_persists_manual_evidence_active_member_result (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_eligibility_assessment_run_and_read_persists_manual_evidence_active_member_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_032758_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 280, in test_eligibility_assessment_run_and_read_persists_manual_evidence_active_member_result
+    self.assertEqual(run_response.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 8.994s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,0 +1,6 @@
+PASS: protected and source paths unchanged
+PASS: non-run changed files 16 <= 30
+PASS: non-run changed lines 1695 <= 2000
+PASS: new dependencies 0 <= 4
+PASS: database migrations 1 <= 1
+PASS: git diff --check

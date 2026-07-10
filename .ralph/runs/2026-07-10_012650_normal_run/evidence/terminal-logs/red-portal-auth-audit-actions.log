@@ -1,0 +1,36 @@
+Creating test database for alias 'default'...
+Found 3 test(s).
+System check identified no issues (0 silenced).
+FEF
+======================================================================
+ERROR: test_failed_portal_login_audits_source_event_without_sensitive_values (sfpcl_credit.tests.test_portal_auth_api.PortalAuthApiTests.test_failed_portal_login_audits_source_event_without_sensitive_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_012650_normal_run/sfpcl_credit/tests/test_portal_auth_api.py", line 138, in test_failed_portal_login_audits_source_event_without_sensitive_values
+    audit = AuditLog.objects.filter(action="portal.login.failed").get()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 649, in get
+    raise self.model.DoesNotExist(
+sfpcl_credit.identity.models.AuditLog.DoesNotExist: AuditLog matching query does not exist.
+
+======================================================================
+FAIL: test_valid_invited_member_can_activate_and_login_with_member_scoped_tokens (sfpcl_credit.tests.test_portal_auth_api.PortalAuthApiTests.test_valid_invited_member_can_activate_and_login_with_member_scoped_tokens)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_012650_normal_run/sfpcl_credit/tests/test_portal_auth_api.py", line 88, in test_valid_invited_member_can_activate_and_login_with_member_scoped_tokens
+    self.assertTrue(
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_security_settings_password_change_audits_and_revokes_other_sessions (sfpcl_credit.tests.test_portal_auth_api.PortalAuthApiTests.test_security_settings_password_change_audits_and_revokes_other_sessions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_012650_normal_run/sfpcl_credit/tests/test_portal_auth_api.py", line 285, in test_security_settings_password_change_audits_and_revokes_other_sessions
+    self.assertTrue(
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 3 tests in 3.770s
+
+FAILED (failures=2, errors=1)
+Destroying test database for alias 'default'...

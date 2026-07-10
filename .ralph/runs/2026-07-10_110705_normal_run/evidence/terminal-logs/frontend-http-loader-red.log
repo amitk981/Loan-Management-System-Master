@@ -1,0 +1,36 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/applications/ApplicationDetail.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_110705_normal_run/sfpcl-lms
+
+ ❯ src/pages/applications/ApplicationDetail.test.tsx (5 tests | 1 failed) 105ms
+   × ApplicationDetail API-backed rendering > loads detail, checklist, and deficiencies through the production HTTP service seam 3ms
+     → loadApplicationDetail is not a function
+   ✓ ApplicationDetail API-backed rendering > does not apply the old LO00000035 mock overrides to API-backed detail data 48ms
+   ✓ ApplicationDetail API-backed rendering > shows unavailable states instead of hardcoded nominee and witness facts 27ms
+   ✓ ApplicationDetail API-backed rendering > renders the API nominee metadata without sensitive identity values 13ms
+   ✓ ApplicationDetail API-backed rendering > renders staff rejection-note metadata returned by the detail API 13ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/applications/ApplicationDetail.test.tsx > ApplicationDetail API-backed rendering > loads detail, checklist, and deficiencies through the production HTTP service seam
+TypeError: loadApplicationDetail is not a function
+ ❯ src/pages/applications/ApplicationDetail.test.tsx:21:18
+     19|     });
+     20| 
+     21|     await expect(loadApplicationDetail(application.loan_application_id…
+       |                  ^
+     22|       application,
+     23|       checklistItems: [],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  11:13:02
+   Duration  747ms (transform 184ms, setup 0ms, collect 286ms, tests 105ms, environment 0ms, prepare 38ms)
+

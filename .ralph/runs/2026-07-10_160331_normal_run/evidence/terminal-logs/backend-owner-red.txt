@@ -1,0 +1,25 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+FF
+======================================================================
+FAIL: test_staff_application_detail_returns_neutral_owner_and_authorized_actions (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_staff_application_detail_returns_neutral_owner_and_authorized_actions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_160331_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 245, in test_staff_application_detail_returns_neutral_owner_and_authorized_actions
+    self.assertIsNone(body["data"]["assigned_owner"])
+AssertionError: {'user_id': 'c9b08526-91a4-4534-8979-17c50a9ebf7b', 'full_name': 'applications.creator@sfpcl.example'} is not None
+
+======================================================================
+FAIL: test_list_applications_supports_staff_pagination_filtering_search_and_ordering (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_list_applications_supports_staff_pagination_filtering_search_and_ordering)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_160331_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 468, in test_list_applications_supports_staff_pagination_filtering_search_and_ordering
+    self.assertIsNone(item["assigned_owner"])
+AssertionError: {'user_id': 'a1085292-b5a7-4f2d-9b49-865773e7dc28', 'full_name': 'applications.creator@sfpcl.example'} is not None
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.073s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

@@ -1,12 +1,24 @@
 from django.urls import path
 
+from sfpcl_credit.applications import views as application_views
 from sfpcl_credit.communications import views as communication_views
 from sfpcl_credit.configurations import views as configuration_views
 from sfpcl_credit.dashboard import views as dashboard_views
 from sfpcl_credit.documents import views as document_views
 from sfpcl_credit.identity import admin_views, audit_views
-from sfpcl_credit.identity.views import login, logout, me, refresh
-from sfpcl_credit.members import views as member_views
+from sfpcl_credit.identity.views import (
+    login,
+    logout,
+    me,
+    portal_activation_complete,
+    portal_activation_start,
+    portal_login,
+    portal_password_change,
+    portal_password_reset_complete,
+    portal_password_reset_start,
+    refresh,
+)
+from sfpcl_credit.members import portal_views, views as member_views
 from sfpcl_credit.ops import deep_health, live_health, ready_health
 from sfpcl_credit.tracer import views as tracer_views
 from sfpcl_credit.workflows import event_views
@@ -17,6 +29,164 @@ urlpatterns = [
     path("api/v1/auth/refresh/", refresh, name="auth-refresh"),
     path("api/v1/auth/logout/", logout, name="auth-logout"),
     path("api/v1/auth/me/", me, name="auth-me"),
+    path(
+        "api/v1/portal/auth/activation/start/",
+        portal_activation_start,
+        name="portal-activation-start",
+    ),
+    path(
+        "api/v1/portal/auth/activation/complete/",
+        portal_activation_complete,
+        name="portal-activation-complete",
+    ),
+    path("api/v1/portal/auth/login/", portal_login, name="portal-auth-login"),
+    path(
+        "api/v1/portal/auth/password-reset/start/",
+        portal_password_reset_start,
+        name="portal-password-reset-start",
+    ),
+    path(
+        "api/v1/portal/auth/password-reset/complete/",
+        portal_password_reset_complete,
+        name="portal-password-reset-complete",
+    ),
+    path(
+        "api/v1/portal/auth/password/change/",
+        portal_password_change,
+        name="portal-password-change",
+    ),
+    path("api/v1/portal/dashboard/", portal_views.portal_dashboard, name="portal-dashboard"),
+    path("api/v1/portal/profile/", portal_views.portal_profile, name="portal-profile"),
+    path(
+        "api/v1/portal/produce-supply/",
+        portal_views.portal_produce_supply,
+        name="portal-produce-supply",
+    ),
+    path(
+        "api/v1/portal/applications/",
+        portal_views.portal_applications,
+        name="portal-applications",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/",
+        portal_views.portal_application_detail,
+        name="portal-application-detail",
+    ),
+    path(
+        "api/v1/portal/applications/<uuid:loan_application_id>/submit/",
+        portal_views.portal_application_submit,
+        name="portal-application-submit",
+    ),
+    path(
+        "api/v1/loan-applications/",
+        application_views.loan_application_collection,
+        name="loan-application-list-create",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/",
+        application_views.loan_application_detail,
+        name="loan-application-detail",
+    ),
+    path(
+        "api/v1/loan-request-register/",
+        application_views.loan_request_register_collection,
+        name="loan-request-register-list",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/submit/",
+        application_views.loan_application_submit,
+        name="loan-application-submit",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/generate-reference/",
+        application_views.loan_application_generate_reference,
+        name="loan-application-generate-reference",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/application-documents/",
+        application_views.loan_application_documents,
+        name="loan-application-documents",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/document-checklist/",
+        application_views.loan_application_document_checklist,
+        name="loan-application-document-checklist",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/document-checklist/refresh/",
+        application_views.loan_application_document_checklist,
+        name="loan-application-document-checklist-refresh",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/completeness-check/",
+        application_views.loan_application_completeness_check,
+        name="loan-application-completeness-check",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/completeness-check/pass/",
+        application_views.loan_application_completeness_pass,
+        name="loan-application-completeness-pass",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/eligibility-assessment/",
+        application_views.loan_application_eligibility_assessment,
+        name="loan-application-eligibility-assessment",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/eligibility-assessment/run/",
+        application_views.loan_application_eligibility_assessment_run,
+        name="loan-application-eligibility-assessment-run",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/loan-limit-assessment/",
+        application_views.loan_application_loan_limit_assessment,
+        name="loan-application-loan-limit-assessment",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/loan-limit-assessment/calculate/",
+        application_views.loan_application_loan_limit_calculate,
+        name="loan-application-loan-limit-calculate",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/appraisal-note/",
+        application_views.loan_application_appraisal_note,
+        name="loan-application-appraisal-note",
+    ),
+    path(
+        "api/v1/appraisal-notes/<uuid:loan_appraisal_note_id>/submit-for-review/",
+        application_views.appraisal_note_submit_for_review,
+        name="appraisal-note-submit-for-review",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/return-with-deficiencies/",
+        application_views.loan_application_return_with_deficiencies,
+        name="loan-application-return-with-deficiencies",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/deficiencies/",
+        application_views.loan_application_deficiencies,
+        name="loan-application-deficiencies",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/rejection-note/",
+        application_views.loan_application_rejection_note,
+        name="loan-application-rejection-note",
+    ),
+    path(
+        "api/v1/deficiencies/<uuid:deficiency_id>/resolve/",
+        application_views.application_deficiency_resolve,
+        name="application-deficiency-resolve",
+    ),
+    path(
+        "api/v1/rejection-notes/<uuid:rejection_note_id>/send/",
+        application_views.rejection_note_send,
+        name="rejection-note-send",
+    ),
+    path(
+        "api/v1/application-documents/<uuid:application_document_id>/verify/",
+        application_views.application_document_verify,
+        name="application-document-verify",
+    ),
     path("api/v1/dashboard/", dashboard_views.dashboard_summary, name="dashboard-summary"),
     path("api/v1/admin/users/", admin_views.user_list, name="admin-user-list"),
     path(
@@ -102,9 +272,64 @@ urlpatterns = [
     ),
     path("api/v1/members/", member_views.member_collection, name="member-list"),
     path(
+        "api/v1/members/<uuid:member_id>/reveal-sensitive-field/",
+        member_views.reveal_sensitive_field,
+        name="member-reveal-sensitive-field",
+    ),
+    path(
         "api/v1/members/<uuid:member_id>/",
         member_views.member_detail,
         name="member-detail",
+    ),
+    path(
+        "api/v1/members/<uuid:member_id>/nominees/",
+        member_views.member_nominees,
+        name="member-nominees",
+    ),
+    path(
+        "api/v1/members/<uuid:member_id>/shareholdings/",
+        member_views.member_shareholdings,
+        name="member-shareholdings",
+    ),
+    path(
+        "api/v1/members/<uuid:member_id>/land-holdings/",
+        member_views.member_land_holdings,
+        name="member-land-holdings",
+    ),
+    path(
+        "api/v1/members/<uuid:member_id>/crop-plans/",
+        member_views.member_crop_plans,
+        name="member-crop-plans",
+    ),
+    path(
+        "api/v1/members/<uuid:member_id>/bank-accounts/",
+        member_views.member_bank_accounts,
+        name="member-bank-accounts",
+    ),
+    path(
+        "api/v1/members/<uuid:member_id>/cancelled-cheques/",
+        member_views.member_cancelled_cheques,
+        name="member-cancelled-cheques",
+    ),
+    path(
+        "api/v1/kyc-profiles/",
+        member_views.kyc_profiles,
+        name="kyc-profile-list-create",
+    ),
+    path(
+        "api/v1/kyc-profiles/<uuid:kyc_profile_id>/",
+        member_views.kyc_profile_detail,
+        name="kyc-profile-detail",
+    ),
+    path(
+        "api/v1/kyc-profiles/<uuid:kyc_profile_id>/documents/",
+        member_views.kyc_profile_documents,
+        name="kyc-profile-documents",
+    ),
+    path(
+        "api/v1/kyc-documents/<uuid:kyc_document_id>/verify/",
+        member_views.kyc_document_verify,
+        name="kyc-document-verify",
     ),
     path(
         "api/v1/document-files/",

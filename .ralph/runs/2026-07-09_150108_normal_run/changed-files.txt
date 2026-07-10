@@ -1,0 +1,16 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/004I-sensitive-masking-and-reveal-audit.md
+ M docs/slices/004J-bank-account-and-cancelled-cheque-profile-foundation.md
+ M docs/slices/004K-borrower-360-kyc-panel-and-masking-ui-wiring.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-004-member-kyc-master.md
+ M sfpcl-lms/src/pages/members/MemberProfile.test.tsx
+ M sfpcl-lms/src/pages/members/MemberProfile.tsx
+ M sfpcl-lms/src/services/memberProfileApi.ts
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/members/services.py
+ M sfpcl_credit/members/views.py
+ M sfpcl_credit/tests/test_member_profile_api.py
+?? .ralph/runs/2026-07-09_150108_normal_run/

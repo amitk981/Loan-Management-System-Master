@@ -30,6 +30,9 @@ appear as actionable tasks with priority and SLA instead of hardcoded prototype 
 - docs/source/api-contracts.md section 43.1 (dashboard `tasks[]` shape: `task_type`, `entity_id`, `title`, `due_at`), section 8 (pagination/filtering; §8.3 reserves `assigned_to_user_id` for task/workflow resources)
 - docs/source/data-model.md (workflow event tables from 003B; entity states per module)
 - docs/source/user-flows.md (which role acts at each workflow stage — the generation rules)
+- docs/source/functional-spec.md M04-FR-001 and M04-FR-002 (create the appraisal task after
+  application-number generation and assign appraisal preparation to Deputy Manager – Finance)
+- `docs/working/REVIEW_FINDINGS.md` entry for `2026-07-10_173305_architecture_review`
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/tasks/TaskInbox.tsx (columns and layout to serve)
@@ -44,6 +47,9 @@ appear as actionable tasks with priority and SLA instead of hardcoded prototype 
    into a state that requires role action, an open task is created for that role; when the entity
    leaves that state, the task closes automatically. Rules must be idempotent — re-processing an
    event or re-running a scan never duplicates an open task for the same entity + task type.
+   The appraisal rule is explicit: successful application-number generation creates one open
+   appraisal-preparation task assigned to role `deputy_manager_finance`; it closes when the
+   appraisal is submitted for Credit Manager review and reopens on a 006F return to draft.
 3. A scheduled reconciliation job on the 003J foundation: recomputes SLA/overdue standing
    (due date, overdue days) and backfills tasks for entities already in actionable states when
    this slice first deploys (so pre-existing in-flight records get tasks).
@@ -61,6 +67,9 @@ appear as actionable tasks with priority and SLA instead of hardcoded prototype 
 ## Test Cases
 - For each of the eight task types: seeding an entity into the actionable state creates exactly
   one open task for the correct role; advancing the entity's state closes it.
+- M04 regression: application-number generation creates exactly one Deputy Manager – Finance
+  appraisal task with the source TAT due date; event replay does not duplicate it, review return
+  reopens it, and review/rejection/sanction paths cannot leave a stale preparation task open.
 - Re-running generation (event replay or reconciliation scan) creates no duplicate open tasks.
 - Overdue computation: a task past its due date reports overdue days; "due today" filter matches.
 - Permission checks: a user sees only tasks for their role/team; reassign by a non-permitted role

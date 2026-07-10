@@ -1,0 +1,42 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/members/Borrower360.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_170359_normal_run/sfpcl-lms
+
+ ❯ src/pages/members/Borrower360.test.tsx (4 tests | 1 failed) 84ms
+   × borrower 360 API client additions > loads bank and cancelled-cheque metadata from 004J endpoints without full account numbers 18ms
+     → expected undefined to be 'Ramesh Patil' // Object.is equality
+   ✓ Borrower360View > renders API-backed borrower, KYC, shareholding, land, crop, nominee, and bank metadata without mock remnants 57ms
+   ✓ Borrower360View > renders reveal controls only for backend-revealable fields and does not offer bank reveal controls 6ms
+   ✓ Borrower360View > renders loading, empty, forbidden, and error states through the borrower layout 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/members/Borrower360.test.tsx > borrower 360 API client additions > loads bank and cancelled-cheque metadata from 004J endpoints without full account numbers
+AssertionError: expected undefined to be 'Ramesh Patil' // Object.is equality
+
+- Expected: 
+"Ramesh Patil"
+
++ Received: 
+undefined
+
+ ❯ src/pages/members/Borrower360.test.tsx:68:51
+     66|       can_view_full: false,
+     67|     });
+     68|     expect(accounts.items[0].account_holder_name).toBe('Ramesh Patil');
+       |                                                   ^
+     69|     expect(cheques.items[0].account_number.masked).toBe('********9012'…
+     70|     expect(JSON.stringify(accounts)).not.toContain('123456789012');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  17:06:03
+   Duration  722ms (transform 122ms, setup 0ms, collect 197ms, tests 84ms, environment 0ms, prepare 36ms)
+

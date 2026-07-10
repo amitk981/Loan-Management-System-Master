@@ -1,0 +1,9 @@
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/applications/NomineeSelectionViews.test.tsx
+
+✓ src/pages/applications/NomineeSelectionViews.test.tsx (3 tests)
+Test Files  1 passed (1)
+Tests  3 passed (3)

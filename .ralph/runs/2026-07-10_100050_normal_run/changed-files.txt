@@ -1,0 +1,25 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/005I3-application-nominee-selection-contract.md
+ M docs/slices/005I4-application-detail-backend-state-hardening.md
+ M docs/slices/006C2-cultivated-acreage-source-hardening.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-005-application-intake.md
+ M sfpcl-lms/src/pages/applications/ApplicationDetail.test.tsx
+ M sfpcl-lms/src/pages/applications/ApplicationDetail.tsx
+ M sfpcl-lms/src/pages/applications/NewApplication.tsx
+ M sfpcl-lms/src/pages/borrower/portal/applications/MP05_NewApplication.tsx
+ M sfpcl-lms/src/pages/borrower/portal/applications/MP10_ApplicationStatus.tsx
+ M sfpcl-lms/src/services/applicationIntakeApi.test.ts
+ M sfpcl-lms/src/services/applicationIntakeApi.ts
+ M sfpcl-lms/src/services/portalApi.test.ts
+ M sfpcl-lms/src/services/portalApi.ts
+ M sfpcl_credit/applications/models.py
+ M sfpcl_credit/applications/services.py
+ M sfpcl_credit/members/portal_services.py
+ M sfpcl_credit/tests/test_loan_applications_api.py
+ M sfpcl_credit/tests/test_portal_member_api.py
+?? .ralph/runs/2026-07-10_100050_normal_run/
+?? sfpcl-lms/src/pages/applications/NomineeSelectionViews.test.tsx
+?? sfpcl_credit/applications/migrations/0010_loanapplication_nominee.py

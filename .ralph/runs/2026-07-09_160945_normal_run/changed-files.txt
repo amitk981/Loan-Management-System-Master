@@ -1,0 +1,13 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/004K-borrower-360-kyc-panel-and-masking-ui-wiring.md
+ M docs/slices/005A-loan-application-draft-create-update.md
+ M docs/slices/005B-application-submit-and-status-transition.md
+ M docs/working/HANDOFF.md
+ M docs/working/PROTOTYPE_GAP_REPORT.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M docs/working/digests/epic-004-member-kyc-master.md
+ M sfpcl-lms/src/pages/members/Borrower360.tsx
+ M sfpcl-lms/src/services/memberProfileApi.ts
+?? .ralph/runs/2026-07-09_160945_normal_run/
+?? sfpcl-lms/src/pages/members/Borrower360.test.tsx

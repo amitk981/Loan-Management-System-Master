@@ -1,0 +1,71 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/005FB-member-portal-dashboard-profile-and-supply-view.md
+ M docs/slices/005G-member-portal-application-start-status.md
+ M docs/slices/005H-rejection-note-shell.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/PROTOTYPE_GAP_REPORT.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M docs/working/digests/epic-005-application-intake.md
+ M sfpcl-lms/src/pages/borrower/portal/MP03_Dashboard.tsx
+ M sfpcl-lms/src/pages/borrower/portal/MP04_MyProfile.tsx
+ M sfpcl-lms/src/pages/borrower/portal/supply/MP22_ProduceSupply.tsx
+ M sfpcl_credit/config/urls.py
+?? .ralph/runs/2026-07-09_233958_repair/api-response-examples.md
+?? .ralph/runs/2026-07-09_233958_repair/artifact-quality-check.md
+?? .ralph/runs/2026-07-09_233958_repair/backend-check-results.md
+?? .ralph/runs/2026-07-09_233958_repair/backend-coverage-results.md
+?? .ralph/runs/2026-07-09_233958_repair/backend-migrations-results.md
+?? .ralph/runs/2026-07-09_233958_repair/backend-test-results.md
+?? .ralph/runs/2026-07-09_233958_repair/build-results.md
+?? .ralph/runs/2026-07-09_233958_repair/changed-files.txt
+?? .ralph/runs/2026-07-09_233958_repair/codex-settings.md
+?? .ralph/runs/2026-07-09_233958_repair/diff-limits-results.md
+?? .ralph/runs/2026-07-09_233958_repair/evidence/member-portal-005fb-visual-evidence.html
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/backend-check.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/backend-coverage.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/backend-makemigrations-check.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/backend-portal-member-green.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/backend-portal-member-red.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/backend-tests.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/codex.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/frontend-build.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/frontend-lint-incremental.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/frontend-lint.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/frontend-playwright-screenshot-attempt.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/frontend-portal-api-green.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/frontend-portal-api-red.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/frontend-portal-views-green.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/frontend-portal-views-red.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/frontend-tests.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/frontend-typecheck-incremental.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/frontend-typecheck.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/git-diff-check-final.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/git-diff-check.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/git-diff-shortstat-final.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/git-status-final.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/orchestrator-backend-deps.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/orchestrator-frontend-deps.log
+?? .ralph/runs/2026-07-09_233958_repair/evidence/terminal-logs/protected-paths-final.log
+?? .ralph/runs/2026-07-09_233958_repair/execution-plan.md
+?? .ralph/runs/2026-07-09_233958_repair/final-summary.md
+?? .ralph/runs/2026-07-09_233958_repair/gate-summary.md
+?? .ralph/runs/2026-07-09_233958_repair/install-results.md
+?? .ralph/runs/2026-07-09_233958_repair/lint-results.md
+?? .ralph/runs/2026-07-09_233958_repair/no-op-check-results.md
+?? .ralph/runs/2026-07-09_233958_repair/preflight-results.md
+?? .ralph/runs/2026-07-09_233958_repair/prompt.md
+?? .ralph/runs/2026-07-09_233958_repair/protected-paths-check.md
+?? .ralph/runs/2026-07-09_233958_repair/ralph-artifact-validation.md
+?? .ralph/runs/2026-07-09_233958_repair/review-packet.md
+?? .ralph/runs/2026-07-09_233958_repair/risk-assessment.md
+?? .ralph/runs/2026-07-09_233958_repair/test-results.md
+?? .ralph/runs/2026-07-09_233958_repair/typecheck-results.md
+?? sfpcl-lms/src/pages/borrower/portal/PortalMemberViews.test.tsx
+?? sfpcl-lms/src/services/portalApi.test.ts
+?? sfpcl-lms/src/services/portalApi.ts
+?? sfpcl_credit/members/portal_services.py
+?? sfpcl_credit/members/portal_views.py
+?? sfpcl_credit/tests/test_portal_member_api.py

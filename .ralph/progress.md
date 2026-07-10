@@ -1,5 +1,779 @@
 # Ralph Progress Log
 
+## 2026-07-10 17:33 - 2026-07-10_173305_architecture_review
+- Agent tool used: codex.
+- Slice attempted: `architecture-review`.
+- Summary: Independently reviewed `005I5`, `006D2B`, `006D3`, and `006E` from pinned base
+  `18d403e`. Found a High appraisal-history defect: UUID-only prerequisite references cannot
+  preserve financial/eligibility facts after an explicit same-UUID assessment rerun. Also found
+  missing repayment-capacity and retained submission-reason facts, unowned M04 Credit Manager
+  rejection, a financial concurrency-test gap, and incomplete static import enforcement.
+- Corrective work: accepted ADR-0003; created High-risk 006D2C, 006E2, and 006F2; made 006F depend
+  on 006E2 and 006G on 006F2; sharpened 012EA for M04-FR-001/002 task creation/assignment; recorded
+  A-052 through A-054 and updated the Epic 006 digest.
+- Production changes: none. Source/protected files: untouched.
+- Tests run: backend check and migration sync; 341 backend tests under coverage; 95% coverage above
+  85%; frontend lint/typecheck; 107 tests; build; diff/protected/integrity checks.
+- Evidence saved: `.ralph/runs/2026-07-10_173305_architecture_review/`.
+- Result: Success, pending orchestrator validation. Risk: Low review/docs-only; corrective slices
+  are High risk. Next: `006D2C`, then `006E2`, then `006F`.
+
+## 2026-07-10 17:30 - 2026-07-10_170303_normal_run
+- Agent tool used: codex.
+- Slice attempted: `006E-appraisal-note-create-edit-submit`.
+- Summary: Added credit-owned risk/appraisal persistence and implemented appraisal create/read/
+  draft PATCH/submit-for-review through `AppraisalWorkflow`. The workflow consumes only stored
+  eligibility/loan-limit projections, snapshots their IDs, enforces strict nested validation and
+  the stored exception boundary, tracks immutable two-day TAT, and writes redacted atomic evidence.
+- Tests run: 14 TDD red/green cycles; 21 focused appraisal/static-seam tests; Django check and
+  migration sync; 341 backend tests at 95% coverage; frontend lint/typecheck, 107 tests, and build;
+  `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_170303_normal_run/`, including API response examples and
+  red/green terminal logs.
+- Result: Success, pending orchestrator validation/commit. Risk: High under standing approval.
+  Architecture review is due next; then run sharpened `006F-credit-manager-review`.
+
+## 2026-07-10 17:00 - 2026-07-10_165107_normal_run
+- Agent tool used: codex.
+- Slice attempted: `006D3-credit-assessment-model-ownership-state-migration`.
+- Summary: Moved eligibility and loan-limit assessment Django model state from `applications` to
+  `credit` through one reversible state-only migration. Physical tables, UUIDs, one-to-one/FK
+  relationships, audit entity IDs, workflow entity IDs, and the established credit module
+  interfaces remain unchanged. `sqlmigrate` confirms no database SQL is emitted.
+- Tests run: migration RED/GREEN and rollback proof; 64 focused credit module/API tests; backend
+  check and migration sync; 321 backend tests at 95% coverage; frontend lint, typecheck, 107 tests,
+  and build; diff/protected-path checks.
+- Evidence saved: `.ralph/runs/2026-07-10_165107_normal_run/`.
+- Result: Success, pending orchestrator validation. Risk: High under standing approval. Next:
+  `006E-appraisal-note-create-edit-submit` through the projection-only `AppraisalWorkflow` seam.
+
+## 2026-07-10 15:46 - 2026-07-10_154638_architecture_review
+- Agent tool used: codex.
+- Slice attempted: `architecture-review`.
+- Summary: Independently reviewed `005I3`, `005I4`, `006C2`, and `006D2A` from pinned base
+  `c25fcfc`. Found one High defect: intake receiver/creator is mislabeled as assigned owner, which
+  can show a borrower portal user as the internal staff owner. Found Medium portal nominee-detail,
+  frontend adult-rule authority, blocked-path test, production-component test, and module-boundary
+  gaps. Created corrective slice `005I5`; sharpened 006D2B and 006E. 006C2 financial correctness
+  tests passed review as substantive.
+- Production changes: none. Source/protected files: untouched. No ADR required.
+- Evidence saved: `.ralph/runs/2026-07-10_154638_architecture_review/`.
+- Result: Success, pending orchestrator validation. Risk: Low review/docs-only; corrective 005I5 is
+  High risk. Next: `005I5`, then `006D2B`, then `006E`.
+
+## 2026-07-10 13:15 - 2026-07-10_125342_normal_run
+- Agent tool used: codex.
+- Slice attempted: `006C2-cultivated-acreage-source-hardening`.
+- Summary: Hardened BR-020 loan-limit acreage source handling. Calculation now requires verified
+  selected member land holdings, a verified crop plan linked to the same loan application, and
+  agreement across normalized selected-land, crop-plan, and applicable profile cultivated acreage
+  facts. Disagreement returns `400 VALIDATION_ERROR` at
+  `error.field_errors.cultivated_acreage = CULTIVATED_ACREAGE_UNRESOLVED` before assessment save,
+  audit, or workflow writes. Successful calculations snapshot the agreed cultivated acreage and
+  keep the existing lower-of-two formula unchanged.
+- Tests run: TDD red/green for acreage mismatch; focused application API suite (50/50); backend
+  check; migration sync; full backend tests (301/301); backend coverage 95% above the 85% floor;
+  frontend lint; frontend typecheck; frontend tests (106/106); frontend build; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_125342_normal_run/`, including red/green logs,
+  gate outputs, and matched/mismatched API examples.
+- Result: Success. Risk: High under standing approval. Next: `006D2`, then `006E`.
+
+## 2026-07-10 12:10 - 2026-07-10_110705_normal_run
+- Agent tool used: codex.
+- Slice attempted: `005I4-application-detail-backend-state-hardening`.
+- Summary: Staff detail now owns persisted owner and §44 actions. Application Detail removes
+  synthetic dates, stage completion, department owners, future workflow facts, and payment
+  readiness; it renders exact API facts/actions or neutral states through one production loader.
+- Tests run: backend red/green plus one repair, check, migration sync, 296 tests, 93% coverage;
+  frontend red/green, lint, typecheck, 106 tests, build, and diff integrity checks.
+- Evidence: `.ralph/runs/2026-07-10_110705_normal_run/`; browser unavailable, so two self-contained
+  inlined-CSS HTML renders were saved instead of PNGs.
+- Result: Success. Risk: Medium. Next: `006C2`, then `006D2`.
+
+## 2026-07-10 10:53:24 - 2026-07-10_100050_normal_run
+- Agent tool used: codex.
+- Slice attempted: `005I3-application-nominee-selection-contract`.
+- Summary: Added a nullable protected application nominee FK and source §19.2 `nominee_id` to
+  staff/portal draft create/update. Shared validation enforces same-member adult age/DOB evidence;
+  submit and completeness/reference revalidate it. Detail responses expose safe metadata only.
+  Eligibility reads only the stored application nominee, so reverse-linked rows cannot choose the
+  result and legacy null selections remain pending. Existing staff/portal forms now load and select
+  real member nominees and render safe detail/empty/error states using existing patterns.
+- Tests run: backend RED/GREEN plus invalid-path/completeness/DOB/portal regressions; backend check;
+  295 backend tests; migration sync; 95% coverage above 85%; frontend RED/GREEN; lint; typecheck;
+  102 frontend tests; build; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_100050_normal_run/`, including API examples,
+  self-contained visual HTML, browser limitation note, and terminal logs.
+- Result: Success. Risk level: High under standing approval.
+- Next action: Run `005I4-application-detail-backend-state-hardening`, then
+  `006C2-cultivated-acreage-source-hardening` and `006D2-credit-assessment-deep-module-boundary`.
+
+## 2026-07-10 05:21:39 - 2026-07-10_052139_normal_run
+- Agent tool used: codex
+- Slice attempted: 006B-default-document-purpose-and-terms-eligibility-checks
+- Summary: Extended the existing 006A eligibility assessment run/read API with source-backed
+  default, document checklist, terms acceptance, purpose, and nominee checks. Eligible results now
+  require active-member pass, `Member.default_status = no_default`, complete 005D/005E checklist
+  metadata, accepted terms, crop/agriculture purpose, and an adult application-specific nominee.
+  Active defaults, incomplete checklist evidence, missing terms, non-agriculture purpose, and minor
+  nominees return `overall_result = ineligible` without advancing application status/stage.
+  Missing application-specific nominee evidence remains `pending_manual_evidence` rather than
+  inventing nominee-selection rules. Reruns update the existing one-to-one assessment.
+- Tests run: TDD red/green for eligible eligibility assessment; focused loan-application API tests
+  (31/31); backend `manage.py check`; backend tests (282/282); `makemigrations --check
+  --dry-run`; backend coverage 95% above 85% floor; frontend lint; frontend typecheck; frontend
+  tests (98/98); frontend build; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_052139_normal_run/`, including red/green and gate logs
+  under `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `006C-loan-limit-configuration-and-calculator`, then
+  `006D-loan-limit-snapshot-storage`; both were sharpened from the Epic 006 digest/source extracts.
+
+## 2026-07-10 04:41:14 - 2026-07-10_044114_normal_run
+- Agent tool used: codex
+- Slice attempted: 005I2-application-detail-api-state-hardening
+- Summary: Hardened staff Application Detail API/UI state after the architecture-review finding.
+  Staff detail responses now include nullable metadata-only `rejection_note` summary data without
+  changing `application_status`; borrower portal application detail still omits staff rejection-note
+  metadata. Removed the frontend `LO00000035` special case, hardcoded witness rows, and hardcoded
+  nominee sensitive reveal values from `ApplicationDetail.tsx`; missing API-backed facts now render
+  neutral unavailable states using existing visual patterns. Updated API contracts and sharpened
+  `006B`/`006C`.
+- Tests run: backend TDD red/green for rejection-note detail; frontend TDD red/green for
+  Application Detail render regressions; focused loan-application API tests (27/27); backend
+  `manage.py check`; backend tests (278/278); `makemigrations --check --dry-run`; backend coverage
+  95% above 85% floor; frontend lint; frontend typecheck; frontend tests (98/98); frontend build;
+  `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_044114_normal_run/`, including terminal logs and
+  self-contained Application Detail visual evidence HTML.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `006B-default-document-purpose-and-terms-eligibility-checks`.
+
+## 2026-07-10 02:31:16 - 2026-07-10_023116_normal_run
+- Agent tool used: codex
+- Slice attempted: 005I-application-intake-frontend-wiring
+- Summary: Wired staff application intake screens to backend data. Added paginated staff
+  `GET /api/v1/loan-applications/` and `GET /api/v1/loan-request-register/` read endpoints,
+  preserving staff permissions/object access and metadata-only list responses. Added the frontend
+  `applicationIntakeApi` client and rewired Application List, New Application, and Application
+  Detail away from `mockData.ts` application/member rows. Application List now renders backend
+  pagination/filter/search, `incomplete_returned` as borrower rectification work, and the Loan
+  Request Register. New Application searches the member directory API and saves/submits through
+  staff application APIs. Detail loads staff detail, checklist, and deficiency APIs.
+- Tests run: TDD red/green for backend list/register endpoints; TDD red/green for frontend
+  application-intake API client; focused frontend render tests; frontend lint/typecheck/tests/build;
+  backend `manage.py check`; backend tests (274/274); backend migrations check; backend coverage
+  95% above 85% floor; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_023116_normal_run/`, including red/green logs and
+  self-contained visual evidence HTML. Browser screenshots could not be captured because Playwright
+  Chromium launch was blocked by the macOS sandbox (`MachPortRendezvousServer` permission denied).
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `006A-active-member-eligibility-service`, then
+  `006B-default-document-purpose-and-terms-eligibility-checks`; both have been sharpened and the
+  new Epic 006 digest records the source extracts.
+
+## 2026-07-10 01:57:23 - 2026-07-10_015723_normal_run
+- Agent tool used: codex
+- Slice attempted: 005H-rejection-note-shell
+- Summary: Implemented the staff-only rejection-note metadata shell. Added `rejection_notes` with
+  `note_status = draft/sent`, create and send endpoints, metadata-only audit/workflow evidence, and
+  strict no-reference/no-register/no-sequence side-effect guarantees. Active borrower portal tokens
+  receive `403 PERMISSION_DENIED` on staff rejection-note routes, while old suspended portal
+  sessions receive `401 INVALID_TOKEN`. Send is metadata-only and does not create communication
+  rows or call providers. A-045 records that application status remains `submitted` until a future
+  source-backed rejected status is defined.
+- Tests run: TDD red for missing rejection-note create route; focused rejection-note tests (3/3);
+  focused loan-application API tests (21/21); backend `manage.py check`; backend tests (272/272);
+  `makemigrations --check --dry-run`; backend coverage 95% (floor 85); frontend `npm run lint`;
+  `npm run typecheck`; `npm test` (90/90); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_015723_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005I-application-intake-frontend-wiring`; it has been sharpened with the
+  exact 005H rejection-note metadata contract and portal/staff separation rules.
+
+## 2026-07-10 01:26:50 - 2026-07-10_012650_normal_run
+- Agent tool used: codex
+- Slice attempted: 005G2-member-portal-session-and-audit-contract-hardening
+- Summary: Hardened member portal sessions and audit contracts. Existing access/refresh sessions
+  for a linked portal account are now revoked with `portal_account_status_changed` and rejected as
+  `401 INVALID_TOKEN` once the `PortalAccount` is no longer active or its member is deleted.
+  `/auth/me`, portal password change, portal own-data APIs, and portal application APIs no longer
+  expose stale portal authority after suspension. Canonical portal audit actions now use
+  `portal.account.activated`, `portal.login.success`, `portal.login.failed`,
+  `portal.password.changed`, `portal.application.draft_created`,
+  `portal.application.saved`, and `portal.application.submitted`; staff application routes keep
+  `applications.loan_application.*` audit names.
+- Tests run: TDD red/green for suspended `/auth/me`, portal auth audit names, and portal
+  application audit names; focused backend portal/application tests (31/31); backend
+  `manage.py check`; backend tests (269/269); `makemigrations --check --dry-run`; backend coverage
+  95% (floor 85); frontend `npm run lint`; `npm run typecheck`; `npm test` (90/90);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_012650_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: High.
+- Next action: Run `005H-rejection-note-shell`. It has been sharpened to preserve staff-only
+  rejection-note behavior, use staff audit names, and assert old suspended portal tokens receive
+  `401 INVALID_TOKEN` while valid active portal tokens remain `403 PERMISSION_DENIED` for staff
+  rejection-note actions.
+
+## 2026-07-10 01:01:38 - 2026-07-10_005716_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed `005F2`, `005FA`, `005FB`, and `005G` since prior architecture-review commit
+  `49da479`. Appended findings to `docs/working/REVIEW_FINDINGS.md`. Found one High issue:
+  suspended portal accounts can still expose portal claims through existing `/auth/me` sessions
+  because shared current-user/token payload paths do not validate `PortalAccount.status`. Found one
+  Medium issue: portal audit rows use implementation/internal action names instead of the source
+  portal audit event names. Created corrective slice
+  `005G2-member-portal-session-and-audit-contract-hardening`, made `005H` depend on it, sharpened
+  `005I`, and added the review extract to the Epic 005 digest.
+- Tests run: backend `manage.py check`; backend tests (265/265); `makemigrations --check
+  --dry-run`; backend coverage 95% (floor 85); frontend `npm run lint`; `npm run typecheck`;
+  `npm test` (90/90); `npm run build`; `git diff --check`; protected-path scan.
+- Evidence saved: `.ralph/runs/2026-07-10_005716_architecture_review/`, with review-window,
+  source-extract, code-snippet, and gate logs under `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Low (review/docs-only), with one High corrective slice queued.
+- Next action: Run `005G2-member-portal-session-and-audit-contract-hardening`; after it passes,
+  continue with `005H-rejection-note-shell`.
+
+## 2026-07-09 22:52:50 - 2026-07-09_222250_normal_run
+- Agent tool used: codex
+- Slice attempted: 005FA-member-portal-authentication
+- Summary: Implemented member portal authentication for MP00/MP01/MP02/MP25. Added
+  `PortalAccount` and `PortalOtpChallenge` identity models, activation start/complete, portal
+  login, password-reset start/complete, and portal password-change endpoints. Borrower access
+  tokens and `/auth/me` now carry `member_id`, `portal_account_id`, and
+  `portal_role = borrower_member`, with portal own-data permissions only. Portal tokens do not
+  grant staff completeness, reference-generation, deficiency-return, or deficiency-resolution
+  authority. Wired the existing portal auth screens to real APIs without changing the visual
+  system. Recorded A-042 for no-provider OTP delivery and placeholder last-four verification.
+- Tests run: TDD red/green for backend portal auth and frontend auth-session API wiring; backend
+  `manage.py check`; backend tests (260/260); `makemigrations --check --dry-run`; backend coverage
+  95% (floor 85); frontend `npm run lint`; `npm run typecheck`; `npm test` (83/83);
+  `npm run build`; `git diff --check`; protected-path scan.
+- Evidence saved: `.ralph/runs/2026-07-09_222250_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus self-contained portal auth visual evidence HTML. Browser PNG
+  screenshots could not be captured because the sandbox refused localhost binding, the in-app
+  browser was unavailable, and Playwright Chromium launch was denied by macOS sandbox permissions.
+- Result: Success.
+- Risk level: High.
+- Next action: Run `005FB-member-portal-dashboard-profile-and-supply-view`; consume 005FA
+  `member_id`/`portal_role` scope for own-data-only profile/dashboard APIs.
+
+## 2026-07-09 21:56:32 - 2026-07-09_215632_normal_run
+- Agent tool used: codex
+- Slice attempted: 005F2-deficiency-return-status-contract-hardening
+- Summary: Hardened the deficiency return contract so returned incomplete applications now persist
+  and serialize `application_status = incomplete_returned`, `completeness_status = incomplete`,
+  and `current_stage = initial_loan_request`. Audit metadata and workflow evidence now record
+  `submitted -> incomplete_returned`. Repeat returns from `incomplete_returned` are blocked without
+  duplicate deficiency rows, success audit/workflow events, register rows, references, or sequence
+  advancement; A-041 records this source-gap assumption. Updated API contracts, the Epic 005
+  digest, handoff, and sharpened 005FA/005FB with the corrected returned-incomplete contract.
+- Tests run: TDD red/green for deficiency return status; focused loan-application API tests
+  (18/18); backend `manage.py check`; backend tests (256/256); `makemigrations --check --dry-run`;
+  backend coverage 95% (floor 85); frontend `npm run lint`; `npm run typecheck`; `npm test`
+  (80/80); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_215632_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005FA-member-portal-authentication`; borrower portal auth must carry linked
+  `member_id` own-data scope and must not grant staff completeness/pass/deficiency actions.
+
+## 2026-07-09 21:38:22 - 2026-07-09_213305_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed `005C2`, `005D`, `005E`, and `005F` since architecture review commit
+  `1f30ed6`. Appended findings to `docs/working/REVIEW_FINDINGS.md`. Found one Medium
+  source-fidelity issue: `005F` returns deficient applications while keeping
+  `application_status = submitted`, but the source status enum and deficiency flows require the
+  returned-incomplete state. Created corrective slice
+  `005F2-deficiency-return-status-contract-hardening`, made `005FA` depend on it, and sharpened
+  `005FA`/`005FB` plus the Epic 005 digest so portal work does not build on the wrong status.
+- Tests run: backend `manage.py check`; backend tests (256/256); `makemigrations --check
+  --dry-run`; backend coverage 95% (floor 85); frontend `npm run lint`; `npm run typecheck`;
+  `npm test` (80/80); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_213305_architecture_review/`, with review-window,
+  source-extract, and gate logs under `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Low (review/docs-only), with one Medium corrective issue queued.
+- Next action: Run `005F2-deficiency-return-status-contract-hardening`; after it passes, continue
+  with `005FA-member-portal-authentication`.
+
+## 2026-07-09 20:56:26 - 2026-07-09_205626_normal_run
+- Agent tool used: codex
+- Slice attempted: 005F-deficiency-creation-and-resolution
+- Summary: Implemented backend/API deficiency creation and resolution. Added structured
+  `deficiencies` records, `POST /api/v1/loan-applications/{loan_application_id}/return-with-deficiencies/`,
+  `GET /api/v1/loan-applications/{loan_application_id}/deficiencies/`, and
+  `POST /api/v1/deficiencies/{deficiency_id}/resolve/`. Return-with-deficiencies derives valid
+  item codes from the existing 005E blocking completeness checklist, maps `missing_metadata` to
+  `missing_document` and `not_verified` to `not_verified`, sets `completeness_status =
+  incomplete`, and creates metadata-only audit/workflow evidence. It does not generate an `LO...`
+  reference, create a loan request register row, advance to credit assessment, or visibly advance
+  the sequence. Permission and object-scope denials create no deficiency/audit/workflow side
+  effects. Recorded A-040 for the item-code request shape and sharpened 005FA/005FB.
+- Tests run: TDD red/green for return-with-deficiencies; focused deficiency API tests (3/3);
+  backend `manage.py check`; backend tests (256/256); `makemigrations --check --dry-run`; backend
+  coverage 95% (floor 85); frontend `npm run lint`; `npm run typecheck`; `npm test` (80/80);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_205626_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus API response examples.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Architecture review is due by cadence before continuing. After review, run
+  `005FA-member-portal-authentication`.
+
+## 2026-07-09 20:23:50 - 2026-07-09_202350_normal_run
+- Agent tool used: codex
+- Slice attempted: 005E-completeness-workbench
+- Summary: Implemented backend/API completeness workbench and pass actions. Added
+  `GET /api/v1/loan-applications/{loan_application_id}/completeness-check/` to return derived
+  application summary, required 005D checklist item statuses, blocking document codes, and
+  `can_generate_reference`. Added
+  `POST /api/v1/loan-applications/{loan_application_id}/completeness-check/pass/` to enforce
+  submitted/non-duplicate state, require every mandatory latest checklist metadata row to be
+  submitted and verified, and then delegate to the existing 005C reference-generation service.
+  Incomplete checklist validation returns item-level `missing_metadata` or `not_verified` reasons
+  with no sequence/register/reference/audit/workflow side effects. Permissions and object access
+  reuse the 005C2 application boundary. Updated API contracts, the Epic 005 digest, and sharpened
+  005F/005FA.
+- Tests run: TDD red/green for workbench read, completeness pass, validation/state ordering, and
+  permission/object-scope behavior; focused loan-application API tests (15/15); backend
+  `manage.py check`; backend tests (253/253); `makemigrations --check --dry-run`; backend coverage
+  95% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test` (80/80);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_202350_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus API response examples.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005F-deficiency-creation-and-resolution`; use 005E blocking checklist facts as
+  the source for deficiency items and do not generate references or register rows when returning an
+  application for deficiencies.
+
+## 2026-07-09 20:00:49 - 2026-07-09_200049_normal_run
+- Agent tool used: codex
+- Slice attempted: 005D-application-document-checklist
+- Summary: Implemented application-document metadata and derived checklist APIs for submitted loan
+  applications. Added `application_documents` with document-file links, party facts, required flag,
+  submission/verification statuses, verifier stamps, remarks, and version history. Added
+  application document list/upload, document verify, checklist read, and read-derived checklist
+  refresh endpoints. Endpoints enforce global permission first, preserve `404 NOT_FOUND` for
+  missing application/document metadata, then reuse
+  `applications.services.evaluate_application_object_access(...)`; unrelated same-permission users
+  receive `403 OBJECT_ACCESS_DENIED` with no document/audit writes. Successful upload/verify write
+  metadata-only audit rows. Updated API contracts, A-039, the Epic 005 digest, and sharpened 005E.
+- Tests run: TDD red regression for missing document/checklist routes; focused green loan
+  application API tests (11/11); backend `manage.py check`; backend tests (249/249);
+  `makemigrations --check --dry-run`; backend coverage 95% (floor 85); frontend
+  `npm run typecheck`; `npm run lint`; `npm test` (80/80); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-09_200049_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus API response examples.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005E-completeness-workbench`; it should evaluate the 005D mandatory checklist
+  item codes and call the existing reference-generation service only after all mandatory latest
+  metadata is verified.
+
+## 2026-07-09 19:55:14 - 2026-07-09_193538_normal_run
+- Agent tool used: codex
+- Slice attempted: 005C2-application-object-access-hardening
+- Summary: Hardened loan-application object access for detail, draft patch, submit, and reference
+  generation. The endpoints now check global permission first, preserve `404 NOT_FOUND` for missing
+  applications, then enforce the 002I object-access helper before serialization or mutation.
+  Created/received users are the current owner facts; `credit_manager` role access is allowed only
+  once an application is in `current_stage = credit_assessment`; unrelated same-permission users
+  receive `403 OBJECT_ACCESS_DENIED`. Denials do not create update/submit/reference success audit
+  rows, workflow events, register rows, application references, or visible sequence advancement.
+  Updated API contracts, A-038, the Epic 005 digest, and sharpened 005D/005E with the corrected
+  boundary.
+- Tests run: TDD red regression for unrelated same-permission read denial; focused green object
+  access regression; loan-application API tests (9/9); backend `manage.py check`; backend tests
+  (247/247); `makemigrations --check --dry-run`; backend coverage 95% (floor 85); frontend
+  `npm run typecheck`; `npm run lint`; `npm test` (80/80); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-09_193538_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005D-application-document-checklist`; it must reuse
+  `applications.services.evaluate_application_object_access(...)` for document/checklist endpoints.
+
+## 2026-07-09 19:33:00 - 2026-07-09_190655_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed `004K2`, `005A`, `005B`, and `005C` since prior architecture review commit
+  `dadeefd`. Appended findings to `docs/working/REVIEW_FINDINGS.md`. Found one Medium issue:
+  loan application detail/actions enforce global permission codes but not source-required
+  application object access; a same-permission user can read or act on unrelated applications.
+  Created corrective slice `005C2-application-object-access-hardening`, inserted it before `005D`,
+  updated the slice index, sharpened `005D`/`005E`, and added the object-access extract to the Epic
+  005 digest.
+- Tests run: backend `manage.py check`; backend tests (245/245); `makemigrations --check
+  --dry-run`; backend coverage 95% (floor 85); frontend `npm run typecheck`; `npm run lint`;
+  `npm test` (80/80); `npm run build`; `git diff --check`; protected-path scan.
+- Evidence saved: `.ralph/runs/2026-07-09_190655_architecture_review/`, with review-window,
+  source-extract, and gate logs under `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Low (review/docs-only), with one Medium corrective issue queued.
+- Next action: Run `005C2-application-object-access-hardening`; after it passes, continue with
+  `005D-application-document-checklist`.
+
+## 2026-07-09 19:05:00 - 2026-07-09_183552_normal_run
+- Agent tool used: codex
+- Slice attempted: 005C-reference-number-generation-and-loan-request-register
+- Summary: Implemented source-backed loan-application reference generation at the completeness-pass
+  point. Added `POST /api/v1/loan-applications/{loan_application_id}/generate-reference/`, gated
+  by `applications.loan_application.complete_check`, plus `system_sequences` and
+  `loan_request_register_entries`. References start at `LO00000001`, are sequential and unique,
+  are generated only from submitted applications, and create exactly one register entry. Successful
+  generation marks the application `reference_generated`, moves it to `credit_assessment`, sets
+  completeness `complete`, writes metadata-only audit, and records a workflow event from
+  `submitted` to `reference_generated`. Duplicate/draft attempts return standard invalid-state
+  errors without register/audit/workflow side effects. Recorded A-037 for the screen/data-model
+  status vocabulary mismatch.
+- Tests run: reference-generation TDD red/green; focused sequence/guard regression; loan
+  application API tests (7/7); backend `manage.py check`; backend tests (245/245);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend `npm run
+  typecheck`; `npm run lint`; `npm test` (80/80); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-09_183552_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus API response examples.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Architecture review is due by cadence before continuing to `005D`; when product
+  work resumes, run `005D-application-document-checklist`.
+
+## 2026-07-09 18:15:45 - 2026-07-09_175511_normal_run
+- Agent tool used: codex
+- Slice attempted: 005B-application-submit-and-status-transition
+- Summary: Implemented loan-application submit as a backend/API slice. Added
+  `POST /api/v1/loan-applications/{loan_application_id}/submit/`, permitting only
+  `draft -> submitted` through the workflow guard foundation. Submit stamps `submitted_at` and
+  `submitted_by_user`, preserves `current_stage = initial_loan_request`,
+  `completeness_status = not_started`, and nullable `application_reference_number`, and locks
+  draft `PATCH` updates after submit. Successful submit writes metadata-only
+  `applications.loan_application.submitted` audit plus a `loan_application` workflow event from
+  `draft` to `submitted`. Responses preserve 005A member/bank masking boundaries and
+  `account_holder_name`.
+- Tests run: submit TDD red/green; focused loan-application API tests (5/5); backend
+  `manage.py check`; backend tests (243/243); `makemigrations --check --dry-run`; backend coverage
+  96% (floor 85); frontend `npm run lint`; `npm run typecheck`; `npm test` (80/80);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_175511_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus API response examples.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005C-reference-number-generation-and-loan-request-register`; keep document
+  checklist, completeness, deficiencies, eligibility, appraisal, sanction, disbursement, and
+  frontend wiring out of scope.
+
+## 2026-07-09 17:23:09 - 2026-07-09_172309_normal_run
+- Agent tool used: codex
+- Slice attempted: 005A-loan-application-draft-create-update
+- Summary: Implemented loan-application draft create/read/update as a backend/API slice. Added the
+  `applications` Django app, `loan_applications` table, draft serializer/service boundary, and
+  `POST /api/v1/loan-applications/`, `GET /api/v1/loan-applications/{id}/`, and
+  `PATCH /api/v1/loan-applications/{id}/`. Drafts persist member, requested amount/tenure,
+  purpose, optional land/crop/bank/cancelled-cheque references, request notes, status/stage, and
+  actor fields. Responses and audit metadata include member summaries and masked bank metadata only,
+  preserve `account_holder_name`, and never expose PAN/Aadhaar/full bank values/token/hash fields.
+  Create writes metadata-only audit plus a draft workflow event; patch writes audit only.
+- Tests run: backend loan-application TDD red/green; focused loan-application API tests (3/3);
+  backend `manage.py check`; backend tests (241/241); `makemigrations --check --dry-run`;
+  backend coverage 95% (floor 85); frontend `npm run lint`; `npm run typecheck`; `npm test`
+  (80/80); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-09_172309_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus API response examples.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005B-application-submit-and-status-transition`; keep reference generation,
+  completeness, document checklist, deficiencies, eligibility, appraisal, sanction, and frontend
+  wiring out of scope.
+
+## 2026-07-09 17:03:59 - 2026-07-09_170359_normal_run
+- Agent tool used: codex
+- Slice attempted: 004K2-borrower-360-bank-holder-contract-hardening
+- Summary: Closed the Borrower 360 bank-holder DTO contract finding. The frontend bank-account
+  type, normalizer, and Bank & Security tab now consume and render the 004J/backend field
+  `account_holder_name` instead of the old frontend-only `holder_name` alias. Borrower 360 tests
+  now use a backend-shaped API fixture and assert that the holder name normalizes/renders while bank
+  account numbers stay masked-only with no bank reveal affordance. Sharpened 005A/005B to preserve
+  the canonical bank holder field in upcoming loan-application summaries.
+- Tests run: Borrower 360 frontend TDD red/green; frontend `npm run typecheck`; `npm test` (80/80);
+  `npm run lint`; `npm run build`; backend `manage.py check`; backend tests (238/238);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85).
+- Evidence saved: `.ralph/runs/2026-07-09_170359_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus self-contained Bank & Security contract HTML. PNG screenshot
+  capture was attempted with installed Playwright but Chromium launch was blocked by sandbox Mach
+  port permissions; the in-app browser backend was unavailable.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `005A-loan-application-draft-create-update`.
+
+## 2026-07-09 16:58:27 - 2026-07-09_163909_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed `004H2`, `004I`, `004J`, and `004K` since prior architecture review commit
+  `fef0026`. Appended findings to `docs/working/REVIEW_FINDINGS.md`. Found one Medium issue:
+  Borrower 360 normalizes bank-account holder names from `holder_name`, while the 004J backend/API
+  contract returns `account_holder_name`; real API data can therefore render a blank holder name in
+  the Bank & Security tab. Created corrective slice
+  `004K2-borrower-360-bank-holder-contract-hardening`, made `005A` depend on it, and updated the
+  Epic 004 digest/API contract notes.
+- Tests run: backend `manage.py check`; backend tests (238/238); `makemigrations --check
+  --dry-run`; backend coverage 96% (floor 85); frontend `npm run typecheck`; `npm run lint`;
+  `npm test` (80/80); `npm run build`; `git diff --check`; protected-path scan.
+- Evidence saved: `.ralph/runs/2026-07-09_163909_architecture_review/`, with review-window diffs
+  and gate logs under `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Low (review/docs-only), with one Medium corrective issue queued.
+- Next action: Run `004K2-borrower-360-bank-holder-contract-hardening`; after it passes, run
+  `005A-loan-application-draft-create-update`.
+
+## 2026-07-09 16:09:45 - 2026-07-09_160945_normal_run
+- Agent tool used: codex
+- Slice attempted: 004K-borrower-360-kyc-panel-and-masking-ui-wiring
+- Summary: Wired Borrower 360 to real Epic 004 frontend APIs. Added bank-account and
+  cancelled-cheque list client methods, replaced `Borrower360` mock-data imports with member
+  detail/shareholding/land/crop/nominee/KYC/bank/cancelled-cheque API composition, retained
+  PAN/Aadhaar reveal only through the 004I reason-capturing endpoint, normalized bank metadata as
+  masked-only with no reveal affordance, and replaced unimplemented loan/application/repayment/
+  communication/risk/audit areas with explicit empty states. Updated prototype tracking docs and
+  Epic 004 digest; sharpened 005A/005B.
+- Tests run: Borrower 360 frontend TDD red/green; frontend `npm test` (80/80), `npm run
+  typecheck`, `npm run lint`, `npm run build`; backend `manage.py check`; backend tests (238/238);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85).
+- Evidence saved: `.ralph/runs/2026-07-09_160945_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus self-contained Borrower 360 visual HTML. PNG screenshot capture
+  was attempted with the installed Playwright binary but Chromium launch was blocked by sandbox
+  Mach port permissions; logs are saved.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run architecture review by cadence before `005A-loan-application-draft-create-update`.
+
+## 2026-07-09 16:04:49 - 2026-07-09_154649_normal_run
+- Agent tool used: codex
+- Slice attempted: 004J-bank-account-and-cancelled-cheque-profile-foundation
+- Summary: Implemented member bank-account and cancelled-cheque metadata foundations. Added
+  `bank_accounts` and `cancelled_cheques`, plus
+  `GET/POST /api/v1/members/{member_id}/bank-accounts/` and
+  `GET/POST /api/v1/members/{member_id}/cancelled-cheques/`. Account numbers are stored only as
+  protected token plus keyed hash plus last four, responses expose masked/last-four metadata only,
+  and successful creates write metadata-only audit rows without workflow events. Recorded A-034:
+  bank metadata lists use `members.member.read`, creates use `members.member.update` until source
+  docs define exact bank metadata permissions. Updated API contracts and Epic 004 digest; sharpened
+  004K/005A with the closed bank boundary.
+- Tests run: backend bank-account TDD red/green; focused bank metadata tests (7/7); backend
+  `manage.py check`; backend tests (238/238); `makemigrations --check --dry-run`; backend coverage
+  95% (floor 85); frontend `npm run lint`; `npm run typecheck`; `npm test` (76/76);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_154649_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/` plus `api-response-examples.md`.
+- Result: Success.
+- Risk level: High.
+- Next action: Run `004K-borrower-360-kyc-panel-and-masking-ui-wiring`; keep bank-account full
+  reveal, duplicate warnings, signature-mismatch resolution, and disbursement/payment UI out of
+  scope.
+
+## 2026-07-09 15:01:08 - 2026-07-09_150108_normal_run
+- Agent tool used: codex
+- Slice attempted: 004I-sensitive-masking-and-reveal-audit
+- Summary: Implemented member PAN/Aadhaar sensitive reveal through
+  `POST /api/v1/members/{member_id}/reveal-sensitive-field/`. The endpoint requires
+  `members.member.read` plus field-specific reveal permissions
+  (`members.sensitive.reveal_pan` or `members.sensitive.reveal_aadhaar`), validates non-empty
+  reason capture, returns full values only in the immediate no-store response with a five-minute
+  expiry, keeps the masked member profile response masked, and writes metadata-only success/denial
+  audit rows without workflow events. Wired the Member Profile overview reveal controls with
+  existing UI patterns, reason-required behavior, temporary component state only, and no mock/local
+  storage full-value persistence. Updated API contracts and sharpened 004J/004K plus the Epic 004
+  digest with the closed reveal boundary.
+- Tests run: backend reveal TDD red/green; backend member profile reveal suite (13/13); frontend
+  MemberProfile focused tests (25/25); backend `manage.py check`; backend tests (231/231);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend `npm run
+  typecheck`; `npm run lint`; `npm test` (76/76); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-09_150108_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`, API examples, and self-contained sensitive reveal visual HTML. Live PNG
+  screenshot capture was blocked because the sandbox refused local dev-server binding and no
+  in-app browser backend was available.
+- Result: Success.
+- Risk level: High.
+- Next action: Run `004J-bank-account-and-cancelled-cheque-profile-foundation`; keep bank-account
+  full-number reveal out of scope and do not reuse PAN/Aadhaar reveal permissions for bank metadata.
+
+## 2026-07-09 14:36:51 - 2026-07-09_143651_normal_run
+- Agent tool used: codex
+- Slice attempted: 004H2-kyc-profile-duplicate-create-contract-hardening
+- Summary: Hardened duplicate member-party KYC profile creation. `POST /api/v1/kyc-profiles/`
+  now checks for an existing active member-party `KycProfile` before attempting create and returns
+  a standard `400 VALIDATION_ERROR` with `field_errors.party_id = "A KYC profile already exists for
+  this member."` Duplicate attempts leave exactly one profile and one `kyc.profile.created` audit
+  row. Updated the local API contract and sharpened 004I/004J with the closed duplicate-create
+  contract.
+- Tests run: duplicate-create TDD red/green; KYC API tests (6/6); backend `manage.py check`;
+  backend tests (226/226); `makemigrations --check --dry-run`; backend coverage 96% (floor 85);
+  frontend `npm run lint`; `npm run typecheck`; `npm test` (74/74); `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-09_143651_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `004I-sensitive-masking-and-reveal-audit`; it now depends on the closed 004H2
+  duplicate-create contract and must preserve it while adding member PAN/Aadhaar reveal only.
+
+## 2026-07-09 14:18:56 - 2026-07-09_141049_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed the four product slices completed since architecture review `7c97efc`:
+  `004D2-member-profile-and-nominee-contract-hardening`,
+  `004F-shareholding-and-share-certificate-records`,
+  `004G-landholding-and-crop-plan-records`, and `004H-kyc-upload-and-verification`.
+  Appended findings to `docs/working/REVIEW_FINDINGS.md`. Found one Medium 004H contract issue:
+  duplicate KYC profile creates can fall through to the database unique constraint without returning
+  a standard validation envelope. Confirmed 004D2 closed the prior nominee-audit and
+  `available_actions[]` findings, and confirmed 004F/004G stayed inside their list/create
+  boundaries. Created corrective slice `004H2-kyc-profile-duplicate-create-contract-hardening`,
+  made `004I` depend on it, and sharpened `004J` with targeted bank-account/cancelled-cheque source
+  extracts.
+- Tests run: backend check/tests/migration check/coverage; frontend typecheck/lint/tests/build;
+  `git diff --check`; protected-path scan.
+- Evidence saved: `.ralph/runs/2026-07-09_141049_architecture_review/`, with gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Low (review/docs-only), with one Medium corrective issue queued.
+- Next action: Run `004H2-kyc-profile-duplicate-create-contract-hardening`; after it passes, run
+  `004I-sensitive-masking-and-reveal-audit`.
+
+## 2026-07-09 12:59:44 - 2026-07-09_125944_normal_run
+- Agent tool used: codex
+- Slice attempted: 004G-landholding-and-crop-plan-records
+- Summary: Implemented member land-holding and crop-plan list/create records. Added
+  `land_holdings` and `crop_plans` with source-backed fields, positive-acreage constraints,
+  verification fields, and metadata-only create audit. Added
+  `GET/POST /api/v1/members/{member_id}/land-holdings/` and
+  `GET/POST /api/v1/members/{member_id}/crop-plans/` with standard envelopes,
+  missing-member handling, validation for positive acreage and UUID fields, and read/create
+  permission separation using A-032 (`members.member.read` for list and `members.member.update`
+  for create). Replaced the Member Profile Land & Crop tab with API-backed list/create states
+  using existing UI patterns and no loan-limit/calculation display.
+- Tests run: backend land/crop TDD red/green; frontend land/crop TDD red/green; backend
+  `manage.py check`; backend tests (220/220); `makemigrations --check --dry-run`; backend coverage
+  96% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test` (73/73);
+  `npm run build`.
+- Evidence saved: `.ralph/runs/2026-07-09_125944_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`, API examples, and self-contained Land & Crop tab HTML evidence.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `004H-kyc-upload-and-verification`; `004I-sensitive-masking-and-reveal-audit`
+  has been sharpened for the member sensitive reveal endpoint after KYC.
+
+## 2026-07-09 12:29:59 - 2026-07-09_122959_normal_run
+- Agent tool used: codex
+- Slice attempted: 004F-shareholding-and-share-certificate-records
+- Summary: Implemented member shareholding list/create. Added the `shareholdings` table with
+  source-backed share-count constraints, available-share derivation, nullable valuation/demat
+  references, and active share summary refresh on the member. Added
+  `GET`/`POST /api/v1/members/{member_id}/shareholdings/` with standard envelopes,
+  `members.shareholding.read` and `members.shareholding.create` separation, invalid count/overflow
+  validation, missing-member handling, and `members.shareholding.created` audit metadata without a
+  workflow event. Replaced the Member Profile Shareholding tab with API-backed list/create states
+  using existing UI patterns and no mock share rows. Share certificates and PATCH/update are
+  explicitly deferred.
+- Tests run: backend shareholding TDD red/green; frontend shareholding TDD red/green; backend
+  `manage.py check`; backend tests (213/213); `makemigrations --check --dry-run`; backend coverage
+  96% (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test` (69/69);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_122959_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`, API examples, and self-contained Shareholding tab HTML. Live PNG
+  screenshot capture was blocked by sandbox localhost/browser restrictions; attempts are logged.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `004G-landholding-and-crop-plan-records`; `004E` can be revisited only after a
+  real loan-application boundary exists, even though shareholding facts now exist.
+
+## 2026-07-09 12:08:45 - 2026-07-09_120845_normal_run
+- Agent tool used: codex
+- Slice attempted: 004D2-member-profile-and-nominee-contract-hardening
+- Summary: Closed the two architecture-review findings from `2026-07-09_114836_architecture_review`.
+  Nominee creation still stores protected identity tokens and keyed hashes on the nominee row for
+  duplicate/search support, but `members.nominee.created` audit metadata now excludes PAN/Aadhaar
+  plaintext, encrypted-token keys, hash keys, and submitted identity-derived hash values. Member
+  profile detail now returns neutral `available_actions: []` and no longer derives
+  `create_loan_application` availability from member/KYC/default status or the caller's application
+  create permission before 005A/eligibility slices own those rules. API contracts and Epic 004
+  digest were updated. Queue sharpened: `004E` witness validation is blocked until shareholding and
+  loan-application prerequisites exist, and `004F` shareholding now follows 004D2.
+- Tests run: nominee audit TDD red/green; member profile action TDD red/green; combined hardening
+  regressions (14/14); backend `manage.py check`; backend tests (208/208);
+  `makemigrations --check --dry-run`; backend coverage 96% (floor 85); frontend `npm run
+  typecheck`; `npm run lint`; `npm test` (65/65); `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_120845_normal_run/`, with red/green and gate logs under
+  `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `004F-shareholding-and-share-certificate-records`; keep `004E` blocked until
+  both persisted shareholding facts and a real loan-application boundary exist.
+
+## 2026-07-09 12:04:18 - 2026-07-09_114836_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed the four product slices completed since the prior architecture review:
+  `004A-member-directory-api-and-ui`, `004B-member-profile-api-and-ui`,
+  `004C-individual-farmer-and-fpc-profile-details`, and `004D-nominee-validation-and-ui`.
+  Appended findings to `docs/working/REVIEW_FINDINGS.md`. Found two Medium contract/spec issues:
+  nominee create audit metadata includes PAN/Aadhaar hash fields, and member profile
+  `available_actions[]` prematurely encodes loan-start eligibility from member/KYC/default status.
+  Created corrective slice `004D2-member-profile-and-nominee-contract-hardening` and sharpened
+  `004E` to depend on it before witness work resumes.
+- Tests run: backend `manage.py check`; backend tests (207/207); `makemigrations --check
+  --dry-run`; backend coverage 96% (floor 85); frontend `npm run typecheck`; `npm run lint`;
+  `npm test` (65/65); `npm run build`; `git diff --check`; protected-path scan.
+- Evidence saved: `.ralph/runs/2026-07-09_114836_architecture_review/`, including terminal logs,
+  review packet, risk assessment, and changed-files list.
+- Result: Success.
+- Risk level: Low.
+- Next action: Run `004D2-member-profile-and-nominee-contract-hardening` before `004E`.
+
+## 2026-07-09 11:19:27 - 2026-07-09_111927_normal_run
+- Agent tool used: codex
+- Slice attempted: 004D-nominee-validation-and-ui
+- Summary: Implemented member-level nominee list/create. Added the `nominees` table, protected
+  identity token/hash storage, masked nominee serialization, `members.nominee.read` and
+  `members.nominee.create` permission separation, adult validation, required/format validation for
+  PAN and Aadhaar, and metadata-only nominee creation audit. Replaced the Member Profile Nominee tab
+  with API-backed list/create behavior using existing UI patterns and no mock nominee rows.
+- Tests run: backend nominee TDD red/green; frontend nominee TDD red/green; backend `manage.py
+  check`; backend tests (207/207); `makemigrations --check --dry-run`; backend coverage 96%
+  (floor 85); frontend `npm run typecheck`; `npm run lint`; `npm test` (65/65);
+  `npm run build`; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_111927_normal_run/`, including API examples, terminal
+  logs, and self-contained nominee-tab HTML evidence.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run architecture review by cadence before implementing `004E-witness-shareholder-validation`.
+
+## 2026-07-09 09:31:45 - 2026-07-09_091651_normal_run
+- Agent tool used: codex
+- Slice attempted: 004C-individual-farmer-and-fpc-profile-details
+- Summary: Extended the 004B profile shell with source §10.2 individual name, gender, birth date,
+  occupation, and employment/service-year fields; added model-boundary member-type validation;
+  retained the non-sensitive producer/FPC shape; and rendered both profile types in the existing
+  Member Profile overview without signatory PAN/Aadhaar or mock-data fallback.
+- Tests run: backend profile TDD red/green and mismatch-validation red/green; frontend profile
+  red/green; backend check; backend tests (201/201); migration sync; backend coverage 96% (floor
+  85%); frontend typecheck/lint/tests (61/61)/build; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-09_091651_normal_run/`, including API examples, terminal
+  logs, and self-contained individual/FPC profile HTML. Live browser PNG capture was unavailable.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `004D-nominee-validation-and-ui`; architecture review cadence is not yet due.
+
 ## 2026-07-08 09:41:46 - 2026-07-08_094146_repair
 - Agent tool used: codex
 - Slice attempted: 004B-member-profile-api-and-ui
@@ -1234,6 +2008,643 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-08_094146_repair/.ralph/runs/2026-07-08_094146_repair/.
 - Evidence saved: /Users/amitkallapa/Loan Management System Development/.ralph/worktrees/2026-07-08_094146_repair/.ralph/runs/2026-07-08_094146_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 09:36:12 - 2026-07-09_091651_normal_run
+- Agent tool used: codex
+- Slice attempted: 004C-individual-farmer-and-fpc-profile-details
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_091651_normal_run/.ralph/runs/2026-07-09_091651_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_091651_normal_run/.ralph/runs/2026-07-09_091651_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 11:48:16 - 2026-07-09_111927_normal_run
+- Agent tool used: codex
+- Slice attempted: 004D-nominee-validation-and-ui
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/.ralph/runs/2026-07-09_111927_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_111927_normal_run/.ralph/runs/2026-07-09_111927_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 12:08:37 - 2026-07-09_114836_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_114836_architecture_review/.ralph/runs/2026-07-09_114836_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_114836_architecture_review/.ralph/runs/2026-07-09_114836_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 12:29:50 - 2026-07-09_120845_normal_run
+- Agent tool used: codex
+- Slice attempted: 004D2-member-profile-and-nominee-contract-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_120845_normal_run/.ralph/runs/2026-07-09_120845_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_120845_normal_run/.ralph/runs/2026-07-09_120845_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 12:59:25 - 2026-07-09_122959_normal_run
+- Agent tool used: codex
+- Slice attempted: 004F-shareholding-and-share-certificate-records
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_122959_normal_run/.ralph/runs/2026-07-09_122959_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_122959_normal_run/.ralph/runs/2026-07-09_122959_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 13:28:44 - 2026-07-09_125944_normal_run
+- Agent tool used: codex
+- Slice attempted: 004G-landholding-and-crop-plan-records
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_125944_normal_run/.ralph/runs/2026-07-09_125944_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_125944_normal_run/.ralph/runs/2026-07-09_125944_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 13:29:17 - 2026-07-09_132917_normal_run
+- Agent tool used: codex
+- Slice attempted: 004H-kyc-upload-and-verification
+- Summary: Implemented member-party KYC profile/document upload/verification APIs and API-backed Member Profile KYC tab.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_132917_normal_run/.ralph/runs/2026-07-09_132917_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_132917_normal_run/.ralph/runs/2026-07-09_132917_normal_run/
+- Result: Success
+- Risk level: High
+- Next action: Architecture review is due before the next normal slice.
+
+## 2026-07-09 14:10:06 - 2026-07-09_132917_normal_run
+- Agent tool used: codex
+- Slice attempted: 004H-kyc-upload-and-verification
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_132917_normal_run/.ralph/runs/2026-07-09_132917_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_132917_normal_run/.ralph/runs/2026-07-09_132917_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 14:36:41 - 2026-07-09_141049_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_141049_architecture_review/.ralph/runs/2026-07-09_141049_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_141049_architecture_review/.ralph/runs/2026-07-09_141049_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 15:01:00 - 2026-07-09_143651_normal_run
+- Agent tool used: codex
+- Slice attempted: 004H2-kyc-profile-duplicate-create-contract-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_143651_normal_run/.ralph/runs/2026-07-09_143651_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_143651_normal_run/.ralph/runs/2026-07-09_143651_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 15:46:32 - 2026-07-09_150108_normal_run
+- Agent tool used: codex
+- Slice attempted: 004I-sensitive-masking-and-reveal-audit
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_150108_normal_run/.ralph/runs/2026-07-09_150108_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_150108_normal_run/.ralph/runs/2026-07-09_150108_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 16:09:29 - 2026-07-09_154649_normal_run
+- Agent tool used: codex
+- Slice attempted: 004J-bank-account-and-cancelled-cheque-profile-foundation
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_154649_normal_run/.ralph/runs/2026-07-09_154649_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_154649_normal_run/.ralph/runs/2026-07-09_154649_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 16:38:51 - 2026-07-09_160945_normal_run
+- Agent tool used: codex
+- Slice attempted: 004K-borrower-360-kyc-panel-and-masking-ui-wiring
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_160945_normal_run/.ralph/runs/2026-07-09_160945_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_160945_normal_run/.ralph/runs/2026-07-09_160945_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 17:03:52 - 2026-07-09_163909_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_163909_architecture_review/.ralph/runs/2026-07-09_163909_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_163909_architecture_review/.ralph/runs/2026-07-09_163909_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 17:23:02 - 2026-07-09_170359_normal_run
+- Agent tool used: codex
+- Slice attempted: 004K2-borrower-360-bank-holder-contract-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_170359_normal_run/.ralph/runs/2026-07-09_170359_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_170359_normal_run/.ralph/runs/2026-07-09_170359_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 17:51:26 - 2026-07-09_172309_normal_run
+- Agent tool used: codex
+- Slice attempted: 005A-loan-application-draft-create-update
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_172309_normal_run/.ralph/runs/2026-07-09_172309_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_172309_normal_run/.ralph/runs/2026-07-09_172309_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 18:35:19 - 2026-07-09_175511_normal_run
+- Agent tool used: codex
+- Slice attempted: 005B-application-submit-and-status-transition
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_175511_normal_run/.ralph/runs/2026-07-09_175511_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_175511_normal_run/.ralph/runs/2026-07-09_175511_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 19:06:41 - 2026-07-09_183552_normal_run
+- Agent tool used: codex
+- Slice attempted: 005C-reference-number-generation-and-loan-request-register
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_183552_normal_run/.ralph/runs/2026-07-09_183552_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_183552_normal_run/.ralph/runs/2026-07-09_183552_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 19:35:25 - 2026-07-09_190655_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_190655_architecture_review/.ralph/runs/2026-07-09_190655_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_190655_architecture_review/.ralph/runs/2026-07-09_190655_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 20:00:39 - 2026-07-09_193538_normal_run
+- Agent tool used: codex
+- Slice attempted: 005C2-application-object-access-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_193538_normal_run/.ralph/runs/2026-07-09_193538_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_193538_normal_run/.ralph/runs/2026-07-09_193538_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 20:23:15 - 2026-07-09_200049_normal_run
+- Agent tool used: codex
+- Slice attempted: 005D-application-document-checklist
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_200049_normal_run/.ralph/runs/2026-07-09_200049_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_200049_normal_run/.ralph/runs/2026-07-09_200049_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 20:56:09 - 2026-07-09_202350_normal_run
+- Agent tool used: codex
+- Slice attempted: 005E-completeness-workbench
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_202350_normal_run/.ralph/runs/2026-07-09_202350_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_202350_normal_run/.ralph/runs/2026-07-09_202350_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 21:32:32 - 2026-07-09_205626_normal_run
+- Agent tool used: codex
+- Slice attempted: 005F-deficiency-creation-and-resolution
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_205626_normal_run/.ralph/runs/2026-07-09_205626_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_205626_normal_run/.ralph/runs/2026-07-09_205626_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 21:56:19 - 2026-07-09_213305_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_213305_architecture_review/.ralph/runs/2026-07-09_213305_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_213305_architecture_review/.ralph/runs/2026-07-09_213305_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 22:22:41 - 2026-07-09_215632_normal_run
+- Agent tool used: codex
+- Slice attempted: 005F2-deficiency-return-status-contract-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_215632_normal_run/.ralph/runs/2026-07-09_215632_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_215632_normal_run/.ralph/runs/2026-07-09_215632_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-09 23:01:16 - 2026-07-09_222250_normal_run
+- Agent tool used: codex
+- Slice attempted: 005FA-member-portal-authentication
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_222250_normal_run/.ralph/runs/2026-07-09_222250_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_222250_normal_run/.ralph/runs/2026-07-09_222250_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 00:11:39 - 2026-07-09_233958_repair
+- Agent tool used: codex
+- Slice attempted: 005FB-member-portal-dashboard-profile-and-supply-view
+- Summary: Completed repair-mode implementation for member portal MP03 dashboard, MP04 profile,
+  and prototype MP22 produce-supply view. Added own-data portal APIs for dashboard/profile/supply,
+  scoped by active `PortalAccount.member_id`; staff tokens are denied, query `member_id` is ignored
+  as authority, profile values remain masked, and produce supply returns the source-backed empty
+  shell until `produce_supply_records` exists.
+- Tests run: Backend focused portal member red/green, full backend suite, backend coverage,
+  backend check, migrations check, frontend focused API/view red/green, frontend tests, lint,
+  typecheck, and build.
+- Evidence saved: `.ralph/runs/2026-07-09_233958_repair/`
+- Result: Success
+- Risk level: Medium
+- Next action: Run `005G-member-portal-application-start-status`.
+
+## 2026-07-10 00:22:02 - 2026-07-09_233958_repair
+- Agent tool used: codex
+- Slice attempted: 005FB-member-portal-dashboard-profile-and-supply-view
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_233958_repair/.ralph/runs/2026-07-09_233958_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_233958_repair/.ralph/runs/2026-07-09_233958_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 00:43:00 - 2026-07-10_002243_normal_run
+- Agent tool used: codex
+- Slice attempted: 005G-member-portal-application-start-status
+- Summary: Completed member portal application start/list/status wiring. Added own-scoped portal
+  application APIs for draft create/update/read, submit, list, and status detail; MP05/MP09/MP10
+  now use real portal APIs; returned-incomplete applications render as borrower rectification work.
+- Tests run: Backend focused red/green portal API tests, full backend suite, backend coverage,
+  backend check, migrations check, frontend API/view red/green tests, frontend full tests,
+  typecheck, lint, and build.
+- Evidence saved: `.ralph/runs/2026-07-10_002243_normal_run/`
+- Result: Success
+- Risk level: Medium
+- Next action: Architecture review is due before the next implementation slice.
+
+## 2026-07-10 00:57:05 - 2026-07-10_002243_normal_run
+- Agent tool used: codex
+- Slice attempted: 005G-member-portal-application-start-status
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_002243_normal_run/.ralph/runs/2026-07-10_002243_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_002243_normal_run/.ralph/runs/2026-07-10_002243_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 01:26:43 - 2026-07-10_005716_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_005716_architecture_review/.ralph/runs/2026-07-10_005716_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_005716_architecture_review/.ralph/runs/2026-07-10_005716_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 01:57:10 - 2026-07-10_012650_normal_run
+- Agent tool used: codex
+- Slice attempted: 005G2-member-portal-session-and-audit-contract-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_012650_normal_run/.ralph/runs/2026-07-10_012650_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_012650_normal_run/.ralph/runs/2026-07-10_012650_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 02:31:08 - 2026-07-10_015723_normal_run
+- Agent tool used: codex
+- Slice attempted: 005H-rejection-note-shell
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_015723_normal_run/.ralph/runs/2026-07-10_015723_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_015723_normal_run/.ralph/runs/2026-07-10_015723_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 03:27:45 - 2026-07-10_023116_normal_run
+- Agent tool used: codex
+- Slice attempted: 005I-application-intake-frontend-wiring
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_023116_normal_run/.ralph/runs/2026-07-10_023116_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_023116_normal_run/.ralph/runs/2026-07-10_023116_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 04:02:00 - 2026-07-10_032758_normal_run
+- Agent tool used: codex
+- Slice attempted: 006A-active-member-eligibility-service
+- Summary: Completed backend eligibility-assessment foundation. Added one-to-one assessment
+  persistence, run/read APIs, active-member check behavior, permission/object-access/state guards,
+  metadata-only success audit/workflow evidence, API docs, and assumption A-046 for missing
+  produce/service history.
+- Tests run: Red focused endpoint test, green focused eligibility tests, backend check, backend
+  full tests, backend migration sync, backend coverage, frontend lint, frontend typecheck,
+  frontend tests, frontend build, and `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_032758_normal_run/`
+- Result: Success
+- Risk level: Medium
+- Next action: Architecture review is due, then run
+  `006B-default-document-purpose-and-terms-eligibility-checks`.
+
+## 2026-07-10 04:18:41 - 2026-07-10_032758_normal_run
+- Agent tool used: codex
+- Slice attempted: 006A-active-member-eligibility-service
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_032758_normal_run/.ralph/runs/2026-07-10_032758_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_032758_normal_run/.ralph/runs/2026-07-10_032758_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 04:18:51 - 2026-07-10_041851_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Reviewed 005G2, 005H, 005I, and 006A since architecture-review commit `353c6df`.
+  Found one medium Application Detail API-state drift issue and one low rejection-note detail-read
+  gap. Created corrective slice `005I2-application-detail-api-state-hardening` and made `006B`
+  depend on it. Portal hardening, rejection-note backend tests, and 006A eligibility foundation
+  passed review.
+- Tests run: backend check, backend migration sync, backend coverage test run (277 tests),
+  backend coverage report (95%), frontend lint, frontend typecheck, frontend tests (95 tests),
+  frontend build, and `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_041851_architecture_review/`
+- Result: Success
+- Risk level: Medium
+- Next action: Run `005I2-application-detail-api-state-hardening`, then `006B`.
+
+## 2026-07-10 04:41:08 - 2026-07-10_041851_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_041851_architecture_review/.ralph/runs/2026-07-10_041851_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_041851_architecture_review/.ralph/runs/2026-07-10_041851_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 05:21:29 - 2026-07-10_044114_normal_run
+- Agent tool used: codex
+- Slice attempted: 005I2-application-detail-api-state-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_044114_normal_run/.ralph/runs/2026-07-10_044114_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_044114_normal_run/.ralph/runs/2026-07-10_044114_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 06:19:12 - 2026-07-10_052139_normal_run
+- Agent tool used: codex
+- Slice attempted: 006B-default-document-purpose-and-terms-eligibility-checks
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_052139_normal_run/.ralph/runs/2026-07-10_052139_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_052139_normal_run/.ralph/runs/2026-07-10_052139_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 08:21:59 - 2026-07-10_073826_repair
+- Agent tool used: codex
+- Slice attempted: 006C-loan-limit-configuration-and-calculator
+- Summary: Recovered from the prior missing command-host no-op, then implemented the source-backed
+  loan-limit calculate endpoint, one-to-one snapshot persistence, active/effective Board-approved
+  policy selection, percentage/per-share-cap and land formulas, eligibility/source-fact/access
+  gates, amount boundary warning, and atomic audit/workflow evidence. Recorded A-047 and sharpened
+  006D/006E.
+- Tests run: TDD red/green endpoint tracer; focused formula, boundary, rerun, eligibility, policy,
+  source-fact, permission, and object-scope tests; 37 loan-application API tests; backend check;
+  288 backend tests; migration sync; 95% backend coverage; frontend lint/typecheck; 98 frontend
+  tests; frontend build; and `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_073826_repair/`
+- Result: Success
+- Risk level: High
+- Next action: Run `006D-loan-limit-snapshot-storage`.
+
+## 2026-07-10 08:31:28 - 2026-07-10_073826_repair
+- Agent tool used: codex
+- Slice attempted: 006C-loan-limit-configuration-and-calculator
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_073826_repair/.ralph/runs/2026-07-10_073826_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_073826_repair/.ralph/runs/2026-07-10_073826_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 - 2026-07-10_083153_normal_run
+- Agent tool used: codex
+- Slice attempted: 006D-loan-limit-snapshot-storage
+- Summary: Added immutable stored loan-limit GET readback, policy-source snapshot persistence,
+  stored warning/config serialization, successful rerun replacement with complete old/new audit,
+  and failed-rerun preservation across invalid/source/access failures. Updated API/digest/assumption
+  docs and sharpened 006F after confirming 006E was already concrete.
+- Tests run: TDD red/green GET tracer; 39 focused loan-application API tests; backend check;
+  290 backend tests; migration sync; 95% backend coverage; frontend lint/typecheck; 98 frontend
+  tests; frontend build; `git diff --check`; two-axis standards/spec review.
+- Evidence saved: `.ralph/runs/2026-07-10_083153_normal_run/`
+- Result: Success
+- Risk level: High
+- Next action: Run architecture review, then `006E-appraisal-note-create-edit-submit`.
+
+## 2026-07-10 09:17:57 - 2026-07-10_083153_normal_run
+- Agent tool used: codex
+- Slice attempted: 006D-loan-limit-snapshot-storage
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_083153_normal_run/.ralph/runs/2026-07-10_083153_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_083153_normal_run/.ralph/runs/2026-07-10_083153_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 09:32:22 - 2026-07-10_092630_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Independently reviewed 005I2, 006B, 006C, and 006D since architecture-review commit
+  `1e2d873`. Confirmed public application-nominee selection and cultivated-acreage correctness
+  gaps, residual frontend-owned Application Detail workflow state, and credit-module architecture
+  drift. Created corrective slices 005I3, 005I4, 006C2, and 006D2; made 006E depend on them; added
+  A-049 and distilled Epic 005/006 review extracts. No production code changed.
+- Tests run: backend check; migration sync; 290 backend tests under coverage; 95% coverage; frontend
+  lint/typecheck; 98 frontend tests; frontend build; protected-path/diff-limit/integrity checks.
+- Evidence saved: `.ralph/runs/2026-07-10_092630_architecture_review/`
+- Result: Success
+- Risk level: High
+- Next action: Run `005I3-application-nominee-selection-contract`, then 005I4, 006C2, and 006D2
+  before 006E.
+
+## 2026-07-10 09:58:38 - 2026-07-10_092630_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_092630_architecture_review/.ralph/runs/2026-07-10_092630_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_092630_architecture_review/.ralph/runs/2026-07-10_092630_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 11:03:12 - 2026-07-10_100050_normal_run
+- Agent tool used: codex
+- Slice attempted: 005I3-application-nominee-selection-contract
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_100050_normal_run/.ralph/runs/2026-07-10_100050_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_100050_normal_run/.ralph/runs/2026-07-10_100050_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 12:18:41 - 2026-07-10_110705_normal_run
+- Agent tool used: codex
+- Slice attempted: 005I4-application-detail-backend-state-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_110705_normal_run/.ralph/runs/2026-07-10_110705_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_110705_normal_run/.ralph/runs/2026-07-10_110705_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 13:19:40 - 2026-07-10_125342_normal_run
+- Agent tool used: codex
+- Slice attempted: 006C2-cultivated-acreage-source-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_125342_normal_run/.ralph/runs/2026-07-10_125342_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_125342_normal_run/.ralph/runs/2026-07-10_125342_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 - 2026-07-10_152757_normal_run
+- Agent tool used: codex
+- Slice attempted: 006D2A-credit-eligibility-module-and-configuration-seam
+- Summary: Established the source-named credit eligibility module and configuration resolver seams,
+  moved eligibility transaction/rule/persistence/audit/workflow behavior out of application services,
+  made application views thin callers, and preserved the existing HTTP and loan-limit contracts.
+- Tests run: characterization eligibility suite; TDD module/resolver/import-boundary red-green;
+  57 focused module/application API tests; backend check and migration sync; 308 backend tests under
+  coverage at 95%; frontend lint/typecheck; 106 frontend tests; frontend build; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_152757_normal_run/`
+- Result: Success
+- Risk level: High
+- Next action: Run the due architecture review, then `006D2B-credit-loan-limit-calculator-and-appraisal-seam`.
+
+## 2026-07-10 15:46:28 - 2026-07-10_152757_normal_run
+- Agent tool used: codex
+- Slice attempted: 006D2A-credit-eligibility-module-and-configuration-seam
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_152757_normal_run/.ralph/runs/2026-07-10_152757_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_152757_normal_run/.ralph/runs/2026-07-10_152757_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 16:03:23 - 2026-07-10_154638_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_154638_architecture_review/.ralph/runs/2026-07-10_154638_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_154638_architecture_review/.ralph/runs/2026-07-10_154638_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 - 2026-07-10_160331_normal_run
+- Agent tool used: codex
+- Slice attempted: 005I5-application-ownership-and-nominee-authority-hardening
+- Summary: Removed receiver/creator owner projection, centralized nominee authority behind a public
+  backend module, strengthened invalid mutation preservation, removed React age/minority rules,
+  surfaced backend nominee errors, and completed safe MP10 nominee rendering.
+- Tests run: backend TDD red/green; focused ownership/nominee/mutation tests; backend check and
+  migration sync; 313 backend tests under coverage at 95%; frontend lint/typecheck; 107 frontend
+  tests; frontend build. Playwright specs were added but local server binding was sandbox-blocked.
+- Evidence saved: `.ralph/runs/2026-07-10_160331_normal_run/`
+- Result: Success
+- Risk level: High
+- Next action: Run `006D2B-credit-loan-limit-calculator-and-appraisal-seam`.
+
+## 2026-07-10 16:19:12 - 2026-07-10_160331_normal_run
+- Agent tool used: codex
+- Slice attempted: 005I5-application-ownership-and-nominee-authority-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_160331_normal_run/.ralph/runs/2026-07-10_160331_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_160331_normal_run/.ralph/runs/2026-07-10_160331_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 - 2026-07-10_162322_normal_run
+- Agent tool used: codex
+- Slice attempted: 006D2B-credit-loan-limit-calculator-and-appraisal-seam
+- Summary: Extracted the locked loan-limit calculator, canonical projection, configuration error
+  translation, static import guards, and appraisal entry seam without changing HTTP contracts.
+- Tests run: 319 backend tests at 95%; frontend lint/typecheck, 107 tests, and build.
+- Evidence saved: `.ralph/runs/2026-07-10_162322_normal_run/`
+- Result: Success; risk High; next action 006D3.
+
+## 2026-07-10 16:50:49 - 2026-07-10_162322_normal_run
+- Agent tool used: codex
+- Slice attempted: 006D2B-credit-loan-limit-calculator-and-appraisal-seam
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_162322_normal_run/.ralph/runs/2026-07-10_162322_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_162322_normal_run/.ralph/runs/2026-07-10_162322_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 17:02:55 - 2026-07-10_165107_normal_run
+- Agent tool used: codex
+- Slice attempted: 006D3-credit-assessment-model-ownership-state-migration
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_165107_normal_run/.ralph/runs/2026-07-10_165107_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_165107_normal_run/.ralph/runs/2026-07-10_165107_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 17:31:02 - 2026-07-10_170303_normal_run
+- Agent tool used: codex
+- Slice attempted: 006E-appraisal-note-create-edit-submit
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_170303_normal_run/.ralph/runs/2026-07-10_170303_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_170303_normal_run/.ralph/runs/2026-07-10_170303_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 17:54:09 - 2026-07-10_173305_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_173305_architecture_review/.ralph/runs/2026-07-10_173305_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_173305_architecture_review/.ralph/runs/2026-07-10_173305_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

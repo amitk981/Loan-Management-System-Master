@@ -1,0 +1,31 @@
+Creating test database for alias 'default'...
+Found 46 test(s).
+System check identified no issues (0 silenced).
+............F............................F....
+======================================================================
+FAIL: test_eligibility_assessment_marks_blockers_ineligible_without_advancing_application (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_eligibility_assessment_marks_blockers_ineligible_without_advancing_application)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_100050_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 491, in test_eligibility_assessment_marks_blockers_ineligible_without_advancing_application
+    content_type="application/json",
+AssertionError: 'valid' != 'minor'
+- valid
++ minor
+
+
+======================================================================
+FAIL: test_portal_dashboard_profile_and_supply_use_authenticated_member_scope (sfpcl_credit.tests.test_portal_member_api.PortalMemberApiTests.test_portal_dashboard_profile_and_supply_use_authenticated_member_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_100050_normal_run/sfpcl_credit/tests/test_portal_member_api.py", line 257, in test_portal_dashboard_profile_and_supply_use_authenticated_member_scope
+    self.assertEqual(profile["nominees"][0]["pan"]["masked"], "******678K")
+AssertionError: '********************oken' != '******678K'
+- ********************oken
++ ******678K
+
+
+----------------------------------------------------------------------
+Ran 46 tests in 280.291s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

@@ -1,0 +1,44 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/applications/ApplicationDetail.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_110705_normal_run/sfpcl-lms
+
+ ❯ src/pages/applications/ApplicationDetail.test.tsx (7 tests | 1 failed) 82ms
+   ✓ ApplicationDetail API-backed rendering > loads detail, checklist, and deficiencies through the production HTTP service seam 2ms
+   ✓ ApplicationDetail API-backed rendering > renders production loading and error states without synthetic application facts 5ms
+   × ApplicationDetail API-backed rendering > renders the submitted backend owner without fixed lifecycle or readiness facts 3ms
+     → expected '' to contain 'LO00000035'
+   ✓ ApplicationDetail API-backed rendering > does not apply the old LO00000035 mock overrides to API-backed detail data 20ms
+   ✓ ApplicationDetail API-backed rendering > shows unavailable states instead of hardcoded nominee and witness facts 26ms
+   ✓ ApplicationDetail API-backed rendering > renders the API nominee metadata without sensitive identity values 12ms
+   ✓ ApplicationDetail API-backed rendering > renders staff rejection-note metadata returned by the detail API 13ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/applications/ApplicationDetail.test.tsx > ApplicationDetail API-backed rendering > renders the submitted backend owner without fixed lifecycle or readiness facts
+AssertionError: expected '' to contain 'LO00000035'
+
+- Expected
++ Received
+
+- LO00000035
+
+ ❯ src/pages/applications/ApplicationDetail.test.tsx:51:18
+     49|     const html = renderView({ status: 'success', data, message: '' });
+     50| 
+     51|     expect(html).toContain('LO00000035');
+       |                  ^
+     52|     expect(html).toContain('Maya Backend Queue Owner');
+     53|     expect(html).not.toContain('Deputy Manager Finance');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  11:14:33
+   Duration  810ms (transform 214ms, setup 0ms, collect 313ms, tests 82ms, environment 0ms, prepare 38ms)
+

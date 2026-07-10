@@ -1,60 +1,31 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-08_094146_repair
+2026-07-10_173305_architecture_review
 
 ## Current Status
-Repair run completed successfully for `004B-member-profile-api-and-ui`. The previous 004B attempt
-passed functional gates but failed Ralph's line limit at 2142 changed lines; this repair completed
-the same slice at 19 files / 1724 lines excluding `.ralph/`.
+Architecture review completed for product slices `005I5`, `006D2B`, `006D3`, and `006E` since
+review commit `18d403e`.
 
-## What Completed
-- Added masked read-only `GET /api/v1/members/{member_id}/` in the existing
-  `sfpcl_credit.members` module.
-- Added one non-destructive `members` migration for `individual_member_profiles` and
-  `producer_institution_profiles` shell tables.
-- Response includes member identifiers/status, registered address, masked mobile, masked
-  PAN/Aadhaar objects with `can_view_full: false`, nullable profile shell objects, share/active
-  member shell fields, and object-shaped `available_actions[]`.
-- `members.member.read` gates the endpoint; missing auth returns `401`, missing permission returns
-  `403`, and unknown/soft-deleted valid UUIDs return `404`.
-- Rewired `sfpcl-lms/src/pages/members/MemberProfile.tsx` to `memberProfileApi`, removed the
-  backend-wired profile path's `mockData` dependency, and rendered existing empty/deferred states
-  for tabs without implemented backend paths.
-- Updated API contracts, assumptions (A-030), prototype inventory/gap docs, Epic 004 digest, and
-  sharpened `004C` to build on the 004B profile shell instead of duplicating it.
+- High finding: appraisal prerequisite UUIDs are not immutable content because explicit assessment
+  reruns retain the UUID and replace current facts. ADR-0003 and corrective 006E2 freeze canonical
+  redacted eligibility/loan-limit projections on the appraisal and define safe legacy provenance.
+- High contract findings: 006E omits source-required repayment-capacity notes and discards required
+  submit remarks. 006E2 adds both before review, without copying free text into audit JSON.
+- High owned gaps: 012EA now explicitly owns M04-FR-001/002 appraisal task creation/Deputy Manager
+  assignment; new 006F2 owns M04-FR-011 terminal rejection plus one unsent 005H rejection note.
+- Medium test finding: 006D2B verifies lock calls but not competing transactions, and its AST test
+  has package/alias bypasses. New 006D2C adds transactional and robust boundary regressions.
+- Pass: 005I5, 006D2B, 006D3, and most 006E behavior have substantive assertions. No production
+  code, migrations, dependencies, source documents, or protected files changed in this review.
 
-## Evidence
-See `.ralph/runs/2026-07-08_094146_repair/`.
+## Validation
+Backend check/migration sync passed; 341 tests passed at 95% coverage. Frontend lint/typecheck,
+107 tests, and build passed. Evidence is in
+`.ralph/runs/2026-07-10_173305_architecture_review/`.
 
-Key logs under `evidence/terminal-logs/`:
-- `backend-member-profile-red.log`
-- `backend-member-profile-green.log`
-- `frontend-member-profile-red.log`
-- `frontend-member-profile-green.log`
-- `backend-check.log`
-- `backend-tests.log`
-- `backend-makemigrations-check.log`
-- `backend-coverage.log`
-- `frontend-typecheck.log`
-- `frontend-lint.log`
-- `frontend-tests.log`
-- `frontend-build.log`
-- `git-diff-check.log`
-
-Gate result: backend checks/tests/migration check/coverage passed, frontend typecheck/lint/tests/build
-passed, and `git diff --check` passed. Backend tests: 198 passed. Frontend tests: 58 passed.
-Coverage: 96% total, above the 85% floor.
-
-Visual evidence: static HTML rendered from the real `MemberProfileView` plus built CSS is under
-`evidence/screenshots/member-profile-html/`. Live browser screenshot capture was attempted, but the
-in-app browser was unavailable in this run context.
-
-## Current Blocker
-None.
-
-## Notes For Next Run
-- Next implementation slice should be `004C-individual-farmer-and-fpc-profile-details`.
-- 004C should extend the existing 004B profile shell with remaining source §10.2/§10.3 fields and
-  tests. Do not recreate profile tables, restore `mockData`, or implement sensitive reveal unless
-  §13.5 reason/expiry/no-cache/audit controls are fully included.
+## Next Run
+Run `006D2C-loan-limit-concurrency-and-boundary-regression`, then
+`006E2-appraisal-source-contract-and-snapshot-hardening`. After both pass, run sharpened 006F
+through `AppraisalWorkflow.review(...)`; it must use 006E2's frozen projections and preserve
+repayment/submission facts. Run 006F2 before 006G.

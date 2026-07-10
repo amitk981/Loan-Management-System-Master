@@ -1,0 +1,103 @@
+   138	def validate_access_session(access_token):
+   139	    """Return the active session bound to `access_token` or raise `TokenError`.
+   140	
+   141	    `/auth/me/` needs current session state, not only stateless JWT validity:
+   142	    logout/session revocation and user status changes must block profile,
+   143	    permissions, and action availability.
+   144	    """
+   145	    claims = validate_access_token(access_token)
+   146	    try:
+   147	        session = UserSession.objects.select_related("user", "user__primary_role").get(
+   148	            user_session_id=claims["session_id"]
+   149	        )
+   150	    except (KeyError, UserSession.DoesNotExist) as exc:
+   151	        raise TokenError("INVALID_TOKEN", "Access session does not exist.") from exc
+   152	
+   153	    if str(session.user_id) != str(claims.get("user_id", "")):
+   154	        raise TokenError("INVALID_TOKEN", "Access token user does not match session.")
+   155	    if not session.is_active():
+   156	        raise TokenError("INVALID_TOKEN", "Access session is not active.")
+   157	    if not session.user.can_authenticate():
+   158	        session.revoke("user_status_changed")
+   159	        raise TokenError("INVALID_TOKEN", "User is not active.")
+   160	    return session
+   161	
+   162	
+   163	def effective_permission_codes(user):
+   164	    if user.primary_role.status != "active":
+   165	        return []
+   166	    codes = Permission.objects.filter(
+   167	        role_permissions__role=user.primary_role
+   168	    ).values_list("permission_code", flat=True)
+   169	    return sorted(set(codes))
+   170	
+   171	
+   172	def role_payload(user):
+   173	    if user.primary_role.status != "active":
+   174	        return []
+   175	    return [
+   176	        {
+   177	            "role_code": user.primary_role.role_code,
+   178	            "role_name": user.primary_role.role_name,
+   179	        }
+   180	    ]
+   181	
+   182	
+   183	def team_payload(user):
+   184	    memberships = (
+   185	        user.team_memberships.filter(status="active", team__status="active")
+   186	        .select_related("team")
+   187	        .order_by("team__team_code")
+   188	    )
+   189	    return [
+   190	        {
+   191	            "team_code": membership.team.team_code,
+   192	            "team_name": membership.team.team_name,
+   193	        }
+   194	        for membership in memberships
+   195	    ]
+   196	
+   197	
+   198	def current_user_payload(user):
+   199	    permissions = effective_permission_codes(user)
+   200	    roles = role_payload(user)
+   201	    teams = team_payload(user)
+   202	    payload = {
+   203	        "user_id": str(user.user_id),
+   204	        "full_name": user.full_name,
+   205	        "email": user.email,
+   206	        "mobile_number": user.mobile_number,
+   207	        "status": user.status,
+   208	        "roles": roles,
+   209	        "teams": teams,
+   210	        "role_codes": [role["role_code"] for role in roles],
+   211	        "team_codes": [team["team_code"] for team in teams],
+   212	        "permissions": permissions,
+   213	        "available_actions": permissions,
+   214	    }
+   215	    portal_account = getattr(user, "portal_account", None)
+   216	    if portal_account is not None:
+   217	        portal_permissions = [
+   218	            "portal.member.profile.read_own",
+   219	            "portal.loan_application.read_own",
+   220	            "portal.document.read_own",
+   221	            "portal.loan_account.read_own",
+   222	            "portal.notice.read_own",
+   223	            "portal.grievance.manage_own",
+   224	        ]
+   225	        payload.update(
+   226	            {
+   227	                "member_id": str(portal_account.member_id),
+   228	                "portal_account_id": str(portal_account.portal_account_id),
+   229	                "portal_role": "borrower_member",
+   230	                "member_display_name": portal_account.member.display_name,
+   231	                "permissions": portal_permissions,
+   232	                "available_actions": portal_permissions,
+   233	            }
+   234	        )
+   235	    return payload
+   236	
+   237	
+   238	def current_user_payload_for_access_token(access_token):
+   239	    session = validate_access_session(access_token)
+   240	    return current_user_payload(session.user)

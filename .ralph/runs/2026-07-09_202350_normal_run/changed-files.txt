@@ -1,0 +1,13 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/005E-completeness-workbench.md
+ M docs/slices/005F-deficiency-creation-and-resolution.md
+ M docs/slices/005FA-member-portal-authentication.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-005-application-intake.md
+ M sfpcl_credit/applications/services.py
+ M sfpcl_credit/applications/views.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/tests/test_loan_applications_api.py
+?? .ralph/runs/2026-07-09_202350_normal_run/

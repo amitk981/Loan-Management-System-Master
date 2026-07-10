@@ -1,0 +1,18 @@
+# No-Op Check Results
+
+PASS: the run produced real changes:
+- docs/slices/004H-kyc-upload-and-verification.md
+- docs/slices/004I-sensitive-masking-and-reveal-audit.md
+- docs/working/API_CONTRACTS.md
+- docs/working/ASSUMPTIONS.md
+- docs/working/HANDOFF.md
+- docs/working/digests/epic-004-member-kyc-master.md
+- sfpcl-lms/src/pages/members/MemberProfile.test.tsx
+- sfpcl-lms/src/pages/members/MemberProfile.tsx
+- sfpcl-lms/src/services/memberProfileApi.ts
+- sfpcl_credit/config/urls.py
+- sfpcl_credit/members/models.py
+- sfpcl_credit/members/services.py
+- sfpcl_credit/members/views.py
+- sfpcl_credit/members/migrations/0007_kycprofile_kycdocument_and_more.py
+- sfpcl_credit/tests/test_member_kyc_api.py

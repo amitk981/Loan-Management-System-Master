@@ -7,7 +7,7 @@ export type LoanPurpose = 'crop_production' | 'agriculture_activity' | 'allied_a
 
 export type ApplicationStatus =
   | 'draft' | 'submitted' | 'incomplete' | 'completeness_check'
-  | 'deficiency_raised' | 'returned_for_rectification' | 'rejected_completeness'
+  | 'deficiency_raised' | 'returned_for_rectification' | 'incomplete_returned' | 'rejected_completeness'
   | 'reference_generated' | 'appraisal_in_progress' | 'appraisal_pending'
   | 'pending_credit_manager_review' | 'credit_review'
   | 'pending_sanction_committee_approval' | 'pending_sanction'

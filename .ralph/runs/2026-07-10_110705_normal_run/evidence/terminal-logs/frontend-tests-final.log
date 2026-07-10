@@ -1,0 +1,30 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_110705_normal_run/sfpcl-lms
+
+ ✓ src/pages/members/MemberDirectory.test.tsx (5 tests) 81ms
+ ✓ src/pages/notifications/NotificationsCenter.test.tsx (6 tests) 86ms
+ ✓ src/pages/Dashboard.test.tsx (13 tests) 74ms
+ ✓ src/pages/borrower/portal/PortalMemberViews.test.tsx (4 tests) 44ms
+ ✓ src/pages/applications/ApplicationDetail.test.tsx (8 tests) 113ms
+ ✓ src/pages/members/Borrower360.test.tsx (4 tests) 127ms
+ ✓ src/pages/members/MemberProfile.test.tsx (25 tests) 315ms
+ ✓ src/services/portalApi.test.ts (3 tests) 7ms
+ ✓ src/services/authSession.test.ts (15 tests) 19ms
+ ✓ src/services/tracerApi.test.ts (2 tests) 5ms
+ ✓ src/pages/profile/MyProfile.test.tsx (1 test) 26ms
+ ✓ src/pages/applications/ApplicationList.test.tsx (2 tests) 42ms
+ ✓ src/services/applicationIntakeApi.test.ts (3 tests) 10ms
+ ✓ src/services/navigationPermissions.test.ts (7 tests) 7ms
+ ✓ src/utils/applicationDisplay.test.ts (5 tests) 5ms
+ ✓ src/pages/applications/NomineeSelectionViews.test.tsx (3 tests) 24ms
+
+ Test Files  16 passed (16)
+      Tests  106 passed (106)
+   Start at  11:44:11
+   Duration  1.68s (transform 1.78s, setup 0ms, collect 4.75s, tests 985ms, environment 2ms, prepare 1.25s)
+

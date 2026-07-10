@@ -1,0 +1,37 @@
+   228	
+   229	### Validations and Errors
+   230	
+   231	- Show generic invalid credential message without revealing whether the user exists.
+   232	- Lock or rate-limit after repeated failed attempts.
+   233	- Block inactive / suspended portal users.
+   234	- If member has no portal access, show support instructions.
+   235	
+   236	### Security Notes
+  1408	The portal must record audit events for all critical actions.
+  1409	
+  1410	| Event | Trigger |
+  1411	|---|---|
+  1412	| `portal.login.success` | Successful member login. |
+  1413	| `portal.login.failed` | Failed login attempt. |
+  1414	| `portal.account.activated` | First-time account activation completed. |
+  1415	| `portal.application.draft_created` | New draft application created. |
+  1416	| `portal.application.saved` | Draft application saved. |
+  1417	| `portal.application.submitted` | Application submitted to SFPCL. |
+  1418	| `portal.document.uploaded` | Borrower uploads document. |
+  1419	| `portal.deficiency.responded` | Borrower responds to deficiency. |
+  1420	| `portal.terms.acknowledged` | Borrower acknowledges sanction terms / term sheet if enabled. |
+  1421	| `portal.document.downloaded` | Borrower downloads issued document. |
+  1422	| `portal.repayment_reference.submitted` | Borrower submits UTR / payment proof if enabled. |
+  1423	| `portal.grievance.created` | Borrower submits grievance. |
+  1424	| `portal.grievance.replied` | Borrower replies to grievance. |
+  1425	| `portal.password.changed` | User changes password. |
+  1426	| `portal.logout` | User logs out. |
+  1427	
+  1428	Audit records should include user ID, member ID, application / loan ID, timestamp, IP/device metadata where available, action, result and linked document/version ID where applicable.
+  1464	## 14.1 Login and Access
+  1465	
+  1466	- Borrower can activate account using verified member details and OTP.
+  1467	- Borrower can log in and view only their own records.
+  1468	- Inactive or unauthorised portal accounts are blocked.
+  1469	- Password reset revokes existing sessions.
+  1470	

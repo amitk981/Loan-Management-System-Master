@@ -50,7 +50,8 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 35 | `005A` Loan Application Draft Create Update | Epic 005 | 004J, | Medium | No | Yes | Yes | Yes |
 | 36 | `005B` Application Submit and Status Transition | Epic 005 | 005A, | Medium | No | Yes | Yes | Yes |
 | 37 | `005C` Reference Number Generation and Loan Request Register | Epic 005 | 005B, | Medium | No | Yes | Yes | Yes |
-| 38 | `005D` Application Document Checklist | Epic 005 | 005C, | Medium | No | Yes | Yes | Yes |
+| 37a | `005C2` Application Object Access Hardening | Epic 005 | 005C, | Medium | No | Yes | No | Yes |
+| 38 | `005D` Application Document Checklist | Epic 005 | 005C2, | Medium | No | Yes | Yes | Yes |
 | 39 | `005E` Completeness Workbench | Epic 005 | 005D, | Medium | Yes | Yes | Yes | Yes |
 | 40 | `005F` Deficiency Creation and Resolution | Epic 005 | 005E, | Medium | No | Yes | Yes | Yes |
 | 40a | `005FA` Member Portal Authentication | Epic 005 | 005F, | High | Yes | Yes | Yes | Yes |

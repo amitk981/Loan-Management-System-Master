@@ -1,0 +1,28 @@
+{
+  "staff_detail": {
+    "loan_application_id": "staff-created-example",
+    "assigned_owner": null,
+    "nominee": {
+      "nominee_id": "nominee-safe-1",
+      "nominee_name": "Safe Nominee",
+      "age_at_application": 42,
+      "minor_flag": false,
+      "kyc_status": "verified",
+      "relationship_to_borrower": "Spouse",
+      "signature_required_flag": true
+    }
+  },
+  "portal_created_staff_detail": {
+    "loan_application_id": "portal-created-example",
+    "assigned_owner": null
+  },
+  "invalid_nominee_patch": {
+    "success": false,
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "field_errors": {
+        "nominee_id": "Selected nominee must be at least 18 years old."
+      }
+    }
+  }
+}

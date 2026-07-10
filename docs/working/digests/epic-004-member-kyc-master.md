@@ -75,3 +75,276 @@ before implementation.
   object-scope facts are still unmodeled, so 004B gates by `members.member.read` and records A-030.
 - Future slices should add object-scope enforcement only when source-backed member/team ownership
   facts exist.
+
+## 004C Profile Detail Extracts
+- `data-model.md` §10.2 requires individual-profile first/last name and permits nullable middle
+  name, gender, date of birth, occupation, and employment/service years. One row belongs only to
+  an `individual_farmer`.
+- §10.3 requires producer/FPC institution type and authorised-signatory name; registration number,
+  produce-supply years, and sensitive signatory identifiers are nullable. One row belongs only to
+  an `fpc` or `producer_institution`.
+- 004C returns the remaining individual fields and the existing non-sensitive producer fields from
+  `GET /api/v1/members/{member_id}/`. Missing type-specific rows remain `null`.
+- Signatory PAN/Aadhaar remain deferred because §13.5 requires reason capture, expiry, audit, and
+  no frontend caching. They are neither stored nor serialized by 004C.
+- `api-contracts.md` §14.1-§14.3 define nominee list/create plus minor, required PAN/Aadhaar, and
+  identity-format errors. `data-model.md` §10.4 requires encrypted/hash identity storage,
+  `minor_flag = false`, and nominee signatures; `auth-permissions.md` maps reads to
+  `members.nominee.read` and creates to `members.nominee.create`.
+- `data-model.md` §10.5 says a witness belongs to a loan application, must be an existing SFPCL
+  shareholder, needs KYC, and signs the Loan Agreement/SH-4 where applicable. Because 004E follows
+  nominee work but precedes application/shareholding persistence, it must not invent a standalone
+  witness endpoint or fake shareholder verification.
+
+## 004D Nominee Extracts
+- 004D implements `GET`/`POST /api/v1/members/{member_id}/nominees/` from `api-contracts.md`
+  §14.1-§14.3 as member-level nominee list/create only. Application-specific snapshot behavior
+  remains deferred; `loan_application_id` is nullable storage and is not accepted by the API.
+- `data-model.md` §10.4 fields now exist in `nominees`: member FK, nullable application UUID,
+  nominee name, DOB, age snapshot, gender, relationship, protected PAN/Aadhaar token storage plus
+  keyed hashes, `kyc_status`, `minor_flag`, signature-required flag, and timestamps.
+- `auth-permissions.md` §12.2 and endpoint map split read/create permissions:
+  `members.nominee.read` for `GET` and `members.nominee.create` for `POST`. 004D does not reuse
+  `members.member.read` for nominee creation.
+- Validation: PAN and Aadhaar are required; missing values return `MISSING_REQUIRED_FIELD`, invalid
+  source formats return `INVALID_PAN_FORMAT` / `INVALID_AADHAAR_FORMAT`, and nominees under legal
+  majority return `NOMINEE_MINOR_NOT_ALLOWED`. A-031 records the age-18 majority default pending
+  source confirmation.
+- Responses and audit metadata expose masked PAN/Aadhaar only and never full plaintext identity
+  values. Nominee create writes `members.nominee.created`; masked list/read writes no workflow event.
+- Member Profile's Nominee tab is API-backed with existing card/empty/alert/form styles. It must not
+  restore `mockData` nominee rows such as the old synthetic `Sudha Patil` example.
+- `data-model.md` §10.5 and `screen-spec.md` S09 require witnesses to belong to a loan application,
+  resolve to an existing SFPCL shareholder/member or folio, carry protected PAN/Aadhaar, and remain
+  incomplete until shareholder/KYC verification is complete. 004E should not create a member-level
+  witness endpoint if loan applications/shareholdings are still absent.
+- `api-contracts.md` §15.1-§15.2 define member shareholding list/create/update:
+  `GET`/`POST /api/v1/members/{member_id}/shareholdings/` and
+  `PATCH /api/v1/shareholdings/{shareholding_id}/`. Response fields include `shareholding_id`,
+  `folio_number`, `number_of_shares`, `holding_mode`, valuation snapshot fields,
+  `pledged_share_count`, `available_share_count`, and `future_shares_pledge_flag`.
+- `data-model.md` §11.1 requires `shareholdings` with member FK, folio, non-negative share counts,
+  holding mode (`physical`/`demat`/`mixed`), optional demat/valuation references, pledged and
+  available counts, future-pledge flag, status, and timestamps. Constraints: shares cannot be
+  negative, pledged shares cannot exceed total shares, and available shares equal total minus
+  pledged when maintained.
+- `data-model.md` §11.2 defines `share_certificates` under a shareholding: certificate number,
+  optional distinctive-number range, share count, optional document FK, and status
+  (`active`/`pledged`/`transferred`). 004F should only implement certificate behavior if it can stay
+  within one slice alongside the shareholding API; otherwise split certificates into a follow-up.
+- `auth-permissions.md` maps shareholding endpoints to `members.shareholding.read`,
+  `members.shareholding.create`, and `members.shareholding.update`.
+
+## 004D2 Contract-Hardening Extracts
+- `auth-permissions.md` §30.2 requires actor/action/entity/old/new values/request/IP/user-agent
+  audit contents, and §30.3 AUD-005/AUD-006 allows only masked values or metadata, not sensitive
+  data values, in audit logs.
+- `api-contracts.md` §13.3 shows member-detail `available_actions[]`, and §44 says detail endpoints
+  may return action availability for frontend usability, but the backend remains the source of
+  workflow gates. 004D2 keeps member profile detail neutral by returning `available_actions: []`
+  until 005A and later eligibility slices own loan-start actions and blockers.
+- `api-contracts.md` §14.1-§14.3 plus local API contracts keep nominee PAN/Aadhaar required,
+  validated, stored as protected tokens plus keyed hashes, and returned masked. 004D2 removes
+  nominee PAN/Aadhaar plaintext, encrypted token keys, hash keys, and submitted identity-derived hash
+  values from `members.nominee.created` audit metadata only; stored hash columns stay unchanged for
+  duplicate/search support.
+- Queue sharpening on 2026-07-09: 004E witness validation is blocked until persisted
+  shareholding/shareholder facts and a real loan-application boundary exist. 004F shareholding now
+  follows 004D2 directly so witness verification can later resolve against real facts instead of a
+  member-level or boolean-only stub.
+
+## 004F Shareholding Extracts
+- `api-contracts.md` §15.1-§15.2 define member shareholding list/create/update. 004F implements
+  only `GET`/`POST /api/v1/members/{member_id}/shareholdings/`; `PATCH
+  /api/v1/shareholdings/{shareholding_id}/` is deferred to a follow-up slice.
+- `data-model.md` §11.1 requires member FK, folio number, non-negative share count, holding mode
+  (`physical`/`demat`/`mixed`), nullable demat/valuation references, valuation snapshot fields,
+  pledged and available share counts, future-shares pledge flag, status, and timestamps.
+  004F maintains `available_share_count = number_of_shares - pledged_share_count` and rejects
+  pledged shares above total shares.
+- `auth-permissions.md` §12.2/endpoint map uses `members.shareholding.read` for list and
+  `members.shareholding.create` for create. 004F does not use `members.member.read` as a substitute
+  for shareholding access.
+- 004F writes `members.shareholding.created` audit metadata for successful creates and no workflow
+  event. Read-only list access writes no audit/workflow row.
+- Member Profile's Shareholding tab is API-backed and must not render `mockData` shareholding rows
+  or a certificate placeholder as the primary backend-backed state. It uses existing card, empty
+  panel, alert, and form patterns.
+- `data-model.md` §11.2 share certificates remain deferred: certificate number, optional
+  distinctive range, share count, optional document FK, and active/pledged/transferred status should
+  be implemented in a small follow-up slice, not folded into unrelated land/KYC work.
+
+## 004G/004H Queue-Sharpening Extracts
+- `api-contracts.md` §17.1 defines land-holding endpoints:
+  `GET`/`POST /api/v1/members/{member_id}/land-holdings/` and detail/update
+  `/api/v1/land-holdings/{land_holding_id}/`. Create request fields: `document_type`,
+  `survey_number`, `village`, `taluka`, `district`, `state`, `area_acres`, `document_id`.
+- `api-contracts.md` §17.2 defines crop-plan endpoints:
+  `GET`/`POST /api/v1/members/{member_id}/crop-plans/` and detail/update
+  `/api/v1/crop-plans/{crop_plan_id}/`. Create request fields: nullable
+  `loan_application_id`, `crop_type`, `season`, `planned_area_acres`,
+  `estimated_cost_amount`, `loan_purpose_alignment`, and nullable `document_id`.
+- `data-model.md` §11.7 requires land-holding verification fields and says 7/12 extract is
+  required for loan application, while `area_acres` feeds land-based loan limit. 004G must not
+  invent loan-limit calculations or application blockers.
+- `data-model.md` §11.8 requires crop-plan verification fields. 004G should persist records and
+  validation only; loan-purpose eligibility decisions belong to later application/eligibility
+  slices.
+- `api-contracts.md` §18.1-§18.5 define KYC profile list/create/update, document upload, document
+  verify, and re-KYC review endpoints. `data-model.md` §12.1-§12.2 requires `kyc_profiles` and
+  `kyc_documents`; KYC must be complete before disbursement, and re-KYC recurs every two years.
+- Screen spec S06 Land and Crop Evidence tab fields are 7/12 extract document, land area under
+  cultivation, crop plan, crop type, season, per-acre scale of finance, and land-based eligible
+  amount. 004G should not add frontend UI unless it wires to real backend data using existing
+  Member Profile patterns.
+
+## 004G Landholding and Crop Plan Extracts
+- 004G implements only `GET`/`POST /api/v1/members/{member_id}/land-holdings/` and
+  `GET`/`POST /api/v1/members/{member_id}/crop-plans/`. Detail/update endpoints remain deferred.
+- `land_holdings` now stores member FK, document type, survey/location fields, positive
+  `area_acres`, required `document_id`, verification status, nullable verifier/timestamp, and
+  created timestamp.
+- `crop_plans` now stores member FK, nullable `loan_application_id`, crop type, season, positive
+  `planned_area_acres`, optional estimated cost, loan-purpose alignment, optional `document_id`,
+  verification status, nullable verifier/timestamp, and created timestamp.
+- Because `auth-permissions.md` has no land/crop-specific codes, A-032 records the 004G assumption:
+  lists use `members.member.read`, creates use `members.member.update`, and no new permission codes
+  are seeded.
+- Successful creates write metadata-only audit rows: `members.land_holding.created` and
+  `members.crop_plan.created`. Read-only lists write no access audit and no workflow event.
+- Validation rejects zero/negative acreage, missing land `document_id`, malformed UUIDs, and missing
+  required create fields. Loan-limit calculations, per-acre scale-of-finance, purpose eligibility,
+  application blockers, verification actions, and land/crop detail updates are deferred.
+- Member Profile's Land & Crop tab is API-backed with loading/empty/error/list/validation/success
+  states using existing Member Profile card, empty-panel, alert, and form patterns. It does not show
+  per-acre scale of finance or land-based eligible amount because no source-backed calculation
+  endpoint exists yet.
+
+## 004H KYC Upload and Verification Extracts
+- 004H implements member-party KYC only:
+  `GET/POST /api/v1/kyc-profiles/`, `PATCH /api/v1/kyc-profiles/{kyc_profile_id}/`,
+  `POST /api/v1/kyc-profiles/{kyc_profile_id}/documents/`, and
+  `POST /api/v1/kyc-documents/{kyc_document_id}/verify/`.
+- `kyc_profiles` stores party type/id, status, CKYC consent, optional beneficial-ownership flag,
+  risk rating, verification user/timestamp, re-KYC due date, and rejection reason. One profile is
+  allowed per member party.
+- `kyc_documents` stores profile FK, allowed document type (`pan`, `aadhaar`, `photo`,
+  `ckyc_consent`), restricted `document_files` FK, self-attestation flag, verification status,
+  verifier/timestamp, remarks, and created timestamp.
+- Permissions are source KYC codes only: profile read/create/update, document upload, and document
+  verify. No `kyc.document.download`, `kyc.sensitive.reveal`, or `kyc.rekyc.manage` behavior is
+  implemented.
+- PAN and Aadhaar uploads require self-attestation. KYC upload/verify audits are metadata-only and
+  exclude identity plaintext, identity hashes, encrypted CKYC identifiers, and file bytes.
+- A-033 records the temporary status rollup: document verification updates profile/member KYC status
+  and sets re-KYC due two years after verified results until source-backed completeness rules exist.
+- Member Profile's KYC tab is API-backed with loading/empty/error/list/validation/success states
+  using existing profile card, empty-panel, alert, field, and status-badge patterns. Sensitive reveal
+  remains deferred to 004I.
+
+## 004H2/004J Architecture-Review Extracts
+- Architecture review 2026-07-09 found that `kyc_profiles` has a one-profile-per-party database
+  constraint, and this digest says one profile is allowed per member party. 004H2 should add a
+  failing-first duplicate-create regression and return a standard validation envelope before the
+  database raises an unhandled uniqueness error.
+- `data-model.md` §12.3 defines `bank_accounts` with owner party type/id, holder name, protected
+  account number storage/hash/last4, IFSC, bank and branch names, verification status, nullable
+  cancelled-cheque link, signature-verified flag, and active/inactive status.
+- `data-model.md` §12.4 defines `cancelled_cheques` with loan-application/member/document IDs,
+  protected account-number storage, IFSC, branch, verification status, signature-mismatch flag, and
+  created timestamp. Because loan applications do not exist yet, 004J should either keep the
+  cancelled-cheque boundary member-profile-only with an explicit assumption or defer
+  loan-application-specific cheque behavior.
+- `data-model.md` §12.5 defines `bank_verification_letters` for signature mismatch/detail
+  confirmation with bank signed/stamped flags and verification result. This belongs to a
+  signature-mismatch/documentation workflow unless 004J is split.
+- `data-model.md` §28 includes `bank_accounts.account_number_encrypted` and
+  `cancelled_cheques.account_number_encrypted` in the encrypted sensitive-field set. API responses
+  and audit metadata must expose only masked/last-four account values, never full numbers, encrypted
+  token contents, hashes, cheque images, or file bytes.
+- `screen-spec.md` S11 says duplicate checks include the same bank account in other active borrower
+  records, S15 covers bank verification letters for signature mismatch, and disbursement screens use
+  cheque-derived holder name, masked account number, IFSC, and branch. 004J should persist the
+  foundation facts but not invent duplicate-active-borrower decisions, mismatch resolution,
+  disbursement blockers, or payment initiation.
+
+## 004I Sensitive Reveal Extracts
+- 004I implements only member PAN/Aadhaar reveal:
+  `POST /api/v1/members/{member_id}/reveal-sensitive-field/` with request
+  `field_name` (`pan` or `aadhaar`) and non-empty `reason`.
+- Base member read remains `members.member.read`; field permissions are exact:
+  `members.sensitive.reveal_pan` for `pan` and `members.sensitive.reveal_aadhaar` for `aadhaar`.
+  Broad member read, KYC, document, admin, export, or bank permissions do not grant reveal.
+- `GET /api/v1/members/{member_id}/` stays masked. Its `pan.can_view_full` and
+  `aadhaar.can_view_full` flags reflect only the matching field-specific permission and never
+  include full source values.
+- Successful reveal returns the full value only in the immediate response with a five-minute
+  `expires_at`, `Cache-Control: no-store`, and `Pragma: no-cache`. Frontend code keeps full values
+  only in temporary component state, requires a reason before calling the endpoint, and clears the
+  reason after success.
+- Success audit action: `members.sensitive_field.revealed`. Authenticated denial audit action:
+  `members.sensitive_field.reveal_denied`. Audit metadata includes member ID, field name, reason,
+  outcome, denial reason when applicable, request ID, IP/user-agent, and expiry on success; it
+  excludes full PAN/Aadhaar, encrypted token contents, hash values, and identifier-derived values.
+- Missing auth returns `401 AUTH_REQUIRED` without reveal audit. Missing base read returns
+  `403 PERMISSION_DENIED`; missing field permission returns `403 SENSITIVE_FIELD_ACCESS_DENIED`;
+  invalid field/reason or unavailable source value returns `400 VALIDATION_ERROR`; unknown or
+  soft-deleted member returns `404 NOT_FOUND`. Sensitive reveal writes no workflow event.
+
+## 004J Bank Account and Cancelled Cheque Extracts
+- 004J implements member-profile bank metadata only:
+  `GET/POST /api/v1/members/{member_id}/bank-accounts/` and
+  `GET/POST /api/v1/members/{member_id}/cancelled-cheques/`.
+- `bank_accounts` stores member ownership as `owner_party_type = member` plus `owner_party_id`,
+  holder name, protected account-number token, keyed hash, last four, IFSC, bank/branch names,
+  verification status (`pending`/`verified`/`rejected`), nullable cancelled-cheque FK, nullable
+  signature-verified flag, status (`active`/`inactive`), and created timestamp.
+- `cancelled_cheques` stores member FK, nullable `loan_application_id` placeholder, document ID,
+  protected account-number token, keyed hash, last four, IFSC, branch, verification status,
+  signature-mismatch flag, and created timestamp. Loan-application-specific cheque behavior remains
+  deferred until application persistence exists.
+- Responses expose only masked account-number metadata shaped as
+  `{masked, last4, can_view_full: false}`. Full account numbers, protected token contents, and
+  account-number hashes are never serialized or included in audit metadata.
+- Because `auth-permissions.md` has no exact bank-account metadata codes, A-034 records the 004J
+  assumption: lists use `members.member.read`, creates use `members.member.update`, and no new
+  permission codes are seeded. PAN/Aadhaar reveal, KYC, document, disbursement, export, and security
+  permissions do not grant bank metadata access or reveal.
+- Successful creates write metadata-only audit rows: `members.bank_account.created` and
+  `members.cancelled_cheque.created`. Read-only lists write no audit/workflow row, and create
+  actions write no workflow event.
+- Validation rejects missing holder/account/IFSC facts, account numbers shorter than four digits,
+  malformed UUID fields, unsupported verification status, and unsupported bank-account status.
+  Duplicate-active-borrower warnings, bank verification letters, signature mismatch resolution,
+  blank-dated cheque custody, disbursement gates, payment initiation, and bank-account full reveal
+  are deferred.
+
+## 004K Borrower 360 and KYC UI Wiring Extracts
+- 004K wires `Borrower360` to existing Epic 004 frontend client methods and adds bank/cancelled
+  cheque fetch methods for `GET /api/v1/members/{member_id}/bank-accounts/` and
+  `GET /api/v1/members/{member_id}/cancelled-cheques/`.
+- Borrower 360 now composes member detail, shareholding, land/crop, nominee, KYC profile/document,
+  bank-account, and cancelled-cheque metadata in the approved existing card/tab/status patterns.
+  It no longer imports `mockData` or renders the former synthetic loan, repayment, communication,
+  risk, audit, security, or nominee rows.
+- PAN/Aadhaar display remains masked by default. If the backend marks a field revealable, the page
+  captures a reason and calls the 004I reveal endpoint; full values remain temporary component state
+  only with backend expiry messaging and a hide control.
+- Bank-account and cancelled-cheque account numbers are normalized to masked/last-four metadata with
+  `can_view_full: false`; the UI has no bank reveal affordance and does not add duplicate-active
+  borrower warnings, signature-mismatch resolution, payment initiation, or disbursement-readiness
+  controls.
+- Later application, loan-account, repayment, communication, risk/exception, and audit API wiring
+  remains deferred. Borrower 360 shows explicit empty states for those modules instead of reusing
+  prototype mock data.
+
+## 004K2 Architecture-Review Extract
+- Architecture review 2026-07-09 found a frontend/backend DTO mismatch in the Borrower 360 bank
+  metadata path: the 004J backend/API contract serializes bank-account holder names as
+  `account_holder_name`, but the 004K frontend type, normalizer, and tests use `holder_name`.
+- Corrective slice 004K2 should preserve the backend field name, update the frontend API type and
+  normalizer to consume `account_holder_name`, render that value on Borrower 360, and add a
+  regression using the real backend response shape.
+- Bank account numbers must remain masked-only with `can_view_full: false`; 004K2 must not add a
+  bank-account reveal flow, duplicate-active-borrower warning, signature-mismatch workflow,
+  payment initiation, or disbursement-readiness UI.

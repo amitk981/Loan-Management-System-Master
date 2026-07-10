@@ -53,6 +53,26 @@ limit_exhausted() {
   grep -q "AGENT_LIMIT_EXHAUSTED" "$last_out"
 }
 
+# Advisory context-occupancy monitor. After a run, report the agent's PEAK
+# per-call context vs the model window and record a note when it enters the
+# watch/breach band. Strictly non-fatal: it never changes a run's exit status
+# or the loop's control flow — splitting a slice stays an owner decision.
+# Thresholds are tunable via env without editing this file.
+context_watch_log=".ralph/logs/context-watch.log"
+context_tripwire_check() {
+  command -v python3 >/dev/null 2>&1 || return 0
+  [[ -f scripts/ralph-context-tripwire.py ]] || return 0
+  local fail="${CONTEXT_TRIPWIRE_FAIL:-0.85}" watch="${CONTEXT_TRIPWIRE_WATCH:-0.70}" out rc
+  out="$(python3 scripts/ralph-context-tripwire.py --last 1 --threshold "$fail" --watch "$watch" 2>/dev/null)"
+  rc=$?
+  printf '%s\n' "$out" | tee -a "$loop_log"
+  if (( rc != 0 )) || printf '%s' "$out" | grep -q '\[watch \]'; then
+    printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$(printf '%s' "$out" | grep -E '\[(watch |BREACH)\]')" >> "$context_watch_log"
+    echo "Context trip-wire: run entered the watch/breach band (advisory; run NOT failed). History: $context_watch_log" | tee -a "$loop_log"
+  fi
+  return 0
+}
+
 # Switches active_tool to the other agent, or exits 3 when no usable agent
 # remains (fallback disabled, other tool already exhausted, or not installed).
 switch_agent_or_stop() {
@@ -88,6 +108,7 @@ for ((i = 1; i <= max_iterations; i++)); do
     echo "Architecture review is due; running it before the next slice." | tee -a "$loop_log"
     run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode architecture-review
     review_status=$?
+    context_tripwire_check
     if (( review_status != 0 )); then
       if limit_exhausted; then
         switch_agent_or_stop
@@ -99,6 +120,7 @@ for ((i = 1; i <= max_iterations; i++)); do
 
   run_streamed env AGENT_TOOL="$active_tool" ./scripts/afk-dev.sh 1 --mode normal
   status=$?
+  context_tripwire_check
 
   if grep -q "No eligible slice found" "$last_out"; then
     echo "Queue complete: no eligible slices remain. Ralph loop finished." | tee -a "$loop_log"
@@ -134,6 +156,7 @@ for ((i = 1; i <= max_iterations; i++)); do
       run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair
       repair_status=$?
     fi
+    context_tripwire_check
 
     if (( repair_status != 0 )); then
       echo "Repair run also failed. Stopping the loop for human review — see $loop_log and the latest .ralph/runs/ folder." | tee -a "$loop_log"

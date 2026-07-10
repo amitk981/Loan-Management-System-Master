@@ -1,0 +1,29 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/portalApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_002243_normal_run/sfpcl-lms
+
+ ❯ src/services/portalApi.test.ts (3 tests | 1 failed) 6ms
+   ✓ portal member API client > loads dashboard, profile, and produce supply using the stored portal bearer token 3ms
+   ✓ portal member API client > surfaces portal permission errors without substituting mock member data 0ms
+   × portal member API client > creates, updates, submits, lists, and reads portal applications with the stored bearer token 2ms
+     → createPortalApplicationDraft is not a function
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/portalApi.test.ts > portal member API client > creates, updates, submits, lists, and reads portal applications with the stored bearer token
+TypeError: createPortalApplicationDraft is not a function
+ ❯ src/services/portalApi.test.ts:76:18
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  00:28:27
+   Duration  379ms (transform 71ms, setup 0ms, collect 71ms, tests 6ms, environment 0ms, prepare 36ms)
+

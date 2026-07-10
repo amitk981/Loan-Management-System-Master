@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_configuration_resolver_returns_the_single_effective_board_policy (tests.test_credit_modules.CreditEligibilityModuleTests.test_configuration_resolver_returns_the_single_effective_board_policy)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_152757_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 212, in test_configuration_resolver_returns_the_single_effective_board_policy
+    from sfpcl_credit.configurations.modules.configuration_resolver import (
+ModuleNotFoundError: No module named 'sfpcl_credit.configurations.modules'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.016s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

@@ -5,6 +5,7 @@ const PRE_REFERENCE_STATUSES = new Set([
   'submitted',
   'completeness_check',
   'incomplete',
+  'incomplete_returned',
   'deficiency_raised',
   'returned_for_rectification',
   'rejected_completeness',
@@ -28,7 +29,7 @@ export const getApplicationStatusLabel = (app: LoanApplication) => {
   if (app.status === 'completeness_check') {
     return 'Pending Completeness';
   }
-  if (app.status === 'deficiency_raised' || app.status === 'returned_for_rectification' || app.status === 'incomplete') {
+  if (app.status === 'deficiency_raised' || app.status === 'returned_for_rectification' || app.status === 'incomplete' || app.status === 'incomplete_returned') {
     return 'Returned for Rectification';
   }
   if (app.status === 'rejected_completeness') {

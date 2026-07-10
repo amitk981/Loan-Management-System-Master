@@ -1,0 +1,6 @@
+Frontend quality gates (final rerun)
+- eslint src: PASS
+- tsc --noEmit: PASS
+- vitest: PASS, 16 files / 102 tests
+- vite build: PASS, 1868 modules transformed
+- Existing Vite CJS deprecation and bundle-size advisory warnings only.

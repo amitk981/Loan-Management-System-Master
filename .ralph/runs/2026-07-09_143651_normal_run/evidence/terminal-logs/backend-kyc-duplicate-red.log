@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_duplicate_kyc_profile_create_returns_validation_error_without_extra_rows (tests.test_member_kyc_api.MemberKycApiTests.test_duplicate_kyc_profile_create_returns_validation_error_without_extra_rows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-09_143651_normal_run/sfpcl_credit/tests/test_member_kyc_api.py", line 99, in test_duplicate_kyc_profile_create_returns_validation_error_without_extra_rows
+    self.assertEqual(
+AssertionError: {'__all__': 'Kyc profile with this Party type and Party id already exists.'} != {'party_id': 'A KYC profile already exists for this member.'}
+- {'__all__': 'Kyc profile with this Party type and Party id already exists.'}
++ {'party_id': 'A KYC profile already exists for this member.'}
+
+----------------------------------------------------------------------
+Ran 1 test in 2.758s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

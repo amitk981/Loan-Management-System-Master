@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ClipboardList, Save, CheckCircle2, AlertTriangle, ChevronLeft, ChevronRight, UserRound, Shield, IndianRupee, Signature, Upload, FileCheck } from 'lucide-react';
 import { useRole } from '../../../../contexts/RoleContext';
+import { AuthSessionError } from '../../../../services/authSession';
+import {
+  createPortalApplicationDraft,
+  fetchPortalProfile,
+  submitPortalApplication,
+  updatePortalApplicationDraft,
+  type PortalApplication,
+  type PortalNominee,
+} from '../../../../services/portalApi';
 
 type ApplicationStep = 'applicant' | 'shareholding' | 'loan' | 'nominee' | 'documents' | 'declarations' | 'review';
 
 interface MP05_NewApplicationProps {
-  onNavigateToApplication: () => void;
+  onNavigateToApplication: (id: string) => void;
 }
 
 const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToApplication }) => {
@@ -13,6 +22,13 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
   const [applicationStep, setApplicationStep] = useState<ApplicationStep>('applicant');
   const [applicationSubmitted, setApplicationSubmitted] = useState(false);
   const [applicationDraftSaved, setApplicationDraftSaved] = useState(false);
+  const [savedApplication, setSavedApplication] = useState<PortalApplication | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [apiMessage, setApiMessage] = useState<string | null>(null);
+  const [nomineeOptions, setNomineeOptions] = useState<PortalNominee[]>([]);
+  const [selectedNomineeId, setSelectedNomineeId] = useState('');
+  const [nomineesLoading, setNomineesLoading] = useState(true);
+  const [nomineesError, setNomineesError] = useState(false);
   
   const [borrowerApplication, setBorrowerApplication] = useState({
     applicantType: 'individual_farmer',
@@ -36,15 +52,6 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
     expectedRepaymentDate: '2026-03-31',
     loanType: 'short_term',
     subsidiaryRepayment: 'Sahyadri Farms Post Harvest Care Ltd.',
-    nomineeName: 'Suman Thorat',
-    nomineeDob: '1983-04-12',
-    nomineeAge: 42,
-    nomineeGender: 'female',
-    nomineeRelationship: 'Spouse',
-    nomineeMobile: '+91 99887 76655',
-    nomineeAddress: 'Same as borrower',
-    nomineePan: 'FGHIJ5678K',
-    nomineeAadhaar: '4421',
     borrowerSignature: false,
     nomineeSignature: false,
     declarations: {
@@ -55,6 +62,27 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
       sanctionTerms: false,
     },
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPortalProfile()
+      .then(profile => {
+        if (cancelled) return;
+        setNomineeOptions(profile.nominees);
+        setNomineesError(false);
+        setApiMessage(null);
+      })
+      .catch(error => {
+        if (cancelled) return;
+        setNomineeOptions([]);
+        setNomineesError(true);
+        setApiMessage(error instanceof AuthSessionError ? error.message : 'Nominees could not be loaded.');
+      })
+      .finally(() => {
+        if (!cancelled) setNomineesLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const requiredApplicationDocuments = [
     { id: 'borrowerPan', label: 'Borrower PAN', requiredFor: 'All borrowers', note: 'Self-attested PAN card copy' },
@@ -91,14 +119,17 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
 
   const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
   const formatCurrency = (value: number) => `₹${value.toLocaleString('en-IN')}`;
+  const selectedNominee = nomineeOptions.find(item => item.nominee_id === selectedNomineeId);
 
   const updateApplication = (field: string, value: string | number | boolean) => {
     setApplicationDraftSaved(false);
+    setApiMessage(null);
     setBorrowerApplication(prev => ({ ...prev, [field]: value }));
   };
 
   const updateDeclaration = (field: keyof typeof borrowerApplication.declarations, value: boolean) => {
     setApplicationDraftSaved(false);
+    setApiMessage(null);
     setBorrowerApplication(prev => ({
       ...prev,
       declarations: { ...prev.declarations, [field]: value },
@@ -107,6 +138,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
 
   const toggleDocument = (docId: string, field: 'uploaded' | 'selfAttested') => {
     setApplicationDraftSaved(false);
+    setApiMessage(null);
     setApplicationDocs(prev => ({
       ...prev,
       [docId]: { ...prev[docId], [field]: !prev[docId]?.[field] },
@@ -127,8 +159,8 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
       message: 'Loan amount must be within eligible limit and purpose must be crop production or agriculture related.',
     },
     nominee: {
-      ok: Boolean(borrowerApplication.nomineeName && borrowerApplication.nomineeGender && borrowerApplication.nomineePan && borrowerApplication.nomineeAadhaar) && borrowerApplication.nomineeAge >= 18 && panPattern.test(borrowerApplication.nomineePan),
-      message: 'Nominee name, adult age, gender, PAN and Aadhaar are mandatory.',
+      ok: Boolean(selectedNomineeId),
+      message: 'Select an existing nominee from your member profile.',
     },
     documents: {
       ok: allDocsComplete,
@@ -148,7 +180,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
     ['Applicant details complete', stepValidations.applicant.ok],
     ['Folio number and shares captured', stepValidations.shareholding.ok],
     ['Requested amount and agriculture purpose valid', stepValidations.loan.ok],
-    ['Nominee details complete and adult', stepValidations.nominee.ok],
+    ['Nominee selected', stepValidations.nominee.ok],
     ['Mandatory documents uploaded and self-attested', stepValidations.documents.ok],
     ['Borrower and nominee signatures captured', borrowerApplication.borrowerSignature && borrowerApplication.nomineeSignature],
     ['Declarations accepted', allDeclarationsAccepted],
@@ -168,6 +200,53 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
 
   const canSubmitApplication = completenessItems.every(([, complete]) => complete);
 
+  const portalDraftPayload = () => ({
+    nominee_id: selectedNomineeId || null,
+    required_loan_amount: String(borrowerApplication.requestedAmount),
+    declared_purpose: borrowerApplication.loanPurpose.replace(/_/g, ' '),
+    purpose_category: borrowerApplication.loanPurpose,
+    loan_type_requested: borrowerApplication.loanType,
+    borrower_request_notes: `${borrowerApplication.crop} ${borrowerApplication.season}`.trim(),
+    terms_acceptance_flag: allDeclarationsAccepted,
+  });
+
+  const saveDraft = async () => {
+    setSaving(true);
+    setApiMessage(null);
+    try {
+      const draft = savedApplication
+        ? await updatePortalApplicationDraft(savedApplication.loan_application_id, portalDraftPayload())
+        : await createPortalApplicationDraft(portalDraftPayload());
+      setSavedApplication(draft);
+      setApplicationDraftSaved(true);
+    } catch (error) {
+      setApiMessage(error instanceof AuthSessionError
+        ? error.fieldErrors?.nominee_id ?? error.message
+        : 'Draft could not be saved.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const submitApplication = async () => {
+    setSaving(true);
+    setApiMessage(null);
+    try {
+      const draft = savedApplication
+        ? await updatePortalApplicationDraft(savedApplication.loan_application_id, portalDraftPayload())
+        : await createPortalApplicationDraft(portalDraftPayload());
+      const submitted = await submitPortalApplication(draft.loan_application_id);
+      setSavedApplication(submitted);
+      setApplicationSubmitted(true);
+    } catch (error) {
+      setApiMessage(error instanceof AuthSessionError
+        ? error.fieldErrors?.nominee_id ?? error.message
+        : 'Application could not be submitted.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-xl border border-slate-100 p-5">
@@ -184,11 +263,12 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
           <div className="flex items-center gap-2">
             {applicationDraftSaved && <span className="text-xs font-medium text-green-700">Draft saved</span>}
             <button
-              onClick={() => setApplicationDraftSaved(true)}
+              onClick={saveDraft}
+              disabled={saving}
               className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
             >
               <Save size={15} />
-              Save Draft
+              {saving ? 'Saving...' : 'Save Draft'}
             </button>
           </div>
         </div>
@@ -224,7 +304,11 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
             Application ID APP-2026-000001 has been submitted. The official LO reference will be generated only after the Deputy Manager - Finance completes the mandatory checklist.
           </p>
           <div className="mt-5 flex flex-col sm:flex-row justify-center gap-3">
-            <button onClick={onNavigateToApplication} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm">
+            <button
+              onClick={() => savedApplication && onNavigateToApplication(savedApplication.loan_application_id)}
+              disabled={!savedApplication}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+            >
               View Application Status
             </button>
             <button onClick={() => setApplicationSubmitted(false)} className="border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">
@@ -388,41 +472,15 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
             <div className="space-y-5">
               <div>
                 <h3 className="font-semibold text-slate-900">Nominee Details</h3>
-                <p className="text-xs text-slate-500 mt-1">Nominee must not be a minor and PAN/Aadhaar copies are mandatory.</p>
+                <p className="text-xs text-slate-500 mt-1">Select an existing adult nominee from your member profile.</p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[
-                  ['Nominee Full Name', 'nomineeName', 'text'],
-                  ['Date of Birth', 'nomineeDob', 'date'],
-                  ['Age', 'nomineeAge', 'number'],
-                  ['Relationship to Borrower', 'nomineeRelationship', 'text'],
-                  ['Mobile Number', 'nomineeMobile', 'text'],
-                  ['PAN', 'nomineePan', 'text'],
-                  ['Aadhaar last 4 digits', 'nomineeAadhaar', 'text'],
-                ].map(([label, field, type]) => (
-                  <div key={field}>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
-                    <input
-                      type={type}
-                      value={String(borrowerApplication[field as keyof typeof borrowerApplication])}
-                      onChange={e => updateApplication(field, type === 'number' ? Number(e.target.value) : field === 'nomineePan' ? e.target.value.toUpperCase() : e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
-                    />
-                  </div>
-                ))}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Gender</label>
-                  <select value={borrowerApplication.nomineeGender} onChange={e => updateApplication('nomineeGender', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Nominee Address</label>
-                  <textarea value={borrowerApplication.nomineeAddress} onChange={e => updateApplication('nomineeAddress', e.target.value)} rows={3} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none" />
-                </div>
-              </div>
+              <PortalNomineeSelectionView
+                nominees={nomineeOptions}
+                selectedNomineeId={selectedNomineeId}
+                loading={nomineesLoading}
+                error={nomineesError}
+                onSelect={setSelectedNomineeId}
+              />
             </div>
           )}
 
@@ -510,7 +568,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
                       ['Requested Amount', formatCurrency(borrowerApplication.requestedAmount)],
                       ['Maximum Limit', formatCurrency(maximumPermissibleLimit)],
                       ['Purpose', borrowerApplication.loanPurpose.replace(/_/g, ' ')],
-                      ['Nominee', `${borrowerApplication.nomineeName}, age ${borrowerApplication.nomineeAge}`],
+                      ['Nominee', selectedNominee ? `${selectedNominee.nominee_name}, age ${selectedNominee.age_at_application ?? 'not recorded'}` : 'Not selected'],
                     ].map(([label, value]) => (
                       <div key={label} className="grid grid-cols-[140px_1fr] gap-3">
                         <span className="text-slate-500">{label}</span>
@@ -541,6 +599,13 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
             </div>
           )}
 
+          {apiMessage && (
+            <div className="mt-5 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+              <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+              {apiMessage}
+            </div>
+          )}
+
           <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-slate-100 pt-4">
             <button
               onClick={goApplicationPrev}
@@ -552,12 +617,12 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
             </button>
             {applicationStep === 'review' ? (
               <button
-                onClick={() => setApplicationSubmitted(true)}
-                disabled={!canSubmitApplication}
+                onClick={submitApplication}
+                disabled={!canSubmitApplication || saving}
                 className="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-green-700 transition-colors shadow-sm"
               >
                 <ChevronRight size={15} />
-                Submit Application
+                {saving ? 'Submitting...' : 'Submit Application'}
               </button>
             ) : (
               <button
@@ -572,6 +637,33 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+export const PortalNomineeSelectionView: React.FC<{
+  nominees: PortalNominee[];
+  selectedNomineeId: string;
+  loading: boolean;
+  error?: boolean;
+  onSelect: (nomineeId: string) => void;
+}> = ({ nominees, selectedNomineeId, loading, error = false, onSelect }) => {
+  const selected = nominees.find(item => item.nominee_id === selectedNomineeId);
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="sm:col-span-2">
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">Select Member Nominee</label>
+        <select value={selectedNomineeId} onChange={event => onSelect(event.target.value)} disabled={loading} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+          <option value="">{loading ? 'Loading nominees...' : 'Select nominee'}</option>
+          {nominees.map(nominee => <option key={nominee.nominee_id} value={nominee.nominee_id}>{nominee.nominee_name} · {nominee.relationship_to_borrower || 'Relationship not recorded'}</option>)}
+        </select>
+      </div>
+      {error && <div className="sm:col-span-2 text-sm text-red-600">Nominees could not be loaded.</div>}
+      {!loading && !error && nominees.length === 0 && <div className="sm:col-span-2 text-sm text-slate-500">No nominees are available. Add one to your member profile before submitting.</div>}
+      {selected && <>
+        <div><span className="text-xs text-slate-500">Age</span><p className="text-sm font-medium text-slate-900">{selected.age_at_application ?? 'Not recorded'}</p></div>
+        <div><span className="text-xs text-slate-500">KYC Status</span><p className="text-sm font-medium text-slate-900">{selected.kyc_status.replace(/_/g, ' ')}</p></div>
+      </>}
     </div>
   );
 };
