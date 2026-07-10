@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 
@@ -63,6 +64,13 @@ TIME_ZONE = "UTC"
 
 AUTH_ACCESS_TOKEN_MINUTES = 15
 AUTH_REFRESH_TOKEN_HOURS = 24
+
+# Under `manage.py test` only: Django's documented test-speed optimization.
+# Most test setUps create users and log in through the API; PBKDF2's 720k
+# iterations per hash dominated suite time (~2s/test). Runtime behavior
+# (runserver, e2e servers, seed commands) keeps the default PBKDF2 hasher.
+if "test" in sys.argv:
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 DOCUMENT_STORAGE_ROOT = os.environ.get("SFPCL_DOCUMENT_STORAGE_ROOT") or (
     BASE_DIR / "local-document-storage"

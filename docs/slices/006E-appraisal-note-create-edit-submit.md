@@ -57,6 +57,14 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
+- Implement appraisal behavior only through `sfpcl_credit.credit.modules.appraisal_workflow.AppraisalWorkflow`;
+  application views may import that public module seam/result-error types but must not add appraisal
+  behavior to `applications.services`.
+- Use the `006D2` credit module snapshots for prerequisites:
+  `EligibilityAssessmentModule.get(...)` for the stored eligibility result and
+  `LoanLimitCalculator.get_assessment(...)` for the stored loan-limit result. Do not import private
+  credit helpers, query current loan-policy rows, or recalculate loan-limit/acreage facts during
+  appraisal create/read/update/submit.
 - Implement `POST`, `GET`, and `PATCH
   /api/v1/loan-applications/{loan_application_id}/appraisal-note/` for one draft appraisal per loan
   application. PATCH is draft-only and updates only fields supplied.
@@ -117,6 +125,9 @@ appraisal/risk rows or success evidence.
   `review_pending`; later edits/repeated submit are blocked. 006F owns `reviewed`.
 
 ## Test Cases
+- Static import-boundary regression proves 006E views/appraisal code use
+  `credit.modules.appraisal_workflow` and do not reintroduce appraisal or credit-assessment helpers
+  through `applications.services`.
 - TDD red/green create through §24.1 response and stored linked risk assessment.
 - GET returns the stored draft without side effects; PATCH updates supplied draft fields only.
 - Missing/non-eligible eligibility or missing loan-limit snapshot blocks create without evidence.

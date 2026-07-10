@@ -109,7 +109,11 @@ quality_gates:
   integration_tests: false
   e2e_tests: optional
   backend_check: true
-  backend_tests: true
+  # backend_tests disabled 2026-07-10 (owner action): backend_coverage runs the
+  # identical full suite under `coverage run` and fails on any test failure, so
+  # the plain run was a pure duplicate costing ~4 min per slice. Same tests,
+  # same failure semantics, same coverage floor — re-enable if coverage is off.
+  backend_tests: false
   backend_migrations: true
   backend_coverage: true
   coverage_fail_under: 85

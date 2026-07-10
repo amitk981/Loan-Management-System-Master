@@ -1,0 +1,2755 @@
+diff --git a/docs/adr/ADR-0002-staged-credit-assessment-model-ownership.md b/docs/adr/ADR-0002-staged-credit-assessment-model-ownership.md
+new file mode 100644
+index 0000000..eb47515
+--- /dev/null
++++ b/docs/adr/ADR-0002-staged-credit-assessment-model-ownership.md
+@@ -0,0 +1,50 @@
++# ADR-0002: Stage Credit Assessment Model Ownership
++
++## Status
++Accepted
++
++## Context
++Slice `006D2-credit-assessment-deep-module-boundary` establishes the source-named deep credit
++module seams:
++
++- `sfpcl_credit.credit.modules.eligibility_assessment`
++- `sfpcl_credit.credit.modules.loan_limit_calculator`
++- `sfpcl_credit.credit.modules.appraisal_workflow`
++
++The source data model says credit-assessment state belongs to the credit bounded context, but the
++existing Django models were created under `sfpcl_credit.applications.models`:
++
++- `EligibilityAssessment`, backed by existing table `eligibility_assessments`
++- `LoanLimitAssessment`, backed by existing table `loan_limit_assessments`
++
++Moving Django model state inside the same behavior-refactor slice would consume the slice's single
++migration allowance and risks turning a source-code ownership correction into accidental table
++rename/drop/recreate behavior.
++
++## Decision
++For `006D2`, move behavior, transaction orchestration, configuration resolution, snapshot
++projection, audit, workflow coordination, and public interfaces into the credit modules, but keep
++the Django model classes in `applications.models` for now.
++
++Create a separately queued slice for model ownership migration using a state-only,
++data-preserving strategy.
++
++## Required Follow-Up Strategy
++The model-ownership slice must:
++
++- Target owner: move `EligibilityAssessment` and `LoanLimitAssessment` model state to
++  `sfpcl_credit.credit.models` or an equivalent credit-owned model module.
++- Preserve database tables exactly as `eligibility_assessments` and `loan_limit_assessments`.
++- Preserve every existing `eligibility_assessment_id`, `loan_limit_assessment_id`, FK, one-to-one
++  application relationship, audit `entity_id`, and workflow `entity_id`.
++- Use Django state-only operations such as `SeparateDatabaseAndState` where needed; it must not
++  rename, drop, recreate, or copy the existing tables.
++- Include a migration/data-preservation test that creates rows through the pre-move state, applies
++  the ownership migration, and proves the same UUIDs/FKs remain readable through the credit-owned
++  model state.
++- Include rollback proof that reversing the migration returns Django model state ownership without
++  destructive database operations.
++
++## Consequences
++`006E` and later appraisal work must import credit module interfaces, not `applications.services`,
++even while the concrete Django model classes remain temporarily in `applications.models`.
+diff --git a/docs/slices/006D2-credit-assessment-deep-module-boundary.md b/docs/slices/006D2-credit-assessment-deep-module-boundary.md
+index 2f08a40..7527bd8 100644
+--- a/docs/slices/006D2-credit-assessment-deep-module-boundary.md
++++ b/docs/slices/006D2-credit-assessment-deep-module-boundary.md
+@@ -1,7 +1,7 @@
+ # Slice 006D2: Credit Assessment Deep Module Boundary
+ 
+ ## Status
+-Not Started
++Complete
+ 
+ ## Parent Epic
+ Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
+@@ -103,14 +103,14 @@ High
+ - 006E has a documented appraisal module seam and cannot deepen `applications.services`.
+ 
+ ## Done Checklist
+-- [ ] Execution plan written
+-- [ ] Characterization tests written or confirmed
+-- [ ] Code implemented
+-- [ ] Architecture/ADR updated, if staged ownership is required
+-- [ ] Migration/data preservation tested, if needed
+-- [ ] API contracts unchanged or reconciled
+-- [ ] Tests/typecheck/lint/build passed
+-- [ ] Risk assessment completed
+-- [ ] Handoff updated
+-- [ ] State updated
++- [x] Execution plan written
++- [x] Characterization tests written or confirmed
++- [x] Code implemented
++- [x] Architecture/ADR updated, if staged ownership is required
++- [x] Migration/data preservation tested, if needed
++- [x] API contracts unchanged or reconciled
++- [x] Tests/typecheck/lint/build passed
++- [x] Risk assessment completed
++- [x] Handoff updated
++- [x] State updated
+ - [ ] Commit created only after passing gates
+diff --git a/docs/slices/006D3-credit-assessment-model-ownership-state-migration.md b/docs/slices/006D3-credit-assessment-model-ownership-state-migration.md
+new file mode 100644
+index 0000000..9424003
+--- /dev/null
++++ b/docs/slices/006D3-credit-assessment-model-ownership-state-migration.md
+@@ -0,0 +1,63 @@
++# Slice 006D3: Credit Assessment Model Ownership State Migration
++
++## Status
++Not Started
++
++## Parent Epic
++Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
++Epic file: `docs/epics/006-eligibility-loan-limit-appraisal.md`
++
++## Goal
++Move credit-assessment Django model ownership from `applications` to the credit bounded context
++without changing existing database tables, UUIDs, foreign keys, audit references, or workflow
++references.
++
++## Source / Review References
++- `docs/source/codebase-design.md` §§6.2-6.3, §7.3, §§12.1-12.3, §26, and §42.2
++- `docs/source/data-model.md` §14.1-§14.4 and §34
++- `docs/adr/ADR-0002-staged-credit-assessment-model-ownership.md`
++- `006D2-credit-assessment-deep-module-boundary`
++
++## Scope
++- Target model owner: `sfpcl_credit.credit.models` or an equivalent credit-owned model module.
++- Existing tables must remain named `eligibility_assessments` and `loan_limit_assessments`.
++- Preserve existing primary keys:
++  - `eligibility_assessment_id`
++  - `loan_limit_assessment_id`
++- Preserve all existing one-to-one and foreign-key relationships to loan applications, members,
++  shareholdings, and users.
++- Use Django state-only migration operations such as `SeparateDatabaseAndState` when required.
++- Do not rename, drop, recreate, copy, truncate, or backfill the existing tables.
++- Keep `006D2` module interfaces as the public behavior seam; callers must not start importing
++  model internals directly.
++
++## Test Cases
++- Migration/data-preservation test creates eligibility and loan-limit rows before the state move,
++  applies the model-ownership migration, and reads the same UUIDs and FKs through the credit-owned
++  model state.
++- Reverse-migration proof shows rollback changes Django state ownership only and leaves the same
++  database tables and UUIDs intact.
++- Existing eligibility and loan-limit module/API tests remain green after ownership changes.
++- Static import-boundary test continues to prove application views and future appraisal code use
++  credit module interfaces rather than `applications.services` credit aliases.
++
++## Acceptance Criteria
++- `EligibilityAssessment` and `LoanLimitAssessment` are credit-owned in Django state.
++- Physical tables remain `eligibility_assessments` and `loan_limit_assessments`.
++- Existing row UUIDs, application one-to-one relationships, audit entity IDs, and workflow entity
++  IDs are preserved.
++- No destructive migration operation is introduced.
++
++## Risk Level
++High
++
++## Done Checklist
++- [ ] Execution plan written
++- [ ] Red migration/data-preservation test captured
++- [ ] State-only migration implemented
++- [ ] Rollback proof captured
++- [ ] Existing credit module/API tests passed
++- [ ] Full backend and frontend gates passed
++- [ ] Risk assessment completed
++- [ ] Handoff updated
++- [ ] State updated
+diff --git a/docs/slices/006E-appraisal-note-create-edit-submit.md b/docs/slices/006E-appraisal-note-create-edit-submit.md
+index cc589ae..5358809 100644
+--- a/docs/slices/006E-appraisal-note-create-edit-submit.md
++++ b/docs/slices/006E-appraisal-note-create-edit-submit.md
+@@ -57,6 +57,14 @@ None directly.
+ None for this slice, except updating frontend documentation or fixtures if required by tests.
+ 
+ ## Backend/API Scope
++- Implement appraisal behavior only through `sfpcl_credit.credit.modules.appraisal_workflow.AppraisalWorkflow`;
++  application views may import that public module seam/result-error types but must not add appraisal
++  behavior to `applications.services`.
++- Use the `006D2` credit module snapshots for prerequisites:
++  `EligibilityAssessmentModule.get(...)` for the stored eligibility result and
++  `LoanLimitCalculator.get_assessment(...)` for the stored loan-limit result. Do not import private
++  credit helpers, query current loan-policy rows, or recalculate loan-limit/acreage facts during
++  appraisal create/read/update/submit.
+ - Implement `POST`, `GET`, and `PATCH
+   /api/v1/loan-applications/{loan_application_id}/appraisal-note/` for one draft appraisal per loan
+   application. PATCH is draft-only and updates only fields supplied.
+@@ -117,6 +125,9 @@ appraisal/risk rows or success evidence.
+   `review_pending`; later edits/repeated submit are blocked. 006F owns `reviewed`.
+ 
+ ## Test Cases
++- Static import-boundary regression proves 006E views/appraisal code use
++  `credit.modules.appraisal_workflow` and do not reintroduce appraisal or credit-assessment helpers
++  through `applications.services`.
+ - TDD red/green create through §24.1 response and stored linked risk assessment.
+ - GET returns the stored draft without side effects; PATCH updates supplied draft fields only.
+ - Missing/non-eligible eligibility or missing loan-limit snapshot blocks create without evidence.
+diff --git a/docs/working/HANDOFF.md b/docs/working/HANDOFF.md
+index 8bea5ba..4d26b41 100644
+--- a/docs/working/HANDOFF.md
++++ b/docs/working/HANDOFF.md
+@@ -1,30 +1,54 @@
+ # Ralph Handoff
+ 
+ ## Last Run
+-2026-07-10_125342_normal_run
++2026-07-10_135716_repair
+ 
+ ## Current Status
+-Completed `006C2-cultivated-acreage-source-hardening`.
++Completed `006D2-credit-assessment-deep-module-boundary`.
+ 
+-- Loan-limit calculation now requires selected land holdings to be verified and member-owned, and
+-  the selected crop plan to be verified, member-owned, agriculture aligned, and linked to the current
+-  loan application.
+-- BR-020 acreage is accepted only when normalized Decimal values agree across total selected land
+-  acreage, crop-plan planned acreage, and profile cultivated acreage when present. Decimal strings
+-  such as `5`, `5.0`, and `5.00` compare equal.
+-- Mismatch returns `400 VALIDATION_ERROR` with
+-  `error.field_errors.cultivated_acreage = "CULTIVATED_ACREAGE_UNRESOLVED"` before any
+-  `LoanLimitAssessment.save()`, `loan_limit.calculated` audit, or `loan_limit_assessment` workflow
+-  event.
+-- Successful calculation snapshots the agreed cultivated acreage in `land_area_acres`; failed reruns
+-  preserve the existing assessment UUID, GET payload, policy snapshot, acreage snapshot, audit count,
+-  and workflow-event count.
++- Added the `sfpcl_credit.credit` Django/domain package and registered it in settings.
++- Established public credit module seams:
++  - `credit.modules.eligibility_assessment.EligibilityAssessmentModule`
++  - `credit.modules.loan_limit_calculator.LoanLimitCalculator`
++  - `credit.modules.appraisal_workflow.AppraisalWorkflow`
++- Added `configurations.modules.configuration_resolver.resolve_effective_loan_policy`; the loan-limit
++  calculator now uses this seam instead of querying/interpreting `LoanPolicyConfig` directly.
++- Moved eligibility and loan-limit transaction/locking, validation, persistence coordination, audit,
++  workflow, and snapshot projection out of `applications.services`.
++- Kept application views as thin adapters for eligibility/loan-limit endpoints: authenticate/parse,
++  call the credit module, translate typed module errors, return the snapshot.
++- Preserved all existing eligibility, 006C/006D loan-limit, and 006C2 cultivated-acreage contracts.
++  Failed cultivated-acreage reruns still return
++  `400 VALIDATION_ERROR` with `field_errors.cultivated_acreage =
++  CULTIVATED_ACREAGE_UNRESOLVED` and preserve the previous stored snapshot/audit/workflow counts.
++- Added a module-boundary regression test proving `applications.services` no longer exposes public
++  credit aliases such as `calculate_loan_limit`, `serialize_loan_limit_assessment`, or
++  `_effective_loan_policy`.
++- Staged credit-assessment Django model ownership in
++  `docs/adr/ADR-0002-staged-credit-assessment-model-ownership.md`; current model classes still live
++  in `applications.models` and continue using existing tables `eligibility_assessments` and
++  `loan_limit_assessments`.
++- Created follow-up slice
++  `006D3-credit-assessment-model-ownership-state-migration` for a state-only, non-destructive model
++  ownership move with UUID/FK/rollback proof.
++- Sharpened `006E-appraisal-note-create-edit-submit` so appraisal must enter through
++  `credit.modules.appraisal_workflow` and consume stored 006D2 snapshots rather than recalculating
++  eligibility/loan-limit facts.
+ 
+ ## Validation
+-Backend check/migration sync passed; 301 tests passed under coverage at 95% (floor 85%). Frontend
+-lint/typecheck passed; 106 tests and build passed. `git diff --check` passed. Evidence is in
+-`.ralph/runs/2026-07-10_125342_normal_run/`, including matched/mismatched API examples.
++Backend check passed; 304 backend tests passed; migration sync reported no changes; coverage passed
++at 95% (floor 85%). Frontend lint/typecheck passed; 106 frontend tests passed; frontend build passed
++with the existing Vite chunk-size warning. `git diff --check` passed.
++
++Evidence is in `.ralph/runs/2026-07-10_135716_repair/`, including:
++- `evidence/terminal-logs/006D2-credit-modules-red.log`
++- `evidence/terminal-logs/006D2-credit-modules-green.log`
++- `evidence/terminal-logs/006D2-characterization-green.log`
++- `evidence/terminal-logs/006D2-characterization-after-refactor.log`
++- full backend/frontend gate logs.
+ 
+ ## Next Run
+-Run `006D2-credit-assessment-deep-module-boundary`, then
+-`006E-appraisal-note-create-edit-submit`; both are sharpened with the 006C2 acreage contract.
++Architecture review is due because `slices_completed_since_architecture_review` is now 4. After the
++review, run `006D3-credit-assessment-model-ownership-state-migration` if the queue takes the new
++ownership slice before appraisal; otherwise run `006E-appraisal-note-create-edit-submit`, which is
++now sharpened to use the 006D2 credit seams.
+diff --git a/docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md b/docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+index f504523..21d0b14 100644
+--- a/docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
++++ b/docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+@@ -199,3 +199,27 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
+ - Epic 006 did not complete in this window. M04-FR-004 through M04-FR-007 are the implemented/under-
+   correction subset; M04-FR-001-003 and M04-FR-008-011 remain owned by queued 006E-006G and are not
+   claimed complete.
++
++## 006D2 Deep Credit Module Boundary Source Extract
++- `codebase-design.md` §§6.2-6.3 and §7.3 require business behavior to sit in `modules/`; views
++  authenticate/parse, call one module interface, and return/translate the result. Views must not
++  calculate loan limits or own SOP decisions.
++- `codebase-design.md` §§12.1-12.3 names the credit seams:
++  `credit.modules.eligibility_assessment`, `credit.modules.loan_limit_calculator`, and
++  `credit.modules.appraisal_workflow`. Eligibility hides active member, default, documents, terms,
++  purpose, nominee, member status, and explanations. Loan limit hides policy choice, valuation,
++  acreage, lower-of-two formula, exception flag, rounding, and snapshot persistence.
++- `codebase-design.md` §22 and `data-model.md` §34 require eligibility/loan-limit persistence,
++  audit, and workflow writes to be transactional.
++- `codebase-design.md` §26 says the module interface is the test surface; replace broad helper
++  tests with tests through the deep module interface.
++- `api-contracts.md` §3 and §§22-24 preserve the existing eligibility, loan-limit, and appraisal
++  endpoint shapes while requiring backend-enforced workflow, observable audit/error formatting, and
++  snapshot decisions.
++- `data-model.md` §14.1-§14.4 keeps the persisted table contracts for `eligibility_assessments`,
++  `loan_limit_assessments`, `risk_assessments`, and `loan_appraisal_notes`; §35.1 stores all
++  loan-limit inputs/results as snapshots.
++- 006D2 staged model ownership in ADR-0002: behavior moved to credit modules now, while the existing
++  `applications.models` ownership of `EligibilityAssessment`/`LoanLimitAssessment` remains until
++  a state-only, non-destructive follow-up migration slice proves table, UUID, FK, audit, and workflow
++  preservation.
+diff --git a/sfpcl_credit/applications/services.py b/sfpcl_credit/applications/services.py
+index db07b18..31eee4b 100644
+--- a/sfpcl_credit/applications/services.py
++++ b/sfpcl_credit/applications/services.py
+@@ -5,19 +5,15 @@ from django.core.exceptions import ValidationError
+ from django.db import transaction
+ from django.db.models import Max, Q
+ from django.utils import timezone
+-from django.utils.dateparse import parse_date
+ 
+ from sfpcl_credit.applications.models import (
+     ApplicationDeficiency,
+     ApplicationDocument,
+-    EligibilityAssessment,
+     LoanApplication,
+-    LoanLimitAssessment,
+     LoanRequestRegisterEntry,
+     RejectionNote,
+     SystemSequence,
+ )
+-from sfpcl_credit.configurations.models import LoanPolicyConfig
+ from sfpcl_credit.documents.models import DocumentFile
+ from sfpcl_credit.identity.models import AuditLog
+ from sfpcl_credit.identity.modules import auth_service
+@@ -58,8 +54,6 @@ APPLICATION_RETURN_DEFICIENCIES_AUDIT_ACTION = (
+ APPLICATION_DEFICIENCY_RESOLVED_AUDIT_ACTION = "applications.deficiency.resolved"
+ APPLICATION_REJECTION_NOTE_CREATED_AUDIT_ACTION = "applications.rejection_note.created"
+ APPLICATION_REJECTION_NOTE_SENT_AUDIT_ACTION = "applications.rejection_note.sent"
+-ELIGIBILITY_ASSESSED_AUDIT_ACTION = "eligibility.assessed"
+-LOAN_LIMIT_CALCULATED_AUDIT_ACTION = "loan_limit.calculated"
+ APPLICATION_DOCUMENT_TYPES = {
+     "loan_application_form",
+     "borrower_pan",
+@@ -163,14 +157,6 @@ def user_can_verify_application_documents(user):
+     return APPLICATION_DOCUMENT_VERIFY_PERMISSION in auth_service.effective_permission_codes(user)
+ 
+ 
+-def user_can_run_eligibility(user):
+-    return ELIGIBILITY_RUN_PERMISSION in auth_service.effective_permission_codes(user)
+-
+-
+-def user_can_calculate_loan_limit(user):
+-    return LOAN_LIMIT_CALCULATE_PERMISSION in auth_service.effective_permission_codes(user)
+-
+-
+ def evaluate_application_object_access(application, actor, required_permission, actor_permissions=None):
+     permissions = actor_permissions or auth_service.effective_permission_codes(actor)
+     allow_global = _has_credit_manager_domain_access(application, actor)
+@@ -269,29 +255,6 @@ def get_rejection_note(rejection_note_id):
+     )
+ 
+ 
+-def get_eligibility_assessment(application):
+-    return (
+-        EligibilityAssessment.objects.select_related(
+-            "loan_application",
+-            "loan_application__member",
+-            "assessed_by_user",
+-        )
+-        .filter(loan_application=application)
+-        .first()
+-    )
+-
+-
+-def get_loan_limit_assessment(application):
+-    return (
+-        LoanLimitAssessment.objects.select_related(
+-            "loan_application",
+-            "calculated_by_user",
+-        )
+-        .filter(loan_application=application)
+-        .first()
+-    )
+-
+-
+ def list_applications_for_staff(query_params, actor, actor_permissions):
+     queryset = LoanApplication.objects.select_related(
+         "member",
+@@ -809,21 +772,6 @@ def completeness_pass_invalid_state_message(application):
+     return None
+ 
+ 
+-def eligibility_run_invalid_state_message(application):
+-    if not (application.application_reference_number or "").startswith("LO"):
+-        return "Eligibility assessment requires a formal LO application reference."
+-    if application.application_status != LoanApplication.STATUS_REFERENCE_GENERATED:
+-        return (
+-            "Invalid state transition for loan_application: eligibility_assessment.run "
+-            f"is not allowed from {application.application_status}."
+-        )
+-    if application.completeness_status != LoanApplication.COMPLETENESS_COMPLETE:
+-        return "Eligibility assessment requires complete application documentation."
+-    if application.current_stage != LoanApplication.STAGE_CREDIT_ASSESSMENT:
+-        return "Eligibility assessment is allowed only in credit assessment stage."
+-    return None
+-
+-
+ def return_deficiencies_invalid_state_message(application):
+     if application.application_status != LoanApplication.STATUS_SUBMITTED:
+         return (
+@@ -1034,187 +982,6 @@ def create_rejection_note(
+     return rejection_note
+ 
+ 
+-@transaction.atomic
+-def run_eligibility_assessment(
+-    application,
+-    actor,
+-    request_ip="",
+-    request_user_agent="",
+-    request_id=None,
+-):
+-    application = (
+-        LoanApplication.objects.select_for_update()
+-        .select_related("member", "created_by_user", "received_by_user")
+-        .get(loan_application_id=application.loan_application_id)
+-    )
+-    invalid_state_message = eligibility_run_invalid_state_message(application)
+-    if invalid_state_message:
+-        raise LoanApplicationInvalidStateError(invalid_state_message)
+-
+-    active_result = _active_member_check(application.member)
+-    source_checks = _source_backed_eligibility_checks(application)
+-    now = timezone.now()
+-    assessment = (
+-        EligibilityAssessment.objects.select_for_update()
+-        .filter(loan_application=application)
+-        .first()
+-    )
+-    old_value_json = (
+-        _eligibility_assessment_audit_snapshot(assessment)
+-        if assessment is not None
+-        else None
+-    )
+-    if assessment is None:
+-        assessment = EligibilityAssessment(loan_application=application)
+-    assessment.member_active_check = active_result["member_active_check"]
+-    assessment.default_check = source_checks["default_check"]
+-    assessment.document_check = source_checks["document_check"]
+-    assessment.terms_acceptance_check = source_checks["terms_acceptance_check"]
+-    assessment.purpose_check = source_checks["purpose_check"]
+-    assessment.nominee_check = source_checks["nominee_check"]
+-    assessment.overall_result = _eligibility_overall_result(active_result, source_checks)
+-    assessment.assessment_notes = _eligibility_assessment_notes(
+-        active_result,
+-        source_checks,
+-        assessment.overall_result,
+-    )
+-    assessment.assessed_by_user = actor
+-    assessment.assessed_at = now
+-    assessment.save()
+-    _audit_eligibility_assessment(
+-        assessment,
+-        actor,
+-        ELIGIBILITY_ASSESSED_AUDIT_ACTION,
+-        old_value_json,
+-        request_ip,
+-        request_user_agent,
+-        request_id,
+-    )
+-    record_workflow_event(
+-        actor=actor,
+-        workflow_name="eligibility_assessment",
+-        entity_type="loan_application",
+-        entity_id=application.loan_application_id,
+-        from_state=application.current_stage,
+-        to_state="eligibility_assessed",
+-        trigger_reason="Eligibility assessment active-member check completed.",
+-        action_code="eligibility.assessed",
+-    )
+-    return assessment
+-
+-
+-@transaction.atomic
+-def calculate_loan_limit(
+-    application,
+-    payload,
+-    actor,
+-    request_ip="",
+-    request_user_agent="",
+-    request_id=None,
+-):
+-    application = (
+-        LoanApplication.objects.select_for_update()
+-        .select_related("member", "created_by_user", "received_by_user")
+-        .get(loan_application_id=application.loan_application_id)
+-    )
+-    eligibility = (
+-        EligibilityAssessment.objects.select_for_update()
+-        .filter(loan_application=application)
+-        .first()
+-    )
+-    if eligibility is None:
+-        raise LoanApplicationInvalidStateError(
+-            "An eligible eligibility assessment is required before loan-limit calculation."
+-        )
+-    if eligibility.overall_result != EligibilityAssessment.OVERALL_ELIGIBLE:
+-        raise LoanApplicationInvalidStateError(
+-            "Loan-limit calculation requires eligibility overall_result eligible."
+-        )
+-
+-    cleaned = _clean_loan_limit_payload(application, payload)
+-    policy = _effective_loan_policy(cleaned["calculation_date"])
+-    shareholding = cleaned["shareholding"]
+-    valuation_per_share = shareholding.valuation_per_share
+-    percentage = policy.share_limit_percentage
+-    cap_amount = policy.per_share_cap_amount
+-
+-    per_share_limits = []
+-    if percentage is not None:
+-        per_share_limits.append(
+-            valuation_per_share * percentage / Decimal("100")
+-        )
+-    if cap_amount is not None:
+-        per_share_limits.append(cap_amount)
+-    per_share_limit = min(per_share_limits)
+-    shareholding_limit = (
+-        Decimal(shareholding.number_of_shares) * per_share_limit
+-    ).quantize(Decimal("0.01"))
+-    land_area = cleaned["cultivated_acreage"]
+-    land_limit = (
+-        land_area * policy.default_scale_of_finance_per_acre_amount
+-    ).quantize(Decimal("0.01"))
+-    final_eligible_amount = min(shareholding_limit, land_limit)
+-    requested_amount = cleaned["requested_amount"].quantize(Decimal("0.01"))
+-    amount_within_limit = requested_amount <= final_eligible_amount
+-    now = timezone.now()
+-
+-    assessment = (
+-        LoanLimitAssessment.objects.select_for_update()
+-        .filter(loan_application=application)
+-        .first()
+-    )
+-    old_value_json = (
+-        _loan_limit_assessment_audit_snapshot(assessment)
+-        if assessment is not None
+-        else None
+-    )
+-    if assessment is None:
+-        assessment = LoanLimitAssessment(loan_application=application)
+-    assessment.member = application.member
+-    assessment.shareholding = shareholding
+-    assessment.number_of_shares = shareholding.number_of_shares
+-    assessment.valuation_per_share = valuation_per_share
+-    assessment.share_limit_percentage = percentage
+-    assessment.per_share_cap_amount = cap_amount
+-    assessment.shareholding_based_limit_amount = shareholding_limit
+-    assessment.land_area_acres = land_area
+-    assessment.scale_of_finance_per_acre_amount = (
+-        policy.default_scale_of_finance_per_acre_amount
+-    )
+-    assessment.land_based_limit_amount = land_limit
+-    assessment.final_eligible_loan_amount = final_eligible_amount
+-    assessment.requested_amount = requested_amount
+-    assessment.amount_within_limit_flag = amount_within_limit
+-    assessment.exception_required_flag = not amount_within_limit
+-    assessment.calculation_rule_version = policy.policy_version
+-    assessment.policy_config_id_snapshot = policy.loan_policy_config_id
+-    assessment.policy_name_snapshot = policy.policy_name
+-    assessment.board_approval_reference_snapshot = policy.board_approval_reference or ""
+-    assessment.calculated_by_user = actor
+-    assessment.calculated_at = now
+-    assessment.save()
+-
+-    _audit_loan_limit_assessment(
+-        assessment,
+-        actor,
+-        old_value_json,
+-        request_ip,
+-        request_user_agent,
+-        request_id,
+-    )
+-    record_workflow_event(
+-        actor=actor,
+-        workflow_name="loan_limit_assessment",
+-        entity_type="loan_application",
+-        entity_id=application.loan_application_id,
+-        from_state=application.current_stage,
+-        to_state="loan_limit_calculated",
+-        trigger_reason="Source-backed loan limit calculated.",
+-        action_code=LOAN_LIMIT_CALCULATED_AUDIT_ACTION,
+-    )
+-    return assessment, policy
+-
+-
+ @transaction.atomic
+ def send_rejection_note(
+     rejection_note,
+@@ -1497,80 +1264,6 @@ def _rejection_note_detail_summary(application):
+     }
+ 
+ 
+-def serialize_eligibility_assessment(assessment):
+-    return {
+-        "eligibility_assessment_id": str(assessment.eligibility_assessment_id),
+-        "loan_application_id": str(assessment.loan_application_id),
+-        "member_active_check": assessment.member_active_check,
+-        "default_check": assessment.default_check,
+-        "document_check": assessment.document_check,
+-        "terms_acceptance_check": assessment.terms_acceptance_check,
+-        "purpose_check": assessment.purpose_check,
+-        "nominee_check": assessment.nominee_check,
+-        "overall_result": assessment.overall_result,
+-        "assessment_notes": assessment.assessment_notes,
+-        "assessed_by_user_id": str(assessment.assessed_by_user_id),
+-        "assessed_at": _datetime(assessment.assessed_at),
+-    }
+-
+-
+-def serialize_loan_limit_assessment(assessment):
+-    warnings = []
+-    if assessment.exception_required_flag:
+-        warnings.append(
+-            {
+-                "code": "REQUESTED_AMOUNT_EXCEEDS_LIMIT",
+-                "message": "Requested amount exceeds final eligible loan amount.",
+-            }
+-        )
+-    return {
+-        "loan_limit_assessment_id": str(assessment.loan_limit_assessment_id),
+-        "loan_application_id": str(assessment.loan_application_id),
+-        "member_id": str(assessment.member_id),
+-        "shareholding_id": str(assessment.shareholding_id)
+-        if assessment.shareholding_id
+-        else None,
+-        "number_of_shares": assessment.number_of_shares,
+-        "valuation_per_share": _money(assessment.valuation_per_share),
+-        "share_limit_percentage": (
+-            f"{assessment.share_limit_percentage:.4f}"
+-            if assessment.share_limit_percentage is not None
+-            else None
+-        ),
+-        "per_share_cap_amount": _money(assessment.per_share_cap_amount),
+-        "shareholding_based_limit_amount": _money(
+-            assessment.shareholding_based_limit_amount
+-        ),
+-        "land_area_acres": f"{assessment.land_area_acres:.2f}",
+-        "scale_of_finance_per_acre_amount": _money(
+-            assessment.scale_of_finance_per_acre_amount
+-        ),
+-        "land_based_limit_amount": _money(assessment.land_based_limit_amount),
+-        "final_eligible_loan_amount": _money(
+-            assessment.final_eligible_loan_amount
+-        ),
+-        "requested_amount": _money(assessment.requested_amount),
+-        "amount_within_limit_flag": assessment.amount_within_limit_flag,
+-        "exception_required_flag": assessment.exception_required_flag,
+-        "calculation_rule_version": assessment.calculation_rule_version,
+-        "configuration_source": {
+-            "type": "loan_policy_config",
+-            "loan_policy_config_id": str(assessment.policy_config_id_snapshot)
+-            if assessment.policy_config_id_snapshot
+-            else None,
+-            "policy_name": assessment.policy_name_snapshot or None,
+-            "board_approval_reference": (
+-                assessment.board_approval_reference_snapshot or None
+-            ),
+-        },
+-        "calculated_by_user_id": str(assessment.calculated_by_user_id)
+-        if assessment.calculated_by_user_id
+-        else None,
+-        "calculated_at": _datetime(assessment.calculated_at),
+-        "warnings": warnings,
+-    }
+-
+-
+ def serialize_returned_deficiencies(result):
+     application = result["application"]
+     return {
+@@ -1588,7 +1281,7 @@ def serialize_returned_deficiencies(result):
+ def validation_field_errors(exc):
+     if hasattr(exc, "message_dict"):
+         return {field: messages[0] for field, messages in exc.message_dict.items()}
+-    if isinstance(exc, LoanApplicationValidationError):
++    if hasattr(exc, "field_errors"):
+         return exc.field_errors
+     return {"non_field_errors": str(exc)}
+ 
+@@ -1610,148 +1303,6 @@ def _validate_submit_facts(application):
+         raise LoanApplicationValidationError(errors)
+ 
+ 
+-def _active_member_check(member):
+-    if member.membership_status != "active":
+-        return {
+-            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_FAIL,
+-            "overall_result": EligibilityAssessment.OVERALL_INELIGIBLE,
+-            "assessment_notes": (
+-                "BR-003 requires active member status or relaxation evidence; "
+-                f"member status is {member.membership_status}."
+-            ),
+-        }
+-    if member.active_member_status == "active" and member.active_member_verified_at:
+-        return {
+-            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_PASS,
+-            "overall_result": EligibilityAssessment.OVERALL_PENDING,
+-            "assessment_notes": (
+-                "Active-member status was verified from existing member facts. "
+-                "Default, document, terms, purpose, and nominee checks are pending."
+-            ),
+-        }
+-    if member.active_member_status == "relaxation" and member.active_member_verified_at:
+-        return {
+-            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_RELAXATION,
+-            "overall_result": EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE,
+-            "assessment_notes": (
+-                "Active-member relaxation is recorded on the member profile. "
+-                "Manual evidence remains reviewable for BR-004 through BR-007."
+-            ),
+-        }
+-    return {
+-        "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_MANUAL_EVIDENCE_REQUIRED,
+-        "overall_result": EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE,
+-        "assessment_notes": (
+-            "BR-004 through BR-007 require continuous produce/service history or "
+-            "relaxation evidence. Current persistence has no source history rows "
+-            "for this application, so manual evidence is required."
+-        ),
+-    }
+-
+-
+-def _source_backed_eligibility_checks(application):
+-    nominee = application.nominee
+-    return {
+-        "default_check": _default_check(application.member),
+-        "document_check": _document_check(application),
+-        "terms_acceptance_check": (
+-            "accepted"
+-            if application.terms_acceptance_flag
+-            else "pending"
+-        ),
+-        "purpose_check": (
+-            "agriculture_aligned"
+-            if application.purpose_category in {"crop_production", "agriculture_activity"}
+-            else "non_agriculture"
+-        ),
+-        "nominee_check": _nominee_check(nominee, application.member),
+-        "nominee_manual_evidence_required": _nominee_check(nominee, application.member) == EligibilityAssessment.CHECK_PENDING,
+-    }
+-
+-
+-def _default_check(member):
+-    if member.default_status == "no_default":
+-        return "no_default"
+-    return "default_found"
+-
+-
+-def _document_check(application):
+-    workbench = build_completeness_workbench(application)
+-    if workbench["blocking_document_types"]:
+-        return "incomplete"
+-    return "complete"
+-
+-
+-def _nominee_check(nominee, member=None):
+-    if nominee is None:
+-        return EligibilityAssessment.CHECK_PENDING
+-    if nominee.age_at_application is None and nominee.date_of_birth is None:
+-        return EligibilityAssessment.CHECK_PENDING
+-    if nominee.minor_flag or (
+-        nominee.age_at_application is not None and nominee.age_at_application < 18
+-    ) or (
+-        nominee.date_of_birth is not None and _age_on_date(nominee.date_of_birth) < 18
+-    ):
+-        return "minor"
+-    if member is not None and nominee.member_id != member.member_id:
+-        return EligibilityAssessment.CHECK_PENDING
+-    return "valid"
+-
+-
+-def _eligibility_overall_result(active_result, source_checks):
+-    if active_result["member_active_check"] == EligibilityAssessment.MEMBER_ACTIVE_FAIL:
+-        return EligibilityAssessment.OVERALL_INELIGIBLE
+-    if any(
+-        (
+-            source_checks["default_check"] == "default_found",
+-            source_checks["document_check"] == "incomplete",
+-            source_checks["terms_acceptance_check"] == "pending",
+-            source_checks["purpose_check"] == "non_agriculture",
+-            source_checks["nominee_check"] == "minor",
+-        )
+-    ):
+-        return EligibilityAssessment.OVERALL_INELIGIBLE
+-    if active_result["overall_result"] == EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE:
+-        return EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE
+-    if source_checks["nominee_manual_evidence_required"]:
+-        return EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE
+-    return EligibilityAssessment.OVERALL_ELIGIBLE
+-
+-
+-def _eligibility_assessment_notes(active_result, source_checks, overall_result):
+-    blockers = []
+-    if active_result["member_active_check"] == EligibilityAssessment.MEMBER_ACTIVE_FAIL:
+-        blockers.append("BR-003 active-member evidence failed")
+-    if source_checks["default_check"] == "default_found":
+-        blockers.append("BR-008 default history blocks normal eligibility")
+-    if source_checks["document_check"] == "incomplete":
+-        blockers.append("BR-013/BR-014 required checklist evidence is incomplete")
+-    if source_checks["terms_acceptance_check"] == "pending":
+-        blockers.append("S15 terms acceptance is pending")
+-    if source_checks["purpose_check"] == "non_agriculture":
+-        blockers.append("BR-018 purpose is not agriculture-aligned")
+-    if source_checks["nominee_check"] == "minor":
+-        blockers.append("BR-009 nominee is a minor")
+-    if blockers:
+-        return "; ".join(blockers) + "."
+-    if overall_result == EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE:
+-        if source_checks["nominee_manual_evidence_required"]:
+-            if (
+-                active_result["member_active_check"]
+-                == EligibilityAssessment.MEMBER_ACTIVE_PASS
+-            ):
+-                return (
+-                    "Source-backed default, document, terms, and purpose checks passed. "
+-                    "Application-specific nominee selection is pending."
+-                )
+-            return (
+-                active_result["assessment_notes"]
+-                + " Application-specific nominee selection is pending."
+-            )
+-        return active_result["assessment_notes"]
+-    return "All mandatory eligibility criteria passed."
+-
+-
+ def _clean_update_payload(payload, member):
+     unknown = set(payload.keys()) - _UPDATE_FIELDS
+     errors = {field: "Unknown field." for field in sorted(unknown)}
+@@ -2117,51 +1668,6 @@ def _audit_application(
+     )
+ 
+ 
+-def _audit_eligibility_assessment(
+-    assessment,
+-    actor,
+-    action,
+-    old_value_json,
+-    request_ip,
+-    request_user_agent,
+-    request_id,
+-):
+-    new_value_json = _eligibility_assessment_audit_snapshot(assessment)
+-    new_value_json["request_id"] = request_id
+-    AuditLog.objects.create(
+-        actor_user=actor,
+-        action=action,
+-        entity_type="eligibility_assessment",
+-        entity_id=assessment.eligibility_assessment_id,
+-        old_value_json=old_value_json,
+-        new_value_json=new_value_json,
+-        ip_address=request_ip,
+-        user_agent=request_user_agent,
+-    )
+-
+-
+-def _audit_loan_limit_assessment(
+-    assessment,
+-    actor,
+-    old_value_json,
+-    request_ip,
+-    request_user_agent,
+-    request_id,
+-):
+-    new_value_json = _loan_limit_assessment_audit_snapshot(assessment)
+-    new_value_json["request_id"] = request_id
+-    AuditLog.objects.create(
+-        actor_user=actor,
+-        action=LOAN_LIMIT_CALCULATED_AUDIT_ACTION,
+-        entity_type="loan_limit_assessment",
+-        entity_id=assessment.loan_limit_assessment_id,
+-        old_value_json=old_value_json,
+-        new_value_json=new_value_json,
+-        ip_address=request_ip,
+-        user_agent=request_user_agent,
+-    )
+-
+-
+ def _audit_application_document(
+     application_document,
+     actor,
+@@ -2288,240 +1794,6 @@ def _audit_snapshot(application):
+     }
+ 
+ 
+-def _eligibility_assessment_audit_snapshot(assessment):
+-    return {
+-        "eligibility_assessment_id": str(assessment.eligibility_assessment_id),
+-        "loan_application_id": str(assessment.loan_application_id),
+-        "member_active_check": assessment.member_active_check,
+-        "default_check": assessment.default_check,
+-        "document_check": assessment.document_check,
+-        "terms_acceptance_check": assessment.terms_acceptance_check,
+-        "purpose_check": assessment.purpose_check,
+-        "nominee_check": assessment.nominee_check,
+-        "overall_result": assessment.overall_result,
+-        "assessed_by_user_id": str(assessment.assessed_by_user_id),
+-        "assessed_at": _datetime(assessment.assessed_at),
+-    }
+-
+-
+-def _loan_limit_assessment_audit_snapshot(assessment):
+-    return {
+-        "loan_limit_assessment_id": str(assessment.loan_limit_assessment_id),
+-        "loan_application_id": str(assessment.loan_application_id),
+-        "member_id": str(assessment.member_id),
+-        "shareholding_id": str(assessment.shareholding_id)
+-        if assessment.shareholding_id
+-        else None,
+-        "number_of_shares": assessment.number_of_shares,
+-        "valuation_per_share": _money(assessment.valuation_per_share),
+-        "share_limit_percentage": (
+-            f"{assessment.share_limit_percentage:.4f}"
+-            if assessment.share_limit_percentage is not None
+-            else None
+-        ),
+-        "per_share_cap_amount": _money(assessment.per_share_cap_amount),
+-        "shareholding_based_limit_amount": _money(
+-            assessment.shareholding_based_limit_amount
+-        ),
+-        "land_area_acres": f"{assessment.land_area_acres:.2f}",
+-        "scale_of_finance_per_acre_amount": _money(
+-            assessment.scale_of_finance_per_acre_amount
+-        ),
+-        "land_based_limit_amount": _money(assessment.land_based_limit_amount),
+-        "final_eligible_loan_amount": _money(
+-            assessment.final_eligible_loan_amount
+-        ),
+-        "requested_amount": _money(assessment.requested_amount),
+-        "amount_within_limit_flag": assessment.amount_within_limit_flag,
+-        "exception_required_flag": assessment.exception_required_flag,
+-        "calculation_rule_version": assessment.calculation_rule_version,
+-        "configuration_source": {
+-            "type": "loan_policy_config",
+-            "loan_policy_config_id": str(assessment.policy_config_id_snapshot)
+-            if assessment.policy_config_id_snapshot
+-            else None,
+-            "policy_name": assessment.policy_name_snapshot or None,
+-            "board_approval_reference": (
+-                assessment.board_approval_reference_snapshot or None
+-            ),
+-        },
+-        "calculated_by_user_id": str(assessment.calculated_by_user_id)
+-        if assessment.calculated_by_user_id
+-        else None,
+-        "calculated_at": _datetime(assessment.calculated_at),
+-    }
+-
+-
+-def _clean_loan_limit_payload(application, payload):
+-    allowed_fields = {
+-        "shareholding_id",
+-        "land_holding_ids",
+-        "crop_plan_id",
+-        "requested_amount",
+-        "calculation_date",
+-    }
+-    errors = {
+-        field: "Unknown field." for field in sorted(set(payload) - allowed_fields)
+-    }
+-    for field in sorted(allowed_fields):
+-        if field not in payload or payload.get(field) in (None, "", []):
+-            errors[field] = "This field is required."
+-
+-    shareholding_id = _parse_uuid(
+-        "shareholding_id", payload.get("shareholding_id"), errors
+-    )
+-    crop_plan_id = _parse_uuid("crop_plan_id", payload.get("crop_plan_id"), errors)
+-    requested_amount = _optional_positive_decimal(
+-        payload.get("requested_amount"), "requested_amount", errors
+-    )
+-    calculation_date = parse_date(str(payload.get("calculation_date", "")))
+-    if calculation_date is None:
+-        errors["calculation_date"] = "Must be a valid ISO date."
+-
+-    raw_land_ids = payload.get("land_holding_ids")
+-    land_ids = []
+-    if isinstance(raw_land_ids, list) and raw_land_ids:
+-        for raw_id in raw_land_ids:
+-            try:
+-                land_ids.append(uuid.UUID(str(raw_id)))
+-            except (TypeError, ValueError):
+-                errors["land_holding_ids"] = "Every value must be a valid UUID."
+-                break
+-        if len(set(land_ids)) != len(land_ids):
+-            errors["land_holding_ids"] = "Duplicate land holdings are not allowed."
+-    elif raw_land_ids not in (None, "", []):
+-        errors["land_holding_ids"] = "Must be a non-empty list of UUIDs."
+-
+-    if errors:
+-        raise LoanApplicationValidationError(errors)
+-
+-    shareholding = Shareholding.objects.filter(
+-        shareholding_id=shareholding_id,
+-        member=application.member,
+-    ).first()
+-    if shareholding is None:
+-        errors["shareholding_id"] = "Referenced record was not found for this member."
+-    elif shareholding.status != "active":
+-        errors["shareholding_id"] = "Shareholding must be active."
+-    elif shareholding.number_of_shares <= 0:
+-        errors["shareholding_id"] = "Shareholding must contain at least one share."
+-    elif (
+-        shareholding.valuation_per_share is None
+-        or shareholding.valuation_per_share <= 0
+-    ):
+-        errors["shareholding_id"] = (
+-            "Shareholding requires a positive approved valuation per share."
+-        )
+-
+-    land_holdings = list(
+-        LandHolding.objects.filter(
+-            land_holding_id__in=land_ids,
+-            member=application.member,
+-        ).order_by("land_holding_id")
+-    )
+-    if len(land_holdings) != len(land_ids):
+-        errors["land_holding_ids"] = (
+-            "Every land holding must exist for the loan application member."
+-        )
+-    elif any(holding.verification_status != "verified" for holding in land_holdings):
+-        errors["land_holding_ids"] = "Every selected land holding must be verified."
+-
+-    crop_plan = CropPlan.objects.filter(
+-        crop_plan_id=crop_plan_id,
+-        member=application.member,
+-    ).first()
+-    if crop_plan is None:
+-        errors["crop_plan_id"] = "Referenced record was not found for this member."
+-    elif crop_plan.loan_application_id != application.loan_application_id:
+-        errors["crop_plan_id"] = "Crop plan must be linked to this loan application."
+-    elif crop_plan.verification_status != "verified":
+-        errors["crop_plan_id"] = "Crop plan must be verified."
+-    elif crop_plan.loan_purpose_alignment != "agriculture_aligned":
+-        errors["crop_plan_id"] = "Crop plan must be agriculture aligned."
+-
+-    if application.required_loan_amount is None:
+-        errors["requested_amount"] = (
+-            "Loan application must store a requested amount before calculation."
+-        )
+-    elif requested_amount != application.required_loan_amount:
+-        errors["requested_amount"] = (
+-            "Requested amount must match the loan application requested amount."
+-        )
+-    if errors:
+-        raise LoanApplicationValidationError(errors)
+-    selected_land_area = _normalized_acres(
+-        sum((holding.area_acres for holding in land_holdings), Decimal("0.00"))
+-    )
+-    crop_plan_area = _normalized_acres(crop_plan.planned_area_acres)
+-    acreage_values = {selected_land_area, crop_plan_area}
+-    profile = IndividualMemberProfile.objects.filter(member=application.member).first()
+-    if profile and profile.land_area_under_cultivation_acres is not None:
+-        acreage_values.add(_normalized_acres(profile.land_area_under_cultivation_acres))
+-    if len(acreage_values) != 1:
+-        raise LoanApplicationValidationError(
+-            {"cultivated_acreage": "CULTIVATED_ACREAGE_UNRESOLVED"}
+-        )
+-    return {
+-        "shareholding": shareholding,
+-        "land_holdings": land_holdings,
+-        "crop_plan": crop_plan,
+-        "cultivated_acreage": selected_land_area,
+-        "requested_amount": requested_amount,
+-        "calculation_date": calculation_date,
+-    }
+-
+-
+-def _normalized_acres(value):
+-    return Decimal(value).quantize(Decimal("0.01"))
+-
+-
+-def _effective_loan_policy(calculation_date):
+-    policies = list(
+-        LoanPolicyConfig.objects.select_for_update()
+-        .filter(
+-            status=LoanPolicyConfig.STATUS_ACTIVE,
+-            effective_from__lte=calculation_date,
+-        )
+-        .filter(Q(effective_to__isnull=True) | Q(effective_to__gte=calculation_date))
+-        .order_by("-effective_from", "-loan_policy_config_id")[:2]
+-    )
+-    if len(policies) != 1:
+-        raise LoanApplicationValidationError(
+-            {
+-                "loan_policy_config": (
+-                    "Exactly one active loan policy must apply on calculation_date."
+-                )
+-            }
+-        )
+-    policy = policies[0]
+-    if not policy.board_approval_reference:
+-        raise LoanApplicationValidationError(
+-            {
+-                "loan_policy_config": (
+-                    "Active loan-limit policy requires Board approval metadata."
+-                )
+-            }
+-        )
+-    if policy.default_scale_of_finance_per_acre_amount <= 0:
+-        raise LoanApplicationValidationError(
+-            {"loan_policy_config": "Scale of finance must be greater than zero."}
+-        )
+-    configured_rules = [
+-        value
+-        for value in (policy.share_limit_percentage, policy.per_share_cap_amount)
+-        if value is not None
+-    ]
+-    if not configured_rules or any(value <= 0 for value in configured_rules):
+-        raise LoanApplicationValidationError(
+-            {
+-                "loan_policy_config": (
+-                    "Configure a positive share percentage or per-share cap before calculation."
+-                )
+-            }
+-        )
+-    return policy
+-
+-
+ def _application_document_audit_snapshot(application_document):
+     return {
+         "application_document_id": str(application_document.application_document_id),
+diff --git a/sfpcl_credit/applications/views.py b/sfpcl_credit/applications/views.py
+index 6d132df..190f9d9 100644
+--- a/sfpcl_credit/applications/views.py
++++ b/sfpcl_credit/applications/views.py
+@@ -10,6 +10,15 @@ from sfpcl_credit.api import (
+     success_response,
+ )
+ from sfpcl_credit.applications import services
++from sfpcl_credit.credit.modules.common import (
++    CreditModuleInvalidStateError,
++    CreditModuleNotFound,
++    CreditModuleObjectAccessDenied,
++    CreditModulePermissionDenied,
++    CreditModuleValidationError,
++)
++from sfpcl_credit.credit.modules.eligibility_assessment import EligibilityAssessmentModule
++from sfpcl_credit.credit.modules.loan_limit_calculator import LoanLimitCalculator
+ from sfpcl_credit.identity.modules import http_auth
+ from sfpcl_credit.workflows.guard import InvalidStateTransition
+ 
+@@ -500,33 +509,19 @@ def loan_application_eligibility_assessment(request, loan_application_id):
+     user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+     if response is not None:
+         return response
+-    if not services.user_can_read_applications(user):
+-        return error_response(
+-            request,
+-            403,
+-            "PERMISSION_DENIED",
+-            "You do not have permission to read loan applications.",
+-        )
+-    application = services.get_application(loan_application_id)
+-    if application is None:
+-        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+-    object_access = services.evaluate_application_object_access(
+-        application,
+-        user,
+-        services.APPLICATION_READ_PERMISSION,
+-        permissions,
+-    )
+-    if not object_access.allowed:
+-        return _object_access_denied_response(request, object_access)
+-    assessment = services.get_eligibility_assessment(application)
+-    if assessment is None:
+-        return error_response(
+-            request,
+-            404,
+-            "NOT_FOUND",
+-            "Eligibility assessment was not found.",
++    try:
++        result = EligibilityAssessmentModule().get(
++            actor=user,
++            application_id=loan_application_id,
++            actor_permissions=permissions,
+         )
+-    return success_response(services.serialize_eligibility_assessment(assessment), request)
++    except (
++        CreditModuleNotFound,
++        CreditModuleObjectAccessDenied,
++        CreditModulePermissionDenied,
++    ) as exc:
++        return _credit_module_error_response(request, exc)
++    return success_response(result.snapshot, request)
+ 
+ 
+ @require_http_methods(["POST"])
+@@ -534,40 +529,13 @@ def loan_application_eligibility_assessment_run(request, loan_application_id):
+     user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+     if response is not None:
+         return response
+-    if not services.user_can_run_eligibility(user):
+-        return error_response(
+-            request,
+-            403,
+-            "PERMISSION_DENIED",
+-            "You do not have permission to run eligibility assessments.",
+-        )
+-    application = services.get_application(loan_application_id)
+-    if application is None:
+-        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+-    object_access = services.evaluate_application_object_access(
+-        application,
+-        user,
+-        services.ELIGIBILITY_RUN_PERMISSION,
+-        permissions,
+-    )
+-    if not object_access.allowed:
+-        return _object_access_denied_response(request, object_access)
+     try:
+         parse_json_body(request)
+-        invalid_state_message = services.eligibility_run_invalid_state_message(application)
+-        if invalid_state_message:
+-            return error_response(
+-                request,
+-                409,
+-                "INVALID_STATE_TRANSITION",
+-                invalid_state_message,
+-            )
+-        assessment = services.run_eligibility_assessment(
+-            application,
+-            user,
+-            request_ip(request),
+-            request_user_agent(request),
+-            request.headers.get("X-Request-ID"),
++        result = EligibilityAssessmentModule().run(
++            actor=user,
++            application_id=loan_application_id,
++            request_meta=_credit_request_meta(request),
++            actor_permissions=permissions,
+         )
+     except ValidationError as exc:
+         return error_response(
+@@ -577,9 +545,23 @@ def loan_application_eligibility_assessment_run(request, loan_application_id):
+             "Eligibility assessment payload failed validation.",
+             services.validation_field_errors(exc),
+         )
+-    except services.LoanApplicationInvalidStateError as exc:
++    except CreditModuleValidationError as exc:
++        return error_response(
++            request,
++            400,
++            "VALIDATION_ERROR",
++            "Eligibility assessment payload failed validation.",
++            services.validation_field_errors(exc),
++        )
++    except CreditModuleInvalidStateError as exc:
+         return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
+-    return success_response(services.serialize_eligibility_assessment(assessment), request)
++    except (
++        CreditModuleNotFound,
++        CreditModuleObjectAccessDenied,
++        CreditModulePermissionDenied,
++    ) as exc:
++        return _credit_module_error_response(request, exc)
++    return success_response(result.snapshot, request)
+ 
+ 
+ @require_http_methods(["POST"])
+@@ -587,35 +569,16 @@ def loan_application_loan_limit_calculate(request, loan_application_id):
+     user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+     if response is not None:
+         return response
+-    if not services.user_can_calculate_loan_limit(user):
+-        return error_response(
+-            request,
+-            403,
+-            "PERMISSION_DENIED",
+-            "You do not have permission to calculate loan limits.",
+-        )
+-    application = services.get_application(loan_application_id)
+-    if application is None:
+-        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+-    object_access = services.evaluate_application_object_access(
+-        application,
+-        user,
+-        services.LOAN_LIMIT_CALCULATE_PERMISSION,
+-        permissions,
+-    )
+-    if not object_access.allowed:
+-        return _object_access_denied_response(request, object_access)
+     try:
+         payload = parse_json_body(request)
+-        assessment, _policy = services.calculate_loan_limit(
+-            application,
+-            payload,
+-            user,
+-            request_ip(request),
+-            request_user_agent(request),
+-            request.headers.get("X-Request-ID"),
++        result = LoanLimitCalculator().calculate_for_application(
++            actor=user,
++            application_id=loan_application_id,
++            payload=payload,
++            request_meta=_credit_request_meta(request),
++            actor_permissions=permissions,
+         )
+-    except services.LoanApplicationValidationError as exc:
++    except CreditModuleValidationError as exc:
+         return error_response(
+             request,
+             400,
+@@ -631,12 +594,15 @@ def loan_application_loan_limit_calculate(request, loan_application_id):
+             "Loan-limit calculation failed validation.",
+             services.validation_field_errors(exc),
+         )
+-    except services.LoanApplicationInvalidStateError as exc:
++    except CreditModuleInvalidStateError as exc:
+         return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
+-    return success_response(
+-        services.serialize_loan_limit_assessment(assessment),
+-        request,
+-    )
++    except (
++        CreditModuleNotFound,
++        CreditModuleObjectAccessDenied,
++        CreditModulePermissionDenied,
++    ) as exc:
++        return _credit_module_error_response(request, exc)
++    return success_response(result.snapshot, request)
+ 
+ 
+ @require_http_methods(["GET"])
+@@ -644,33 +610,19 @@ def loan_application_loan_limit_assessment(request, loan_application_id):
+     user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+     if response is not None:
+         return response
+-    if not services.user_can_read_applications(user):
+-        return error_response(
+-            request,
+-            403,
+-            "PERMISSION_DENIED",
+-            "You do not have permission to read loan applications.",
+-        )
+-    application = services.get_application(loan_application_id)
+-    if application is None:
+-        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+-    object_access = services.evaluate_application_object_access(
+-        application,
+-        user,
+-        services.APPLICATION_READ_PERMISSION,
+-        permissions,
+-    )
+-    if not object_access.allowed:
+-        return _object_access_denied_response(request, object_access)
+-    assessment = services.get_loan_limit_assessment(application)
+-    if assessment is None:
+-        return error_response(
+-            request,
+-            404,
+-            "NOT_FOUND",
+-            "Loan-limit assessment was not found.",
++    try:
++        result = LoanLimitCalculator().get_assessment(
++            actor=user,
++            application_id=loan_application_id,
++            actor_permissions=permissions,
+         )
+-    return success_response(services.serialize_loan_limit_assessment(assessment), request)
++    except (
++        CreditModuleNotFound,
++        CreditModuleObjectAccessDenied,
++        CreditModulePermissionDenied,
++    ) as exc:
++        return _credit_module_error_response(request, exc)
++    return success_response(result.snapshot, request)
+ 
+ 
+ @require_http_methods(["POST"])
+@@ -901,3 +853,21 @@ def _object_access_denied_response(request, object_access):
+         object_access.error_code or "OBJECT_ACCESS_DENIED",
+         "You do not have access to this loan application.",
+     )
++
++
++def _credit_request_meta(request):
++    return {
++        "request_id": request.headers.get("X-Request-ID"),
++        "ip_address": request_ip(request),
++        "user_agent": request_user_agent(request),
++    }
++
++
++def _credit_module_error_response(request, exc):
++    if isinstance(exc, CreditModuleObjectAccessDenied):
++        return _object_access_denied_response(request, exc.object_access)
++    if isinstance(exc, CreditModulePermissionDenied):
++        return error_response(request, 403, "PERMISSION_DENIED", exc.message)
++    if isinstance(exc, CreditModuleNotFound):
++        return error_response(request, 404, "NOT_FOUND", exc.message)
++    raise exc
+diff --git a/sfpcl_credit/config/settings.py b/sfpcl_credit/config/settings.py
+index e4db6fe..b5e8a79 100644
+--- a/sfpcl_credit/config/settings.py
++++ b/sfpcl_credit/config/settings.py
+@@ -34,6 +34,7 @@ INSTALLED_APPS = [
+     "sfpcl_credit.applications",
+     "sfpcl_credit.communications",
+     "sfpcl_credit.configurations",
++    "sfpcl_credit.credit",
+     "sfpcl_credit.documents",
+     "sfpcl_credit.identity",
+     "sfpcl_credit.members",
+diff --git a/sfpcl_credit/configurations/modules/__init__.py b/sfpcl_credit/configurations/modules/__init__.py
+new file mode 100644
+index 0000000..31ee216
+--- /dev/null
++++ b/sfpcl_credit/configurations/modules/__init__.py
+@@ -0,0 +1 @@
++"""Configuration module interfaces."""
+diff --git a/sfpcl_credit/configurations/modules/configuration_resolver.py b/sfpcl_credit/configurations/modules/configuration_resolver.py
+new file mode 100644
+index 0000000..50ce8b9
+--- /dev/null
++++ b/sfpcl_credit/configurations/modules/configuration_resolver.py
+@@ -0,0 +1,53 @@
++from django.db.models import Q
++
++from sfpcl_credit.configurations.models import LoanPolicyConfig
++from sfpcl_credit.credit.modules.common import CreditModuleValidationError
++
++
++def resolve_effective_loan_policy(*, calculation_date, for_update=False):
++    queryset = LoanPolicyConfig.objects
++    if for_update:
++        queryset = queryset.select_for_update()
++    policies = list(
++        queryset.filter(
++            status=LoanPolicyConfig.STATUS_ACTIVE,
++            effective_from__lte=calculation_date,
++        )
++        .filter(Q(effective_to__isnull=True) | Q(effective_to__gte=calculation_date))
++        .order_by("-effective_from", "-loan_policy_config_id")[:2]
++    )
++    if len(policies) != 1:
++        raise CreditModuleValidationError(
++            {
++                "loan_policy_config": (
++                    "Exactly one active loan policy must apply on calculation_date."
++                )
++            }
++        )
++    policy = policies[0]
++    if not policy.board_approval_reference:
++        raise CreditModuleValidationError(
++            {
++                "loan_policy_config": (
++                    "Active loan-limit policy requires Board approval metadata."
++                )
++            }
++        )
++    if policy.default_scale_of_finance_per_acre_amount <= 0:
++        raise CreditModuleValidationError(
++            {"loan_policy_config": "Scale of finance must be greater than zero."}
++        )
++    configured_rules = [
++        value
++        for value in (policy.share_limit_percentage, policy.per_share_cap_amount)
++        if value is not None
++    ]
++    if not configured_rules or any(value <= 0 for value in configured_rules):
++        raise CreditModuleValidationError(
++            {
++                "loan_policy_config": (
++                    "Configure a positive share percentage or per-share cap before calculation."
++                )
++            }
++        )
++    return policy
+diff --git a/sfpcl_credit/credit/__init__.py b/sfpcl_credit/credit/__init__.py
+new file mode 100644
+index 0000000..5c0aef1
+--- /dev/null
++++ b/sfpcl_credit/credit/__init__.py
+@@ -0,0 +1 @@
++default_app_config = "sfpcl_credit.credit.apps.CreditConfig"
+diff --git a/sfpcl_credit/credit/apps.py b/sfpcl_credit/credit/apps.py
+new file mode 100644
+index 0000000..4d4d504
+--- /dev/null
++++ b/sfpcl_credit/credit/apps.py
+@@ -0,0 +1,7 @@
++from django.apps import AppConfig
++
++
++class CreditConfig(AppConfig):
++    default_auto_field = "django.db.models.BigAutoField"
++    name = "sfpcl_credit.credit"
++    label = "credit"
+diff --git a/sfpcl_credit/credit/modules/__init__.py b/sfpcl_credit/credit/modules/__init__.py
+new file mode 100644
+index 0000000..626a3f3
+--- /dev/null
++++ b/sfpcl_credit/credit/modules/__init__.py
+@@ -0,0 +1 @@
++"""Deep credit assessment module interfaces."""
+diff --git a/sfpcl_credit/credit/modules/appraisal_workflow.py b/sfpcl_credit/credit/modules/appraisal_workflow.py
+new file mode 100644
+index 0000000..40b0840
+--- /dev/null
++++ b/sfpcl_credit/credit/modules/appraisal_workflow.py
+@@ -0,0 +1,12 @@
++class AppraisalWorkflow:
++    def create_or_update(self, *, actor, application_id, payload):
++        raise NotImplementedError("Appraisal workflow is owned by slice 006E.")
++
++    def submit_for_review(self, *, actor, appraisal_id):
++        raise NotImplementedError("Appraisal workflow is owned by slice 006E.")
++
++    def review(self, *, actor, appraisal_id, decision, comments):
++        raise NotImplementedError("Appraisal review is owned by slice 006F.")
++
++    def submit_to_sanction(self, *, actor, application_id):
++        raise NotImplementedError("Sanction submission is owned by slice 006G.")
+diff --git a/sfpcl_credit/credit/modules/common.py b/sfpcl_credit/credit/modules/common.py
+new file mode 100644
+index 0000000..6349c58
+--- /dev/null
++++ b/sfpcl_credit/credit/modules/common.py
+@@ -0,0 +1,142 @@
++import uuid
++from dataclasses import dataclass
++from decimal import Decimal, InvalidOperation
++
++from django.utils import timezone
++from django.utils.dateparse import parse_date
++
++from sfpcl_credit.applications.models import LoanApplication
++from sfpcl_credit.applications.services import evaluate_application_object_access
++from sfpcl_credit.identity.modules import auth_service
++
++
++APPLICATION_READ_PERMISSION = "applications.loan_application.read"
++ELIGIBILITY_RUN_PERMISSION = "credit.eligibility.run"
++LOAN_LIMIT_CALCULATE_PERMISSION = "credit.loan_limit.calculate"
++
++
++@dataclass(frozen=True)
++class RequestMeta:
++    request_id: str | None = None
++    ip_address: str = ""
++    user_agent: str = ""
++
++
++class CreditModuleValidationError(Exception):
++    def __init__(self, field_errors):
++        self.field_errors = field_errors
++        super().__init__("Credit module payload failed validation.")
++
++
++class CreditModuleInvalidStateError(Exception):
++    pass
++
++
++class CreditModulePermissionDenied(Exception):
++    def __init__(self, message):
++        self.message = message
++        super().__init__(message)
++
++
++class CreditModuleObjectAccessDenied(Exception):
++    def __init__(self, object_access):
++        self.object_access = object_access
++        super().__init__("Object access denied.")
++
++
++class CreditModuleNotFound(Exception):
++    def __init__(self, message):
++        self.message = message
++        super().__init__(message)
++
++
++def normalize_request_meta(request_meta=None):
++    if isinstance(request_meta, RequestMeta):
++        return request_meta
++    request_meta = request_meta or {}
++    return RequestMeta(
++        request_id=request_meta.get("request_id"),
++        ip_address=request_meta.get("ip_address", ""),
++        user_agent=request_meta.get("user_agent", ""),
++    )
++
++
++def require_permission(actor, permission_code, message, actor_permissions=None):
++    permissions = actor_permissions or auth_service.effective_permission_codes(actor)
++    if permission_code not in permissions:
++        raise CreditModulePermissionDenied(message)
++    return permissions
++
++
++def require_application_access(application, actor, permission_code, actor_permissions=None):
++    object_access = evaluate_application_object_access(
++        application,
++        actor,
++        permission_code,
++        actor_permissions,
++    )
++    if not object_access.allowed:
++        raise CreditModuleObjectAccessDenied(object_access)
++
++
++def get_application_or_raise(application_id):
++    application = (
++        LoanApplication.objects.select_related(
++            "member",
++            "nominee",
++            "created_by_user",
++            "received_by_user",
++        )
++        .filter(loan_application_id=application_id)
++        .first()
++    )
++    if application is None:
++        raise CreditModuleNotFound("Loan application was not found.")
++    return application
++
++
++def parse_uuid(field, value, errors):
++    try:
++        return uuid.UUID(str(value))
++    except (TypeError, ValueError):
++        errors[field] = "Must be a valid UUID."
++        return None
++
++
++def parse_required_positive_decimal(value, field, errors):
++    try:
++        amount = Decimal(str(value))
++    except (InvalidOperation, TypeError, ValueError):
++        errors[field] = "Must be a valid decimal amount."
++        return None
++    if amount <= 0:
++        errors[field] = "Must be greater than zero."
++        return None
++    return amount.quantize(Decimal("0.01"))
++
++
++def parse_iso_date(field, value, errors):
++    parsed = parse_date(str(value or ""))
++    if parsed is None:
++        errors[field] = "Must be a valid ISO date."
++    return parsed
++
++
++def money(value):
++    if value is None:
++        return None
++    return f"{Decimal(value):.2f}"
++
++
++def timestamp(value):
++    if value is None:
++        return None
++    return timezone.localtime(value).isoformat()
++
++
++def age_on_date(date_of_birth, on_date=None):
++    on_date = on_date or timezone.localdate()
++    years = on_date.year - date_of_birth.year
++    if (on_date.month, on_date.day) < (date_of_birth.month, date_of_birth.day):
++        years -= 1
++    return years
+diff --git a/sfpcl_credit/credit/modules/eligibility_assessment.py b/sfpcl_credit/credit/modules/eligibility_assessment.py
+new file mode 100644
+index 0000000..f02118e
+--- /dev/null
++++ b/sfpcl_credit/credit/modules/eligibility_assessment.py
+@@ -0,0 +1,313 @@
++from dataclasses import dataclass
++
++from django.db import transaction
++from django.utils import timezone
++
++from sfpcl_credit.applications.models import EligibilityAssessment, LoanApplication
++from sfpcl_credit.applications.services import build_completeness_workbench
++from sfpcl_credit.credit.modules.common import (
++    APPLICATION_READ_PERMISSION,
++    ELIGIBILITY_RUN_PERMISSION,
++    CreditModuleInvalidStateError,
++    CreditModuleNotFound,
++    age_on_date,
++    get_application_or_raise,
++    normalize_request_meta,
++    require_application_access,
++    require_permission,
++    timestamp,
++)
++from sfpcl_credit.identity.models import AuditLog
++from sfpcl_credit.workflows.events import record_workflow_event
++
++
++ELIGIBILITY_ASSESSED_AUDIT_ACTION = "eligibility.assessed"
++
++
++@dataclass(frozen=True)
++class EligibilityAssessmentResult:
++    assessment: EligibilityAssessment
++    snapshot: dict
++
++
++class EligibilityAssessmentModule:
++    def get(self, *, actor, application_id, actor_permissions=None):
++        permissions = require_permission(
++            actor,
++            APPLICATION_READ_PERMISSION,
++            "You do not have permission to read loan applications.",
++            actor_permissions,
++        )
++        application = get_application_or_raise(application_id)
++        require_application_access(
++            application,
++            actor,
++            APPLICATION_READ_PERMISSION,
++            permissions,
++        )
++        assessment = (
++            EligibilityAssessment.objects.select_related("loan_application", "assessed_by_user")
++            .filter(loan_application=application)
++            .first()
++        )
++        if assessment is None:
++            raise CreditModuleNotFound("Eligibility assessment was not found.")
++        return EligibilityAssessmentResult(
++            assessment=assessment,
++            snapshot=eligibility_assessment_snapshot(assessment),
++        )
++
++    @transaction.atomic
++    def run(self, *, actor, application_id, request_meta=None, actor_permissions=None):
++        permissions = require_permission(
++            actor,
++            ELIGIBILITY_RUN_PERMISSION,
++            "You do not have permission to run eligibility assessments.",
++            actor_permissions,
++        )
++        request_meta = normalize_request_meta(request_meta)
++        application = (
++            LoanApplication.objects.select_for_update()
++            .select_related("member", "nominee", "created_by_user", "received_by_user")
++            .filter(loan_application_id=application_id)
++            .first()
++        )
++        if application is None:
++            raise CreditModuleNotFound("Loan application was not found.")
++        require_application_access(
++            application,
++            actor,
++            ELIGIBILITY_RUN_PERMISSION,
++            permissions,
++        )
++        invalid_state_message = eligibility_run_invalid_state_message(application)
++        if invalid_state_message:
++            raise CreditModuleInvalidStateError(invalid_state_message)
++
++        active_result = _active_member_check(application.member)
++        source_checks = _source_backed_eligibility_checks(application)
++        assessment = (
++            EligibilityAssessment.objects.select_for_update()
++            .filter(loan_application=application)
++            .first()
++        )
++        old_value_json = (
++            eligibility_assessment_snapshot(assessment) if assessment is not None else None
++        )
++        if assessment is None:
++            assessment = EligibilityAssessment(loan_application=application)
++        assessment.member_active_check = active_result["member_active_check"]
++        assessment.default_check = source_checks["default_check"]
++        assessment.document_check = source_checks["document_check"]
++        assessment.terms_acceptance_check = source_checks["terms_acceptance_check"]
++        assessment.purpose_check = source_checks["purpose_check"]
++        assessment.nominee_check = source_checks["nominee_check"]
++        assessment.overall_result = _eligibility_overall_result(active_result, source_checks)
++        assessment.assessment_notes = _eligibility_assessment_notes(
++            active_result,
++            source_checks,
++            assessment.overall_result,
++        )
++        assessment.assessed_by_user = actor
++        assessment.assessed_at = timezone.now()
++        assessment.save()
++        _audit_eligibility_assessment(
++            assessment,
++            actor,
++            old_value_json,
++            request_meta,
++        )
++        record_workflow_event(
++            actor=actor,
++            workflow_name="eligibility_assessment",
++            entity_type="loan_application",
++            entity_id=application.loan_application_id,
++            from_state=application.current_stage,
++            to_state="eligibility_assessed",
++            trigger_reason="Eligibility assessment active-member check completed.",
++            action_code=ELIGIBILITY_ASSESSED_AUDIT_ACTION,
++        )
++        return EligibilityAssessmentResult(
++            assessment=assessment,
++            snapshot=eligibility_assessment_snapshot(assessment),
++        )
++
++
++def eligibility_run_invalid_state_message(application):
++    if not (application.application_reference_number or "").startswith("LO"):
++        return "Eligibility assessment requires a formal LO application reference."
++    if application.application_status != LoanApplication.STATUS_REFERENCE_GENERATED:
++        return (
++            "Invalid state transition for loan_application: eligibility_assessment.run "
++            f"is not allowed from {application.application_status}."
++        )
++    if application.completeness_status != LoanApplication.COMPLETENESS_COMPLETE:
++        return "Eligibility assessment requires complete application documentation."
++    if application.current_stage != LoanApplication.STAGE_CREDIT_ASSESSMENT:
++        return "Eligibility assessment is allowed only in credit assessment stage."
++    return None
++
++
++def eligibility_assessment_snapshot(assessment):
++    return {
++        "eligibility_assessment_id": str(assessment.eligibility_assessment_id),
++        "loan_application_id": str(assessment.loan_application_id),
++        "member_active_check": assessment.member_active_check,
++        "default_check": assessment.default_check,
++        "document_check": assessment.document_check,
++        "terms_acceptance_check": assessment.terms_acceptance_check,
++        "purpose_check": assessment.purpose_check,
++        "nominee_check": assessment.nominee_check,
++        "overall_result": assessment.overall_result,
++        "assessment_notes": assessment.assessment_notes,
++        "assessed_by_user_id": str(assessment.assessed_by_user_id),
++        "assessed_at": timestamp(assessment.assessed_at),
++    }
++
++
++def _audit_eligibility_assessment(assessment, actor, old_value_json, request_meta):
++    new_value_json = eligibility_assessment_snapshot(assessment)
++    new_value_json["request_id"] = request_meta.request_id
++    AuditLog.objects.create(
++        actor_user=actor,
++        action=ELIGIBILITY_ASSESSED_AUDIT_ACTION,
++        entity_type="eligibility_assessment",
++        entity_id=assessment.eligibility_assessment_id,
++        old_value_json=old_value_json,
++        new_value_json=new_value_json,
++        ip_address=request_meta.ip_address,
++        user_agent=request_meta.user_agent,
++    )
++
++
++def _active_member_check(member):
++    if member.membership_status != "active":
++        return {
++            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_FAIL,
++            "overall_result": EligibilityAssessment.OVERALL_INELIGIBLE,
++            "assessment_notes": (
++                "BR-003 requires active member status or relaxation evidence; "
++                f"member status is {member.membership_status}."
++            ),
++        }
++    if member.active_member_status == "active" and member.active_member_verified_at:
++        return {
++            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_PASS,
++            "overall_result": EligibilityAssessment.OVERALL_PENDING,
++            "assessment_notes": (
++                "Active-member status was verified from existing member facts. "
++                "Default, document, terms, purpose, and nominee checks are pending."
++            ),
++        }
++    if member.active_member_status == "relaxation" and member.active_member_verified_at:
++        return {
++            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_RELAXATION,
++            "overall_result": EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE,
++            "assessment_notes": (
++                "Active-member relaxation is recorded on the member profile. "
++                "Manual evidence remains reviewable for BR-004 through BR-007."
++            ),
++        }
++    return {
++        "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_MANUAL_EVIDENCE_REQUIRED,
++        "overall_result": EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE,
++        "assessment_notes": (
++            "BR-004 through BR-007 require continuous produce/service history or "
++            "relaxation evidence. Current persistence has no source history rows "
++            "for this application, so manual evidence is required."
++        ),
++    }
++
++
++def _source_backed_eligibility_checks(application):
++    nominee_check = _nominee_check(application.nominee, application.member)
++    return {
++        "default_check": "no_default"
++        if application.member.default_status == "no_default"
++        else "default_found",
++        "document_check": _document_check(application),
++        "terms_acceptance_check": (
++            "accepted" if application.terms_acceptance_flag else "pending"
++        ),
++        "purpose_check": (
++            "agriculture_aligned"
++            if application.purpose_category in {"crop_production", "agriculture_activity"}
++            else "non_agriculture"
++        ),
++        "nominee_check": nominee_check,
++        "nominee_manual_evidence_required": nominee_check == EligibilityAssessment.CHECK_PENDING,
++    }
++
++
++def _document_check(application):
++    workbench = build_completeness_workbench(application)
++    if workbench["blocking_document_types"]:
++        return "incomplete"
++    return "complete"
++
++
++def _nominee_check(nominee, member=None):
++    if nominee is None:
++        return EligibilityAssessment.CHECK_PENDING
++    if nominee.age_at_application is None and nominee.date_of_birth is None:
++        return EligibilityAssessment.CHECK_PENDING
++    if (
++        nominee.minor_flag
++        or (nominee.age_at_application is not None and nominee.age_at_application < 18)
++        or (nominee.date_of_birth is not None and age_on_date(nominee.date_of_birth) < 18)
++    ):
++        return "minor"
++    if member is not None and nominee.member_id != member.member_id:
++        return EligibilityAssessment.CHECK_PENDING
++    return "valid"
++
++
++def _eligibility_overall_result(active_result, source_checks):
++    if active_result["member_active_check"] == EligibilityAssessment.MEMBER_ACTIVE_FAIL:
++        return EligibilityAssessment.OVERALL_INELIGIBLE
++    if any(
++        (
++            source_checks["default_check"] == "default_found",
++            source_checks["document_check"] == "incomplete",
++            source_checks["terms_acceptance_check"] == "pending",
++            source_checks["purpose_check"] == "non_agriculture",
++            source_checks["nominee_check"] == "minor",
++        )
++    ):
++        return EligibilityAssessment.OVERALL_INELIGIBLE
++    if active_result["overall_result"] == EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE:
++        return EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE
++    if source_checks["nominee_manual_evidence_required"]:
++        return EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE
++    return EligibilityAssessment.OVERALL_ELIGIBLE
++
++
++def _eligibility_assessment_notes(active_result, source_checks, overall_result):
++    blockers = []
++    if active_result["member_active_check"] == EligibilityAssessment.MEMBER_ACTIVE_FAIL:
++        blockers.append("BR-003 active-member evidence failed")
++    if source_checks["default_check"] == "default_found":
++        blockers.append("BR-008 default history blocks normal eligibility")
++    if source_checks["document_check"] == "incomplete":
++        blockers.append("BR-013/BR-014 required checklist evidence is incomplete")
++    if source_checks["terms_acceptance_check"] == "pending":
++        blockers.append("S15 terms acceptance is pending")
++    if source_checks["purpose_check"] == "non_agriculture":
++        blockers.append("BR-018 purpose is not agriculture-aligned")
++    if source_checks["nominee_check"] == "minor":
++        blockers.append("BR-009 nominee is a minor")
++    if blockers:
++        return "; ".join(blockers) + "."
++    if overall_result == EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE:
++        if source_checks["nominee_manual_evidence_required"]:
++            if active_result["member_active_check"] == EligibilityAssessment.MEMBER_ACTIVE_PASS:
++                return (
++                    "Source-backed default, document, terms, and purpose checks passed. "
++                    "Application-specific nominee selection is pending."
++                )
++            return (
++                active_result["assessment_notes"]
++                + " Application-specific nominee selection is pending."
++            )
++        return active_result["assessment_notes"]
++    return "All mandatory eligibility criteria passed."
+diff --git a/sfpcl_credit/credit/modules/loan_limit_calculator.py b/sfpcl_credit/credit/modules/loan_limit_calculator.py
+new file mode 100644
+index 0000000..cacfb75
+--- /dev/null
++++ b/sfpcl_credit/credit/modules/loan_limit_calculator.py
+@@ -0,0 +1,405 @@
++import uuid
++from dataclasses import dataclass
++from decimal import Decimal
++
++from django.db import transaction
++from django.utils import timezone
++
++from sfpcl_credit.applications.models import (
++    EligibilityAssessment,
++    LoanApplication,
++    LoanLimitAssessment,
++)
++from sfpcl_credit.configurations.modules.configuration_resolver import resolve_effective_loan_policy
++from sfpcl_credit.credit.modules.common import (
++    APPLICATION_READ_PERMISSION,
++    LOAN_LIMIT_CALCULATE_PERMISSION,
++    CreditModuleInvalidStateError,
++    CreditModuleNotFound,
++    CreditModuleValidationError,
++    get_application_or_raise,
++    money,
++    normalize_request_meta,
++    parse_iso_date,
++    parse_required_positive_decimal,
++    parse_uuid,
++    require_application_access,
++    require_permission,
++    timestamp,
++)
++from sfpcl_credit.identity.models import AuditLog
++from sfpcl_credit.members.models import (
++    CropPlan,
++    IndividualMemberProfile,
++    LandHolding,
++    Shareholding,
++)
++from sfpcl_credit.workflows.events import record_workflow_event
++
++
++LOAN_LIMIT_CALCULATED_AUDIT_ACTION = "loan_limit.calculated"
++
++
++@dataclass(frozen=True)
++class LoanLimitAssessmentResult:
++    assessment: LoanLimitAssessment
++    snapshot: dict
++
++
++class LoanLimitCalculator:
++    def get_assessment(self, *, actor, application_id, actor_permissions=None):
++        permissions = require_permission(
++            actor,
++            APPLICATION_READ_PERMISSION,
++            "You do not have permission to read loan applications.",
++            actor_permissions,
++        )
++        application = get_application_or_raise(application_id)
++        require_application_access(
++            application,
++            actor,
++            APPLICATION_READ_PERMISSION,
++            permissions,
++        )
++        assessment = (
++            LoanLimitAssessment.objects.select_related(
++                "loan_application",
++                "member",
++                "shareholding",
++                "calculated_by_user",
++            )
++            .filter(loan_application=application)
++            .first()
++        )
++        if assessment is None:
++            raise CreditModuleNotFound("Loan-limit assessment was not found.")
++        return LoanLimitAssessmentResult(
++            assessment=assessment,
++            snapshot=loan_limit_assessment_snapshot(assessment),
++        )
++
++    @transaction.atomic
++    def calculate_for_application(
++        self,
++        *,
++        actor,
++        application_id,
++        payload,
++        request_meta=None,
++        actor_permissions=None,
++    ):
++        permissions = require_permission(
++            actor,
++            LOAN_LIMIT_CALCULATE_PERMISSION,
++            "You do not have permission to calculate loan limits.",
++            actor_permissions,
++        )
++        request_meta = normalize_request_meta(request_meta)
++        application = (
++            LoanApplication.objects.select_for_update()
++            .select_related("member", "created_by_user", "received_by_user")
++            .filter(loan_application_id=application_id)
++            .first()
++        )
++        if application is None:
++            raise CreditModuleNotFound("Loan application was not found.")
++        require_application_access(
++            application,
++            actor,
++            LOAN_LIMIT_CALCULATE_PERMISSION,
++            permissions,
++        )
++        eligibility = (
++            EligibilityAssessment.objects.select_for_update()
++            .filter(loan_application=application)
++            .first()
++        )
++        if eligibility is None:
++            raise CreditModuleInvalidStateError(
++                "An eligible eligibility assessment is required before loan-limit calculation."
++            )
++        if eligibility.overall_result != EligibilityAssessment.OVERALL_ELIGIBLE:
++            raise CreditModuleInvalidStateError(
++                "Loan-limit calculation requires eligibility overall_result eligible."
++            )
++
++        cleaned = _clean_loan_limit_payload(application, payload)
++        policy = resolve_effective_loan_policy(
++            calculation_date=cleaned["calculation_date"],
++            for_update=True,
++        )
++        shareholding = cleaned["shareholding"]
++        valuation_per_share = shareholding.valuation_per_share
++        percentage = policy.share_limit_percentage
++        cap_amount = policy.per_share_cap_amount
++
++        per_share_limits = []
++        if percentage is not None:
++            per_share_limits.append(valuation_per_share * percentage / Decimal("100"))
++        if cap_amount is not None:
++            per_share_limits.append(cap_amount)
++        per_share_limit = min(per_share_limits)
++        shareholding_limit = (
++            Decimal(shareholding.number_of_shares) * per_share_limit
++        ).quantize(Decimal("0.01"))
++        land_area = cleaned["cultivated_acreage"]
++        land_limit = (
++            land_area * policy.default_scale_of_finance_per_acre_amount
++        ).quantize(Decimal("0.01"))
++        final_eligible_amount = min(shareholding_limit, land_limit)
++        requested_amount = cleaned["requested_amount"].quantize(Decimal("0.01"))
++        amount_within_limit = requested_amount <= final_eligible_amount
++
++        assessment = (
++            LoanLimitAssessment.objects.select_for_update()
++            .filter(loan_application=application)
++            .first()
++        )
++        old_value_json = (
++            loan_limit_assessment_audit_snapshot(assessment)
++            if assessment is not None
++            else None
++        )
++        if assessment is None:
++            assessment = LoanLimitAssessment(loan_application=application)
++        assessment.member = application.member
++        assessment.shareholding = shareholding
++        assessment.number_of_shares = shareholding.number_of_shares
++        assessment.valuation_per_share = valuation_per_share
++        assessment.share_limit_percentage = percentage
++        assessment.per_share_cap_amount = cap_amount
++        assessment.shareholding_based_limit_amount = shareholding_limit
++        assessment.land_area_acres = land_area
++        assessment.scale_of_finance_per_acre_amount = (
++            policy.default_scale_of_finance_per_acre_amount
++        )
++        assessment.land_based_limit_amount = land_limit
++        assessment.final_eligible_loan_amount = final_eligible_amount
++        assessment.requested_amount = requested_amount
++        assessment.amount_within_limit_flag = amount_within_limit
++        assessment.exception_required_flag = not amount_within_limit
++        assessment.calculation_rule_version = policy.policy_version
++        assessment.policy_config_id_snapshot = policy.loan_policy_config_id
++        assessment.policy_name_snapshot = policy.policy_name
++        assessment.board_approval_reference_snapshot = policy.board_approval_reference or ""
++        assessment.calculated_by_user = actor
++        assessment.calculated_at = timezone.now()
++        assessment.save()
++
++        _audit_loan_limit_assessment(
++            assessment,
++            actor,
++            old_value_json,
++            request_meta,
++        )
++        record_workflow_event(
++            actor=actor,
++            workflow_name="loan_limit_assessment",
++            entity_type="loan_application",
++            entity_id=application.loan_application_id,
++            from_state=application.current_stage,
++            to_state="loan_limit_calculated",
++            trigger_reason="Source-backed loan limit calculated.",
++            action_code=LOAN_LIMIT_CALCULATED_AUDIT_ACTION,
++        )
++        return LoanLimitAssessmentResult(
++            assessment=assessment,
++            snapshot=loan_limit_assessment_snapshot(assessment),
++        )
++
++
++def loan_limit_assessment_snapshot(assessment):
++    snapshot = loan_limit_assessment_audit_snapshot(assessment)
++    warnings = []
++    if assessment.exception_required_flag:
++        warnings.append(
++            {
++                "code": "REQUESTED_AMOUNT_EXCEEDS_LIMIT",
++                "message": "Requested amount exceeds final eligible loan amount.",
++            }
++        )
++    snapshot["warnings"] = warnings
++    return snapshot
++
++
++def loan_limit_assessment_audit_snapshot(assessment):
++    return {
++        "loan_limit_assessment_id": str(assessment.loan_limit_assessment_id),
++        "loan_application_id": str(assessment.loan_application_id),
++        "member_id": str(assessment.member_id),
++        "shareholding_id": str(assessment.shareholding_id)
++        if assessment.shareholding_id
++        else None,
++        "number_of_shares": assessment.number_of_shares,
++        "valuation_per_share": money(assessment.valuation_per_share),
++        "share_limit_percentage": (
++            f"{assessment.share_limit_percentage:.4f}"
++            if assessment.share_limit_percentage is not None
++            else None
++        ),
++        "per_share_cap_amount": money(assessment.per_share_cap_amount),
++        "shareholding_based_limit_amount": money(
++            assessment.shareholding_based_limit_amount
++        ),
++        "land_area_acres": f"{assessment.land_area_acres:.2f}",
++        "scale_of_finance_per_acre_amount": money(
++            assessment.scale_of_finance_per_acre_amount
++        ),
++        "land_based_limit_amount": money(assessment.land_based_limit_amount),
++        "final_eligible_loan_amount": money(assessment.final_eligible_loan_amount),
++        "requested_amount": money(assessment.requested_amount),
++        "amount_within_limit_flag": assessment.amount_within_limit_flag,
++        "exception_required_flag": assessment.exception_required_flag,
++        "calculation_rule_version": assessment.calculation_rule_version,
++        "configuration_source": {
++            "type": "loan_policy_config",
++            "loan_policy_config_id": str(assessment.policy_config_id_snapshot)
++            if assessment.policy_config_id_snapshot
++            else None,
++            "policy_name": assessment.policy_name_snapshot or None,
++            "board_approval_reference": (
++                assessment.board_approval_reference_snapshot or None
++            ),
++        },
++        "calculated_by_user_id": str(assessment.calculated_by_user_id)
++        if assessment.calculated_by_user_id
++        else None,
++        "calculated_at": timestamp(assessment.calculated_at),
++    }
++
++
++def _audit_loan_limit_assessment(assessment, actor, old_value_json, request_meta):
++    new_value_json = loan_limit_assessment_audit_snapshot(assessment)
++    new_value_json["request_id"] = request_meta.request_id
++    AuditLog.objects.create(
++        actor_user=actor,
++        action=LOAN_LIMIT_CALCULATED_AUDIT_ACTION,
++        entity_type="loan_limit_assessment",
++        entity_id=assessment.loan_limit_assessment_id,
++        old_value_json=old_value_json,
++        new_value_json=new_value_json,
++        ip_address=request_meta.ip_address,
++        user_agent=request_meta.user_agent,
++    )
++
++
++def _clean_loan_limit_payload(application, payload):
++    allowed_fields = {
++        "shareholding_id",
++        "land_holding_ids",
++        "crop_plan_id",
++        "requested_amount",
++        "calculation_date",
++    }
++    errors = {
++        field: "Unknown field." for field in sorted(set(payload) - allowed_fields)
++    }
++    for field in sorted(allowed_fields):
++        if field not in payload or payload.get(field) in (None, "", []):
++            errors[field] = "This field is required."
++
++    shareholding_id = parse_uuid("shareholding_id", payload.get("shareholding_id"), errors)
++    crop_plan_id = parse_uuid("crop_plan_id", payload.get("crop_plan_id"), errors)
++    requested_amount = parse_required_positive_decimal(
++        payload.get("requested_amount"),
++        "requested_amount",
++        errors,
++    )
++    calculation_date = parse_iso_date("calculation_date", payload.get("calculation_date"), errors)
++
++    raw_land_ids = payload.get("land_holding_ids")
++    land_ids = []
++    if isinstance(raw_land_ids, list) and raw_land_ids:
++        for raw_id in raw_land_ids:
++            try:
++                land_ids.append(uuid.UUID(str(raw_id)))
++            except (TypeError, ValueError):
++                errors["land_holding_ids"] = "Every value must be a valid UUID."
++                break
++        if len(set(land_ids)) != len(land_ids):
++            errors["land_holding_ids"] = "Duplicate land holdings are not allowed."
++    elif raw_land_ids not in (None, "", []):
++        errors["land_holding_ids"] = "Must be a non-empty list of UUIDs."
++
++    if errors:
++        raise CreditModuleValidationError(errors)
++
++    shareholding = Shareholding.objects.filter(
++        shareholding_id=shareholding_id,
++        member=application.member,
++    ).first()
++    if shareholding is None:
++        errors["shareholding_id"] = "Referenced record was not found for this member."
++    elif shareholding.status != "active":
++        errors["shareholding_id"] = "Shareholding must be active."
++    elif shareholding.number_of_shares <= 0:
++        errors["shareholding_id"] = "Shareholding must contain at least one share."
++    elif (
++        shareholding.valuation_per_share is None
++        or shareholding.valuation_per_share <= 0
++    ):
++        errors["shareholding_id"] = (
++            "Shareholding requires a positive approved valuation per share."
++        )
++
++    land_holdings = list(
++        LandHolding.objects.filter(
++            land_holding_id__in=land_ids,
++            member=application.member,
++        ).order_by("land_holding_id")
++    )
++    if len(land_holdings) != len(land_ids):
++        errors["land_holding_ids"] = (
++            "Every land holding must exist for the loan application member."
++        )
++    elif any(holding.verification_status != "verified" for holding in land_holdings):
++        errors["land_holding_ids"] = "Every selected land holding must be verified."
++
++    crop_plan = CropPlan.objects.filter(
++        crop_plan_id=crop_plan_id,
++        member=application.member,
++    ).first()
++    if crop_plan is None:
++        errors["crop_plan_id"] = "Referenced record was not found for this member."
++    elif crop_plan.loan_application_id != application.loan_application_id:
++        errors["crop_plan_id"] = "Crop plan must be linked to this loan application."
++    elif crop_plan.verification_status != "verified":
++        errors["crop_plan_id"] = "Crop plan must be verified."
++    elif crop_plan.loan_purpose_alignment != "agriculture_aligned":
++        errors["crop_plan_id"] = "Crop plan must be agriculture aligned."
++
++    if application.required_loan_amount is None:
++        errors["requested_amount"] = (
++            "Loan application must store a requested amount before calculation."
++        )
++    elif requested_amount != application.required_loan_amount:
++        errors["requested_amount"] = (
++            "Requested amount must match the loan application requested amount."
++        )
++    if errors:
++        raise CreditModuleValidationError(errors)
++
++    selected_land_area = _normalized_acres(
++        sum((holding.area_acres for holding in land_holdings), Decimal("0.00"))
++    )
++    crop_plan_area = _normalized_acres(crop_plan.planned_area_acres)
++    acreage_values = {selected_land_area, crop_plan_area}
++    profile = IndividualMemberProfile.objects.filter(member=application.member).first()
++    if profile and profile.land_area_under_cultivation_acres is not None:
++        acreage_values.add(_normalized_acres(profile.land_area_under_cultivation_acres))
++    if len(acreage_values) != 1:
++        raise CreditModuleValidationError(
++            {"cultivated_acreage": "CULTIVATED_ACREAGE_UNRESOLVED"}
++        )
++    return {
++        "shareholding": shareholding,
++        "land_holdings": land_holdings,
++        "crop_plan": crop_plan,
++        "cultivated_acreage": selected_land_area,
++        "requested_amount": requested_amount,
++        "calculation_date": calculation_date,
++    }
++
++
++def _normalized_acres(value):
++    return Decimal(value).quantize(Decimal("0.01"))
+diff --git a/sfpcl_credit/tests/test_credit_modules.py b/sfpcl_credit/tests/test_credit_modules.py
+new file mode 100644
+index 0000000..129d553
+--- /dev/null
++++ b/sfpcl_credit/tests/test_credit_modules.py
+@@ -0,0 +1,355 @@
++from uuid import uuid4
++
++from django.test import TestCase
++from django.utils import timezone
++
++from sfpcl_credit.applications.models import (
++    ApplicationDocument,
++    EligibilityAssessment,
++    LoanApplication,
++)
++from sfpcl_credit.configurations.models import LoanPolicyConfig
++from sfpcl_credit.documents.models import DocumentFile
++from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
++from sfpcl_credit.members.models import (
++    CancelledCheque,
++    CropPlan,
++    IndividualMemberProfile,
++    LandHolding,
++    Member,
++    Nominee,
++    Shareholding,
++)
++from sfpcl_credit.workflows.models import WorkflowEvent
++
++
++APPLICATION_READ_PERMISSION = "applications.loan_application.read"
++ELIGIBILITY_RUN_PERMISSION = "credit.eligibility.run"
++LOAN_LIMIT_CALCULATE_PERMISSION = "credit.loan_limit.calculate"
++
++
++class CreditModuleBoundaryTests(TestCase):
++    def setUp(self):
++        self.read_permission = self._permission(
++            APPLICATION_READ_PERMISSION,
++            "View applications",
++        )
++        self.eligibility_permission = self._permission(
++            ELIGIBILITY_RUN_PERMISSION,
++            "Run eligibility assessment",
++        )
++        self.loan_limit_permission = self._permission(
++            LOAN_LIMIT_CALCULATE_PERMISSION,
++            "Calculate loan limit",
++        )
++        self.actor = self._user(
++            "credit.module.actor@sfpcl.example",
++            self.read_permission,
++            self.eligibility_permission,
++            self.loan_limit_permission,
++        )
++        self.member = Member.objects.create(
++            member_number="MEM-CREDIT-MODULE",
++            member_type="individual_farmer",
++            legal_name="Ramesh Patil",
++            display_name="Ramesh Patil",
++            folio_number="FOL-CREDIT-MODULE",
++            membership_status="active",
++            pan_encrypted="member-pan-token",
++            pan_hash="member-pan-hash",
++            aadhaar_encrypted="member-aadhaar-token",
++            aadhaar_hash="member-aadhaar-hash",
++            kyc_status="verified",
++            default_status="no_default",
++            active_member_status="active",
++            active_member_verified_at=timezone.now(),
++        )
++        self.land = LandHolding.objects.create(
++            member=self.member,
++            document_type="7_12_extract",
++            survey_number="123/4",
++            village="Niphad",
++            area_acres="5.00",
++            document_id=uuid4(),
++            verification_status="verified",
++            verified_by_user=self.actor,
++            verified_at=timezone.now(),
++        )
++        self.crop = CropPlan.objects.create(
++            member=self.member,
++            crop_type="grapes",
++            season="FY2026 Kharif",
++            planned_area_acres="5.00",
++            estimated_cost_amount="100000.00",
++            loan_purpose_alignment="agriculture_aligned",
++            document_id=uuid4(),
++            verification_status="verified",
++            verified_by_user=self.actor,
++            verified_at=timezone.now(),
++        )
++        self.nominee = Nominee.objects.create(
++            member=self.member,
++            nominee_name="Sita Patil",
++            age_at_application=42,
++            gender="female",
++            relationship_to_borrower="Spouse",
++            pan_encrypted="nominee-pan-token",
++            pan_hash="nominee-pan-hash",
++            aadhaar_encrypted="nominee-aadhaar-token",
++            aadhaar_hash="nominee-aadhaar-hash",
++            kyc_status="verified",
++            minor_flag=False,
++        )
++        cheque = CancelledCheque.objects.create(
++            member=self.member,
++            document_id=uuid4(),
++            account_number_encrypted="cheque-token",
++            account_number_hash="cheque-hash",
++            account_number_last4="9012",
++            ifsc="HDFC0001234",
++            branch_name="Nashik Road",
++        )
++        self.application = LoanApplication.objects.create(
++            application_reference_number="LO00000999",
++            member=self.member,
++            borrower_type=self.member.member_type,
++            received_by_user=self.actor,
++            required_loan_amount="400000.00",
++            requested_tenure_months=12,
++            declared_purpose="Crop production loan for grape cultivation",
++            purpose_category="crop_production",
++            nominee=self.nominee,
++            loan_type_requested="short_term",
++            land_holding=self.land,
++            crop_plan=self.crop,
++            cancelled_cheque=cheque,
++            terms_acceptance_flag=True,
++            current_stage=LoanApplication.STAGE_CREDIT_ASSESSMENT,
++            application_status=LoanApplication.STATUS_REFERENCE_GENERATED,
++            completeness_status=LoanApplication.COMPLETENESS_COMPLETE,
++            submitted_at=timezone.now(),
++            submitted_by_user=self.actor,
++            created_by_user=self.actor,
++        )
++        self.crop.loan_application_id = self.application.loan_application_id
++        self.crop.save(update_fields=["loan_application_id"])
++        self.nominee.loan_application_id = self.application.loan_application_id
++        self.nominee.save(update_fields=["loan_application_id"])
++        self._verified_required_documents()
++
++    def test_eligibility_runs_through_source_named_credit_module_interface(self):
++        from sfpcl_credit.credit.modules.eligibility_assessment import (
++            EligibilityAssessmentModule,
++            EligibilityAssessmentResult,
++        )
++
++        result = EligibilityAssessmentModule().run(
++            actor=self.actor,
++            application_id=self.application.loan_application_id,
++            request_meta={
++                "request_id": "req-credit-module-eligibility",
++                "ip_address": "127.0.0.1",
++                "user_agent": "credit-module-test",
++            },
++        )
++
++        self.assertIsInstance(result, EligibilityAssessmentResult)
++        self.assertEqual(result.snapshot["loan_application_id"], str(self.application.loan_application_id))
++        self.assertEqual(result.snapshot["overall_result"], "eligible")
++        self.assertEqual(result.snapshot["document_check"], "complete")
++        self.assertEqual(result.snapshot["nominee_check"], "valid")
++        self.assertEqual(
++            AuditLog.objects.get(action="eligibility.assessed").new_value_json["request_id"],
++            "req-credit-module-eligibility",
++        )
++        self.assertTrue(
++            WorkflowEvent.objects.filter(
++                workflow_name="eligibility_assessment",
++                entity_id=self.application.loan_application_id,
++            ).exists()
++        )
++
++    def test_loan_limit_calculates_through_credit_module_and_canonical_snapshot(self):
++        from sfpcl_credit.credit.modules.eligibility_assessment import EligibilityAssessmentModule
++        from sfpcl_credit.credit.modules.loan_limit_calculator import (
++            LoanLimitAssessmentResult,
++            LoanLimitCalculator,
++        )
++
++        EligibilityAssessmentModule().run(
++            actor=self.actor,
++            application_id=self.application.loan_application_id,
++        )
++        shareholding = Shareholding.objects.create(
++            member=self.member,
++            folio_number=self.member.folio_number,
++            number_of_shares=100,
++            holding_mode="physical",
++            valuation_per_share="2000.00",
++            valuation_effective_date=timezone.localdate(),
++            pledged_share_count=0,
++            available_share_count=100,
++            status="active",
++        )
++        policy = self._active_loan_policy(
++            share_limit_percentage="10.0000",
++            per_share_cap_amount="200.00",
++        )
++
++        result = LoanLimitCalculator().calculate_for_application(
++            actor=self.actor,
++            application_id=self.application.loan_application_id,
++            payload={
++                "shareholding_id": str(shareholding.shareholding_id),
++                "land_holding_ids": [str(self.land.land_holding_id)],
++                "crop_plan_id": str(self.crop.crop_plan_id),
++                "requested_amount": "400000.00",
++                "calculation_date": timezone.localdate().isoformat(),
++            },
++            request_meta={
++                "request_id": "req-credit-module-loan-limit",
++                "ip_address": "127.0.0.1",
++                "user_agent": "credit-module-test",
++            },
++        )
++
++        self.assertIsInstance(result, LoanLimitAssessmentResult)
++        self.assertEqual(result.snapshot["calculation_rule_version"], policy.policy_version)
++        self.assertEqual(result.snapshot["shareholding_based_limit_amount"], "20000.00")
++        self.assertEqual(result.snapshot["land_area_acres"], "5.00")
++        self.assertEqual(result.snapshot["land_based_limit_amount"], "100000.00")
++        self.assertEqual(result.snapshot["final_eligible_loan_amount"], "20000.00")
++        self.assertEqual(
++            result.snapshot["configuration_source"]["loan_policy_config_id"],
++            str(policy.loan_policy_config_id),
++        )
++        audit_snapshot = AuditLog.objects.get(action="loan_limit.calculated").new_value_json
++        shared_snapshot_fields = {
++            "loan_limit_assessment_id",
++            "loan_application_id",
++            "member_id",
++            "shareholding_id",
++            "number_of_shares",
++            "valuation_per_share",
++            "share_limit_percentage",
++            "per_share_cap_amount",
++            "shareholding_based_limit_amount",
++            "land_area_acres",
++            "scale_of_finance_per_acre_amount",
++            "land_based_limit_amount",
++            "final_eligible_loan_amount",
++            "requested_amount",
++            "amount_within_limit_flag",
++            "exception_required_flag",
++            "calculation_rule_version",
++            "configuration_source",
++            "calculated_by_user_id",
++            "calculated_at",
++        }
++        self.assertEqual(
++            {field: result.snapshot[field] for field in shared_snapshot_fields},
++            {field: audit_snapshot[field] for field in shared_snapshot_fields},
++        )
++        self.assertEqual(audit_snapshot["request_id"], "req-credit-module-loan-limit")
++
++    def test_credit_module_import_boundary_has_no_application_service_aliases(self):
++        import sfpcl_credit.applications.services as application_services
++        from sfpcl_credit.configurations.modules.configuration_resolver import (
++            resolve_effective_loan_policy,
++        )
++        from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow
++
++        for forbidden_name in (
++            "run_eligibility_assessment",
++            "calculate_loan_limit",
++            "serialize_eligibility_assessment",
++            "serialize_loan_limit_assessment",
++            "_effective_loan_policy",
++            "_loan_limit_assessment_audit_snapshot",
++        ):
++            self.assertFalse(
++                hasattr(application_services, forbidden_name),
++                f"applications.services must not expose credit helper {forbidden_name}",
++            )
++        self.assertTrue(callable(resolve_effective_loan_policy))
++        self.assertTrue(hasattr(AppraisalWorkflow, "create_or_update"))
++
++    def _verified_required_documents(self):
++        for document_type in (
++            "loan_application_form",
++            "borrower_pan",
++            "borrower_aadhaar_ovd",
++            "nominee_pan",
++            "nominee_aadhaar_ovd",
++            "share_certificate_copy",
++            "land_document_7_12",
++            "crop_plan",
++            "six_month_bank_statement",
++        ):
++            document_file = DocumentFile.objects.create(
++                file_name=f"{document_type}.pdf",
++                file_extension=".pdf",
++                mime_type="application/pdf",
++                file_size_bytes=256,
++                storage_provider="local",
++                storage_key=f"document-files/private/{document_type}.pdf",
++                checksum_sha256=f"{document_type}-hash",
++                uploaded_by_user=self.actor,
++                sensitivity_level="restricted",
++            )
++            ApplicationDocument.objects.create(
++                loan_application=self.application,
++                document_type=document_type,
++                party_type="borrower",
++                party_id=self.member.member_id,
++                document_file=document_file,
++                required_flag=True,
++                submission_status=ApplicationDocument.SUBMISSION_SUBMITTED,
++                verification_status=ApplicationDocument.VERIFICATION_VERIFIED,
++                verified_by_user=self.actor,
++                verified_at=timezone.now(),
++                created_by_user=self.actor,
++            )
++
++    def _active_loan_policy(self, **overrides):
++        values = {
++            "policy_name": "Board-approved member loan policy",
++            "policy_version": "loan-policy-v1.0",
++            "effective_from": timezone.localdate(),
++            "short_term_duration_months": 12,
++            "approval_threshold_amount": "500000.00",
++            "default_scale_of_finance_per_acre_amount": "20000.00",
++            "interest_rate_type": "floating",
++            "rekyc_frequency_months": 24,
++            "record_retention_years": 8,
++            "grace_period_months": 3,
++            "non_intentional_extension_months": 3,
++            "board_approval_reference": "BOARD/2026/006D2",
++            "status": LoanPolicyConfig.STATUS_ACTIVE,
++        }
++        values.update(overrides)
++        return LoanPolicyConfig.objects.create(**values)
++
++    def _permission(self, code, name):
++        return Permission.objects.create(
++            permission_code=code,
++            permission_name=name,
++            module_name=code.split(".")[0],
++            risk_level="high",
++        )
++
++    def _user(self, email, *permissions):
++        role = Role.objects.create(
++            role_code=email.split("@")[0].replace(".", "_"),
++            role_name=email,
++            is_system_role=True,
++            status="active",
++        )
++        for permission in permissions:
++            RolePermission.objects.create(role=role, permission=permission)
++        return User.objects.create(
++            full_name=email,
++            email=email,
++            status="active",
++            primary_role=role,
++        )

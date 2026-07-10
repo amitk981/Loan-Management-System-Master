@@ -1,7 +1,14 @@
 # Slice 006D2: Credit Assessment Deep Module Boundary
 
 ## Status
-Not Started
+Superseded
+
+> Owner decision 2026-07-10: two fully-gated attempts exceeded `limits.max_lines_changed`
+> (2,061 and 2,459 vs 2,000) because a three-module extraction counts every moved line twice.
+> The scope is split into `006D2A-credit-eligibility-module-and-configuration-seam.md` and
+> `006D2B-credit-loan-limit-calculator-and-appraisal-seam.md`. A reviewed reference
+> implementation (all quality gates green, 304 tests, 95% coverage) is preserved at
+> `.ralph/runs/2026-07-10_135716_repair/full-implementation.patch`. Do not select this slice.
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
