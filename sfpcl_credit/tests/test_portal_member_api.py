@@ -51,6 +51,19 @@ class PortalMemberApiTests(TestCase):
             status=PortalAccount.STATUS_ACTIVE,
             activated_at=timezone.now(),
         )
+        self.nominee = Nominee.objects.create(
+            member=self.member,
+            nominee_name="Selected Portal Nominee",
+            age_at_application=42,
+            gender="female",
+            relationship_to_borrower="spouse",
+            pan_encrypted="portal-nominee-pan-token",
+            pan_hash="portal-nominee-pan-hash",
+            aadhaar_encrypted="portal-nominee-aadhaar-token",
+            aadhaar_hash="portal-nominee-aadhaar-hash",
+            kyc_status="verified",
+            minor_flag=False,
+        )
 
     def _user(self, email, role, full_name=None, password="CorrectHorse123!"):
         user = User.objects.create(
@@ -241,7 +254,10 @@ class PortalMemberApiTests(TestCase):
         self.assertEqual(profile_response.status_code, 200)
         profile = profile_response.json()["data"]
         self.assertEqual(profile["member"]["pan"], {"masked": "******234F", "can_view_full": False})
-        self.assertEqual(profile["nominees"][0]["pan"]["masked"], "******678K")
+        profile_nominee = next(
+            item for item in profile["nominees"] if item["nominee_name"] == "Suman Thorat"
+        )
+        self.assertEqual(profile_nominee["pan"]["masked"], "******678K")
         self.assertEqual(profile["bank_accounts"][0]["account_number"]["masked"], "********9012")
         self.assertEqual(profile["kyc_profile"]["kyc_status"], "verified")
         self.assertNotIn("123456789012", json.dumps(profile))
@@ -284,6 +300,7 @@ class PortalMemberApiTests(TestCase):
                 "purpose_category": "crop_production",
                 "loan_type_requested": "short_term",
                 "terms_acceptance_flag": True,
+                "nominee_id": str(self.nominee.nominee_id),
             },
             content_type="application/json",
             headers={"Authorization": f"Bearer {token}", "X-Request-ID": "req-portal-create"},
@@ -299,6 +316,10 @@ class PortalMemberApiTests(TestCase):
         self.assertEqual(draft["pending_with"], "Borrower")
         self.assertEqual(draft["open_deficiency_count"], 0)
         self.assertIsNone(draft["application_reference_number"])
+        self.assertEqual(draft["nominee"]["nominee_id"], str(self.nominee.nominee_id))
+        self.assertEqual(draft["nominee"]["nominee_name"], "Selected Portal Nominee")
+        self.assertNotIn("pan", draft["nominee"])
+        self.assertNotIn("aadhaar", draft["nominee"])
         self.assertNotIn("available_actions", draft)
         self.assertNotIn(str(self.other_member.member_id), str(body))
 
@@ -307,6 +328,7 @@ class PortalMemberApiTests(TestCase):
             data={
                 "required_loan_amount": "300000.00",
                 "declared_purpose": "Updated grape crop production",
+                "nominee_id": str(self.nominee.nominee_id),
             },
             content_type="application/json",
             headers={"Authorization": f"Bearer {token}", "X-Request-ID": "req-portal-update"},
@@ -315,6 +337,7 @@ class PortalMemberApiTests(TestCase):
         updated = update_response.json()["data"]
         self.assertEqual(updated["required_loan_amount"], "300000.00")
         self.assertEqual(updated["application_status"], "draft")
+        self.assertEqual(updated["nominee"]["nominee_id"], str(self.nominee.nominee_id))
 
         submit_response = self.client.post(
             f"/api/v1/portal/applications/{draft['loan_application_id']}/submit/",

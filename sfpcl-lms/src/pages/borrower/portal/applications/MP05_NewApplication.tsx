@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ClipboardList, Save, CheckCircle2, AlertTriangle, ChevronLeft, ChevronRight, UserRound, Shield, IndianRupee, Signature, Upload, FileCheck } from 'lucide-react';
 import { useRole } from '../../../../contexts/RoleContext';
 import { AuthSessionError } from '../../../../services/authSession';
 import {
   createPortalApplicationDraft,
+  fetchPortalProfile,
   submitPortalApplication,
   updatePortalApplicationDraft,
   type PortalApplication,
+  type PortalNominee,
 } from '../../../../services/portalApi';
 
 type ApplicationStep = 'applicant' | 'shareholding' | 'loan' | 'nominee' | 'documents' | 'declarations' | 'review';
@@ -14,6 +16,17 @@ type ApplicationStep = 'applicant' | 'shareholding' | 'loan' | 'nominee' | 'docu
 interface MP05_NewApplicationProps {
   onNavigateToApplication: (id: string) => void;
 }
+
+const hasAdultNomineeEvidence = (nominee?: PortalNominee) => {
+  if (!nominee || nominee.minor_flag) return false;
+  if (nominee.age_at_application != null) return nominee.age_at_application >= 18;
+  if (!nominee.date_of_birth) return false;
+  const birth = new Date(`${nominee.date_of_birth}T00:00:00`);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  if ((today.getMonth() < birth.getMonth()) || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age -= 1;
+  return age >= 18;
+};
 
 const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToApplication }) => {
   const { currentUser } = useRole();
@@ -23,6 +36,10 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
   const [savedApplication, setSavedApplication] = useState<PortalApplication | null>(null);
   const [saving, setSaving] = useState(false);
   const [apiMessage, setApiMessage] = useState<string | null>(null);
+  const [nomineeOptions, setNomineeOptions] = useState<PortalNominee[]>([]);
+  const [selectedNomineeId, setSelectedNomineeId] = useState('');
+  const [nomineesLoading, setNomineesLoading] = useState(true);
+  const [nomineesError, setNomineesError] = useState(false);
   
   const [borrowerApplication, setBorrowerApplication] = useState({
     applicantType: 'individual_farmer',
@@ -46,15 +63,6 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
     expectedRepaymentDate: '2026-03-31',
     loanType: 'short_term',
     subsidiaryRepayment: 'Sahyadri Farms Post Harvest Care Ltd.',
-    nomineeName: 'Suman Thorat',
-    nomineeDob: '1983-04-12',
-    nomineeAge: 42,
-    nomineeGender: 'female',
-    nomineeRelationship: 'Spouse',
-    nomineeMobile: '+91 99887 76655',
-    nomineeAddress: 'Same as borrower',
-    nomineePan: 'FGHIJ5678K',
-    nomineeAadhaar: '4421',
     borrowerSignature: false,
     nomineeSignature: false,
     declarations: {
@@ -65,6 +73,27 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
       sanctionTerms: false,
     },
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPortalProfile()
+      .then(profile => {
+        if (cancelled) return;
+        setNomineeOptions(profile.nominees);
+        setNomineesError(false);
+        setApiMessage(null);
+      })
+      .catch(error => {
+        if (cancelled) return;
+        setNomineeOptions([]);
+        setNomineesError(true);
+        setApiMessage(error instanceof AuthSessionError ? error.message : 'Nominees could not be loaded.');
+      })
+      .finally(() => {
+        if (!cancelled) setNomineesLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const requiredApplicationDocuments = [
     { id: 'borrowerPan', label: 'Borrower PAN', requiredFor: 'All borrowers', note: 'Self-attested PAN card copy' },
@@ -101,6 +130,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
 
   const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
   const formatCurrency = (value: number) => `₹${value.toLocaleString('en-IN')}`;
+  const selectedNominee = nomineeOptions.find(item => item.nominee_id === selectedNomineeId);
 
   const updateApplication = (field: string, value: string | number | boolean) => {
     setApplicationDraftSaved(false);
@@ -140,8 +170,8 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
       message: 'Loan amount must be within eligible limit and purpose must be crop production or agriculture related.',
     },
     nominee: {
-      ok: Boolean(borrowerApplication.nomineeName && borrowerApplication.nomineeGender && borrowerApplication.nomineePan && borrowerApplication.nomineeAadhaar) && borrowerApplication.nomineeAge >= 18 && panPattern.test(borrowerApplication.nomineePan),
-      message: 'Nominee name, adult age, gender, PAN and Aadhaar are mandatory.',
+      ok: hasAdultNomineeEvidence(selectedNominee),
+      message: 'Select an existing adult nominee from your member profile.',
     },
     documents: {
       ok: allDocsComplete,
@@ -182,6 +212,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
   const canSubmitApplication = completenessItems.every(([, complete]) => complete);
 
   const portalDraftPayload = () => ({
+    nominee_id: selectedNomineeId || null,
     required_loan_amount: String(borrowerApplication.requestedAmount),
     declared_purpose: borrowerApplication.loanPurpose.replace(/_/g, ' '),
     purpose_category: borrowerApplication.loanPurpose,
@@ -448,41 +479,15 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
             <div className="space-y-5">
               <div>
                 <h3 className="font-semibold text-slate-900">Nominee Details</h3>
-                <p className="text-xs text-slate-500 mt-1">Nominee must not be a minor and PAN/Aadhaar copies are mandatory.</p>
+                <p className="text-xs text-slate-500 mt-1">Select an existing adult nominee from your member profile.</p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[
-                  ['Nominee Full Name', 'nomineeName', 'text'],
-                  ['Date of Birth', 'nomineeDob', 'date'],
-                  ['Age', 'nomineeAge', 'number'],
-                  ['Relationship to Borrower', 'nomineeRelationship', 'text'],
-                  ['Mobile Number', 'nomineeMobile', 'text'],
-                  ['PAN', 'nomineePan', 'text'],
-                  ['Aadhaar last 4 digits', 'nomineeAadhaar', 'text'],
-                ].map(([label, field, type]) => (
-                  <div key={field}>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
-                    <input
-                      type={type}
-                      value={String(borrowerApplication[field as keyof typeof borrowerApplication])}
-                      onChange={e => updateApplication(field, type === 'number' ? Number(e.target.value) : field === 'nomineePan' ? e.target.value.toUpperCase() : e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
-                    />
-                  </div>
-                ))}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Gender</label>
-                  <select value={borrowerApplication.nomineeGender} onChange={e => updateApplication('nomineeGender', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Nominee Address</label>
-                  <textarea value={borrowerApplication.nomineeAddress} onChange={e => updateApplication('nomineeAddress', e.target.value)} rows={3} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none" />
-                </div>
-              </div>
+              <PortalNomineeSelectionView
+                nominees={nomineeOptions}
+                selectedNomineeId={selectedNomineeId}
+                loading={nomineesLoading}
+                error={nomineesError}
+                onSelect={setSelectedNomineeId}
+              />
             </div>
           )}
 
@@ -570,7 +575,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
                       ['Requested Amount', formatCurrency(borrowerApplication.requestedAmount)],
                       ['Maximum Limit', formatCurrency(maximumPermissibleLimit)],
                       ['Purpose', borrowerApplication.loanPurpose.replace(/_/g, ' ')],
-                      ['Nominee', `${borrowerApplication.nomineeName}, age ${borrowerApplication.nomineeAge}`],
+                      ['Nominee', selectedNominee ? `${selectedNominee.nominee_name}, age ${selectedNominee.age_at_application ?? 'not recorded'}` : 'Not selected'],
                     ].map(([label, value]) => (
                       <div key={label} className="grid grid-cols-[140px_1fr] gap-3">
                         <span className="text-slate-500">{label}</span>
@@ -639,6 +644,33 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+export const PortalNomineeSelectionView: React.FC<{
+  nominees: PortalNominee[];
+  selectedNomineeId: string;
+  loading: boolean;
+  error?: boolean;
+  onSelect: (nomineeId: string) => void;
+}> = ({ nominees, selectedNomineeId, loading, error = false, onSelect }) => {
+  const selected = nominees.find(item => item.nominee_id === selectedNomineeId);
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="sm:col-span-2">
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">Select Member Nominee</label>
+        <select value={selectedNomineeId} onChange={event => onSelect(event.target.value)} disabled={loading} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+          <option value="">{loading ? 'Loading nominees...' : 'Select nominee'}</option>
+          {nominees.map(nominee => <option key={nominee.nominee_id} value={nominee.nominee_id}>{nominee.nominee_name} · {nominee.relationship_to_borrower || 'Relationship not recorded'}</option>)}
+        </select>
+      </div>
+      {error && <div className="sm:col-span-2 text-sm text-red-600">Nominees could not be loaded.</div>}
+      {!loading && !error && nominees.length === 0 && <div className="sm:col-span-2 text-sm text-slate-500">No nominees are available. Add one to your member profile before submitting.</div>}
+      {selected && <>
+        <div><span className="text-xs text-slate-500">Age</span><p className="text-sm font-medium text-slate-900">{selected.age_at_application ?? 'Not recorded'}</p></div>
+        <div><span className="text-xs text-slate-500">KYC Status</span><p className="text-sm font-medium text-slate-900">{selected.kyc_status.replace(/_/g, ' ')}</p></div>
+      </>}
     </div>
   );
 };

@@ -73,18 +73,20 @@ describe('portal member API client', () => {
       .mockResolvedValueOnce(ok(application));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(createPortalApplicationDraft({ required_loan_amount: '250000.00', declared_purpose: 'Crop production', purpose_category: 'crop_production' })).resolves.toMatchObject({ loan_application_id: 'app-1' });
-    await expect(updatePortalApplicationDraft('app-1', { required_loan_amount: '300000.00' })).resolves.toMatchObject({ required_loan_amount: '300000.00' });
+    await expect(createPortalApplicationDraft({ nominee_id: 'nominee-1', required_loan_amount: '250000.00', declared_purpose: 'Crop production', purpose_category: 'crop_production' })).resolves.toMatchObject({ loan_application_id: 'app-1' });
+    await expect(updatePortalApplicationDraft('app-1', { nominee_id: 'nominee-1', required_loan_amount: '300000.00' })).resolves.toMatchObject({ required_loan_amount: '300000.00' });
     await expect(submitPortalApplication('app-1')).resolves.toMatchObject({ application_status: 'submitted', pending_with: 'SFPCL' });
     await expect(fetchPortalApplications()).resolves.toMatchObject({ items: [{ loan_application_id: 'app-1' }] });
     await expect(fetchPortalApplication('app-1')).resolves.toMatchObject({ display_reference: 'APP-1' });
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:8000/api/v1/portal/applications/', request('POST', {
+      nominee_id: 'nominee-1',
       required_loan_amount: '250000.00',
       declared_purpose: 'Crop production',
       purpose_category: 'crop_production',
     }));
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://127.0.0.1:8000/api/v1/portal/applications/app-1/', request('PATCH', {
+      nominee_id: 'nominee-1',
       required_loan_amount: '300000.00',
     }));
     expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://127.0.0.1:8000/api/v1/portal/applications/app-1/submit/', request('POST', {}));

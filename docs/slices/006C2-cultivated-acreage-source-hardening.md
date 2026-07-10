@@ -46,6 +46,9 @@ being cultivated for the application.
 - If applicable values disagree after decimal normalization, return `400 VALIDATION_ERROR` with a
   stable `cultivated_acreage` field/code such as `CULTIVATED_ACREAGE_UNRESOLVED`. Persist no new
   assessment/audit/workflow evidence and leave an existing 006D snapshot unchanged.
+- Normalize all three acreage facts with the existing Decimal path before equality comparison;
+  string formatting differences such as `5`, `5.0`, and `5.00` are equal and must not trigger the
+  unresolved blocker.
 - When all applicable values agree, use that value as snapshotted `land_area_acres`; retain the
   source-backed scale-of-finance multiplication and lower-of-two calculation unchanged.
 - Keep policy percentages/caps, overrides, appraisal, and frontend wiring out of scope.
@@ -63,6 +66,8 @@ being cultivated for the application.
 - Missing profile acreage does not invent a value; selected-land and crop-plan evidence must agree.
 - Pending/rejected land or crop facts, null/wrong application crop link, cross-member IDs, and
   mismatch paths produce no success evidence.
+- The no-success-evidence assertion covers the assessment row/UUID and serialized GET response,
+  `loan_limit.calculated` audit count, and `loan_limit_assessment` workflow-event count.
 - Successful rerun replaces the current one-to-one snapshot; every failed rerun preserves it.
 
 ## Evidence Required

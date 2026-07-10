@@ -1,7 +1,7 @@
 # Slice 005I3: Application Nominee Selection Contract
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 005: Loan Application Intake, Documents, Completeness, and Deficiencies
@@ -82,15 +82,15 @@ High
 - Minor/missing-evidence/cross-member paths are blocked without success side effects.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated
-- [ ] Database rules followed
-- [ ] Permissions and audit tested
-- [ ] Visual evidence saved
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated
+- [x] Database rules followed
+- [x] Permissions and audit tested
+- [x] Visual evidence saved
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [x] Commit delegated to the orchestrator only after passing gates

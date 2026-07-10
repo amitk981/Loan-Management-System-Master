@@ -1,0 +1,7 @@
+Backend quality gates (exact final code)
+- manage.py check: PASS, no issues
+- full Django suite: PASS, 295 tests in 647.009s
+- coverage: PASS, 95% total (floor 85%)
+- makemigrations --check --dry-run: PASS, no changes detected
+- coverage.py used its Python tracer because the optional C tracer architecture did not match;
+  coverage collection and threshold enforcement completed successfully.

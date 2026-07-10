@@ -37,6 +37,13 @@ class LoanApplication(models.Model):
     requested_tenure_months = models.PositiveIntegerField(blank=True, null=True)
     declared_purpose = models.TextField(blank=True)
     purpose_category = models.CharField(max_length=80, blank=True, db_index=True)
+    nominee = models.ForeignKey(
+        "members.Nominee",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="selected_for_loan_applications",
+    )
     loan_type_requested = models.CharField(max_length=60, blank=True)
     land_holding = models.ForeignKey(
         "members.LandHolding",

@@ -53,6 +53,32 @@ describe('ApplicationDetail API-backed rendering', () => {
     expect(witnessHtml).not.toContain('Sunanda Patil');
   });
 
+  it('renders the API nominee metadata without sensitive identity values', () => {
+    const html = renderApplicationDetail({
+      application: {
+        ...application,
+        nominee: {
+          nominee_id: 'nominee-1',
+          nominee_name: 'API Nominee',
+          age_at_application: 42,
+          minor_flag: false,
+          kyc_status: 'verified',
+          relationship_to_borrower: 'Spouse',
+          signature_required_flag: true,
+        },
+      },
+      checklistItems: [],
+      initialActiveTab: 3,
+    });
+
+    expect(html).toContain('API Nominee');
+    expect(html).toContain('Spouse');
+    expect(html).toContain('Adult');
+    expect(html).toContain('Verified');
+    expect(html).not.toContain('Nominee PAN');
+    expect(html).not.toContain('Nominee Aadhaar');
+  });
+
   it('renders staff rejection-note metadata returned by the detail API', () => {
     const html = renderApplicationDetail({
       application: {

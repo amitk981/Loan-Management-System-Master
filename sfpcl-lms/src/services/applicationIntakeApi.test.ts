@@ -74,15 +74,15 @@ describe('application intake API client', () => {
       .mockResolvedValueOnce(ok({ loan_application_id: 'app-1', items: [deficiency] }));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(createStaffApplicationDraft({ member_id: 'member-1', required_loan_amount: '250000.00' })).resolves.toMatchObject({ loan_application_id: 'app-1' });
-    await expect(updateStaffApplicationDraft('app-1', { required_loan_amount: '300000.00' })).resolves.toMatchObject({ required_loan_amount: '300000.00' });
+    await expect(createStaffApplicationDraft({ member_id: 'member-1', nominee_id: 'nominee-1', required_loan_amount: '250000.00' })).resolves.toMatchObject({ loan_application_id: 'app-1' });
+    await expect(updateStaffApplicationDraft('app-1', { nominee_id: 'nominee-1', required_loan_amount: '300000.00' })).resolves.toMatchObject({ required_loan_amount: '300000.00' });
     await expect(submitStaffApplication('app-1')).resolves.toMatchObject({ application_status: 'submitted' });
     await expect(fetchApplicationDetail('app-1')).resolves.toMatchObject({ member: { display_name: 'Ramesh Patil' } });
     await expect(fetchApplicationDocumentChecklist('app-1')).resolves.toMatchObject({ items: [{ document_type: 'borrower_pan' }] });
     await expect(fetchApplicationDeficiencies('app-1')).resolves.toMatchObject({ items: [{ item_code: 'borrower_pan' }] });
 
-    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:8000/api/v1/loan-applications/', request('POST', { member_id: 'member-1', required_loan_amount: '250000.00' }));
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://127.0.0.1:8000/api/v1/loan-applications/app-1/', request('PATCH', { required_loan_amount: '300000.00' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:8000/api/v1/loan-applications/', request('POST', { member_id: 'member-1', nominee_id: 'nominee-1', required_loan_amount: '250000.00' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://127.0.0.1:8000/api/v1/loan-applications/app-1/', request('PATCH', { nominee_id: 'nominee-1', required_loan_amount: '300000.00' }));
     expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://127.0.0.1:8000/api/v1/loan-applications/app-1/submit/', request('POST', {}));
     expect(fetchMock).toHaveBeenNthCalledWith(4, 'http://127.0.0.1:8000/api/v1/loan-applications/app-1/', request());
     expect(fetchMock).toHaveBeenNthCalledWith(5, 'http://127.0.0.1:8000/api/v1/loan-applications/app-1/document-checklist/', request());

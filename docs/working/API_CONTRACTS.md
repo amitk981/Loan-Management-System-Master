@@ -264,6 +264,7 @@ Request:
 ```json
 {
   "member_id": "uuid",
+  "nominee_id": "uuid",
   "required_loan_amount": "400000.00",
   "requested_tenure_months": 12,
   "declared_purpose": "Crop production loan for grape cultivation",
@@ -283,16 +284,24 @@ Request:
 `PATCH /api/v1/loan-applications/{loan_application_id}/`
 
 Patch accepts only the draft facts above except `member_id`; borrower ownership is preserved.
+`nominee_id` may be null while a draft is incomplete, but a supplied value must identify one
+same-member nominee with adult age/date-of-birth evidence. Cross-member, unknown, minor, and
+missing-age selections return `400 VALIDATION_ERROR` without application/audit/workflow changes.
+
+Staff detail serializes `nominee` as metadata only: `nominee_id`, `nominee_name`, nullable
+`age_at_application`, `minor_flag`, `kyc_status`, nullable `relationship_to_borrower`,
+and `signature_required_flag`. It never includes PAN/Aadhaar values,
+tokens, hashes, or reveal controls.
 
 `POST /api/v1/loan-applications/{loan_application_id}/submit/`
 
-Request body is accepted as a JSON object. `submission_notes` may be supplied by clients, but 005B
+Request body is accepted as a JSON object. A stored adult `nominee_id` is required. `submission_notes` may be supplied by clients, but 005B
 does not persist notes because no source-backed column exists yet.
 
 `POST /api/v1/loan-applications/{loan_application_id}/generate-reference/`
 
 Request body is accepted as a JSON object. In 005C this endpoint represents the successful
-completeness-pass transition only; it does not evaluate document checklist items, nominee rules,
+completeness-pass transition only; it requires the stored nominee selection but does not evaluate document checklist items,
 deficiencies, eligibility, appraisal, sanction, or disbursement.
 
 `GET /api/v1/loan-applications/{loan_application_id}/completeness-check/`
@@ -312,6 +321,16 @@ Returns the derived completeness workbench for a submitted application:
     "member_type": "individual_farmer",
     "folio_number": "FOL-005A"
   },
+  "nominee": {
+    "nominee_id": "uuid",
+    "nominee_name": "Sita Patil",
+    "age_at_application": 42,
+    "minor_flag": false,
+    "kyc_status": "verified",
+    "relationship_to_borrower": "Spouse",
+    "signature_required_flag": true
+  },
+  "nominee_selection_status": "valid",
   "required_checklist_items": [
     {
       "document_type": "borrower_pan",
@@ -1659,15 +1678,16 @@ Rules:
   `portal.application.submitted`. Staff application routes keep internal
   `applications.loan_application.created`, `applications.loan_application.updated`, and
   `applications.loan_application.submitted` audit actions.
-- Draft save can be incomplete. Submit requires existing 005B persisted facts: own member, positive
-  requested amount, declared purpose, and purpose category.
+- Draft save can be incomplete. Create/update accept `nominee_id` through the shared application
+  validator. Submit requires own member, positive requested amount, declared purpose, purpose
+  category, and one stored adult own-member nominee.
 - Submitted applications remain without an `LO...` reference until staff completeness pass
   generates it.
 - Returned-incomplete applications serialize borrower-facing rectification state:
   `application_status = incomplete_returned`, `completeness_status = incomplete`,
   `current_stage = initial_loan_request`, `pending_with = Borrower`, open deficiency count, and
   open deficiency item metadata.
-- Responses expose portal-safe application summary/detail fields only: application IDs/reference
+- Detail responses expose the same metadata-only `nominee` summary as staff detail. Responses expose portal-safe application summary/detail fields only: application IDs/reference
   display, dates, requested amount, purpose, status/stage/completeness, pending owner, borrower
   action, open deficiency count, member snapshot, timeline, and open deficiency metadata.
 - Responses do not expose staff completeness/reference-generation/return/resolve actions, PAN,
@@ -1734,9 +1754,9 @@ Rules:
     otherwise it returns `pending`.
   - `purpose_check = agriculture_aligned` only when `purpose_category` is `crop_production` or
     `agriculture_activity`; otherwise it returns `non_agriculture`.
-  - `nominee_check = valid` when an application-specific nominee fact exists and is not minor,
-    `minor` when that nominee is minor, and `pending` when the current application schema has no
-    source-backed submitted nominee fact.
+  - `nominee_check` reads only `LoanApplication.nominee`: `valid` for the stored adult nominee,
+    `minor` for a legacy invalid stored nominee, and `pending` for a legacy null or missing-age
+    selection. Reverse-linked member nominee rows never influence the result.
 - `overall_result = eligible` only when every implemented check passes. It is `ineligible` when
   membership/default/document/terms/purpose/minor-nominee blockers fail, and
   `pending_manual_evidence` when active-member or application-specific nominee evidence remains

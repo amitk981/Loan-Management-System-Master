@@ -49,13 +49,26 @@ export interface PortalDashboard {
 
 export interface PortalProfile {
   member: PortalMember;
-  nominees: { nominee_name: string; relationship_to_borrower: string | null; pan: MaskedValue; aadhaar: MaskedValue; kyc_status: string }[];
+  nominees: PortalNominee[];
   shareholdings: { folio_number: string; number_of_shares: number; holding_mode: string; available_share_count: number; status: string }[];
   land_holdings: { survey_number: string | null; village: string | null; area_acres: string; verification_status: string }[];
   crop_plans: { season: string | null; crop_type: string; planned_area_acres: string; verification_status: string }[];
   bank_accounts: { account_holder_name: string; account_number: MaskedValue; ifsc: string; bank_name: string | null; branch_name: string | null; verification_status: string }[];
   cancelled_cheques: { account_number: MaskedValue; ifsc: string; branch_name: string | null; verification_status: string }[];
   kyc_profile: { kyc_status: string; rekyc_due_date: string | null; risk_rating: string | null } | null;
+}
+
+export interface PortalNominee {
+  nominee_id?: string;
+  nominee_name: string;
+  date_of_birth?: string | null;
+  relationship_to_borrower: string | null;
+  age_at_application?: number | null;
+  minor_flag?: boolean;
+  signature_required_flag?: boolean;
+  pan: MaskedValue;
+  aadhaar: MaskedValue;
+  kyc_status: string;
 }
 
 export interface PortalProduceSupply {
@@ -87,6 +100,16 @@ export interface PortalApplication {
   requested_tenure_months?: number | null;
   borrower_request_notes?: string;
   terms_acceptance_flag?: boolean;
+  nominee?: {
+    nominee_id: string;
+    nominee_name: string;
+    date_of_birth?: string | null;
+    age_at_application: number | null;
+    minor_flag: boolean;
+    kyc_status: string;
+    relationship_to_borrower: string | null;
+    signature_required_flag: boolean;
+  } | null;
   timeline?: { event: string; at: string | null; owner: string }[];
   deficiencies?: {
     deficiency_id: string;
@@ -103,6 +126,7 @@ export interface PortalApplicationList {
 }
 
 export interface PortalApplicationDraftPayload {
+  nominee_id?: string | null;
   required_loan_amount?: string;
   requested_tenure_months?: number | null;
   declared_purpose?: string;

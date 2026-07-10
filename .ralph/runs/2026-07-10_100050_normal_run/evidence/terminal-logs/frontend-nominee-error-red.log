@@ -1,0 +1,5 @@
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+src/pages/applications/NomineeSelectionViews.test.tsx(50,86): error TS2322:
+Property 'error' does not exist on PortalNomineeSelectionView props.

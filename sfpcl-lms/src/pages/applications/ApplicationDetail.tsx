@@ -23,6 +23,7 @@ import {
   fetchApplicationDocumentChecklist,
   type ApplicationDeficiency,
   type ApplicationDocumentChecklistItem,
+  type ApplicationNomineeSummary,
   type StaffApplication,
   type StaffApplicationRejectionNote,
 } from '../../services/applicationIntakeApi';
@@ -108,6 +109,7 @@ const toDisplayApplication = (application: StaffApplication): LoanApplication =>
   memberId: application.member.member_id,
   memberName: application.member.display_name,
   memberType: application.member.member_type === 'fpc' ? 'fpc' : application.member.member_type === 'producer_institution' ? 'producer_institution' : 'individual',
+  nomineeId: application.nominee?.nominee_id ?? '',
   requestedAmount: Number(application.required_loan_amount ?? 0),
   purpose: application.purpose_category === 'agriculture_activity' ? 'agriculture_activity' : 'crop_production',
   loanType: application.loan_type_requested === 'long_term' ? 'long_term' : 'short_term',
@@ -174,6 +176,7 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
   const [auditEvents] = useState<AuditEvent[]>([]);
   const [apiDeficiencies, setApiDeficiencies] = useState<ApplicationDeficiency[]>(() => initialData?.deficiencies ?? []);
   const [rejectionNote, setRejectionNote] = useState<StaffApplicationRejectionNote | null>(() => initialData?.application.rejection_note ?? null);
+  const [nominee, setNominee] = useState<ApplicationNomineeSummary | null>(() => initialData?.application.nominee ?? null);
   const [loadStatus, setLoadStatus] = useState<'loading' | 'success' | 'error'>(initialData ? 'success' : 'loading');
   const [loadMessage, setLoadMessage] = useState('');
 
@@ -193,6 +196,7 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
         setAppDocs(toDisplayDocuments(checklist.items));
         setApiDeficiencies(deficiencies.items);
         setRejectionNote(application.rejection_note ?? null);
+        setNominee(application.nominee ?? null);
         setLoadStatus('success');
         setLoadMessage('');
       })
@@ -857,42 +861,22 @@ const ApplicationDetail: React.FC<ApplicationDetailProps> = ({
               <h3 className="font-semibold text-slate-800 flex items-center gap-2">
                 <User size={16} className="text-green-600" /> Nominee Details
               </h3>
-              <StatusBadge label="Unavailable" size="sm" />
+              <StatusBadge label={nominee?.kyc_status ?? 'Unavailable'} size="sm" />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {[
-                { label: 'Full Name', value: 'Not available' },
-                { label: 'Date of Birth', value: 'Not available' },
-                { label: 'Age', value: 'Not available' },
-                { label: 'Gender', value: 'Not available' },
-                { label: 'Relationship to Borrower', value: 'Not available' },
-                { label: 'Mobile', value: 'Not available' },
-                { label: 'Signature Status', value: 'Not available' },
-                { label: 'PAN Document Status', value: 'Not available' },
-                { label: 'Aadhaar Document Status', value: 'Not available' },
-                { label: 'Address', value: 'Not available' },
+                { label: 'Full Name', value: nominee?.nominee_name ?? 'Not available' },
+                { label: 'Age', value: nominee?.age_at_application != null ? String(nominee.age_at_application) : 'Not available' },
+                { label: 'Minor Status', value: nominee ? (nominee.minor_flag ? 'Minor' : 'Adult') : 'Not available' },
+                { label: 'Relationship to Borrower', value: nominee?.relationship_to_borrower ?? 'Not available' },
+                { label: 'KYC Status', value: nominee?.kyc_status?.replace(/_/g, ' ') ?? 'Not available' },
+                { label: 'Signature Required', value: nominee ? (nominee.signature_required_flag ? 'Required' : 'Not required') : 'Not available' },
               ].map(({ label, value }) => (
                 <div key={label} className="bg-slate-50 rounded-lg p-3">
                   <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{label}</p>
                   <p className="text-sm font-semibold mt-0.5 text-slate-900">{value}</p>
                 </div>
               ))}
-            </div>
-            <div className="border-t border-slate-100 pt-4 mt-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-lg p-3">
-                  <div className="flex-1">
-                    <p className="text-xs text-slate-500">Nominee PAN</p>
-                    <p className="text-sm font-mono font-semibold text-slate-900">••••••••••</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-lg p-3">
-                  <div className="flex-1">
-                    <p className="text-xs text-slate-500">Nominee Aadhaar</p>
-                    <p className="text-sm font-mono font-semibold text-slate-900">••••-••••-••••</p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

@@ -52,6 +52,12 @@ Staff never see invented dates, owners, stage completions, or payment readiness 
 - Add a later-stage regression whose backend owner conflicts with the old inferred owner and prove
   the API owner wins; assert no fixed dates, synthetic completion claims, or payment-readiness CTA.
 - Preserve the `LO00000035`, rejection-note, empty witness, and selected nominee regressions.
+- The selected-nominee regression must assert the 005I3 metadata-only fields (ID, name, age,
+  minor/KYC/relationship/signature facts) survive the HTTP rendering seam while PAN/Aadhaar labels,
+  tokens, hashes, and reveal controls remain absent.
+- The submitted-state regression must use a backend `assigned_owner.full_name` that differs from
+  every old inferred department label; the later-stage regression must use another conflicting
+  owner and assert both exact names, not only absence of the old labels.
 
 ## Evidence Required
 Frontend red/green logs, screenshots for submitted and later-stage detail, API contract examples if

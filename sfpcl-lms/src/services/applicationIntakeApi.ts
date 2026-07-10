@@ -56,6 +56,17 @@ export interface StaffApplication {
   submitted_by_user_id?: string | null;
   terms_acceptance_flag?: boolean;
   rejection_note?: StaffApplicationRejectionNote | null;
+  nominee?: ApplicationNomineeSummary | null;
+}
+
+export interface ApplicationNomineeSummary {
+  nominee_id: string;
+  nominee_name: string;
+  age_at_application: number | null;
+  minor_flag: boolean;
+  kyc_status: string;
+  relationship_to_borrower: string | null;
+  signature_required_flag: boolean;
 }
 
 export interface StaffApplicationRejectionNote {

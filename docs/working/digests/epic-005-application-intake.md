@@ -434,3 +434,16 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   window. M03-FR-008/M03-FR-011/M03-FR-012 remain implemented; 005I3 explicitly owns the missing
   M03-FR-003 nominee selection and submit gate. Existing assumptions A-036/A-039-A-045 continue to
   own the documented partial/deferred intake behavior.
+
+## Application Nominee Selection Contract
+- 005I3 adds nullable, protected `LoanApplication.nominee` persistence so legacy drafts migrate
+  safely while staff and portal create/update flows store source §19.2 `nominee_id`.
+- A supplied nominee must belong to the application member, must not have `minor_flag = true`, must
+  meet A-031's age-18 threshold, and must carry date-of-birth or age-snapshot evidence. Invalid
+  selection paths write no application/audit/workflow success evidence.
+- Submit and completeness/reference generation require the stored selection. Staff and own-member
+  portal detail return only nominee ID/name/age/minor/KYC/relationship/signature metadata and never
+  PAN/Aadhaar tokens, hashes, or values.
+- 006B eligibility reads only `LoanApplication.nominee`; reverse-linked
+  `Nominee.loan_application_id` rows and ordering cannot choose or change the assessed nominee.
+  Legacy null selections remain `pending_manual_evidence`.

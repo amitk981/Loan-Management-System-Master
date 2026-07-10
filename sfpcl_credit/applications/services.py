@@ -108,6 +108,7 @@ APPLICATION_TRANSITIONS = (
 )
 _CREATE_FIELDS = {
     "member_id",
+    "nominee_id",
     "required_loan_amount",
     "requested_tenure_months",
     "declared_purpose",
@@ -201,6 +202,7 @@ def get_application(application_id):
     return (
         LoanApplication.objects.select_related(
             "member",
+            "nominee",
             "land_holding",
             "crop_plan",
             "bank_account",
@@ -532,6 +534,9 @@ def generate_reference_after_completeness_pass(
         actor_permissions=actor_permissions or auth_service.effective_permission_codes(actor),
         transitions=APPLICATION_TRANSITIONS,
     )
+    nominee_error = _nominee_selection_error(application.nominee, application.member)
+    if nominee_error:
+        raise LoanApplicationValidationError({"nominee_id": nominee_error})
     if application.application_reference_number:
         raise LoanApplicationValidationError(
             {"application_reference_number": "Application already has a reference number."}
@@ -745,6 +750,7 @@ def build_completeness_workbench(application):
     blocking_document_types = [
         item["document_type"] for item in required_items if not item["complete"]
     ]
+    nominee_error = _nominee_selection_error(application.nominee, application.member)
     return {
         "loan_application_id": str(application.loan_application_id),
         "application_reference_number": application.application_reference_number,
@@ -752,6 +758,8 @@ def build_completeness_workbench(application):
         "current_stage": application.current_stage,
         "completeness_status": application.completeness_status,
         "member": _member_summary(application.member),
+        "nominee": serialize_application_nominee(application.nominee),
+        "nominee_selection_status": "valid" if nominee_error is None else "pending",
         "required_checklist_items": required_items,
         "blocking_document_types": blocking_document_types,
         "can_generate_reference": (
@@ -759,12 +767,16 @@ def build_completeness_workbench(application):
             and not application.application_reference_number
             and not LoanRequestRegisterEntry.objects.filter(loan_application=application).exists()
             and not blocking_document_types
+            and nominee_error is None
         ),
     }
 
 
 def validate_completeness_ready_for_reference(application):
     workbench = build_completeness_workbench(application)
+    nominee_error = _nominee_selection_error(application.nominee, application.member)
+    if nominee_error:
+        raise LoanApplicationValidationError({"nominee_id": nominee_error})
     if workbench["blocking_document_types"]:
         raise LoanApplicationValidationError(
             {
@@ -1266,6 +1278,7 @@ def serialize_application(application):
         "requested_tenure_months": application.requested_tenure_months,
         "declared_purpose": application.declared_purpose,
         "purpose_category": application.purpose_category,
+        "nominee": serialize_application_nominee(application.nominee),
         "loan_type_requested": application.loan_type_requested or None,
         "land_holding": _land_summary(application.land_holding),
         "crop_plan": _crop_summary(application.crop_plan),
@@ -1550,6 +1563,9 @@ def _validate_submit_facts(application):
         errors["declared_purpose"] = "Declared purpose is required before submit."
     if not application.purpose_category.strip():
         errors["purpose_category"] = "Purpose category is required before submit."
+    nominee_error = _nominee_selection_error(application.nominee, application.member)
+    if nominee_error:
+        errors["nominee_id"] = nominee_error
     if errors:
         raise LoanApplicationValidationError(errors)
 
@@ -1594,14 +1610,7 @@ def _active_member_check(member):
 
 
 def _source_backed_eligibility_checks(application):
-    nominee = (
-        Nominee.objects.filter(
-            member=application.member,
-            loan_application_id=application.loan_application_id,
-        )
-        .order_by("created_at", "nominee_id")
-        .first()
-    )
+    nominee = application.nominee
     return {
         "default_check": _default_check(application.member),
         "document_check": _document_check(application),
@@ -1615,8 +1624,8 @@ def _source_backed_eligibility_checks(application):
             if application.purpose_category in {"crop_production", "agriculture_activity"}
             else "non_agriculture"
         ),
-        "nominee_check": _nominee_check(nominee),
-        "nominee_manual_evidence_required": nominee is None,
+        "nominee_check": _nominee_check(nominee, application.member),
+        "nominee_manual_evidence_required": _nominee_check(nominee, application.member) == EligibilityAssessment.CHECK_PENDING,
     }
 
 
@@ -1633,13 +1642,19 @@ def _document_check(application):
     return "complete"
 
 
-def _nominee_check(nominee):
+def _nominee_check(nominee, member=None):
     if nominee is None:
+        return EligibilityAssessment.CHECK_PENDING
+    if nominee.age_at_application is None and nominee.date_of_birth is None:
         return EligibilityAssessment.CHECK_PENDING
     if nominee.minor_flag or (
         nominee.age_at_application is not None and nominee.age_at_application < 18
+    ) or (
+        nominee.date_of_birth is not None and _age_on_date(nominee.date_of_birth) < 18
     ):
         return "minor"
+    if member is not None and nominee.member_id != member.member_id:
+        return EligibilityAssessment.CHECK_PENDING
     return "valid"
 
 
@@ -1687,13 +1702,11 @@ def _eligibility_assessment_notes(active_result, source_checks, overall_result):
             ):
                 return (
                     "Source-backed default, document, terms, and purpose checks passed. "
-                    "Application-specific nominee evidence is pending because the current "
-                    "application schema has no submitted nominee selection."
+                    "Application-specific nominee selection is pending."
                 )
             return (
                 active_result["assessment_notes"]
-                + " Application-specific nominee evidence is pending because the current "
-                "application schema has no submitted nominee selection."
+                + " Application-specific nominee selection is pending."
             )
         return active_result["assessment_notes"]
     return "All mandatory eligibility criteria passed."
@@ -1725,6 +1738,8 @@ def _clean_update_payload(payload, member):
             cleaned[field] = _optional_text(payload.get(field))
     if "terms_acceptance_flag" in payload:
         cleaned["terms_acceptance_flag"] = bool(payload.get("terms_acceptance_flag", False))
+    if "nominee_id" in payload:
+        cleaned["nominee"] = _nominee_ref(payload.get("nominee_id"), member, errors)
     if "land_holding_id" in payload:
         cleaned["land_holding"] = _member_ref(
             LandHolding,
@@ -1784,6 +1799,7 @@ def _clean_payload(payload, *, require_member):
         "terms_acceptance_flag": bool(payload.get("terms_acceptance_flag", False)),
     }
     if member:
+        cleaned["nominee"] = _nominee_ref(payload.get("nominee_id"), member, errors)
         cleaned["land_holding"] = _member_ref(
             LandHolding,
             "land_holding_id",
@@ -1998,6 +2014,7 @@ def _assign_fields(application, cleaned):
         "requested_tenure_months",
         "declared_purpose",
         "purpose_category",
+        "nominee",
         "loan_type_requested",
         "land_holding",
         "crop_plan",
@@ -2028,6 +2045,7 @@ def _audit_application(
         "completeness_status": application.completeness_status,
         "required_loan_amount": _money(application.required_loan_amount),
         "purpose_category": application.purpose_category or None,
+        "nominee_id": str(application.nominee_id) if application.nominee_id else None,
         "land_holding_id": str(application.land_holding_id)
         if application.land_holding_id
         else None,
@@ -2216,6 +2234,7 @@ def _audit_snapshot(application):
         "completeness_status": application.completeness_status,
         "required_loan_amount": _money(application.required_loan_amount),
         "purpose_category": application.purpose_category or None,
+        "nominee_id": str(application.nominee_id) if application.nominee_id else None,
         "land_holding_id": str(application.land_holding_id)
         if application.land_holding_id
         else None,
@@ -2534,6 +2553,20 @@ def _member_summary(member):
     }
 
 
+def serialize_application_nominee(nominee):
+    if nominee is None:
+        return None
+    return {
+        "nominee_id": str(nominee.nominee_id),
+        "nominee_name": nominee.nominee_name,
+        "age_at_application": nominee.age_at_application,
+        "minor_flag": nominee.minor_flag,
+        "kyc_status": nominee.kyc_status,
+        "relationship_to_borrower": nominee.relationship_to_borrower or None,
+        "signature_required_flag": nominee.signature_required_flag,
+    }
+
+
 def _user_summary(user):
     if user is None:
         return None
@@ -2731,6 +2764,45 @@ def _member_ref(model, payload_field, value, pk_field, member, errors):
     if instance is None:
         errors[payload_field] = "Referenced record was not found for this member."
     return instance
+
+
+def _nominee_ref(value, member, errors):
+    parsed = _optional_uuid("nominee_id", value, errors)
+    if parsed is None:
+        return None
+    nominee = Nominee.objects.filter(nominee_id=parsed, member=member).first()
+    if nominee is None:
+        errors["nominee_id"] = "Referenced nominee was not found for this member."
+        return None
+
+    selection_error = _nominee_selection_error(nominee, member)
+    if selection_error:
+        errors["nominee_id"] = selection_error
+    return nominee
+
+
+def _nominee_selection_error(nominee, member):
+    if nominee is None:
+        return "An adult nominee must be selected."
+    if nominee.member_id != member.member_id:
+        return "Selected nominee must belong to the application member."
+    age_from_birth = None
+    if nominee.date_of_birth is not None:
+        age_from_birth = _age_on_date(nominee.date_of_birth)
+    if nominee.minor_flag or (
+        nominee.age_at_application is not None and nominee.age_at_application < 18
+    ) or (age_from_birth is not None and age_from_birth < 18):
+        return "Selected nominee must be at least 18 years old."
+    if nominee.age_at_application is None and nominee.date_of_birth is None:
+        return "Selected nominee requires age or date-of-birth evidence."
+    return None
+
+
+def _age_on_date(date_of_birth):
+    today = timezone.localdate()
+    return today.year - date_of_birth.year - (
+        (today.month, today.day) < (date_of_birth.month, date_of_birth.day)
+    )
 
 
 def _bank_ref(value, member, errors):

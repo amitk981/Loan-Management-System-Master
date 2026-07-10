@@ -1,5 +1,23 @@
 # Ralph Progress Log
 
+## 2026-07-10 10:53:24 - 2026-07-10_100050_normal_run
+- Agent tool used: codex.
+- Slice attempted: `005I3-application-nominee-selection-contract`.
+- Summary: Added a nullable protected application nominee FK and source §19.2 `nominee_id` to
+  staff/portal draft create/update. Shared validation enforces same-member adult age/DOB evidence;
+  submit and completeness/reference revalidate it. Detail responses expose safe metadata only.
+  Eligibility reads only the stored application nominee, so reverse-linked rows cannot choose the
+  result and legacy null selections remain pending. Existing staff/portal forms now load and select
+  real member nominees and render safe detail/empty/error states using existing patterns.
+- Tests run: backend RED/GREEN plus invalid-path/completeness/DOB/portal regressions; backend check;
+  295 backend tests; migration sync; 95% coverage above 85%; frontend RED/GREEN; lint; typecheck;
+  102 frontend tests; build; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_100050_normal_run/`, including API examples,
+  self-contained visual HTML, browser limitation note, and terminal logs.
+- Result: Success. Risk level: High under standing approval.
+- Next action: Run `005I4-application-detail-backend-state-hardening`, then
+  `006C2-cultivated-acreage-source-hardening` and `006D2-credit-assessment-deep-module-boundary`.
+
 ## 2026-07-10 05:21:39 - 2026-07-10_052139_normal_run
 - Agent tool used: codex
 - Slice attempted: 006B-default-document-purpose-and-terms-eligibility-checks
@@ -2400,6 +2418,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_092630_architecture_review/.ralph/runs/2026-07-10_092630_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_092630_architecture_review/.ralph/runs/2026-07-10_092630_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 11:03:12 - 2026-07-10_100050_normal_run
+- Agent tool used: codex
+- Slice attempted: 005I3-application-nominee-selection-contract
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_100050_normal_run/.ralph/runs/2026-07-10_100050_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_100050_normal_run/.ralph/runs/2026-07-10_100050_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

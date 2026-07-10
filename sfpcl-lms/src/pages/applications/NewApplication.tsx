@@ -6,6 +6,7 @@ import {
 import { useRole } from '../../contexts/RoleContext';
 import LoanLimitCalculator from '../../components/loan/LoanLimitCalculator';
 import { fetchMemberDirectory, type MemberDirectoryItem } from '../../services/memberDirectoryApi';
+import { fetchMemberNominees, type MemberNomineeDetail } from '../../services/memberProfileApi';
 import {
   createStaffApplicationDraft,
   submitStaffApplication,
@@ -46,8 +47,6 @@ const REQUIRED_DOCUMENTS = [
 ];
 
 const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
-const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
-
 const formatKyc = (status: string) => {
   if (status === 'rekyc_due') return 'Re-KYC Due';
   if (status === 'verified') return 'Verified';
@@ -60,6 +59,17 @@ const formatMemberType = (type: string) => {
   if (type === 'fpc') return 'FPC';
   if (type === 'producer_institution') return 'Producer Institution';
   return type;
+};
+
+const hasAdultNomineeEvidence = (nominee?: MemberNomineeDetail) => {
+  if (!nominee || nominee.minor_flag) return false;
+  if (nominee.age_at_application != null) return nominee.age_at_application >= 18;
+  if (!nominee.date_of_birth) return false;
+  const birth = new Date(`${nominee.date_of_birth}T00:00:00`);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  if ((today.getMonth() < birth.getMonth()) || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age -= 1;
+  return age >= 18;
 };
 
 const blankDocs = Object.fromEntries(REQUIRED_DOCUMENTS.map(doc => [doc.id, { uploaded: false, selfAttested: false }]));
@@ -112,6 +122,9 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
   const [memberOptions, setMemberOptions] = useState<MemberOption[]>([]);
   const [submitMessage, setSubmitMessage] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [nomineeOptions, setNomineeOptions] = useState<MemberNomineeDetail[]>([]);
+  const [selectedNomineeId, setSelectedNomineeId] = useState('');
+  const [nomineesStatus, setNomineesStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [applicationForm, setApplicationForm] = useState({
     channel: 'Assisted Entry',
     applicantType: 'individual',
@@ -136,15 +149,6 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
     loanType: 'short_term' as LoanType,
     tenure: 12,
     subsidiaryRepayment: '',
-    nomineeName: '',
-    nomineeDob: '',
-    nomineeAge: 0,
-    nomineeGender: '',
-    nomineeRelationship: '',
-    nomineeMobile: '',
-    nomineeAddress: '',
-    nomineePan: '',
-    nomineeAadhaar: '',
     borrowerSignature: false,
     nomineeSignature: false,
     declarations: {
@@ -158,6 +162,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
   const [documentState, setDocumentState] = useState<Record<string, { uploaded: boolean; selfAttested: boolean }>>(blankDocs);
 
   const selectedMember = memberOptions.find(m => m.id === selectedMemberId);
+  const selectedNominee = nomineeOptions.find(item => item.nominee_id === selectedNomineeId);
 
   useEffect(() => {
     let cancelled = false;
@@ -180,6 +185,31 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
     };
   }, [memberSearch]);
 
+  useEffect(() => {
+    if (!selectedMemberId) {
+      setNomineeOptions([]);
+      setSelectedNomineeId('');
+      setNomineesStatus('idle');
+      return;
+    }
+    let cancelled = false;
+    setNomineesStatus('loading');
+    fetchMemberNominees(selectedMemberId)
+      .then(result => {
+        if (cancelled) return;
+        setNomineeOptions(result.items);
+        setSelectedNomineeId(current => result.items.some(item => item.nominee_id === current) ? current : '');
+        setNomineesStatus('success');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setNomineeOptions([]);
+        setSelectedNomineeId('');
+        setNomineesStatus('error');
+      });
+    return () => { cancelled = true; };
+  }, [selectedMemberId]);
+
   const stepIndex = STEP_ORDER.indexOf(step);
   const shareholdingLimit = applicationForm.sharesHeld * applicationForm.valuationPerShare;
   const landBasedLimit = applicationForm.landAreaAcres * 20000;
@@ -197,22 +227,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
 
   const updateField = (field: string, value: string | number | boolean) => {
     setDraftSaved(false);
-    setApplicationForm(prev => {
-      const next = { ...prev, [field]: value };
-      if (field === 'nomineeDob' && typeof value === 'string') {
-        const birthDate = new Date(value);
-        if (!isNaN(birthDate.getTime())) {
-          const today = new Date();
-          let age = today.getFullYear() - birthDate.getFullYear();
-          const m = today.getMonth() - birthDate.getMonth();
-          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-          }
-          next.nomineeAge = age > 0 ? age : 0;
-        }
-      }
-      return next;
-    });
+    setApplicationForm(prev => ({ ...prev, [field]: value }));
   };
 
   const updateDeclaration = (field: keyof typeof applicationForm.declarations, value: boolean) => {
@@ -233,6 +248,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
 
   const hydrateFromMember = (member: MemberOption) => {
     setSelectedMemberId(member.id);
+    setSelectedNomineeId('');
     setDraftSaved(false);
     setApplicationForm(prev => ({
       ...prev,
@@ -258,6 +274,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
     try {
       const payload = {
         member_id: selectedMember.id,
+        nominee_id: selectedNomineeId || null,
         required_loan_amount: applicationForm.requestedAmount || null,
         requested_tenure_months: applicationForm.tenure || null,
         declared_purpose: applicationForm.crop ? `${applicationForm.purpose}: ${applicationForm.crop}` : applicationForm.purpose,
@@ -312,8 +329,8 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
       message: 'Requested amount must be within the permissible limit and purpose must be crop/agriculture related.',
     },
     nominee: {
-      ok: applicationForm.applicantType !== 'individual' || (Boolean(applicationForm.nomineeName && applicationForm.nomineeGender && applicationForm.nomineePan && applicationForm.nomineeAadhaar) && applicationForm.nomineeAge >= 18 && panPattern.test(applicationForm.nomineePan)),
-      message: applicationForm.applicantType !== 'individual' ? '' : 'Nominee name, adult age, gender, PAN and Aadhaar last four digits are mandatory.',
+      ok: hasAdultNomineeEvidence(selectedNominee),
+      message: 'Select an existing adult nominee for this member.',
     },
     documents: {
       ok: allDocsComplete,
@@ -608,34 +625,14 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
           <>
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Nominee Details</h2>
-              <p className="text-sm text-slate-500">Nominee name, adult age, gender, PAN and Aadhaar last four digits are mandatory.</p>
+              <p className="text-sm text-slate-500">Select an existing adult nominee from the member master.</p>
             </div>
-            {applicationForm.applicantType !== 'individual' ? (
-              <Warning>Authorised signatory flow gap: Nominee details are not applicable for institutional borrowers. Please proceed to the next step.</Warning>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <TextField label="Nominee Full Name" value={applicationForm.nomineeName} onChange={v => updateField('nomineeName', v)} />
-                <Field label="Date of Birth">
-                  <input type="date" value={applicationForm.nomineeDob} onChange={e => updateField('nomineeDob', e.target.value)} className="field-input" />
-                </Field>
-                <NumberField label="Age" value={applicationForm.nomineeAge} readOnly />
-                <Field label="Gender">
-                  <select value={applicationForm.nomineeGender} onChange={e => updateField('nomineeGender', e.target.value)} className="field-select">
-                    <option value="">Select gender</option>
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                    <option value="other">Other</option>
-                  </select>
-                </Field>
-                <TextField label="Relationship to Borrower" value={applicationForm.nomineeRelationship} onChange={v => updateField('nomineeRelationship', v)} />
-                <TextField label="Mobile Number" value={applicationForm.nomineeMobile} onChange={v => updateField('nomineeMobile', v)} />
-                <TextField label="PAN" value={applicationForm.nomineePan} onChange={v => updateField('nomineePan', v.toUpperCase())} />
-                <TextField label="Aadhaar last four digits" value={applicationForm.nomineeAadhaar} onChange={v => updateField('nomineeAadhaar', v)} />
-                <Field label="Nominee Address" className="sm:col-span-2">
-                  <textarea value={applicationForm.nomineeAddress} onChange={e => updateField('nomineeAddress', e.target.value)} rows={3} className="field-input resize-none" />
-                </Field>
-              </div>
-            )}
+            <StaffNomineeSelectionView
+              nominees={nomineeOptions}
+              selectedNomineeId={selectedNomineeId}
+              status={nomineesStatus}
+              onSelect={setSelectedNomineeId}
+            />
           </>
         )}
 
@@ -718,7 +715,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
                 <SummaryRow label="Requested Amount" value={applicationForm.requestedAmount ? fmt(applicationForm.requestedAmount) : '—'} />
                 <SummaryRow label="Eligible Limit" value={maximumPermissibleLimit ? fmt(maximumPermissibleLimit) : '—'} />
                 <SummaryRow label="Purpose" value={applicationForm.purpose.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} />
-                <SummaryRow label="Nominee" value={applicationForm.applicantType !== 'individual' ? 'Not Applicable' : `${applicationForm.nomineeName || '—'} · Age ${applicationForm.nomineeAge || '—'}`} />
+                <SummaryRow label="Nominee" value={selectedNominee ? `${selectedNominee.nominee_name} · Age ${selectedNominee.age_at_application ?? '—'}` : 'Not selected'} />
               </div>
               <div className="border border-slate-200 rounded-lg p-4">
                 <h3 className="font-semibold text-slate-900 mb-3">Completeness Checklist</h3>
@@ -814,5 +811,30 @@ const Warning: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <span>{children}</span>
   </div>
 );
+
+export const StaffNomineeSelectionView: React.FC<{
+  nominees: MemberNomineeDetail[];
+  selectedNomineeId: string;
+  status: 'idle' | 'loading' | 'success' | 'error';
+  onSelect: (nomineeId: string) => void;
+}> = ({ nominees, selectedNomineeId, status, onSelect }) => {
+  const selected = nominees.find(item => item.nominee_id === selectedNomineeId);
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <Field label="Select Member Nominee" className="sm:col-span-2">
+        <select value={selectedNomineeId} onChange={event => onSelect(event.target.value)} className="field-select" disabled={status === 'loading'}>
+          <option value="">{status === 'loading' ? 'Loading nominees…' : 'Select nominee'}</option>
+          {nominees.map(nominee => <option key={nominee.nominee_id} value={nominee.nominee_id}>{nominee.nominee_name} · {nominee.relationship_to_borrower || 'Relationship not recorded'}</option>)}
+        </select>
+      </Field>
+      {status === 'success' && nominees.length === 0 && <Warning>No nominees are available for this member.</Warning>}
+      {status === 'error' && <Warning>Nominees could not be loaded.</Warning>}
+      {selected && <>
+        <SummaryRow label="Age" value={String(selected.age_at_application ?? 'Not recorded')} />
+        <SummaryRow label="KYC Status" value={formatKyc(selected.kyc_status)} />
+      </>}
+    </div>
+  );
+};
 
 export default NewApplication;

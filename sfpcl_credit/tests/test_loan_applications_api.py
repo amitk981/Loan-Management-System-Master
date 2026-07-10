@@ -100,6 +100,7 @@ class LoanApplicationDraftApiTests(TestCase):
         self.plain = self._user("applications.plain@sfpcl.example", "PlainPass123!")
         self.member = self._member("005A", "Ramesh Patil")
         self.other_member = self._member("005A-OTHER", "Sita Farms")
+        self.nominee = self._create_nominee(None)
         self.land = LandHolding.objects.create(
             member=self.member,
             document_type="7_12_extract",
@@ -208,6 +209,178 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertNotIn("123456789012", flattened)
         self.assertNotIn('"holder_name"', json.dumps(body))
 
+    def test_staff_create_and_detail_persist_safe_same_member_nominee_selection(self):
+        response = self.client.post(
+            "/api/v1/loan-applications/",
+            data=self._draft_payload(),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        nominee = response.json()["data"]["nominee"]
+        self.assertEqual(
+            nominee,
+            {
+                "nominee_id": str(self.nominee.nominee_id),
+                "nominee_name": "Sita Patil",
+                "age_at_application": 42,
+                "minor_flag": False,
+                "kyc_status": "verified",
+                "relationship_to_borrower": "Spouse",
+                "signature_required_flag": True,
+            },
+        )
+        self.assertNotIn("pan", nominee)
+        self.assertNotIn("aadhaar", nominee)
+
+        application_id = response.json()["data"]["loan_application_id"]
+        detail = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.json()["data"]["nominee"], nominee)
+        self.assertEqual(
+            str(
+                apps.get_model("applications", "LoanApplication")
+                .objects.get(pk=application_id)
+                .nominee_id
+            ),
+            str(self.nominee.nominee_id),
+        )
+
+    def test_invalid_nominee_selections_create_no_application_or_success_evidence(self):
+        cross_member = self._create_nominee(None, member=self.other_member)
+        minor = self._create_nominee(None, minor_flag=True)
+        missing_age = self._create_nominee(
+            None,
+            age_at_application=None,
+            date_of_birth=None,
+        )
+        baseline = {
+            "applications": apps.get_model("applications", "LoanApplication").objects.count(),
+            "audits": AuditLog.objects.filter(
+                action="applications.loan_application.created"
+            ).count(),
+            "workflows": WorkflowEvent.objects.filter(
+                entity_type="loan_application"
+            ).count(),
+        }
+
+        for nominee_id in (
+            cross_member.nominee_id,
+            minor.nominee_id,
+            missing_age.nominee_id,
+            uuid4(),
+        ):
+            with self.subTest(nominee_id=nominee_id):
+                response = self.client.post(
+                    "/api/v1/loan-applications/",
+                    data=self._draft_payload(nominee_id=str(nominee_id)),
+                    content_type="application/json",
+                    headers=self._headers(
+                        "applications.creator@sfpcl.example", "CreatorPass123!"
+                    ),
+                )
+                self.assertEqual(response.status_code, 400)
+                assert_error_envelope(self, response.json(), "VALIDATION_ERROR")
+                self.assertIn("nominee_id", response.json()["error"]["field_errors"])
+                self.assertEqual(
+                    apps.get_model("applications", "LoanApplication").objects.count(),
+                    baseline["applications"],
+                )
+                self.assertEqual(
+                    AuditLog.objects.filter(
+                        action="applications.loan_application.created"
+                    ).count(),
+                    baseline["audits"],
+                )
+                self.assertEqual(
+                    WorkflowEvent.objects.filter(entity_type="loan_application").count(),
+                    baseline["workflows"],
+                )
+
+    def test_draft_selects_nominee_then_submits_but_missing_selection_is_blocked(self):
+        create = self.client.post(
+            "/api/v1/loan-applications/",
+            data=self._draft_payload(nominee_id=None),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(create.status_code, 200)
+        application_id = create.json()["data"]["loan_application_id"]
+
+        blocked = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/submit/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(blocked.status_code, 400)
+        self.assertIn("nominee_id", blocked.json()["error"]["field_errors"])
+        self.assertFalse(
+            AuditLog.objects.filter(
+                action="applications.loan_application.submitted",
+                entity_id=application_id,
+            ).exists()
+        )
+        self.assertFalse(
+            WorkflowEvent.objects.filter(entity_id=application_id, to_state="submitted").exists()
+        )
+
+        selected = self.client.patch(
+            f"/api/v1/loan-applications/{application_id}/",
+            data={"nominee_id": str(self.nominee.nominee_id)},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(selected.status_code, 200)
+        self.assertEqual(
+            selected.json()["data"]["nominee"]["nominee_id"],
+            str(self.nominee.nominee_id),
+        )
+        submitted = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/submit/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(submitted.status_code, 200)
+        self.assertEqual(submitted.json()["data"]["application_status"], "submitted")
+
+    def test_completeness_read_and_pass_block_legacy_null_nominee_without_evidence(self):
+        application_id = self._create_and_submit_application()
+        application = apps.get_model("applications", "LoanApplication").objects.get(
+            pk=application_id
+        )
+        application.nominee = None
+        application.save(update_fields=["nominee"])
+        self._verify_required_application_documents(application_id)
+
+        workbench = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/completeness-check/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(workbench.status_code, 200)
+        self.assertEqual(workbench.json()["data"]["nominee_selection_status"], "pending")
+        self.assertIsNone(workbench.json()["data"]["nominee"])
+        self.assertFalse(workbench.json()["data"]["can_generate_reference"])
+
+        passed = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/completeness-check/pass/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(passed.status_code, 400)
+        self.assertIn("nominee_id", passed.json()["error"]["field_errors"])
+        self.assertFalse(
+            apps.get_model("applications", "LoanRequestRegisterEntry")
+            .objects.filter(loan_application_id=application_id)
+            .exists()
+        )
+
     def test_list_applications_supports_staff_pagination_filtering_search_and_ordering(self):
         first_id = self._create_and_submit_application()
         second_id = self._create_and_submit_application(
@@ -305,7 +478,7 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(assessment["document_check"], "complete")
         self.assertEqual(assessment["terms_acceptance_check"], "accepted")
         self.assertEqual(assessment["purpose_check"], "agriculture_aligned")
-        self.assertEqual(assessment["nominee_check"], "pending")
+        self.assertEqual(assessment["nominee_check"], "valid")
         self.assertEqual(assessment["overall_result"], "pending_manual_evidence")
         self.assertIn("BR-004", assessment["assessment_notes"])
         self.assertEqual(assessment["assessed_by_user_id"], str(self.creator.user_id))
@@ -337,6 +510,11 @@ class LoanApplicationDraftApiTests(TestCase):
         self.member.active_member_verified_at = timezone.now()
         self.member.save(update_fields=["active_member_status", "active_member_verified_at"])
         application_id = self._reference_generated_application(terms_acceptance_flag=True)
+        application = apps.get_model("applications", "LoanApplication").objects.get(
+            pk=application_id
+        )
+        application.nominee = None
+        application.save(update_fields=["nominee"])
 
         response = self.client.post(
             f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
@@ -356,7 +534,7 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(body["data"]["nominee_check"], "pending")
         self.assertEqual(body["data"]["overall_result"], "pending_manual_evidence")
         self.assertIn(
-            "Application-specific nominee evidence is pending",
+            "Application-specific nominee selection is pending",
             body["data"]["assessment_notes"],
         )
 
@@ -379,6 +557,7 @@ class LoanApplicationDraftApiTests(TestCase):
             kyc_status="verified",
             minor_flag=False,
         )
+        self._create_nominee(application_id, minor_flag=True)
 
         response = self.client.post(
             f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
@@ -397,6 +576,27 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(body["data"]["purpose_check"], "agriculture_aligned")
         self.assertEqual(body["data"]["nominee_check"], "valid")
         self.assertEqual(body["data"]["overall_result"], "eligible")
+
+    def test_eligibility_uses_dob_to_reject_legacy_selected_minor(self):
+        self.member.active_member_status = "active"
+        self.member.active_member_verified_at = timezone.now()
+        self.member.save(update_fields=["active_member_status", "active_member_verified_at"])
+        application_id = self._reference_generated_application(terms_acceptance_flag=True)
+        self.nominee.age_at_application = None
+        self.nominee.date_of_birth = timezone.localdate().replace(
+            year=timezone.localdate().year - 17
+        )
+        self.nominee.save(update_fields=["age_at_application", "date_of_birth"])
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["data"]["nominee_check"], "minor")
+        self.assertEqual(response.json()["data"]["overall_result"], "ineligible")
 
     def test_eligibility_assessment_marks_blockers_ineligible_without_advancing_application(self):
         self.member.active_member_status = "active"
@@ -440,10 +640,10 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(body["data"]["document_check"], "incomplete")
         self.assertEqual(body["data"]["terms_acceptance_check"], "accepted")
         self.assertEqual(body["data"]["purpose_check"], "non_agriculture")
-        self.assertEqual(body["data"]["nominee_check"], "minor")
+        self.assertEqual(body["data"]["nominee_check"], "valid")
         self.assertEqual(body["data"]["overall_result"], "ineligible")
         self.assertIn("BR-008", body["data"]["assessment_notes"])
-        self.assertIn("BR-009", body["data"]["assessment_notes"])
+        self.assertNotIn("BR-009", body["data"]["assessment_notes"])
         self.assertIn("BR-013/BR-014", body["data"]["assessment_notes"])
         self.assertIn("BR-018", body["data"]["assessment_notes"])
 
@@ -3087,6 +3287,7 @@ class LoanApplicationDraftApiTests(TestCase):
             "cancelled_cheque_id": str(self.cheque.cancelled_cheque_id),
             "borrower_request_notes": "Borrower prefers assisted digital intake.",
             "terms_acceptance_flag": False,
+            "nominee_id": str(self.nominee.nominee_id),
         }
         payload.update(overrides)
         return payload

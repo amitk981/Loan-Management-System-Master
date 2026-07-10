@@ -222,6 +222,7 @@ def _portal_application_detail(application):
         **summary,
         "member": _member_snapshot(application.member),
         "requested_tenure_months": application.requested_tenure_months,
+        "nominee": application_services.serialize_application_nominee(application.nominee),
         "borrower_request_notes": application.borrower_request_notes,
         "terms_acceptance_flag": application.terms_acceptance_flag,
         "timeline": _application_timeline(application),
