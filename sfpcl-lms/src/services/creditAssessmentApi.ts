@@ -1,6 +1,5 @@
-import { API_BASE_URL, AuthSessionError, loadStoredAuthSession } from './authSession';
+import { authenticatedRequest } from './authSession';
 
-type Envelope<T> = { success: boolean; data?: T; error?: { code: string; message: string; field_errors?: Record<string, string> } };
 export type Rating = 'low' | 'medium' | 'high';
 
 export interface EligibilityAssessment {
@@ -50,11 +49,13 @@ export interface AppraisalNote extends AppraisalDraft {
   review_history: ReviewHistoryItem[]; tat_due_at: string; tat_status: string;
   risk_assessment: RiskAssessment & { risk_assessment_id: string };
   appraisal_status: string; rejection_note?: RejectionNoteSummary;
+  available_actions?: AvailableAction[];
 }
+export interface AvailableAction { action_code: string; label?: string; enabled: boolean; disabled_reason?: string | null; required_permission?: string | null; required_role?: string | null }
 export interface LoanLimitRequest { shareholding_id: string; land_holding_ids: string[]; crop_plan_id: string; requested_amount: string; calculation_date: string }
 export type AppraisalUpdate = Partial<Omit<AppraisalDraft, 'risk_assessment'>> & { risk_assessment?: Partial<RiskAssessment> };
 export interface ReviewRequest { decision: 'reviewed' | 'returned' | 'rejected'; review_comments: string; rejection_reason_category?: string; detailed_reason?: string; reapply_allowed_flag?: boolean; communication_mode?: string }
-export interface SanctionSubmission { approval_case_id: string; loan_application_id: string; loan_appraisal_note_id: string; submission_status: string; exception_required_flag: boolean; submitted_by: { user_id: string; full_name: string }; submitted_at: string }
+export interface SanctionSubmission { approval_case_id: string; loan_application_id: string; loan_appraisal_note_id: string; application_status?: string; appraisal_status?: string; appraisal_review_decision_id?: string | null; workflow_event_id?: string | null; submission_status: string; exception_required_flag: boolean; submitted_by: { user_id: string; full_name: string }; submitted_at: string; available_actions?: AvailableAction[] }
 
 export const fetchEligibilityAssessment = (id: string) => request<EligibilityAssessment>(`/api/v1/loan-applications/${id}/eligibility-assessment/`);
 export const runEligibilityAssessment = (id: string) => request<EligibilityAssessment>(`/api/v1/loan-applications/${id}/eligibility-assessment/run/`, 'POST', {});
@@ -67,19 +68,27 @@ export const revalidateAppraisalPrerequisites = (id: string) => request<Appraisa
 export const submitAppraisalForReview = (id: string, body: { remarks: string }) => request<AppraisalNote>(`/api/v1/appraisal-notes/${id}/submit-for-review/`, 'POST', body);
 export const reviewAppraisal = (id: string, body: ReviewRequest) => request<AppraisalNote>(`/api/v1/appraisal-notes/${id}/review/`, 'POST', body);
 export const submitAppraisalToSanction = (id: string, body: { remarks: string }) => request<SanctionSubmission>(`/api/v1/loan-applications/${id}/submit-to-sanction-committee/`, 'POST', body);
+export const fetchSanctionCase = (id: string) => request<SanctionSubmission>(`/api/v1/loan-applications/${id}/sanction-case/`);
+export const projectAppraisalDraft = (note: AppraisalDraft): AppraisalDraft => ({
+  borrower_summary: note.borrower_summary,
+  eligibility_summary: note.eligibility_summary,
+  loan_limit_summary: note.loan_limit_summary,
+  recommended_amount: note.recommended_amount,
+  recommended_tenure_months: note.recommended_tenure_months,
+  recommended_interest_type: note.recommended_interest_type,
+  recommended_security_summary: note.recommended_security_summary,
+  repayment_capacity_notes: note.repayment_capacity_notes,
+  risk_assessment: {
+    market_risk_rating: note.risk_assessment.market_risk_rating,
+    operational_risk_rating: note.risk_assessment.operational_risk_rating,
+    borrower_risk_rating: note.risk_assessment.borrower_risk_rating,
+    overall_risk_rating: note.risk_assessment.overall_risk_rating,
+    risk_mitigation_notes: note.risk_assessment.risk_mitigation_notes,
+  },
+  recommendation: note.recommendation,
+});
 const appraisalBody = <T extends AppraisalUpdate>(body: T) => body.recommended_tenure_months == null ? Object.fromEntries(Object.entries(body).filter(([key]) => key !== 'recommended_tenure_months')) : body;
 
 async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
-  const session = loadStoredAuthSession();
-  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: { Accept: 'application/json', Authorization: `Bearer ${session.accessToken}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  const envelope = await response.json() as Envelope<T>;
-  if (!response.ok || !envelope.success || envelope.data === undefined) {
-    throw new AuthSessionError(envelope.error?.code ?? 'REQUEST_FAILED', envelope.error?.message ?? 'Request failed.', response.status, envelope.error?.field_errors);
-  }
-  return envelope.data;
+  return authenticatedRequest<T>(path, { method, ...(body !== undefined ? { body } : {}) });
 }

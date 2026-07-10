@@ -1,0 +1,21 @@
+.ralph/progress.md
+.ralph/state.json
+docs/slices/006H2-workbench-action-contract-hardening.md
+docs/slices/006H3-appraisal-workbench-prototype-fidelity-restoration.md
+docs/slices/006X-mvp-end-to-end-happy-path-tracer-bullet.md
+docs/working/HANDOFF.md
+docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.test.tsx
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx
+sfpcl-lms/src/services/authSession.ts
+sfpcl-lms/src/services/creditAssessmentApi.test.ts
+sfpcl-lms/src/services/creditAssessmentApi.ts
+tracked_non_ralph_lines=224 added=173 deleted=51
+protected_paths=PASS
+artifact_execution-plan.md=PASS
+artifact_risk-assessment.md=PASS
+artifact_final-summary.md=PASS
+artifact_review-packet.md=PASS
+artifact_changed-files.txt=PASS
+artifact_placeholders=PASS
+diff_check=PASS

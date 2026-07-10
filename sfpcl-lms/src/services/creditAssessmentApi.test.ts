@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearStoredAuthSession, storedAuthSession } from './authSession';
 import {
   calculateLoanLimit, createAppraisal, fetchAppraisal, fetchEligibilityAssessment,
-  fetchLoanLimitAssessment, revalidateAppraisalPrerequisites, reviewAppraisal,
+  fetchLoanLimitAssessment, fetchSanctionCase, projectAppraisalDraft, revalidateAppraisalPrerequisites, reviewAppraisal,
   runEligibilityAssessment, submitAppraisalForReview, submitAppraisalToSanction, updateAppraisal,
 } from './creditAssessmentApi';
 
@@ -19,6 +19,35 @@ beforeEach(() => {
 afterEach(() => { clearStoredAuthSession(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('credit assessment API client', () => {
+  it('projects a returned server appraisal to exactly the writable PATCH contract', () => {
+    const projected = projectAppraisalDraft({
+      ...appraisal,
+      borrower_summary: 'Borrower', eligibility_summary: 'Eligible', loan_limit_summary: 'Within limit',
+      recommended_amount: '250000.00', recommended_tenure_months: 12,
+      recommended_interest_type: 'floating', recommended_security_summary: 'Security',
+      repayment_capacity_notes: 'Capacity', recommendation: 'approve',
+      risk_assessment: { risk_assessment_id: 'risk-1', market_risk_rating: 'low', operational_risk_rating: 'medium', borrower_risk_rating: 'low', overall_risk_rating: 'medium', risk_mitigation_notes: 'Controls', assessed_by_user_id: 'user-1' },
+      eligibility_snapshot: { frozen: true }, review_history: [{ response_only: true }],
+      available_actions: [{ action_code: 'update_appraisal', enabled: true }],
+    } as never);
+    expect(Object.keys(projected)).toEqual([
+      'borrower_summary', 'eligibility_summary', 'loan_limit_summary', 'recommended_amount',
+      'recommended_tenure_months', 'recommended_interest_type', 'recommended_security_summary',
+      'repayment_capacity_notes', 'risk_assessment', 'recommendation',
+    ]);
+    expect(Object.keys(projected.risk_assessment)).toEqual([
+      'market_risk_rating', 'operational_risk_rating', 'borrower_risk_rating',
+      'overall_risk_rating', 'risk_mitigation_notes',
+    ]);
+    expect(JSON.stringify(projected)).not.toMatch(/risk_assessment_id|eligibility_snapshot|review_history|available_actions|appraisal_status/);
+  });
+
+  it('reads the canonical pending sanction case identity and server statuses', async () => {
+    const canonical = { ...sanction, application_status: 'pending_sanction_committee_approval', appraisal_status: 'submitted_to_sanction_committee', appraisal_review_decision_id: 'review-1', workflow_event_id: 'event-1', available_actions: [] };
+    const fetchMock = vi.fn().mockResolvedValue(ok(canonical)); vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchSanctionCase('application-1')).resolves.toEqual(canonical);
+    expect(fetchMock).toHaveBeenCalledWith(endpoint('/api/v1/loan-applications/application-1/sanction-case/'), request('GET'));
+  });
   it('uses the completed eligibility and loan-limit paths without changing decimal strings', async () => {
     const fetchMock = vi.fn().mockResolvedValue(ok(eligibility)); vi.stubGlobal('fetch', fetchMock);
     await fetchEligibilityAssessment('application-1'); await runEligibilityAssessment('application-1');

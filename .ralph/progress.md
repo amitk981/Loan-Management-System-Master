@@ -1433,6 +1433,18 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+## 2026-07-11 - 2026-07-11_020739_repair
+- Agent tool used: codex
+- Slice attempted: 006H2-workbench-action-contract-hardening
+- Summary: Repaired the prior artifact failure and restored the gated Appraisal Workbench writable
+  projection, backend action usability, shared authenticated envelope behavior, and canonical
+  006G2 sanction-case reload/identity.
+- Tests run: focused frontend RED/GREEN; frontend lint/typecheck, 130 tests and build; Django check,
+  migration sync, 387 backend tests with five expected SQLite skips and 94% coverage (85% floor).
+- Evidence saved: `.ralph/runs/2026-07-11_020739_repair/`
+- Result: Success
+- Risk level: High (standing approval; no veto)
+- Next action: Run the due architecture review, then sharpened 006H3.
 
 ## 2026-07-02 15:47:24 - 2026-07-02_154724_normal_run
 - Agent tool used: codex
@@ -3006,6 +3018,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_014217_repair/.ralph/runs/2026-07-11_014217_repair/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_014217_repair/.ralph/runs/2026-07-11_014217_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-11 02:17:33 - 2026-07-11_020739_repair
+- Agent tool used: codex
+- Slice attempted: 006H2-workbench-action-contract-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_020739_repair/.ralph/runs/2026-07-11_020739_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_020739_repair/.ralph/runs/2026-07-11_020739_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

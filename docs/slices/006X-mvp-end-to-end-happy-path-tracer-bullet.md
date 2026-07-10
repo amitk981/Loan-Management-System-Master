@@ -72,6 +72,19 @@ approval is explicitly not part of this tracer.
   facts; capture the reviewed and pending-sanction states.
 - One repeat-submit regression proving the case/audit/workflow counts remain one.
 
+## Sharpened Cross-Role Assertions
+
+- The Deputy Manager Finance session must observe the server-advertised eligibility, calculation,
+  create/update, and submit-review controls; the Credit Manager session must observe review and,
+  only after `reviewed`, sanction submission. Zero-permission or missing-action sessions expose none.
+- After sanction submission, reload through
+  `GET /api/v1/loan-applications/{id}/sanction-case/` and assert the UI/API share the exact
+  `approval_case_id`, application/appraisal statuses, submission status, review-decision UUID,
+  workflow-event UUID, exception flag, actor, and timestamp.
+- Capture the exact appraisal PATCH body and prove it contains only 006H2's writable appraisal/risk
+  allowlist; the tracer must fail if response-only status, snapshot, history, reviewer, TAT, or case
+  fields are sent.
+
 ## Visual Acceptance Criteria
 None.
 

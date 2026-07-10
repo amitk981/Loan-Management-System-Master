@@ -1,5 +1,24 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006H2 Workbench Action Contract Hardening
+
+- Returned appraisal responses now pass through one explicit writable projection before becoming
+  editable state or PATCH bodies. The projection excludes IDs, frozen snapshots/provenance,
+  statuses, reviewer/history/TAT/rejection facts, actor/time facts, and action summaries, including
+  the corresponding response-only nested risk fields.
+- The real workbench reload path reads the 006G2 sanction case alongside eligibility, loan limit,
+  and appraisal facts. A `404 NOT_FOUND` means no case; success retains the server case UUID and
+  canonical application/appraisal/submission facts. Sanction submission no longer invents either
+  status in React.
+- Ordinary action usability intersects `/auth/me.available_actions` with canonical permissions,
+  role/state checks, while legacy remediation additionally requires the appraisal response's
+  dedicated `revalidate_appraisal_prerequisites` action plus update and risk-management authority.
+- Credit requests now reuse the shared authenticated envelope path. It preserves field errors,
+  rejects malformed JSON as `MALFORMED_RESPONSE`, and performs no automatic stale-write retry.
+- Frontend contract/behavior coverage verifies exact writable keys, nested risk keys, sanction-case
+  URL/readback, role/action denial, legacy remediation authority, conditional rejection fields,
+  standard `409` field errors, and the no-mock/no-formula boundary.
+
 ## 006F4 PostgreSQL Credit Concurrency Acceptance
 
 - PostgreSQL 14.20 executed the two loan-limit, two appraisal/rejection, and one sanction-submission

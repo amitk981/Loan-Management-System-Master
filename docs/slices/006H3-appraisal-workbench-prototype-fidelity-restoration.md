@@ -43,6 +43,16 @@ while retaining the corrected 006H2 backend wiring and introducing no new visual
   API-error states at the existing acceptance viewport.
 - Static diff/fidelity review proves no new color, typography, card, badge, table, or layout pattern.
 
+## Sharpened Carry-Forward Contract
+
+- Preserve `projectAppraisalDraft` as the only response-to-edit/PATCH seam and keep its exact ten
+  top-level writable keys plus the five nested risk keys covered by 006H2.
+- Preserve the four-way reload (`eligibility`, `loan-limit`, `appraisal`, `sanction-case`) and treat
+  sanction-case `404 NOT_FOUND` as absence while displaying the exact returned case UUID and
+  application/appraisal statuses.
+- Restored controls must continue to require the matching server action code plus current-user
+  permission/role usability; legacy revalidation remains distinct from submit-for-review.
+
 ## Evidence Required
 
 Before/after host screenshots, visual-regression output, prototype-fidelity checklist, and all
