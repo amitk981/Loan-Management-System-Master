@@ -1,10 +1,14 @@
 import ast
 from contextlib import ExitStack
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier, Event, Lock
+from unittest import skipUnless
 from uuid import uuid4
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.db import close_old_connections, connection, connections
+from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import (
@@ -245,10 +249,10 @@ class CreditEligibilityModuleTests(TestCase):
 
     def test_static_import_boundary_routes_loan_limit_and_appraisal_through_credit_modules(self):
         package_root = Path(__file__).resolve().parents[1]
-        services_tree = ast.parse(
-            (package_root / "applications" / "services.py").read_text()
-        )
-        views_tree = ast.parse((package_root / "applications" / "views.py").read_text())
+        services_source = (package_root / "applications" / "services.py").read_text()
+        views_source = (package_root / "applications" / "views.py").read_text()
+        services_tree = ast.parse(services_source)
+        views_tree = ast.parse(views_source)
         resolver_tree = ast.parse(
             (
                 package_root
@@ -260,14 +264,10 @@ class CreditEligibilityModuleTests(TestCase):
         appraisal_path = (
             package_root / "credit" / "modules" / "appraisal_workflow.py"
         )
-        calculator_tree = ast.parse(
-            (
-                package_root
-                / "credit"
-                / "modules"
-                / "loan_limit_calculator.py"
-            ).read_text()
-        )
+        calculator_source = (
+            package_root / "credit" / "modules" / "loan_limit_calculator.py"
+        ).read_text()
+        calculator_tree = ast.parse(calculator_source)
 
         service_definitions = {
             node.name
@@ -287,11 +287,14 @@ class CreditEligibilityModuleTests(TestCase):
             self._imports_from(services_tree, "sfpcl_credit.credit")
         )
         self.assertEqual(
-            self._imports_from_module(
-                views_tree,
-                "sfpcl_credit.credit.modules.loan_limit_calculator",
+            self._missing_required_imports(
+                views_source,
+                {
+                    "sfpcl_credit.credit.modules.appraisal_workflow.AppraisalWorkflow",
+                    "sfpcl_credit.credit.modules.loan_limit_calculator.LoanLimitCalculator",
+                },
             ),
-            {("LoanLimitCalculator", None)},
+            set(),
         )
         self.assertFalse(
             self._imports_from(resolver_tree, "sfpcl_credit.credit")
@@ -304,7 +307,14 @@ class CreditEligibilityModuleTests(TestCase):
             )
         )
         self.assertTrue(appraisal_path.is_file())
-        appraisal_tree = ast.parse(appraisal_path.read_text())
+        appraisal_source = appraisal_path.read_text()
+        appraisal_tree = ast.parse(appraisal_source)
+        for source in (services_source, views_source, appraisal_source):
+            self.assertFalse(self._credit_boundary_violations(source))
+        self.assertFalse(
+            self._credit_boundary_violations(calculator_source)
+            - {"direct credit assessment model access"}
+        )
         self.assertFalse(
             self._imports_from(appraisal_tree, "sfpcl_credit.applications.services")
         )
@@ -318,19 +328,28 @@ class CreditEligibilityModuleTests(TestCase):
                 ("LoanLimitAssessment", None),
             }
         )
-        self.assertTrue(
-            self._imports_from_module(
-                appraisal_tree,
-                "sfpcl_credit.credit.modules.loan_limit_calculator",
-            ).issubset({("LoanLimitCalculator", None)})
+        self.assertEqual(
+            self._missing_required_imports(
+                appraisal_source,
+                {
+                    "sfpcl_credit.credit.modules.loan_limit_calculator.LoanLimitCalculator",
+                },
+            ),
+            set(),
         )
         appraisal_class = next(
             node for node in appraisal_tree.body
             if isinstance(node, ast.ClassDef) and node.name == "AppraisalWorkflow"
         )
-        self.assertEqual(
-            {node.name for node in appraisal_class.body if isinstance(node, ast.FunctionDef)},
-            {"create_or_update", "get", "submit_for_review", "review", "submit_to_sanction"},
+        self.assertTrue(
+            {"create_or_update", "get", "submit_for_review", "review", "submit_to_sanction"}
+            .issubset(
+                {
+                    node.name
+                    for node in appraisal_class.body
+                    if isinstance(node, ast.FunctionDef)
+                }
+            )
         )
         self.assertIn(
             "AppraisalWorkflow",
@@ -339,6 +358,98 @@ class CreditEligibilityModuleTests(TestCase):
                 for node in appraisal_tree.body
                 if isinstance(node, ast.ClassDef)
             },
+        )
+
+    def test_boundary_import_inspection_resolves_package_alias_imports(self):
+        tree = ast.parse(
+            "import sfpcl_credit.credit.models as credit_models\n"
+        )
+
+        self.assertEqual(
+            self._imports_from_module(
+                tree,
+                "sfpcl_credit.credit.models",
+            ),
+            {("sfpcl_credit.credit.models", "credit_models")},
+        )
+
+    def test_boundary_fixture_rejects_package_level_concrete_model_access(self):
+        source = """
+from sfpcl_credit.credit import models as credit_models
+
+assessment = credit_models.LoanLimitAssessment
+"""
+
+        self.assertEqual(
+            self._credit_boundary_violations(source),
+            {"direct credit assessment model access"},
+        )
+
+    def test_boundary_fixtures_reject_direct_aliased_policy_and_private_access(self):
+        fixtures = {
+            "direct assessment": (
+                "from sfpcl_credit.credit.models import LoanLimitAssessment\n",
+                {"direct credit assessment model access"},
+            ),
+            "aliased assessment": (
+                "from sfpcl_credit.credit.models import EligibilityAssessment as Current\n",
+                {"direct credit assessment model access"},
+            ),
+            "package policy": (
+                "from sfpcl_credit.configurations import models as configs\n"
+                "policy = configs.LoanPolicyConfig\n",
+                {"direct loan policy model access"},
+            ),
+            "aliased policy": (
+                "from sfpcl_credit.configurations.models import LoanPolicyConfig as Policy\n",
+                {"direct loan policy model access"},
+            ),
+            "private calculator helper": (
+                "from sfpcl_credit.credit.modules.loan_limit_calculator import _projection as project\n",
+                {"private loan-limit module access"},
+            ),
+        }
+
+        for label, (source, expected) in fixtures.items():
+            with self.subTest(label=label):
+                self.assertEqual(self._credit_boundary_violations(source), expected)
+
+    def test_boundary_fixture_requires_public_imports_and_allows_extra_methods(self):
+        required = {
+            "sfpcl_credit.credit.modules.appraisal_workflow.AppraisalWorkflow",
+            "sfpcl_credit.credit.modules.loan_limit_calculator.LoanLimitCalculator",
+        }
+        missing_source = "from sfpcl_credit.credit.modules import appraisal_workflow\n"
+        public_source = """
+from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow as Workflow
+import sfpcl_credit.credit.modules.loan_limit_calculator as calculator
+
+workflow = Workflow
+loan_limit = calculator.LoanLimitCalculator
+
+class AppraisalWorkflow:
+    def create_or_update(self): pass
+    def get(self): pass
+    def submit_for_review(self): pass
+    def additional_public_refactor(self): pass
+"""
+
+        self.assertEqual(
+            self._missing_required_imports(missing_source, required),
+            required,
+        )
+        self.assertEqual(
+            self._missing_required_imports(public_source, required),
+            set(),
+        )
+        workflow_tree = ast.parse(public_source).body[-1]
+        public_methods = {
+            node.name
+            for node in workflow_tree.body
+            if isinstance(node, ast.FunctionDef)
+        }
+        self.assertTrue(
+            {"create_or_update", "get", "submit_for_review"}.issubset(public_methods)
         )
 
     def test_loan_limit_calculates_through_module_with_one_public_audit_projection(self):
@@ -562,12 +673,77 @@ class CreditEligibilityModuleTests(TestCase):
 
     @staticmethod
     def _imports_from_module(tree, module_name):
-        return {
+        imported_members = {
             (alias.name, alias.asname)
             for node in ast.walk(tree)
             if isinstance(node, ast.ImportFrom) and node.module == module_name
             for alias in node.names
         }
+        imported_modules = {
+            (alias.name, alias.asname)
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Import)
+            for alias in node.names
+            if alias.name == module_name
+        }
+        return imported_members | imported_modules
+
+    @classmethod
+    def _credit_boundary_violations(cls, source):
+        references = cls._resolved_import_references(ast.parse(source))
+        violations = set()
+        concrete_assessments = {
+            "sfpcl_credit.credit.models.EligibilityAssessment",
+            "sfpcl_credit.credit.models.LoanLimitAssessment",
+        }
+        if references & concrete_assessments:
+            violations.add("direct credit assessment model access")
+        if "sfpcl_credit.configurations.models.LoanPolicyConfig" in references:
+            violations.add("direct loan policy model access")
+        if any(
+            reference.startswith(
+                "sfpcl_credit.credit.modules.loan_limit_calculator._"
+            )
+            for reference in references
+        ):
+            violations.add("private loan-limit module access")
+        return violations
+
+    @classmethod
+    def _missing_required_imports(cls, source, required):
+        references = cls._resolved_import_references(ast.parse(source))
+        return set(required) - references
+
+    @staticmethod
+    def _resolved_import_references(tree):
+        aliases = {}
+        imported = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    local_name = alias.asname or alias.name.split(".")[0]
+                    target = alias.name if alias.asname else local_name
+                    aliases[local_name] = target
+                    imported.add(alias.name)
+            elif isinstance(node, ast.ImportFrom):
+                module = node.module or ""
+                for alias in node.names:
+                    target = f"{module}.{alias.name}" if module else alias.name
+                    aliases[alias.asname or alias.name] = target
+                    imported.add(target)
+
+        references = set(imported)
+        for node in ast.walk(tree):
+            parts = []
+            current = node
+            while isinstance(current, ast.Attribute):
+                parts.append(current.attr)
+                current = current.value
+            if isinstance(current, ast.Name) and current.id in aliases:
+                references.add(
+                    ".".join([aliases[current.id], *reversed(parts)])
+                )
+        return references
 
     def _verified_required_documents(self):
         document_types = """
@@ -691,3 +867,259 @@ class CreditEligibilityModuleTests(TestCase):
             status="active",
             primary_role=role,
         )
+
+
+@skipUnless(
+    connection.vendor == "postgresql",
+    "Authoritative loan-limit concurrency proof requires the PostgreSQL integration settings.",
+)
+class LoanLimitConcurrencyTests(TransactionTestCase):
+    setUp = CreditEligibilityModuleTests.setUp
+    _verified_required_documents = CreditEligibilityModuleTests._verified_required_documents
+    _shareholding = CreditEligibilityModuleTests._shareholding
+    _calculator_fixture = CreditEligibilityModuleTests._calculator_fixture
+    _loan_limit_payload = CreditEligibilityModuleTests._loan_limit_payload
+    _permission = CreditEligibilityModuleTests._permission
+    _active_loan_policy = CreditEligibilityModuleTests._active_loan_policy
+    _user = CreditEligibilityModuleTests._user
+
+    def test_competing_valid_reruns_serialize_complete_snapshots_and_evidence(self):
+        from sfpcl_credit.credit.modules.loan_limit_calculator import LoanLimitCalculator
+
+        calculator, first_shareholding, _policy = self._calculator_fixture()
+        initial = calculator.calculate_for_application(
+            actor=self.actor,
+            application_id=self.application.loan_application_id,
+            payload=self._loan_limit_payload(first_shareholding),
+            request_meta={"request_id": "concurrency-initial"},
+        ).snapshot
+        second_shareholding = self._shareholding(
+            folio_number="FOL-CREDIT-MODULE-SECOND",
+            number_of_shares=250,
+            available_share_count=250,
+        )
+        initial_audit_count = AuditLog.objects.filter(
+            action="loan_limit.calculated"
+        ).count()
+        initial_workflow_count = WorkflowEvent.objects.filter(
+            workflow_name="loan_limit_assessment"
+        ).count()
+        first_locked = Barrier(2)
+        second_attempting = Barrier(2)
+        release_first = Event()
+        second_payload_entered = Event()
+        ordering = []
+        ordering_lock = Lock()
+
+        def record(step):
+            with ordering_lock:
+                ordering.append(step)
+
+        def first_payload():
+            record("first_locked_application")
+            first_locked.wait(timeout=10)
+            if not release_first.wait(timeout=10):
+                raise AssertionError("Timed out waiting to release the first calculation.")
+            record("first_released")
+            return self._loan_limit_payload(first_shareholding)
+
+        def second_payload():
+            record("second_locked_application")
+            second_payload_entered.set()
+            return self._loan_limit_payload(second_shareholding)
+
+        def calculate(payload, request_id, attempted_barrier=None):
+            close_old_connections()
+            try:
+                actor = User.objects.get(user_id=self.actor.user_id)
+                if attempted_barrier is not None:
+                    record("second_attempting_application_lock")
+                    attempted_barrier.wait(timeout=10)
+                return LoanLimitCalculator().calculate_for_application(
+                    actor=actor,
+                    application_id=self.application.loan_application_id,
+                    payload=payload,
+                    request_meta={"request_id": request_id},
+                ).snapshot
+            finally:
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            first_future = executor.submit(
+                calculate,
+                first_payload,
+                "concurrency-first",
+            )
+            first_locked.wait(timeout=10)
+            second_future = executor.submit(
+                calculate,
+                second_payload,
+                "concurrency-second",
+                second_attempting,
+            )
+            second_attempting.wait(timeout=10)
+            try:
+                self.assertFalse(
+                    second_payload_entered.wait(timeout=0.5),
+                    "The second calculation reached its payload before the first committed.",
+                )
+            finally:
+                release_first.set()
+            first = first_future.result(timeout=10)
+            second = second_future.result(timeout=10)
+
+        assessment = LoanLimitAssessment.objects.get(
+            loan_application=self.application
+        )
+        final = calculator.get_assessment(
+            actor=self.actor,
+            application_id=self.application.loan_application_id,
+        ).snapshot
+        self.assertEqual(LoanLimitAssessment.objects.count(), 1)
+        self.assertEqual(
+            str(assessment.loan_limit_assessment_id),
+            initial["loan_limit_assessment_id"],
+        )
+        self.assertEqual(first["shareholding_id"], str(first_shareholding.shareholding_id))
+        self.assertEqual(first["number_of_shares"], 100)
+        self.assertEqual(first["shareholding_based_limit_amount"], "20000.00")
+        self.assertEqual(second["shareholding_id"], str(second_shareholding.shareholding_id))
+        self.assertEqual(second["number_of_shares"], 250)
+        self.assertEqual(second["shareholding_based_limit_amount"], "50000.00")
+        self.assertEqual(final, second)
+        self.assertEqual(
+            AuditLog.objects.filter(action="loan_limit.calculated").count(),
+            initial_audit_count + 2,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="loan_limit_assessment").count(),
+            initial_workflow_count + 2,
+        )
+        final_audit = AuditLog.objects.filter(
+            action="loan_limit.calculated",
+            entity_id=assessment.loan_limit_assessment_id,
+        ).latest("created_at")
+        audit_projection = dict(final_audit.new_value_json)
+        self.assertEqual(audit_projection.pop("request_id"), "concurrency-second")
+        final_projection = dict(final)
+        final_projection.pop("warnings")
+        self.assertEqual(audit_projection, final_projection)
+        self.assertEqual(
+            ordering,
+            [
+                "first_locked_application",
+                "second_attempting_application_lock",
+                "first_released",
+                "second_locked_application",
+            ],
+        )
+        print(f"database_backend={connection.vendor} ordering={' -> '.join(ordering)}")
+
+    def test_competing_valid_and_invalid_calculations_preserve_valid_snapshot(self):
+        from sfpcl_credit.credit.modules.common import CreditModuleValidationError
+        from sfpcl_credit.credit.modules.loan_limit_calculator import LoanLimitCalculator
+
+        calculator, shareholding, _policy = self._calculator_fixture()
+        valid_locked = Barrier(2)
+        invalid_attempting = Barrier(2)
+        release_valid = Event()
+        invalid_payload_entered = Event()
+        ordering = []
+        ordering_lock = Lock()
+
+        def record(step):
+            with ordering_lock:
+                ordering.append(step)
+
+        def valid_payload():
+            record("valid_locked_application")
+            valid_locked.wait(timeout=10)
+            if not release_valid.wait(timeout=10):
+                raise AssertionError("Timed out waiting to release the valid calculation.")
+            record("valid_released")
+            return self._loan_limit_payload(shareholding)
+
+        def invalid_payload():
+            record("invalid_locked_application")
+            invalid_payload_entered.set()
+            return self._loan_limit_payload(
+                shareholding,
+                requested_amount="1.00",
+            )
+
+        def calculate(payload, request_id, attempted_barrier=None):
+            close_old_connections()
+            try:
+                actor = User.objects.get(user_id=self.actor.user_id)
+                if attempted_barrier is not None:
+                    record("invalid_attempting_application_lock")
+                    attempted_barrier.wait(timeout=10)
+                return LoanLimitCalculator().calculate_for_application(
+                    actor=actor,
+                    application_id=self.application.loan_application_id,
+                    payload=payload,
+                    request_meta={"request_id": request_id},
+                ).snapshot
+            finally:
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            valid_future = executor.submit(
+                calculate,
+                valid_payload,
+                "concurrency-valid",
+            )
+            valid_locked.wait(timeout=10)
+            invalid_future = executor.submit(
+                calculate,
+                invalid_payload,
+                "concurrency-invalid",
+                invalid_attempting,
+            )
+            invalid_attempting.wait(timeout=10)
+            try:
+                self.assertFalse(
+                    invalid_payload_entered.wait(timeout=0.5),
+                    "The invalid calculation reached its payload before the valid commit.",
+                )
+            finally:
+                release_valid.set()
+            valid = valid_future.result(timeout=10)
+            with self.assertRaises(CreditModuleValidationError) as raised:
+                invalid_future.result(timeout=10)
+
+        self.assertEqual(
+            raised.exception.field_errors,
+            {
+                "requested_amount": (
+                    "Requested amount must match the loan application requested amount."
+                )
+            },
+        )
+        final = calculator.get_assessment(
+            actor=self.actor,
+            application_id=self.application.loan_application_id,
+        ).snapshot
+        self.assertEqual(final, valid)
+        self.assertEqual(LoanLimitAssessment.objects.count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action="loan_limit.calculated").count(),
+            1,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="loan_limit_assessment").count(),
+            1,
+        )
+        only_audit = AuditLog.objects.get(action="loan_limit.calculated")
+        self.assertEqual(only_audit.entity_id, LoanLimitAssessment.objects.get().pk)
+        self.assertEqual(only_audit.new_value_json["request_id"], "concurrency-valid")
+        self.assertEqual(
+            ordering,
+            [
+                "valid_locked_application",
+                "invalid_attempting_application_lock",
+                "valid_released",
+                "invalid_locked_application",
+            ],
+        )
+        print(f"database_backend={connection.vendor} ordering={' -> '.join(ordering)}")

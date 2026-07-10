@@ -36,11 +36,14 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
   not reread current assessment rows, even if they were rerun under the same UUID.
 
 ## Source References
-- docs/source/implementation-roadmap.md section 11
-- docs/source/api-contracts.md sections 22-24
-- docs/source/data-model.md eligibility/appraisal tables
-- docs/source/functional-spec.md
-- docs/source/test-plan.md
+- `docs/source/api-contracts.md` §3 and §24.4: compliance reason, snapshot decisions, and exact
+  `decision` / `review_comments` request boundary.
+- `docs/source/data-model.md` §14.2-§14.4 and §34: stored loan-limit/appraisal facts and atomic
+  appraisal/audit/workflow coordination.
+- `docs/source/codebase-design.md` §12.3 and §26.1-§26.3: review through `AppraisalWorkflow` and
+  transactional interface tests rather than concrete assessment helpers.
+- `docs/source/implementation-roadmap.md` §11, `docs/source/functional-spec.md` M04-FR-008 through
+  M04-FR-010, and `docs/source/test-plan.md` MOD-APPRAISAL-005/MOD-APPRAISAL-007.
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx
@@ -114,6 +117,9 @@ review success evidence.
 - Review leaves the stored 006B eligibility, 006D loan-limit snapshot, risk assessment, TAT due
   time, repayment-capacity notes, submission reason, and recommendation unchanged. The test must
   rerun a current assessment under the same UUID and prove review still uses 006E2's frozen facts.
+- Static boundary fixtures must still reject package/aliased concrete assessment imports and must
+  positively find the public `AppraisalWorkflow` route; adding `review` must not restore an exact
+  full-class method-set assertion.
 
 ## Visual Acceptance Criteria
 None.

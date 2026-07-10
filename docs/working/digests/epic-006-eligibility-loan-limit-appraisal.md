@@ -7,6 +7,25 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - `docs/source/functional-spec.md` BR-004 through BR-018 and M04-FR-001 through M04-FR-011
 - `docs/source/auth-permissions.md` action and endpoint maps for eligibility/loan-limit actions
 
+## 006D2C Concurrency And Boundary Regression
+- Added PostgreSQL-only `TransactionTestCase` coverage around the public
+  `LoanLimitCalculator.calculate_for_application(...)` seam. Deterministic barriers hold the first
+  calculation after its application row lock while a second independent connection attempts the
+  same lock.
+- The valid/valid case requires one stable assessment UUID, complete non-mixed first/final source
+  snapshots, two committed success audit/workflow pairs, and a final audit projection equal to the
+  final row. The valid/invalid case requires one valid row/evidence pair and no invalid success
+  evidence.
+- SQLite explicitly reports these cases as non-proofs. `config.postgres_test_settings` is the
+  repository integration configuration; run the two cases with that settings module after
+  installing pinned `psycopg[binary]`.
+- Static import inspection now resolves `ast.Import` and `ast.ImportFrom` package/alias references,
+  rejects direct concrete credit-assessment/loan-policy/private calculator access, positively
+  requires the calculator/appraisal public imports, and checks only the required subset of
+  `AppraisalWorkflow` methods.
+- No formula, endpoint, persistence, permission, rerun, audit payload, response, model, or migration
+  behavior changed.
+
 ## Architecture Review 2026-07-10 17:33 - 005I5/006D2B/006D3/006E
 - 006D2B's calculation module, locked mutable inputs, canonical public/audit projection, resolver
   direction, and rollback/failed-rerun assertions are substantive. 006D3's forward/reverse

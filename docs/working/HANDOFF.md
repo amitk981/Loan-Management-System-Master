@@ -1,31 +1,34 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-10_173305_architecture_review
+2026-07-10_175450_normal_run
 
 ## Current Status
-Architecture review completed for product slices `005I5`, `006D2B`, `006D3`, and `006E` since
-review commit `18d403e`.
+Completed `006D2C-loan-limit-concurrency-and-boundary-regression` under standing High-risk approval.
 
-- High finding: appraisal prerequisite UUIDs are not immutable content because explicit assessment
-  reruns retain the UUID and replace current facts. ADR-0003 and corrective 006E2 freeze canonical
-  redacted eligibility/loan-limit projections on the appraisal and define safe legacy provenance.
-- High contract findings: 006E omits source-required repayment-capacity notes and discards required
-  submit remarks. 006E2 adds both before review, without copying free text into audit JSON.
-- High owned gaps: 012EA now explicitly owns M04-FR-001/002 appraisal task creation/Deputy Manager
-  assignment; new 006F2 owns M04-FR-011 terminal rejection plus one unsent 005H rejection note.
-- Medium test finding: 006D2B verifies lock calls but not competing transactions, and its AST test
-  has package/alias bypasses. New 006D2C adds transactional and robust boundary regressions.
-- Pass: 005I5, 006D2B, 006D3, and most 006E behavior have substantive assertions. No production
-  code, migrations, dependencies, source documents, or protected files changed in this review.
+- Added deterministic PostgreSQL `TransactionTestCase` regressions using independent thread-local
+  connections around `LoanLimitCalculator.calculate_for_application(...)`: valid/valid reruns must
+  serialize to one stable UUID and consistent final row/audit/workflow facts; valid/invalid must
+  preserve only the valid snapshot/evidence.
+- Added `config.postgres_test_settings` plus the pre-approved pinned `psycopg[binary]==3.3.4` driver.
+  The offline worktree cannot import the new driver, so PostgreSQL green execution is explicitly
+  delegated to independent validation after requirements installation. SQLite reports two skips
+  with a non-proof message; it is not accepted as concurrency evidence (A-055).
+- Strengthened AST fixtures across `ast.Import`/`ast.ImportFrom`, package and aliased imports,
+  concrete assessment/policy/private-helper access, required public imports, and required-method
+  subsets that tolerate harmless extra methods.
+- No calculator formula, endpoint, persistence, permissions, rerun semantics, audit payload,
+  response, model, or migration changed.
 
 ## Validation
-Backend check/migration sync passed; 341 tests passed at 95% coverage. Frontend lint/typecheck,
-107 tests, and build passed. Evidence is in
-`.ralph/runs/2026-07-10_173305_architecture_review/`.
+Backend check/migration sync passed; 347 SQLite/default tests passed with the two explicit
+PostgreSQL-only skips at 94% coverage. Frontend lint/typecheck, 107 tests, and build passed. The
+PostgreSQL command currently stops at the expected missing pinned driver and must be rerun by the
+orchestrator after dependency installation. Evidence is in
+`.ralph/runs/2026-07-10_175450_normal_run/`.
 
 ## Next Run
-Run `006D2C-loan-limit-concurrency-and-boundary-regression`, then
-`006E2-appraisal-source-contract-and-snapshot-hardening`. After both pass, run sharpened 006F
-through `AppraisalWorkflow.review(...)`; it must use 006E2's frozen projections and preserve
-repayment/submission facts. Run 006F2 before 006G.
+After independent PostgreSQL validation of 006D2C, run
+`006E2-appraisal-source-contract-and-snapshot-hardening`. Then run sharpened 006F through
+`AppraisalWorkflow.review(...)`; it must use 006E2's frozen projections and preserve repayment/
+submission facts. Run 006F2 before 006G.

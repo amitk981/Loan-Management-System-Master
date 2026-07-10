@@ -1,5 +1,21 @@
 # Ralph Progress Log
 
+## 2026-07-10 18:15 - 2026-07-10_175450_normal_run
+- Agent tool used: codex.
+- Slice attempted: `006D2C-loan-limit-concurrency-and-boundary-regression`.
+- Summary: Added PostgreSQL competing-transaction regressions for valid/valid and valid/invalid
+  loan-limit calculations through the public calculator, plus robust package/alias/private/static
+  boundary fixtures and subset-based appraisal interface checks. Added the repository PostgreSQL
+  test settings and pinned the pre-approved Psycopg driver; no business/API/schema behavior changed.
+- Tests run: boundary red/green cycles; 90 focused backend tests; backend check/migration sync;
+  347 backend tests at 94% coverage; frontend lint/typecheck, 107 tests, and build. Two concurrency
+  tests explicitly skip under SQLite. PostgreSQL red reached the integration settings but the
+  offline venv lacks the newly pinned driver; independent validation must install requirements,
+  provision PostgreSQL, and run the exact command in the review packet.
+- Evidence saved: `.ralph/runs/2026-07-10_175450_normal_run/`.
+- Result: Success pending orchestrator dependency install and authoritative PostgreSQL rerun. Risk:
+  High under standing approval. Next: 006E2, then 006F.
+
 ## 2026-07-10 17:33 - 2026-07-10_173305_architecture_review
 - Agent tool used: codex.
 - Slice attempted: `architecture-review`.
@@ -2645,6 +2661,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_173305_architecture_review/.ralph/runs/2026-07-10_173305_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_173305_architecture_review/.ralph/runs/2026-07-10_173305_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 18:12:45 - 2026-07-10_175450_normal_run
+- Agent tool used: codex
+- Slice attempted: 006D2C-loan-limit-concurrency-and-boundary-regression
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_175450_normal_run/.ralph/runs/2026-07-10_175450_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_175450_normal_run/.ralph/runs/2026-07-10_175450_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
