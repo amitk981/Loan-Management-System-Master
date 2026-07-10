@@ -1,30 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-10_160331_normal_run
+2026-07-10_162322_normal_run
 
 ## Current Status
-Slice `005I5-application-ownership-and-nominee-authority-hardening` completed.
+Slice `006D2B-credit-loan-limit-calculator-and-appraisal-seam` completed.
 
-- Staff list/detail now return `assigned_owner = null`; intake receiver/creator are not relabelled.
-  API regressions cover staff- and portal-created applications.
-- One public nominee-validation module now owns the established same-member/adult/age-evidence
-  decision for intake, submit, completeness/reference, and eligibility.
-- Invalid staff PATCH and portal create/PATCH paths preserve serialized detail, nominee selection,
-  status, audit counts, and workflow counts for unknown/cross-member/minor/missing-evidence nominees.
-- React no longer computes nominee age/minority. Both forms require only selection shape and surface
-  backend `nominee_id` messages. MP10 renders all safe nominee facts without sensitive fields.
-- Production-controller and portal visual browser specs were added with mocked HTTP. The AFK sandbox
-  blocked local Playwright web-server binding (`Errno 1`); standard gates are fully green and the
-  orchestrator should run those browser specs in its unrestricted validation environment.
+- Loan-limit read/calculation now live behind `credit.modules.loan_limit_calculator`; application
+  views are thin adapters and application services expose no credit calculation helpers.
+- One immutable canonical projection feeds public and audit snapshots. Configuration errors are
+  configuration-owned and translated at the credit seam.
+- Successful calculations lock all mutable financial sources and policy; rollback and failed-rerun
+  tests preserve the one-to-one UUID and evidence.
+- Static AST guards reject private/aliased helper imports, reverse dependencies, and direct policy
+  model access. The projection-only `AppraisalWorkflow` entry seam is ready for 006E.
 
 ## Validation
-Backend check and migration sync passed; 313 backend tests passed under coverage at 95%.
-Frontend lint/typecheck, 107 tests, and build passed. Red/green logs, API examples, visual HTML,
-browser limitation log, risk assessment, and review packet are in
-`.ralph/runs/2026-07-10_160331_normal_run/`.
+Backend check/migration sync passed; 319 tests passed at 95% coverage. Frontend lint/typecheck,
+107 tests, and build passed. Evidence is in `.ralph/runs/2026-07-10_162322_normal_run/`.
 
 ## Next Run
-Run `006D2B-credit-loan-limit-calculator-and-appraisal-seam`, preserving the new public nominee
-authority seam and neutral-owner contract. Then run `006D3` before `006E` if queue dependency/order
-selects it.
+Run `006D3-credit-assessment-model-ownership-state-migration`, preserving the 006D2B module
+interfaces and physical tables; then run 006E through `AppraisalWorkflow`.

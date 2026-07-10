@@ -21,6 +21,11 @@ references.
   superseded 006D2)
 
 ## Scope
+- Preserve `LoanLimitCalculator`, `LoanLimitAssessmentResult`, `LoanLimitSnapshot`, and
+  `EligibilityAssessmentModule` as the only behavior interfaces while moving Django state.
+- Keep the 006D2B AST boundary green: no credit-helper aliases in `applications.services`, no
+  private/aliased imports in views/appraisal, and no direct `LoanPolicyConfig` query outside the
+  configuration resolver.
 - Target model owner: `sfpcl_credit.credit.models` or an equivalent credit-owned model module.
 - Existing tables must remain named `eligibility_assessments` and `loan_limit_assessments`.
 - Preserve existing primary keys:

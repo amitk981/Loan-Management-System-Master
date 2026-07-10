@@ -77,16 +77,17 @@
     "005I4-application-detail-backend-state-hardening",
     "006C2-cultivated-acreage-source-hardening",
     "006D2A-credit-eligibility-module-and-configuration-seam",
-    "005I5-application-ownership-and-nominee-authority-hardening"
+    "005I5-application-ownership-and-nominee-authority-hardening",
+    "006D2B-credit-loan-limit-calculator-and-appraisal-seam"
   ],
   "failed_slices": [],
   "blocked_slices": [
     "004E-witness-shareholder-validation"
   ],
   "last_successful_commit": "9f9ae0b",
-  "last_run_id": "2026-07-10_160331_normal_run",
+  "last_run_id": "2026-07-10_162322_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
+  "slices_completed_since_architecture_review": 2,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

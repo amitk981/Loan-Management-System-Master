@@ -1,0 +1,16 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.038s
+
+OK
+Destroying test database for alias 'default'...
+tracked_changed_lines=983
+new_module_lines=505
+total_changed_lines=1488
+changed_file_entries=15
+protected_paths=clean
+state_json=valid
+slice_status=complete

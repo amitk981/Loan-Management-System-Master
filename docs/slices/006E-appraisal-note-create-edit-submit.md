@@ -33,6 +33,10 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
   rows.
 - 006E must require both stored assessments before appraisal creation and must consume their stored
   summaries/IDs rather than re-running eligibility or loan-limit formulas.
+- 006D2B exposes stored loan-limit facts as a projection-only `LoanLimitAssessmentResult`; consume
+  `LoanLimitCalculator.get_assessment(...).snapshot` and never retain or mutate a Django assessment.
+- Configuration resolution failures are configuration-owned and translated at the calculator
+  seam; appraisal must not import the resolver or configuration error type.
 - Architecture review `2026-07-10_092630_architecture_review` queued 005I3/005I4 to complete the
   application nominee/detail contracts, 006C2 to block unresolved cultivated-acreage evidence, and
   006D2A/006D2B to establish the deep eligibility, loan-limit, configuration, and

@@ -15,8 +15,10 @@ from sfpcl_credit.credit.modules.common import (
     CreditModuleNotFound,
     CreditModuleObjectAccessDenied,
     CreditModulePermissionDenied,
+    CreditModuleValidationError,
 )
 from sfpcl_credit.credit.modules.eligibility_assessment import EligibilityAssessmentModule
+from sfpcl_credit.credit.modules.loan_limit_calculator import LoanLimitCalculator
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.workflows.guard import InvalidStateTransition
 
@@ -559,41 +561,21 @@ def loan_application_loan_limit_calculate(request, loan_application_id):
     user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:
         return response
-    if not services.user_can_calculate_loan_limit(user):
-        return error_response(
-            request,
-            403,
-            "PERMISSION_DENIED",
-            "You do not have permission to calculate loan limits.",
-        )
-    application = services.get_application(loan_application_id)
-    if application is None:
-        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
-    object_access = services.evaluate_application_object_access(
-        application,
-        user,
-        services.LOAN_LIMIT_CALCULATE_PERMISSION,
-        permissions,
-    )
-    if not object_access.allowed:
-        return _object_access_denied_response(request, object_access)
     try:
-        payload = parse_json_body(request)
-        assessment, _policy = services.calculate_loan_limit(
-            application,
-            payload,
-            user,
-            request_ip(request),
-            request_user_agent(request),
-            request.headers.get("X-Request-ID"),
+        result = LoanLimitCalculator().calculate_for_application(
+            actor=user,
+            application_id=loan_application_id,
+            payload=lambda: parse_json_body(request),
+            request_meta=_credit_request_meta(request),
+            actor_permissions=permissions,
         )
-    except services.LoanApplicationValidationError as exc:
+    except CreditModuleValidationError as exc:
         return error_response(
             request,
             400,
             "VALIDATION_ERROR",
             "Loan-limit calculation failed validation.",
-            services.validation_field_errors(exc),
+            exc.field_errors,
         )
     except ValidationError as exc:
         return error_response(
@@ -603,12 +585,15 @@ def loan_application_loan_limit_calculate(request, loan_application_id):
             "Loan-limit calculation failed validation.",
             services.validation_field_errors(exc),
         )
-    except services.LoanApplicationInvalidStateError as exc:
+    except CreditModuleInvalidStateError as exc:
         return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
-    return success_response(
-        services.serialize_loan_limit_assessment(assessment),
-        request,
-    )
+    except (
+        CreditModuleNotFound,
+        CreditModuleObjectAccessDenied,
+        CreditModulePermissionDenied,
+    ) as exc:
+        return _credit_module_error_response(request, exc)
+    return success_response(result.snapshot, request)
 
 
 @require_http_methods(["GET"])
@@ -616,33 +601,19 @@ def loan_application_loan_limit_assessment(request, loan_application_id):
     user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:
         return response
-    if not services.user_can_read_applications(user):
-        return error_response(
-            request,
-            403,
-            "PERMISSION_DENIED",
-            "You do not have permission to read loan applications.",
+    try:
+        result = LoanLimitCalculator().get_assessment(
+            actor=user,
+            application_id=loan_application_id,
+            actor_permissions=permissions,
         )
-    application = services.get_application(loan_application_id)
-    if application is None:
-        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
-    object_access = services.evaluate_application_object_access(
-        application,
-        user,
-        services.APPLICATION_READ_PERMISSION,
-        permissions,
-    )
-    if not object_access.allowed:
-        return _object_access_denied_response(request, object_access)
-    assessment = services.get_loan_limit_assessment(application)
-    if assessment is None:
-        return error_response(
-            request,
-            404,
-            "NOT_FOUND",
-            "Loan-limit assessment was not found.",
-        )
-    return success_response(services.serialize_loan_limit_assessment(assessment), request)
+    except (
+        CreditModuleNotFound,
+        CreditModuleObjectAccessDenied,
+        CreditModulePermissionDenied,
+    ) as exc:
+        return _credit_module_error_response(request, exc)
+    return success_response(result.snapshot, request)
 
 
 @require_http_methods(["POST"])

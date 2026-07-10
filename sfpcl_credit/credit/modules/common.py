@@ -6,6 +6,7 @@ from sfpcl_credit.identity.modules import auth_service
 
 APPLICATION_READ_PERMISSION = "applications.loan_application.read"
 ELIGIBILITY_RUN_PERMISSION = "credit.eligibility.run"
+LOAN_LIMIT_CALCULATE_PERMISSION = "credit.loan_limit.calculate"
 
 
 @dataclass(frozen=True)

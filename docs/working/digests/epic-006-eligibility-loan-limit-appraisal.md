@@ -184,6 +184,16 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - 006C2's mismatch, verification, Decimal normalization, nullable-profile, and failed-rerun
   preservation tests are substantive and must move behind the module interface unchanged.
 
+## 006D2B Loan-Limit Calculator And Appraisal Seam
+- `LoanLimitCalculator.get_assessment/calculate_for_application` now own access, locking,
+  validation, formula, rerun persistence, canonical redacted projection, audit, and workflow.
+- Application views are thin adapters; `applications.services` exposes no loan-limit helpers.
+- The configuration resolver owns its error type; calculator translation preserves HTTP errors and
+  always resolves the effective policy with `for_update=True`.
+- Calculation locks application, eligibility/current assessment, shareholding, selected land,
+  crop plan, applicable profile, and policy in one transaction. Failed reruns preserve evidence.
+- `AppraisalWorkflow` is the projection-only 006E entry seam; no appraisal rule was added here.
+
 ## 006E-006F Appraisal And Credit Review Source Extract
 - `api-contracts.md` §24 defines appraisal create/read, submit-for-review, Credit Manager review,
   and submit-to-sanction as separate actions. 006E owns create/read/edit/submit-for-review; 006F
