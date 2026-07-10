@@ -2,6 +2,94 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-10 15:46 - Architecture Review 2026-07-10_154638_architecture_review
+
+Reviewed completed product slices since architecture-review commit `c25fcfc`:
+- `005I3-application-nominee-selection-contract` (`261641c`)
+- `005I4-application-detail-backend-state-hardening` (`c20b72f`)
+- `006C2-cultivated-acreage-source-hardening` (`7023475`)
+- `006D2A-credit-eligibility-module-and-configuration-seam` (`5c6866a`)
+
+Intervening E2E-baseline, owner configuration/slice-split, and owner capability-map commits were
+inspected as context but excluded from product-slice findings. The review checked the pinned
+`git diff c25fcfc...HEAD`, slice/run packets, implementation/tests, Epic 005/006 digests, and only
+the cited primary-source sections needed to verify disputed requirements.
+
+### Finding 1 - High - Intake actors are presented as assigned application owners
+
+005I4 removed React's role/status owner inference, but the backend replacement still synthesizes
+`assigned_owner` as `received_by_user or created_by_user`. Those fields record intake/audit actors;
+they are not a persisted queue/task assignment. This is especially unsafe for member-portal drafts:
+the portal user can become `received_by_user`, so staff detail can display the borrower as the
+internal current owner. The backend test asserts this fallback, while the later-stage frontend test
+injects an arbitrary owner DTO and never proves a real backend assignment.
+
+This contradicts 005I4's requirement to render a backend-owned assignment or neutral absence and
+source API §19.1's explicit assigned-owner fact. Corrective action: created
+`005I5-application-ownership-and-nominee-authority-hardening`. Until an assignment/task model exists,
+staff list/detail must return `assigned_owner = null`; receiver/creator remain distinct audit facts.
+
+### Finding 2 - Medium - The portal nominee detail contract is incomplete
+
+005I3's API/DTO safely returns nominee ID, name, age, minor flag, KYC, relationship, and signature
+required status. MP10 renders name, relationship, age, KYC, and signature status but omits nominee
+ID and minor/adult status. Its new frontend tests exercise only extracted selector views, not the
+portal application-detail page, so the partial implementation remained green.
+
+Corrective action: 005I5 must render every safe selected-nominee fact in portal detail and assert
+that PAN/Aadhaar values, hashes, tokens, and reveal controls stay absent.
+
+### Finding 3 - Medium - Nominee minority is decided independently in two React pages
+
+Both staff and portal application forms added their own current-date/age-snapshot
+`hasAdultNomineeEvidence` implementations and use them to decide step/submission availability.
+This duplicates the backend intake and credit checks, already differs in evaluation shape, and
+violates `codebase-design.md` §§23.3/42.3: React should render backend facts/errors rather than own
+business decisions. The reviewed tests also omit invalid staff PATCH and portal
+cross-member/unknown/minor/missing-age create/PATCH preservation paths required by 005I3.
+
+Corrective action: 005I5 removes frontend age/minority calculations, establishes one public backend
+nominee-validation seam for intake/completeness/eligibility, and adds the missing mutation/no-success-
+evidence regressions.
+
+### Finding 4 - Medium - Interface boundary tests do not yet enforce the intended architecture
+
+006D2A moved eligibility behavior behind the source-named module and added meaningful direct tests,
+including transaction rollback. However, its boundary regression checks runtime object identity and
+the absence of old attribute names; it cannot catch aliased private imports. The new configuration
+resolver also imports `CreditModuleValidationError`, creating a reverse
+`configurations -> credit` dependency. The resolver function shape itself is an acceptable narrow
+slice interface, but its error contract should not couple the configuration bounded context to a
+consumer.
+
+Corrective action: sharpened the already queued 006D2B to replace the weak check with static
+AST/import-boundary coverage, remove the reverse dependency, prohibit direct policy queries, and
+lock all mutable financial snapshot sources inside the calculator transaction. No new ADR is
+needed because this follows the existing source module boundaries and ADR-0002.
+
+### Finding 5 - Pass / owned follow-up - Cultivated-acreage correctness is substantive
+
+006C2 blocks mismatched, unverified, cross-application, and rejected acreage evidence before
+assessment/audit/workflow writes. Its tests cover Decimal-equivalent values, the nullable-profile
+two-source path, and failed-rerun preservation of UUID/payload/evidence. The calculation still lives
+in the generic application service and its tests are HTTP-heavy, but that is the explicit,
+immediately queued 006D2B extraction rather than an unowned finding.
+
+### Finding 6 - Watch - 005I4 tests split the production controller from the rendered view
+
+The loader is tested with mocked HTTP and the view has substantive submitted/later-stage/neutral
+assertions, but success/error data are injected into exported `ApplicationDetailView`; no test runs
+the mounted production component's async success/error or submit-refresh path. 005I5 owns this
+remaining test-seam correction and may use the existing E2E harness or a pinned dev-only DOM test
+dependency.
+
+Functional-spec spot check: neither Epic 005 nor Epic 006 is marked Complete. M03-FR-003 nominee
+capture is backend-reachable but its portal presentation/authority regressions remain owned by
+005I5; existing assumptions continue to own M03 signature/document deferrals. M04-FR-004 through
+M04-FR-007 remain implemented or under the already queued deep-module extraction, while
+M04-FR-001-003 and M04-FR-008-011 remain assigned to 006E-006G. No completed epic falsely claims
+full requirement-ID coverage.
+
 ## 2026-07-10 09:32 - Architecture Review 2026-07-10_092630_architecture_review
 
 Reviewed completed product slices since architecture-review commit `1e2d873`:

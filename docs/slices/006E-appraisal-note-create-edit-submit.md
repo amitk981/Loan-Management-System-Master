@@ -20,6 +20,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - 005I4
 - 006C2
 - 006D2B
+- 005I5
 
 ## Prior Slice Handoff
 - 006C calculates and atomically stores the source-backed loan-limit assessment only after 006B
@@ -36,8 +37,12 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
   application nominee/detail contracts, 006C2 to block unresolved cultivated-acreage evidence, and
   006D2A/006D2B to establish the deep eligibility, loan-limit, configuration, and
   `credit.modules.appraisal_workflow` seams. Do not start 006E until all
-  five corrective slices are complete; implement appraisal through that credit seam rather than
+  six corrective slices are complete; implement appraisal through that credit seam rather than
   adding more behavior to `applications.services`.
+- Architecture review `2026-07-10_154638_architecture_review` additionally queued 005I5 so
+  appraisal/detail consumers cannot treat intake receiver/creator as a persisted assignment fact.
+  Appraisal owner/TAT projections must use their own persisted prepared/assigned facts and must not
+  revive that fallback.
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11

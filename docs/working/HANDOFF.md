@@ -1,33 +1,33 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-10_152757_normal_run
+2026-07-10_154638_architecture_review
 
 ## Current Status
-Completed `006D2A-credit-eligibility-module-and-configuration-seam`.
+Architecture review completed for product slices `005I3`, `005I4`, `006C2`, and `006D2A` since
+review commit `c25fcfc`.
 
-- Added the source-named `sfpcl_credit.credit` Django package and
-  `EligibilityAssessmentModule.get/run` interface. Eligibility locking, validation, rule evaluation,
-  persistence, snapshot, audit, and workflow coordination no longer live in
-  `applications.services`.
-- Application eligibility views are thin adapters over that interface. Existing eligible,
-  ineligible, pending-manual-evidence, permission/object-scope, invalid-state, rerun, response, and
-  metadata-only evidence contracts remain unchanged.
-- Added `configurations.modules.configuration_resolver.resolve_effective_loan_policy` as the sole
-  active/effective Board-policy selection and validation seam. The current legacy loan-limit
-  implementation delegates to it with `for_update=True`; 006D2B will move the rest of the calculator.
-- Direct module tests cover eligible/ineligible/pending paths and transaction rollback on audit
-  failure. An import-boundary regression prevents eligibility/private policy helpers from returning
-  to `applications.services`.
-- No endpoint, API payload, business rule, model, table, migration, dependency, or frontend changed.
+- High finding: staff list/detail synthesize `assigned_owner` from intake receiver/creator. A
+  portal-created application can therefore present the borrower as the internal owner. Created
+  `005I5-application-ownership-and-nominee-authority-hardening`; it returns neutral owner state
+  until a persisted assignment/task owner exists.
+- Medium nominee findings: MP10 omits nominee ID/minor status, both staff/portal forms calculate
+  minority independently in React, and required invalid PATCH/portal preservation tests are absent.
+  005I5 owns the safe-detail, backend-authority, and test corrections.
+- Medium architecture finding: 006D2A's runtime identity/attribute boundary test cannot catch
+  aliased private imports, and the configuration resolver depends on a credit-specific error.
+  Sharpened 006D2B with static boundary coverage, clean dependency direction, public-resolver proof,
+  and explicit mutable-source row locking.
+- Pass: 006C2 has substantive mismatch/verification/Decimal/null-profile/failed-rerun assertions.
+  Its move behind `credit.modules.loan_limit_calculator` remains explicitly owned by 006D2B.
+- No production code, migrations, dependencies, source documents, protected files, or ADRs changed.
 
 ## Validation
-Backend check/migration sync passed; 308 tests passed under coverage at 95% (floor 85%). Frontend
-lint/typecheck passed; 106 tests and build passed. Focused module/application API suite: 57 tests.
-Evidence is in `.ralph/runs/2026-07-10_152757_normal_run/`.
+Run the configured backend check, migration sync, full suite under coverage, frontend lint,
+typecheck, tests, and build. Evidence and the two-axis review are in
+`.ralph/runs/2026-07-10_154638_architecture_review/`.
 
 ## Next Run
-Run the due architecture review, then
-`006D2B-credit-loan-limit-calculator-and-appraisal-seam`. After 006D2B, run
-`006E-appraisal-note-create-edit-submit`; both are sharpened with the delivered eligibility,
-configuration, snapshot, and acreage contracts.
+Run `005I5-application-ownership-and-nominee-authority-hardening`, then
+`006D2B-credit-loan-limit-calculator-and-appraisal-seam`. `006E` depends on both and is sharpened
+not to revive receiver/creator owner inference.

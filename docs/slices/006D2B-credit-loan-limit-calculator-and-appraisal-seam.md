@@ -20,6 +20,7 @@ loan-limit rules.
 
 ## Depends On
 - 006D2A
+- 005I5
 
 ## 006D2A Handoff Contract
 - `EligibilityAssessmentModule.get/run` now owns eligibility locking, persistence, audit/workflow,
@@ -68,6 +69,13 @@ merged by 006D2A — build on them, do not re-move them.
   `eligibility_assessments` or `loan_limit_assessments` tables and do not lose UUIDs/FKs here.
 - Add an import-boundary regression proving application views and future appraisal code reach
   loan-limit behavior only via the public module entrypoints.
+- Keep dependency direction clean: `configurations.modules.configuration_resolver` must not import
+  from `credit`. Define its resolution error/result in the configuration module (or a neutral
+  shared module), then translate it inside the credit calculator boundary. No
+  `configurations -> credit` dependency may remain.
+- Replace the 006D2A runtime identity/`hasattr` boundary check with a static AST/import regression
+  that rejects private or aliased credit-helper imports from application views/services and rejects
+  direct `LoanPolicyConfig` queries outside the public configuration resolver.
 
 ## Cultivated-Acreage Contract (preserve exactly)
 Preserve the 006C2 contract inside the extracted calculator: selected `LandHolding.area_acres`,
@@ -79,6 +87,10 @@ audit, or workflow writes. Module tests must cover the decimal-equivalent path (
 `5.00`), the two-value null-profile path, pending/rejected land or crop evidence, null/wrong
 crop-plan application link, and failed-rerun preservation of the stored GET snapshot/evidence
 counts.
+- Lock every mutable financial source used for a successful snapshot in the calculation
+  transaction: application, current assessment, shareholding, selected land holdings, crop plan,
+  applicable cultivated-area profile, and effective policy. Tests must prove the public module
+  requests the policy resolver with `for_update=True` and does not query policy rows directly.
 
 ## Diff Budget (hard requirement)
 The parent slice failed twice on `limits.max_lines_changed` (2,000). This half must land well
@@ -99,6 +111,8 @@ test-file splitting) rather than exceeding it — a green run over the limit is 
 - Import-boundary regression for loan-limit private helpers and the appraisal seam.
 - Resolver regression patches/calls the public resolver during calculation and asserts
   `for_update=True`; active `LoanPolicyConfig` must never be queried from the calculator module.
+- Static dependency regression proves the configuration resolver imports neither `credit` nor
+  application-layer result/error types, and aliased private imports fail the boundary test.
 
 ## Evidence Required
 Characterization and refactor green logs, module/API test logs, an architecture map in the review

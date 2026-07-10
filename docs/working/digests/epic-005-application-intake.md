@@ -467,3 +467,20 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   LO00000035, rejection-note, empty witness, and selected nominee metadata-only regressions now run
   through the HTTP loader/view seam; nominee PAN/Aadhaar labels, token/hash values, and reveal
   controls remain absent.
+
+## Architecture Review 2026-07-10 15:46 - Ownership And Nominee Authority
+- Reviewed 005I3/005I4 with the next Epic 006 corrections. Staff detail/list currently project
+  `received_by_user or created_by_user` as `assigned_owner`, but neither field is a persisted
+  assignment. A portal-created application can therefore display the borrower portal user as the
+  internal staff owner. Corrective 005I5 requires neutral `assigned_owner = null` until the future
+  assignment/task owner supplies a real fact.
+- MP10 portal detail consumes the safe nominee DTO but omits nominee ID and minor/adult status.
+  Selector tests do not exercise this page. 005I5 must render all safe 005I3 nominee facts while
+  keeping PAN/Aadhaar values, hashes, tokens, and reveal controls absent.
+- Staff and portal application forms independently calculate adult/minor status in React. This
+  duplicates backend BR-009 authority and can drift. 005I5 removes the client calculations,
+  centralizes the existing backend nominee decision for intake/completeness/eligibility, and adds
+  invalid staff PATCH plus portal create/PATCH mutation-preservation tests.
+- 005I4 loader/view tests contain useful assertions but split the production async controller from
+  the rendered success/error/action path. 005I5 must test the actual production component with
+  mocked HTTP using the existing E2E harness or a minimal pinned dev-only DOM test dependency.

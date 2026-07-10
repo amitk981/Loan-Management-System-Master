@@ -170,6 +170,20 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - HTTP endpoints, response/error envelopes, permissions, object scope, explicit rerun semantics,
   loan-limit formula/snapshot behavior, frontend behavior, and API contracts are unchanged.
 
+## Architecture Review 2026-07-10 15:46 - 006D2B Boundary Hardening
+- 006D2A's direct module tests substantively cover eligible/ineligible/pending paths and transaction
+  rollback, but the import-boundary regression uses runtime identity/`hasattr` checks and cannot
+  reject aliased private imports. 006D2B must replace it with static AST/import-graph coverage for
+  application views/services and the future appraisal seam.
+- `configurations.modules.configuration_resolver` currently imports a credit-specific validation
+  error. 006D2B must remove the reverse `configurations -> credit` dependency, keep the resolver's
+  result/error configuration-owned or neutral, and translate at the credit calculator boundary.
+- During calculator extraction, lock the application, current assessment, shareholding, selected
+  land rows, crop plan, applicable cultivated-area profile, and effective policy in one transaction.
+  Tests must patch the public resolver, assert `for_update=True`, and reject direct policy queries.
+- 006C2's mismatch, verification, Decimal normalization, nullable-profile, and failed-rerun
+  preservation tests are substantive and must move behind the module interface unchanged.
+
 ## 006E-006F Appraisal And Credit Review Source Extract
 - `api-contracts.md` §24 defines appraisal create/read, submit-for-review, Credit Manager review,
   and submit-to-sanction as separate actions. 006E owns create/read/edit/submit-for-review; 006F
