@@ -480,6 +480,21 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
   missing/repeated/inconsistent states, rollback, and preservation. A PostgreSQL-only competing
   submission test exists; AFK sandbox socket denial is environment evidence, not concurrency proof.
 
+## 006G2 Sanction Handoff Module And Read Contract
+
+- `approvals.modules.sanction_handoff.SanctionHandoffModule` is the sole pending-case create/get/
+  serialization seam. Credit retains appraisal validation and the application -> appraisal ->
+  immutable-history locks, then calls the approvals interface; it no longer imports the concrete
+  approvals model.
+- POST and authenticated object-scoped `GET /api/v1/loan-applications/{id}/sanction-case/` return
+  the same case/application/appraisal/latest-review/workflow UUIDs, canonical statuses,
+  exception flag, actor/time, and empty pre-007 action list. Remarks and frozen free text are absent.
+- Malformed/non-object JSON is a standard `400 VALIDATION_ERROR`; missing cases are `404 NOT_FOUND`;
+  denied scope retains `403 OBJECT_ACCESS_DENIED`. Case, audit, or workflow failure rolls back the
+  full handoff transaction, and repeated submission remains `409 INVALID_STATE_TRANSITION`.
+- The exact 006F4 five-race PostgreSQL command passed twice with five executed tests, zero skips,
+  and the existing application-first serialization order after the module extraction.
+
 ## 006H Frontend Integration
 - The workbench and Application Detail credit tab now read stored eligibility, limit, appraisal,
   immutable history, rejection summary, and pending sanction response through §22-§24 APIs.

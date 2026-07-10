@@ -1,6 +1,8 @@
 from copy import deepcopy
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+import ast
+from pathlib import Path
 from threading import Event
 from unittest import skipUnless
 from unittest.mock import patch
@@ -142,6 +144,11 @@ class SanctionSubmissionApiTests(TestCase):
             {"user_id": str(self.reviewer.pk), "full_name": self.reviewer.full_name},
         )
         self.assertIsNotNone(data["submitted_at"])
+        self.assertEqual(data["application_status"], "submitted_to_sanction_committee")
+        self.assertEqual(data["appraisal_status"], "submitted_to_sanction_committee")
+        self.assertEqual(data["appraisal_review_decision_id"], str(self.history.pk))
+        self.assertIsNotNone(data["workflow_event_id"])
+        self.assertEqual(data["available_actions"], [])
 
         approval_case_model = apps.get_model("approvals", "ApprovalCase")
         case = approval_case_model.objects.get()
@@ -185,6 +192,55 @@ class SanctionSubmissionApiTests(TestCase):
             case.submission_remarks,
         ):
             self.assertNotIn(secret, evidence_text)
+
+        reloaded = self._get_case()
+        self.assertEqual(reloaded.status_code, 200)
+        self.assertEqual(reloaded.json()["data"], data)
+        self.assertNotIn("submission_remarks", reloaded.json()["data"])
+
+    def test_pending_case_read_is_scoped_and_missing_case_is_not_found(self):
+        missing = self._get_case()
+        self.assertEqual(missing.status_code, 404)
+        self.assertEqual(missing.json()["error"]["code"], "NOT_FOUND")
+
+        self.assertEqual(self._submit({"remarks": "Ready."}).status_code, 200)
+        LoanApplication.objects.filter(pk=self.application.pk).update(
+            current_stage=LoanApplication.STAGE_INITIAL
+        )
+        denied = self._get_case()
+        self.assertEqual(denied.status_code, 403)
+        self.assertEqual(denied.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
+
+    def test_malformed_and_non_object_json_are_validation_errors_without_writes(self):
+        token = self._login(self.reviewer)
+        url = f"/api/v1/loan-applications/{self.application.pk}/submit-to-sanction-committee/"
+        for raw in ('{"remarks":', '["remarks"]'):
+            with self.subTest(raw=raw):
+                response = self.client.post(
+                    url,
+                    data=raw,
+                    content_type="application/json",
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.json()["error"]["code"], "VALIDATION_ERROR")
+                self._assert_no_submission_writes()
+
+    def test_credit_module_does_not_import_concrete_approval_models(self):
+        module_path = (
+            Path(__file__).resolve().parents[1]
+            / "credit"
+            / "modules"
+            / "appraisal_workflow.py"
+        )
+        imports = []
+        for node in ast.walk(ast.parse(module_path.read_text())):
+            if isinstance(node, ast.ImportFrom) and node.module:
+                imports.append(node.module)
+            elif isinstance(node, ast.Import):
+                imports.extend(alias.name for alias in node.names)
+        self.assertNotIn("sfpcl_credit.approvals.models", imports)
+        self.assertIn("sfpcl_credit.approvals.modules.sanction_handoff", imports)
 
     def test_payload_permission_role_and_object_scope_are_independent(self):
         for payload, field in (
@@ -336,6 +392,21 @@ class SanctionSubmissionApiTests(TestCase):
         )
         self._assert_no_submission_writes()
 
+        with patch(
+            "sfpcl_credit.credit.modules.appraisal_workflow.record_workflow_event",
+            side_effect=RuntimeError("workflow unavailable"),
+        ):
+            with self.assertRaisesMessage(RuntimeError, "workflow unavailable"):
+                self._submit({"remarks": "Exception route required later."})
+        self.note.refresh_from_db()
+        self.application.refresh_from_db()
+        self.assertEqual(self.note.appraisal_status, LoanAppraisalNote.STATUS_REVIEWED)
+        self.assertEqual(
+            self.application.application_status,
+            LoanApplication.STATUS_REFERENCE_GENERATED,
+        )
+        self._assert_no_submission_writes()
+
         response = self._submit({"remarks": "Exception route required later."})
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()["data"]["exception_required_flag"])
@@ -368,21 +439,32 @@ class SanctionSubmissionApiTests(TestCase):
 
     def _submit(self, payload, *, actor=None, request_id="submit-sanction-test"):
         actor = actor or self.reviewer
+        token = self._login(actor)
+        return self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/submit-to-sanction-committee/",
+            data=payload,
+            content_type="application/json",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "X-Request-ID": request_id,
+            },
+        )
+
+    def _get_case(self):
+        token = self._login(self.reviewer)
+        return self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/sanction-case/",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    def _login(self, actor):
         login = self.client.post(
             "/api/v1/auth/login/",
             data={"email": actor.email, "password": "SanctionPass123!"},
             content_type="application/json",
         )
         self.assertEqual(login.status_code, 200)
-        return self.client.post(
-            f"/api/v1/loan-applications/{self.application.pk}/submit-to-sanction-committee/",
-            data=payload,
-            content_type="application/json",
-            headers={
-                "Authorization": f"Bearer {login.json()['data']['access_token']}",
-                "X-Request-ID": request_id,
-            },
-        )
+        return login.json()["data"]["access_token"]
 
     def _assert_no_submission_writes(self):
         try:

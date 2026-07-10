@@ -158,6 +158,11 @@ urlpatterns = [
         name="loan-application-submit-to-sanction",
     ),
     path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/sanction-case/",
+        application_views.loan_application_sanction_case,
+        name="loan-application-sanction-case",
+    ),
+    path(
         "api/v1/appraisal-notes/<uuid:loan_appraisal_note_id>/submit-for-review/",
         application_views.appraisal_note_submit_for_review,
         name="appraisal-note-submit-for-review",

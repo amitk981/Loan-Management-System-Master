@@ -58,6 +58,10 @@ request fields, and consume canonical server state/case identity without local w
   checklist, calculator, panel, badge, and page patterns from the binding frontend rules.
 - On sanction success and reload, display/navigate with the exact 006G2 case UUID and server statuses;
   do not derive a status from the clicked action or retain a client-only case identifier.
+- Reload calls `GET /api/v1/loan-applications/{id}/sanction-case/` and consumes
+  `approval_case_id`, `application_status`, `appraisal_status`, `submission_status`,
+  `appraisal_review_decision_id`, `workflow_event_id`, `exception_required_flag`, actor/time, and
+  `available_actions`; `404 NOT_FOUND` means no submitted case, not a client-side pending state.
 
 ## Evidence Required
 

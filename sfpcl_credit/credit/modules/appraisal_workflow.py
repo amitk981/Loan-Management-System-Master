@@ -7,7 +7,7 @@ from decimal import Decimal, InvalidOperation
 from django.db import transaction
 from django.utils import timezone
 
-from sfpcl_credit.approvals.models import ApprovalCase
+from sfpcl_credit.approvals.modules.sanction_handoff import SanctionHandoffModule
 from sfpcl_credit.applications.modules.rejection_notes import (
     RejectionNoteInvalidStateError,
     RejectionNoteModule,
@@ -774,27 +774,17 @@ class AppraisalWorkflow:
             )
         latest_review = history[-1]
 
-        # Approval-case access deliberately happens after application, appraisal, and
-        # immutable history locks. The appraisal lock serializes the initially empty case.
-        if (
-            ApprovalCase.objects.select_for_update(of=("self",))
-            .filter(loan_application=application)
-            .exists()
-        ):
-            raise CreditModuleInvalidStateError(
-                "The appraisal has already been submitted for sanction."
-            )
-
         now = timezone.now()
         exception_required = (
             note.loan_limit_snapshot_json.get("exception_required_flag") is True
         )
-        approval_case = ApprovalCase.objects.create(
-            loan_application=application,
-            loan_appraisal_note=note,
+        handoff = SanctionHandoffModule()
+        approval_case = handoff.create_pending(
+            application=application,
+            appraisal_note=note,
+            actor=actor,
+            remarks=payload["remarks"].strip(),
             exception_required_flag=exception_required,
-            submission_remarks=payload["remarks"].strip(),
-            submitted_by_user=actor,
             submitted_at=now,
         )
         previous_application_status = application.application_status
@@ -830,7 +820,7 @@ class AppraisalWorkflow:
             ip_address=request_meta.ip_address,
             user_agent=request_meta.user_agent,
         )
-        record_workflow_event(
+        workflow_event = record_workflow_event(
             actor=actor,
             workflow_name="sanction_submission",
             entity_type="loan_application",
@@ -844,18 +834,7 @@ class AppraisalWorkflow:
             action_code="appraisal.submitted_to_sanction",
         )
         return AppraisalNoteResult(
-            snapshot={
-                "approval_case_id": str(approval_case.pk),
-                "loan_application_id": str(application.pk),
-                "loan_appraisal_note_id": str(note.pk),
-                "submission_status": approval_case.current_status,
-                "exception_required_flag": exception_required,
-                "submitted_by": {
-                    "user_id": str(actor.pk),
-                    "full_name": actor.full_name,
-                },
-                "submitted_at": timezone.localtime(now).isoformat(),
-            }
+            snapshot=handoff.serialize(approval_case, latest_review, workflow_event)
         )
 
 

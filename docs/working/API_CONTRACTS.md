@@ -2006,14 +2006,15 @@ ordered immutable `review_history[]`, and
 also includes the nested existing rejection-note representation and links its UUID to the appraisal
 audit metadata.
 
-## Submit appraisal to Sanction Committee API (006G)
+## Submit appraisal to Sanction Committee API (006G/006G2)
 
 Protected Credit Manager endpoint:
 
 - `POST /api/v1/loan-applications/{loan_application_id}/submit-to-sanction-committee/`
+- `GET /api/v1/loan-applications/{loan_application_id}/sanction-case/`
 
-Request is exactly `{ "remarks": "non-blank reason" }`. Missing/blank remarks or any unknown field
-returns `400 VALIDATION_ERROR`. The action requires active `credit_manager` role authority,
+POST request is exactly `{ "remarks": "non-blank reason" }`. Malformed JSON, a non-object body,
+missing/blank remarks, or any unknown field returns `400 VALIDATION_ERROR`. The action requires active `credit_manager` role authority,
 `credit.appraisal.submit_sanction`, and the existing Credit Manager credit-domain object boundary;
 permission/role failures return `403 PERMISSION_DENIED` and out-of-domain applications return
 `403 OBJECT_ACCESS_DENIED`.
@@ -2038,15 +2039,25 @@ Response data:
   "approval_case_id": "uuid",
   "loan_application_id": "uuid",
   "loan_appraisal_note_id": "uuid",
+  "appraisal_review_decision_id": "uuid",
+  "workflow_event_id": "uuid",
+  "application_status": "submitted_to_sanction_committee",
+  "appraisal_status": "submitted_to_sanction_committee",
   "submission_status": "pending",
   "exception_required_flag": false,
   "submitted_by": {
     "user_id": "uuid",
     "full_name": "Credit Manager"
   },
-  "submitted_at": "2026-07-10T20:30:00+00:00"
+  "submitted_at": "2026-07-10T20:30:00+00:00",
+  "available_actions": []
 }
 ```
+
+GET is authenticated and applies the same application object-access boundary. It returns the exact
+same backend-owned projection as the successful POST, including case, latest-review, and workflow
+event UUIDs; it never returns submission remarks or other frozen free text. A real application
+without a sanction case returns `404 NOT_FOUND`; denied scope returns `403 OBJECT_ACCESS_DENIED`.
 
 Successful submission writes one `appraisal.submitted_to_sanction` audit record and one
 `sanction_submission` workflow event with application/appraisal/case/latest-review IDs, states,

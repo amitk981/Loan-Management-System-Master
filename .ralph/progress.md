@@ -1,5 +1,21 @@
 # Ralph Progress Log
 
+## 2026-07-11 01:52 - 2026-07-11_014217_repair
+- Agent tool used: codex.
+- Slice repaired: `006G2-sanction-handoff-module-and-read-contract`.
+- Failure diagnosed: the original static dependency regression used a repository-root-relative
+  path that did not include the backend directory. The repaired assertion resolves from
+  `__file__`, remains red-capable for the forbidden import, and passes under the full gate cwd.
+- Summary: Moved unique pending sanction-case create/get/serialization behind an approvals-owned
+  interface, removed credit's concrete approvals-model import, added reload-safe object-scoped
+  case read, canonical states/evidence IDs/actions, and malformed JSON envelopes.
+- Tests run: focused TDD red/green; exact five-race PostgreSQL command twice (five executed, zero
+  skips each); Django check/migration sync; 387 backend tests at 94% coverage; frontend
+  lint/typecheck, 126 tests, and build; diff/import checks.
+- Evidence saved: `.ralph/runs/2026-07-11_014217_repair/`.
+- Result: Success, pending orchestrator validation. Risk: High under standing approval. Next:
+  architecture review, then already-sharpened 006H2 and 006H3.
+
 ## 2026-07-11 00:05 - 2026-07-10_235256_normal_run
 - Agent tool used: codex.
 - Slice attempted: `004E-witness-shareholder-validation`.
@@ -2980,6 +2996,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_235256_normal_run/.ralph/runs/2026-07-10_235256_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_235256_normal_run/.ralph/runs/2026-07-10_235256_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-11 01:57:15 - 2026-07-11_014217_repair
+- Agent tool used: codex
+- Slice attempted: 006G2-sanction-handoff-module-and-read-contract
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_014217_repair/.ralph/runs/2026-07-11_014217_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_014217_repair/.ralph/runs/2026-07-11_014217_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

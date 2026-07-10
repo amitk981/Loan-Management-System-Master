@@ -1,7 +1,7 @@
 # Slice 006G2: Sanction Handoff Module and Read Contract
 
 ## Status
-Not Started
+Complete
 
 ## Runtime Capabilities
 - `postgresql-five-race-acceptance`

@@ -9,6 +9,7 @@ from sfpcl_credit.api import (
     request_user_agent,
     success_response,
 )
+from sfpcl_credit.approvals.modules.sanction_handoff import SanctionHandoffModule
 from sfpcl_credit.applications import services
 from sfpcl_credit.credit.modules.common import (
     CreditModuleInvalidStateError,
@@ -652,6 +653,26 @@ def loan_application_loan_limit_calculate(request, loan_application_id):
 
 
 @require_http_methods(["GET"])
+def loan_application_sanction_case(request, loan_application_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    try:
+        result = SanctionHandoffModule().get_pending(
+            actor=user,
+            application_id=loan_application_id,
+            actor_permissions=permissions,
+        )
+    except (
+        CreditModuleNotFound,
+        CreditModuleObjectAccessDenied,
+        CreditModulePermissionDenied,
+    ) as exc:
+        return _credit_module_error_response(request, exc)
+    return success_response(result.snapshot, request)
+
+
+@require_http_methods(["GET"])
 def loan_application_loan_limit_assessment(request, loan_application_id):
     user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:
@@ -838,6 +859,14 @@ def loan_application_submit_to_sanction(request, loan_application_id):
             "VALIDATION_ERROR",
             "Sanction submission failed validation.",
             exc.field_errors,
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Sanction submission failed validation.",
+            services.validation_field_errors(exc),
         )
     except CreditModuleInvalidStateError as exc:
         return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
