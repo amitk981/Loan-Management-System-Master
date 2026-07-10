@@ -1,65 +1,56 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-10_052139_normal_run
+2026-07-10_073826_repair
 
 ## Current Status
-Completed `006B-default-document-purpose-and-terms-eligibility-checks`.
+Completed `006C-loan-limit-configuration-and-calculator` after diagnosing the prior normal-run
+no-op as a missing Codex command-host binary; no failed product changes were salvaged.
 
 What changed:
-- Existing `POST /api/v1/loan-applications/{id}/eligibility-assessment/run/` now computes
-  source-backed checks beyond 006A active-member status.
-- `default_check = no_default` only for `Member.default_status = no_default`; existing/default-like
-  statuses return `default_found` and `overall_result = ineligible`.
-- `document_check` uses 005D/005E required checklist metadata. Any blocking required item returns
-  `incomplete` and `overall_result = ineligible`; raw files are not read.
-- `terms_acceptance_check = accepted` only when `LoanApplication.terms_acceptance_flag = true`;
-  otherwise it returns `pending` and `overall_result = ineligible`.
-- `purpose_check = agriculture_aligned` only for `crop_production` or `agriculture_activity`;
-  other purpose categories return `non_agriculture` and `overall_result = ineligible`.
-- `nominee_check` uses `Nominee.loan_application_id` only when that application-specific fact
-  exists. Adult nominee returns `valid`; minor nominee returns `minor` and ineligible. Missing
-  application-specific nominee evidence remains `pending` with
-  `overall_result = pending_manual_evidence`.
-- `overall_result = eligible` only when member-active, default, document, terms, purpose, and
-  nominee checks all pass.
-- Ineligible eligibility assessments do not advance `application_status` or `current_stage`.
-- Reruns update the existing one-to-one `EligibilityAssessment`.
-- 006A permission/object access/state guard/no-success-evidence behavior is preserved.
-- `docs/working/API_CONTRACTS.md` and the Epic 006 digest now record the 006B contract.
-- `006C` and `006D` were sharpened from the Epic 006 digest/source extracts.
+- Added `POST /api/v1/loan-applications/{loan_application_id}/loan-limit-assessment/calculate/`.
+- Added one-to-one `loan_limit_assessments` persistence and migration with all source §14.2
+  share, land, policy, result, boundary, rule-version, actor, and timestamp snapshots.
+- Calculation requires stored 006B `overall_result = eligible`; absent, pending-manual, and
+  ineligible states return `409` with no loan-limit success evidence.
+- Shareholding, every land holding, and crop plan must belong to the application member. Crop plans
+  linked to another application/non-agriculture purpose and missing source facts return validation
+  errors. Requested amount must match the stored application request.
+- Exactly one active/effective Board-referenced loan policy must supply positive scale of finance
+  and a percentage and/or per-share cap. Missing, overlapping, or unresolved config blocks.
+- Percentage derives the per-share value from stored valuation; an optional cap is the ceiling.
+  Land limit is selected acreage times configured scale of finance; final amount is lower-of-two.
+- Above-limit requests return `REQUESTED_AMOUNT_EXCEEDS_LIMIT`, set within-limit false and
+  exception-required true; equal/below boundaries need no exception.
+- Successful reruns preserve the one-to-one assessment UUID and atomically write metadata-only
+  `loan_limit.calculated` audit plus `loan_limit_assessment` workflow evidence. Denied/invalid/
+  validation paths write none.
+- Updated `API_CONTRACTS.md`, Epic 006 digest, and assumption A-047. Sharpened 006D immutable
+  snapshot readback and 006E appraisal/risk/TAT/submit-review requirements.
 
 ## Validation
-- Backend TDD red/green eligible-path test passed.
-- Focused loan-application API tests passed: 31 tests.
+- Backend TDD endpoint tracer: red `404`, then green stored calculation.
+- Focused loan-application API suite passed: 37 tests.
 - Backend `manage.py check` passed.
-- Backend full tests passed: 282 tests.
+- Backend full suite passed: 288 tests.
 - Backend `makemigrations --check --dry-run` passed.
-- Backend coverage report passed: 95%, above 85% floor.
-- Frontend lint passed.
-- Frontend typecheck passed.
+- Backend coverage passed: 95%, above the 85% floor.
+- Frontend lint and typecheck passed.
 - Frontend tests passed: 98 tests.
 - Frontend build passed.
-- `git diff --check` passed.
+- `git diff --check` passed; no protected files changed; diff limits remain within configured caps.
 
-Evidence is in `.ralph/runs/2026-07-10_052139_normal_run/`.
+Evidence is in `.ralph/runs/2026-07-10_073826_repair/`.
 
 ## Next Run
-Run `006C-loan-limit-configuration-and-calculator`.
+Run `006D-loan-limit-snapshot-storage`.
 
-Key instructions for 006C:
-- Require a stored 006B eligibility assessment with `overall_result = eligible` before normal
-  loan-limit calculation.
-- Treat 006B `pending_manual_evidence` and `ineligible` as blockers; do not invent override or
-  exception behavior in 006C.
-- Implement `POST /api/v1/loan-applications/{loan_application_id}/loan-limit-assessment/calculate/`.
-- Use source-backed member shareholding, landholding, crop-plan, requested amount, and loan-policy
-  configuration facts. Cross-member facts must fail validation without persisted assessment/audit
-  or workflow evidence.
-- Formula contract from the digest/source: shareholding-based limit, land-based limit, and final
-  eligible amount as the lower of the two. If requested amount exceeds final eligible amount, return
-  `amount_within_limit_flag = false`, `exception_required_flag = true`, and a
-  `REQUESTED_AMOUNT_EXCEEDS_LIMIT` warning.
-- Do not silently decide the unresolved 30% vs 10% vs Rs 200/share policy ambiguity. Use existing
-  source-backed config if present; otherwise block and record the ambiguity rather than inventing
-  a rule.
+Key instructions for 006D:
+- Add the stored snapshot read companion at
+  `GET /api/v1/loan-applications/{loan_application_id}/loan-limit-assessment/`; do not recalculate.
+- Prove mutations to shareholding, land/crop, application amount, and policy do not change GET
+  output until a new successful calculate call replaces the snapshot.
+- Persist the smallest immutable policy-source metadata needed to reproduce 006C's
+  `configuration_source` without reading mutable config rows.
+- GET uses application read plus existing object access and creates no audit/workflow evidence.
+- Failed reruns must leave the prior stored snapshot unchanged and create no success evidence.

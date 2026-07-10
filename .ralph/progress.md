@@ -2325,3 +2325,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-10 08:21:59 - 2026-07-10_073826_repair
+- Agent tool used: codex
+- Slice attempted: 006C-loan-limit-configuration-and-calculator
+- Summary: Recovered from the prior missing command-host no-op, then implemented the source-backed
+  loan-limit calculate endpoint, one-to-one snapshot persistence, active/effective Board-approved
+  policy selection, percentage/per-share-cap and land formulas, eligibility/source-fact/access
+  gates, amount boundary warning, and atomic audit/workflow evidence. Recorded A-047 and sharpened
+  006D/006E.
+- Tests run: TDD red/green endpoint tracer; focused formula, boundary, rerun, eligibility, policy,
+  source-fact, permission, and object-scope tests; 37 loan-application API tests; backend check;
+  288 backend tests; migration sync; 95% backend coverage; frontend lint/typecheck; 98 frontend
+  tests; frontend build; and `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_073826_repair/`
+- Result: Success
+- Risk level: High
+- Next action: Run `006D-loan-limit-snapshot-storage`.
+
+## 2026-07-10 08:31:28 - 2026-07-10_073826_repair
+- Agent tool used: codex
+- Slice attempted: 006C-loan-limit-configuration-and-calculator
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_073826_repair/.ralph/runs/2026-07-10_073826_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_073826_repair/.ralph/runs/2026-07-10_073826_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

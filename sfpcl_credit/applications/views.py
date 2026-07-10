@@ -583,6 +583,63 @@ def loan_application_eligibility_assessment_run(request, loan_application_id):
 
 
 @require_http_methods(["POST"])
+def loan_application_loan_limit_calculate(request, loan_application_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    if not services.user_can_calculate_loan_limit(user):
+        return error_response(
+            request,
+            403,
+            "PERMISSION_DENIED",
+            "You do not have permission to calculate loan limits.",
+        )
+    application = services.get_application(loan_application_id)
+    if application is None:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+    object_access = services.evaluate_application_object_access(
+        application,
+        user,
+        services.LOAN_LIMIT_CALCULATE_PERMISSION,
+        permissions,
+    )
+    if not object_access.allowed:
+        return _object_access_denied_response(request, object_access)
+    try:
+        payload = parse_json_body(request)
+        assessment, policy = services.calculate_loan_limit(
+            application,
+            payload,
+            user,
+            request_ip(request),
+            request_user_agent(request),
+            request.headers.get("X-Request-ID"),
+        )
+    except services.LoanApplicationValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Loan-limit calculation failed validation.",
+            services.validation_field_errors(exc),
+        )
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Loan-limit calculation failed validation.",
+            services.validation_field_errors(exc),
+        )
+    except services.LoanApplicationInvalidStateError as exc:
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
+    return success_response(
+        services.serialize_loan_limit_assessment(assessment, policy),
+        request,
+    )
+
+
+@require_http_methods(["POST"])
 def loan_application_return_with_deficiencies(request, loan_application_id):
     user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:

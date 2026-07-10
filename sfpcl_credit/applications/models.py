@@ -285,6 +285,71 @@ class EligibilityAssessment(models.Model):
         ]
 
 
+class LoanLimitAssessment(models.Model):
+    loan_limit_assessment_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    loan_application = models.OneToOneField(
+        LoanApplication,
+        on_delete=models.PROTECT,
+        related_name="loan_limit_assessment",
+    )
+    member = models.ForeignKey(
+        "members.Member",
+        on_delete=models.PROTECT,
+        related_name="loan_limit_assessments",
+    )
+    shareholding = models.ForeignKey(
+        "members.Shareholding",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="loan_limit_assessments",
+    )
+    number_of_shares = models.IntegerField()
+    valuation_per_share = models.DecimalField(max_digits=18, decimal_places=2)
+    share_limit_percentage = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        blank=True,
+        null=True,
+    )
+    per_share_cap_amount = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        blank=True,
+        null=True,
+    )
+    shareholding_based_limit_amount = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+    )
+    land_area_acres = models.DecimalField(max_digits=12, decimal_places=2)
+    scale_of_finance_per_acre_amount = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+    )
+    land_based_limit_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    final_eligible_loan_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    requested_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    amount_within_limit_flag = models.BooleanField(db_index=True)
+    exception_required_flag = models.BooleanField(db_index=True)
+    calculation_rule_version = models.CharField(max_length=80)
+    calculated_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="loan_limit_assessments",
+    )
+    calculated_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "loan_limit_assessments"
+
+
 class ApplicationDocument(models.Model):
     SUBMISSION_PENDING = "pending"
     SUBMISSION_SUBMITTED = "submitted"

@@ -97,6 +97,24 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
   calculation or record the ambiguity instead of inventing the rule.
 - Permission for calculation is `credit.loan_limit.calculate`; override requires
   `credit.loan_limit.override` and is out of scope for 006C.
+- Implemented in 006C:
+  - Calculation requires a stored 006B assessment with `overall_result = eligible`; absent,
+    `pending_manual_evidence`, and `ineligible` paths return invalid state with no calculation
+    evidence.
+  - The request amount must match the persisted application request. Shareholding, every selected
+    land holding, and crop plan must belong to that application member; application-mismatched or
+    non-agriculture-aligned crop plans are rejected.
+  - Exactly one active/effective Board-referenced `LoanPolicyConfig` is required. Missing,
+    overlapping, non-positive, or percentage/cap-empty policies block calculation rather than
+    selecting 30%, 10%, or Rs 200 in code.
+  - Percentage produces a per-share amount from the stored valuation; configured per-share cap is
+    a ceiling. Selected land acreage is summed and multiplied by configured scale of finance. The
+    lower of share and land results is stored as the final amount.
+  - Requested amount above the final limit returns `REQUESTED_AMOUNT_EXCEEDS_LIMIT` and sets both
+    boundary flags. Equal/below amounts require no exception.
+  - Successful calculation atomically snapshots all `data-model.md` §14.2 inputs/results, rule
+    version, user, and time with `loan_limit.calculated` audit and `loan_limit_assessment` workflow
+    evidence. Rerun updates the one-to-one row while denied/invalid/validation paths write none.
 
 ## Architecture Review 2026-07-10 04:18 - 006A Spot Check
 - 006A implemented only the active-member portion of the eligibility assessment contract and left

@@ -5,16 +5,19 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Max, Q
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 
 from sfpcl_credit.applications.models import (
     ApplicationDeficiency,
     ApplicationDocument,
     EligibilityAssessment,
     LoanApplication,
+    LoanLimitAssessment,
     LoanRequestRegisterEntry,
     RejectionNote,
     SystemSequence,
 )
+from sfpcl_credit.configurations.models import LoanPolicyConfig
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
@@ -26,6 +29,7 @@ from sfpcl_credit.members.models import (
     LandHolding,
     Member,
     Nominee,
+    Shareholding,
 )
 from sfpcl_credit.workflows.events import record_workflow_event
 from sfpcl_credit.workflows.guard import (
@@ -43,6 +47,7 @@ APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_
 APPLICATION_DOCUMENT_UPLOAD_PERMISSION = "applications.document.upload"
 APPLICATION_DOCUMENT_VERIFY_PERMISSION = "applications.document.verify"
 ELIGIBILITY_RUN_PERMISSION = "credit.eligibility.run"
+LOAN_LIMIT_CALCULATE_PERMISSION = "credit.loan_limit.calculate"
 LOAN_APPLICATION_REFERENCE_SEQUENCE_CODE = "loan_application_reference"
 APPLICATION_DOCUMENT_ATTACH_AUDIT_ACTION = "applications.application_document.attached"
 APPLICATION_DOCUMENT_VERIFY_AUDIT_ACTION = "applications.application_document.verified"
@@ -53,6 +58,7 @@ APPLICATION_DEFICIENCY_RESOLVED_AUDIT_ACTION = "applications.deficiency.resolved
 APPLICATION_REJECTION_NOTE_CREATED_AUDIT_ACTION = "applications.rejection_note.created"
 APPLICATION_REJECTION_NOTE_SENT_AUDIT_ACTION = "applications.rejection_note.sent"
 ELIGIBILITY_ASSESSED_AUDIT_ACTION = "eligibility.assessed"
+LOAN_LIMIT_CALCULATED_AUDIT_ACTION = "loan_limit.calculated"
 APPLICATION_DOCUMENT_TYPES = {
     "loan_application_form",
     "borrower_pan",
@@ -157,6 +163,10 @@ def user_can_verify_application_documents(user):
 
 def user_can_run_eligibility(user):
     return ELIGIBILITY_RUN_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_calculate_loan_limit(user):
+    return LOAN_LIMIT_CALCULATE_PERMISSION in auth_service.effective_permission_codes(user)
 
 
 def evaluate_application_object_access(application, actor, required_permission, actor_permissions=None):
@@ -1070,6 +1080,119 @@ def run_eligibility_assessment(
 
 
 @transaction.atomic
+def calculate_loan_limit(
+    application,
+    payload,
+    actor,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+):
+    application = (
+        LoanApplication.objects.select_for_update()
+        .select_related("member", "created_by_user", "received_by_user")
+        .get(loan_application_id=application.loan_application_id)
+    )
+    eligibility = (
+        EligibilityAssessment.objects.select_for_update()
+        .filter(loan_application=application)
+        .first()
+    )
+    if eligibility is None:
+        raise LoanApplicationInvalidStateError(
+            "An eligible eligibility assessment is required before loan-limit calculation."
+        )
+    if eligibility.overall_result != EligibilityAssessment.OVERALL_ELIGIBLE:
+        raise LoanApplicationInvalidStateError(
+            "Loan-limit calculation requires eligibility overall_result eligible."
+        )
+
+    cleaned = _clean_loan_limit_payload(application, payload)
+    policy = _effective_loan_policy(cleaned["calculation_date"])
+    shareholding = cleaned["shareholding"]
+    valuation_per_share = shareholding.valuation_per_share
+    percentage = policy.share_limit_percentage
+    cap_amount = policy.per_share_cap_amount
+
+    per_share_limits = []
+    if percentage is not None:
+        per_share_limits.append(
+            valuation_per_share * percentage / Decimal("100")
+        )
+    if cap_amount is not None:
+        per_share_limits.append(cap_amount)
+    per_share_limit = min(per_share_limits)
+    shareholding_limit = (
+        Decimal(shareholding.number_of_shares) * per_share_limit
+    ).quantize(Decimal("0.01"))
+    land_area = sum(
+        (holding.area_acres for holding in cleaned["land_holdings"]),
+        Decimal("0.00"),
+    )
+    land_limit = (
+        land_area * policy.default_scale_of_finance_per_acre_amount
+    ).quantize(Decimal("0.01"))
+    final_eligible_amount = min(shareholding_limit, land_limit)
+    requested_amount = cleaned["requested_amount"].quantize(Decimal("0.01"))
+    amount_within_limit = requested_amount <= final_eligible_amount
+    now = timezone.now()
+
+    assessment = (
+        LoanLimitAssessment.objects.select_for_update()
+        .filter(loan_application=application)
+        .first()
+    )
+    old_value_json = (
+        _loan_limit_assessment_audit_snapshot(assessment)
+        if assessment is not None
+        else None
+    )
+    if assessment is None:
+        assessment = LoanLimitAssessment(loan_application=application)
+    assessment.member = application.member
+    assessment.shareholding = shareholding
+    assessment.number_of_shares = shareholding.number_of_shares
+    assessment.valuation_per_share = valuation_per_share
+    assessment.share_limit_percentage = percentage
+    assessment.per_share_cap_amount = cap_amount
+    assessment.shareholding_based_limit_amount = shareholding_limit
+    assessment.land_area_acres = land_area
+    assessment.scale_of_finance_per_acre_amount = (
+        policy.default_scale_of_finance_per_acre_amount
+    )
+    assessment.land_based_limit_amount = land_limit
+    assessment.final_eligible_loan_amount = final_eligible_amount
+    assessment.requested_amount = requested_amount
+    assessment.amount_within_limit_flag = amount_within_limit
+    assessment.exception_required_flag = not amount_within_limit
+    assessment.calculation_rule_version = policy.policy_version
+    assessment.calculated_by_user = actor
+    assessment.calculated_at = now
+    assessment.save()
+
+    _audit_loan_limit_assessment(
+        assessment,
+        actor,
+        old_value_json,
+        policy,
+        request_ip,
+        request_user_agent,
+        request_id,
+    )
+    record_workflow_event(
+        actor=actor,
+        workflow_name="loan_limit_assessment",
+        entity_type="loan_application",
+        entity_id=application.loan_application_id,
+        from_state=application.current_stage,
+        to_state="loan_limit_calculated",
+        trigger_reason="Source-backed loan limit calculated.",
+        action_code=LOAN_LIMIT_CALCULATED_AUDIT_ACTION,
+    )
+    return assessment, policy
+
+
+@transaction.atomic
 def send_rejection_note(
     rejection_note,
     payload,
@@ -1322,6 +1445,59 @@ def serialize_eligibility_assessment(assessment):
         "assessment_notes": assessment.assessment_notes,
         "assessed_by_user_id": str(assessment.assessed_by_user_id),
         "assessed_at": _datetime(assessment.assessed_at),
+    }
+
+
+def serialize_loan_limit_assessment(assessment, policy):
+    warnings = []
+    if assessment.exception_required_flag:
+        warnings.append(
+            {
+                "code": "REQUESTED_AMOUNT_EXCEEDS_LIMIT",
+                "message": "Requested amount exceeds final eligible loan amount.",
+            }
+        )
+    return {
+        "loan_limit_assessment_id": str(assessment.loan_limit_assessment_id),
+        "loan_application_id": str(assessment.loan_application_id),
+        "member_id": str(assessment.member_id),
+        "shareholding_id": str(assessment.shareholding_id)
+        if assessment.shareholding_id
+        else None,
+        "number_of_shares": assessment.number_of_shares,
+        "valuation_per_share": _money(assessment.valuation_per_share),
+        "share_limit_percentage": (
+            f"{assessment.share_limit_percentage:.4f}"
+            if assessment.share_limit_percentage is not None
+            else None
+        ),
+        "per_share_cap_amount": _money(assessment.per_share_cap_amount),
+        "shareholding_based_limit_amount": _money(
+            assessment.shareholding_based_limit_amount
+        ),
+        "land_area_acres": f"{assessment.land_area_acres:.2f}",
+        "scale_of_finance_per_acre_amount": _money(
+            assessment.scale_of_finance_per_acre_amount
+        ),
+        "land_based_limit_amount": _money(assessment.land_based_limit_amount),
+        "final_eligible_loan_amount": _money(
+            assessment.final_eligible_loan_amount
+        ),
+        "requested_amount": _money(assessment.requested_amount),
+        "amount_within_limit_flag": assessment.amount_within_limit_flag,
+        "exception_required_flag": assessment.exception_required_flag,
+        "calculation_rule_version": assessment.calculation_rule_version,
+        "configuration_source": {
+            "type": "loan_policy_config",
+            "loan_policy_config_id": str(policy.loan_policy_config_id),
+            "policy_name": policy.policy_name,
+            "board_approval_reference": policy.board_approval_reference,
+        },
+        "calculated_by_user_id": str(assessment.calculated_by_user_id)
+        if assessment.calculated_by_user_id
+        else None,
+        "calculated_at": _datetime(assessment.calculated_at),
+        "warnings": warnings,
     }
 
 
@@ -1889,6 +2065,30 @@ def _audit_eligibility_assessment(
     )
 
 
+def _audit_loan_limit_assessment(
+    assessment,
+    actor,
+    old_value_json,
+    policy,
+    request_ip,
+    request_user_agent,
+    request_id,
+):
+    new_value_json = _loan_limit_assessment_audit_snapshot(assessment)
+    new_value_json["loan_policy_config_id"] = str(policy.loan_policy_config_id)
+    new_value_json["request_id"] = request_id
+    AuditLog.objects.create(
+        actor_user=actor,
+        action=LOAN_LIMIT_CALCULATED_AUDIT_ACTION,
+        entity_type="loan_limit_assessment",
+        entity_id=assessment.loan_limit_assessment_id,
+        old_value_json=old_value_json,
+        new_value_json=new_value_json,
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+
+
 def _audit_application_document(
     application_document,
     actor,
@@ -2028,6 +2228,196 @@ def _eligibility_assessment_audit_snapshot(assessment):
         "assessed_by_user_id": str(assessment.assessed_by_user_id),
         "assessed_at": _datetime(assessment.assessed_at),
     }
+
+
+def _loan_limit_assessment_audit_snapshot(assessment):
+    return {
+        "loan_limit_assessment_id": str(assessment.loan_limit_assessment_id),
+        "loan_application_id": str(assessment.loan_application_id),
+        "member_id": str(assessment.member_id),
+        "shareholding_id": str(assessment.shareholding_id)
+        if assessment.shareholding_id
+        else None,
+        "number_of_shares": assessment.number_of_shares,
+        "valuation_per_share": _money(assessment.valuation_per_share),
+        "share_limit_percentage": (
+            f"{assessment.share_limit_percentage:.4f}"
+            if assessment.share_limit_percentage is not None
+            else None
+        ),
+        "per_share_cap_amount": _money(assessment.per_share_cap_amount),
+        "shareholding_based_limit_amount": _money(
+            assessment.shareholding_based_limit_amount
+        ),
+        "land_area_acres": f"{assessment.land_area_acres:.2f}",
+        "scale_of_finance_per_acre_amount": _money(
+            assessment.scale_of_finance_per_acre_amount
+        ),
+        "land_based_limit_amount": _money(assessment.land_based_limit_amount),
+        "final_eligible_loan_amount": _money(
+            assessment.final_eligible_loan_amount
+        ),
+        "requested_amount": _money(assessment.requested_amount),
+        "amount_within_limit_flag": assessment.amount_within_limit_flag,
+        "exception_required_flag": assessment.exception_required_flag,
+        "calculation_rule_version": assessment.calculation_rule_version,
+        "calculated_by_user_id": str(assessment.calculated_by_user_id)
+        if assessment.calculated_by_user_id
+        else None,
+        "calculated_at": _datetime(assessment.calculated_at),
+    }
+
+
+def _clean_loan_limit_payload(application, payload):
+    allowed_fields = {
+        "shareholding_id",
+        "land_holding_ids",
+        "crop_plan_id",
+        "requested_amount",
+        "calculation_date",
+    }
+    errors = {
+        field: "Unknown field." for field in sorted(set(payload) - allowed_fields)
+    }
+    for field in sorted(allowed_fields):
+        if field not in payload or payload.get(field) in (None, "", []):
+            errors[field] = "This field is required."
+
+    shareholding_id = _parse_uuid(
+        "shareholding_id", payload.get("shareholding_id"), errors
+    )
+    crop_plan_id = _parse_uuid("crop_plan_id", payload.get("crop_plan_id"), errors)
+    requested_amount = _optional_positive_decimal(
+        payload.get("requested_amount"), "requested_amount", errors
+    )
+    calculation_date = parse_date(str(payload.get("calculation_date", "")))
+    if calculation_date is None:
+        errors["calculation_date"] = "Must be a valid ISO date."
+
+    raw_land_ids = payload.get("land_holding_ids")
+    land_ids = []
+    if isinstance(raw_land_ids, list) and raw_land_ids:
+        for raw_id in raw_land_ids:
+            try:
+                land_ids.append(uuid.UUID(str(raw_id)))
+            except (TypeError, ValueError):
+                errors["land_holding_ids"] = "Every value must be a valid UUID."
+                break
+        if len(set(land_ids)) != len(land_ids):
+            errors["land_holding_ids"] = "Duplicate land holdings are not allowed."
+    elif raw_land_ids not in (None, "", []):
+        errors["land_holding_ids"] = "Must be a non-empty list of UUIDs."
+
+    if errors:
+        raise LoanApplicationValidationError(errors)
+
+    shareholding = Shareholding.objects.filter(
+        shareholding_id=shareholding_id,
+        member=application.member,
+    ).first()
+    if shareholding is None:
+        errors["shareholding_id"] = "Referenced record was not found for this member."
+    elif shareholding.status != "active":
+        errors["shareholding_id"] = "Shareholding must be active."
+    elif shareholding.number_of_shares <= 0:
+        errors["shareholding_id"] = "Shareholding must contain at least one share."
+    elif (
+        shareholding.valuation_per_share is None
+        or shareholding.valuation_per_share <= 0
+    ):
+        errors["shareholding_id"] = (
+            "Shareholding requires a positive approved valuation per share."
+        )
+
+    land_holdings = list(
+        LandHolding.objects.filter(
+            land_holding_id__in=land_ids,
+            member=application.member,
+        ).order_by("land_holding_id")
+    )
+    if len(land_holdings) != len(land_ids):
+        errors["land_holding_ids"] = (
+            "Every land holding must exist for the loan application member."
+        )
+
+    crop_plan = CropPlan.objects.filter(
+        crop_plan_id=crop_plan_id,
+        member=application.member,
+    ).first()
+    if crop_plan is None:
+        errors["crop_plan_id"] = "Referenced record was not found for this member."
+    elif (
+        crop_plan.loan_application_id
+        and crop_plan.loan_application_id != application.loan_application_id
+    ):
+        errors["crop_plan_id"] = "Crop plan belongs to another loan application."
+    elif crop_plan.loan_purpose_alignment != "agriculture_aligned":
+        errors["crop_plan_id"] = "Crop plan must be agriculture aligned."
+
+    if application.required_loan_amount is None:
+        errors["requested_amount"] = (
+            "Loan application must store a requested amount before calculation."
+        )
+    elif requested_amount != application.required_loan_amount:
+        errors["requested_amount"] = (
+            "Requested amount must match the loan application requested amount."
+        )
+    if errors:
+        raise LoanApplicationValidationError(errors)
+    return {
+        "shareholding": shareholding,
+        "land_holdings": land_holdings,
+        "crop_plan": crop_plan,
+        "requested_amount": requested_amount,
+        "calculation_date": calculation_date,
+    }
+
+
+def _effective_loan_policy(calculation_date):
+    policies = list(
+        LoanPolicyConfig.objects.select_for_update()
+        .filter(
+            status=LoanPolicyConfig.STATUS_ACTIVE,
+            effective_from__lte=calculation_date,
+        )
+        .filter(Q(effective_to__isnull=True) | Q(effective_to__gte=calculation_date))
+        .order_by("-effective_from", "-loan_policy_config_id")[:2]
+    )
+    if len(policies) != 1:
+        raise LoanApplicationValidationError(
+            {
+                "loan_policy_config": (
+                    "Exactly one active loan policy must apply on calculation_date."
+                )
+            }
+        )
+    policy = policies[0]
+    if not policy.board_approval_reference:
+        raise LoanApplicationValidationError(
+            {
+                "loan_policy_config": (
+                    "Active loan-limit policy requires Board approval metadata."
+                )
+            }
+        )
+    if policy.default_scale_of_finance_per_acre_amount <= 0:
+        raise LoanApplicationValidationError(
+            {"loan_policy_config": "Scale of finance must be greater than zero."}
+        )
+    configured_rules = [
+        value
+        for value in (policy.share_limit_percentage, policy.per_share_cap_amount)
+        if value is not None
+    ]
+    if not configured_rules or any(value <= 0 for value in configured_rules):
+        raise LoanApplicationValidationError(
+            {
+                "loan_policy_config": (
+                    "Configure a positive share percentage or per-share cap before calculation."
+                )
+            }
+        )
+    return policy
 
 
 def _application_document_audit_snapshot(application_document):

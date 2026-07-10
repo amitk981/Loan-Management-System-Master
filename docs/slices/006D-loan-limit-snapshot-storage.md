@@ -18,6 +18,14 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 ## Depends On
 - 006C
 
+## Prior Slice Handoff
+- 006C implemented the calculate endpoint, one-to-one `LoanLimitAssessment`, all source §14.2
+  numeric/rule/user/time snapshot fields, eligibility/policy/source-fact gates, same-member
+  validation, lower-of-two formula, boundary warning, and atomic audit/workflow evidence.
+- 006C's immediate calculate response includes live-selected `configuration_source` metadata, but
+  there is no stored-assessment GET endpoint yet. 006D must make readback independent of current
+  member/share/land/crop/policy rows and must not add another calculation path.
+
 ## Source References
 - docs/source/implementation-roadmap.md section 11
 - docs/source/api-contracts.md sections 22-24
@@ -38,7 +46,10 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-- Reuse the 006C loan-limit assessment calculate/read path; do not create a parallel calculator.
+- Reuse the 006C calculator; do not create a parallel calculator.
+- Implement `GET /api/v1/loan-applications/{loan_application_id}/loan-limit-assessment/` as the
+  stored snapshot read companion to source §23.1. It returns `404 NOT_FOUND` when no assessment
+  exists and performs no calculation or write.
 - Ensure the persisted `loan_limit_assessments` row stores the source-backed calculation snapshot
   named by `api-contracts.md` §23.1 and `data-model.md` §14.2:
   `member_id`, `shareholding_id`, `number_of_shares`, `valuation_per_share`,
@@ -48,7 +59,9 @@ None for this slice, except updating frontend documentation or fixtures if requi
   `exception_required_flag`, `calculation_rule_version`, `calculated_by_user_id`, and
   `calculated_at`.
 - Snapshot the operative policy/rule facts used by 006C so later configuration changes do not
-  alter old assessment responses.
+  alter old assessment responses. If the current §14.2 fields cannot reproduce source §23.3
+  `configuration_source` without reading the mutable policy row, add only the smallest immutable
+  source snapshot fields: policy config UUID, policy name, and Board approval reference.
 - Snapshot the selected shareholding, landholding/crop-plan area, requested amount, and member
   identifiers used in the calculation response. Do not read mutable current values when serializing
   an existing assessment if snapshot fields are available.
@@ -64,8 +77,10 @@ which warnings/metadata come from the stored assessment.
 
 ## Permissions
 Same as 006C: calculate requires `credit.loan_limit.calculate` and existing application
-object-access; read follows the same application read/object-access boundary unless 006C already
-introduced a narrower read permission. Do not implement `credit.loan_limit.override`.
+object-access. GET requires `applications.loan_application.read` plus the same application
+object-access boundary used by eligibility/application detail; do not invent or seed the
+source-inconsistent `credit.loan_limit.read` gap recorded in A-007. Do not implement
+`credit.loan_limit.override`.
 
 ## Audit Requirements
 Successful first calculation and rerun/update write metadata-only loan-limit audit/workflow
@@ -79,6 +94,8 @@ calculation evidence.
   metadata and replacing the snapshot only when the calculation succeeds.
 - Later changes to shareholding, landholding, crop-plan, requested amount, or loan-policy config
   must not mutate an already stored assessment read response unless a new successful rerun occurs.
+- GET warning output is derived from stored `exception_required_flag`/amount snapshots, never by
+  comparing the current application amount or recalculating current source facts.
 - If 006C blocks on unresolved share-policy ambiguity, 006D must not invent the missing policy.
 
 ## Test Cases
