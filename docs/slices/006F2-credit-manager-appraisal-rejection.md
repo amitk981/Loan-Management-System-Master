@@ -1,7 +1,7 @@
 # Slice 006F2: Credit Manager Appraisal Rejection
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
@@ -71,11 +71,11 @@ High
 - Existing review-return and rejection-note contracts are reused, not duplicated.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Failing tests and red evidence saved first
-- [ ] Code and additive migration (if required) implemented
-- [ ] API contracts updated
-- [ ] Full gates passed
-- [ ] Risk assessment and handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Failing tests and red evidence saved first
+- [x] Code implemented; no migration required
+- [x] API contracts updated
+- [x] Full gates passed
+- [x] Risk assessment and handoff updated
+- [x] State updated
 - [ ] Commit delegated to orchestrator only after passing gates

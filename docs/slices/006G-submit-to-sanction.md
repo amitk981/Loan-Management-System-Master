@@ -85,6 +85,9 @@ comments, or request remarks into audit JSON. Denied/invalid/repeated paths writ
 ## Validation Rules
 - Only a `reviewed` appraisal can submit; missing, draft, review-pending, returned, or already
   submitted states return `409 INVALID_STATE_TRANSITION`.
+- A terminal `rejected` appraisal returns `409 INVALID_STATE_TRANSITION` without reading, sending,
+  updating, or deleting its linked 006F2 rejection-note draft and without creating an approval
+  case, sanction audit row, or sanction workflow event.
 - Credit Manager review facts are mandatory and the actor requires the separate sanction-submit
   permission. If the stored loan-limit snapshot requires an exception, flag the pending sanction
   package for later exception routing; do not create or approve the exception in 006G.
@@ -94,6 +97,8 @@ comments, or request remarks into audit JSON. Denied/invalid/repeated paths writ
 ## Test Cases
 - TDD red/green reviewed-appraisal submission creates one pending case and source response.
 - Draft/review-pending/returned/missing/repeated submission paths are blocked without side effects.
+- A rejected appraisal with its linked unsent rejection note is blocked; the note ID/status/send
+  facts and all rejection evidence remain byte-for-byte unchanged.
 - `credit.appraisal.submit_sanction` and object scope are independently enforced; review permission
   alone cannot submit.
 - Stored eligibility/loan-limit IDs, recommendation, risk, TAT, reviewer, and comments remain

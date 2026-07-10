@@ -2722,3 +2722,26 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-10 - 2026-07-10_184709_normal_run
+- Agent tool used: codex
+- Slice attempted: 006F2-credit-manager-appraisal-rejection
+- Summary: Added terminal Credit Manager rejection through the existing appraisal workflow and a
+  public rejection-note module seam, creating exactly one auditable unsent 005H draft atomically.
+- Tests run: Two TDD red/green cycles; focused appraisal/module/rollback tests; backend check and
+  migration sync; 361 backend tests with two PostgreSQL-only skips at 95% coverage; frontend
+  lint/typecheck, 107 tests, and build; static architecture boundary repair and diff checks.
+- Evidence saved: `.ralph/runs/2026-07-10_184709_normal_run/`
+- Result: Success
+- Risk level: High (standing approval; no veto)
+- Next action: Run the due architecture review, then sharpened 006G submit-to-sanction.
+
+## 2026-07-10 19:04:43 - 2026-07-10_184709_normal_run
+- Agent tool used: codex
+- Slice attempted: 006F2-credit-manager-appraisal-rejection
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_184709_normal_run/.ralph/runs/2026-07-10_184709_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_184709_normal_run/.ralph/runs/2026-07-10_184709_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

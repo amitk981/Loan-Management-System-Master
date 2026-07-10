@@ -468,6 +468,7 @@ Success data:
   "detailed_reason": "Borrower does not meet active member criteria.",
   "reapply_allowed_flag": true,
   "note_status": "draft",
+  "communication_status": "not_sent",
   "prepared_by_user_id": "uuid",
   "approved_by_user_id": null,
   "communication_mode": "email",
@@ -491,9 +492,11 @@ Request:
 }
 ```
 
-Success returns the rejection note shape above with `note_status = sent`, `sent_by_user_id`, and
-`sent_at` populated. The send endpoint is a metadata/status transition only in 005H; it does not
-call a real email/SMS/courier provider and does not create a `communications` row.
+Success returns the rejection note shape above with `note_status = sent`,
+`communication_status = sent`, `sent_by_user_id`, and `sent_at` populated. The derived
+`communication_status` is `not_sent` while `sent_at` is null. The send endpoint is a
+metadata/status transition only in 005H; it does not call a real email/SMS/courier provider and
+does not create a `communications` row.
 
 Rules:
 - All endpoints require session-bound bearer authentication.
@@ -1888,7 +1891,7 @@ Response data fields:
 }
 ```
 
-## Appraisal-note preparation and Credit Manager review APIs (006E/006E2/006F)
+## Appraisal-note preparation and Credit Manager review APIs (006E/006E2/006F/006F2)
 
 Protected staff endpoints:
 - `POST /api/v1/loan-applications/{loan_application_id}/appraisal-note/`
@@ -1936,22 +1939,52 @@ Rules:
   mitigation notes, repayment-capacity notes, and submit remarks are never copied into evidence
   JSON. Submit audit metadata records only `submission_reason_exists` and its appraisal owner ID;
   revalidation metadata records projection UUIDs and provenance only.
-- Review accepts exactly `decision` and non-blank `review_comments`; `decision` is `reviewed` or
-  `returned`. It requires `credit.appraisal.review`, Credit Manager credit-domain object access,
-  `review_pending` state, `prerequisite_provenance = verified`, and a reviewer other than the
-  preparer. Missing permission and object scope return their existing distinct `403` codes.
+- Review always requires `decision` and non-blank `review_comments`; `decision` is `reviewed`,
+  `returned`, or `rejected`. `reviewed` and `returned` continue to accept exactly those two fields.
+  `rejected` additionally requires the existing 005H rejection-note fields
+  `rejection_reason_category`, non-blank `detailed_reason`, boolean `reapply_allowed_flag`, and
+  `communication_mode`; the workflow fixes `rejection_stage = credit_assessment`. Missing, invalid,
+  blank, or unknown fields return `400 VALIDATION_ERROR` without success evidence.
+- Every review decision requires `credit.appraisal.review`, Credit Manager credit-domain object
+  access, `review_pending` state, `prerequisite_provenance = verified`, and a reviewer other than
+  the preparer. Create/update/submit-review permissions do not imply rejection authority. Missing
+  permission and object scope return their existing distinct `403` codes.
 - `reviewed` transitions to terminal appraisal state `reviewed`. `returned` records the same
   reviewer/time/comment/decision facts and transitions to `draft`, where the maker must revise and
   resubmit before another review. Draft, reviewed, repeated, and other non-pending review attempts
   return `409 INVALID_STATE_TRANSITION`.
+- `rejected` atomically transitions to terminal appraisal state `rejected` and creates exactly one
+  linked existing 005H rejection-note draft. Its response nests the serialized `rejection_note`,
+  including `note_status = draft`, derived `communication_status = not_sent`, null send facts, and
+  the appraisal/application/note IDs. It does not send communication or create a sanction/approval
+  case. Repeated rejection returns `409` and cannot create a duplicate note.
 - Review never reads current eligibility or loan-limit rows. It preserves the appraisal-owned
   projections, recommendation/terms, repayment-capacity and submission reasons, linked risk, and
   TAT facts. Successful decisions atomically write `appraisal.reviewed` or `appraisal.returned`
   audit/workflow evidence containing only IDs, state, decision, actor/time, and request ID; free
   text review comments and appraisal/risk projections are excluded.
+- Rejected review uses the same outer transaction for appraisal state, rejection-note persistence,
+  both metadata evidence streams, and both workflow events. Any note/audit/workflow failure rolls
+  back all writes. `appraisal.rejected` evidence may contain the note ID, category, state, actor,
+  time, and request ID, but excludes `review_comments` and `detailed_reason`.
+
+Rejected review request:
+
+```json
+{
+  "decision": "rejected",
+  "review_comments": "Independent credit review completed.",
+  "rejection_reason_category": "eligibility",
+  "detailed_reason": "Verified appraisal facts do not meet credit criteria.",
+  "reapply_allowed_flag": true,
+  "communication_mode": "email"
+}
+```
 
 Response data includes appraisal/application/prerequisite IDs, exact `eligibility_snapshot` and
 `loan_limit_snapshot`, `prerequisite_provenance = verified|legacy_unverified`, prepared-user
 summary/time, immutable TAT due/status, `repayment_capacity_notes`, all stored recommendation-term
 facts, linked risk assessment, recommendation, review decision/comments/reviewer/time, and
-`appraisal_status = draft|review_pending|reviewed`.
+`appraisal_status = draft|review_pending|reviewed|rejected`. A successful rejected-review response
+also includes the nested existing rejection-note representation and links its UUID to the appraisal
+audit metadata.

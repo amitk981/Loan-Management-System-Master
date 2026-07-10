@@ -151,6 +151,7 @@ class LoanAppraisalNote(models.Model):
     STATUS_DRAFT = "draft"
     STATUS_REVIEW_PENDING = "review_pending"
     STATUS_REVIEWED = "reviewed"
+    STATUS_REJECTED = "rejected"
     TAT_WITHIN = "within_tat"
     TAT_BREACHED = "breached"
 

@@ -7,6 +7,11 @@ from decimal import Decimal, InvalidOperation
 from django.db import transaction
 from django.utils import timezone
 
+from sfpcl_credit.applications.modules.rejection_notes import (
+    RejectionNoteInvalidStateError,
+    RejectionNoteModule,
+    RejectionNoteValidationError,
+)
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.credit.models import LoanAppraisalNote, RiskAssessment
 from sfpcl_credit.credit.modules.common import (
@@ -529,10 +534,21 @@ class AppraisalWorkflow:
             actor_permissions,
         )
         errors = {}
-        unknown = sorted(set(payload_fields or ()) - {"decision", "review_comments"})
+        payload = payload_fields or {}
+        allowed_fields = {"decision", "review_comments"}
+        if decision == "rejected":
+            allowed_fields.update(
+                {
+                    "rejection_reason_category",
+                    "detailed_reason",
+                    "reapply_allowed_flag",
+                    "communication_mode",
+                }
+            )
+        unknown = sorted(set(payload) - allowed_fields)
         errors.update({field: "Unknown field." for field in unknown})
-        if decision not in {"reviewed", "returned"}:
-            errors["decision"] = "Must be reviewed or returned."
+        if decision not in {"reviewed", "returned", "rejected"}:
+            errors["decision"] = "Must be reviewed, returned, or rejected."
         if not isinstance(comments, str) or not comments.strip():
             errors["review_comments"] = "This field must not be blank."
         if errors:
@@ -572,11 +588,37 @@ class AppraisalWorkflow:
 
         from_state = note.appraisal_status
         now = timezone.now()
-        note.appraisal_status = (
-            LoanAppraisalNote.STATUS_REVIEWED
-            if decision == "reviewed"
-            else LoanAppraisalNote.STATUS_DRAFT
-        )
+        rejection_note = None
+        if decision == "rejected":
+            rejection_payload = {
+                field: payload.get(field)
+                for field in (
+                    "rejection_reason_category",
+                    "detailed_reason",
+                    "reapply_allowed_flag",
+                    "communication_mode",
+                )
+                if field in payload
+            }
+            request_meta = normalize_request_meta(request_meta)
+            try:
+                rejection_note = RejectionNoteModule().create_credit_draft(
+                    application=note.loan_application,
+                    payload=rejection_payload,
+                    actor=actor,
+                    request_ip=request_meta.ip_address,
+                    request_user_agent=request_meta.user_agent,
+                    request_id=request_meta.request_id,
+                )
+            except RejectionNoteValidationError as exc:
+                raise CreditModuleValidationError(exc.field_errors) from exc
+            except RejectionNoteInvalidStateError as exc:
+                raise CreditModuleInvalidStateError(str(exc)) from exc
+            note.appraisal_status = LoanAppraisalNote.STATUS_REJECTED
+        elif decision == "reviewed":
+            note.appraisal_status = LoanAppraisalNote.STATUS_REVIEWED
+        else:
+            note.appraisal_status = LoanAppraisalNote.STATUS_DRAFT
         note.reviewed_by_user = actor
         note.reviewed_at = now
         note.review_comments = comments.strip()
@@ -606,6 +648,19 @@ class AppraisalWorkflow:
                 "reviewed_by_user_id": str(actor.pk),
                 "reviewed_at": timezone.localtime(now).isoformat(),
                 "request_id": request_meta.request_id,
+                **(
+                    {
+                        "rejection_note_id": rejection_note.snapshot[
+                            "rejection_note_id"
+                        ],
+                        "rejection_reason_category": (
+                            rejection_note.snapshot["rejection_reason_category"]
+                        ),
+                        "rejection_note_status": rejection_note.snapshot["note_status"],
+                    }
+                    if rejection_note is not None
+                    else {}
+                ),
             },
             ip_address=request_meta.ip_address,
             user_agent=request_meta.user_agent,
@@ -620,7 +675,10 @@ class AppraisalWorkflow:
             trigger_reason=f"Appraisal review decision recorded as {decision}.",
             action_code=action,
         )
-        return AppraisalNoteResult(snapshot=appraisal_note_snapshot(note))
+        snapshot = appraisal_note_snapshot(note)
+        if rejection_note is not None:
+            snapshot["rejection_note"] = rejection_note.snapshot
+        return AppraisalNoteResult(snapshot=snapshot)
 
     def submit_to_sanction(self, *, actor, application_id):
         raise NotImplementedError("Sanction submission is owned by slice 006G.")

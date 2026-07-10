@@ -949,6 +949,57 @@ def create_rejection_note(
     invalid_state_message = rejection_note_create_invalid_state_message(application)
     if invalid_state_message:
         raise LoanApplicationInvalidStateError(invalid_state_message)
+    return _create_rejection_note_draft(
+        application,
+        payload,
+        actor,
+        request_ip,
+        request_user_agent,
+        request_id,
+    )
+
+
+@transaction.atomic
+def create_credit_rejection_note(
+    application,
+    payload,
+    actor,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+):
+    """Create the 005H draft for a terminal credit-stage rejection."""
+    if "reapply_allowed_flag" not in payload:
+        raise LoanApplicationValidationError(
+            {"reapply_allowed_flag": "This field is required."}
+        )
+    application = (
+        LoanApplication.objects.select_for_update()
+        .select_related("member", "received_by_user")
+        .get(loan_application_id=application.loan_application_id)
+    )
+    if RejectionNote.objects.filter(loan_application=application).exists():
+        raise LoanApplicationInvalidStateError(
+            "Application already has a rejection note."
+        )
+    return _create_rejection_note_draft(
+        application,
+        {**payload, "rejection_stage": "credit_assessment"},
+        actor,
+        request_ip,
+        request_user_agent,
+        request_id,
+    )
+
+
+def _create_rejection_note_draft(
+    application,
+    payload,
+    actor,
+    request_ip,
+    request_user_agent,
+    request_id,
+):
     cleaned = _clean_rejection_note_payload(payload)
     now = timezone.now()
     rejection_note = RejectionNote.objects.create(
@@ -1214,6 +1265,9 @@ def serialize_rejection_note(rejection_note):
         "detailed_reason": rejection_note.detailed_reason,
         "reapply_allowed_flag": rejection_note.reapply_allowed_flag,
         "note_status": rejection_note.note_status,
+        "communication_status": (
+            "sent" if rejection_note.sent_at is not None else "not_sent"
+        ),
         "prepared_by_user_id": str(rejection_note.prepared_by_user_id),
         "approved_by_user_id": str(rejection_note.approved_by_user_id)
         if rejection_note.approved_by_user_id

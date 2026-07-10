@@ -312,6 +312,23 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - Successful decisions write `appraisal.reviewed`/`appraisal.returned` audit and workflow evidence;
   free-text review comments and financial/risk projections remain only on the appraisal row.
 
+## 006F2 Credit Manager Appraisal Rejection
+- `AppraisalWorkflow.review(...)` accepts terminal `rejected` only from `review_pending` under the
+  same review permission, Credit Manager object scope, maker-checker, verified-provenance, and row
+  lock as 006F. Existing `reviewed` and `returned` behavior is unchanged.
+- The rejected request adds the source 005H note fields `rejection_reason_category`,
+  `detailed_reason`, `reapply_allowed_flag`, and `communication_mode`; the workflow-owned stage is
+  fixed to `credit_assessment`. Missing/invalid/unknown facts write nothing.
+- Rejection atomically stores reviewer/time/comments/decision, sets terminal appraisal state
+  `rejected`, and calls the public applications rejection-note seam to create exactly one existing
+  draft with derived `communication_status = not_sent`. It neither sends communication nor creates
+  a sanction case.
+- Appraisal evidence records only IDs/category/state/actor/time/request ID. Review comments and the
+  detailed rejection reason are excluded; rejection-note validation/serialization/audit/workflow
+  remain owned and reused from 005H. Any note or evidence failure rolls back the whole decision.
+- Rejection consumes no current eligibility/loan-limit model. The frozen projections,
+  recommendation/terms, repayment/submission facts, linked risk assessment, and TAT remain unchanged.
+
 ## Architecture Review 2026-07-10 04:18 - 006A Spot Check
 - 006A implemented only the active-member portion of the eligibility assessment contract and left
   default, document, terms, purpose, and nominee checks pending for 006B as planned.

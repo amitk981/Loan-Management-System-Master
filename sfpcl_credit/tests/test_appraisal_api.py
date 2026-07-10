@@ -496,6 +496,275 @@ class AppraisalApiTests(TestCase):
         self.assertEqual(workflow.from_state, "review_pending")
         self.assertNotIn("Sanction Committee", workflow.trigger_reason)
 
+    def test_credit_manager_rejects_appraisal_and_creates_one_unsent_rejection_note(self):
+        created = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data=self._payload(),
+            content_type="application/json",
+            headers=self._headers(),
+        ).json()["data"]
+        self.client.post(
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/submit-for-review/",
+            data={"remarks": "Ready for a terminal credit decision."},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        reviewer, review_headers = self._credit_manager_headers()
+
+        response = self.client.post(
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/review/",
+            data={
+                "decision": "rejected",
+                "review_comments": "Independent credit review completed.",
+                "rejection_reason_category": "eligibility",
+                "detailed_reason": "Verified appraisal facts do not meet credit criteria.",
+                "reapply_allowed_flag": True,
+                "communication_mode": "email",
+            },
+            content_type="application/json",
+            headers={**review_headers, "X-Request-ID": "reject-tracer-006f2"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        rejected = response.json()["data"]
+        self.assertEqual(rejected["appraisal_status"], "rejected")
+        self.assertEqual(rejected["decision"], "rejected")
+        rejection_note = rejected["rejection_note"]
+        self.assertEqual(rejection_note["loan_application_id"], str(self.application.pk))
+        self.assertEqual(rejection_note["rejection_stage"], "credit_assessment")
+        self.assertEqual(rejection_note["rejection_reason_category"], "eligibility")
+        self.assertEqual(rejection_note["note_status"], "draft")
+        self.assertEqual(rejection_note["communication_status"], "not_sent")
+        self.assertEqual(rejection_note["prepared_by_user_id"], str(reviewer.pk))
+        self.assertIsNone(rejection_note["sent_at"])
+
+        rejection_note_model = apps.get_model("applications", "RejectionNote")
+        self.assertEqual(rejection_note_model.objects.count(), 1)
+        self.assertEqual(
+            str(rejection_note_model.objects.get().rejection_note_id),
+            rejection_note["rejection_note_id"],
+        )
+        appraisal_audit = AuditLog.objects.get(action="appraisal.rejected")
+        self.assertEqual(
+            appraisal_audit.new_value_json["rejection_note_id"],
+            rejection_note["rejection_note_id"],
+        )
+        self.assertEqual(appraisal_audit.new_value_json["request_id"], "reject-tracer-006f2")
+        self.assertNotIn("review_comments", appraisal_audit.new_value_json)
+        self.assertNotIn("detailed_reason", appraisal_audit.new_value_json)
+        self.assertNotIn("credit criteria", str(appraisal_audit.new_value_json))
+        self.assertEqual(
+            AuditLog.objects.filter(action="applications.rejection_note.created").count(),
+            1,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                workflow_name="appraisal_note",
+                from_state="review_pending",
+                to_state="rejected",
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                entity_type="rejection_note",
+                to_state="draft",
+            ).count(),
+            1,
+        )
+        repeated = self.client.post(
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/review/",
+            data={
+                "decision": "rejected",
+                "review_comments": "Attempted repeated rejection.",
+                "rejection_reason_category": "eligibility",
+                "detailed_reason": "This must not create a second note.",
+                "reapply_allowed_flag": True,
+                "communication_mode": "email",
+            },
+            content_type="application/json",
+            headers=review_headers,
+        )
+        self.assertEqual(repeated.status_code, 409)
+        self.assertEqual(rejection_note_model.objects.count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="appraisal.rejected").count(), 1)
+
+    def test_rejected_review_requires_explicit_source_rejection_note_fields(self):
+        created = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data=self._payload(),
+            content_type="application/json",
+            headers=self._headers(),
+        ).json()["data"]
+        self.client.post(
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/submit-for-review/",
+            data={"remarks": "Ready for rejection validation."},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        _, review_headers = self._credit_manager_headers()
+        workflow_count = WorkflowEvent.objects.count()
+
+        response = self.client.post(
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/review/",
+            data={
+                "decision": "rejected",
+                "review_comments": "Independent review complete.",
+                "rejection_reason_category": "eligibility",
+                "detailed_reason": "Credit criteria were not met.",
+                "communication_mode": "email",
+            },
+            content_type="application/json",
+            headers=review_headers,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"]["code"], "VALIDATION_ERROR")
+        self.assertIn(
+            "reapply_allowed_flag",
+            response.json()["error"]["field_errors"],
+        )
+        note = apps.get_model("credit", "LoanAppraisalNote").objects.get()
+        self.assertEqual(note.appraisal_status, "review_pending")
+        self.assertIsNone(note.reviewed_by_user_id)
+        self.assertEqual(apps.get_model("applications", "RejectionNote").objects.count(), 0)
+        self.assertFalse(AuditLog.objects.filter(action="appraisal.rejected").exists())
+        self.assertEqual(WorkflowEvent.objects.count(), workflow_count)
+
+        invalid_payloads = (
+            (
+                {
+                    "decision": "rejected",
+                    "review_comments": "Independent review complete.",
+                    "rejection_reason_category": "unknown_reason",
+                    "detailed_reason": "Credit criteria were not met.",
+                    "reapply_allowed_flag": True,
+                    "communication_mode": "email",
+                },
+                "rejection_reason_category",
+            ),
+            (
+                {
+                    "decision": "rejected",
+                    "review_comments": "Independent review complete.",
+                    "rejection_reason_category": "eligibility",
+                    "detailed_reason": "   ",
+                    "reapply_allowed_flag": True,
+                    "communication_mode": "email",
+                },
+                "detailed_reason",
+            ),
+            (
+                {
+                    "decision": "rejected",
+                    "review_comments": "Independent review complete.",
+                    "rejection_reason_category": "eligibility",
+                    "detailed_reason": "Credit criteria were not met.",
+                    "reapply_allowed_flag": True,
+                    "communication_mode": "email",
+                    "rejection_stage": "sanction_committee",
+                },
+                "rejection_stage",
+            ),
+        )
+        for payload, expected_field in invalid_payloads:
+            with self.subTest(expected_field=expected_field):
+                invalid = self.client.post(
+                    f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/review/",
+                    data=payload,
+                    content_type="application/json",
+                    headers=review_headers,
+                )
+                self.assertEqual(invalid.status_code, 400)
+                self.assertIn(expected_field, invalid.json()["error"]["field_errors"])
+        self.assertEqual(apps.get_model("applications", "RejectionNote").objects.count(), 0)
+        self.assertEqual(WorkflowEvent.objects.count(), workflow_count)
+
+    def test_rejection_failures_roll_back_appraisal_note_and_all_success_evidence(self):
+        created = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data=self._payload(),
+            content_type="application/json",
+            headers=self._headers(),
+        ).json()["data"]
+        self.client.post(
+            f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/submit-for-review/",
+            data={"remarks": "Frozen facts are ready for rejection."},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        _, review_headers = self._credit_manager_headers()
+        review_url = f"/api/v1/appraisal-notes/{created['loan_appraisal_note_id']}/review/"
+        payload = {
+            "decision": "rejected",
+            "review_comments": "Independent review complete.",
+            "rejection_reason_category": "limit_issue",
+            "detailed_reason": "The requested amount cannot be supported.",
+            "reapply_allowed_flag": True,
+            "communication_mode": "email",
+        }
+        note = apps.get_model("credit", "LoanAppraisalNote").objects.get()
+        preserved = {
+            "eligibility": note.eligibility_snapshot_json,
+            "loan_limit": note.loan_limit_snapshot_json,
+            "repayment": note.repayment_capacity_notes,
+            "remarks": note.submission_remarks,
+            "recommendation": note.recommendation,
+            "tat_due_at": note.tat_due_at,
+            "risk": note.risk_assessment.overall_risk_rating,
+        }
+
+        with patch(
+            "sfpcl_credit.applications.services._audit_rejection_note",
+            side_effect=RuntimeError("rejection audit unavailable"),
+        ):
+            with self.assertRaisesMessage(RuntimeError, "rejection audit unavailable"):
+                self.client.post(
+                    review_url,
+                    data=payload,
+                    content_type="application/json",
+                    headers=review_headers,
+                )
+        note.refresh_from_db()
+        self.assertEqual(note.appraisal_status, "review_pending")
+        self.assertIsNone(note.reviewed_by_user_id)
+        self.assertEqual(apps.get_model("applications", "RejectionNote").objects.count(), 0)
+        self.assertFalse(AuditLog.objects.filter(action="appraisal.rejected").exists())
+
+        with patch(
+            "sfpcl_credit.credit.modules.appraisal_workflow.record_workflow_event",
+            side_effect=RuntimeError("appraisal workflow unavailable"),
+        ):
+            with self.assertRaisesMessage(RuntimeError, "appraisal workflow unavailable"):
+                self.client.post(
+                    review_url,
+                    data=payload,
+                    content_type="application/json",
+                    headers=review_headers,
+                )
+        note.refresh_from_db()
+        self.assertEqual(note.appraisal_status, "review_pending")
+        self.assertEqual(apps.get_model("applications", "RejectionNote").objects.count(), 0)
+        self.assertFalse(AuditLog.objects.filter(action="appraisal.rejected").exists())
+        self.assertFalse(
+            AuditLog.objects.filter(action="applications.rejection_note.created").exists()
+        )
+
+        rejected = self.client.post(
+            review_url,
+            data=payload,
+            content_type="application/json",
+            headers=review_headers,
+        ).json()["data"]
+        self.assertEqual(rejected["eligibility_snapshot"], preserved["eligibility"])
+        self.assertEqual(rejected["loan_limit_snapshot"], preserved["loan_limit"])
+        note.refresh_from_db()
+        self.assertEqual(note.repayment_capacity_notes, preserved["repayment"])
+        self.assertEqual(note.submission_remarks, preserved["remarks"])
+        self.assertEqual(note.recommendation, preserved["recommendation"])
+        self.assertEqual(note.tat_due_at, preserved["tat_due_at"])
+        self.assertEqual(note.risk_assessment.overall_risk_rating, preserved["risk"])
+
     def test_returned_appraisal_can_be_revised_resubmitted_and_reviewed(self):
         created = self.client.post(
             f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
@@ -600,7 +869,14 @@ class AppraisalApiTests(TestCase):
         workflow_count_before_denials = WorkflowEvent.objects.filter(
             workflow_name="appraisal_note"
         ).count()
-        payload = {"decision": "reviewed", "review_comments": "Independent review."}
+        payload = {
+            "decision": "rejected",
+            "review_comments": "Independent review.",
+            "rejection_reason_category": "eligibility",
+            "detailed_reason": "The appraisal does not meet credit criteria.",
+            "reapply_allowed_flag": True,
+            "communication_mode": "email",
+        }
         review_permission = self._permission(
             "credit.appraisal.review",
             "Review appraisal",
@@ -655,9 +931,14 @@ class AppraisalApiTests(TestCase):
         self.assertEqual(note.appraisal_status, "review_pending")
         self.assertFalse(
             AuditLog.objects.filter(
-                action__in=("appraisal.reviewed", "appraisal.returned")
+                action__in=(
+                    "appraisal.reviewed",
+                    "appraisal.returned",
+                    "appraisal.rejected",
+                )
             ).exists()
         )
+        self.assertEqual(apps.get_model("applications", "RejectionNote").objects.count(), 0)
         self.assertEqual(
             WorkflowEvent.objects.filter(workflow_name="appraisal_note").count(),
             workflow_count_before_denials,
