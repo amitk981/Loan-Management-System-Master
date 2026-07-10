@@ -7,6 +7,29 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - `docs/source/functional-spec.md` BR-004 through BR-018 and M04-FR-001 through M04-FR-011
 - `docs/source/auth-permissions.md` action and endpoint maps for eligibility/loan-limit actions
 
+## Architecture Review 2026-07-10 17:33 - 005I5/006D2B/006D3/006E
+- 006D2B's calculation module, locked mutable inputs, canonical public/audit projection, resolver
+  direction, and rollback/failed-rerun assertions are substantive. 006D3's forward/reverse
+  migration proof confirms state-only ownership without SQL or lost UUID/FK/evidence references.
+- 006D2B's lock regression proves calls, not competing-transaction outcomes, and its AST check can
+  miss package-level aliased concrete-model imports. Corrective 006D2C adds the codebase-design
+  §26.3 concurrency proof and robust positive/negative import fixtures without changing behavior.
+- 006E stores only eligibility/loan-limit UUIDs while explicit assessment reruns preserve those
+  UUIDs and replace current facts. The appraisal therefore cannot prove which cultivated acreage,
+  policy, financial limits, eligibility result, or exception flag supported its recommendation.
+  ADR-0003 and corrective 006E2 require appraisal-owned immutable public projection snapshots.
+- Functional §9.8/M04-FR-009 requires `repayment_capacity_notes`; 006E has risk fields but no such
+  required field. API §24.3 remarks are validated and then discarded even though API §3 requires a
+  reason for sensitive actions. 006E2 adds both before 006F.
+- M04-FR-001/M04-FR-002 task creation and Deputy Manager – Finance assignment are not implemented
+  by 006E. A-053 records the existing owner-planned 012EA task engine as their explicit owner; its
+  slice now names the appraisal generation/closure/reopen rules and backfill test.
+- M04-FR-011 Credit Manager rejection is not the same as 006F's returned-for-revision path. New
+  corrective 006F2 owns terminal appraisal rejection plus one unsent 005H rejection-note draft;
+  006G now follows that correction.
+- M04-FR-003 remains implemented using application `created_at` as the available receipt proxy;
+  A-054 records the unresolved receipt-versus-completeness-confirmation source ambiguity.
+
 ## Eligibility Assessment Contract
 - Source endpoint:
   `POST /api/v1/loan-applications/{loan_application_id}/eligibility-assessment/run/`.

@@ -2,6 +2,97 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-10 17:33 - Architecture Review 2026-07-10_173305_architecture_review
+
+Reviewed completed product slices since architecture-review commit `18d403e`:
+- `005I5-application-ownership-and-nominee-authority-hardening` (`8016ca1`)
+- `006D2B-credit-loan-limit-calculator-and-appraisal-seam` (`95f9bd4`)
+- `006D3-credit-assessment-model-ownership-state-migration` (`007777b`)
+- `006E-appraisal-note-create-edit-submit` (`14c1978`)
+
+The review checked `git diff 18d403e...HEAD`, all four slice/run packets, implementation/tests,
+Epic 005/006 digests, and the cited primary-source sections for disputed requirements.
+
+### Finding 1 - High - Appraisal UUIDs do not freeze the financial decision basis
+
+006E records only `eligibility_assessment_id_snapshot` and `loan_limit_assessment_id_snapshot`
+plus caller-authored summaries. The reviewed 006D contract deliberately permits an explicit rerun
+to replace the current assessment while retaining the same UUID. After such a rerun, an appraisal
+cannot prove the cultivated acreage, policy version, share/land/final limits, eligibility checks,
+or exception flag used for its recommendation. PATCH also rereads the current loan-limit row, so a
+later rerun can change an existing draft's amount/exception boundary.
+
+This fails API §3's snapshot-decision principle and 006E's handoff to consume stored 006B/006D
+facts. Corrective action: accepted ADR-0003 and created High-risk `006E2-appraisal-source-contract-
+and-snapshot-hardening`. It freezes canonical redacted projections on the appraisal, preserves IDs
+only as provenance, and defines safe handling for legacy rows whose history is ambiguous.
+
+### Finding 2 - High - Required appraisal reasons/repayment facts are accepted incompletely
+
+Functional §9.8 and M04-FR-009 require repayment-capacity notes; 006E stores risk ratings and
+mitigation but no required repayment-capacity field. The §24.3 submit endpoint also requires
+`remarks`, yet the workflow validates and discards them: neither appraisal-owned state nor an
+append-only submission record retains the compliance reason. The slice correctly keeps free text
+out of audit JSON, but metadata-only audit does not justify losing the source request fact.
+
+Corrective action: 006E2 adds exact `repayment_capacity_notes`, persists submission remarks outside
+audit JSON, and adds rollback/redaction tests before Credit Manager review. M04-FR-008's amount,
+tenure, interest/rate basis, and security facts remain implemented; no undocumented repayment
+formula was invented.
+
+### Finding 3 - High / owned deferral - Appraisal task, assignment, and rejection requirements lack current behavior
+
+M04-FR-001/M04-FR-002 require one appraisal task after application-number generation assigned to
+Deputy Manager – Finance. 006E creates an appraisal only when a caller POSTs and records that caller
+as preparer; it does not persist assignment. The repository already intentionally deferred the
+generic task engine to 012EA, so this review sharpened 012EA with the exact appraisal create,
+role-assignment, close/reopen, idempotency, and backfill contract and recorded A-053. `prepared_by`
+must never be relabelled as assignment.
+
+M04-FR-011 separately requires Credit Manager rejection and a Rejection Note. 006F owns reviewed
+and returned-for-revision only, while 006G owns sanction submission. Created High-risk 006F2 for a
+terminal rejected decision that atomically creates one unsent 005H rejection-note draft; 006G now
+depends on that correction.
+
+### Finding 4 - Medium - Financial concurrency and static-boundary tests are incomplete
+
+006D2B substantially improves its AST regression, but the appraisal concrete-model check examines
+only `from sfpcl_credit.credit.models import ...`. A package import such as
+`import sfpcl_credit.credit.models as credit_models` can bypass it, and the public calculator check
+uses `issubset`, so removing the required import entirely satisfies the assertion. This does not
+currently mask a production bypass, but it does not fully enforce the slice's promised boundary.
+Its lock test also mocks each manager and asserts `select_for_update` was called; that proves the
+requested API, not the competing-transaction outcome required for financial modules by
+codebase-design §26.3.
+
+Corrective action: created High-risk `006D2C-loan-limit-concurrency-and-boundary-regression` before
+006E2. It adds an independent-connection transactional outcome proof and rejects both import forms/
+aliases while avoiding brittle exact-full-method-set assertions.
+
+### Finding 5 - Pass - The reviewed corrections have substantive tests
+
+005I5 proves neutral owner projection, shared adult-nominee outcomes, invalid mutation
+preservation, safe portal facts, and production-controller browser paths (browser execution remains
+the recorded A-013 optional-gate limitation). 006D2B covers calculation branches, Decimal acreage,
+locked source selection, canonical public/audit projection, rollback, and failed-rerun preservation.
+006D3 proves forward/reverse state ownership with unchanged rows/UUID/FKs/evidence. 006E covers
+strict create/PATCH/submit validation, permissions/object scope, TAT boundaries, prerequisite
+gates, and create rollback; the gaps above are specific source/history omissions, not padding.
+
+### Finding 6 - Watch - TAT anchor and risk cardinality remain explicit source tensions
+
+006E uses `application.created_at + 2 days`, matching data-model §14.4's receipt wording and the
+reviewed slice, while M04-FR-003 also names completeness confirmation and the model has no such
+timestamp. A-054 retains `created_at` as the available receipt proxy until governance chooses an
+anchor; historical due dates must not be silently rewritten. Risk is one-to-one in 006E although
+§14.3 expresses a plain application FK; no current workflow requires multiple concurrent risk rows,
+so this is watched rather than changed before review.
+
+Functional-ID spot check: neither parent epic is Complete. M03-FR-003/M03-FR-009 behavior reviewed
+in 005I5 is reachable. M04-FR-003-007 are implemented; M04-FR-008 is present through recommendation
+amount/tenure/interest/security; M04-FR-009 is partial until 006E2; M04-FR-010 remains in 006F/006G;
+M04-FR-011 is now owned by 006F2; and M04-FR-001/002 are explicitly deferred to 012EA by A-053.
+
 ## 2026-07-10 15:46 - Architecture Review 2026-07-10_154638_architecture_review
 
 Reviewed completed product slices since architecture-review commit `c25fcfc`:

@@ -1,0 +1,14 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006F-credit-manager-review.md
+ M docs/slices/006G-submit-to-sanction.md
+ M docs/slices/012EA-workflow-task-engine-and-task-inbox-apis.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+?? .ralph/runs/2026-07-10_173305_architecture_review/
+?? docs/adr/ADR-0003-freeze-appraisal-prerequisite-projections.md
+?? docs/slices/006D2C-loan-limit-concurrency-and-boundary-regression.md
+?? docs/slices/006E2-appraisal-source-contract-and-snapshot-hardening.md
+?? docs/slices/006F2-credit-manager-appraisal-rejection.md

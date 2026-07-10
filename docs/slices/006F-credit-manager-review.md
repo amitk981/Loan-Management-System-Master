@@ -16,7 +16,7 @@ in 006G.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 006E
+- 006E2
 
 ## Prior Slice Handoff
 - 006E owns one `credit.models.LoanAppraisalNote` and linked `RiskAssessment` per application,
@@ -31,6 +31,9 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - Credit assessment persistence is credit-owned after 006D3, but concrete eligibility/loan-limit
   models remain implementation details. Review must operate on 006E's appraisal interface/state
   and must not import or mutate either assessment model.
+- 006E2 freezes the exact prerequisite projections, adds required repayment-capacity notes, and
+  persists the submit-for-review reason. Review must require verified snapshot provenance and must
+  not reread current assessment rows, even if they were rerun under the same UUID.
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11
@@ -61,6 +64,8 @@ None for this slice, except updating frontend documentation or fixtures if requi
   `returned`; do not lose the return reason by treating it as an unaudited edit.
 - Keep sanction submission/approval cases, exception route creation, rejection-note generation,
   frontend wiring, and approval-matrix calculations out of scope.
+- A terminal `rejected` appraisal plus rejection-note creation is explicitly owned by 006F2 so
+  M04-FR-011 is not confused with 006F's returned-for-revision path.
 
 ## Database/Model Impact
 Use 006E's nullable `reviewed_by_user`, `reviewed_at`, and appraisal status fields. Add only the
@@ -107,7 +112,8 @@ review success evidence.
 - Maker cannot review their own appraisal; create/update/submit-review permission alone cannot
   review; missing permission and object-scope denial create no success evidence.
 - Review leaves the stored 006B eligibility, 006D loan-limit snapshot, risk assessment, TAT due
-  time, and recommendation unchanged.
+  time, repayment-capacity notes, submission reason, and recommendation unchanged. The test must
+  rerun a current assessment under the same UUID and prove review still uses 006E2's frozen facts.
 
 ## Visual Acceptance Criteria
 None.
