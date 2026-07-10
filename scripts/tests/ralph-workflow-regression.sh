@@ -44,6 +44,37 @@ if postgresql_acceptance_log_passes "$fixture_dir/fail.log"; then
   fail "failed PostgreSQL evidence was accepted"
 fi
 
+declare -F postgresql_environment_probe >/dev/null \
+  || fail "missing reusable PostgreSQL environment probe"
+probe_worktree="$fixture_dir/probe-worktree"
+probe_python="$fixture_dir/probe-python"
+mkdir -p "$probe_worktree"
+cat > "$probe_python" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "$PWD" == "$EXPECTED_PROBE_WORKTREE" ]]
+[[ "$DJANGO_SETTINGS_MODULE" == "sfpcl_credit.config.postgres_test_settings" ]]
+probe_source="$(cat)"
+grep -qF 'connection._nodb_cursor()' <<< "$probe_source"
+cat <<'OUTPUT'
+- Engine: django.db.backends.postgresql
+- Database: sfpcl_credit
+- Test database: test_sfpcl_credit
+- Host: (local Unix socket)
+- Port: 5432
+- PostgreSQL maintenance database: postgres
+- PostgreSQL server version: 14.20
+OUTPUT
+EOF
+chmod +x "$probe_python"
+export EXPECTED_PROBE_WORKTREE="$probe_worktree"
+probe_output="$(postgresql_environment_probe "$probe_python" "$probe_worktree")" \
+  || fail "PostgreSQL environment probe did not execute from the repository import root"
+grep -qF -- '- PostgreSQL maintenance database: postgres' <<< "$probe_output" \
+  || fail "PostgreSQL environment probe did not use the maintenance connection"
+grep -qF -- '- PostgreSQL server version: 14.20' <<< "$probe_output" \
+  || fail "PostgreSQL environment probe did not record the live server version"
+
 cat > "$fixture_dir/future-postgres-slice.md" <<'EOF'
 ## Status
 Not Started

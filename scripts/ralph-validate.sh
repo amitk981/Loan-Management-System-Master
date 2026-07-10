@@ -149,27 +149,7 @@ run_postgresql_acceptance_once() {
 
 write_postgresql_environment() {
   local file="$run_dir/evidence/postgresql-environment-validation.md"
-  if (
-    cd "$worktree_dir/$backend_dir"
-    DJANGO_SETTINGS_MODULE=sfpcl_credit.config.postgres_test_settings "$venv_python" - <<'PY'
-import django
-
-django.setup()
-from django.db import connection
-
-config = connection.settings_dict
-print(f"- Engine: {config.get('ENGINE', '')}")
-print(f"- Database: {config.get('NAME', '')}")
-print(f"- Test database: {config.get('TEST', {}).get('NAME', '')}")
-print(f"- Host: {config.get('HOST') or '(local Unix socket)'}")
-print(f"- Port: {config.get('PORT') or '5432'}")
-cursor = connection.cursor()
-cursor.execute("SHOW server_version")
-print(f"- PostgreSQL server version: {cursor.fetchone()[0]}")
-cursor.close()
-connection.close()
-PY
-  ) > "$file.tmp" 2>&1; then
+  if postgresql_environment_probe "$venv_python" "$worktree_dir" > "$file.tmp" 2>&1; then
     {
       echo "# PostgreSQL Validation Environment"
       echo
