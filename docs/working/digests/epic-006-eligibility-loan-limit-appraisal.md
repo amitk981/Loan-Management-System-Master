@@ -151,6 +151,25 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - Successful calculation stores the agreed cultivated acreage in `loan_limit_assessments.land_area_acres`
   and keeps the existing source-backed scale-of-finance multiplication and lower-of-two formula.
 
+## 006D2A Credit Eligibility And Configuration Seams
+- Eligibility read/run behavior now lives behind
+  `credit.modules.eligibility_assessment.EligibilityAssessmentModule`; application views only
+  authenticate/parse, call `get` or `run`, and translate the module result/errors.
+- The module owns permission/object access, application and assessment locking, state validation,
+  active/default/document/terms/purpose/nominee evaluation, one-to-one rerun persistence,
+  metadata-only audit, workflow evidence, and the public eligibility snapshot.
+- Eligible, ineligible, and pending-manual-evidence paths retain the 006A/006B contracts. A forced
+  audit failure rolls back the assessment and workflow evidence in the same transaction.
+- Effective Board-approved loan-policy selection/validation now lives only in
+  `configurations.modules.configuration_resolver.resolve_effective_loan_policy`. The still-legacy
+  loan-limit implementation calls it with row locking and translates its shared validation error;
+  006D2B will remove that compatibility translation when it extracts the calculator.
+- Application services no longer expose eligibility lookup/run/serialization/rule/audit helpers or
+  a private policy resolver. Models remain in `applications.models` and existing tables/UUIDs are
+  unchanged under ADR-0002; there is no migration.
+- HTTP endpoints, response/error envelopes, permissions, object scope, explicit rerun semantics,
+  loan-limit formula/snapshot behavior, frontend behavior, and API contracts are unchanged.
+
 ## 006E-006F Appraisal And Credit Review Source Extract
 - `api-contracts.md` §24 defines appraisal create/read, submit-for-review, Credit Manager review,
   and submit-to-sanction as separate actions. 006E owns create/read/edit/submit-for-review; 006F

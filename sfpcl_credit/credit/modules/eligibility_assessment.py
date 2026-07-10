@@ -1,0 +1,315 @@
+from dataclasses import dataclass
+
+from django.db import transaction
+from django.utils import timezone
+
+from sfpcl_credit.applications.models import EligibilityAssessment, LoanApplication
+from sfpcl_credit.applications.services import build_completeness_workbench
+from sfpcl_credit.credit.modules.common import (
+    APPLICATION_READ_PERMISSION,
+    ELIGIBILITY_RUN_PERMISSION,
+    CreditModuleInvalidStateError,
+    CreditModuleNotFound,
+    get_application_or_raise,
+    normalize_request_meta,
+    require_application_access,
+    require_permission,
+)
+from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.workflows.events import record_workflow_event
+
+
+ELIGIBILITY_ASSESSED_AUDIT_ACTION = "eligibility.assessed"
+
+
+@dataclass(frozen=True)
+class EligibilityAssessmentResult:
+    assessment: EligibilityAssessment
+    snapshot: dict
+
+
+class EligibilityAssessmentModule:
+    def get(self, *, actor, application_id, actor_permissions=None):
+        permissions = require_permission(
+            actor,
+            APPLICATION_READ_PERMISSION,
+            "You do not have permission to read loan applications.",
+            actor_permissions,
+        )
+        application = get_application_or_raise(application_id)
+        require_application_access(
+            application,
+            actor,
+            APPLICATION_READ_PERMISSION,
+            permissions,
+        )
+        assessment = (
+            EligibilityAssessment.objects.select_related("loan_application", "assessed_by_user")
+            .filter(loan_application=application)
+            .first()
+        )
+        if assessment is None:
+            raise CreditModuleNotFound("Eligibility assessment was not found.")
+        return EligibilityAssessmentResult(
+            assessment=assessment,
+            snapshot=eligibility_assessment_snapshot(assessment),
+        )
+
+    @transaction.atomic
+    def run(self, *, actor, application_id, request_meta=None, actor_permissions=None):
+        permissions = require_permission(
+            actor,
+            ELIGIBILITY_RUN_PERMISSION,
+            "You do not have permission to run eligibility assessments.",
+            actor_permissions,
+        )
+        request_meta = normalize_request_meta(request_meta)
+        application = (
+            LoanApplication.objects.select_for_update()
+            .select_related("member", "nominee", "created_by_user", "received_by_user")
+            .filter(loan_application_id=application_id)
+            .first()
+        )
+        if application is None:
+            raise CreditModuleNotFound("Loan application was not found.")
+        require_application_access(
+            application,
+            actor,
+            ELIGIBILITY_RUN_PERMISSION,
+            permissions,
+        )
+        invalid_state_message = eligibility_run_invalid_state_message(application)
+        if invalid_state_message:
+            raise CreditModuleInvalidStateError(invalid_state_message)
+
+        active_result = _active_member_check(application.member)
+        source_checks = _source_backed_eligibility_checks(application)
+        assessment = (
+            EligibilityAssessment.objects.select_for_update()
+            .filter(loan_application=application)
+            .first()
+        )
+        old_value_json = (
+            eligibility_assessment_snapshot(assessment) if assessment is not None else None
+        )
+        if assessment is None:
+            assessment = EligibilityAssessment(loan_application=application)
+        assessment.member_active_check = active_result["member_active_check"]
+        assessment.default_check = source_checks["default_check"]
+        assessment.document_check = source_checks["document_check"]
+        assessment.terms_acceptance_check = source_checks["terms_acceptance_check"]
+        assessment.purpose_check = source_checks["purpose_check"]
+        assessment.nominee_check = source_checks["nominee_check"]
+        assessment.overall_result = _eligibility_overall_result(active_result, source_checks)
+        assessment.assessment_notes = _eligibility_assessment_notes(
+            active_result,
+            source_checks,
+            assessment.overall_result,
+        )
+        assessment.assessed_by_user = actor
+        assessment.assessed_at = timezone.now()
+        assessment.save()
+        _audit_eligibility_assessment(assessment, actor, old_value_json, request_meta)
+        record_workflow_event(
+            actor=actor,
+            workflow_name="eligibility_assessment",
+            entity_type="loan_application",
+            entity_id=application.loan_application_id,
+            from_state=application.current_stage,
+            to_state="eligibility_assessed",
+            trigger_reason="Eligibility assessment active-member check completed.",
+            action_code=ELIGIBILITY_ASSESSED_AUDIT_ACTION,
+        )
+        return EligibilityAssessmentResult(
+            assessment=assessment,
+            snapshot=eligibility_assessment_snapshot(assessment),
+        )
+
+
+def eligibility_run_invalid_state_message(application):
+    if not (application.application_reference_number or "").startswith("LO"):
+        return "Eligibility assessment requires a formal LO application reference."
+    if application.application_status != LoanApplication.STATUS_REFERENCE_GENERATED:
+        return (
+            "Invalid state transition for loan_application: eligibility_assessment.run "
+            f"is not allowed from {application.application_status}."
+        )
+    if application.completeness_status != LoanApplication.COMPLETENESS_COMPLETE:
+        return "Eligibility assessment requires complete application documentation."
+    if application.current_stage != LoanApplication.STAGE_CREDIT_ASSESSMENT:
+        return "Eligibility assessment is allowed only in credit assessment stage."
+    return None
+
+
+def eligibility_assessment_snapshot(assessment):
+    return {
+        "eligibility_assessment_id": str(assessment.eligibility_assessment_id),
+        "loan_application_id": str(assessment.loan_application_id),
+        "member_active_check": assessment.member_active_check,
+        "default_check": assessment.default_check,
+        "document_check": assessment.document_check,
+        "terms_acceptance_check": assessment.terms_acceptance_check,
+        "purpose_check": assessment.purpose_check,
+        "nominee_check": assessment.nominee_check,
+        "overall_result": assessment.overall_result,
+        "assessment_notes": assessment.assessment_notes,
+        "assessed_by_user_id": str(assessment.assessed_by_user_id),
+        "assessed_at": timezone.localtime(assessment.assessed_at).isoformat(),
+    }
+
+
+def _audit_eligibility_assessment(assessment, actor, old_value_json, request_meta):
+    new_value_json = eligibility_assessment_snapshot(assessment)
+    new_value_json["request_id"] = request_meta.request_id
+    AuditLog.objects.create(
+        actor_user=actor,
+        action=ELIGIBILITY_ASSESSED_AUDIT_ACTION,
+        entity_type="eligibility_assessment",
+        entity_id=assessment.eligibility_assessment_id,
+        old_value_json=old_value_json,
+        new_value_json=new_value_json,
+        ip_address=request_meta.ip_address,
+        user_agent=request_meta.user_agent,
+    )
+
+
+def _active_member_check(member):
+    if member.membership_status != "active":
+        return {
+            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_FAIL,
+            "overall_result": EligibilityAssessment.OVERALL_INELIGIBLE,
+            "assessment_notes": (
+                "BR-003 requires active member status or relaxation evidence; "
+                f"member status is {member.membership_status}."
+            ),
+        }
+    if member.active_member_status == "active" and member.active_member_verified_at:
+        return {
+            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_PASS,
+            "overall_result": EligibilityAssessment.OVERALL_PENDING,
+            "assessment_notes": (
+                "Active-member status was verified from existing member facts. "
+                "Default, document, terms, purpose, and nominee checks are pending."
+            ),
+        }
+    if member.active_member_status == "relaxation" and member.active_member_verified_at:
+        return {
+            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_RELAXATION,
+            "overall_result": EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE,
+            "assessment_notes": (
+                "Active-member relaxation is recorded on the member profile. "
+                "Manual evidence remains reviewable for BR-004 through BR-007."
+            ),
+        }
+    return {
+        "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_MANUAL_EVIDENCE_REQUIRED,
+        "overall_result": EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE,
+        "assessment_notes": (
+            "BR-004 through BR-007 require continuous produce/service history or "
+            "relaxation evidence. Current persistence has no source history rows "
+            "for this application, so manual evidence is required."
+        ),
+    }
+
+
+def _source_backed_eligibility_checks(application):
+    nominee_check = _nominee_check(application.nominee, application.member)
+    return {
+        "default_check": (
+            "no_default" if application.member.default_status == "no_default" else "default_found"
+        ),
+        "document_check": _document_check(application),
+        "terms_acceptance_check": (
+            "accepted" if application.terms_acceptance_flag else "pending"
+        ),
+        "purpose_check": (
+            "agriculture_aligned"
+            if application.purpose_category in {"crop_production", "agriculture_activity"}
+            else "non_agriculture"
+        ),
+        "nominee_check": nominee_check,
+        "nominee_manual_evidence_required": nominee_check == EligibilityAssessment.CHECK_PENDING,
+    }
+
+
+def _document_check(application):
+    workbench = build_completeness_workbench(application)
+    return "incomplete" if workbench["blocking_document_types"] else "complete"
+
+
+def _nominee_check(nominee, member=None):
+    if nominee is None:
+        return EligibilityAssessment.CHECK_PENDING
+    if nominee.age_at_application is None and nominee.date_of_birth is None:
+        return EligibilityAssessment.CHECK_PENDING
+    if (
+        nominee.minor_flag
+        or (nominee.age_at_application is not None and nominee.age_at_application < 18)
+        or (
+            nominee.date_of_birth is not None
+            and _age_on_date(nominee.date_of_birth) < 18
+        )
+    ):
+        return "minor"
+    if member is not None and nominee.member_id != member.member_id:
+        return EligibilityAssessment.CHECK_PENDING
+    return "valid"
+
+
+def _age_on_date(date_of_birth, on_date=None):
+    on_date = on_date or timezone.localdate()
+    years = on_date.year - date_of_birth.year
+    if (on_date.month, on_date.day) < (date_of_birth.month, date_of_birth.day):
+        years -= 1
+    return years
+
+
+def _eligibility_overall_result(active_result, source_checks):
+    if active_result["member_active_check"] == EligibilityAssessment.MEMBER_ACTIVE_FAIL:
+        return EligibilityAssessment.OVERALL_INELIGIBLE
+    if any(
+        (
+            source_checks["default_check"] == "default_found",
+            source_checks["document_check"] == "incomplete",
+            source_checks["terms_acceptance_check"] == "pending",
+            source_checks["purpose_check"] == "non_agriculture",
+            source_checks["nominee_check"] == "minor",
+        )
+    ):
+        return EligibilityAssessment.OVERALL_INELIGIBLE
+    if active_result["overall_result"] == EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE:
+        return EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE
+    if source_checks["nominee_manual_evidence_required"]:
+        return EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE
+    return EligibilityAssessment.OVERALL_ELIGIBLE
+
+
+def _eligibility_assessment_notes(active_result, source_checks, overall_result):
+    blockers = []
+    if active_result["member_active_check"] == EligibilityAssessment.MEMBER_ACTIVE_FAIL:
+        blockers.append("BR-003 active-member evidence failed")
+    if source_checks["default_check"] == "default_found":
+        blockers.append("BR-008 default history blocks normal eligibility")
+    if source_checks["document_check"] == "incomplete":
+        blockers.append("BR-013/BR-014 required checklist evidence is incomplete")
+    if source_checks["terms_acceptance_check"] == "pending":
+        blockers.append("S15 terms acceptance is pending")
+    if source_checks["purpose_check"] == "non_agriculture":
+        blockers.append("BR-018 purpose is not agriculture-aligned")
+    if source_checks["nominee_check"] == "minor":
+        blockers.append("BR-009 nominee is a minor")
+    if blockers:
+        return "; ".join(blockers) + "."
+    if overall_result == EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE:
+        if source_checks["nominee_manual_evidence_required"]:
+            if active_result["member_active_check"] == EligibilityAssessment.MEMBER_ACTIVE_PASS:
+                return (
+                    "Source-backed default, document, terms, and purpose checks passed. "
+                    "Application-specific nominee selection is pending."
+                )
+            return (
+                active_result["assessment_notes"]
+                + " Application-specific nominee selection is pending."
+            )
+        return active_result["assessment_notes"]
+    return "All mandatory eligibility criteria passed."

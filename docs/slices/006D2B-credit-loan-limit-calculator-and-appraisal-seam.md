@@ -21,6 +21,20 @@ loan-limit rules.
 ## Depends On
 - 006D2A
 
+## 006D2A Handoff Contract
+- `EligibilityAssessmentModule.get/run` now owns eligibility locking, persistence, audit/workflow,
+  and public snapshots; do not move those helpers back into `applications.services`.
+- `resolve_effective_loan_policy(calculation_date=..., for_update=True)` is the sole policy query
+  seam. The temporary legacy calculator translates `CreditModuleValidationError.field_errors` to
+  `LoanApplicationValidationError`; remove that translation when calculation moves behind the
+  shared credit-module result/error interface.
+- Preserve the import-boundary test in `tests/test_credit_modules.py`: after 006D2B,
+  `applications.services` must also stop exposing `calculate_loan_limit`,
+  `serialize_loan_limit_assessment`, `_audit_loan_limit_assessment`, and
+  `_loan_limit_assessment_audit_snapshot`.
+- 006D2A added no model/table/migration change. Continue to preserve the existing assessment UUID,
+  one-to-one row, and table names under ADR-0002.
+
 ## Reference Implementation
 A fully-gated implementation of the combined 006D2 scope (304 tests green, 95% coverage; failed
 only the diff-size limit) is preserved at
@@ -83,6 +97,8 @@ test-file splitting) rather than exceeding it — a green run over the limit is 
   ambiguity, cultivated-acreage blockers, snapshot serialization, and failed-rerun preservation.
 - Views tested as thin adapters; module tests prove transaction rollback and locking behavior.
 - Import-boundary regression for loan-limit private helpers and the appraisal seam.
+- Resolver regression patches/calls the public resolver during calculation and asserts
+  `for_update=True`; active `LoanPolicyConfig` must never be queried from the calculator module.
 
 ## Evidence Required
 Characterization and refactor green logs, module/API test logs, an architecture map in the review

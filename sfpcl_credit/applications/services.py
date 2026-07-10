@@ -17,7 +17,10 @@ from sfpcl_credit.applications.models import (
     RejectionNote,
     SystemSequence,
 )
-from sfpcl_credit.configurations.models import LoanPolicyConfig
+from sfpcl_credit.configurations.modules.configuration_resolver import (
+    resolve_effective_loan_policy,
+)
+from sfpcl_credit.credit.modules.common import CreditModuleValidationError
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
@@ -47,7 +50,6 @@ APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
 APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_check"
 APPLICATION_DOCUMENT_UPLOAD_PERMISSION = "applications.document.upload"
 APPLICATION_DOCUMENT_VERIFY_PERMISSION = "applications.document.verify"
-ELIGIBILITY_RUN_PERMISSION = "credit.eligibility.run"
 LOAN_LIMIT_CALCULATE_PERMISSION = "credit.loan_limit.calculate"
 LOAN_APPLICATION_REFERENCE_SEQUENCE_CODE = "loan_application_reference"
 APPLICATION_DOCUMENT_ATTACH_AUDIT_ACTION = "applications.application_document.attached"
@@ -58,7 +60,6 @@ APPLICATION_RETURN_DEFICIENCIES_AUDIT_ACTION = (
 APPLICATION_DEFICIENCY_RESOLVED_AUDIT_ACTION = "applications.deficiency.resolved"
 APPLICATION_REJECTION_NOTE_CREATED_AUDIT_ACTION = "applications.rejection_note.created"
 APPLICATION_REJECTION_NOTE_SENT_AUDIT_ACTION = "applications.rejection_note.sent"
-ELIGIBILITY_ASSESSED_AUDIT_ACTION = "eligibility.assessed"
 LOAN_LIMIT_CALCULATED_AUDIT_ACTION = "loan_limit.calculated"
 APPLICATION_DOCUMENT_TYPES = {
     "loan_application_form",
@@ -163,10 +164,6 @@ def user_can_verify_application_documents(user):
     return APPLICATION_DOCUMENT_VERIFY_PERMISSION in auth_service.effective_permission_codes(user)
 
 
-def user_can_run_eligibility(user):
-    return ELIGIBILITY_RUN_PERMISSION in auth_service.effective_permission_codes(user)
-
-
 def user_can_calculate_loan_limit(user):
     return LOAN_LIMIT_CALCULATE_PERMISSION in auth_service.effective_permission_codes(user)
 
@@ -265,18 +262,6 @@ def get_rejection_note(rejection_note_id):
             "sent_by_user",
         )
         .filter(rejection_note_id=rejection_note_id)
-        .first()
-    )
-
-
-def get_eligibility_assessment(application):
-    return (
-        EligibilityAssessment.objects.select_related(
-            "loan_application",
-            "loan_application__member",
-            "assessed_by_user",
-        )
-        .filter(loan_application=application)
         .first()
     )
 
@@ -809,21 +794,6 @@ def completeness_pass_invalid_state_message(application):
     return None
 
 
-def eligibility_run_invalid_state_message(application):
-    if not (application.application_reference_number or "").startswith("LO"):
-        return "Eligibility assessment requires a formal LO application reference."
-    if application.application_status != LoanApplication.STATUS_REFERENCE_GENERATED:
-        return (
-            "Invalid state transition for loan_application: eligibility_assessment.run "
-            f"is not allowed from {application.application_status}."
-        )
-    if application.completeness_status != LoanApplication.COMPLETENESS_COMPLETE:
-        return "Eligibility assessment requires complete application documentation."
-    if application.current_stage != LoanApplication.STAGE_CREDIT_ASSESSMENT:
-        return "Eligibility assessment is allowed only in credit assessment stage."
-    return None
-
-
 def return_deficiencies_invalid_state_message(application):
     if application.application_status != LoanApplication.STATUS_SUBMITTED:
         return (
@@ -1035,75 +1005,6 @@ def create_rejection_note(
 
 
 @transaction.atomic
-def run_eligibility_assessment(
-    application,
-    actor,
-    request_ip="",
-    request_user_agent="",
-    request_id=None,
-):
-    application = (
-        LoanApplication.objects.select_for_update()
-        .select_related("member", "created_by_user", "received_by_user")
-        .get(loan_application_id=application.loan_application_id)
-    )
-    invalid_state_message = eligibility_run_invalid_state_message(application)
-    if invalid_state_message:
-        raise LoanApplicationInvalidStateError(invalid_state_message)
-
-    active_result = _active_member_check(application.member)
-    source_checks = _source_backed_eligibility_checks(application)
-    now = timezone.now()
-    assessment = (
-        EligibilityAssessment.objects.select_for_update()
-        .filter(loan_application=application)
-        .first()
-    )
-    old_value_json = (
-        _eligibility_assessment_audit_snapshot(assessment)
-        if assessment is not None
-        else None
-    )
-    if assessment is None:
-        assessment = EligibilityAssessment(loan_application=application)
-    assessment.member_active_check = active_result["member_active_check"]
-    assessment.default_check = source_checks["default_check"]
-    assessment.document_check = source_checks["document_check"]
-    assessment.terms_acceptance_check = source_checks["terms_acceptance_check"]
-    assessment.purpose_check = source_checks["purpose_check"]
-    assessment.nominee_check = source_checks["nominee_check"]
-    assessment.overall_result = _eligibility_overall_result(active_result, source_checks)
-    assessment.assessment_notes = _eligibility_assessment_notes(
-        active_result,
-        source_checks,
-        assessment.overall_result,
-    )
-    assessment.assessed_by_user = actor
-    assessment.assessed_at = now
-    assessment.save()
-    _audit_eligibility_assessment(
-        assessment,
-        actor,
-        ELIGIBILITY_ASSESSED_AUDIT_ACTION,
-        old_value_json,
-        request_ip,
-        request_user_agent,
-        request_id,
-    )
-    record_workflow_event(
-        actor=actor,
-        workflow_name="eligibility_assessment",
-        entity_type="loan_application",
-        entity_id=application.loan_application_id,
-        from_state=application.current_stage,
-        to_state="eligibility_assessed",
-        trigger_reason="Eligibility assessment active-member check completed.",
-        action_code="eligibility.assessed",
-    )
-    return assessment
-
-
-@transaction.atomic
 def calculate_loan_limit(
     application,
     payload,
@@ -1132,7 +1033,13 @@ def calculate_loan_limit(
         )
 
     cleaned = _clean_loan_limit_payload(application, payload)
-    policy = _effective_loan_policy(cleaned["calculation_date"])
+    try:
+        policy = resolve_effective_loan_policy(
+            calculation_date=cleaned["calculation_date"],
+            for_update=True,
+        )
+    except CreditModuleValidationError as exc:
+        raise LoanApplicationValidationError(exc.field_errors) from exc
     shareholding = cleaned["shareholding"]
     valuation_per_share = shareholding.valuation_per_share
     percentage = policy.share_limit_percentage
@@ -1497,23 +1404,6 @@ def _rejection_note_detail_summary(application):
     }
 
 
-def serialize_eligibility_assessment(assessment):
-    return {
-        "eligibility_assessment_id": str(assessment.eligibility_assessment_id),
-        "loan_application_id": str(assessment.loan_application_id),
-        "member_active_check": assessment.member_active_check,
-        "default_check": assessment.default_check,
-        "document_check": assessment.document_check,
-        "terms_acceptance_check": assessment.terms_acceptance_check,
-        "purpose_check": assessment.purpose_check,
-        "nominee_check": assessment.nominee_check,
-        "overall_result": assessment.overall_result,
-        "assessment_notes": assessment.assessment_notes,
-        "assessed_by_user_id": str(assessment.assessed_by_user_id),
-        "assessed_at": _datetime(assessment.assessed_at),
-    }
-
-
 def serialize_loan_limit_assessment(assessment):
     warnings = []
     if assessment.exception_required_flag:
@@ -1608,148 +1498,6 @@ def _validate_submit_facts(application):
         errors["nominee_id"] = nominee_error
     if errors:
         raise LoanApplicationValidationError(errors)
-
-
-def _active_member_check(member):
-    if member.membership_status != "active":
-        return {
-            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_FAIL,
-            "overall_result": EligibilityAssessment.OVERALL_INELIGIBLE,
-            "assessment_notes": (
-                "BR-003 requires active member status or relaxation evidence; "
-                f"member status is {member.membership_status}."
-            ),
-        }
-    if member.active_member_status == "active" and member.active_member_verified_at:
-        return {
-            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_PASS,
-            "overall_result": EligibilityAssessment.OVERALL_PENDING,
-            "assessment_notes": (
-                "Active-member status was verified from existing member facts. "
-                "Default, document, terms, purpose, and nominee checks are pending."
-            ),
-        }
-    if member.active_member_status == "relaxation" and member.active_member_verified_at:
-        return {
-            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_RELAXATION,
-            "overall_result": EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE,
-            "assessment_notes": (
-                "Active-member relaxation is recorded on the member profile. "
-                "Manual evidence remains reviewable for BR-004 through BR-007."
-            ),
-        }
-    return {
-        "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_MANUAL_EVIDENCE_REQUIRED,
-        "overall_result": EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE,
-        "assessment_notes": (
-            "BR-004 through BR-007 require continuous produce/service history or "
-            "relaxation evidence. Current persistence has no source history rows "
-            "for this application, so manual evidence is required."
-        ),
-    }
-
-
-def _source_backed_eligibility_checks(application):
-    nominee = application.nominee
-    return {
-        "default_check": _default_check(application.member),
-        "document_check": _document_check(application),
-        "terms_acceptance_check": (
-            "accepted"
-            if application.terms_acceptance_flag
-            else "pending"
-        ),
-        "purpose_check": (
-            "agriculture_aligned"
-            if application.purpose_category in {"crop_production", "agriculture_activity"}
-            else "non_agriculture"
-        ),
-        "nominee_check": _nominee_check(nominee, application.member),
-        "nominee_manual_evidence_required": _nominee_check(nominee, application.member) == EligibilityAssessment.CHECK_PENDING,
-    }
-
-
-def _default_check(member):
-    if member.default_status == "no_default":
-        return "no_default"
-    return "default_found"
-
-
-def _document_check(application):
-    workbench = build_completeness_workbench(application)
-    if workbench["blocking_document_types"]:
-        return "incomplete"
-    return "complete"
-
-
-def _nominee_check(nominee, member=None):
-    if nominee is None:
-        return EligibilityAssessment.CHECK_PENDING
-    if nominee.age_at_application is None and nominee.date_of_birth is None:
-        return EligibilityAssessment.CHECK_PENDING
-    if nominee.minor_flag or (
-        nominee.age_at_application is not None and nominee.age_at_application < 18
-    ) or (
-        nominee.date_of_birth is not None and _age_on_date(nominee.date_of_birth) < 18
-    ):
-        return "minor"
-    if member is not None and nominee.member_id != member.member_id:
-        return EligibilityAssessment.CHECK_PENDING
-    return "valid"
-
-
-def _eligibility_overall_result(active_result, source_checks):
-    if active_result["member_active_check"] == EligibilityAssessment.MEMBER_ACTIVE_FAIL:
-        return EligibilityAssessment.OVERALL_INELIGIBLE
-    if any(
-        (
-            source_checks["default_check"] == "default_found",
-            source_checks["document_check"] == "incomplete",
-            source_checks["terms_acceptance_check"] == "pending",
-            source_checks["purpose_check"] == "non_agriculture",
-            source_checks["nominee_check"] == "minor",
-        )
-    ):
-        return EligibilityAssessment.OVERALL_INELIGIBLE
-    if active_result["overall_result"] == EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE:
-        return EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE
-    if source_checks["nominee_manual_evidence_required"]:
-        return EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE
-    return EligibilityAssessment.OVERALL_ELIGIBLE
-
-
-def _eligibility_assessment_notes(active_result, source_checks, overall_result):
-    blockers = []
-    if active_result["member_active_check"] == EligibilityAssessment.MEMBER_ACTIVE_FAIL:
-        blockers.append("BR-003 active-member evidence failed")
-    if source_checks["default_check"] == "default_found":
-        blockers.append("BR-008 default history blocks normal eligibility")
-    if source_checks["document_check"] == "incomplete":
-        blockers.append("BR-013/BR-014 required checklist evidence is incomplete")
-    if source_checks["terms_acceptance_check"] == "pending":
-        blockers.append("S15 terms acceptance is pending")
-    if source_checks["purpose_check"] == "non_agriculture":
-        blockers.append("BR-018 purpose is not agriculture-aligned")
-    if source_checks["nominee_check"] == "minor":
-        blockers.append("BR-009 nominee is a minor")
-    if blockers:
-        return "; ".join(blockers) + "."
-    if overall_result == EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE:
-        if source_checks["nominee_manual_evidence_required"]:
-            if (
-                active_result["member_active_check"]
-                == EligibilityAssessment.MEMBER_ACTIVE_PASS
-            ):
-                return (
-                    "Source-backed default, document, terms, and purpose checks passed. "
-                    "Application-specific nominee selection is pending."
-                )
-            return (
-                active_result["assessment_notes"]
-                + " Application-specific nominee selection is pending."
-            )
-        return active_result["assessment_notes"]
-    return "All mandatory eligibility criteria passed."
 
 
 def _clean_update_payload(payload, member):
@@ -2117,29 +1865,6 @@ def _audit_application(
     )
 
 
-def _audit_eligibility_assessment(
-    assessment,
-    actor,
-    action,
-    old_value_json,
-    request_ip,
-    request_user_agent,
-    request_id,
-):
-    new_value_json = _eligibility_assessment_audit_snapshot(assessment)
-    new_value_json["request_id"] = request_id
-    AuditLog.objects.create(
-        actor_user=actor,
-        action=action,
-        entity_type="eligibility_assessment",
-        entity_id=assessment.eligibility_assessment_id,
-        old_value_json=old_value_json,
-        new_value_json=new_value_json,
-        ip_address=request_ip,
-        user_agent=request_user_agent,
-    )
-
-
 def _audit_loan_limit_assessment(
     assessment,
     actor,
@@ -2285,22 +2010,6 @@ def _audit_snapshot(application):
         "cancelled_cheque_id": str(application.cancelled_cheque_id)
         if application.cancelled_cheque_id
         else None,
-    }
-
-
-def _eligibility_assessment_audit_snapshot(assessment):
-    return {
-        "eligibility_assessment_id": str(assessment.eligibility_assessment_id),
-        "loan_application_id": str(assessment.loan_application_id),
-        "member_active_check": assessment.member_active_check,
-        "default_check": assessment.default_check,
-        "document_check": assessment.document_check,
-        "terms_acceptance_check": assessment.terms_acceptance_check,
-        "purpose_check": assessment.purpose_check,
-        "nominee_check": assessment.nominee_check,
-        "overall_result": assessment.overall_result,
-        "assessed_by_user_id": str(assessment.assessed_by_user_id),
-        "assessed_at": _datetime(assessment.assessed_at),
     }
 
 
@@ -2473,53 +2182,6 @@ def _clean_loan_limit_payload(application, payload):
 
 def _normalized_acres(value):
     return Decimal(value).quantize(Decimal("0.01"))
-
-
-def _effective_loan_policy(calculation_date):
-    policies = list(
-        LoanPolicyConfig.objects.select_for_update()
-        .filter(
-            status=LoanPolicyConfig.STATUS_ACTIVE,
-            effective_from__lte=calculation_date,
-        )
-        .filter(Q(effective_to__isnull=True) | Q(effective_to__gte=calculation_date))
-        .order_by("-effective_from", "-loan_policy_config_id")[:2]
-    )
-    if len(policies) != 1:
-        raise LoanApplicationValidationError(
-            {
-                "loan_policy_config": (
-                    "Exactly one active loan policy must apply on calculation_date."
-                )
-            }
-        )
-    policy = policies[0]
-    if not policy.board_approval_reference:
-        raise LoanApplicationValidationError(
-            {
-                "loan_policy_config": (
-                    "Active loan-limit policy requires Board approval metadata."
-                )
-            }
-        )
-    if policy.default_scale_of_finance_per_acre_amount <= 0:
-        raise LoanApplicationValidationError(
-            {"loan_policy_config": "Scale of finance must be greater than zero."}
-        )
-    configured_rules = [
-        value
-        for value in (policy.share_limit_percentage, policy.per_share_cap_amount)
-        if value is not None
-    ]
-    if not configured_rules or any(value <= 0 for value in configured_rules):
-        raise LoanApplicationValidationError(
-            {
-                "loan_policy_config": (
-                    "Configure a positive share percentage or per-share cap before calculation."
-                )
-            }
-        )
-    return policy
 
 
 def _application_document_audit_snapshot(application_document):

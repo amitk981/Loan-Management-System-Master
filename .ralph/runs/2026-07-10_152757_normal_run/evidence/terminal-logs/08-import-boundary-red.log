@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_application_layer_uses_only_public_credit_and_configuration_seams (tests.test_credit_modules.CreditEligibilityModuleTests.test_application_layer_uses_only_public_credit_and_configuration_seams)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_152757_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 247, in test_application_layer_uses_only_public_credit_and_configuration_seams
+    self.assertFalse(
+AssertionError: True is not false : applications.services must not expose credit helper get_eligibility_assessment
+
+----------------------------------------------------------------------
+Ran 1 test in 0.020s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

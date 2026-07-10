@@ -1,7 +1,7 @@
 # Slice 006D2A: Credit Eligibility Module and Configuration Seam
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
@@ -83,12 +83,12 @@ High
 - Loan-limit behavior is untouched and still fully green.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Characterization tests written or confirmed
-- [ ] Code implemented
-- [ ] API contracts unchanged
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Characterization tests written or confirmed
+- [x] Code implemented
+- [x] API contracts unchanged
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

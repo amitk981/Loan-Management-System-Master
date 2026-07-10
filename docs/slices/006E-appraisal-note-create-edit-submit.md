@@ -19,7 +19,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - 005I3
 - 005I4
 - 006C2
-- 006D2
+- 006D2B
 
 ## Prior Slice Handoff
 - 006C calculates and atomically stores the source-backed loan-limit assessment only after 006B
@@ -34,8 +34,9 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
   summaries/IDs rather than re-running eligibility or loan-limit formulas.
 - Architecture review `2026-07-10_092630_architecture_review` queued 005I3/005I4 to complete the
   application nominee/detail contracts, 006C2 to block unresolved cultivated-acreage evidence, and
-  006D2 to establish the deep `credit.modules.appraisal_workflow` seam. Do not start 006E until all
-  four corrective slices are complete; implement appraisal through that credit seam rather than
+  006D2A/006D2B to establish the deep eligibility, loan-limit, configuration, and
+  `credit.modules.appraisal_workflow` seams. Do not start 006E until all
+  five corrective slices are complete; implement appraisal through that credit seam rather than
   adding more behavior to `applications.services`.
 
 ## Source References
@@ -60,7 +61,7 @@ None for this slice, except updating frontend documentation or fixtures if requi
 - Implement appraisal behavior only through `sfpcl_credit.credit.modules.appraisal_workflow.AppraisalWorkflow`;
   application views may import that public module seam/result-error types but must not add appraisal
   behavior to `applications.services`.
-- Use the `006D2` credit module snapshots for prerequisites:
+- Use the `006D2A`/`006D2B` credit module snapshots for prerequisites:
   `EligibilityAssessmentModule.get(...)` for the stored eligibility result and
   `LoanLimitCalculator.get_assessment(...)` for the stored loan-limit result. Do not import private
   credit helpers, query current loan-policy rows, or recalculate loan-limit/acreage facts during
