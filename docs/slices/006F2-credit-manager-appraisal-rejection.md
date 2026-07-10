@@ -23,6 +23,9 @@ rejection and creating the existing source-backed rejection-note draft without s
 
 ## Scope
 - Extend `AppraisalWorkflow.review(...)` with `decision = rejected` from `review_pending`.
+- Consume only 006E2's verified appraisal-owned prerequisite projections and preserve its
+  `repayment_capacity_notes` and `submission_remarks`; never reread or navigate current
+  eligibility/loan-limit models, even when their UUIDs match the stored provenance IDs.
 - Require non-blank review comments and a source rejection reason/category compatible with the
   existing 005H rejection-note contract; unknown fields fail validation.
 - Enforce the same `credit.appraisal.review`, Credit Manager object scope, and maker-checker rules

@@ -266,6 +266,22 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
   preparation/submission after it is breached. Create/update/submit evidence is metadata-only and
   excludes summaries, mitigation notes, and submit remarks.
 
+## 006E2 Appraisal Source Contract And Snapshot Hardening
+- Create now stores exact canonical redacted eligibility and loan-limit public projections on the
+  appraisal with their same-UUID provenance IDs and `prerequisite_provenance = verified`.
+- GET, draft PATCH amount/exception checks, submit, and future review/sanction consumers use only
+  those frozen JSON projections. Replacing current assessment facts under the same UUID does not
+  alter the appraisal response or its recommendation boundary.
+- `repayment_capacity_notes` is a required non-blank appraisal fact. Submit persists trimmed
+  §24.3 remarks on the appraisal; audit JSON records only reason existence and owner ID.
+- The additive migration copies current projections only where assessment timestamps and success
+  audit chronology prove no later rerun. Ambiguous rows remain `legacy_unverified` and cannot
+  submit/review until the draft-only revalidation action pins current public projections.
+- `POST /api/v1/appraisal-notes/{id}/revalidate-prerequisites/` accepts `{}`, requires appraisal
+  update plus risk-management scope and object access, and preserves all caller-authored
+  recommendation, repayment, summary, risk, preparer, and TAT facts. All mutation/evidence paths
+  are atomic and metadata-only.
+
 ## 006E-006F Appraisal And Credit Review Source Extract
 - `api-contracts.md` §24 defines appraisal create/read, submit-for-review, Credit Manager review,
   and submit-to-sanction as separate actions. 006E owns create/read/edit/submit-for-review; 006F

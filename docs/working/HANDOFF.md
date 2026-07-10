@@ -1,34 +1,41 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-10_175450_normal_run
+2026-07-10_181310_normal_run
 
 ## Current Status
-Completed `006D2C-loan-limit-concurrency-and-boundary-regression` under standing High-risk approval.
+Completed `006E2-appraisal-source-contract-and-snapshot-hardening` under standing High-risk
+approval.
 
-- Added deterministic PostgreSQL `TransactionTestCase` regressions using independent thread-local
-  connections around `LoanLimitCalculator.calculate_for_application(...)`: valid/valid reruns must
-  serialize to one stable UUID and consistent final row/audit/workflow facts; valid/invalid must
-  preserve only the valid snapshot/evidence.
-- Added `config.postgres_test_settings` plus the pre-approved pinned `psycopg[binary]==3.3.4` driver.
-  The offline worktree cannot import the new driver, so PostgreSQL green execution is explicitly
-  delegated to independent validation after requirements installation. SQLite reports two skips
-  with a non-proof message; it is not accepted as concurrency evidence (A-055).
-- Strengthened AST fixtures across `ast.Import`/`ast.ImportFrom`, package and aliased imports,
-  concrete assessment/policy/private-helper access, required public imports, and required-method
-  subsets that tolerate harmless extra methods.
-- No calculator formula, endpoint, persistence, permissions, rerun semantics, audit payload,
-  response, model, or migration changed.
+- Appraisal creation copies the exact canonical redacted projections from
+  `EligibilityAssessmentModule.get(...)` and `LoanLimitCalculator.get_assessment(...)` into
+  appraisal-owned JSON, retaining assessment UUIDs only as provenance. GET and draft amount/
+  exception validation no longer reread mutable current assessments.
+- Added required non-blank `repayment_capacity_notes`. Submit persists trimmed §24.3 remarks on the
+  appraisal; audit JSON records only reason existence and owning appraisal ID.
+- One additive migration copies legacy projections only when source timestamps and audit chronology
+  prove no successful post-appraisal rerun. Ambiguous history remains `legacy_unverified` and is
+  blocked from submit/review.
+- Added `POST /api/v1/appraisal-notes/{id}/revalidate-prerequisites/`: empty-body, draft-only,
+  one-way legacy repair requiring appraisal-update plus risk-management scope and object access.
+  It changes only frozen prerequisite IDs/projections/provenance and writes metadata-only atomic
+  evidence.
+- Static regressions positively require both public prerequisite module imports, reject concrete
+  assessment access, and allow harmless extra public workflow methods.
 
 ## Validation
-Backend check/migration sync passed; 347 SQLite/default tests passed with the two explicit
-PostgreSQL-only skips at 94% coverage. Frontend lint/typecheck, 107 tests, and build passed. The
-PostgreSQL command currently stops at the expected missing pinned driver and must be rerun by the
-orchestrator after dependency installation. Evidence is in
-`.ralph/runs/2026-07-10_175450_normal_run/`.
+Backend check and migration sync passed. Full default suite: 353 tests ran successfully with two explicit
+PostgreSQL-only concurrency skips; coverage 95% (floor 85%). Frontend lint/typecheck, 107 tests, and
+build passed. Focused migration proof covers safe-copy and ambiguous chronology. Evidence is in
+`.ralph/runs/2026-07-10_181310_normal_run/`.
+
+The calculator locking implementation did not change. Preserve the existing independent
+PostgreSQL gate whenever future appraisal/calculator imports or projections change:
+`/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests --settings=sfpcl_credit.config.postgres_test_settings -v 2`
+from `sfpcl_credit/`; SQLite skips are not concurrency proof.
 
 ## Next Run
-After independent PostgreSQL validation of 006D2C, run
-`006E2-appraisal-source-contract-and-snapshot-hardening`. Then run sharpened 006F through
-`AppraisalWorkflow.review(...)`; it must use 006E2's frozen projections and preserve repayment/
-submission facts. Run 006F2 before 006G.
+Run sharpened `006F-credit-manager-review` through `AppraisalWorkflow.review(...)`. It must require
+`prerequisite_provenance = verified`, consume only the frozen appraisal projections, preserve
+repayment/submission/recommendation/risk/TAT facts, and never revalidate on the reviewer's behalf.
+Then run `006F2` before `006G`.

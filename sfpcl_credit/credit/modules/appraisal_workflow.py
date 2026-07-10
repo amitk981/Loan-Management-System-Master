@@ -81,34 +81,43 @@ class AppraisalWorkflow:
             raise CreditModuleNotFound("Loan application was not found.")
         require_application_access(application, actor, permission, permissions)
         payload = _clean_payload(payload, partial=partial)
-        projection_permissions = set(permissions) | {APPLICATION_READ_PERMISSION}
-
-        try:
-            eligibility = EligibilityAssessmentModule().get(
-                actor=actor,
-                application_id=application_id,
-                actor_permissions=projection_permissions,
-            ).snapshot
-        except CreditModuleNotFound as exc:
-            raise CreditModuleInvalidStateError(
-                "A stored eligible eligibility assessment is required before appraisal."
-            ) from exc
-        if eligibility["overall_result"] != "eligible":
-            raise CreditModuleInvalidStateError(
-                "Appraisal creation requires eligibility overall_result eligible."
-            )
-        try:
-            loan_limit = LoanLimitCalculator().get_assessment(
-                actor=actor,
-                application_id=application_id,
-                actor_permissions=projection_permissions,
-            ).snapshot
-        except CreditModuleNotFound as exc:
-            raise CreditModuleInvalidStateError(
-                "A stored loan-limit assessment is required before appraisal."
-            ) from exc
+        current = (
+            LoanAppraisalNote.objects.select_for_update()
+            .select_related("risk_assessment", "prepared_by_user", "reviewed_by_user")
+            .filter(loan_application=application)
+            .first()
+        )
+        if partial:
+            loan_limit = current.loan_limit_snapshot_json if current is not None else {}
+        else:
+            projection_permissions = set(permissions) | {APPLICATION_READ_PERMISSION}
+            try:
+                eligibility = EligibilityAssessmentModule().get(
+                    actor=actor,
+                    application_id=application_id,
+                    actor_permissions=projection_permissions,
+                ).snapshot
+            except CreditModuleNotFound as exc:
+                raise CreditModuleInvalidStateError(
+                    "A stored eligible eligibility assessment is required before appraisal."
+                ) from exc
+            if eligibility["overall_result"] != "eligible":
+                raise CreditModuleInvalidStateError(
+                    "Appraisal creation requires eligibility overall_result eligible."
+                )
+            try:
+                loan_limit = LoanLimitCalculator().get_assessment(
+                    actor=actor,
+                    application_id=application_id,
+                    actor_permissions=projection_permissions,
+                ).snapshot
+            except CreditModuleNotFound as exc:
+                raise CreditModuleInvalidStateError(
+                    "A stored loan-limit assessment is required before appraisal."
+                ) from exc
         if (
             "recommended_amount" in payload
+            and loan_limit
             and payload["recommended_amount"]
             > Decimal(loan_limit["final_eligible_loan_amount"])
             and not loan_limit["exception_required_flag"]
@@ -116,18 +125,11 @@ class AppraisalWorkflow:
             raise CreditModuleValidationError(
                 {
                     "recommended_amount": (
-                        "Cannot exceed the stored final eligible amount unless the stored "
-                        "loan-limit assessment already requires an exception."
+                        "Cannot exceed the frozen final eligible amount unless the frozen "
+                        "loan-limit projection already requires an exception."
                     )
                 }
             )
-
-        current = (
-            LoanAppraisalNote.objects.select_for_update()
-            .select_related("risk_assessment", "prepared_by_user", "reviewed_by_user")
-            .filter(loan_application=application)
-            .first()
-        )
         if partial:
             if current is None:
                 raise CreditModuleNotFound("Appraisal note was not found.")
@@ -142,6 +144,7 @@ class AppraisalWorkflow:
                 "recommended_tenure_months",
                 "recommended_interest_type",
                 "recommended_security_summary",
+                "repayment_capacity_notes",
                 "recommendation",
             ):
                 if field in payload:
@@ -218,6 +221,9 @@ class AppraisalWorkflow:
             tat_status=_tat_status(now, due_at),
             eligibility_assessment_id_snapshot=eligibility["eligibility_assessment_id"],
             loan_limit_assessment_id_snapshot=loan_limit["loan_limit_assessment_id"],
+            eligibility_snapshot_json=eligibility,
+            loan_limit_snapshot_json=loan_limit,
+            prerequisite_provenance="verified",
             borrower_summary=payload["borrower_summary"],
             eligibility_summary=payload["eligibility_summary"],
             loan_limit_summary=payload["loan_limit_summary"],
@@ -225,6 +231,7 @@ class AppraisalWorkflow:
             recommended_tenure_months=payload.get("recommended_tenure_months"),
             recommended_interest_type=payload.get("recommended_interest_type", ""),
             recommended_security_summary=payload["recommended_security_summary"],
+            repayment_capacity_notes=payload["repayment_capacity_notes"],
             risk_assessment=risk,
             recommendation=payload["recommendation"],
             appraisal_status=LoanAppraisalNote.STATUS_DRAFT,
@@ -340,13 +347,20 @@ class AppraisalWorkflow:
             raise CreditModuleInvalidStateError(
                 "Only a draft appraisal note can be submitted for review."
             )
+        if note.prerequisite_provenance != "verified":
+            raise CreditModuleInvalidStateError(
+                "Appraisal prerequisites must be explicitly revalidated before review."
+            )
         submission_errors = _submission_errors(note)
         if submission_errors:
             raise CreditModuleValidationError(submission_errors)
         now = timezone.now()
         note.appraisal_status = LoanAppraisalNote.STATUS_REVIEW_PENDING
         note.tat_status = _tat_status(now, note.tat_due_at)
-        note.save(update_fields=["appraisal_status", "tat_status"])
+        note.submission_remarks = payload["remarks"].strip()
+        note.save(
+            update_fields=["appraisal_status", "tat_status", "submission_remarks"]
+        )
         request_meta = normalize_request_meta(request_meta)
         AuditLog.objects.create(
             actor_user=actor,
@@ -357,6 +371,8 @@ class AppraisalWorkflow:
             new_value_json={
                 "appraisal_status": note.appraisal_status,
                 "tat_status": note.tat_status,
+                "submission_reason_exists": True,
+                "submission_reason_owner_id": str(note.pk),
                 "request_id": request_meta.request_id,
             },
             ip_address=request_meta.ip_address,
@@ -374,6 +390,125 @@ class AppraisalWorkflow:
         )
         return AppraisalNoteResult(snapshot=appraisal_note_snapshot(note))
 
+    @transaction.atomic
+    def revalidate_prerequisites(
+        self,
+        *,
+        actor,
+        appraisal_id,
+        payload,
+        request_meta=None,
+        actor_permissions=None,
+    ):
+        permissions = require_permission(
+            actor,
+            APPRAISAL_UPDATE_PERMISSION,
+            "You do not have permission to revalidate appraisal prerequisites.",
+            actor_permissions,
+        )
+        require_permission(
+            actor,
+            RISK_MANAGE_PERMISSION,
+            "You do not have permission to manage risk assessments.",
+            permissions,
+        )
+        if payload:
+            raise CreditModuleValidationError(
+                {field: "Unknown field." for field in sorted(payload)}
+            )
+        note = (
+            LoanAppraisalNote.objects.select_for_update()
+            .select_related(
+                "loan_application__created_by_user",
+                "loan_application__received_by_user",
+                "risk_assessment",
+                "prepared_by_user",
+                "reviewed_by_user",
+            )
+            .filter(loan_appraisal_note_id=appraisal_id)
+            .first()
+        )
+        if note is None:
+            raise CreditModuleNotFound("Appraisal note was not found.")
+        require_application_access(
+            note.loan_application,
+            actor,
+            APPRAISAL_UPDATE_PERMISSION,
+            permissions,
+        )
+        if note.appraisal_status != LoanAppraisalNote.STATUS_DRAFT:
+            raise CreditModuleInvalidStateError(
+                "Only a draft appraisal note can revalidate prerequisites."
+            )
+        if note.prerequisite_provenance != "legacy_unverified":
+            raise CreditModuleInvalidStateError(
+                "Only legacy-unverified appraisal prerequisites can be revalidated."
+            )
+        projection_permissions = set(permissions) | {APPLICATION_READ_PERMISSION}
+        eligibility = EligibilityAssessmentModule().get(
+            actor=actor,
+            application_id=note.loan_application_id,
+            actor_permissions=projection_permissions,
+        ).snapshot
+        if eligibility["overall_result"] != "eligible":
+            raise CreditModuleInvalidStateError(
+                "Revalidation requires eligibility overall_result eligible."
+            )
+        loan_limit = LoanLimitCalculator().get_assessment(
+            actor=actor,
+            application_id=note.loan_application_id,
+            actor_permissions=projection_permissions,
+        ).snapshot
+        note.eligibility_assessment_id_snapshot = eligibility[
+            "eligibility_assessment_id"
+        ]
+        note.loan_limit_assessment_id_snapshot = loan_limit[
+            "loan_limit_assessment_id"
+        ]
+        note.eligibility_snapshot_json = eligibility
+        note.loan_limit_snapshot_json = loan_limit
+        note.prerequisite_provenance = "verified"
+        note.save(
+            update_fields=(
+                "eligibility_assessment_id_snapshot",
+                "loan_limit_assessment_id_snapshot",
+                "eligibility_snapshot_json",
+                "loan_limit_snapshot_json",
+                "prerequisite_provenance",
+            )
+        )
+        request_meta = normalize_request_meta(request_meta)
+        AuditLog.objects.create(
+            actor_user=actor,
+            action="appraisal.prerequisites_revalidated",
+            entity_type="loan_appraisal_note",
+            entity_id=note.pk,
+            old_value_json={"prerequisite_provenance": "legacy_unverified"},
+            new_value_json={
+                "prerequisite_provenance": "verified",
+                "eligibility_assessment_id": str(
+                    note.eligibility_assessment_id_snapshot
+                ),
+                "loan_limit_assessment_id": str(
+                    note.loan_limit_assessment_id_snapshot
+                ),
+                "request_id": request_meta.request_id,
+            },
+            ip_address=request_meta.ip_address,
+            user_agent=request_meta.user_agent,
+        )
+        record_workflow_event(
+            actor=actor,
+            workflow_name="appraisal_note",
+            entity_type="loan_appraisal_note",
+            entity_id=note.pk,
+            from_state=note.appraisal_status,
+            to_state=note.appraisal_status,
+            trigger_reason="Appraisal prerequisite projections revalidated.",
+            action_code="appraisal.prerequisites_revalidated",
+        )
+        return AppraisalNoteResult(snapshot=appraisal_note_snapshot(note))
+
     def review(self, *, actor, appraisal_id, decision, comments):
         raise NotImplementedError("Appraisal review is owned by slice 006F.")
 
@@ -388,6 +523,9 @@ def appraisal_note_snapshot(note):
         "loan_application_id": str(note.loan_application_id),
         "eligibility_assessment_id": str(note.eligibility_assessment_id_snapshot),
         "loan_limit_assessment_id": str(note.loan_limit_assessment_id_snapshot),
+        "eligibility_snapshot": note.eligibility_snapshot_json,
+        "loan_limit_snapshot": note.loan_limit_snapshot_json,
+        "prerequisite_provenance": note.prerequisite_provenance,
         "prepared_by": {
             "user_id": str(note.prepared_by_user_id),
             "full_name": note.prepared_by_user.full_name,
@@ -404,6 +542,7 @@ def appraisal_note_snapshot(note):
         "recommended_tenure_months": note.recommended_tenure_months,
         "recommended_interest_type": note.recommended_interest_type or None,
         "recommended_security_summary": note.recommended_security_summary,
+        "repayment_capacity_notes": note.repayment_capacity_notes,
         "risk_assessment": {
             "risk_assessment_id": str(risk.pk),
             "market_risk_rating": risk.market_risk_rating,
@@ -430,6 +569,7 @@ def _submission_errors(note):
         "eligibility_summary",
         "loan_limit_summary",
         "recommended_security_summary",
+        "repayment_capacity_notes",
     ):
         if not getattr(note, field).strip():
             errors[field] = "This field must not be blank."
@@ -462,6 +602,7 @@ def _clean_payload(payload, *, partial):
         "recommended_tenure_months",
         "recommended_interest_type",
         "recommended_security_summary",
+        "repayment_capacity_notes",
         "risk_assessment",
         "recommendation",
     }
@@ -475,6 +616,7 @@ def _clean_payload(payload, *, partial):
         "eligibility_summary",
         "loan_limit_summary",
         "recommended_security_summary",
+        "repayment_capacity_notes",
     }
     errors = {}
     for field in required_summaries:

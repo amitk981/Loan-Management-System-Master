@@ -1,0 +1,3 @@
+Migrations for 'credit':
+  sfpcl_credit/credit/migrations/0004_alter_loanappraisalnote_repayment_capacity_notes.py
+    - Alter field repayment_capacity_notes on loanappraisalnote

@@ -332,6 +332,7 @@ class CreditEligibilityModuleTests(TestCase):
             self._missing_required_imports(
                 appraisal_source,
                 {
+                    "sfpcl_credit.credit.modules.eligibility_assessment.EligibilityAssessmentModule",
                     "sfpcl_credit.credit.modules.loan_limit_calculator.LoanLimitCalculator",
                 },
             ),
@@ -342,7 +343,14 @@ class CreditEligibilityModuleTests(TestCase):
             if isinstance(node, ast.ClassDef) and node.name == "AppraisalWorkflow"
         )
         self.assertTrue(
-            {"create_or_update", "get", "submit_for_review", "review", "submit_to_sanction"}
+            {
+                "create_or_update",
+                "get",
+                "submit_for_review",
+                "revalidate_prerequisites",
+                "review",
+                "submit_to_sanction",
+            }
             .issubset(
                 {
                     node.name
@@ -417,14 +425,17 @@ assessment = credit_models.LoanLimitAssessment
     def test_boundary_fixture_requires_public_imports_and_allows_extra_methods(self):
         required = {
             "sfpcl_credit.credit.modules.appraisal_workflow.AppraisalWorkflow",
+            "sfpcl_credit.credit.modules.eligibility_assessment.EligibilityAssessmentModule",
             "sfpcl_credit.credit.modules.loan_limit_calculator.LoanLimitCalculator",
         }
         missing_source = "from sfpcl_credit.credit.modules import appraisal_workflow\n"
         public_source = """
 from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow as Workflow
+from sfpcl_credit.credit.modules.eligibility_assessment import EligibilityAssessmentModule
 import sfpcl_credit.credit.modules.loan_limit_calculator as calculator
 
 workflow = Workflow
+eligibility = EligibilityAssessmentModule
 loan_limit = calculator.LoanLimitCalculator
 
 class AppraisalWorkflow:

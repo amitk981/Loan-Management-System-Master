@@ -43,7 +43,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Role/permission/team catalogue | Seeded in slice 002C; exposed for current user in 002D | None directly | `auth-permissions.md` §12-15, §38 | Canonical `Permission`, `Role`, `Team`, `RolePermission` catalogue seeded idempotently via `python manage.py seed_role_catalogue` (`sfpcl_credit/identity/catalogue.py`). `/api/v1/auth/me/` exposes the authenticated user's effective permission codes from this data. |
 | Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; shareholding list/create implemented in 004F; land/crop list/create implemented in 004G; KYC profile/document upload/verify implemented in 004H; member bank-account/cancelled-cheque metadata implemented in 004J; Borrower 360 Epic 004 UI wiring implemented in 004K with corrective DTO hardening queued in 004K2 | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3/§15.1-§15.2/§17.1-§18.4; `data-model.md` §10.1-§10.4/§11.1/§11.7-§12.4; `auth-permissions.md` §12.2-§12.3/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/`, `/shareholdings/`, `/land-holdings/`, `/crop-plans/`, `/bank-accounts/`, and `/cancelled-cheques/` are API-backed with their documented validations and metadata-only create audits. `GET/POST/PATCH /api/v1/kyc-profiles/`, KYC document upload, and KYC document verify are implemented for member parties only with KYC permissions. Sensitive bank-account reveal, re-KYC task management, share certificate/demat, bank verification letters, disbursement bank gates, and loan-application/loan-account/repayment/risk/audit Borrower 360 data remain future scope. |
 | Loan applications | Draft create/read/update implemented in 005A; submit in 005B; reference generation/register persistence in 005C; object access hardened in 005C2; application document/checklist metadata implemented in 005D; completeness workbench/pass implemented in 005E; deficiency return/list/resolve implemented in 005F; rejection-note create/send shell implemented in 005H; staff list/register UI wiring reads implemented in 005I; staff detail rejection-note summary hardening implemented in 005I2; eligibility assessment through default/document/terms/purpose/nominee checks implemented in 006A-006B; loan-limit calculation and snapshots implemented in 006C-006D; cultivated-acreage source hardening implemented in 006C2 | Applications, completeness, rejection note shell, Loan Request Register, eligibility assessment, loan-limit assessment | `api-contracts.md` §8, §19.1-§23; `screen-spec.md` S13/S15; `data-model.md` §13.1, application-document/deficiency/rejection-note/register tables, and §14.1-§14.2; `auth-permissions.md` §12.4, §19.2, §34.3, §37.3 | Existing loan-application, register, document, checklist, completeness, deficiency, rejection-note, and eligibility endpoints retain their documented contracts. `POST /api/v1/loan-applications/{id}/loan-limit-assessment/calculate/` requires a stored normally eligible assessment, same-member verified source facts, an application-linked verified crop plan, agreement among applicable cultivated-acreage evidence, an active Board-referenced policy version, `credit.loan_limit.calculate`, and existing application object access; it atomically snapshots the lower of shareholding/land limits with audit and workflow evidence. Staff detail reads include nullable `rejection_note` summary metadata when a staff rejection note exists; `application_status` remains backend-owned and unchanged by the summary. Staff list reads support standard `search`, `application_status`/`status`, `current_stage`, `member_id`, `ordering`, `page`, and `page_size` with `page_size` capped at 100. Register reads support `search`, `register_status`/`status`, `current_stage`, `member_type`, `ordering`, `page`, and `page_size`. Appraisal, sanction, document generation, real communication delivery, and disbursement remain future slices. |
-| Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
+| Appraisal and loan limit | Eligibility/loan limit implemented through 006D2C; appraisal draft/snapshot/revalidation/submit implemented through 006E2 | Appraisal workbench | `functional-spec.md` §9.8/M04; `api-contracts.md` §22-§24 | Appraisals freeze canonical redacted eligibility and loan-limit projections, require repayment-capacity notes, retain submit remarks outside audit JSON, and block ambiguous legacy provenance until scoped draft revalidation. Credit Manager review, sanction submission, and frontend wiring remain queued. |
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
 | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
 | Versioned configuration | Loan-policy shell implemented in 003E; calculations and broader config types remain draft | Settings/config shell | `api-contracts.md` §41.1, §42.3; `data-model.md` §25.1, §26.3; `functional-spec.md` M01-FR-001/M01-FR-002/M01-FR-015 | `loan_policy_configs` and `version_histories` are persisted. `GET/POST/PATCH/activate` loan-policy APIs and filtered version-history reads are protected, audited where mutating, and versioned on activation. M01-FR-003 through M01-FR-014 calculations/rules are explicitly deferred; only neutral source model fields are stored. |
@@ -1888,28 +1888,31 @@ Response data fields:
 }
 ```
 
-## Appraisal-note draft and submit APIs (006E)
+## Appraisal-note draft, snapshot, revalidation, and submit APIs (006E/006E2)
 
 Protected staff endpoints:
 - `POST /api/v1/loan-applications/{loan_application_id}/appraisal-note/`
 - `GET /api/v1/loan-applications/{loan_application_id}/appraisal-note/`
 - `PATCH /api/v1/loan-applications/{loan_application_id}/appraisal-note/`
 - `POST /api/v1/appraisal-notes/{loan_appraisal_note_id}/submit-for-review/`
+- `POST /api/v1/appraisal-notes/{loan_appraisal_note_id}/revalidate-prerequisites/`
 
 Rules:
 - Create requires `credit.appraisal.create`, `credit.risk_assessment.manage`, and the existing
   application object-access boundary. It requires a stored eligibility projection with
   `overall_result = eligible` and a stored loan-limit projection; missing or non-eligible facts
   return `409 INVALID_STATE_TRANSITION` without appraisal, risk, audit, or workflow rows.
-- One appraisal and one linked risk assessment are stored per loan application. The note snapshots
-  the prerequisite assessment UUIDs and user-provided summaries; it never recalculates eligibility,
-  loan limits, policy, or cultivated acreage.
-- Required summaries are non-blank. Recommended amount is positive; optional tenure is a positive
+- One appraisal and one linked risk assessment are stored per loan application. Create copies the
+  exact canonical redacted projections returned by `EligibilityAssessmentModule` and
+  `LoanLimitCalculator`, plus their UUID provenance. GET, PATCH amount/exception validation,
+  submit, review, and sanction consumers use those appraisal-owned frozen projections; a later
+  successful same-UUID assessment rerun cannot reinterpret the appraisal.
+- Required summaries and `repayment_capacity_notes` are non-blank. Recommended amount is positive; optional tenure is a positive
   integer; supplied interest type is `floating`; recommendation is `approve`, `reject`, or
   `conditions`; all four risk ratings are `low`, `medium`, or `high`. Unknown top-level or nested
   fields return `400 VALIDATION_ERROR`.
-- A recommendation above the stored final eligible amount is rejected unless that stored
-  loan-limit projection already has `exception_required_flag = true`; 006E does not create an
+- A recommendation above the frozen final eligible amount is rejected unless that frozen
+  loan-limit projection already has `exception_required_flag = true`; this contract does not create an
   exception approval.
 - PATCH is draft-only and changes supplied fields only. It requires `credit.appraisal.update`;
   changing nested risk fields additionally requires `credit.risk_assessment.manage`.
@@ -1918,12 +1921,22 @@ Rules:
 - `tat_due_at` is application `created_at + 2 days` and never resets. At the exact due instant TAT
   is `within_tat`; later preparation/submission is `breached`.
 - Submit requires `credit.appraisal.submit_review`, object scope, and non-blank `remarks`; it
-  atomically transitions `draft -> review_pending` once. Repeated submit and later PATCH return
-  `409 INVALID_STATE_TRANSITION`.
+  persists trimmed remarks on the appraisal and atomically transitions `draft -> review_pending`
+  once. Submit additionally requires `prerequisite_provenance = verified`; repeated submit and
+  later PATCH return `409 INVALID_STATE_TRANSITION`.
+- The revalidation action accepts only `{}`, requires `credit.appraisal.update` plus
+  `credit.risk_assessment.manage`, object scope, and `draft` state, and replaces only prerequisite
+  IDs/projections/provenance with the current public eligible projections. It never changes
+  recommendation, repayment, risk, summary, TAT, or preparer facts. Legacy rows whose chronology
+  cannot prove their mutable assessments were the original inputs remain `legacy_unverified` until
+  this explicit action succeeds.
 - Create/update/submit write `appraisal.created`, `appraisal.updated`, or
   `appraisal.submitted_for_review` metadata-only audit/workflow evidence. Free-text summaries,
-  mitigation notes, and submit remarks are never copied into evidence JSON.
+  mitigation notes, repayment-capacity notes, and submit remarks are never copied into evidence
+  JSON. Submit audit metadata records only `submission_reason_exists` and its appraisal owner ID;
+  revalidation metadata records projection UUIDs and provenance only.
 
-Response data includes appraisal/application/prerequisite IDs, prepared-user summary/time,
-immutable TAT due/status, all stored appraisal fields, linked risk assessment, recommendation, and
-`appraisal_status = draft|review_pending`.
+Response data includes appraisal/application/prerequisite IDs, exact `eligibility_snapshot` and
+`loan_limit_snapshot`, `prerequisite_provenance = verified|legacy_unverified`, prepared-user
+summary/time, immutable TAT due/status, `repayment_capacity_notes`, all stored recommendation-term
+facts, linked risk assessment, recommendation, and `appraisal_status = draft|review_pending`.

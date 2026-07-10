@@ -1,7 +1,7 @@
 # Slice 006E2: Appraisal Source Contract and Snapshot Hardening
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
@@ -102,12 +102,12 @@ High
 - 006F can review only a source-complete appraisal with verified frozen prerequisite projections.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Failing tests and red evidence saved first
-- [ ] Additive migration and implementation completed
-- [ ] API contracts updated
-- [ ] Legacy provenance paths tested
-- [ ] Full gates passed
-- [ ] Risk assessment and handoff updated
-- [ ] State updated
-- [ ] Commit delegated to orchestrator only after passing gates
+- [x] Execution plan written
+- [x] Failing tests and red evidence saved first
+- [x] Additive migration and implementation completed
+- [x] API contracts updated
+- [x] Legacy provenance paths tested
+- [x] Full gates passed
+- [x] Risk assessment and handoff updated
+- [x] State updated
+- [x] Commit delegated to orchestrator only after passing gates

@@ -158,6 +158,11 @@ urlpatterns = [
         name="appraisal-note-submit-for-review",
     ),
     path(
+        "api/v1/appraisal-notes/<uuid:loan_appraisal_note_id>/revalidate-prerequisites/",
+        application_views.appraisal_note_revalidate_prerequisites,
+        name="appraisal-note-revalidate-prerequisites",
+    ),
+    path(
         "api/v1/loan-applications/<uuid:loan_application_id>/return-with-deficiencies/",
         application_views.loan_application_return_with_deficiencies,
         name="loan-application-return-with-deficiencies",

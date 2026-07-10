@@ -19,10 +19,11 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - 006E2
 
 ## Prior Slice Handoff
-- 006E owns one `credit.models.LoanAppraisalNote` and linked `RiskAssessment` per application,
+- 006E2 owns one `credit.models.LoanAppraisalNote` and linked `RiskAssessment` per application,
   draft editing, immutable two-day TAT facts, and `draft -> review_pending` submission through
-  `AppraisalWorkflow`. The note stores prerequisite assessment UUID snapshots without concrete
-  assessment-model FKs.
+  `AppraisalWorkflow`. The note stores exact appraisal-owned `eligibility_snapshot_json` and
+  `loan_limit_snapshot_json`, same-UUID provenance IDs, `repayment_capacity_notes`, persisted
+  `submission_remarks`, and `prerequisite_provenance` without concrete assessment-model FKs.
 - Extend the existing `AppraisalWorkflow.review(...)` interface and existing thin application view
   pattern. Do not move review behavior into `applications.services` or query eligibility/loan-limit
   rows from the view.
@@ -34,6 +35,9 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - 006E2 freezes the exact prerequisite projections, adds required repayment-capacity notes, and
   persists the submit-for-review reason. Review must require verified snapshot provenance and must
   not reread current assessment rows, even if they were rerun under the same UUID.
+- The 006E2 migration leaves ambiguous history `legacy_unverified`; submit already blocks it.
+  Review must independently reject any non-`verified` provenance as defense in depth and must not
+  invoke the draft-only revalidation action on the reviewer's behalf.
 
 ## Source References
 - `docs/source/api-contracts.md` §3 and §24.4: compliance reason, snapshot decisions, and exact

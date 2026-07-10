@@ -181,6 +181,13 @@ class LoanAppraisalNote(models.Model):
     tat_status = models.CharField(max_length=60, db_index=True)
     eligibility_assessment_id_snapshot = models.UUIDField()
     loan_limit_assessment_id_snapshot = models.UUIDField()
+    eligibility_snapshot_json = models.JSONField(default=dict)
+    loan_limit_snapshot_json = models.JSONField(default=dict)
+    prerequisite_provenance = models.CharField(
+        max_length=60,
+        default="legacy_unverified",
+        db_index=True,
+    )
     borrower_summary = models.TextField()
     eligibility_summary = models.TextField()
     loan_limit_summary = models.TextField()
@@ -188,6 +195,8 @@ class LoanAppraisalNote(models.Model):
     recommended_tenure_months = models.PositiveIntegerField(blank=True, null=True)
     recommended_interest_type = models.CharField(max_length=60, blank=True)
     recommended_security_summary = models.TextField()
+    repayment_capacity_notes = models.TextField()
+    submission_remarks = models.TextField(blank=True)
     risk_assessment = models.OneToOneField(
         RiskAssessment,
         on_delete=models.PROTECT,

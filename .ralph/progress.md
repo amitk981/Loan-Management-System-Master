@@ -2674,3 +2674,27 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-10 - 2026-07-10_181310_normal_run
+- Agent tool used: codex
+- Slice attempted: 006E2-appraisal-source-contract-and-snapshot-hardening
+- Summary: Froze canonical public eligibility/loan-limit projections on appraisals, added required
+  repayment-capacity notes and retained submit reasons, conservatively migrated legacy provenance,
+  and added scoped draft-only revalidation without concrete assessment-model coupling.
+- Tests run: TDD red/green; focused appraisal/module/migration tests; backend check and migration
+  sync; 353 backend tests ran successfully with two PostgreSQL-only skips at 95% coverage; frontend lint/typecheck,
+  107 tests, and build; git diff checks.
+- Evidence saved: `.ralph/runs/2026-07-10_181310_normal_run/`
+- Result: Success
+- Risk level: High (standing approval; no veto)
+- Next action: Run 006F Credit Manager review through the verified frozen appraisal projections.
+
+## 2026-07-10 18:32:32 - 2026-07-10_181310_normal_run
+- Agent tool used: codex
+- Slice attempted: 006E2-appraisal-source-contract-and-snapshot-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_181310_normal_run/.ralph/runs/2026-07-10_181310_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_181310_normal_run/.ralph/runs/2026-07-10_181310_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
