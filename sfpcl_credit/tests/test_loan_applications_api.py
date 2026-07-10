@@ -12,6 +12,7 @@ from sfpcl_credit.members.models import (
     BankAccount,
     CancelledCheque,
     CropPlan,
+    IndividualMemberProfile,
     LandHolding,
     Member,
     Nominee,
@@ -116,6 +117,9 @@ class LoanApplicationDraftApiTests(TestCase):
             village="Niphad",
             area_acres="5.00",
             document_id=uuid4(),
+            verification_status="verified",
+            verified_by_user=self.creator,
+            verified_at=timezone.now(),
         )
         self.crop = CropPlan.objects.create(
             member=self.member,
@@ -125,6 +129,9 @@ class LoanApplicationDraftApiTests(TestCase):
             estimated_cost_amount="100000.00",
             loan_purpose_alignment="agriculture_aligned",
             document_id=uuid4(),
+            verification_status="verified",
+            verified_by_user=self.creator,
+            verified_at=timezone.now(),
         )
         self.cheque = CancelledCheque.objects.create(
             member=self.member,
@@ -885,6 +892,335 @@ class LoanApplicationDraftApiTests(TestCase):
             1,
         )
 
+    def test_loan_limit_blocks_unresolved_cultivated_acreage_without_success_evidence(self):
+        application_id = self._eligible_application(required_loan_amount="400000.00")
+        self.land.area_acres = "20.00"
+        self.land.verification_status = "verified"
+        self.land.verified_by_user = self.creator
+        self.land.verified_at = timezone.now()
+        self.land.save()
+        self.crop.planned_area_acres = "5.00"
+        self.crop.loan_application_id = application_id
+        self.crop.verification_status = "verified"
+        self.crop.verified_by_user = self.creator
+        self.crop.verified_at = timezone.now()
+        self.crop.save()
+        IndividualMemberProfile.objects.create(
+            member=self.member,
+            first_name="Ramesh",
+            last_name="Patil",
+            land_area_under_cultivation_acres="5.00",
+            services_availed_flag=True,
+        )
+        shareholding = Shareholding.objects.create(
+            member=self.member,
+            folio_number=self.member.folio_number,
+            number_of_shares=100,
+            holding_mode="physical",
+            valuation_per_share="2000.00",
+            valuation_effective_date=timezone.localdate(),
+            pledged_share_count=0,
+            available_share_count=100,
+            status="active",
+        )
+        self._active_loan_policy(
+            share_limit_percentage="10.0000",
+            per_share_cap_amount="200.00",
+        )
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/loan-limit-assessment/calculate/",
+            data={
+                "shareholding_id": str(shareholding.shareholding_id),
+                "land_holding_ids": [str(self.land.land_holding_id)],
+                "crop_plan_id": str(self.crop.crop_plan_id),
+                "requested_amount": "400000.00",
+                "calculation_date": timezone.localdate().isoformat(),
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        body = response.json()
+        assert_error_envelope(self, body, "VALIDATION_ERROR")
+        self.assertEqual(
+            body["error"]["field_errors"]["cultivated_acreage"],
+            "CULTIVATED_ACREAGE_UNRESOLVED",
+        )
+        loan_limit_model = apps.get_model("applications", "LoanLimitAssessment")
+        self.assertEqual(loan_limit_model.objects.filter(loan_application_id=application_id).count(), 0)
+        self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 0)
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="loan_limit_assessment").count(),
+            0,
+        )
+
+    def test_loan_limit_accepts_decimal_equivalent_cultivated_acreage_sources(self):
+        application_id = self._eligible_application(required_loan_amount="400000.00")
+        self.land.area_acres = "5"
+        self.land.save()
+        self.crop.planned_area_acres = "5.0"
+        self.crop.save()
+        IndividualMemberProfile.objects.create(
+            member=self.member,
+            first_name="Ramesh",
+            last_name="Patil",
+            land_area_under_cultivation_acres="5.00",
+            services_availed_flag=True,
+        )
+        shareholding = Shareholding.objects.create(
+            member=self.member,
+            folio_number=self.member.folio_number,
+            number_of_shares=100,
+            holding_mode="physical",
+            valuation_per_share="2000.00",
+            valuation_effective_date=timezone.localdate(),
+            pledged_share_count=0,
+            available_share_count=100,
+            status="active",
+        )
+        self._active_loan_policy(
+            share_limit_percentage="10.0000",
+            per_share_cap_amount="200.00",
+        )
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/loan-limit-assessment/calculate/",
+            data={
+                "shareholding_id": str(shareholding.shareholding_id),
+                "land_holding_ids": [str(self.land.land_holding_id)],
+                "crop_plan_id": str(self.crop.crop_plan_id),
+                "requested_amount": "400000.00",
+                "calculation_date": timezone.localdate().isoformat(),
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        assert_success_envelope(self, response.json())
+        assessment = response.json()["data"]
+        self.assertEqual(assessment["land_area_acres"], "5.00")
+        self.assertEqual(assessment["land_based_limit_amount"], "100000.00")
+
+    def test_loan_limit_uses_selected_land_and_crop_plan_when_profile_acreage_is_null(self):
+        application_id = self._eligible_application(required_loan_amount="400000.00")
+        IndividualMemberProfile.objects.create(
+            member=self.member,
+            first_name="Ramesh",
+            last_name="Patil",
+            land_area_under_cultivation_acres=None,
+            services_availed_flag=True,
+        )
+        shareholding = Shareholding.objects.create(
+            member=self.member,
+            folio_number=self.member.folio_number,
+            number_of_shares=100,
+            holding_mode="physical",
+            valuation_per_share="2000.00",
+            valuation_effective_date=timezone.localdate(),
+            pledged_share_count=0,
+            available_share_count=100,
+            status="active",
+        )
+        self._active_loan_policy(
+            share_limit_percentage="10.0000",
+            per_share_cap_amount="200.00",
+        )
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/loan-limit-assessment/calculate/",
+            data={
+                "shareholding_id": str(shareholding.shareholding_id),
+                "land_holding_ids": [str(self.land.land_holding_id)],
+                "crop_plan_id": str(self.crop.crop_plan_id),
+                "requested_amount": "400000.00",
+                "calculation_date": timezone.localdate().isoformat(),
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        assert_success_envelope(self, response.json())
+        self.assertEqual(response.json()["data"]["land_area_acres"], "5.00")
+
+    def test_loan_limit_failed_cultivated_acreage_rerun_preserves_existing_snapshot(self):
+        application_id = self._eligible_application(required_loan_amount="400000.00")
+        shareholding = Shareholding.objects.create(
+            member=self.member,
+            folio_number=self.member.folio_number,
+            number_of_shares=100,
+            holding_mode="physical",
+            valuation_per_share="2000.00",
+            valuation_effective_date=timezone.localdate(),
+            pledged_share_count=0,
+            available_share_count=100,
+            status="active",
+        )
+        self._active_loan_policy(
+            share_limit_percentage="10.0000",
+            per_share_cap_amount="200.00",
+        )
+        endpoint = f"/api/v1/loan-applications/{application_id}/loan-limit-assessment/"
+        payload = {
+            "shareholding_id": str(shareholding.shareholding_id),
+            "land_holding_ids": [str(self.land.land_holding_id)],
+            "crop_plan_id": str(self.crop.crop_plan_id),
+            "requested_amount": "400000.00",
+            "calculation_date": timezone.localdate().isoformat(),
+        }
+        first = self.client.post(
+            f"{endpoint}calculate/",
+            data=payload,
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(first.status_code, 200)
+        stored_snapshot = first.json()["data"]
+        self.crop.planned_area_acres = "4.00"
+        self.crop.save()
+
+        failed = self.client.post(
+            f"{endpoint}calculate/",
+            data=payload,
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(failed.status_code, 400)
+        assert_error_envelope(self, failed.json(), "VALIDATION_ERROR")
+        self.assertEqual(
+            failed.json()["error"]["field_errors"]["cultivated_acreage"],
+            "CULTIVATED_ACREAGE_UNRESOLVED",
+        )
+        read = self.client.get(
+            endpoint,
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(read.status_code, 200)
+        self.assertEqual(read.json()["data"], stored_snapshot)
+        loan_limit_model = apps.get_model("applications", "LoanLimitAssessment")
+        self.assertEqual(loan_limit_model.objects.filter(loan_application_id=application_id).count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 1)
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="loan_limit_assessment").count(),
+            1,
+        )
+
+    def test_loan_limit_rejects_unverified_or_unlinked_cultivation_facts_without_evidence(self):
+        application_id = self._eligible_application(required_loan_amount="400000.00")
+        shareholding = Shareholding.objects.create(
+            member=self.member,
+            folio_number=self.member.folio_number,
+            number_of_shares=100,
+            holding_mode="physical",
+            valuation_per_share="2000.00",
+            valuation_effective_date=timezone.localdate(),
+            pledged_share_count=0,
+            available_share_count=100,
+            status="active",
+        )
+        pending_land = LandHolding.objects.create(
+            member=self.member,
+            document_type="7_12_extract",
+            survey_number="124/1",
+            village="Niphad",
+            area_acres="5.00",
+            document_id=uuid4(),
+            verification_status="pending",
+        )
+        rejected_land = LandHolding.objects.create(
+            member=self.member,
+            document_type="7_12_extract",
+            survey_number="124/2",
+            village="Niphad",
+            area_acres="5.00",
+            document_id=uuid4(),
+            verification_status="rejected",
+        )
+        pending_crop = CropPlan.objects.create(
+            member=self.member,
+            loan_application_id=application_id,
+            crop_type="grapes",
+            season="FY2026 Rabi",
+            planned_area_acres="5.00",
+            estimated_cost_amount="100000.00",
+            loan_purpose_alignment="agriculture_aligned",
+            document_id=uuid4(),
+            verification_status="pending",
+        )
+        unlinked_crop = CropPlan.objects.create(
+            member=self.member,
+            crop_type="grapes",
+            season="FY2026 Summer",
+            planned_area_acres="5.00",
+            estimated_cost_amount="100000.00",
+            loan_purpose_alignment="agriculture_aligned",
+            document_id=uuid4(),
+            verification_status="verified",
+            verified_by_user=self.creator,
+            verified_at=timezone.now(),
+        )
+        wrong_application_crop = CropPlan.objects.create(
+            member=self.member,
+            loan_application_id=uuid4(),
+            crop_type="grapes",
+            season="FY2026 Late",
+            planned_area_acres="5.00",
+            estimated_cost_amount="100000.00",
+            loan_purpose_alignment="agriculture_aligned",
+            document_id=uuid4(),
+            verification_status="verified",
+            verified_by_user=self.creator,
+            verified_at=timezone.now(),
+        )
+        self._active_loan_policy(
+            share_limit_percentage="10.0000",
+            per_share_cap_amount="200.00",
+        )
+        endpoint = (
+            f"/api/v1/loan-applications/{application_id}/"
+            "loan-limit-assessment/calculate/"
+        )
+        base_payload = {
+            "shareholding_id": str(shareholding.shareholding_id),
+            "land_holding_ids": [str(self.land.land_holding_id)],
+            "crop_plan_id": str(self.crop.crop_plan_id),
+            "requested_amount": "400000.00",
+            "calculation_date": timezone.localdate().isoformat(),
+        }
+        cases = [
+            ({"land_holding_ids": [str(pending_land.land_holding_id)]}, "land_holding_ids"),
+            ({"land_holding_ids": [str(rejected_land.land_holding_id)]}, "land_holding_ids"),
+            ({"crop_plan_id": str(pending_crop.crop_plan_id)}, "crop_plan_id"),
+            ({"crop_plan_id": str(unlinked_crop.crop_plan_id)}, "crop_plan_id"),
+            ({"crop_plan_id": str(wrong_application_crop.crop_plan_id)}, "crop_plan_id"),
+        ]
+        for override, expected_field in cases:
+            with self.subTest(override=override):
+                response = self.client.post(
+                    endpoint,
+                    data={**base_payload, **override},
+                    content_type="application/json",
+                    headers=self._headers(
+                        "applications.creator@sfpcl.example",
+                        "CreatorPass123!",
+                    ),
+                )
+                self.assertEqual(response.status_code, 400)
+                assert_error_envelope(self, response.json(), "VALIDATION_ERROR")
+                self.assertIn(expected_field, response.json()["error"]["field_errors"])
+
+        loan_limit_model = apps.get_model("applications", "LoanLimitAssessment")
+        self.assertEqual(loan_limit_model.objects.filter(loan_application_id=application_id).count(), 0)
+        self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 0)
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="loan_limit_assessment").count(),
+            0,
+        )
+
     def test_loan_limit_read_returns_immutable_stored_snapshot_without_evidence(self):
         application_id = self._eligible_application(required_loan_amount="400000.00")
         shareholding = Shareholding.objects.create(
@@ -929,7 +1265,7 @@ class LoanApplicationDraftApiTests(TestCase):
             available_share_count=999,
         )
         LandHolding.objects.filter(pk=self.land.pk).update(area_acres="99.00")
-        CropPlan.objects.filter(pk=self.crop.pk).update(planned_area_acres="88.00")
+        CropPlan.objects.filter(pk=self.crop.pk).update(planned_area_acres="99.00")
         application_model = apps.get_model("applications", "LoanApplication")
         application_model.objects.filter(pk=application_id).update(
             required_loan_amount="10000.00"
@@ -3357,6 +3693,8 @@ class LoanApplicationDraftApiTests(TestCase):
             headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
         )
         self.assertEqual(submit_response.status_code, 200)
+        CropPlan.objects.filter(pk=self.crop.pk).update(loan_application_id=application_id)
+        self.crop.refresh_from_db()
         return application_id
 
     def _reference_generated_application(self, **payload_overrides):

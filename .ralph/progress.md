@@ -1,5 +1,22 @@
 # Ralph Progress Log
 
+## 2026-07-10 13:15 - 2026-07-10_125342_normal_run
+- Agent tool used: codex.
+- Slice attempted: `006C2-cultivated-acreage-source-hardening`.
+- Summary: Hardened BR-020 loan-limit acreage source handling. Calculation now requires verified
+  selected member land holdings, a verified crop plan linked to the same loan application, and
+  agreement across normalized selected-land, crop-plan, and applicable profile cultivated acreage
+  facts. Disagreement returns `400 VALIDATION_ERROR` at
+  `error.field_errors.cultivated_acreage = CULTIVATED_ACREAGE_UNRESOLVED` before assessment save,
+  audit, or workflow writes. Successful calculations snapshot the agreed cultivated acreage and
+  keep the existing lower-of-two formula unchanged.
+- Tests run: TDD red/green for acreage mismatch; focused application API suite (50/50); backend
+  check; migration sync; full backend tests (301/301); backend coverage 95% above the 85% floor;
+  frontend lint; frontend typecheck; frontend tests (106/106); frontend build; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_125342_normal_run/`, including red/green logs,
+  gate outputs, and matched/mismatched API examples.
+- Result: Success. Risk: High under standing approval. Next: `006D2`, then `006E`.
+
 ## 2026-07-10 12:10 - 2026-07-10_110705_normal_run
 - Agent tool used: codex.
 - Slice attempted: `005I4-application-detail-backend-state-hardening`.
@@ -2450,6 +2467,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_110705_normal_run/.ralph/runs/2026-07-10_110705_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_110705_normal_run/.ralph/runs/2026-07-10_110705_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 13:19:40 - 2026-07-10_125342_normal_run
+- Agent tool used: codex
+- Slice attempted: 006C2-cultivated-acreage-source-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_125342_normal_run/.ralph/runs/2026-07-10_125342_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_125342_normal_run/.ralph/runs/2026-07-10_125342_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

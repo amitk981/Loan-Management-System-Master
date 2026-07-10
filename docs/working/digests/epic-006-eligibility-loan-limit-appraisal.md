@@ -132,6 +132,25 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
   permission-denied, and object-scope-denied reruns preserve the prior snapshot and create no
   success evidence.
 
+## 006C2 Cultivated Acreage Source Hardening
+- Source ambiguity A-049 remains open: functional-spec BR-020 requires land area under cultivation,
+  while the model exposes selected `LandHolding.area_acres`, application `CropPlan.planned_area_acres`,
+  and nullable `IndividualMemberProfile.land_area_under_cultivation_acres` without a precedence rule.
+- Implemented safe interim behavior: calculation proceeds only when the normalized Decimal acreage
+  values agree across total selected verified land holdings, the selected verified crop plan linked
+  to the current application, and profile cultivated acreage when that profile value exists. `5`,
+  `5.0`, and `5.00` compare equal.
+- The calculate endpoint now rejects pending/rejected selected land holdings, pending/rejected crop
+  plans, crop plans with null `loan_application_id`, crop plans linked to another application, and
+  mismatched acreage evidence before any `LoanLimitAssessment.save()`, `loan_limit.calculated`
+  audit, or `loan_limit_assessment` workflow event.
+- Mismatch contract for 006D2/module extraction: `400 VALIDATION_ERROR` with
+  `error.field_errors.cultivated_acreage = "CULTIVATED_ACREAGE_UNRESOLVED"`. A failed rerun leaves
+  the existing one-to-one assessment UUID, serialized GET response, policy snapshot, acreage
+  snapshot, audit count, and workflow-event count unchanged.
+- Successful calculation stores the agreed cultivated acreage in `loan_limit_assessments.land_area_acres`
+  and keeps the existing source-backed scale-of-finance multiplication and lower-of-two formula.
+
 ## 006E-006F Appraisal And Credit Review Source Extract
 - `api-contracts.md` §24 defines appraisal create/read, submit-for-review, Credit Manager review,
   and submit-to-sanction as separate actions. 006E owns create/read/edit/submit-for-review; 006F

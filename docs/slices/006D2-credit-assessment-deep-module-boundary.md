@@ -49,6 +49,15 @@ reducing the chance that later appraisal/sanction work duplicates or bypasses th
   snapshot projection helpers, or credit-assessment models directly.
 - Keep one canonical redacted snapshot DTO for both public response data and audit old/new values;
   tests must fail if the two projections drift in shared financial/policy/acreage fields.
+- Preserve the 006C2 cultivated-acreage contract inside the extracted loan-limit calculator:
+  selected `LandHolding.area_acres`, application-linked `CropPlan.planned_area_acres`, and nullable
+  profile `land_area_under_cultivation_acres` are normalized through the Decimal path and must
+  agree when applicable. Disagreement returns `400 VALIDATION_ERROR` with
+  `error.field_errors.cultivated_acreage = "CULTIVATED_ACREAGE_UNRESOLVED"` before assessment save,
+  audit, or workflow writes.
+- Module tests must cover the 006C2 decimal-equivalent path (`5`, `5.0`, `5.00`), the two-value
+  null-profile path, pending/rejected land or crop evidence, null/wrong crop-plan application link,
+  and failed-rerun preservation of the stored GET snapshot/evidence counts.
 - Add an import-boundary regression (or equivalent static assertion) proving new appraisal code and
   application views cannot reach the extracted private credit helpers through
   `applications.services` compatibility aliases.

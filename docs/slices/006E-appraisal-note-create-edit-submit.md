@@ -24,6 +24,12 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 ## Prior Slice Handoff
 - 006C calculates and atomically stores the source-backed loan-limit assessment only after 006B
   `overall_result = eligible`; 006D makes that stored snapshot readable without recalculation.
+- 006C2 now guarantees the stored loan-limit snapshot used by appraisal comes only from verified
+  selected land holdings, a verified crop plan linked to the same loan application, and agreed
+  cultivated-acreage evidence. 006E must read the stored `land_area_acres`,
+  `land_based_limit_amount`, `final_eligible_loan_amount`, and `exception_required_flag` from the
+  snapshot; it must not re-run acreage comparison or fall back to current member land/crop/profile
+  rows.
 - 006E must require both stored assessments before appraisal creation and must consume their stored
   summaries/IDs rather than re-running eligibility or loan-limit formulas.
 - Architecture review `2026-07-10_092630_architecture_review` queued 005I3/005I4 to complete the

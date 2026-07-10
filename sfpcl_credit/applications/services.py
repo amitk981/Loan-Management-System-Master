@@ -26,6 +26,7 @@ from sfpcl_credit.members.models import (
     BankAccount,
     CancelledCheque,
     CropPlan,
+    IndividualMemberProfile,
     LandHolding,
     Member,
     Nominee,
@@ -1148,10 +1149,7 @@ def calculate_loan_limit(
     shareholding_limit = (
         Decimal(shareholding.number_of_shares) * per_share_limit
     ).quantize(Decimal("0.01"))
-    land_area = sum(
-        (holding.area_acres for holding in cleaned["land_holdings"]),
-        Decimal("0.00"),
-    )
+    land_area = cleaned["cultivated_acreage"]
     land_limit = (
         land_area * policy.default_scale_of_finance_per_acre_amount
     ).quantize(Decimal("0.01"))
@@ -2425,6 +2423,8 @@ def _clean_loan_limit_payload(application, payload):
         errors["land_holding_ids"] = (
             "Every land holding must exist for the loan application member."
         )
+    elif any(holding.verification_status != "verified" for holding in land_holdings):
+        errors["land_holding_ids"] = "Every selected land holding must be verified."
 
     crop_plan = CropPlan.objects.filter(
         crop_plan_id=crop_plan_id,
@@ -2432,11 +2432,10 @@ def _clean_loan_limit_payload(application, payload):
     ).first()
     if crop_plan is None:
         errors["crop_plan_id"] = "Referenced record was not found for this member."
-    elif (
-        crop_plan.loan_application_id
-        and crop_plan.loan_application_id != application.loan_application_id
-    ):
-        errors["crop_plan_id"] = "Crop plan belongs to another loan application."
+    elif crop_plan.loan_application_id != application.loan_application_id:
+        errors["crop_plan_id"] = "Crop plan must be linked to this loan application."
+    elif crop_plan.verification_status != "verified":
+        errors["crop_plan_id"] = "Crop plan must be verified."
     elif crop_plan.loan_purpose_alignment != "agriculture_aligned":
         errors["crop_plan_id"] = "Crop plan must be agriculture aligned."
 
@@ -2450,13 +2449,30 @@ def _clean_loan_limit_payload(application, payload):
         )
     if errors:
         raise LoanApplicationValidationError(errors)
+    selected_land_area = _normalized_acres(
+        sum((holding.area_acres for holding in land_holdings), Decimal("0.00"))
+    )
+    crop_plan_area = _normalized_acres(crop_plan.planned_area_acres)
+    acreage_values = {selected_land_area, crop_plan_area}
+    profile = IndividualMemberProfile.objects.filter(member=application.member).first()
+    if profile and profile.land_area_under_cultivation_acres is not None:
+        acreage_values.add(_normalized_acres(profile.land_area_under_cultivation_acres))
+    if len(acreage_values) != 1:
+        raise LoanApplicationValidationError(
+            {"cultivated_acreage": "CULTIVATED_ACREAGE_UNRESOLVED"}
+        )
     return {
         "shareholding": shareholding,
         "land_holdings": land_holdings,
         "crop_plan": crop_plan,
+        "cultivated_acreage": selected_land_area,
         "requested_amount": requested_amount,
         "calculation_date": calculation_date,
     }
+
+
+def _normalized_acres(value):
+    return Decimal(value).quantize(Decimal("0.01"))
 
 
 def _effective_loan_policy(calculation_date):
