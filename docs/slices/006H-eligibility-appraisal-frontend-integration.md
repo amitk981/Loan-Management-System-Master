@@ -1,7 +1,7 @@
 # Slice 006H: Eligibility Appraisal Frontend Integration
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review

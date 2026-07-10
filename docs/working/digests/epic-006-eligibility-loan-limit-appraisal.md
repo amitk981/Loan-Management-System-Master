@@ -442,3 +442,10 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - The SQLite functional suite covers strict validation, permissions/scope, invalid/rejected/
   missing/repeated/inconsistent states, rollback, and preservation. A PostgreSQL-only competing
   submission test exists; AFK sandbox socket denial is environment evidence, not concurrency proof.
+
+## 006H Frontend Integration
+- The workbench and Application Detail credit tab now read stored eligibility, limit, appraisal,
+  immutable history, rejection summary, and pending sanction response through §22-§24 APIs.
+- Canonical `/auth/me` permissions plus exact server states gate actions; standard errors surface.
+- Decimal inputs remain strings, sanction sends exactly `{ remarks }`, and frontend formulas and
+  appraisal `mockData` ownership are removed. Browser screenshots remain 006X host evidence.

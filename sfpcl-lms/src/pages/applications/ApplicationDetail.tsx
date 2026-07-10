@@ -4,6 +4,8 @@ import AlertBanner from '../../components/ui/AlertBanner';
 import StageStepper from '../../components/ui/StageStepper';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Tabs from '../../components/ui/Tabs';
+import EligibilityChecklist from '../../components/loan/EligibilityChecklist';
+import LoanLimitCalculator from '../../components/loan/LoanLimitCalculator';
 import type {
   ApplicationDeficiency,
   ApplicationDocumentChecklistItem,
@@ -23,6 +25,7 @@ interface ApplicationDetailProps {
   applicationId: string;
   onBack: () => void;
   onNavigateMember: (memberId: string) => void;
+  onNavigateAppraisal?: (applicationId: string) => void;
 }
 
 interface ApplicationDetailViewProps extends ApplicationDetailProps {
@@ -185,6 +188,7 @@ const RejectionNotePanel: React.FC<{ application: StaffApplication }> = ({ appli
 export const ApplicationDetailView: React.FC<ApplicationDetailViewProps> = ({
   onBack,
   onNavigateMember,
+  onNavigateAppraisal,
   status,
   message,
   data,
@@ -317,7 +321,14 @@ export const ApplicationDetailView: React.FC<ApplicationDetailViewProps> = ({
           </h3>
           <p className="text-sm text-slate-500">No API-backed witness details are available for this application yet.</p>
         </div>
-        {unavailablePanel('Eligibility & Limit', 'No backend eligibility or loan-limit facts are available in this detail response.')}
+        <div className="space-y-4">
+          {data.eligibility ? <div className="card"><EligibilityChecklist assessment={data.eligibility} /></div> : unavailablePanel('Eligibility Assessment', 'No stored eligibility assessment is available.')}
+          {data.loanLimit ? <div className="card"><LoanLimitCalculator assessment={data.loanLimit} /></div> : unavailablePanel('Loan Limit', 'No stored loan-limit assessment is available.')}
+          <div className="card flex items-center justify-between gap-3">
+            <div><h3 className="text-sm font-semibold text-slate-700">Appraisal</h3><p className="text-sm text-slate-500 mt-1">{data.appraisal ? `Stored status: ${documentLabel(data.appraisal.appraisal_status)}` : 'No stored appraisal note is available.'}</p></div>
+            {onNavigateAppraisal && <button className="btn-secondary text-sm" onClick={() => onNavigateAppraisal(application.loan_application_id)}>Open Appraisal Workbench</button>}
+          </div>
+        </div>
         {unavailablePanel('Sanction & Approvals', 'No backend sanction or approval facts are available in this detail response.')}
         <ChecklistRows items={checklistItems} />
         {unavailablePanel('Security Instruments', 'No backend security facts are available in this detail response.')}

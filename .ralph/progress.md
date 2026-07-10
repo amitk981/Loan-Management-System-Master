@@ -1,5 +1,14 @@
 # Ralph Progress Log
 
+## 2026-07-10 - 2026-07-10_210638_repair
+- Slice: `006H-eligibility-appraisal-frontend-integration` (repair after a 2,019-line diff failure).
+- Result: API-backed Appraisal Workbench and Application Detail credit summary; no frontend formula
+  or appraisal mock ownership; permission/state gates and standard stale errors are tested.
+- Gates: frontend lint/typecheck/build and 126 tests; backend check/migration sync and 372 tests at
+  93% coverage; 1,979 validator-counted lines (2,000 limit).
+- Evidence: `.ralph/runs/2026-07-10_210638_repair/evidence/`; risk Medium; result Success.
+- Next: due architecture review, then sharpened `006X` two-role Epic 006 tracer.
+
 ## 2026-07-10 - 2026-07-10_201119_normal_run
 - Agent tool used: codex.
 - Slice attempted: `006G-submit-to-sanction`.
@@ -2853,6 +2862,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/.ralph/runs/2026-07-10_201119_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/.ralph/runs/2026-07-10_201119_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 21:32:44 - 2026-07-10_210638_repair
+- Agent tool used: codex
+- Slice attempted: 006H-eligibility-appraisal-frontend-integration
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_210638_repair/.ralph/runs/2026-07-10_210638_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_210638_repair/.ralph/runs/2026-07-10_210638_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

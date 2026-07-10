@@ -253,6 +253,7 @@ const AppInner: React.FC = () => {
             applicationId={selectedApplicationId || 'app001'}
             onBack={() => navigate('applications')}
             onNavigateMember={id => navigate('members/profile', id)}
+            onNavigateAppraisal={id => navigate('appraisal', id)}
           />
         );
       case 'completeness':
@@ -282,7 +283,7 @@ const AppInner: React.FC = () => {
           />
         );
       case 'appraisal':
-        return <AppraisalWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} applications={applications} onUpdateStatus={updateApplicationStatus} />;
+        return <AppraisalWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} />;
       case 'sanction':
         return <SanctionWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} applications={applications} onUpdateStatus={updateApplicationStatus} />;
       case 'documentation':

@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as applicationIntakeApi from '../../services/applicationIntakeApi';
 import ApplicationDetail, { ApplicationDetailView } from './ApplicationDetail';
-import { loadApplicationDetail } from './applicationDetailLoader';
+import { loadApplicationDetail, type ApplicationDetailData } from './applicationDetailLoader';
 import type { ApplicationDeficiency, ApplicationDocumentChecklistItem, StaffApplication } from '../../services/applicationIntakeApi';
 
 describe('ApplicationDetail API-backed rendering', () => {
@@ -24,6 +24,9 @@ describe('ApplicationDetail API-backed rendering', () => {
       application,
       checklistItems: [],
       deficiencies: [],
+      eligibility: null,
+      loanLimit: null,
+      appraisal: null,
     });
   });
 
@@ -218,6 +221,13 @@ describe('ApplicationDetail API-backed rendering', () => {
     expect(`${nomineeHtml}${witnessHtml}`).not.toContain('Rajan Marathe');
     expect(`${nomineeHtml}${witnessHtml}`).not.toContain('Sunanda Patil');
   });
+
+  it('renders the stored credit summary and workbench link', () => {
+    const eligibility: ApplicationDetailData['eligibility'] = { eligibility_assessment_id: 'eligibility-1', loan_application_id: 'app-1', member_active_check: 'pass', default_check: 'no_default', document_check: 'complete', terms_acceptance_check: 'accepted', purpose_check: 'agriculture_aligned', nominee_check: 'valid', overall_result: 'eligible', assessment_notes: 'Stored detail explanation.', assessed_by_user_id: 'user-1', assessed_at: '2026-07-10T10:00:00Z' };
+    const loanLimit: ApplicationDetailData['loanLimit'] = { loan_limit_assessment_id: 'limit-1', loan_application_id: 'app-1', member_id: 'member-1', shareholding_id: 'share-1', number_of_shares: 100, valuation_per_share: '2500.00', share_limit_percentage: '10.0000', per_share_cap_amount: '250.00', shareholding_based_limit_amount: '250000.00', land_area_acres: '12.50', scale_of_finance_per_acre_amount: '30000.00', land_based_limit_amount: '375000.00', final_eligible_loan_amount: '250000.00', requested_amount: '250000.00', amount_within_limit_flag: true, exception_required_flag: false, calculation_rule_version: 'board-policy-2026', configuration_source: { type: 'loan_policy_config', loan_policy_config_id: 'policy-1', policy_name: 'Board policy', board_approval_reference: 'BR-01' }, warnings: [], calculated_by_user_id: 'user-1', calculated_at: '2026-07-10T10:05:00Z' };
+    const html = renderView({ status: 'success', message: '', activeTab: 5, data: { application, checklistItems: [], deficiencies: [], eligibility, loanLimit, appraisal: null }, onNavigateAppraisal: vi.fn() });
+    expect(html).toContain('Stored detail explanation.'); expect(html).toContain('board-policy-2026'); expect(html).toContain('Open Appraisal Workbench');
+  });
 });
 
 const renderView = ({
@@ -225,16 +235,19 @@ const renderView = ({
   data,
   message,
   activeTab = 0,
+  onNavigateAppraisal,
 }: {
   status: 'loading' | 'success' | 'error';
-  data: { application: StaffApplication; checklistItems: ApplicationDocumentChecklistItem[]; deficiencies: ApplicationDeficiency[] } | null;
+  data: ApplicationDetailData | null;
   message: string;
   activeTab?: number;
+  onNavigateAppraisal?: (applicationId: string) => void;
 }) => renderToStaticMarkup(
   <ApplicationDetailView
     applicationId="app-1"
     onBack={vi.fn()}
     onNavigateMember={vi.fn()}
+    onNavigateAppraisal={onNavigateAppraisal}
     status={status}
     message={message}
     data={data}

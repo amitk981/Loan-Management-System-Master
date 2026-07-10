@@ -1,10 +1,16 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-10_201119_normal_run
+2026-07-10_210638_repair
 
 ## Current Status
-`006G-submit-to-sanction` is complete through the backend/API path.
+`006H-eligibility-appraisal-frontend-integration` is complete through the staff UI path.
+
+- Appraisal Workbench and Application Detail now consume the completed Epic 006 APIs.
+- Stored explanations, provenance, decimals, boundaries, TAT, rejection summary, and immutable
+  history render without `mockData` facts or a TypeScript loan-limit formula.
+- Canonical permissions and exact states gate actions; sanction sends exactly `{ remarks }`, never
+  retries stale writes, and retains the returned pending case ID.
 
 - A Credit Manager with independent `credit.appraisal.submit_sanction` authority can submit one
   reviewed, provenance-verified appraisal through the strict source §24.5 endpoint.
@@ -22,9 +28,11 @@
 
 ## Validation
 Configured gates passed: 372 backend tests with five PostgreSQL-only skips, 93% coverage (85%
-floor), Django check, migration sync, frontend lint/typecheck, 107 tests, build, and diff checks.
-Focused sanction/migration tests passed. TDD red/green, API examples, and all terminal output are in
-`.ralph/runs/2026-07-10_201119_normal_run/evidence/`.
+floor), Django check, migration sync, frontend lint/typecheck, 126 tests, build, and diff checks.
+TDD red/green, API examples, and terminal evidence are in
+`.ralph/runs/2026-07-10_210638_repair/evidence/`.
+
+Visual capture was unavailable: the sandbox denied Vite's listener and no in-app browser existed.
 
 The new sanction duplicate-submission concurrency test was collected but could not execute against
 PostgreSQL because the AFK sandbox denied the live Unix socket before database creation with
@@ -33,6 +41,5 @@ proof; independent host validation should run it with
 `--settings=sfpcl_credit.config.postgres_test_settings`.
 
 ## Next Run
-Run `006H-eligibility-appraisal-frontend-integration`. It has been sharpened with the exact 006G
-response/state handoff. Then run the sharpened `006X` tracer only through the Epic 006 boundary,
-ending at one pending sanction case without implementing later-epic committee or servicing work.
+Run the due architecture review, then `006X` through the Epic 006 boundary with two real roles and
+host screenshots, ending at one pending case without later-epic committee or servicing work.

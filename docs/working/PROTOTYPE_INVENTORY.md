@@ -16,6 +16,7 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
 - Applications: `ApplicationList`, `NewApplication`, `ApplicationDetail`, `CompletenessWorkbench`
 - Members: `MemberDirectory`, `MemberProfile`, `Borrower360`
 - Appraisal and sanction: `AppraisalWorkbench`, `SanctionWorkbench`
+- `AppraisalWorkbench` and Application Detail's credit tab consume Epic 006 staff APIs (006H).
 - Documentation and disbursement: `DocumentationHub`, `DisbursementHub`, `PaymentAuthorisationHub`
 - Servicing: `LoanAccount360`, `RepaymentsHub`, `InterestManagement`, `MonitoringDashboard`
 - Default/closure/compliance: `DefaultRecoveryHub`, `LoanClosureHub`, `ComplianceDashboard`, `GrievancesHub`, `AuditArchiveHub`, `RegistersHub`

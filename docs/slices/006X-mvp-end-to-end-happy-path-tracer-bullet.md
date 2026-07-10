@@ -35,7 +35,9 @@ Epic 007 adds committee decisions.
 None directly.
 
 ## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
+Drive the existing 006H controls with real Deputy Manager Finance and Credit Manager sessions.
+Assert displayed IDs/statuses match API responses and save reviewed/pending-case screenshots; add
+no production UI, mock credit facts, or client-side calculation.
 
 ## Backend/API Scope
 Use only existing APIs to seed or create one complete reference-generated application, run eligible
