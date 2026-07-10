@@ -2802,3 +2802,31 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-10 20:08:00 - 2026-07-10_195330_normal_run
+- Agent tool used: codex
+- Slice attempted: 006F3-appraisal-lock-order-and-postgresql-concurrency-closure
+- Summary: Added an ungated candidate application-first appraisal lock implementation and two
+  PostgreSQL-only public-interface concurrency outcome tests. The standard gate suite is green,
+  but the mandatory PostgreSQL acceptance command could not execute because the AFK sandbox denied
+  access to the running PostgreSQL 14 socket; in-sandbox PostgreSQL bootstrap was also denied its
+  required shared-memory allocation.
+- Tests run: 52 focused credit/appraisal tests green with two PostgreSQL-only skips; 365 full
+  backend tests green with four PostgreSQL-only skips; 94% coverage; Django check; migration sync;
+  frontend lint/typecheck/107 tests/build; combined PostgreSQL command found four tests and failed
+  before execution with `Operation not permitted`.
+- Evidence saved: `.ralph/runs/2026-07-10_195330_normal_run/`.
+- Result: Failed. Slice remains Not Started and must not be committed or merged.
+- Risk level: High.
+- Next action: Ralph repair must run the combined 006D2C/appraisal concurrency command on reachable
+  PostgreSQL with zero skips before 006F3 can complete; then proceed to sharpened 006G and 006H.
+
+## 2026-07-10 20:11:08 - 2026-07-10_195330_normal_run
+- Agent tool used: codex
+- Slice attempted: 006F3-appraisal-lock-order-and-postgresql-concurrency-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_195330_normal_run/.ralph/runs/2026-07-10_195330_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_195330_normal_run/.ralph/runs/2026-07-10_195330_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

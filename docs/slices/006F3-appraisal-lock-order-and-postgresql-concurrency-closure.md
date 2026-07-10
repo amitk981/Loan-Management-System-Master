@@ -1,7 +1,7 @@
 # Slice 006F3: Appraisal Lock Order and PostgreSQL Concurrency Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review

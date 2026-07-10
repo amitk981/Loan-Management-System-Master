@@ -1,10 +1,14 @@
+from collections.abc import Mapping
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from decimal import Decimal
+from threading import Event, Lock
+from unittest import skipUnless
 from unittest.mock import patch
 from uuid import uuid4
 
 from django.apps import apps
-from django.db import connection
+from django.db import close_old_connections, connection, connections
 from django.db.migrations.executor import MigrationExecutor
 from django.test import Client, TestCase, TransactionTestCase
 from django.utils import timezone
@@ -1885,6 +1889,377 @@ class AppraisalApiTests(TestCase):
         user.set_password("AppraisalPass123!")
         user.save()
         return user
+
+
+@skipUnless(
+    connection.vendor == "postgresql",
+    "Authoritative appraisal concurrency proof requires PostgreSQL integration settings.",
+)
+class AppraisalConcurrencyTests(TransactionTestCase):
+    setUp = AppraisalApiTests.setUp
+    _payload = AppraisalApiTests._payload
+    _permission = AppraisalApiTests._permission
+    _user = AppraisalApiTests._user
+
+    def test_rejected_review_serializes_before_stale_draft_patch_without_deadlock(self):
+        from sfpcl_credit.credit.models import (
+            AppraisalReviewDecision,
+            LoanAppraisalNote,
+        )
+        from sfpcl_credit.credit.modules.appraisal_workflow import (
+            AppraisalWorkflow,
+            CreditModuleInvalidStateError,
+        )
+
+        workflow = AppraisalWorkflow()
+        created = workflow.create_or_update(
+            actor=self.actor,
+            application_id=self.application.pk,
+            payload=self._payload(),
+            request_meta={"request_id": "concurrency-appraisal-created"},
+        ).snapshot
+        workflow.submit_for_review(
+            actor=self.actor,
+            appraisal_id=created["loan_appraisal_note_id"],
+            payload={"remarks": "Ready for a competing terminal review."},
+            request_meta={"request_id": "concurrency-appraisal-submitted"},
+        )
+        reviewer = self._user(
+            "credit.manager@sfpcl.example",
+            self._permission("credit.appraisal.review", "Review appraisal"),
+        )
+        review_locked = Event()
+        patch_attempting = Event()
+        patch_payload_entered = Event()
+        release_review = Event()
+        ordering = []
+        ordering_lock = Lock()
+
+        def record(step):
+            with ordering_lock:
+                ordering.append(step)
+
+        class CoordinatedReviewPayload(dict):
+            blocked = False
+
+            def get(self, key, default=None):
+                if key == "rejection_reason_category" and not self.blocked:
+                    self.blocked = True
+                    record("review_locked_application_and_appraisal")
+                    review_locked.set()
+                    if not release_review.wait(timeout=10):
+                        raise AssertionError("Timed out waiting to release rejected review.")
+                    record("review_released")
+                return super().get(key, default)
+
+        class CoordinatedPatchPayload(Mapping):
+            values = {"recommendation": "conditions"}
+
+            def __contains__(self, key):
+                return key in self.values
+
+            def __getitem__(self, key):
+                return self.values[key]
+
+            def __iter__(self):
+                record("patch_locked_application")
+                patch_payload_entered.set()
+                return iter(self.values)
+
+            def __len__(self):
+                return len(self.values)
+
+        rejection_payload = CoordinatedReviewPayload(
+            {
+                "decision": "rejected",
+                "review_comments": "Independent terminal review completed.",
+                "rejection_reason_category": "eligibility",
+                "detailed_reason": "The appraisal does not meet credit criteria.",
+                "reapply_allowed_flag": True,
+                "communication_mode": "email",
+            }
+        )
+
+        def reject():
+            close_old_connections()
+            try:
+                thread_reviewer = User.objects.get(user_id=reviewer.pk)
+                return AppraisalWorkflow().review(
+                    actor=thread_reviewer,
+                    appraisal_id=created["loan_appraisal_note_id"],
+                    decision="rejected",
+                    comments=rejection_payload["review_comments"],
+                    payload_fields=rejection_payload,
+                    request_meta={"request_id": "concurrency-rejection-winner"},
+                ).snapshot
+            finally:
+                connections["default"].close()
+
+        def stale_patch():
+            close_old_connections()
+            try:
+                thread_actor = User.objects.get(user_id=self.actor.pk)
+                record("patch_attempting_application_lock")
+                patch_attempting.set()
+                return AppraisalWorkflow().create_or_update(
+                    actor=thread_actor,
+                    application_id=self.application.pk,
+                    payload=CoordinatedPatchPayload(),
+                    partial=True,
+                    request_meta={"request_id": "concurrency-stale-patch-loser"},
+                ).snapshot
+            finally:
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            review_future = executor.submit(reject)
+            review_locked.wait(timeout=10)
+            patch_future = executor.submit(stale_patch)
+            patch_attempting.wait(timeout=10)
+            try:
+                self.assertFalse(
+                    patch_payload_entered.wait(timeout=0.5),
+                    "Stale PATCH reached its payload while rejected review held the locks.",
+                )
+            finally:
+                release_review.set()
+            rejected = review_future.result(timeout=10)
+            with self.assertRaises(CreditModuleInvalidStateError):
+                patch_future.result(timeout=10)
+
+        note = LoanAppraisalNote.objects.get(pk=created["loan_appraisal_note_id"])
+        history = AppraisalReviewDecision.objects.get(loan_appraisal_note=note)
+        rejection_note_model = apps.get_model("applications", "RejectionNote")
+        self.assertEqual(note.appraisal_status, LoanAppraisalNote.STATUS_REJECTED)
+        self.assertEqual(note.recommendation, "approve")
+        self.assertEqual(rejected["appraisal_status"], "rejected")
+        self.assertEqual(history.history_provenance, "native")
+        self.assertEqual(history.from_state, "review_pending")
+        self.assertEqual(history.to_state, "rejected")
+        self.assertEqual(rejection_note_model.objects.count(), 1)
+        appraisal_audit = AuditLog.objects.get(action="appraisal.rejected")
+        self.assertEqual(
+            appraisal_audit.new_value_json["appraisal_review_decision_id"],
+            str(history.pk),
+        )
+        self.assertEqual(
+            appraisal_audit.new_value_json["rejection_note_id"],
+            str(rejection_note_model.objects.get().pk),
+        )
+        appraisal_event = WorkflowEvent.objects.get(action_code="appraisal.rejected")
+        self.assertEqual(
+            appraisal_event.metadata["appraisal_review_decision_id"],
+            str(history.pk),
+        )
+        self.assertFalse(AuditLog.objects.filter(action="appraisal.updated").exists())
+        self.assertEqual(
+            ordering,
+            [
+                "review_locked_application_and_appraisal",
+                "patch_attempting_application_lock",
+                "review_released",
+                "patch_locked_application",
+            ],
+        )
+        print(f"database_backend={connection.vendor} ordering={' -> '.join(ordering)}")
+
+    def test_duplicate_terminal_reviews_append_one_complete_decision_and_no_loser_evidence(self):
+        from sfpcl_credit.credit.models import (
+            AppraisalReviewDecision,
+            LoanAppraisalNote,
+        )
+        from sfpcl_credit.credit.modules.appraisal_workflow import (
+            AppraisalWorkflow,
+            CreditModuleInvalidStateError,
+        )
+
+        workflow = AppraisalWorkflow()
+        created = workflow.create_or_update(
+            actor=self.actor,
+            application_id=self.application.pk,
+            payload=self._payload(),
+            request_meta={"request_id": "duplicate-review-created"},
+        ).snapshot
+        workflow.submit_for_review(
+            actor=self.actor,
+            appraisal_id=created["loan_appraisal_note_id"],
+            payload={"remarks": "Ready for an initial return."},
+            request_meta={"request_id": "duplicate-review-first-submit"},
+        )
+        reviewer = self._user(
+            "credit.manager@sfpcl.example",
+            self._permission("credit.appraisal.review", "Review appraisal"),
+        )
+        workflow.review(
+            actor=reviewer,
+            appraisal_id=created["loan_appraisal_note_id"],
+            decision="returned",
+            comments="Clarify the repayment capacity evidence.",
+            payload_fields={
+                "decision": "returned",
+                "review_comments": "Clarify the repayment capacity evidence.",
+            },
+            request_meta={"request_id": "duplicate-review-returned"},
+        )
+        workflow.create_or_update(
+            actor=self.actor,
+            application_id=self.application.pk,
+            payload={"repayment_capacity_notes": "Clarified repayment evidence."},
+            partial=True,
+            request_meta={"request_id": "duplicate-review-revised"},
+        )
+        workflow.submit_for_review(
+            actor=self.actor,
+            appraisal_id=created["loan_appraisal_note_id"],
+            payload={"remarks": "Clarification added for terminal review."},
+            request_meta={"request_id": "duplicate-review-second-submit"},
+        )
+        history_fields = (
+            "appraisal_review_decision_id",
+            "decision",
+            "review_comments",
+            "reviewer_user_id",
+            "decided_at",
+            "from_state",
+            "to_state",
+            "history_provenance",
+        )
+        pre_race_history = list(
+            AppraisalReviewDecision.objects.order_by(
+                "decided_at", "appraisal_review_decision_id"
+            ).values(*history_fields)
+        )
+        winner_locked = Event()
+        loser_attempting = Event()
+        loser_completed = Event()
+        release_winner = Event()
+        ordering = []
+        ordering_lock = Lock()
+
+        def record(step):
+            with ordering_lock:
+                ordering.append(step)
+
+        class CoordinatedRejectionPayload(dict):
+            blocked = False
+
+            def get(self, key, default=None):
+                if key == "rejection_reason_category" and not self.blocked:
+                    self.blocked = True
+                    record("winner_locked_application_appraisal_and_history")
+                    winner_locked.set()
+                    if not release_winner.wait(timeout=10):
+                        raise AssertionError("Timed out waiting to release terminal review.")
+                    record("winner_released")
+                return super().get(key, default)
+
+        rejection_payload = CoordinatedRejectionPayload(
+            {
+                "decision": "rejected",
+                "review_comments": "Terminal rejection after independent review.",
+                "rejection_reason_category": "limit_issue",
+                "detailed_reason": "The clarified repayment evidence remains insufficient.",
+                "reapply_allowed_flag": True,
+                "communication_mode": "email",
+            }
+        )
+
+        def reject():
+            close_old_connections()
+            try:
+                thread_reviewer = User.objects.get(user_id=reviewer.pk)
+                return AppraisalWorkflow().review(
+                    actor=thread_reviewer,
+                    appraisal_id=created["loan_appraisal_note_id"],
+                    decision="rejected",
+                    comments=rejection_payload["review_comments"],
+                    payload_fields=rejection_payload,
+                    request_meta={"request_id": "duplicate-review-rejection-winner"},
+                ).snapshot
+            finally:
+                connections["default"].close()
+
+        def duplicate_review():
+            close_old_connections()
+            try:
+                thread_reviewer = User.objects.get(user_id=reviewer.pk)
+                record("loser_attempting_application_lock")
+                loser_attempting.set()
+                return AppraisalWorkflow().review(
+                    actor=thread_reviewer,
+                    appraisal_id=created["loan_appraisal_note_id"],
+                    decision="reviewed",
+                    comments="This competing decision must not persist.",
+                    payload_fields={
+                        "decision": "reviewed",
+                        "review_comments": "This competing decision must not persist.",
+                    },
+                    request_meta={"request_id": "duplicate-review-loser"},
+                ).snapshot
+            finally:
+                loser_completed.set()
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            winner_future = executor.submit(reject)
+            winner_locked.wait(timeout=10)
+            loser_future = executor.submit(duplicate_review)
+            loser_attempting.wait(timeout=10)
+            try:
+                self.assertFalse(
+                    loser_completed.wait(timeout=0.5),
+                    "Competing review completed before the winning transaction committed.",
+                )
+            finally:
+                release_winner.set()
+            rejected = winner_future.result(timeout=10)
+            with self.assertRaises(CreditModuleInvalidStateError):
+                loser_future.result(timeout=10)
+
+        note = LoanAppraisalNote.objects.get(pk=created["loan_appraisal_note_id"])
+        final_history = list(
+            AppraisalReviewDecision.objects.order_by(
+                "decided_at", "appraisal_review_decision_id"
+            ).values(*history_fields)
+        )
+        winning_history = final_history[-1]
+        rejection_note_model = apps.get_model("applications", "RejectionNote")
+        self.assertEqual(final_history[:-1], pre_race_history)
+        self.assertEqual(len(final_history), len(pre_race_history) + 1)
+        self.assertEqual(note.appraisal_status, LoanAppraisalNote.STATUS_REJECTED)
+        self.assertEqual(rejected["appraisal_status"], "rejected")
+        self.assertEqual(winning_history["decision"], "rejected")
+        self.assertEqual(winning_history["from_state"], "review_pending")
+        self.assertEqual(winning_history["to_state"], "rejected")
+        self.assertEqual(winning_history["history_provenance"], "native")
+        self.assertEqual(rejection_note_model.objects.count(), 1)
+        winning_audit = AuditLog.objects.get(
+            action="appraisal.rejected",
+            new_value_json__request_id="duplicate-review-rejection-winner",
+        )
+        self.assertEqual(
+            winning_audit.new_value_json["appraisal_review_decision_id"],
+            str(winning_history["appraisal_review_decision_id"]),
+        )
+        winning_event = WorkflowEvent.objects.get(
+            action_code="appraisal.rejected",
+            metadata__appraisal_review_decision_id=str(
+                winning_history["appraisal_review_decision_id"]
+            ),
+        )
+        self.assertEqual(winning_event.from_state, "review_pending")
+        self.assertEqual(winning_event.to_state, "rejected")
+        self.assertFalse(AuditLog.objects.filter(action="appraisal.reviewed").exists())
+        self.assertFalse(WorkflowEvent.objects.filter(action_code="appraisal.reviewed").exists())
+        self.assertEqual(
+            ordering,
+            [
+                "winner_locked_application_appraisal_and_history",
+                "loser_attempting_application_lock",
+                "winner_released",
+            ],
+        )
+        print(f"database_backend={connection.vendor} ordering={' -> '.join(ordering)}")
 
 
 class AppraisalSnapshotMigrationTests(TransactionTestCase):

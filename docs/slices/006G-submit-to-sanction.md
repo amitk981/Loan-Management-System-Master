@@ -66,6 +66,9 @@ None for this slice, except updating frontend documentation or fixtures if requi
   and appraisal, transition the appraisal/application to the source sanction-review state, and
   return the case/application/appraisal IDs and status. A repeated call must not create a second
   case.
+- Preserve 006F3's lock order when implementing the mutation: lock the loan application, then its
+  appraisal, then the existing immutable review-history rows, and only then read/create the pending
+  approval case. Do not introduce an appraisal-first or approval-case-first path.
 - Keep approval-matrix evaluation, approver assignment/decisions, exception approval, meeting
   scheduling, rejection-note generation, documents, and frontend wiring out of scope.
 
@@ -115,6 +118,9 @@ none.
   unchanged; the full ordered review history remains unchanged; exception-required input is
   flagged without creating an exception decision.
 - Forced audit/case failure rolls back every state/evidence write.
+- Two PostgreSQL transactions submitting the same reviewed appraisal serialize without deadlock;
+  one creates the pending case and complete audit/workflow set, while the loser creates no second
+  case or success evidence and leaves appraisal/history snapshots unchanged.
 
 ## Visual Acceptance Criteria
 None.

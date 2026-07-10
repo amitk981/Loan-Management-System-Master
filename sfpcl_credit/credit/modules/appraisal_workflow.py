@@ -82,7 +82,7 @@ class AppraisalWorkflow:
                 permissions,
             )
         application = (
-            LoanApplication.objects.select_for_update()
+            LoanApplication.objects.select_for_update(of=("self",))
             .select_related("created_by_user", "received_by_user")
             .filter(loan_application_id=application_id)
             .first()
@@ -92,7 +92,7 @@ class AppraisalWorkflow:
         require_application_access(application, actor, permission, permissions)
         payload = _clean_payload(payload, partial=partial)
         current = (
-            LoanAppraisalNote.objects.select_for_update()
+            LoanAppraisalNote.objects.select_for_update(of=("self",))
             .select_related("risk_assessment", "prepared_by_user", "reviewed_by_user")
             .filter(loan_application=application)
             .first()
@@ -333,20 +333,7 @@ class AppraisalWorkflow:
             errors["remarks"] = "This field must not be blank."
         if errors:
             raise CreditModuleValidationError(errors)
-        note = (
-            LoanAppraisalNote.objects.select_for_update()
-            .select_related(
-                "loan_application__created_by_user",
-                "loan_application__received_by_user",
-                "risk_assessment",
-                "prepared_by_user",
-                "reviewed_by_user",
-            )
-            .filter(loan_appraisal_note_id=appraisal_id)
-            .first()
-        )
-        if note is None:
-            raise CreditModuleNotFound("Appraisal note was not found.")
+        note = _lock_appraisal_after_application(appraisal_id)
         require_application_access(
             note.loan_application,
             actor,
@@ -426,20 +413,7 @@ class AppraisalWorkflow:
             raise CreditModuleValidationError(
                 {field: "Unknown field." for field in sorted(payload)}
             )
-        note = (
-            LoanAppraisalNote.objects.select_for_update()
-            .select_related(
-                "loan_application__created_by_user",
-                "loan_application__received_by_user",
-                "risk_assessment",
-                "prepared_by_user",
-                "reviewed_by_user",
-            )
-            .filter(loan_appraisal_note_id=appraisal_id)
-            .first()
-        )
-        if note is None:
-            raise CreditModuleNotFound("Appraisal note was not found.")
+        note = _lock_appraisal_after_application(appraisal_id)
         require_application_access(
             note.loan_application,
             actor,
@@ -561,20 +535,7 @@ class AppraisalWorkflow:
             errors["review_comments"] = "This field must not be blank."
         if errors:
             raise CreditModuleValidationError(errors)
-        note = (
-            LoanAppraisalNote.objects.select_for_update()
-            .select_related(
-                "loan_application__created_by_user",
-                "loan_application__received_by_user",
-                "risk_assessment",
-                "prepared_by_user",
-                "reviewed_by_user",
-            )
-            .filter(loan_appraisal_note_id=appraisal_id)
-            .first()
-        )
-        if note is None:
-            raise CreditModuleNotFound("Appraisal note was not found.")
+        note = _lock_appraisal_after_application(appraisal_id)
         require_application_access(
             note.loan_application,
             actor,
@@ -593,6 +554,9 @@ class AppraisalWorkflow:
             raise CreditModulePermissionDenied(
                 "The appraisal preparer cannot review their own appraisal note."
             )
+        # Existing immutable history is locked only after its owning application and
+        # appraisal. The appraisal lock serializes an empty history as well.
+        list(note.review_decisions.select_for_update().only("pk"))
 
         from_state = note.appraisal_status
         now = timezone.now()
@@ -703,6 +667,42 @@ class AppraisalWorkflow:
 
     def submit_to_sanction(self, *, actor, application_id):
         raise NotImplementedError("Sanction submission is owned by slice 006G.")
+
+
+def _lock_appraisal_after_application(appraisal_id):
+    application_id = (
+        LoanAppraisalNote.objects.filter(loan_appraisal_note_id=appraisal_id)
+        .values_list("loan_application_id", flat=True)
+        .first()
+    )
+    if application_id is None:
+        raise CreditModuleNotFound("Appraisal note was not found.")
+    application = (
+        LoanApplication.objects.select_for_update(of=("self",))
+        .select_related("created_by_user", "received_by_user")
+        .filter(loan_application_id=application_id)
+        .first()
+    )
+    if application is None:
+        raise CreditModuleNotFound("Appraisal note was not found.")
+    note = (
+        LoanAppraisalNote.objects.select_for_update(of=("self",))
+        .select_related(
+            "loan_application__created_by_user",
+            "loan_application__received_by_user",
+            "risk_assessment",
+            "prepared_by_user",
+            "reviewed_by_user",
+        )
+        .filter(
+            loan_appraisal_note_id=appraisal_id,
+            loan_application=application,
+        )
+        .first()
+    )
+    if note is None:
+        raise CreditModuleNotFound("Appraisal note was not found.")
+    return note
 
 
 def appraisal_note_snapshot(note):

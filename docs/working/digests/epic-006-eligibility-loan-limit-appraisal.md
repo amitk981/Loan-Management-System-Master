@@ -369,6 +369,23 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
   `legacy_latest_only`; it never fabricates prior cycles. Reverse schema migration drops this
   derived table but deliberately does not relabel unproven prerequisites as verified.
 
+## 006F3 Lock-Order Candidate And Unmet Acceptance (2026-07-10_195330)
+
+- The implementation candidate centralizes appraisal mutation locking inside `AppraisalWorkflow`:
+  application first, appraisal second, then existing immutable history and optional rejection-note
+  work. PostgreSQL `FOR UPDATE OF self` limits locks to the intended rows when nullable related
+  users are joined for authorization/serialization.
+- PostgreSQL-only public-interface tests now describe rejected-review versus stale draft PATCH and
+  duplicate terminal review races. They require deterministic serialization, one native terminal
+  history row, one optional rejection note, matching audit/workflow history UUIDs, preserved
+  pre-race history, and no loser success evidence.
+- This run is not acceptance evidence: the live PostgreSQL 14 server socket was visible but the AFK
+  sandbox denied connection with `Operation not permitted`; an in-sandbox cluster also could not
+  allocate PostgreSQL's required SysV bootstrap segment. The combined loan-limit/appraisal command
+  found four tests but executed none. 006F3 must remain incomplete and rerun in an environment that
+  permits the PostgreSQL connection; SQLite skips and the otherwise-green standard gates do not
+  satisfy the slice.
+
 ## Architecture Review 2026-07-10 04:18 - 006A Spot Check
 - 006A implemented only the active-member portion of the eligibility assessment contract and left
   default, document, terms, purpose, and nominee checks pending for 006B as planned.
