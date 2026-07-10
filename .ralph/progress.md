@@ -1,5 +1,28 @@
 # Ralph Progress Log
 
+## 2026-07-10 21:39 - 2026-07-10_213352_architecture_review
+- Agent tool used: codex.
+- Slice attempted: `architecture-review`.
+- Summary: Independently reviewed `006E3`, `006F3`, `006G`, and `006H` from pinned base
+  `46442fe` along separate Standards and Spec axes. The explicit 006F3 no-merge PostgreSQL
+  acceptance failed (four found, zero executed), then 006G merged with its own PostgreSQL race also
+  unexecuted. Migration 0005 can strand non-draft legacy appraisals; the workbench sends GET-only
+  fields on PATCH, loses case identity after reload, synthesizes status/actions, and replaced the
+  approved staged composition without visual evidence or real container action tests.
+- Architecture finding: credit directly persists the concrete approvals model, reversing the
+  documented app dependency and leaving no deep case read/enrichment seam. Accepted ADR-0005.
+- Corrective work: created High-risk 006E4 (legacy remediation/history), 006F4 (five PostgreSQL
+  races twice), 006G2 (approvals-owned handoff/read contract), 006H2 (writable/action contract), and
+  Medium-risk 006H3 (prototype fidelity/screenshots). `006X` now depends on 006H3. Recorded A-061
+  and updated Epic 006/007 digests and REVIEW_FINDINGS.
+- Production changes: none. Source/protected files: untouched.
+- Tests run: Django check and migration sync; 372 backend tests under coverage with five explicit
+  PostgreSQL-only skips; 93% coverage above 85%; frontend lint/typecheck, 126 tests, build; final
+  diff/protected/state checks. The skips are regression-gate facts, not PostgreSQL acceptance.
+- Evidence saved: `.ralph/runs/2026-07-10_213352_architecture_review/`.
+- Result: Success, pending orchestrator validation. Risk: Low review/docs-only; queued corrective
+  slices are Medium/High. Next: `006E4`, then `006F4`; do not run 006X before 006G2/006H2/006H3.
+
 ## 2026-07-10 - 2026-07-10_210638_repair
 - Slice: `006H-eligibility-appraisal-frontend-integration` (repair after a 2,019-line diff failure).
 - Result: API-backed Appraisal Workbench and Application Detail credit summary; no frontend formula
@@ -2872,6 +2895,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_210638_repair/.ralph/runs/2026-07-10_210638_repair/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_210638_repair/.ralph/runs/2026-07-10_210638_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 21:51:02 - 2026-07-10_213352_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_213352_architecture_review/.ralph/runs/2026-07-10_213352_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_213352_architecture_review/.ralph/runs/2026-07-10_213352_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

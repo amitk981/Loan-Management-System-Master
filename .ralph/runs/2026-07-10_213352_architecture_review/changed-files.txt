@@ -1,0 +1,15 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006X-mvp-end-to-end-happy-path-tracer-bullet.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+?? .ralph/runs/2026-07-10_213352_architecture_review/
+?? docs/adr/ADR-0005-approval-case-module-owns-sanction-handoff.md
+?? docs/slices/006E4-legacy-appraisal-remediation-and-history-backfill.md
+?? docs/slices/006F4-postgresql-credit-concurrency-acceptance.md
+?? docs/slices/006G2-sanction-handoff-module-and-read-contract.md
+?? docs/slices/006H2-workbench-action-contract-hardening.md
+?? docs/slices/006H3-appraisal-workbench-prototype-fidelity-restoration.md

@@ -2,6 +2,159 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-10 21:39 - Architecture Review 2026-07-10_213352_architecture_review
+
+Reviewed completed product slices since architecture-review commit `46442fe`:
+- `006E3-appraisal-history-and-review-authority-hardening` (`cd3aca6`)
+- `006F3-appraisal-lock-order-and-postgresql-concurrency-closure` (`b022c83`)
+- `006G-submit-to-sanction` (`b1b8889`)
+- `006H-eligibility-appraisal-frontend-integration` (`b7cf63f`)
+
+The review checked `git diff 46442fe...HEAD`, the four slice/run packets, migrations, backend and
+frontend implementation/tests, Epic 006 and both Epic 006/007 digests, and the cited primary-source
+sections. Standards and spec fidelity were reviewed independently. Production code was not changed.
+
+### Standards
+
+#### Finding 1 - Critical - Required PostgreSQL acceptance failed but the slices merged
+
+006F3 explicitly says a connection failure or collected-but-unexecuted test is failed acceptance
+and that the slice must not be marked Complete or merged. Its committed review packet says “Failed
+acceptance; do not commit or merge”: four PostgreSQL tests were found, zero executed. The next
+artifact nevertheless says Success, state marks 006F3 Complete, and 006G ran. 006G then added a
+fifth PostgreSQL-only duplicate-submission race; that command also found the test and executed zero
+while the run reported success.
+
+This repeats the prior architecture review's highest-risk finding and violates 006F3/006G plus
+Decision Policy §2. Corrective action: created High-risk
+`006F4-postgresql-credit-concurrency-acceptance`. It must execute all five loan-limit, appraisal,
+and sanction races twice on real PostgreSQL with zero skips; unavailable execution is failure.
+
+#### Finding 2 - High - Frontend recreates backend workflow state and loses action authority
+
+The workbench derives action availability from a locally maintained role/permission/status matrix
+instead of backend `available_actions`. After sanction POST, the response does not contain the new
+application/appraisal statuses, so React hard-codes both strings. Revalidation is shown under
+submit-review permission even though the backend requires update plus risk-management authority and
+legacy-unverified state. This violates codebase-design §23.3-§23.4 and 006H's no-synthesis rule.
+
+Corrective action: 006G2 returns canonical states/actions and a reload-safe case read; 006H2 consumes
+them and deletes the local workflow matrix/status synthesis.
+
+#### Finding 3 - High - The approved Appraisal Workbench was redesigned without visual proof
+
+006H replaced the approved 1,186-line staged queue/detail workbench with a 226-line condensed form
+and rewrote the eligibility and calculator compositions. These are layout/card/density changes, not
+only labels, data, visibility, and actions. That violates the binding Frontend Design Rules and the
+slice's preserve/reuse requirement. No screenshot or visual-regression result exists; the packet
+defers visual proof to 006X despite the 006H visual acceptance requirement.
+
+Corrective action: created Medium-risk `006H3-appraisal-workbench-prototype-fidelity-restoration`.
+It restores the pre-006H composition with real data and requires host screenshots/visual regression.
+
+#### Finding 4 - High - Frontend tests do not exercise the implemented action path
+
+`AppraisalWorkbench.test.tsx` renders only the presentational view to static markup. It never mounts
+the container, runs effects, clicks a control, mocks HTTP at the UI interface, verifies mutation
+refresh, or proves one-call stale behavior through the page. This fails codebase-design §26.3 and
+006H's explicit render/action-test requirement. The missing interaction path concealed the broken
+PATCH and revalidation gates described below.
+
+Corrective action: created High-risk `006H2-workbench-action-contract-hardening`, with real container
+tests for every action and exact request/response/state assertions.
+
+#### Finding 5 - Medium - Sanction handoff crosses the module seam in the wrong direction
+
+`credit.modules.appraisal_workflow` imports and persists the concrete `approvals.ApprovalCase`
+model. The documented direction is `approvals -> credit`, and the source names
+`approvals.modules.approval_case_engine` as the case seam. Keeping creation in credit would spread
+case uniqueness, reads, matrix enrichment, and later action invariants across two apps.
+
+Corrective action: accepted ADR-0005 and created High-risk 006G2. Approval-case creation/read/
+serialization move behind one approvals-owned module interface; credit retains frozen appraisal,
+review consistency, and lock-order behavior without importing the concrete approvals model.
+
+#### Finding 6 - Medium - Malformed sanction JSON can escape the standard envelope
+
+The new sanction view does not catch `ValidationError` from malformed or non-object JSON, unlike
+established application adapters. That input can escape the standard `400 VALIDATION_ERROR`
+contract. Corrective action: 006G2 owns the malformed-body envelope regression.
+
+#### Finding 7 - Medium - New transport code duplicates and weakens existing client behavior
+
+`creditAssessmentApi.ts` implements another authenticated `fetch` path that discards envelope
+metadata and has no shared refresh/401/request-ID behavior. This violates codebase-design §23.5
+and increases transport duplication.
+
+Corrective action: 006H2 must reuse the shared authenticated request/envelope implementation
+instead of layering another shallow client.
+
+### Spec
+
+#### Finding 1 - Critical - PostgreSQL outcomes required by 006F3/006G are absent
+
+Same acceptance evidence as Standards Finding 1. The tests themselves assert meaningful competing
+outcomes, but none ran on the database whose row locks they are meant to prove. 006F4 owns closure.
+
+#### Finding 2 - High - Existing and returned appraisals cannot be saved from the workbench
+
+On load, the full appraisal GET response becomes the edit form. Save PATCH sends that object back,
+while the adapter removes only a null tenure. Response-only IDs, frozen snapshots, provenance,
+review history, status, reviewers, TAT, and rejection facts therefore hit the backend's strict
+unknown-field validation. The client test avoids the defect by PATCHing only a hand-built amount.
+This breaks 006H's required update and returned-draft revise/resubmit flows.
+
+Corrective action: 006H2 adds an exact response-to-writable-draft projection and interaction tests
+that save both ordinary and returned drafts.
+
+#### Finding 3 - High - Migration 0005 can permanently strand legacy appraisals
+
+Migration 0005 downgrades unproven appraisals in every state to `legacy_unverified`, but explicit
+revalidation is draft-only while review and sanction require verified provenance. A
+`review_pending` or `reviewed` legacy row therefore has no repair path. The migration also skips the
+latest known returned decision when the appraisal was resubmitted and is now `review_pending`, so a
+reason that is still present in the latest projection is not backfilled. Fixtures cover neither
+case, contrary to 006E3's “blocked until revalidation succeeds” and latest-known-backfill contract.
+
+Corrective action: created High-risk `006E4-legacy-appraisal-remediation-and-history-backfill` and
+recorded conservative remediation assumption A-061. New evidence never inherits an old review;
+immutable history remains, and reviewed rows require maker resubmission plus fresh review.
+
+#### Finding 4 - Medium - Pending case identity is not recoverable after reload
+
+006H requires API-loaded sanction state and retention of the case UUID for Epic 007. The loader
+fetches only eligibility, limit, and appraisal, then clears `sanctionSubmission`; no subsequent read
+returns the case. A reload shows only a generic submitted label and loses the UUID. The same POST
+response also omits canonical application/appraisal statuses, causing the client synthesis above.
+
+Corrective action: ADR-0005/006G2 add one case-summary read and complete state response; 006H2 loads
+and retains them.
+
+#### Finding 5 - Medium - Revalidation uses the wrong UI authority and state
+
+The revalidation button is controlled by draft state plus submit-review permission, although the
+backend requires update plus risk-management permissions and the action is meaningful only for
+legacy-unverified provenance. Authorized repair users can be blocked while submit-only users see an
+action guaranteed to fail. Corrective action: 006H2 consumes the backend action contract.
+
+### Test Quality and Functional IDs
+
+006E3's authority, positive chronology, append-only history, rollback, and migration tests are
+otherwise substantive. 006G's SQLite functional suite meaningfully covers strict payloads,
+permissions/scope, invalid/rejected/repeated states, history consistency, redaction, and rollback.
+The test gaps are specific: non-draft migration remediation, real PostgreSQL execution, and actual
+frontend container actions/visual regression.
+
+M04-FR-004 through M04-FR-009 have implemented backend behavior and substantive assertions.
+M04-FR-010/M04-FR-011 behavior exists but remains High-risk until 006E4/006F4/006G2 close legacy,
+concurrency, and sanction-handoff defects. M04-FR-001/M04-FR-002 remain explicitly deferred to
+012EA under A-053; M04-FR-003 retains the explicit A-054 receipt-time proxy. Epic 006 is not
+complete and 006X now depends on 006H3.
+
+Summary: Standards found 1 Critical, 3 High, and 3 Medium issues; worst is merging explicitly failed
+PostgreSQL acceptance. Spec found 1 Critical, 2 High, and 2 Medium issues; worst is the same absent
+database proof, followed by permanently stranded legacy rows and an unusable update path.
+
 ## 2026-07-10 19:15 - Architecture Review 2026-07-10_190455_architecture_review
 
 Reviewed completed product slices since architecture-review commit `d29f697`:

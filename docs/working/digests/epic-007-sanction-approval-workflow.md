@@ -25,6 +25,8 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - 006G already creates the unique pending application/appraisal case shell at source §24.5. 007B
   must resolve the effective 007A rule and enrich that row with recommended amount, matrix-rule
   linkage, required-approver snapshot, related-entity facts, and exception condition/reason.
+- ADR-0005 and corrective 006G2 make the approval-case module the only create/read/enrichment seam;
+  007B must use that interface and must not import or mutate the case model from credit code.
 - Do not expose a second generic create path that can duplicate the 006G case. Any source §25.2
   adapter must return/enrich the existing row idempotently or reject incompatible state.
 - Approver selection, conflict exclusion, actions, sanction decisions, and register entries remain

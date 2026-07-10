@@ -1,0 +1,45 @@
+46442fe7892d3ad7aa9f4251a9f5f01442ff4a9a
+b7cf63f chore(006H-eligibility-appraisal-frontend-integration): complete Ralph AFK run
+b1b8889 chore(006G-submit-to-sanction): complete Ralph AFK run
+b022c83 chore(006F3-appraisal-lock-order-and-postgresql-concurrency-closure): complete Ralph AFK run
+cd3aca6 chore(006E3-appraisal-history-and-review-authority-hardening): complete Ralph AFK run
+ ...aisal-history-and-review-authority-hardening.md |   20 +-
+ ...ock-order-and-postgresql-concurrency-closure.md |    9 +-
+ docs/slices/006G-submit-to-sanction.md             |   47 +-
+ ...H-eligibility-appraisal-frontend-integration.md |   71 +-
+ ...006X-mvp-end-to-end-happy-path-tracer-bullet.md |   33 +-
+ docs/working/API_CONTRACTS.md                      |   76 +-
+ docs/working/ASSUMPTIONS.md                        |    3 +
+ docs/working/HANDOFF.md                            |   68 +-
+ docs/working/PROTOTYPE_GAP_REPORT.md               |    1 +
+ docs/working/PROTOTYPE_INVENTORY.md                |    1 +
+ .../epic-006-eligibility-loan-limit-appraisal.md   |   75 +-
+ .../digests/epic-007-sanction-approval-workflow.md |   31 +
+ sfpcl-lms/src/App.tsx                              |    3 +-
+ .../src/components/loan/EligibilityChecklist.tsx   |  125 +-
+ .../src/components/loan/LoanLimitCalculator.tsx    |  160 +--
+ .../pages/applications/ApplicationDetail.test.tsx  |   17 +-
+ .../src/pages/applications/ApplicationDetail.tsx   |   13 +-
+ .../src/pages/applications/NewApplication.tsx      |   38 +-
+ .../pages/applications/applicationDetailLoader.ts  |   24 +
+ .../pages/appraisal/AppraisalWorkbench.test.tsx    |   53 +
+ .../src/pages/appraisal/AppraisalWorkbench.tsx     | 1364 +++-----------------
+ sfpcl-lms/src/services/creditAssessmentApi.test.ts |   59 +
+ sfpcl-lms/src/services/creditAssessmentApi.ts      |   85 ++
+ sfpcl_credit/applications/models.py                |    2 +
+ sfpcl_credit/applications/views.py                 |   32 +
+ sfpcl_credit/approvals/__init__.py                 |    0
+ sfpcl_credit/approvals/apps.py                     |    7 +
+ sfpcl_credit/approvals/migrations/0001_initial.py  |   85 ++
+ sfpcl_credit/approvals/migrations/__init__.py      |    0
+ sfpcl_credit/approvals/models.py                   |   48 +
+ sfpcl_credit/config/settings.py                    |    1 +
+ sfpcl_credit/config/urls.py                        |    5 +
+ .../migrations/0005_appraisalreviewdecision.py     |  128 ++
+ sfpcl_credit/credit/models.py                      |   46 +
+ sfpcl_credit/credit/modules/appraisal_workflow.py  |  338 ++++-
+ .../credit/modules/loan_limit_calculator.py        |    2 +-
+ sfpcl_credit/tests/test_appraisal_api.py           |  811 +++++++++++-
+ .../tests/test_credit_model_ownership_migration.py |    4 +-
+ sfpcl_credit/tests/test_sanction_submission_api.py |  553 ++++++++
+ 39 files changed, 2877 insertions(+), 1561 deletions(-)

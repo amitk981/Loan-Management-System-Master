@@ -449,3 +449,30 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - Canonical `/auth/me` permissions plus exact server states gate actions; standard errors surface.
 - Decimal inputs remain strings, sanction sends exactly `{ remarks }`, and frontend formulas and
   appraisal `mockData` ownership are removed. Browser screenshots remain 006X host evidence.
+
+## Architecture Review 2026-07-10 21:39 - 006E3 Through 006H Corrections
+
+- Migration 0005 conservatively downgrades unproven prerequisite provenance in every appraisal
+  state, but the repair action is draft-only. `review_pending` and `reviewed` rows can therefore be
+  blocked forever. It also misses a known returned decision when a later submit has moved the row
+  back to `review_pending`. 006E4 owns state-aware remediation and latest-known history backfill;
+  A-061 records the conservative re-review rule.
+- The authoritative loan-limit/appraisal PostgreSQL command found four tests and executed none,
+  while 006G's sanction race found one and executed none. 006F4 must run all five tests twice with
+  zero skips; connection or sandbox failure remains failed acceptance.
+- 006G creates its concrete approval row from the credit module, reversing the documented
+  `approvals -> credit` dependency. ADR-0005 and 006G2 put create/read/serialization behind the
+  approval-case module interface, retain the same unique row for 007B, return canonical statuses,
+  and make the pending case UUID recoverable after reload.
+- 006H assigns the full appraisal response to the edit form, so PATCH sends response-only IDs,
+  snapshots, review history, status, and TAT into a strict writable contract. Returned/existing
+  drafts cannot save. Revalidation is gated by submit permission rather than update+risk authority,
+  and local code synthesizes post-sanction statuses. 006H2 owns writable projection, server
+  actions/state, reload, and real container interaction tests.
+- 006H replaced the approved staged workbench/checklist/calculator composition with a new condensed
+  layout without screenshots. 006H3 restores the pre-006H visual composition using real data and
+  requires host visual regression; missing browser evidence is not deferrable there.
+- Functional-ID spot check: M04-FR-004 through M04-FR-009 have substantive backend assertions;
+  M04-FR-010/M04-FR-011 behavior exists but remains High-risk until 006E4/006F4/006G2 close repair,
+  concurrency, and sanction-handoff defects. M04-FR-001/M04-FR-002 remain explicitly deferred to
+  012EA by A-053. M04-FR-003 remains the explicit A-054 receipt-time proxy. Epic 006 is not complete.

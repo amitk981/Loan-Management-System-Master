@@ -17,7 +17,7 @@ Provides a reviewable cross-role proof that the credit-assessment feature works 
 Epic 007 adds committee decisions.
 
 ## Depends On
-- 006H
+- 006H3
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11
