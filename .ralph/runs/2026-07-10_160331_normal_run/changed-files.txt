@@ -1,0 +1,21 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/005I5-application-ownership-and-nominee-authority-hardening.md
+ M docs/slices/006D2B-credit-loan-limit-calculator-and-appraisal-seam.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-005-application-intake.md
+ M sfpcl-lms/src/pages/applications/NewApplication.tsx
+ M sfpcl-lms/src/pages/borrower/portal/applications/MP05_NewApplication.tsx
+ M sfpcl-lms/src/pages/borrower/portal/applications/MP10_ApplicationStatus.tsx
+ M sfpcl-lms/src/services/portalApi.test.ts
+ M sfpcl-lms/src/services/portalApi.ts
+ M sfpcl_credit/applications/services.py
+ M sfpcl_credit/credit/modules/eligibility_assessment.py
+ M sfpcl_credit/tests/test_loan_applications_api.py
+ M sfpcl_credit/tests/test_portal_member_api.py
+?? .ralph/runs/2026-07-10_160331_normal_run/
+?? sfpcl-lms/e2e/application-detail-controller.e2e.spec.ts
+?? sfpcl-lms/e2e/portal-nominee-detail.e2e.spec.ts
+?? sfpcl_credit/applications/modules/
+?? sfpcl_credit/tests/test_nominee_validation.py

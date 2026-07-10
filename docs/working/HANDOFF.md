@@ -1,33 +1,30 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-10_154638_architecture_review
+2026-07-10_160331_normal_run
 
 ## Current Status
-Architecture review completed for product slices `005I3`, `005I4`, `006C2`, and `006D2A` since
-review commit `c25fcfc`.
+Slice `005I5-application-ownership-and-nominee-authority-hardening` completed.
 
-- High finding: staff list/detail synthesize `assigned_owner` from intake receiver/creator. A
-  portal-created application can therefore present the borrower as the internal owner. Created
-  `005I5-application-ownership-and-nominee-authority-hardening`; it returns neutral owner state
-  until a persisted assignment/task owner exists.
-- Medium nominee findings: MP10 omits nominee ID/minor status, both staff/portal forms calculate
-  minority independently in React, and required invalid PATCH/portal preservation tests are absent.
-  005I5 owns the safe-detail, backend-authority, and test corrections.
-- Medium architecture finding: 006D2A's runtime identity/attribute boundary test cannot catch
-  aliased private imports, and the configuration resolver depends on a credit-specific error.
-  Sharpened 006D2B with static boundary coverage, clean dependency direction, public-resolver proof,
-  and explicit mutable-source row locking.
-- Pass: 006C2 has substantive mismatch/verification/Decimal/null-profile/failed-rerun assertions.
-  Its move behind `credit.modules.loan_limit_calculator` remains explicitly owned by 006D2B.
-- No production code, migrations, dependencies, source documents, protected files, or ADRs changed.
+- Staff list/detail now return `assigned_owner = null`; intake receiver/creator are not relabelled.
+  API regressions cover staff- and portal-created applications.
+- One public nominee-validation module now owns the established same-member/adult/age-evidence
+  decision for intake, submit, completeness/reference, and eligibility.
+- Invalid staff PATCH and portal create/PATCH paths preserve serialized detail, nominee selection,
+  status, audit counts, and workflow counts for unknown/cross-member/minor/missing-evidence nominees.
+- React no longer computes nominee age/minority. Both forms require only selection shape and surface
+  backend `nominee_id` messages. MP10 renders all safe nominee facts without sensitive fields.
+- Production-controller and portal visual browser specs were added with mocked HTTP. The AFK sandbox
+  blocked local Playwright web-server binding (`Errno 1`); standard gates are fully green and the
+  orchestrator should run those browser specs in its unrestricted validation environment.
 
 ## Validation
-Run the configured backend check, migration sync, full suite under coverage, frontend lint,
-typecheck, tests, and build. Evidence and the two-axis review are in
-`.ralph/runs/2026-07-10_154638_architecture_review/`.
+Backend check and migration sync passed; 313 backend tests passed under coverage at 95%.
+Frontend lint/typecheck, 107 tests, and build passed. Red/green logs, API examples, visual HTML,
+browser limitation log, risk assessment, and review packet are in
+`.ralph/runs/2026-07-10_160331_normal_run/`.
 
 ## Next Run
-Run `005I5-application-ownership-and-nominee-authority-hardening`, then
-`006D2B-credit-loan-limit-calculator-and-appraisal-seam`. `006E` depends on both and is sharpened
-not to revive receiver/creator owner inference.
+Run `006D2B-credit-loan-limit-calculator-and-appraisal-seam`, preserving the new public nominee
+authority seam and neutral-owner contract. Then run `006D3` before `006E` if queue dependency/order
+selects it.

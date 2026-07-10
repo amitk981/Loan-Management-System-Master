@@ -484,3 +484,19 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
 - 005I4 loader/view tests contain useful assertions but split the production async controller from
   the rendered success/error/action path. 005I5 must test the actual production component with
   mocked HTTP using the existing E2E harness or a minimal pinned dev-only DOM test dependency.
+
+## Application Ownership And Nominee Authority Hardening
+- 005I5 makes `assigned_owner` neutral in staff list/detail. Receiver and creator remain intake/audit
+  actors only; staff- and portal-created API regressions prove neither is projected as assignment.
+- `applications.modules.nominee_validation.evaluate_nominee_selection` is the public BR-009 seam.
+  Staff/portal draft mutation, submit, completeness/reference, and credit eligibility use the same
+  unchanged same-member/adult/age-evidence decision and validation messages.
+- Invalid staff PATCH and portal create/PATCH tests cover unknown, cross-member, minor, and missing-
+  age-evidence nominees and prove serialized detail, selection, status, audit counts, and workflow
+  counts are preserved.
+- Staff and portal forms now require only the selected nominee ID as input shape and display backend
+  `nominee_id` errors. React no longer computes age or minority.
+- MP10 renders nominee ID, name, age snapshot, adult/minor state, KYC, relationship, and signature-
+  required state while sensitive values and controls remain absent. Browser regressions cover the
+  production staff controller and portal detail with mocked HTTP; local Playwright execution was
+  blocked by the AFK sandbox's local-port restriction, so the orchestrator must execute them.

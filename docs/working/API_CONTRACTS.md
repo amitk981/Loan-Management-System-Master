@@ -293,8 +293,9 @@ Staff detail serializes `nominee` as metadata only: `nominee_id`, `nominee_name`
 and `signature_required_flag`. It never includes PAN/Aadhaar values,
 tokens, hashes, or reveal controls.
 
-Staff detail also returns `assigned_owner` from the persisted receiver/creator as
-`{user_id, full_name}` (or `null`) and §44-shaped `available_actions[]`. The currently implemented
+Staff list/detail return `assigned_owner: null` until an assignment/task owner is persisted by its
+owning future slice. `received_by_user` and `created_by_user` remain intake/audit facts and are never
+projected as assignment facts. Detail also returns §44-shaped `available_actions[]`. The currently implemented
 detail action is `submit`: it is returned only to an object-scoped actor with
 `applications.loan_application.submit` while the application is a draft, and its `enabled` /
 `disabled_reason` fields reflect whether the persisted submit facts are complete. Submitted and
@@ -1688,7 +1689,10 @@ Rules:
   `applications.loan_application.created`, `applications.loan_application.updated`, and
   `applications.loan_application.submitted` audit actions.
 - Draft save can be incomplete. Create/update accept `nominee_id` through the shared application
-  validator. Submit requires own member, positive requested amount, declared purpose, purpose
+  nominee-validation module interface. Unknown, cross-member, minor, and missing-age-evidence
+  create/PATCH attempts return `400 VALIDATION_ERROR` with `field_errors.nominee_id` and preserve
+  the previously serialized application, status, selection, audit counts, and workflow counts.
+  Submit requires own member, positive requested amount, declared purpose, purpose
   category, and one stored adult own-member nominee.
 - Submitted applications remain without an `LO...` reference until staff completeness pass
   generates it.
@@ -1696,7 +1700,9 @@ Rules:
   `application_status = incomplete_returned`, `completeness_status = incomplete`,
   `current_stage = initial_loan_request`, `pending_with = Borrower`, open deficiency count, and
   open deficiency item metadata.
-- Detail responses expose the same metadata-only `nominee` summary as staff detail. Responses expose portal-safe application summary/detail fields only: application IDs/reference
+- Detail responses expose the same metadata-only `nominee` summary as staff detail. MP10 renders
+  nominee ID, name, age snapshot, minor/adult status, KYC status, relationship, and signature-required
+  status. Responses expose portal-safe application summary/detail fields only: application IDs/reference
   display, dates, requested amount, purpose, status/stage/completeness, pending owner, borrower
   action, open deficiency count, member snapshot, timeline, and open deficiency metadata.
 - Responses do not expose staff completeness/reference-generation/return/resolve actions, PAN,

@@ -1,0 +1,5 @@
+# Diff Limits Results
+
+- Files changed (excluding .ralph/): 18 (limit 30)
+- Lines changed (tracked + new files, excluding .ralph/): 836 (limit 2000)
+- PASS: within diff limits.

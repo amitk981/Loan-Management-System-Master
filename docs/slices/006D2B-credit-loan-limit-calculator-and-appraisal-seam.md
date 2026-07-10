@@ -36,6 +36,15 @@ loan-limit rules.
 - 006D2A added no model/table/migration change. Continue to preserve the existing assessment UUID,
   one-to-one row, and table names under ADR-0002.
 
+## 005I5 Handoff Contract
+- Eligibility now consumes `applications.modules.nominee_validation.evaluate_nominee_selection`
+  as the single public BR-009 authority. Preserve that import and its `valid` / `minor` / `pending`
+  classifications while extracting loan-limit behavior; do not copy age/DOB/minority logic into the
+  calculator or restore a private eligibility helper.
+- Staff `assigned_owner` remains `null` until a persisted assignment/task owner exists. The future
+  appraisal seam may expose only its own persisted preparer/assignment facts and must not project
+  application receiver/creator as ownership.
+
 ## Reference Implementation
 A fully-gated implementation of the combined 006D2 scope (304 tests green, 95% coverage; failed
 only the diff-size limit) is preserved at

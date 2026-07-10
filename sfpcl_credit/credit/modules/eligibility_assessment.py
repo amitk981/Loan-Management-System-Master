@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from django.db import transaction
 from django.utils import timezone
 
+from sfpcl_credit.applications.modules.nominee_validation import evaluate_nominee_selection
 from sfpcl_credit.applications.models import EligibilityAssessment, LoanApplication
 from sfpcl_credit.applications.services import build_completeness_workbench
 from sfpcl_credit.credit.modules.common import (
@@ -238,30 +239,9 @@ def _document_check(application):
 
 
 def _nominee_check(nominee, member=None):
-    if nominee is None:
+    if member is None:
         return EligibilityAssessment.CHECK_PENDING
-    if nominee.age_at_application is None and nominee.date_of_birth is None:
-        return EligibilityAssessment.CHECK_PENDING
-    if (
-        nominee.minor_flag
-        or (nominee.age_at_application is not None and nominee.age_at_application < 18)
-        or (
-            nominee.date_of_birth is not None
-            and _age_on_date(nominee.date_of_birth) < 18
-        )
-    ):
-        return "minor"
-    if member is not None and nominee.member_id != member.member_id:
-        return EligibilityAssessment.CHECK_PENDING
-    return "valid"
-
-
-def _age_on_date(date_of_birth, on_date=None):
-    on_date = on_date or timezone.localdate()
-    years = on_date.year - date_of_birth.year
-    if (on_date.month, on_date.day) < (date_of_birth.month, date_of_birth.day):
-        years -= 1
-    return years
+    return evaluate_nominee_selection(nominee, member).status
 
 
 def _eligibility_overall_result(active_result, source_checks):

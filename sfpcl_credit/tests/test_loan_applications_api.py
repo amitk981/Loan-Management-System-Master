@@ -224,7 +224,7 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertNotIn("123456789012", flattened)
         self.assertNotIn('"holder_name"', json.dumps(body))
 
-    def test_staff_application_detail_returns_backend_owner_and_authorized_actions(self):
+    def test_staff_application_detail_returns_neutral_owner_and_authorized_actions(self):
         create_response = self.client.post(
             "/api/v1/loan-applications/",
             data=self._draft_payload(),
@@ -242,13 +242,7 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         body = response.json()
         assert_success_envelope(self, body)
-        self.assertEqual(
-            body["data"]["assigned_owner"],
-            {
-                "user_id": str(self.creator.user_id),
-                "full_name": self.creator.full_name,
-            },
-        )
+        self.assertIsNone(body["data"]["assigned_owner"])
         assert_available_actions_shape(self, body["data"]["available_actions"])
         self.assertEqual(
             body["data"]["available_actions"],
@@ -353,6 +347,70 @@ class LoanApplicationDraftApiTests(TestCase):
                 )
                 self.assertEqual(
                     WorkflowEvent.objects.filter(entity_type="loan_application").count(),
+                    baseline["workflows"],
+                )
+
+    def test_invalid_staff_nominee_patch_preserves_serialized_detail_and_success_evidence(self):
+        cross_member = self._create_nominee(None, member=self.other_member)
+        minor = self._create_nominee(None, minor_flag=True)
+        missing_age = self._create_nominee(
+            None,
+            age_at_application=None,
+            date_of_birth=None,
+        )
+        created = self.client.post(
+            "/api/v1/loan-applications/",
+            data=self._draft_payload(),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(created.status_code, 200)
+        application_id = created.json()["data"]["loan_application_id"]
+        before = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        ).json()["data"]
+        baseline = {
+            "audits": AuditLog.objects.filter(
+                action="applications.loan_application.updated",
+                entity_id=application_id,
+            ).count(),
+            "workflows": WorkflowEvent.objects.filter(entity_id=application_id).count(),
+        }
+
+        for nominee_id in (
+            cross_member.nominee_id,
+            minor.nominee_id,
+            missing_age.nominee_id,
+            uuid4(),
+        ):
+            with self.subTest(nominee_id=nominee_id):
+                response = self.client.patch(
+                    f"/api/v1/loan-applications/{application_id}/",
+                    data={"nominee_id": str(nominee_id)},
+                    content_type="application/json",
+                    headers=self._headers(
+                        "applications.creator@sfpcl.example", "CreatorPass123!"
+                    ),
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("nominee_id", response.json()["error"]["field_errors"])
+                after = self.client.get(
+                    f"/api/v1/loan-applications/{application_id}/",
+                    headers=self._headers(
+                        "applications.creator@sfpcl.example", "CreatorPass123!"
+                    ),
+                ).json()["data"]
+                self.assertEqual(after, before)
+                self.assertEqual(
+                    AuditLog.objects.filter(
+                        action="applications.loan_application.updated",
+                        entity_id=application_id,
+                    ).count(),
+                    baseline["audits"],
+                )
+                self.assertEqual(
+                    WorkflowEvent.objects.filter(entity_id=application_id).count(),
                     baseline["workflows"],
                 )
 
@@ -471,8 +529,7 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(item["required_loan_amount"], "250000.00")
         self.assertEqual(item["application_status"], "incomplete_returned")
         self.assertEqual(item["completeness_status"], "incomplete")
-        self.assertEqual(item["assigned_owner"]["user_id"], str(self.creator.user_id))
-        self.assertEqual(item["assigned_owner"]["full_name"], self.creator.full_name)
+        self.assertIsNone(item["assigned_owner"])
         self.assertEqual(item["tat"]["status"], "blocked")
 
         flattened = json.dumps(body)

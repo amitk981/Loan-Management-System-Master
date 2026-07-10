@@ -81,9 +81,11 @@ const MP10_ApplicationStatus: React.FC<MP10_ApplicationStatusProps> = ({ applica
       title: 'Nominee & Signatures',
       icon: Signature,
       rows: [
+        ['Nominee ID', application?.nominee?.nominee_id ?? 'Not selected'],
         ['Nominee Name', application?.nominee?.nominee_name ?? 'Not selected'],
         ['Relationship', application?.nominee?.relationship_to_borrower ?? 'Not available'],
         ['Age', application?.nominee?.age_at_application != null ? String(application.nominee.age_at_application) : 'Not available'],
+        ['Minor Status', application?.nominee ? (application.nominee.minor_flag ? 'Minor' : 'Adult') : 'Not available'],
         ['KYC Status', application?.nominee?.kyc_status?.replace(/_/g, ' ') ?? 'Not available'],
         ['Signature Required', application?.nominee ? (application.nominee.signature_required_flag ? 'Required' : 'Not required') : 'Not available'],
       ],

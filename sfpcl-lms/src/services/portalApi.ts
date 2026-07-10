@@ -166,7 +166,15 @@ async function request<T>(path: string, options: { method?: 'GET' | 'POST' | 'PA
       envelope.error?.code ?? 'REQUEST_FAILED',
       envelope.error?.message ?? 'Request failed.',
       response.status,
+      normalizeFieldErrors(envelope.error?.field_errors),
     );
   }
   return envelope.data;
 }
+
+const normalizeFieldErrors = (fieldErrors?: Record<string, unknown>) => {
+  if (!fieldErrors) return undefined;
+  return Object.fromEntries(
+    Object.entries(fieldErrors).map(([field, value]) => [field, String(value)]),
+  );
+};

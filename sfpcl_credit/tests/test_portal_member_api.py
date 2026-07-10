@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from sfpcl_credit.applications.models import ApplicationDeficiency, LoanApplication
 from sfpcl_credit.identity.models import AuditLog
-from sfpcl_credit.identity.models import PortalAccount, Role, User
+from sfpcl_credit.identity.models import Permission, PortalAccount, Role, RolePermission, User
 from sfpcl_credit.members.models import (
     BankAccount,
     CancelledCheque,
@@ -429,6 +429,152 @@ class PortalMemberApiTests(TestCase):
             WorkflowEvent.objects.filter(entity_type="loan_application", to_state="submitted").count(),
             1,
         )
+
+    def test_invalid_portal_nominee_create_and_patch_preserve_application_and_evidence(self):
+        cross_member = Nominee.objects.create(
+            member=self.other_member,
+            nominee_name="Cross Member Nominee",
+            age_at_application=42,
+            minor_flag=False,
+        )
+        minor = Nominee.objects.create(
+            member=self.member,
+            nominee_name="Minor Nominee",
+            age_at_application=16,
+            minor_flag=True,
+        )
+        missing_age = Nominee.objects.create(
+            member=self.member,
+            nominee_name="Missing Age Nominee",
+            age_at_application=None,
+            date_of_birth=None,
+            minor_flag=False,
+        )
+        invalid_ids = (
+            cross_member.nominee_id,
+            minor.nominee_id,
+            missing_age.nominee_id,
+            uuid4(),
+        )
+        token = self._portal_token()
+        base_payload = {
+            "required_loan_amount": "250000.00",
+            "declared_purpose": "Crop production for grapes",
+            "purpose_category": "crop_production",
+        }
+
+        for nominee_id in invalid_ids:
+            with self.subTest(path="create", nominee_id=nominee_id):
+                response = self.client.post(
+                    "/api/v1/portal/applications/",
+                    data={**base_payload, "nominee_id": str(nominee_id)},
+                    content_type="application/json",
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("nominee_id", response.json()["error"]["field_errors"])
+                self.assertEqual(LoanApplication.objects.filter(member=self.member).count(), 0)
+                self.assertFalse(
+                    AuditLog.objects.filter(action="portal.application.draft_created").exists()
+                )
+                self.assertFalse(
+                    WorkflowEvent.objects.filter(entity_type="loan_application").exists()
+                )
+
+        created = self.client.post(
+            "/api/v1/portal/applications/",
+            data={**base_payload, "nominee_id": str(self.nominee.nominee_id)},
+            content_type="application/json",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(created.status_code, 200)
+        application_id = created.json()["data"]["loan_application_id"]
+        before = self.client.get(
+            f"/api/v1/portal/applications/{application_id}/",
+            headers={"Authorization": f"Bearer {token}"},
+        ).json()["data"]
+        baseline = {
+            "saved": AuditLog.objects.filter(
+                action="portal.application.saved", entity_id=application_id
+            ).count(),
+            "workflows": WorkflowEvent.objects.filter(entity_id=application_id).count(),
+        }
+
+        for nominee_id in invalid_ids:
+            with self.subTest(path="patch", nominee_id=nominee_id):
+                response = self.client.patch(
+                    f"/api/v1/portal/applications/{application_id}/",
+                    data={"nominee_id": str(nominee_id)},
+                    content_type="application/json",
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("nominee_id", response.json()["error"]["field_errors"])
+                after = self.client.get(
+                    f"/api/v1/portal/applications/{application_id}/",
+                    headers={"Authorization": f"Bearer {token}"},
+                ).json()["data"]
+                self.assertEqual(after, before)
+                self.assertEqual(
+                    AuditLog.objects.filter(
+                        action="portal.application.saved", entity_id=application_id
+                    ).count(),
+                    baseline["saved"],
+                )
+                self.assertEqual(
+                    WorkflowEvent.objects.filter(entity_id=application_id).count(),
+                    baseline["workflows"],
+                )
+
+    def test_portal_created_application_never_projects_borrower_as_staff_owner(self):
+        read_permission = Permission.objects.create(
+            permission_code="applications.loan_application.read",
+            permission_name="Read loan applications",
+            module_name="applications",
+        )
+        RolePermission.objects.create(
+            role=self.staff_role,
+            permission=read_permission,
+            granted_by_user=self.staff_user,
+        )
+        portal_token = self._portal_token()
+        created = self.client.post(
+            "/api/v1/portal/applications/",
+            data={
+                "required_loan_amount": "250000.00",
+                "declared_purpose": "Crop production for grapes",
+                "purpose_category": "crop_production",
+                "nominee_id": str(self.nominee.nominee_id),
+            },
+            content_type="application/json",
+            headers={"Authorization": f"Bearer {portal_token}"},
+        )
+        self.assertEqual(created.status_code, 200)
+        application_id = created.json()["data"]["loan_application_id"]
+        application = LoanApplication.objects.get(pk=application_id)
+        self.assertEqual(application.received_by_user_id, self.portal_user.user_id)
+        application.current_stage = LoanApplication.STAGE_CREDIT_ASSESSMENT
+        application.save(update_fields=["current_stage"])
+
+        staff_token = self._staff_token()
+        detail = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/",
+            headers={"Authorization": f"Bearer {staff_token}"},
+        )
+        listed = self.client.get(
+            "/api/v1/loan-applications/",
+            headers={"Authorization": f"Bearer {staff_token}"},
+        )
+
+        self.assertEqual(detail.status_code, 200)
+        self.assertIsNone(detail.json()["data"]["assigned_owner"])
+        self.assertEqual(listed.status_code, 200)
+        item = next(
+            item
+            for item in listed.json()["data"]
+            if item["loan_application_id"] == application_id
+        )
+        self.assertIsNone(item["assigned_owner"])
 
     def test_portal_status_marks_returned_incomplete_as_borrower_rectification_work(self):
         returned = LoanApplication.objects.create(

@@ -17,17 +17,6 @@ interface MP05_NewApplicationProps {
   onNavigateToApplication: (id: string) => void;
 }
 
-const hasAdultNomineeEvidence = (nominee?: PortalNominee) => {
-  if (!nominee || nominee.minor_flag) return false;
-  if (nominee.age_at_application != null) return nominee.age_at_application >= 18;
-  if (!nominee.date_of_birth) return false;
-  const birth = new Date(`${nominee.date_of_birth}T00:00:00`);
-  const today = new Date();
-  let age = today.getFullYear() - birth.getFullYear();
-  if ((today.getMonth() < birth.getMonth()) || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age -= 1;
-  return age >= 18;
-};
-
 const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToApplication }) => {
   const { currentUser } = useRole();
   const [applicationStep, setApplicationStep] = useState<ApplicationStep>('applicant');
@@ -170,8 +159,8 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
       message: 'Loan amount must be within eligible limit and purpose must be crop production or agriculture related.',
     },
     nominee: {
-      ok: hasAdultNomineeEvidence(selectedNominee),
-      message: 'Select an existing adult nominee from your member profile.',
+      ok: Boolean(selectedNomineeId),
+      message: 'Select an existing nominee from your member profile.',
     },
     documents: {
       ok: allDocsComplete,
@@ -191,7 +180,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
     ['Applicant details complete', stepValidations.applicant.ok],
     ['Folio number and shares captured', stepValidations.shareholding.ok],
     ['Requested amount and agriculture purpose valid', stepValidations.loan.ok],
-    ['Nominee details complete and adult', stepValidations.nominee.ok],
+    ['Nominee selected', stepValidations.nominee.ok],
     ['Mandatory documents uploaded and self-attested', stepValidations.documents.ok],
     ['Borrower and nominee signatures captured', borrowerApplication.borrowerSignature && borrowerApplication.nomineeSignature],
     ['Declarations accepted', allDeclarationsAccepted],
@@ -231,7 +220,9 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
       setSavedApplication(draft);
       setApplicationDraftSaved(true);
     } catch (error) {
-      setApiMessage(error instanceof AuthSessionError ? error.message : 'Draft could not be saved.');
+      setApiMessage(error instanceof AuthSessionError
+        ? error.fieldErrors?.nominee_id ?? error.message
+        : 'Draft could not be saved.');
     } finally {
       setSaving(false);
     }
@@ -248,7 +239,9 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
       setSavedApplication(submitted);
       setApplicationSubmitted(true);
     } catch (error) {
-      setApiMessage(error instanceof AuthSessionError ? error.message : 'Application could not be submitted.');
+      setApiMessage(error instanceof AuthSessionError
+        ? error.fieldErrors?.nominee_id ?? error.message
+        : 'Application could not be submitted.');
     } finally {
       setSaving(false);
     }

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useRole } from '../../contexts/RoleContext';
 import LoanLimitCalculator from '../../components/loan/LoanLimitCalculator';
+import { AuthSessionError } from '../../services/authSession';
 import { fetchMemberDirectory, type MemberDirectoryItem } from '../../services/memberDirectoryApi';
 import { fetchMemberNominees, type MemberNomineeDetail } from '../../services/memberProfileApi';
 import {
@@ -59,17 +60,6 @@ const formatMemberType = (type: string) => {
   if (type === 'fpc') return 'FPC';
   if (type === 'producer_institution') return 'Producer Institution';
   return type;
-};
-
-const hasAdultNomineeEvidence = (nominee?: MemberNomineeDetail) => {
-  if (!nominee || nominee.minor_flag) return false;
-  if (nominee.age_at_application != null) return nominee.age_at_application >= 18;
-  if (!nominee.date_of_birth) return false;
-  const birth = new Date(`${nominee.date_of_birth}T00:00:00`);
-  const today = new Date();
-  let age = today.getFullYear() - birth.getFullYear();
-  if ((today.getMonth() < birth.getMonth()) || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age -= 1;
-  return age >= 18;
 };
 
 const blankDocs = Object.fromEntries(REQUIRED_DOCUMENTS.map(doc => [doc.id, { uploaded: false, selfAttested: false }]));
@@ -290,7 +280,9 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
       setDraftSaved(true);
       return saved;
     } catch (error) {
-      setSubmitMessage(error instanceof Error ? error.message : 'Unable to save draft.');
+      setSubmitMessage(error instanceof AuthSessionError
+        ? error.fieldErrors?.nominee_id ?? error.message
+        : 'Unable to save draft.');
       return null;
     } finally {
       setIsSaving(false);
@@ -329,8 +321,8 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
       message: 'Requested amount must be within the permissible limit and purpose must be crop/agriculture related.',
     },
     nominee: {
-      ok: hasAdultNomineeEvidence(selectedNominee),
-      message: 'Select an existing adult nominee for this member.',
+      ok: Boolean(selectedNomineeId),
+      message: 'Select an existing nominee for this member.',
     },
     documents: {
       ok: allDocsComplete,
@@ -351,7 +343,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
     ['Applicant identity and KYC fields complete', validations.applicant.ok],
     ['Shareholding and security inputs complete', validations.shareholding.ok],
     ['Requested amount and crop/agriculture purpose valid', validations.loan.ok],
-    ['Nominee complete and not a minor', validations.nominee.ok],
+    ['Nominee selected', validations.nominee.ok],
     ['Mandatory documents uploaded and self-attested', validations.documents.ok],
     ['Borrower and nominee signatures captured', applicationForm.borrowerSignature && applicationForm.nomineeSignature],
     ['Declarations accepted', allDeclarationsAccepted],

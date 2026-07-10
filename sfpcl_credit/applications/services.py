@@ -7,6 +7,7 @@ from django.db.models import Max, Q
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
+from sfpcl_credit.applications.modules.nominee_validation import evaluate_nominee_selection
 from sfpcl_credit.applications.models import (
     ApplicationDeficiency,
     ApplicationDocument,
@@ -520,7 +521,9 @@ def generate_reference_after_completeness_pass(
         actor_permissions=actor_permissions or auth_service.effective_permission_codes(actor),
         transitions=APPLICATION_TRANSITIONS,
     )
-    nominee_error = _nominee_selection_error(application.nominee, application.member)
+    nominee_error = evaluate_nominee_selection(
+        application.nominee, application.member
+    ).field_error
     if nominee_error:
         raise LoanApplicationValidationError({"nominee_id": nominee_error})
     if application.application_reference_number:
@@ -736,7 +739,9 @@ def build_completeness_workbench(application):
     blocking_document_types = [
         item["document_type"] for item in required_items if not item["complete"]
     ]
-    nominee_error = _nominee_selection_error(application.nominee, application.member)
+    nominee_error = evaluate_nominee_selection(
+        application.nominee, application.member
+    ).field_error
     return {
         "loan_application_id": str(application.loan_application_id),
         "application_reference_number": application.application_reference_number,
@@ -760,7 +765,9 @@ def build_completeness_workbench(application):
 
 def validate_completeness_ready_for_reference(application):
     workbench = build_completeness_workbench(application)
-    nominee_error = _nominee_selection_error(application.nominee, application.member)
+    nominee_error = evaluate_nominee_selection(
+        application.nominee, application.member
+    ).field_error
     if nominee_error:
         raise LoanApplicationValidationError({"nominee_id": nominee_error})
     if workbench["blocking_document_types"]:
@@ -1212,10 +1219,9 @@ def serialize_application(application):
 
 
 def serialize_application_detail(application, actor):
-    owner = application.received_by_user or application.created_by_user
     return {
         **serialize_application(application),
-        "assigned_owner": _user_summary(owner),
+        "assigned_owner": None,
         "available_actions": _application_available_actions(application, actor),
     }
 
@@ -1254,7 +1260,6 @@ def _application_available_actions(application, actor):
 
 
 def serialize_application_list_item(application):
-    owner = application.received_by_user or application.created_by_user
     return {
         "loan_application_id": str(application.loan_application_id),
         "application_reference_number": application.application_reference_number,
@@ -1265,7 +1270,7 @@ def serialize_application_list_item(application):
         "current_stage": application.current_stage,
         "application_status": application.application_status,
         "completeness_status": application.completeness_status,
-        "assigned_owner": _user_summary(owner),
+        "assigned_owner": None,
         "tat": {
             "due_at": None,
             "status": _tat_status(application),
@@ -1493,7 +1498,9 @@ def _validate_submit_facts(application):
         errors["declared_purpose"] = "Declared purpose is required before submit."
     if not application.purpose_category.strip():
         errors["purpose_category"] = "Purpose category is required before submit."
-    nominee_error = _nominee_selection_error(application.nominee, application.member)
+    nominee_error = evaluate_nominee_selection(
+        application.nominee, application.member
+    ).field_error
     if nominee_error:
         errors["nominee_id"] = nominee_error
     if errors:
@@ -2495,34 +2502,10 @@ def _nominee_ref(value, member, errors):
         errors["nominee_id"] = "Referenced nominee was not found for this member."
         return None
 
-    selection_error = _nominee_selection_error(nominee, member)
+    selection_error = evaluate_nominee_selection(nominee, member).field_error
     if selection_error:
         errors["nominee_id"] = selection_error
     return nominee
-
-
-def _nominee_selection_error(nominee, member):
-    if nominee is None:
-        return "An adult nominee must be selected."
-    if nominee.member_id != member.member_id:
-        return "Selected nominee must belong to the application member."
-    age_from_birth = None
-    if nominee.date_of_birth is not None:
-        age_from_birth = _age_on_date(nominee.date_of_birth)
-    if nominee.minor_flag or (
-        nominee.age_at_application is not None and nominee.age_at_application < 18
-    ) or (age_from_birth is not None and age_from_birth < 18):
-        return "Selected nominee must be at least 18 years old."
-    if nominee.age_at_application is None and nominee.date_of_birth is None:
-        return "Selected nominee requires age or date-of-birth evidence."
-    return None
-
-
-def _age_on_date(date_of_birth):
-    today = timezone.localdate()
-    return today.year - date_of_birth.year - (
-        (today.month, today.day) < (date_of_birth.month, date_of_birth.day)
-    )
 
 
 def _bank_ref(value, member, errors):

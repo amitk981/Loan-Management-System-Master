@@ -1,0 +1,5 @@
+Listing tests:
+  [chromium] › application-detail-controller.e2e.spec.ts:53:7 › ApplicationDetail production controller › renders loading and success, then submits and refreshes through mocked HTTP
+  [chromium] › application-detail-controller.e2e.spec.ts:78:7 › ApplicationDetail production controller › renders the production error state when detail HTTP fails
+  [chromium] › portal-nominee-detail.e2e.spec.ts:3:5 › portal detail renders every safe nominee fact and no sensitive controls
+Total: 3 tests in 2 files

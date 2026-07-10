@@ -53,6 +53,19 @@ describe('portal member API client', () => {
     await expect(fetchPortalDashboard()).rejects.toMatchObject({ code: 'PERMISSION_DENIED', status: 403 });
   });
 
+  it('surfaces backend nominee field errors for portal forms', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(error(
+      400,
+      'VALIDATION_ERROR',
+      { nominee_id: 'Selected nominee must be at least 18 years old.' },
+    )));
+
+    await expect(createPortalApplicationDraft({ nominee_id: 'minor-nominee' })).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+      fieldErrors: { nominee_id: 'Selected nominee must be at least 18 years old.' },
+    });
+  });
+
   it('creates, updates, submits, lists, and reads portal applications with the stored bearer token', async () => {
     const application = {
       loan_application_id: 'app-1',
@@ -109,10 +122,10 @@ function ok(data: unknown): Response {
   return { ok: true, status: 200, json: async () => ({ success: true, data, meta: {} }) } as Response;
 }
 
-function error(status: number, code: string): Response {
+function error(status: number, code: string, fieldErrors?: Record<string, string>): Response {
   return {
     ok: false,
     status,
-    json: async () => ({ success: false, error: { code, message: 'Portal request failed.' }, meta: {} }),
+    json: async () => ({ success: false, error: { code, message: 'Portal request failed.', field_errors: fieldErrors }, meta: {} }),
   } as Response;
 }
