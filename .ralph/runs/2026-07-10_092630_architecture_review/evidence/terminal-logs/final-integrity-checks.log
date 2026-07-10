@@ -1,0 +1,6 @@
+PASS: git diff --check
+PASS: .ralph/state.json parses as valid JSON
+PASS: no incomplete run-artifact template markers remain
+PASS: no trailing whitespace in new corrective slices or run Markdown artifacts
+PASS: no production-code, protected, forbidden, or docs/source path changed
+PASS: 12 non-run changed files and approximately 600 changed lines remain below configured limits

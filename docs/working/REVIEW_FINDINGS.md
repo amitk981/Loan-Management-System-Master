@@ -2,6 +2,97 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-10 09:32 - Architecture Review 2026-07-10_092630_architecture_review
+
+Reviewed completed product slices since architecture-review commit `1e2d873`:
+- `005I2-application-detail-api-state-hardening` (`e016d2a`)
+- `006B-default-document-purpose-and-terms-eligibility-checks` (`c181819`)
+- `006C-loan-limit-configuration-and-calculator` (`3f066cf`)
+- `006D-loan-limit-snapshot-storage` (`9f9ae0b`)
+
+The product review excluded config-only commit `c578e87` from findings. It checked the pinned
+`git diff 1e2d873...HEAD`, four slice/run packets, implementation/tests, working contracts, Epic
+005/006 digests, and only the cited primary-source sections needed for disputed requirements.
+
+### Finding 1 - High - Application nominee selection is not reachable through the public contract
+
+Source `api-contracts.md` §19.2 requires `nominee_id` when creating a loan application and §19.3
+returns the selected nominee. The implemented application model/API stores no nominee. The member
+nominee API intentionally creates member-level nominees without `loan_application_id`, so a real
+staff or portal client cannot produce 006B's normal eligible nominee result. Instead, 006B reverse-
+queries nullable legacy rows, orders them, and chooses `.first()`; its green test directly inserts a
+linked nominee through the ORM. Multiple linked rows or absent age/DOB evidence are not tested.
+
+This is an end-to-end blocker, not coverage padding: 006C requires `overall_result = eligible`, but
+the intended API path cannot establish that result. Corrective action: created
+`005I3-application-nominee-selection-contract` to persist/validate source §19.2 `nominee_id`, wire
+staff/portal draft flows, make submit enforce the selected adult nominee, and make 006B use only
+that deterministic application fact.
+
+### Finding 2 - High - BR-020 can calculate from owned acreage rather than evidenced cultivated acreage
+
+006C sums every selected `LandHolding.area_acres` and multiplies that total by scale of finance.
+The selected `CropPlan.planned_area_acres` is checked only for owner/application/alignment, while
+the profile's explicit `land_area_under_cultivation_acres` is unused. Functional-spec BR-020 says
+the financial limit is based on acreage under cultivation. A borrower owning 20 acres with a
+5-acre crop plan can therefore receive a 20-acre land limit. The test fixtures use equal 5-acre
+facts, masking this edge case.
+
+The source does not define precedence among the three acreage fields, so this review did not invent
+a min/max rule. Corrective action: created `006C2-cultivated-acreage-source-hardening` and A-049.
+Until source confirmation, applicable verified acreage facts must agree or calculation is blocked
+without changing a stored snapshot/audit/workflow evidence.
+
+### Finding 3 - Medium - Application Detail still invents later-stage workflow and ownership facts
+
+005I2 correctly removed the `LO00000035` special branch, fake witnesses, nominee secrets, and added
+staff-only rejection-note metadata. However, `ApplicationDetail.tsx` still spreads synthetic
+documentation/disbursement defaults, shows fixed dates and completion claims in the stage stepper,
+overwrites the backend `assigned_owner` with hardcoded department roles for later stages, and
+computes payment readiness in React. Its new test injects `initialData` through a production-only
+prop and checks only a submitted application, so none of the later-stage drift is exercised.
+
+Corrective action: created `005I4-application-detail-backend-state-hardening`. It must render
+backend state/actions or neutral absence, remove frontend workflow decisions, and test via mocked
+HTTP using the same seam as production.
+
+### Finding 4 - Medium - Credit business logic is deepening the generic application monolith
+
+The reviewed changes put eligibility rules, loan-limit calculation, configuration selection,
+persistence, serialization, and audit projection into `applications.services`, now 2,789 lines;
+the combined application HTTP test file is 3,305 lines. This contradicts codebase-design §§12/26,
+which name `credit.modules.eligibility_assessment`, `credit.modules.loan_limit_calculator`, and
+`configurations.modules.configuration_resolver` as the deep seams. Public response and audit
+snapshot projections also duplicate nearly the same loan-limit field mapping.
+
+Corrective action: created `006D2-credit-assessment-deep-module-boundary` before 006E. It must
+extract the source-named module interfaces, configuration resolver, focused module tests, and a
+single snapshot projection without changing the reviewed behavior or destructively migrating data.
+
+### Finding 5 - Pass - Financial/access tests have real assertions and useful failure coverage
+
+006B covers each named blocker, pending nominee evidence, one-to-one rerun, no stage advancement,
+and denied/invalid no-success-evidence paths. 006C/006D cover both lower-of-two branches,
+below/equal/above limits, missing/ambiguous policy, cross-member facts, permission/object scope,
+stored read immutability, complete old/new rerun audit, and preservation after four failed-rerun
+classes. These are substantive behavior assertions, not coverage-only tests. The gaps above are
+specific untested source mismatches rather than a generally weak suite.
+
+### Finding 6 - Watch - Explicit reruns replace the current one-to-one snapshot
+
+The standards pass flagged same-UUID rerun replacement against the design statement that historical
+assessments do not change. The source data model also defines one assessment per application, and
+006D explicitly requires an authorized successful rerun to replace the current snapshot with full
+old/new audit while passive source/policy changes leave GET unchanged. No corrective slice was
+created for that documented behavior. Future appraisal work must consume stored snapshots and must
+not make recalculation an implicit read or review side effect.
+
+Functional-spec spot check: no parent epic changed to `Complete` in this window. For the Epic 005
+correction, M03-FR-003 remains incomplete until 005I3 supplies the public nominee selection; prior
+assumptions own other documented intake deferrals. Epic 006 is still in progress: M04-FR-004-007
+are implemented or queued for correction, while M04-FR-001-003 and M04-FR-008-011 remain assigned
+to 006E-006G. No completed epic is falsely claiming full requirement-ID coverage.
+
 ## 2026-07-10 04:18 - Architecture Review 2026-07-10_041851_architecture_review
 
 Reviewed completed product slices since the prior architecture review commit `353c6df`:

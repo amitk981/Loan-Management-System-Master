@@ -1,29 +1,38 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-10_083153_normal_run
+2026-07-10_092630_architecture_review
 
 ## Current Status
-Completed `006D-loan-limit-snapshot-storage`.
+Completed the architecture review of the four product slices after commit `1e2d873`:
+- `005I2-application-detail-api-state-hardening`
+- `006B-default-document-purpose-and-terms-eligibility-checks`
+- `006C-loan-limit-configuration-and-calculator`
+- `006D-loan-limit-snapshot-storage`
 
-What changed:
-- Added `GET /api/v1/loan-applications/{loan_application_id}/loan-limit-assessment/` with
-  `applications.loan_application.read` and existing application object access. Missing snapshots
-  return `404`; reads calculate nothing and write no audit/workflow evidence.
-- Added immutable policy config UUID, policy name, and Board approval reference snapshot columns.
-  Calculate/GET responses and audit old/new values now serialize policy source only from the
-  assessment row, never the mutable policy row.
-- Proved application amount, shareholding, land/crop, and policy mutations cannot alter stored GET
-  output until a successful rerun atomically replaces the snapshot while preserving its UUID.
-- Proved invalid-state, missing-source, permission, and object-scope rerun failures preserve the
-  prior snapshot and success-evidence counts.
-- Updated the working API contract, Epic 006 digest, and A-048 legacy-row migration behavior.
-  Revalidated already-concrete 006E and sharpened 006F Credit Manager review requirements from
-  source §24.4, data model §14.4, auth permissions, and appraisal test-plan cases.
+Review outcome:
+- High: source §19.2 application nominee selection is absent from the public staff/portal contract,
+  so 006B's eligible path currently requires direct ORM fixture writes and chooses the first
+  reverse-linked nominee. Created `005I3-application-nominee-selection-contract`.
+- High: 006C can use all selected owned acreage even when crop/profile cultivation evidence is
+  lower. Created `006C2-cultivated-acreage-source-hardening` and A-049; disagreement must block
+  until the source defines a precedence/formula.
+- Medium: Application Detail still synthesizes later-stage dates, ownership, readiness, and action
+  state and tests through a production data-injection prop. Created
+  `005I4-application-detail-backend-state-hardening`.
+- Medium: eligibility and loan-limit behavior deepened the generic application service instead of
+  the source-named credit/configuration modules. Created
+  `006D2-credit-assessment-deep-module-boundary`.
+- Pass: 006B-006D tests have substantive formula, boundary, access, audit, immutable-read, and
+  failed-rerun preservation assertions.
+- Watch: explicit successful reruns replace the current one-to-one loan-limit snapshot with full
+  old/new audit. This matches the reviewed slice/data shape; appraisal must consume stored facts and
+  must never recalculate as a read/review side effect.
+
+No production code or `docs/source/` file changed. Findings were prepended to
+`docs/working/REVIEW_FINDINGS.md`; Epic 005/006 digests carry the distilled review facts.
 
 ## Validation
-- Backend TDD stored-GET tracer: red `404`, then green immutable snapshot read.
-- Focused loan-application API suite passed: 39 tests.
 - Backend `manage.py check` passed.
 - Backend full suite passed: 290 tests.
 - Backend `makemigrations --check --dry-run` passed.
@@ -31,18 +40,21 @@ What changed:
 - Frontend lint and typecheck passed.
 - Frontend tests passed: 98 tests.
 - Frontend build passed.
-- `git diff --check` passed; no protected files changed; diff limits remain within configured caps.
+- Final integrity/protected-path/diff-limit checks passed.
 
-Evidence is in `.ralph/runs/2026-07-10_083153_normal_run/`.
+Evidence is in `.ralph/runs/2026-07-10_092630_architecture_review/`.
 
 ## Next Run
-Run the architecture review now due after four completed slices, then run
-`006E-appraisal-note-create-edit-submit`.
+Run `005I3-application-nominee-selection-contract`.
 
-Key instructions for 006E:
-- Require stored eligible 006B and stored 006D loan-limit snapshots before appraisal creation;
-  consume them without recalculation.
-- Implement one appraisal/risk assessment per application with draft-only update,
-  source §24.1 fields, two-day immutable TAT due facts, and submit-for-review.
-- Enforce create/update/submit-review/risk permissions separately with existing application object
-  access, metadata-only evidence, and no free-text summaries in audit JSON.
+Key instructions for 005I3:
+- Add source §19.2 `nominee_id` to staff and portal draft create/update and store one same-member
+  nominee on `LoanApplication` through a non-destructive migration.
+- Require a selected adult nominee before submit/completeness/normal eligibility; missing legacy
+  selection stays pending, and cross-member/minor/missing-age paths create no success evidence.
+- Make 006B read only the stored application nominee; remove reverse-query `.first()` selection.
+- Wire existing staff/member portal application forms and safe detail summaries using current
+  visual patterns; never expose nominee PAN/Aadhaar values.
+
+Then run `005I4`, `006C2`, and `006D2` in order. `006E-appraisal-note-create-edit-submit` now
+depends on all four corrective slices and must use the deep credit appraisal module seam.

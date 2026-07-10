@@ -155,3 +155,28 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
   no-success-evidence behavior on denied/invalid paths.
 - Full review-run gates passed with 277 backend tests, 95% backend coverage, 95 frontend tests,
   frontend lint/typecheck/build, backend check, migration sync, and `git diff --check`.
+
+## Architecture Review 2026-07-10 09:32 - 006B-006D Contract And Module Review
+- 006B's default/document/terms/purpose paths and 006C/006D's permission, object-scope,
+  lower-of-two, below/equal/above boundary, policy ambiguity, snapshot read, and failed-rerun tests
+  contain substantive assertions and preserve no-success-evidence guarantees.
+- Application nominee authority is not reachable through public APIs: source §19.2's `nominee_id`
+  is absent from `LoanApplication`, while 006B reverse-queries nullable legacy rows and chooses the
+  first. `005I3` must establish one stored selection, use it for 006B, and keep missing/ambiguous
+  evidence pending rather than eligible.
+- BR-020 names acreage under cultivation, but 006C uses the total of selected owned
+  `LandHolding.area_acres` and only validates crop-plan ownership/alignment. `006C2` must block when
+  selected-land, crop-plan, and applicable profile cultivation acreage disagree; A-049 records the
+  source ambiguity so the corrective slice does not invent a selector formula.
+- Eligibility, loan-limit calculation, configuration resolution, persistence, serialization, and
+  audit projection now sit in `applications.services` (2,789 lines), contrary to the source-named
+  `credit.modules.eligibility_assessment`, `credit.modules.loan_limit_calculator`, and
+  `configurations.modules.configuration_resolver` seams. `006D2` must establish those deep module
+  boundaries before 006E adds appraisal behavior.
+- Explicit successful reruns currently replace the one-to-one loan-limit snapshot while preserving
+  its UUID and complete old/new audit metadata. The source one-to-one data model and reviewed slice
+  require that behavior; passive policy/source changes do not alter GET. Treat versioned recalculation
+  as a watch item and prohibit future appraisal code from bypassing stored snapshots.
+- Epic 006 did not complete in this window. M04-FR-004 through M04-FR-007 are the implemented/under-
+  correction subset; M04-FR-001-003 and M04-FR-008-011 remain owned by queued 006E-006G and are not
+  claimed complete.

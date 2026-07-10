@@ -16,12 +16,21 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 
 ## Depends On
 - 006D
+- 005I3
+- 005I4
+- 006C2
+- 006D2
 
 ## Prior Slice Handoff
 - 006C calculates and atomically stores the source-backed loan-limit assessment only after 006B
   `overall_result = eligible`; 006D makes that stored snapshot readable without recalculation.
 - 006E must require both stored assessments before appraisal creation and must consume their stored
   summaries/IDs rather than re-running eligibility or loan-limit formulas.
+- Architecture review `2026-07-10_092630_architecture_review` queued 005I3/005I4 to complete the
+  application nominee/detail contracts, 006C2 to block unresolved cultivated-acreage evidence, and
+  006D2 to establish the deep `credit.modules.appraisal_workflow` seam. Do not start 006E until all
+  four corrective slices are complete; implement appraisal through that credit seam rather than
+  adding more behavior to `applications.services`.
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11

@@ -1,0 +1,13 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006E-appraisal-note-create-edit-submit.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-005-application-intake.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+?? .ralph/runs/2026-07-10_092630_architecture_review/
+?? docs/slices/005I3-application-nominee-selection-contract.md
+?? docs/slices/005I4-application-detail-backend-state-hardening.md
+?? docs/slices/006C2-cultivated-acreage-source-hardening.md
+?? docs/slices/006D2-credit-assessment-deep-module-boundary.md

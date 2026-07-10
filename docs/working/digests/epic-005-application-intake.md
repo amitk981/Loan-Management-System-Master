@@ -416,3 +416,21 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
   and no longer renders hardcoded witness rows or hardcoded nominee PAN/Aadhaar reveal values.
 - Missing API-backed nominee/witness facts render neutral unavailable states using existing visual
   patterns.
+
+## Architecture Review 2026-07-10 09:32 - Nominee And Detail Contract Gaps
+- Source `api-contracts.md` §19.2 requires `nominee_id` on application create and §19.3 returns one
+  selected nominee summary. The implemented member nominee API deliberately creates only reusable
+  member-level nominees, `LoanApplication` stores no selected nominee, and no staff/portal request
+  can populate `Nominee.loan_application_id`. Consequently, 006B's green eligible path currently
+  depends on direct ORM fixture writes and silently chooses `.first()` if several reverse-linked
+  rows exist. Corrective slice `005I3-application-nominee-selection-contract` must establish one
+  explicit same-member application nominee through the public draft flows and make 006B use it.
+- 005I2 removed the `LO00000035` branch and fake people, but Application Detail still inherits
+  synthetic documentation/disbursement defaults, fixed stage dates/completion claims, hardcoded
+  later-stage owner roles, and a frontend payment-readiness rule. Corrective slice
+  `005I4-application-detail-backend-state-hardening` must render backend fields/actions or neutral
+  absence and must test through the HTTP service seam rather than a production `initialData` prop.
+- Epic 005 requirement-ID spot check: no parent epic transitioned to `Complete` in this review
+  window. M03-FR-008/M03-FR-011/M03-FR-012 remain implemented; 005I3 explicitly owns the missing
+  M03-FR-003 nominee selection and submit gate. Existing assumptions A-036/A-039-A-045 continue to
+  own the documented partial/deferred intake behavior.
