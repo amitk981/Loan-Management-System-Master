@@ -38,9 +38,10 @@ while retaining the corrected 006H2 backend wiring and introducing no new visual
 ## Test Cases
 
 - Behavior tests from 006H2 remain unchanged and green through the restored composition.
-- Visual regression covers queue, eligible/ineligible/pending, below/equal/above limit, draft,
-  returned, review-pending, reviewed, rejected, submitted, empty, loading, denied, validation, and
-  API-error states at the existing acceptance viewport.
+- Add a focused spec under `sfpcl-lms/e2e/` that uses the repository-pinned `@playwright/test`
+  Chromium project. Visual regression covers queue, eligible/ineligible/pending,
+  below/equal/above limit, draft, returned, review-pending, reviewed, rejected, submitted, empty,
+  loading, denied, validation, and API-error states at the existing acceptance viewport.
 - Static diff/fidelity review proves no new color, typography, card, badge, table, or layout pattern.
 
 ## Sharpened Carry-Forward Contract
@@ -55,8 +56,16 @@ while retaining the corrected 006H2 backend wiring and introducing no new visual
 
 ## Evidence Required
 
-Before/after host screenshots, visual-regression output, prototype-fidelity checklist, and all
-configured gates. A missing browser/listener is failure for this corrective slice, not a deferral.
+Before/after host screenshots, Playwright visual-regression output, prototype-fidelity checklist,
+and all configured gates. The authoritative capture path is the repository's pinned
+`sfpcl-lms/e2e/` Playwright harness with `E2E_DJANGO_PYTHON` set to the Ralph virtualenv. It must
+be an absolute path because Playwright starts Django from the repository root. The harness must
+write self-contained screenshots into the run evidence directory and commit the approved visual
+baseline beside the focused e2e spec.
+
+The in-app Browser may be used for exploratory inspection, but its listener is not a prerequisite
+and must not replace or block the deterministic repository harness. Failure to launch the pinned
+Playwright Chromium project or produce its screenshots is failure, not a deferral.
 
 ## Risk Level
 Medium
