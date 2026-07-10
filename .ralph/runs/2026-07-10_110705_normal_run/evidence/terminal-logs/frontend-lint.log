@@ -1,0 +1,10 @@
+
+> sfpcl-lms@1.0.0 lint
+> eslint src
+
+
+/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_110705_normal_run/sfpcl-lms/src/pages/applications/ApplicationDetail.tsx
+  43:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+✖ 1 problem (0 errors, 1 warning)
+

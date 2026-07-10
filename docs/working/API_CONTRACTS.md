@@ -293,6 +293,15 @@ Staff detail serializes `nominee` as metadata only: `nominee_id`, `nominee_name`
 and `signature_required_flag`. It never includes PAN/Aadhaar values,
 tokens, hashes, or reveal controls.
 
+Staff detail also returns `assigned_owner` from the persisted receiver/creator as
+`{user_id, full_name}` (or `null`) and §44-shaped `available_actions[]`. The currently implemented
+detail action is `submit`: it is returned only to an object-scoped actor with
+`applications.loan_application.submit` while the application is a draft, and its `enabled` /
+`disabled_reason` fields reflect whether the persisted submit facts are complete. Submitted and
+later-stage applications return an empty action list until their owning workflow APIs supply
+actions. Documentation, sanction, security, SAP, and disbursement facts remain absent rather than
+being inferred by the detail response or frontend.
+
 `POST /api/v1/loan-applications/{loan_application_id}/submit/`
 
 Request body is accepted as a JSON object. A stored adult `nominee_id` is required. `submission_notes` may be supplied by clients, but 005B

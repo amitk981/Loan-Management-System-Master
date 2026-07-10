@@ -1306,6 +1306,48 @@ def serialize_application(application):
     }
 
 
+def serialize_application_detail(application, actor):
+    owner = application.received_by_user or application.created_by_user
+    return {
+        **serialize_application(application),
+        "assigned_owner": _user_summary(owner),
+        "available_actions": _application_available_actions(application, actor),
+    }
+
+
+def _application_available_actions(application, actor):
+    if application.application_status != LoanApplication.STATUS_DRAFT:
+        return []
+    permissions = auth_service.effective_permission_codes(actor)
+    if APPLICATION_SUBMIT_PERMISSION not in permissions:
+        return []
+    object_access = evaluate_application_object_access(
+        application,
+        actor,
+        APPLICATION_SUBMIT_PERMISSION,
+        permissions,
+    )
+    if not object_access.allowed:
+        return []
+    try:
+        _validate_submit_facts(application)
+    except LoanApplicationValidationError:
+        enabled = False
+        disabled_reason = "Complete required application facts before submit."
+    else:
+        enabled = True
+        disabled_reason = None
+    return [
+        {
+            "action_code": "submit",
+            "label": "Submit Application",
+            "enabled": enabled,
+            "disabled_reason": disabled_reason,
+            "required_permission": APPLICATION_SUBMIT_PERMISSION,
+        }
+    ]
+
+
 def serialize_application_list_item(application):
     owner = application.received_by_user or application.created_by_user
     return {

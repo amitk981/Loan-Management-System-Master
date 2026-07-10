@@ -42,6 +42,21 @@ reducing the chance that later appraisal/sanction work duplicates or bypasses th
 - Future 006E appraisal code must enter through `credit.modules.appraisal_workflow`; do not add any
   appraisal behavior to `applications.services`.
 
+### Ready-To-Implement Extraction Boundaries
+- Inventory every eligibility/loan-limit function currently called by application views and tests
+  before moving code. After extraction, application views may import only the public credit-module
+  entrypoints/result-error types; they must not import calculator helpers, configuration queries,
+  snapshot projection helpers, or credit-assessment models directly.
+- Keep one canonical redacted snapshot DTO for both public response data and audit old/new values;
+  tests must fail if the two projections drift in shared financial/policy/acreage fields.
+- Add an import-boundary regression (or equivalent static assertion) proving new appraisal code and
+  application views cannot reach the extracted private credit helpers through
+  `applications.services` compatibility aliases.
+- If model state ownership is staged, the ADR and follow-up slice must name the existing table names,
+  current Django model owners, target owners, exact state-only migration strategy, and the rollback/
+  UUID-preservation proof. Do not spend this slice's single-migration allowance on a destructive
+  table move.
+
 ## Model Ownership / Migration Safety
 - Credit-assessment models belong to the credit bounded context. Move Django model ownership using
   a non-destructive, data-preserving migration/state strategy: do not rename/drop/recreate existing

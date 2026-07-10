@@ -447,3 +447,23 @@ Additional sources distilled during slice `005B-application-submit-and-status-tr
 - 006B eligibility reads only `LoanApplication.nominee`; reverse-linked
   `Nominee.loan_application_id` rows and ordering cannot choose or change the assessed nominee.
   Legacy null selections remain `pending_manual_evidence`.
+
+## Application Detail Backend State Hardening
+- 005I4 adds persisted receiver/creator `assigned_owner` and §44-shaped `available_actions` to the
+  staff detail response. The only current detail action is authorized, object-scoped draft submit;
+  submitted and later-stage responses return an empty list until owning workflow APIs add actions.
+- Application Detail now loads detail, checklist, and deficiencies through one production loader;
+  its tests mock those HTTP service functions and render loading, success, and error states through
+  the same loader/view boundary. The production-only `initialData` / `initialActiveTab` bypass is
+  removed.
+- The stepper remains wholly neutral because the detail DTO has no stage-history facts; the exact
+  backend `current_stage` is shown separately as text. It no longer invents completion dates,
+  review/verification claims, owner departments, SAP progress, disbursement progress, or payment
+  readiness.
+- Overview loan type and tenure render only when returned by the backend. Future eligibility,
+  sanction, security, disbursement, and audit panels use the existing neutral unavailable pattern;
+  checklist counts/rows remain direct presentations of API checklist items.
+- Submitted and later-stage regressions assert two conflicting backend owner names win exactly.
+  LO00000035, rejection-note, empty witness, and selected nominee metadata-only regressions now run
+  through the HTTP loader/view seam; nominee PAN/Aadhaar labels, token/hash values, and reveal
+  controls remain absent.

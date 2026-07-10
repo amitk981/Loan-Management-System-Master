@@ -1,5 +1,17 @@
 # Ralph Progress Log
 
+## 2026-07-10 12:10 - 2026-07-10_110705_normal_run
+- Agent tool used: codex.
+- Slice attempted: `005I4-application-detail-backend-state-hardening`.
+- Summary: Staff detail now owns persisted owner and §44 actions. Application Detail removes
+  synthetic dates, stage completion, department owners, future workflow facts, and payment
+  readiness; it renders exact API facts/actions or neutral states through one production loader.
+- Tests run: backend red/green plus one repair, check, migration sync, 296 tests, 93% coverage;
+  frontend red/green, lint, typecheck, 106 tests, build, and diff integrity checks.
+- Evidence: `.ralph/runs/2026-07-10_110705_normal_run/`; browser unavailable, so two self-contained
+  inlined-CSS HTML renders were saved instead of PNGs.
+- Result: Success. Risk: Medium. Next: `006C2`, then `006D2`.
+
 ## 2026-07-10 10:53:24 - 2026-07-10_100050_normal_run
 - Agent tool used: codex.
 - Slice attempted: `005I3-application-nominee-selection-contract`.
@@ -2428,6 +2440,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_100050_normal_run/.ralph/runs/2026-07-10_100050_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_100050_normal_run/.ralph/runs/2026-07-10_100050_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 12:18:41 - 2026-07-10_110705_normal_run
+- Agent tool used: codex
+- Slice attempted: 005I4-application-detail-backend-state-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_110705_normal_run/.ralph/runs/2026-07-10_110705_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_110705_normal_run/.ralph/runs/2026-07-10_110705_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

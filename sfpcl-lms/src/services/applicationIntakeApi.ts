@@ -48,6 +48,7 @@ export interface StaffApplication {
   current_stage: string;
   completeness_status: string;
   assigned_owner?: { user_id: string; full_name: string } | null;
+  available_actions?: ApplicationAvailableAction[];
   tat?: { due_at: string | null; status: string };
   loan_request_register_entry?: LoanRequestRegisterRow | null;
   created_at?: string | null;
@@ -57,6 +58,14 @@ export interface StaffApplication {
   terms_acceptance_flag?: boolean;
   rejection_note?: StaffApplicationRejectionNote | null;
   nominee?: ApplicationNomineeSummary | null;
+}
+
+export interface ApplicationAvailableAction {
+  action_code: string;
+  label: string;
+  enabled: boolean;
+  disabled_reason: string | null;
+  required_permission: string;
 }
 
 export interface ApplicationNomineeSummary {
@@ -88,7 +97,7 @@ export interface StaffApplicationRejectionNote {
 
 export interface ApplicationDocumentChecklistItem {
   document_type: string;
-  required_flag?: string;
+  required_flag?: string | boolean;
   submission_status?: string;
   verification_status?: string;
   complete?: boolean;

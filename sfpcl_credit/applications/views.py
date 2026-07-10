@@ -162,7 +162,7 @@ def loan_application_detail(request, loan_application_id):
     )
     if not object_access.allowed:
         return _object_access_denied_response(request, object_access)
-    return success_response(services.serialize_application(application), request)
+    return success_response(services.serialize_application_detail(application, user), request)
 
 
 @require_http_methods(["POST"])

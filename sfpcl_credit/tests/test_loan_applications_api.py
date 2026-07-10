@@ -17,7 +17,11 @@ from sfpcl_credit.members.models import (
     Nominee,
     Shareholding,
 )
-from sfpcl_credit.tests.api_contracts import assert_error_envelope, assert_success_envelope
+from sfpcl_credit.tests.api_contracts import (
+    assert_available_actions_shape,
+    assert_error_envelope,
+    assert_success_envelope,
+)
 from sfpcl_credit.workflows.models import WorkflowEvent
 
 
@@ -30,6 +34,10 @@ APPLICATION_DOCUMENT_UPLOAD_PERMISSION = "applications.document.upload"
 APPLICATION_DOCUMENT_VERIFY_PERMISSION = "applications.document.verify"
 ELIGIBILITY_RUN_PERMISSION = "credit.eligibility.run"
 LOAN_LIMIT_CALCULATE_PERMISSION = "credit.loan_limit.calculate"
+
+
+def without_detail_metadata(data):
+    return {key: value for key, value in data.items() if key not in {"assigned_owner", "available_actions"}}
 
 
 class LoanApplicationDraftApiTests(TestCase):
@@ -184,7 +192,7 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(read_response.status_code, 200)
         read_body = read_response.json()
         assert_success_envelope(self, read_body)
-        self.assertEqual(read_body["data"], draft)
+        self.assertEqual(without_detail_metadata(read_body["data"]), draft)
 
         audit = AuditLog.objects.filter(action="applications.loan_application.created").get()
         self.assertEqual(audit.entity_type, "loan_application")
@@ -208,6 +216,46 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertNotIn("cheque-hash-123456789012", flattened)
         self.assertNotIn("123456789012", flattened)
         self.assertNotIn('"holder_name"', json.dumps(body))
+
+    def test_staff_application_detail_returns_backend_owner_and_authorized_actions(self):
+        create_response = self.client.post(
+            "/api/v1/loan-applications/",
+            data=self._draft_payload(),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(create_response.status_code, 200)
+        application_id = create_response.json()["data"]["loan_application_id"]
+
+        response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        assert_success_envelope(self, body)
+        self.assertEqual(
+            body["data"]["assigned_owner"],
+            {
+                "user_id": str(self.creator.user_id),
+                "full_name": self.creator.full_name,
+            },
+        )
+        assert_available_actions_shape(self, body["data"]["available_actions"])
+        self.assertEqual(
+            body["data"]["available_actions"],
+            [
+                {
+                    "action_code": "submit",
+                    "label": "Submit Application",
+                    "enabled": True,
+                    "disabled_reason": None,
+                    "required_permission": APPLICATION_SUBMIT_PERMISSION,
+                }
+            ],
+        )
+
 
     def test_staff_create_and_detail_persist_safe_same_member_nominee_selection(self):
         response = self.client.post(
@@ -1509,7 +1557,7 @@ class LoanApplicationDraftApiTests(TestCase):
             headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
         )
         self.assertEqual(read_response.status_code, 200)
-        self.assertEqual(read_response.json()["data"], submitted)
+        self.assertEqual(without_detail_metadata(read_response.json()["data"]), submitted)
 
         audit = AuditLog.objects.filter(action="applications.loan_application.submitted").get()
         self.assertEqual(str(audit.entity_id), draft["loan_application_id"])
@@ -1591,7 +1639,7 @@ class LoanApplicationDraftApiTests(TestCase):
             headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
         )
         self.assertEqual(read_response.status_code, 200)
-        self.assertEqual(read_response.json()["data"], generated)
+        self.assertEqual(without_detail_metadata(read_response.json()["data"]), generated)
 
         register_model = apps.get_model("applications", "LoanRequestRegisterEntry")
         register_entry = register_model.objects.get(
@@ -2692,6 +2740,7 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertIsNone(detail_note["sent_at"])
         self.assertNotIn("detailed_reason", detail_note)
         self.assertEqual(detail_body["data"]["application_status"], "submitted")
+        self.assertEqual(detail_body["data"]["available_actions"], [])
 
         scope_denied = self.client.get(
             f"/api/v1/loan-applications/{application_id}/",

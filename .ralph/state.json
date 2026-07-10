@@ -73,16 +73,17 @@
     "006B-default-document-purpose-and-terms-eligibility-checks",
     "006C-loan-limit-configuration-and-calculator",
     "006D-loan-limit-snapshot-storage",
-    "005I3-application-nominee-selection-contract"
+    "005I3-application-nominee-selection-contract",
+    "005I4-application-detail-backend-state-hardening"
   ],
   "failed_slices": [],
   "blocked_slices": [
     "004E-witness-shareholder-validation"
   ],
   "last_successful_commit": "9f9ae0b",
-  "last_run_id": "2026-07-10_100050_normal_run",
+  "last_run_id": "2026-07-10_110705_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
+  "slices_completed_since_architecture_review": 2,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

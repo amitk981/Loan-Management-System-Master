@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_staff_application_detail_returns_backend_owner_and_authorized_actions (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_staff_application_detail_returns_backend_owner_and_authorized_actions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_110705_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 235, in test_staff_application_detail_returns_backend_owner_and_authorized_actions
+    body["data"]["assigned_owner"],
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+KeyError: 'assigned_owner'
+
+----------------------------------------------------------------------
+Ran 1 test in 2.075s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

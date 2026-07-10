@@ -1,0 +1,44 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/applications/ApplicationDetail.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_110705_normal_run/sfpcl-lms
+
+ ❯ src/pages/applications/ApplicationDetail.test.tsx (6 tests | 1 failed) 74ms
+   ✓ ApplicationDetail API-backed rendering > loads detail, checklist, and deficiencies through the production HTTP service seam 2ms
+   × ApplicationDetail API-backed rendering > renders production loading and error states without synthetic application facts 4ms
+     → Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+   ✓ ApplicationDetail API-backed rendering > does not apply the old LO00000035 mock overrides to API-backed detail data 23ms
+   ✓ ApplicationDetail API-backed rendering > shows unavailable states instead of hardcoded nominee and witness facts 19ms
+   ✓ ApplicationDetail API-backed rendering > renders the API nominee metadata without sensitive identity values 12ms
+   ✓ ApplicationDetail API-backed rendering > renders staff rejection-note metadata returned by the detail API 13ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/applications/ApplicationDetail.test.tsx > ApplicationDetail API-backed rendering > renders production loading and error states without synthetic application facts
+Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+ ❯ renderElement node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6119:15
+ ❯ retryNode node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6428:21
+ ❯ performWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:7435:17
+ ❯ startWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8270:7
+ ❯ renderToStringImpl node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8380:7
+ ❯ Proxy.process.env.NODE_ENV.exports.renderToStaticMarkup node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:9861:14
+ ❯ renderView src/pages/applications/ApplicationDetail.test.tsx:176:7
+    174|   data: { application: StaffApplication; checklistItems: ApplicationDo…
+    175|   message: string;
+    176| }) => renderToStaticMarkup(
+       |       ^
+    177|   <ApplicationDetailView
+    178|     applicationId="app-1"
+ ❯ src/pages/applications/ApplicationDetail.test.tsx:29:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  11:13:44
+   Duration  627ms (transform 187ms, setup 0ms, collect 283ms, tests 74ms, environment 0ms, prepare 35ms)
+

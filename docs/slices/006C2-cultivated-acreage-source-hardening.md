@@ -53,6 +53,17 @@ being cultivated for the application.
   source-backed scale-of-finance multiplication and lower-of-two calculation unchanged.
 - Keep policy percentages/caps, overrides, appraisal, and frontend wiring out of scope.
 
+### Ready-To-Implement Contract Notes
+- Use the existing standard error envelope and put the stable blocker under
+  `error.field_errors.cultivated_acreage`; do not add a second endpoint or a success-shaped
+  “pending” result for a mismatch.
+- The equality comparison happens before any `LoanLimitAssessment.save()`, audit write, or workflow
+  event. A failed rerun must return the exact previously stored GET payload byte-for-byte at the
+  field level (including assessment UUID, policy snapshot, acreage snapshot, and calculated amount).
+- Test decimal normalization with at least one mixed-format triplet (`5`, `5.0`, `5.00`) and test
+  the two-value path where profile cultivated acreage is null. Neither path may fall back to total
+  member land outside the explicitly selected verified holdings.
+
 ## Snapshot / Audit Requirements
 - Audit old/new metadata records only the accepted acreage snapshot and source record UUIDs, not
   land document contents or profile free text.
@@ -69,6 +80,8 @@ being cultivated for the application.
 - The no-success-evidence assertion covers the assessment row/UUID and serialized GET response,
   `loan_limit.calculated` audit count, and `loan_limit_assessment` workflow-event count.
 - Successful rerun replaces the current one-to-one snapshot; every failed rerun preserves it.
+- Capture matched and mismatched API envelope examples in the run packet so 006D2 can preserve the
+  contract during module extraction without rereading the financial source documents.
 
 ## Evidence Required
 Backend red/green logs, API examples for matched/mismatched acreage, immutable-rerun evidence, and
