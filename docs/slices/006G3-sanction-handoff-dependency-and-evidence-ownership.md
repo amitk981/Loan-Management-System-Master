@@ -73,3 +73,10 @@ High
   stored identity on both submit and sanction-case reload; never recover it with a latest-event query.
 - The PostgreSQL acceptance must execute the existing five races twice after the dependency change,
   with exact case/event/audit identity assertions and zero skips in both saved logs.
+- Start with a static failing test over every production Python file under `credit/` that rejects
+  direct, aliased, and package-level `approvals` imports; pair it with an interface test proving the
+  application HTTP adapter receives case/event identities only from the approvals-owned public
+  result. This implements the already-cited §6.3/§25 thin-view rule without another latest-row query.
+- Treat 004E2 as satisfied only after its nullable legacy witness provenance migration is present;
+  006G3 must not couple sanction evidence to current shareholding lookup while removing the app
+  dependency cycle.

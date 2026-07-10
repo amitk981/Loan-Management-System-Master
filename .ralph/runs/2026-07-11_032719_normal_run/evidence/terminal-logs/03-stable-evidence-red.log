@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_witness_read_retains_verification_time_shareholding_and_folio (sfpcl_credit.tests.test_witness_api.WitnessApiTests.test_witness_read_retains_verification_time_shareholding_and_folio)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_032719_normal_run/sfpcl_credit/tests/test_witness_api.py", line 135, in test_witness_read_retains_verification_time_shareholding_and_folio
+    created.json()["data"]["verification_shareholding_id"],
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'verification_shareholding_id'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.018s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

@@ -61,7 +61,7 @@ class WitnessApiTests(TestCase):
             kyc_status="verified",
             default_status="no_default",
         )
-        Shareholding.objects.create(
+        self.shareholding = Shareholding.objects.create(
             member=self.member,
             folio_number="FOL-004E",
             number_of_shares=25,
@@ -128,6 +128,39 @@ class WitnessApiTests(TestCase):
         self.assertEqual(body["pagination"]["total_count"], 1)
         self.assertEqual(body["data"][0]["witness_id"], first.json()["data"]["witness_id"])
 
+    def test_witness_read_retains_verification_time_shareholding_and_folio(self):
+        created = self._post()
+        self.assertEqual(created.status_code, 200)
+        self.assertEqual(
+            created.json()["data"]["verification_shareholding_id"],
+            str(self.shareholding.shareholding_id),
+        )
+
+        self.shareholding.folio_number = "FOL-CHANGED"
+        self.shareholding.number_of_shares = 0
+        self.shareholding.available_share_count = 0
+        self.shareholding.status = "inactive"
+        self.shareholding.save()
+        Shareholding.objects.create(
+            member=self.member,
+            folio_number="FOL-NEW",
+            number_of_shares=50,
+            holding_mode="demat",
+            pledged_share_count=0,
+            available_share_count=50,
+            status="active",
+        )
+
+        response = self.client.get(self._url(), headers=self._headers())
+
+        self.assertEqual(response.status_code, 200)
+        witness = response.json()["data"][0]
+        self.assertEqual(
+            witness["verification_shareholding_id"],
+            str(self.shareholding.shareholding_id),
+        )
+        self.assertEqual(witness["folio_number"], "FOL-004E")
+
     def test_witness_create_rejects_non_shareholder_unverified_kyc_and_name_mismatch(self):
         shareholding = self.member.shareholdings.get()
         shareholding.status = "inactive"
@@ -183,6 +216,25 @@ class WitnessApiTests(TestCase):
         assert_error_envelope(self, forged.json(), "VALIDATION_ERROR")
         self.assertIn("shareholder_verified_flag", forged.json()["error"]["field_errors"])
         self.assertEqual(Witness.objects.count(), 0)
+
+    def test_witness_create_envelopes_malformed_and_non_object_json_without_writes(self):
+        headers = self._headers()
+        baseline_audits = AuditLog.objects.count()
+        baseline_events = WorkflowEvent.objects.count()
+        for body in ('{"member_id":', "[]", '"witness"'):
+            with self.subTest(body=body):
+                response = self.client.post(
+                    self._url(),
+                    data=body,
+                    content_type="application/json",
+                    headers=headers,
+                )
+
+                self.assertEqual(response.status_code, 400)
+                assert_error_envelope(self, response.json(), "VALIDATION_ERROR")
+                self.assertEqual(Witness.objects.count(), 0)
+                self.assertEqual(AuditLog.objects.count(), baseline_audits)
+                self.assertEqual(WorkflowEvent.objects.count(), baseline_events)
 
     def test_witness_permissions_and_application_object_access_are_enforced(self):
         plain = self._user("witness.plain@sfpcl.example", "PlainPass123!")

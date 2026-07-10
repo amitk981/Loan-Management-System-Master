@@ -3087,3 +3087,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-11 - 2026-07-11_032719_normal_run
+- Agent tool used: codex
+- Slice attempted: 004E2-witness-evidence-snapshot-and-input-hardening
+- Summary: Persisted the exact verification-time shareholding UUID and folio on witnesses, made
+  reads stable across later holding mutations, conservatively backfilled only unambiguous audited
+  legacy evidence, removed three duplicate indexes, and enveloped malformed/non-object JSON with
+  zero domain writes. Witness list query/serialization composition now lives behind the application
+  service seam.
+- Tests run: failing-first malformed-body and stable-evidence API cycles; migration backfill,
+  ambiguity, reverse/idempotency, and index inspection; 11 focused witness tests; Django check and
+  migration sync; 394 backend tests with five expected skips at 94% coverage; frontend build,
+  typecheck, lint, and 130 tests.
+- Evidence saved: `.ralph/runs/2026-07-11_032719_normal_run/`
+- Result: Success
+- Risk level: Medium
+- Next action: Run sharpened 006G3-sanction-handoff-dependency-and-evidence-ownership.
+
+## 2026-07-11 03:37:47 - 2026-07-11_032719_normal_run
+- Agent tool used: codex
+- Slice attempted: 004E2-witness-evidence-snapshot-and-input-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_032719_normal_run/.ralph/runs/2026-07-11_032719_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_032719_normal_run/.ralph/runs/2026-07-11_032719_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

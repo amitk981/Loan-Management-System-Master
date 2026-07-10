@@ -2076,7 +2076,7 @@ actor/time, exception flag, and request ID. Generic evidence excludes request re
 comments, appraisal summaries, risk notes, and rejection text. Approval-case storage retains the
 trimmed request remarks as the action reason.
 
-## Application Witness API (004E)
+## Application Witness API (004E, hardened by 004E2)
 
 Application-scoped endpoints:
 
@@ -2091,10 +2091,16 @@ The selected member must exist, the trimmed/case-normalized witness name must ma
 display name, member KYC must be `verified`, and persisted shareholding evidence must include an
 `active` row with `number_of_shares > 0`. Missing records return `404 NOT_FOUND`; non-shareholders
 return `400 WITNESS_NOT_SHAREHOLDER`; missing/invalid identity, KYC, name, unknown, or
-caller-supplied verification fields return the applicable standard 400 envelope.
+caller-supplied verification fields return the applicable standard 400 envelope. Malformed JSON,
+arrays/scalars, missing fields, and unknown fields never escape the adapter: they return a standard
+`400 VALIDATION_ERROR` envelope and write no witness, audit, or workflow row.
 
-Successful response data contains `witness_id`, application/member IDs, resolved `folio_number`,
-name, masked PAN/Aadhaar objects, `shareholder_verified_flag: true`,
+Successful response data contains `witness_id`, application/member IDs,
+`verification_shareholding_id`, immutable verification-time `folio_number`, name, masked
+PAN/Aadhaar objects, `shareholder_verified_flag: true`,
 `verification_status: verified`, verifier/time, and creation time. Plaintext identities, protected
 tokens, and keyed hashes are never returned or audited. Creation writes one metadata-only
 `applications.witness.created` audit row and no workflow event or application-state transition.
+Later shareholding folio/status/count changes or newly created holdings do not change witness read
+evidence. Legacy rows whose creation audit folio does not resolve to exactly one member
+shareholding expose both evidence fields as `null` rather than selecting current facts.

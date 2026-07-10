@@ -13,6 +13,18 @@
   conservative legacy backfill, stable-read tests, a thin application-owned query seam, and
   redundant-index cleanup. M02-FR-009/BR-010 is not fully closed until it lands.
 
+## 004E2 Witness Evidence Hardening
+
+- New witness creation snapshots the exact qualifying shareholding UUID and folio; list/create
+  responses use only that verification-time evidence and do not reselect current holdings.
+- Legacy backfill requires one creation-audit folio and exactly one matching shareholding for the
+  witness member. Missing, conflicting, or ambiguous evidence stays nullable rather than guessed.
+- Malformed JSON and non-object bodies return `400 VALIDATION_ERROR` without witness/audit/workflow
+  writes. Witness list query plus serialization composition now lives behind the application
+  service seam.
+- The named application, PAN-hash, and Aadhaar-hash indexes remain exactly once; their redundant
+  automatic FK/`db_index` companions are removed.
+
 Source extracts opened incidentally during 003K queue sharpening. `docs/source/` remains
 authoritative; the 004A run must still read the full Epic 004 file and named source references
 before implementation.

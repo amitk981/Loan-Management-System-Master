@@ -175,6 +175,7 @@ class Witness(models.Model):
         LoanApplication,
         on_delete=models.PROTECT,
         related_name="witnesses",
+        db_index=False,
     )
     member = models.ForeignKey(
         "members.Member",
@@ -183,9 +184,17 @@ class Witness(models.Model):
     )
     witness_name = models.CharField(max_length=255)
     pan_encrypted = models.TextField()
-    pan_hash = models.CharField(max_length=128, db_index=True)
+    pan_hash = models.CharField(max_length=128)
     aadhaar_encrypted = models.TextField()
-    aadhaar_hash = models.CharField(max_length=128, db_index=True)
+    aadhaar_hash = models.CharField(max_length=128)
+    verification_shareholding = models.ForeignKey(
+        "members.Shareholding",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="verified_witnesses",
+    )
+    verification_folio_number = models.CharField(max_length=100, blank=True, null=True)
     shareholder_verified_flag = models.BooleanField(default=False)
     verification_status = models.CharField(max_length=60, default="pending", db_index=True)
     verified_by_user = models.ForeignKey(

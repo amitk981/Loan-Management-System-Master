@@ -202,8 +202,7 @@ def loan_application_witnesses(request, loan_application_id):
     if not object_access.allowed:
         return _object_access_denied_response(request, object_access)
     if request.method == "GET":
-        rows = application.witnesses.select_related("member", "verified_by_user").order_by("created_at", "witness_id")
-        items = [services.serialize_witness(row) for row in rows]
+        items = services.list_witnesses(application)
         return list_response(
             items,
             {
@@ -227,6 +226,13 @@ def loan_application_witnesses(request, loan_application_id):
     except services.WitnessValidationError as exc:
         status = 404 if exc.code == "NOT_FOUND" else 400
         return error_response(request, status, exc.code, exc.message, exc.field_errors)
+    except ValidationError:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Witness payload failed validation.",
+        )
     return success_response(services.serialize_witness(witness), request)
 
 

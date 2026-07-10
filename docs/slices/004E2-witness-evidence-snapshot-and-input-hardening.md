@@ -1,7 +1,7 @@
 # Slice 004E2: Witness Evidence Snapshot and Input Hardening
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master
@@ -70,3 +70,12 @@ Medium
   `serialize_witness`; list composition must leave the view and remain in `applications.services`.
 - The migration/schema regression must name the retained application and identity-hash indexes so
   duplicate implicit FK/explicit indexes cannot silently return.
+
+## Done Checklist
+
+- [x] Execution plan and failing-first API evidence saved
+- [x] Verification-time shareholding and folio snapshot persisted and serialized
+- [x] Conservative legacy migration, reverse/idempotency, and index regressions passed
+- [x] Malformed/non-object JSON returns standard 400 with zero domain writes
+- [x] Witness list/query/serialization composition moved behind the application service seam
+- [x] API contract, digest, assumption, evidence, and all configured gates completed

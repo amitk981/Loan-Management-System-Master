@@ -241,6 +241,8 @@ def create_witness(application, payload, actor_user, request_ip="", request_user
         pan_hash=identity_hash(pan),
         aadhaar_encrypted=protected_identity_token(aadhaar, 12),
         aadhaar_hash=identity_hash(aadhaar),
+        verification_shareholding=shareholding,
+        verification_folio_number=shareholding.folio_number,
         shareholder_verified_flag=True,
         verification_status="verified",
         verified_by_user=actor_user,
@@ -255,6 +257,7 @@ def create_witness(application, payload, actor_user, request_ip="", request_user
             "loan_application_id": str(application.loan_application_id),
             "witness_id": str(witness.witness_id),
             "member_id": str(member.member_id),
+            "verification_shareholding_id": str(shareholding.shareholding_id),
             "folio_number": shareholding.folio_number,
             "witness_name": witness.witness_name,
             "shareholder_verified_flag": True,
@@ -267,16 +270,16 @@ def create_witness(application, payload, actor_user, request_ip="", request_user
 
 
 def serialize_witness(witness):
-    shareholding = (
-        witness.member.shareholdings.filter(status="active", number_of_shares__gt=0)
-        .order_by("created_at", "shareholding_id")
-        .first()
-    )
     return {
         "witness_id": str(witness.witness_id),
         "loan_application_id": str(witness.loan_application_id),
         "member_id": str(witness.member_id),
-        "folio_number": shareholding.folio_number if shareholding else witness.member.folio_number,
+        "verification_shareholding_id": (
+            str(witness.verification_shareholding_id)
+            if witness.verification_shareholding_id
+            else None
+        ),
+        "folio_number": witness.verification_folio_number,
         "witness_name": witness.witness_name,
         "pan": {"masked": mask_protected_identity(witness.pan_encrypted, 10), "can_view_full": False},
         "aadhaar": {"masked": mask_protected_identity(witness.aadhaar_encrypted, 12), "can_view_full": False},
@@ -286,6 +289,13 @@ def serialize_witness(witness):
         "verified_at": witness.verified_at.isoformat().replace("+00:00", "Z") if witness.verified_at else None,
         "created_at": witness.created_at.isoformat().replace("+00:00", "Z"),
     }
+
+
+def list_witnesses(application):
+    rows = application.witnesses.select_related(
+        "member", "verified_by_user", "verification_shareholding"
+    ).order_by("created_at", "witness_id")
+    return [serialize_witness(row) for row in rows]
 
 
 def user_can_upload_application_documents(user):
