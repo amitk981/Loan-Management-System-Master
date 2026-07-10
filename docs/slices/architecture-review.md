@@ -1,7 +1,7 @@
 # Internal Run Descriptor: Architecture Review
 
 ## Status
-Internal — orchestrator-only
+Complete
 
 ## Goal
 

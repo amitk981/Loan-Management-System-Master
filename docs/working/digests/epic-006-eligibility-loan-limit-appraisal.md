@@ -1,5 +1,25 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-11 - 006G2/006H2 Corrective Follow-ups
+
+- 006G2 hides the concrete case model, but `credit -> approvals.modules -> credit.modules.common`
+  is still a circular business-app dependency forbidden by codebase-design §36.2. Credit also
+  creates the sanction workflow event although 006G2 assigns created-event ownership to the
+  approvals handoff; reload finds a latest event rather than reading a durable case-linked result.
+  Corrective 006G3 removes the cycle, moves event creation into the atomic approvals seam, and
+  reruns the five PostgreSQL races with exact canonical evidence assertions.
+- 006H2's writable projection and canonical sanction reload client are useful, but the real page
+  unions `/auth/me.available_actions` (global permissions) with resource actions. Appraisal
+  responses do not supply a resource action projection, so an empty resource set cannot deny a
+  permissioned user and the dedicated legacy revalidation action is unreachable.
+- 006H2 tests static-render the exported view and call API wrappers directly; they never mount the
+  default container, click controls, or observe HTTP/state refresh. Corrective 006H4 adds
+  state/object-aware backend actions, intersection-only React authority, and failing-first real
+  container tests before 006H3 restores visual fidelity.
+- 006E4 remediation/history behavior and 006F4's twice-green five-race PostgreSQL execution match
+  their core contracts. 006G3 will replace 006F4's weakened decision-ID substring checks with exact
+  canonical workflow assertions while preserving all race outcomes.
+
 ## 006H2 Workbench Action Contract Hardening
 
 - Returned appraisal responses now pass through one explicit writable projection before becoming

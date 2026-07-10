@@ -2,6 +2,130 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-11 03:08 - Architecture Review 2026-07-11_030117_architecture_review
+
+Reviewed completed product slices since architecture-review commit `6efe1a8`:
+- `006E4-legacy-appraisal-remediation-and-history-backfill` (`69d5af0`)
+- `006F4-postgresql-credit-concurrency-acceptance` (`1b5b24a`)
+- `004E-witness-shareholder-validation` (`c25950f`)
+- `006G2-sanction-handoff-module-and-read-contract` (`d7f98c9`)
+- `006H2-workbench-action-contract-hardening` (`55a9074`)
+
+The review checked `git diff 6efe1a8...HEAD`, the five slice/run packets, migrations,
+implementation/tests, Epic 004/006 digests, ADR-0005, and cited source sections. Standards and spec
+fidelity were reviewed independently. Production code was not changed. `CONTEXT.md` still describes
+the repository truthfully, and `.ralph/state.json` contains no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - Global permissions still override resource action authority
+
+`AppraisalWorkbench.tsx` unions `/auth/me.available_actions` with appraisal/case actions before
+checking controls. `/auth/me.available_actions` is the user's complete permission list, while the
+appraisal serializer returns no resource actions. Therefore an empty resource action list cannot
+deny a globally permissioned user, React still owns the state/role matrix, and the dedicated legacy
+revalidation action never reaches the real container. This violates codebase-design §23.3-§23.4
+and the central 006H2 requirement. Corrective action: created High-risk
+`006H4-workbench-authoritative-actions-and-container-tests` and made 006H3 depend on it.
+
+#### Finding 2 - High - Required real-container action tests are still absent
+
+`AppraisalWorkbench.test.tsx` server-renders only `AppraisalWorkbenchView` with injected props and
+mock callbacks. The API tests invoke wrappers directly. No test mounts the default container,
+selects an application, clicks an action, observes HTTP/state refresh, or proves a resource denial
+beats `/auth/me`. This repeats the prior review's explicit test-quality finding and violates
+codebase-design §26.3 plus 006H2's Test Cases/Acceptance Criteria. 006H4 owns failing-first container
+coverage for every action, denial, stale write, returned draft, legacy repair, and sanction reload.
+
+#### Finding 3 - High - The sanction seam introduced the dependency cycle ADR-0005 forbids
+
+`credit.modules.appraisal_workflow` imports the approvals handoff while that handoff imports
+credit-owned errors/object-access logic. Codebase-design §36.2 permits `approvals -> credit`, not
+the reverse, and explicitly says a circular dependency means the seam is misplaced. The narrow
+static test rejects only `credit -> approvals.models`, so it certifies an interface import while
+missing the package cycle. Corrective action: created High-risk
+`006G3-sanction-handoff-dependency-and-evidence-ownership`.
+
+#### Finding 4 - Medium - New permission denials preserve a source-contract error code drift
+
+The witness endpoint returns `403 PERMISSION_DENIED`; source API §7.1 defines missing permission as
+`403 FORBIDDEN` and reserves distinct codes for object, sensitive-field, and approval-authority
+denials. This is inherited by many earlier adapters and the local contract harness, but 004E added
+another endpoint that cements the divergence. Corrective action: created Medium-risk
+`002J2-forbidden-permission-error-contract-alignment` to migrate the shared contract without
+changing authorization decisions.
+
+#### Finding 5 - Medium - 006F4 altered authoritative assertions despite its no-change rule
+
+006F4 correctly ran all five PostgreSQL races twice with zero skips and fixed invalid fixture
+binding. However, it replaced structured workflow action/metadata assertions with decision-ID
+substring checks even though the slice required the five tests to execute without changing or
+weakening assertions. The old fields were retired, so a canonical assertion update was necessary,
+but substring matching is weaker than exact state/reason/identity proof. 006G3 owns exact canonical
+workflow evidence assertions while rerunning the same five-race acceptance.
+
+### Spec
+
+#### Finding 1 - High - 006H2 implemented action authority incorrectly
+
+006H2 requires controls from backend resource `available_actions` intersected with `/auth/me`
+usability and says controls disappear when the server denies them. The global-permission union and
+missing appraisal action projection implement the opposite precedence. The real legacy-repair
+button is unreachable, while other controls can remain visible from permission plus local state.
+Corrective action: 006H4 adds the object/state-aware backend projection and makes React intersect,
+never union, resource actions.
+
+#### Finding 2 - High - 006H2's mandated behavior proof is partial
+
+The slice explicitly requires mounting the real container, mocked HTTP, clicking every action, and
+asserting exact bodies plus refresh/error/role/object/stale behavior. Static markup and direct API
+wrapper tests do not meet that requirement and concealed Spec Finding 1. Corrective action: 006H4.
+
+#### Finding 3 - Medium - Malformed witness JSON can escape the standard 400 envelope
+
+004E requires malformed input to return a standard validation envelope. `parse_json_body` raises
+Django `ValidationError` for malformed or non-object JSON, but the witness adapter catches only its
+domain `WitnessValidationError`. Corrective action: created Medium-risk
+`004E2-witness-evidence-snapshot-and-input-hardening` with failing-first malformed-body/no-write
+coverage.
+
+#### Finding 4 - Medium - Witness verification-time folio evidence is not persisted
+
+004E says the qualifying shareholding folio is persisted evidence. `Witness` stores neither the
+shareholding nor a folio snapshot; every GET reselects the currently first active positive holding
+and otherwise falls back to the mutable member folio. Later shareholding changes can therefore
+rewrite the returned basis for an old verification. The same model also creates redundant automatic
+and explicit application/hash indexes. 004E2 owns an unambiguous legacy backfill, immutable
+shareholding/folio evidence, stable read regression, and index cleanup.
+
+#### Finding 5 - Medium - Approval handoff does not own the workflow event promised by 006G2
+
+006G2 says the approvals module returns the created workflow-event UUID. Credit still creates the
+event and passes it to approvals serialization; reload then queries the newest matching application
+event instead of a durable case-linked creation result. 006G3 moves the event into the atomic
+approvals handoff and proves exact create/reload identity and rollback.
+
+### Test Quality and Functional IDs
+
+006E4's state-specific remediation, append-only migration, negative paths, and rollback assertions
+are substantive. 006F4's two real PostgreSQL runs execute all five races and close the prior
+critical acceptance gap, subject to the exact-evidence assertion correction above. 004E's core
+permission/KYC/name/shareholder/masking/audit matrix is useful but misses malformed bodies and
+historical evidence stability. 006G2's rollback/read cases are meaningful but its dependency test
+is too narrow. 006H2's projection/client assertions are useful but do not substitute for container
+behavior.
+
+M02-FR-009/BR-010 is behaviorally present but remains Medium risk until 004E2 makes its evidence
+durable. M04-FR-004 through M04-FR-011 remain implemented at the backend; confidence in FR-010/
+FR-011's reachable UI path remains High risk until 006H4. M04-FR-001/M04-FR-002 remain explicitly
+deferred to 012EA under A-053, and M04-FR-003 retains the explicit A-054 receipt-time proxy. No new
+M03 requirement was claimed by 004E, and no material scope creep was found.
+
+Summary: Standards found 3 High and 2 Medium issues; worst is resource authorization remaining
+client/global-permission driven and untested. Spec found 2 High and 3 Medium issues; worst is the
+same broken 006H2 authority/interaction contract. Corrective order is 002J2 -> 004E2 -> 006G3 ->
+006H4 -> 006H3 -> 006X.
+
 ## 2026-07-10 21:39 - Architecture Review 2026-07-10_213352_architecture_review
 
 Reviewed completed product slices since architecture-review commit `46442fe`:

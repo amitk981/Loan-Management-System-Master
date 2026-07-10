@@ -1,5 +1,18 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## Architecture Review 2026-07-11 - 004E Witness Hardening
+
+- 004E's successful shareholder/KYC/name/masking/audit behavior is substantive, but malformed or
+  non-object JSON can escape because the adapter does not translate `parse_json_body`'s Django
+  `ValidationError`.
+- The qualifying folio is written only to the creation audit. `Witness` stores no shareholding FK
+  or folio snapshot, and GET reselects current shareholdings, so later mutations can rewrite the
+  displayed verification basis. Automatic FK/`db_index` indexes are also duplicated by explicit
+  `Meta.indexes`.
+- Corrective 004E2 owns standard malformed-body envelopes, immutable shareholding/folio evidence,
+  conservative legacy backfill, stable-read tests, a thin application-owned query seam, and
+  redundant-index cleanup. M02-FR-009/BR-010 is not fully closed until it lands.
+
 Source extracts opened incidentally during 003K queue sharpening. `docs/source/` remains
 authoritative; the 004A run must still read the full Epic 004 file and named source references
 before implementation.

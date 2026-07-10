@@ -13,7 +13,7 @@ Restore the approved staged Appraisal Workbench, eligibility checklist, and calc
 while retaining the corrected 006H2 backend wiring and introducing no new visual design.
 
 ## Depends On
-- 006H2
+- 006H4
 
 ## Source / Review References
 - `docs/working/FRONTEND_DESIGN_RULES.md`
@@ -28,7 +28,8 @@ while retaining the corrected 006H2 backend wiring and introducing no new visual
 - Restore the approved queue/detail/staged-workflow structure, card hierarchy, density, spacing,
   badges, and disclosure patterns from the pre-006H prototype. Replace only labels, API data,
   visibility, and action handlers needed for real Epic 006 facts.
-- Keep 006H2 writable projections, server `available_actions`, case reload, errors, and exact
+- Keep 006H2/006H4 writable projections, authoritative resource `available_actions`, case reload,
+  real-container behavior tests, errors, and exact
   action bodies. Do not restore mock calculations, invented statuses, local exception decisions,
   JSON downloads, console audit, or mock member/application facts.
 - Use only existing components/classes and compositions. Any prototype control whose backend
@@ -37,7 +38,8 @@ while retaining the corrected 006H2 backend wiring and introducing no new visual
 
 ## Test Cases
 
-- Behavior tests from 006H2 remain unchanged and green through the restored composition.
+- Behavior tests from 006H2 and the real-container interaction suite from 006H4 remain unchanged
+  and green through the restored composition.
 - Add a focused spec under `sfpcl-lms/e2e/` that uses the repository-pinned `@playwright/test`
   Chromium project. Visual regression covers queue, eligible/ineligible/pending,
   below/equal/above limit, draft, returned, review-pending, reviewed, rejected, submitted, empty,
@@ -51,8 +53,9 @@ while retaining the corrected 006H2 backend wiring and introducing no new visual
 - Preserve the four-way reload (`eligibility`, `loan-limit`, `appraisal`, `sanction-case`) and treat
   sanction-case `404 NOT_FOUND` as absence while displaying the exact returned case UUID and
   application/appraisal statuses.
-- Restored controls must continue to require the matching server action code plus current-user
-  permission/role usability; legacy revalidation remains distinct from submit-for-review.
+- Restored controls must continue to require the matching resource action code plus current-user
+  permission/role usability; global permissions must never be unioned into resource actions, and
+  legacy revalidation remains distinct from submit-for-review.
 
 ## Evidence Required
 
