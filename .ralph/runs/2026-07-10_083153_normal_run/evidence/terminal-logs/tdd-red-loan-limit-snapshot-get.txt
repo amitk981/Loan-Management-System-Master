@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_loan_limit_read_returns_immutable_stored_snapshot_without_evidence (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_read_returns_immutable_stored_snapshot_without_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_loan_applications_api.py", line 709, in test_loan_limit_read_returns_immutable_stored_snapshot_without_evidence
+    self.assertEqual(read.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 9.980s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

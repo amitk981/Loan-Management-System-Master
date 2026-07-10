@@ -637,6 +637,283 @@ class LoanApplicationDraftApiTests(TestCase):
             1,
         )
 
+    def test_loan_limit_read_returns_immutable_stored_snapshot_without_evidence(self):
+        application_id = self._eligible_application(required_loan_amount="400000.00")
+        shareholding = Shareholding.objects.create(
+            member=self.member,
+            folio_number=self.member.folio_number,
+            number_of_shares=100,
+            holding_mode="physical",
+            valuation_per_share="2000.00",
+            valuation_effective_date=timezone.localdate(),
+            pledged_share_count=0,
+            available_share_count=100,
+            status="active",
+        )
+        policy = self._active_loan_policy(
+            share_limit_percentage="10.0000",
+            per_share_cap_amount="200.00",
+        )
+        endpoint = (
+            f"/api/v1/loan-applications/{application_id}/loan-limit-assessment/"
+        )
+        calculate = self.client.post(
+            f"{endpoint}calculate/",
+            data={
+                "shareholding_id": str(shareholding.shareholding_id),
+                "land_holding_ids": [str(self.land.land_holding_id)],
+                "crop_plan_id": str(self.crop.crop_plan_id),
+                "requested_amount": "400000.00",
+                "calculation_date": timezone.localdate().isoformat(),
+            },
+            content_type="application/json",
+            headers=self._headers(
+                "applications.creator@sfpcl.example",
+                "CreatorPass123!",
+            ),
+        )
+        self.assertEqual(calculate.status_code, 200)
+        stored_snapshot = calculate.json()["data"]
+
+        Shareholding.objects.filter(pk=shareholding.pk).update(
+            number_of_shares=999,
+            valuation_per_share="9999.00",
+            available_share_count=999,
+        )
+        LandHolding.objects.filter(pk=self.land.pk).update(area_acres="99.00")
+        CropPlan.objects.filter(pk=self.crop.pk).update(planned_area_acres="88.00")
+        application_model = apps.get_model("applications", "LoanApplication")
+        application_model.objects.filter(pk=application_id).update(
+            required_loan_amount="10000.00"
+        )
+        LoanPolicyConfig.objects.filter(pk=policy.pk).update(
+            policy_name="Mutated policy name",
+            policy_version="mutated-v99",
+            board_approval_reference="BOARD-MUTATED",
+            share_limit_percentage="99.0000",
+            per_share_cap_amount="9999.00",
+            default_scale_of_finance_per_acre_amount="9999.00",
+        )
+
+        read = self.client.get(
+            endpoint,
+            headers={
+                **self._headers(
+                    "applications.creator@sfpcl.example",
+                    "CreatorPass123!",
+                ),
+                "X-Request-ID": "req-read-loan-limit-snapshot",
+            },
+        )
+
+        self.assertEqual(read.status_code, 200)
+        assert_success_envelope(self, read.json())
+        self.assertEqual(
+            read.json()["meta"]["request_id"],
+            "req-read-loan-limit-snapshot",
+        )
+        self.assertEqual(read.json()["data"], stored_snapshot)
+        self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 1)
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="loan_limit_assessment").count(),
+            1,
+        )
+
+        rerun = self.client.post(
+            f"{endpoint}calculate/",
+            data={
+                "shareholding_id": str(shareholding.shareholding_id),
+                "land_holding_ids": [str(self.land.land_holding_id)],
+                "crop_plan_id": str(self.crop.crop_plan_id),
+                "requested_amount": "10000.00",
+                "calculation_date": timezone.localdate().isoformat(),
+            },
+            content_type="application/json",
+            headers=self._headers(
+                "applications.creator@sfpcl.example",
+                "CreatorPass123!",
+            ),
+        )
+        self.assertEqual(rerun.status_code, 200)
+        replacement_snapshot = rerun.json()["data"]
+        self.assertEqual(
+            replacement_snapshot["loan_limit_assessment_id"],
+            stored_snapshot["loan_limit_assessment_id"],
+        )
+        self.assertEqual(replacement_snapshot["number_of_shares"], 999)
+        self.assertEqual(replacement_snapshot["land_area_acres"], "99.00")
+        self.assertEqual(replacement_snapshot["requested_amount"], "10000.00")
+        self.assertEqual(replacement_snapshot["calculation_rule_version"], "mutated-v99")
+        self.assertEqual(
+            replacement_snapshot["configuration_source"],
+            {
+                "type": "loan_policy_config",
+                "loan_policy_config_id": str(policy.loan_policy_config_id),
+                "policy_name": "Mutated policy name",
+                "board_approval_reference": "BOARD-MUTATED",
+            },
+        )
+        reread = self.client.get(
+            endpoint,
+            headers=self._headers(
+                "applications.creator@sfpcl.example",
+                "CreatorPass123!",
+            ),
+        )
+        self.assertEqual(reread.status_code, 200)
+        self.assertEqual(reread.json()["data"], replacement_snapshot)
+        rerun_audit = (
+            AuditLog.objects.filter(action="loan_limit.calculated")
+            .order_by("-created_at")
+            .first()
+        )
+        self.assertEqual(rerun_audit.old_value_json["number_of_shares"], 100)
+        self.assertEqual(rerun_audit.new_value_json["number_of_shares"], 999)
+        self.assertEqual(
+            rerun_audit.old_value_json["configuration_source"]["policy_name"],
+            policy.policy_name,
+        )
+        self.assertEqual(
+            rerun_audit.new_value_json["configuration_source"]["policy_name"],
+            "Mutated policy name",
+        )
+        self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 2)
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="loan_limit_assessment").count(),
+            2,
+        )
+
+        rerun_payload = {
+            "shareholding_id": str(shareholding.shareholding_id),
+            "land_holding_ids": [str(self.land.land_holding_id)],
+            "crop_plan_id": str(self.crop.crop_plan_id),
+            "requested_amount": "10000.00",
+            "calculation_date": timezone.localdate().isoformat(),
+        }
+        eligibility_model = apps.get_model("applications", "EligibilityAssessment")
+        eligibility_model.objects.filter(loan_application_id=application_id).update(
+            overall_result="ineligible"
+        )
+        invalid_state = self.client.post(
+            f"{endpoint}calculate/",
+            data=rerun_payload,
+            content_type="application/json",
+            headers=self._headers(
+                "applications.creator@sfpcl.example",
+                "CreatorPass123!",
+            ),
+        )
+        self.assertEqual(invalid_state.status_code, 409)
+        assert_error_envelope(
+            self,
+            invalid_state.json(),
+            "INVALID_STATE_TRANSITION",
+        )
+        eligibility_model.objects.filter(loan_application_id=application_id).update(
+            overall_result="eligible"
+        )
+
+        missing_source = self.client.post(
+            f"{endpoint}calculate/",
+            data={**rerun_payload, "shareholding_id": str(uuid4())},
+            content_type="application/json",
+            headers=self._headers(
+                "applications.creator@sfpcl.example",
+                "CreatorPass123!",
+            ),
+        )
+        self.assertEqual(missing_source.status_code, 400)
+        assert_error_envelope(self, missing_source.json(), "VALIDATION_ERROR")
+
+        permission_denied = self.client.post(
+            f"{endpoint}calculate/",
+            data=rerun_payload,
+            content_type="application/json",
+            headers=self._headers(
+                "applications.reader@sfpcl.example",
+                "ReaderPass123!",
+            ),
+        )
+        self.assertEqual(permission_denied.status_code, 403)
+        assert_error_envelope(
+            self,
+            permission_denied.json(),
+            "PERMISSION_DENIED",
+        )
+
+        object_scope_denied = self.client.post(
+            f"{endpoint}calculate/",
+            data=rerun_payload,
+            content_type="application/json",
+            headers=self._headers(
+                "applications.unrelated@sfpcl.example",
+                "UnrelatedPass123!",
+            ),
+        )
+        self.assertEqual(object_scope_denied.status_code, 403)
+        assert_error_envelope(
+            self,
+            object_scope_denied.json(),
+            "OBJECT_ACCESS_DENIED",
+        )
+
+        preserved = self.client.get(
+            endpoint,
+            headers=self._headers(
+                "applications.creator@sfpcl.example",
+                "CreatorPass123!",
+            ),
+        )
+        self.assertEqual(preserved.status_code, 200)
+        self.assertEqual(preserved.json()["data"], replacement_snapshot)
+        self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 2)
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="loan_limit_assessment").count(),
+            2,
+        )
+
+    def test_loan_limit_read_enforces_read_permission_scope_and_missing_snapshot(self):
+        application_id = self._eligible_application(required_loan_amount="400000.00")
+        endpoint = (
+            f"/api/v1/loan-applications/{application_id}/loan-limit-assessment/"
+        )
+
+        unauthenticated = self.client.get(endpoint)
+        self.assertEqual(unauthenticated.status_code, 401)
+        assert_error_envelope(self, unauthenticated.json(), "AUTH_REQUIRED")
+
+        no_permission = self.client.get(
+            endpoint,
+            headers=self._headers("applications.plain@sfpcl.example", "PlainPass123!"),
+        )
+        self.assertEqual(no_permission.status_code, 403)
+        assert_error_envelope(self, no_permission.json(), "PERMISSION_DENIED")
+
+        out_of_scope = self.client.get(
+            endpoint,
+            headers=self._headers(
+                "applications.unrelated@sfpcl.example",
+                "UnrelatedPass123!",
+            ),
+        )
+        self.assertEqual(out_of_scope.status_code, 403)
+        assert_error_envelope(self, out_of_scope.json(), "OBJECT_ACCESS_DENIED")
+
+        missing = self.client.get(
+            endpoint,
+            headers=self._headers(
+                "applications.creator@sfpcl.example",
+                "CreatorPass123!",
+            ),
+        )
+        self.assertEqual(missing.status_code, 404)
+        assert_error_envelope(self, missing.json(), "NOT_FOUND")
+        self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 0)
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="loan_limit_assessment").count(),
+            0,
+        )
+
     def test_loan_limit_equal_and_below_boundaries_update_one_assessment(self):
         application_id = self._eligible_application(required_loan_amount="20000.00")
         shareholding = Shareholding.objects.create(

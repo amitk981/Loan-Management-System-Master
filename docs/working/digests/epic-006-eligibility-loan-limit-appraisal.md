@@ -116,6 +116,37 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
     version, user, and time with `loan_limit.calculated` audit and `loan_limit_assessment` workflow
     evidence. Rerun updates the one-to-one row while denied/invalid/validation paths write none.
 
+## 006D Immutable Loan-Limit Snapshot Readback
+- Implemented `GET /api/v1/loan-applications/{loan_application_id}/loan-limit-assessment/` with
+  `applications.loan_application.read` and the existing application object-access boundary.
+  Missing applications/assessments return `404`; GET performs no calculation and writes no audit
+  or workflow evidence.
+- The persisted assessment includes policy config UUID, policy name, and Board approval reference
+  snapshots. Calculate response, GET response, and audit old/new metadata serialize the policy
+  source from those stored fields rather than the mutable `LoanPolicyConfig` row.
+- All §14.2 numeric inputs/results, member/shareholding identifiers, requested amount, boundary
+  flags/warnings, rule version, actor/time, and policy source remain unchanged on read when current
+  application, shareholding, land/crop, or policy facts change.
+- A successful rerun preserves the one-to-one assessment UUID, atomically replaces the stored
+  snapshot, and records complete old/new snapshot audit metadata. Invalid-state, missing-source,
+  permission-denied, and object-scope-denied reruns preserve the prior snapshot and create no
+  success evidence.
+
+## 006E-006F Appraisal And Credit Review Source Extract
+- `api-contracts.md` §24 defines appraisal create/read, submit-for-review, Credit Manager review,
+  and submit-to-sanction as separate actions. 006E owns create/read/edit/submit-for-review; 006F
+  owns review only; 006G owns sanction submission.
+- §24.4 review request fields are `decision` and `review_comments`. The example decision is
+  `reviewed`; test-plan MOD-APPRAISAL-005 additionally requires a returned review with reason.
+- `data-model.md` §14.4 stores one appraisal per application with prepared/reviewed users and times,
+  immutable TAT due/status, summaries, recommendation terms, linked risk assessment,
+  recommendation, and appraisal status.
+- `auth-permissions.md` assigns `credit.appraisal.review` to Credit Manager and separately assigns
+  `credit.appraisal.submit_sanction`; review must not imply sanction authority. Test-plan
+  MOD-APPRAISAL-007 requires maker-checker, so the preparer cannot review their own appraisal.
+- A review return uses the source `draft` state to permit maker revision/resubmission while storing
+  the returned decision/reason and evidence; `reviewed` is the terminal 006F state consumed by 006G.
+
 ## Architecture Review 2026-07-10 04:18 - 006A Spot Check
 - 006A implemented only the active-member portion of the eligibility assessment contract and left
   default, document, terms, purpose, and nominee checks pending for 006B as planned.

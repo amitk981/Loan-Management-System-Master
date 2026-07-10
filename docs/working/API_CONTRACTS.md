@@ -1765,10 +1765,11 @@ Response data fields:
 }
 ```
 
-## Loan-limit calculation API (006C)
+## Loan-limit calculation and stored snapshot APIs (006C-006D)
 
-Protected staff endpoint:
+Protected staff endpoints:
 - `POST /api/v1/loan-applications/{loan_application_id}/loan-limit-assessment/calculate/`
+- `GET /api/v1/loan-applications/{loan_application_id}/loan-limit-assessment/`
 
 Request fields:
 - `shareholding_id`, non-empty `land_holding_ids`, `crop_plan_id`, positive `requested_amount`,
@@ -1794,6 +1795,17 @@ Rules:
 - A successful rerun updates the one-to-one assessment while preserving its UUID. Each successful
   calculation atomically writes `loan_limit.calculated` audit metadata and a
   `loan_limit_assessment` workflow event; denied/invalid/validation paths write none.
+- GET requires `applications.loan_application.read` and the existing application object-access
+  boundary. It returns `404 NOT_FOUND` when the application or stored assessment does not exist.
+- GET performs no calculation and writes no audit/workflow evidence. Every response field below,
+  including warning output and `configuration_source`, is serialized from the assessment row.
+- Number/share valuation, percentage/cap, land area/scale, all computed amounts, requested amount,
+  boundary flags, member/shareholding identifiers, rule version, actor/time, and policy config
+  UUID/name/Board reference are immutable snapshot facts until a new successful calculate call
+  replaces them. Changes to application, member source records, land/crop/shareholding rows, or
+  loan-policy config do not alter an existing GET response.
+- Failed reruns leave the prior assessment and evidence counts unchanged. Successful rerun audit
+  metadata contains the complete prior and replacement assessment snapshots.
 
 Response data fields:
 

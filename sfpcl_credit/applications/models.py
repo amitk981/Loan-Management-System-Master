@@ -337,6 +337,9 @@ class LoanLimitAssessment(models.Model):
     amount_within_limit_flag = models.BooleanField(db_index=True)
     exception_required_flag = models.BooleanField(db_index=True)
     calculation_rule_version = models.CharField(max_length=80)
+    policy_config_id_snapshot = models.UUIDField(blank=True, null=True)
+    policy_name_snapshot = models.CharField(max_length=255, blank=True)
+    board_approval_reference_snapshot = models.CharField(max_length=255, blank=True)
     calculated_by_user = models.ForeignKey(
         "identity.User",
         blank=True,

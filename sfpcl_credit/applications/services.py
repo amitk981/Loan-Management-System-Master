@@ -278,6 +278,17 @@ def get_eligibility_assessment(application):
     )
 
 
+def get_loan_limit_assessment(application):
+    return (
+        LoanLimitAssessment.objects.select_related(
+            "loan_application",
+            "calculated_by_user",
+        )
+        .filter(loan_application=application)
+        .first()
+    )
+
+
 def list_applications_for_staff(query_params, actor, actor_permissions):
     queryset = LoanApplication.objects.select_related(
         "member",
@@ -1166,6 +1177,9 @@ def calculate_loan_limit(
     assessment.amount_within_limit_flag = amount_within_limit
     assessment.exception_required_flag = not amount_within_limit
     assessment.calculation_rule_version = policy.policy_version
+    assessment.policy_config_id_snapshot = policy.loan_policy_config_id
+    assessment.policy_name_snapshot = policy.policy_name
+    assessment.board_approval_reference_snapshot = policy.board_approval_reference or ""
     assessment.calculated_by_user = actor
     assessment.calculated_at = now
     assessment.save()
@@ -1174,7 +1188,6 @@ def calculate_loan_limit(
         assessment,
         actor,
         old_value_json,
-        policy,
         request_ip,
         request_user_agent,
         request_id,
@@ -1448,7 +1461,7 @@ def serialize_eligibility_assessment(assessment):
     }
 
 
-def serialize_loan_limit_assessment(assessment, policy):
+def serialize_loan_limit_assessment(assessment):
     warnings = []
     if assessment.exception_required_flag:
         warnings.append(
@@ -1489,9 +1502,13 @@ def serialize_loan_limit_assessment(assessment, policy):
         "calculation_rule_version": assessment.calculation_rule_version,
         "configuration_source": {
             "type": "loan_policy_config",
-            "loan_policy_config_id": str(policy.loan_policy_config_id),
-            "policy_name": policy.policy_name,
-            "board_approval_reference": policy.board_approval_reference,
+            "loan_policy_config_id": str(assessment.policy_config_id_snapshot)
+            if assessment.policy_config_id_snapshot
+            else None,
+            "policy_name": assessment.policy_name_snapshot or None,
+            "board_approval_reference": (
+                assessment.board_approval_reference_snapshot or None
+            ),
         },
         "calculated_by_user_id": str(assessment.calculated_by_user_id)
         if assessment.calculated_by_user_id
@@ -2069,13 +2086,11 @@ def _audit_loan_limit_assessment(
     assessment,
     actor,
     old_value_json,
-    policy,
     request_ip,
     request_user_agent,
     request_id,
 ):
     new_value_json = _loan_limit_assessment_audit_snapshot(assessment)
-    new_value_json["loan_policy_config_id"] = str(policy.loan_policy_config_id)
     new_value_json["request_id"] = request_id
     AuditLog.objects.create(
         actor_user=actor,
@@ -2261,6 +2276,16 @@ def _loan_limit_assessment_audit_snapshot(assessment):
         "amount_within_limit_flag": assessment.amount_within_limit_flag,
         "exception_required_flag": assessment.exception_required_flag,
         "calculation_rule_version": assessment.calculation_rule_version,
+        "configuration_source": {
+            "type": "loan_policy_config",
+            "loan_policy_config_id": str(assessment.policy_config_id_snapshot)
+            if assessment.policy_config_id_snapshot
+            else None,
+            "policy_name": assessment.policy_name_snapshot or None,
+            "board_approval_reference": (
+                assessment.board_approval_reference_snapshot or None
+            ),
+        },
         "calculated_by_user_id": str(assessment.calculated_by_user_id)
         if assessment.calculated_by_user_id
         else None,

@@ -138,6 +138,11 @@ urlpatterns = [
         name="loan-application-eligibility-assessment-run",
     ),
     path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/loan-limit-assessment/",
+        application_views.loan_application_loan_limit_assessment,
+        name="loan-application-loan-limit-assessment",
+    ),
+    path(
         "api/v1/loan-applications/<uuid:loan_application_id>/loan-limit-assessment/calculate/",
         application_views.loan_application_loan_limit_calculate,
         name="loan-application-loan-limit-calculate",

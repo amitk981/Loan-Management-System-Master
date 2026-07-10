@@ -2352,3 +2352,28 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-10 - 2026-07-10_083153_normal_run
+- Agent tool used: codex
+- Slice attempted: 006D-loan-limit-snapshot-storage
+- Summary: Added immutable stored loan-limit GET readback, policy-source snapshot persistence,
+  stored warning/config serialization, successful rerun replacement with complete old/new audit,
+  and failed-rerun preservation across invalid/source/access failures. Updated API/digest/assumption
+  docs and sharpened 006F after confirming 006E was already concrete.
+- Tests run: TDD red/green GET tracer; 39 focused loan-application API tests; backend check;
+  290 backend tests; migration sync; 95% backend coverage; frontend lint/typecheck; 98 frontend
+  tests; frontend build; `git diff --check`; two-axis standards/spec review.
+- Evidence saved: `.ralph/runs/2026-07-10_083153_normal_run/`
+- Result: Success
+- Risk level: High
+- Next action: Run architecture review, then `006E-appraisal-note-create-edit-submit`.
+
+## 2026-07-10 09:17:57 - 2026-07-10_083153_normal_run
+- Agent tool used: codex
+- Slice attempted: 006D-loan-limit-snapshot-storage
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_083153_normal_run/.ralph/runs/2026-07-10_083153_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_083153_normal_run/.ralph/runs/2026-07-10_083153_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
