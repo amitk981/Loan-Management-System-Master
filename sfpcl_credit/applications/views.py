@@ -18,6 +18,7 @@ from sfpcl_credit.credit.modules.common import (
     CreditModuleValidationError,
 )
 from sfpcl_credit.credit.modules.eligibility_assessment import EligibilityAssessmentModule
+from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow
 from sfpcl_credit.credit.modules.loan_limit_calculator import LoanLimitCalculator
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.workflows.guard import InvalidStateTransition
@@ -607,6 +608,78 @@ def loan_application_loan_limit_assessment(request, loan_application_id):
             application_id=loan_application_id,
             actor_permissions=permissions,
         )
+    except (
+        CreditModuleNotFound,
+        CreditModuleObjectAccessDenied,
+        CreditModulePermissionDenied,
+    ) as exc:
+        return _credit_module_error_response(request, exc)
+    return success_response(result.snapshot, request)
+
+
+@require_http_methods(["GET", "POST", "PATCH"])
+def loan_application_appraisal_note(request, loan_application_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    try:
+        if request.method == "GET":
+            result = AppraisalWorkflow().get(
+                actor=user,
+                application_id=loan_application_id,
+                actor_permissions=permissions,
+            )
+        else:
+            result = AppraisalWorkflow().create_or_update(
+                actor=user,
+                application_id=loan_application_id,
+                payload=parse_json_body(request),
+                partial=request.method == "PATCH",
+                request_meta=_credit_request_meta(request),
+                actor_permissions=permissions,
+            )
+    except CreditModuleValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Appraisal note payload failed validation.",
+            exc.field_errors,
+        )
+    except CreditModuleInvalidStateError as exc:
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
+    except (
+        CreditModuleNotFound,
+        CreditModuleObjectAccessDenied,
+        CreditModulePermissionDenied,
+    ) as exc:
+        return _credit_module_error_response(request, exc)
+    return success_response(result.snapshot, request)
+
+
+@require_http_methods(["POST"])
+def appraisal_note_submit_for_review(request, loan_appraisal_note_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    try:
+        result = AppraisalWorkflow().submit_for_review(
+            actor=user,
+            appraisal_id=loan_appraisal_note_id,
+            payload=parse_json_body(request),
+            request_meta=_credit_request_meta(request),
+            actor_permissions=permissions,
+        )
+    except CreditModuleValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Appraisal submission failed validation.",
+            exc.field_errors,
+        )
+    except CreditModuleInvalidStateError as exc:
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
     except (
         CreditModuleNotFound,
         CreditModuleObjectAccessDenied,

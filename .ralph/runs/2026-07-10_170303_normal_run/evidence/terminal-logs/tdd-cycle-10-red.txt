@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_submit_transitions_draft_once_and_locks_later_edits (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_submit_transitions_draft_once_and_locks_later_edits)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_170303_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 324, in test_submit_transitions_draft_once_and_locks_later_edits
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 0.025s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

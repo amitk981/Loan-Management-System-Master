@@ -206,6 +206,24 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
   `LoanLimitAssessmentResult`, `LoanLimitSnapshot`, and `AppraisalWorkflow`; future appraisal code
   must not import the concrete assessment models.
 
+## 006E Appraisal Note Draft And Submit
+- `AppraisalWorkflow` now owns create/read/draft-update/submit-for-review. Application views are
+  thin envelope adapters and import no concrete credit assessment models.
+- Create requires scoped `credit.appraisal.create` plus `credit.risk_assessment.manage`, consumes
+  only `EligibilityAssessmentModule.get(...).snapshot` and
+  `LoanLimitCalculator.get_assessment(...).snapshot`, and stores their IDs with one linked risk
+  assessment. Missing/non-eligible prerequisites are invalid state and write no success evidence.
+- Strict payload rules cover non-blank summaries, positive amount/optional tenure, floating
+  interest type, recommendation/risk enums, nested risk shape, unknown fields, and the rule that a
+  recommendation may exceed the stored final limit only when the stored snapshot already carries
+  `exception_required_flag = true`.
+- PATCH is draft-only and supplied-fields-only. Risk permission is additionally required only when
+  nested risk fields change. Submit requires non-blank remarks and transitions exactly once to
+  `review_pending`; post-submit edits and repeated submit are blocked.
+- `tat_due_at = application.created_at + 2 days` is immutable. Exact due time is within TAT;
+  preparation/submission after it is breached. Create/update/submit evidence is metadata-only and
+  excludes summaries, mitigation notes, and submit remarks.
+
 ## 006E-006F Appraisal And Credit Review Source Extract
 - `api-contracts.md` §24 defines appraisal create/read, submit-for-review, Credit Manager review,
   and submit-to-sanction as separate actions. 006E owns create/read/edit/submit-for-review; 006F

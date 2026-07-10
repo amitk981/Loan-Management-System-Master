@@ -1,0 +1,57 @@
+{
+  "create_or_get": {
+    "success": true,
+    "data": {
+      "loan_appraisal_note_id": "10000000-0000-0000-0000-000000000006",
+      "loan_application_id": "20000000-0000-0000-0000-000000000006",
+      "eligibility_assessment_id": "30000000-0000-0000-0000-000000000006",
+      "loan_limit_assessment_id": "40000000-0000-0000-0000-000000000006",
+      "prepared_by": {
+        "user_id": "50000000-0000-0000-0000-000000000006",
+        "full_name": "Deputy Manager Finance"
+      },
+      "prepared_at": "2026-07-10T10:30:00+00:00",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "tat_due_at": "2026-07-12T10:30:00+00:00",
+      "tat_status": "within_tat",
+      "borrower_summary": "Active individual farmer with verified KYC.",
+      "eligibility_summary": "All mandatory eligibility criteria passed.",
+      "loan_limit_summary": "Stored final eligible amount is INR 500,000.",
+      "recommended_amount": "400000.00",
+      "recommended_tenure_months": 12,
+      "recommended_interest_type": "floating",
+      "recommended_security_summary": "PoA, shares and blank-dated cheque.",
+      "risk_assessment": {
+        "risk_assessment_id": "60000000-0000-0000-0000-000000000006",
+        "market_risk_rating": "medium",
+        "operational_risk_rating": "low",
+        "borrower_risk_rating": "low",
+        "overall_risk_rating": "low",
+        "risk_mitigation_notes": "Produce deduction arrangement is available.",
+        "assessed_by_user_id": "50000000-0000-0000-0000-000000000006",
+        "assessed_at": "2026-07-10T10:30:00+00:00"
+      },
+      "recommendation": "approve",
+      "appraisal_status": "draft"
+    }
+  },
+  "submit_for_review": {
+    "success": true,
+    "data": {
+      "loan_appraisal_note_id": "10000000-0000-0000-0000-000000000006",
+      "loan_application_id": "20000000-0000-0000-0000-000000000006",
+      "tat_due_at": "2026-07-12T10:30:00+00:00",
+      "tat_status": "within_tat",
+      "appraisal_status": "review_pending"
+    }
+  },
+  "invalid_state": {
+    "success": false,
+    "error": {
+      "code": "INVALID_STATE_TRANSITION",
+      "message": "Only a draft appraisal note can be submitted for review."
+    }
+  },
+  "note": "Representative values mirror assertions in sfpcl_credit/tests/test_appraisal_api.py; all UUIDs and names are synthetic."
+}

@@ -1,0 +1,22 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_patch_requires_risk_manage_only_when_nested_risk_changes (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_patch_requires_risk_manage_only_when_nested_risk_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_170303_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 386, in test_patch_requires_risk_manage_only_when_nested_risk_changes
+    self.assertEqual(
+AssertionError: '2026-07-10T11:53:16.094760+00:00' != '2026-07-10T11:53:16.083823+00:00'
+- 2026-07-10T11:53:16.094760+00:00
+?                      ^^^^^
++ 2026-07-10T11:53:16.083823+00:00
+?                      ^^^^^
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.035s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

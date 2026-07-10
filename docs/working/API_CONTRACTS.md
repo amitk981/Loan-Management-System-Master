@@ -1887,3 +1887,43 @@ Response data fields:
   ]
 }
 ```
+
+## Appraisal-note draft and submit APIs (006E)
+
+Protected staff endpoints:
+- `POST /api/v1/loan-applications/{loan_application_id}/appraisal-note/`
+- `GET /api/v1/loan-applications/{loan_application_id}/appraisal-note/`
+- `PATCH /api/v1/loan-applications/{loan_application_id}/appraisal-note/`
+- `POST /api/v1/appraisal-notes/{loan_appraisal_note_id}/submit-for-review/`
+
+Rules:
+- Create requires `credit.appraisal.create`, `credit.risk_assessment.manage`, and the existing
+  application object-access boundary. It requires a stored eligibility projection with
+  `overall_result = eligible` and a stored loan-limit projection; missing or non-eligible facts
+  return `409 INVALID_STATE_TRANSITION` without appraisal, risk, audit, or workflow rows.
+- One appraisal and one linked risk assessment are stored per loan application. The note snapshots
+  the prerequisite assessment UUIDs and user-provided summaries; it never recalculates eligibility,
+  loan limits, policy, or cultivated acreage.
+- Required summaries are non-blank. Recommended amount is positive; optional tenure is a positive
+  integer; supplied interest type is `floating`; recommendation is `approve`, `reject`, or
+  `conditions`; all four risk ratings are `low`, `medium`, or `high`. Unknown top-level or nested
+  fields return `400 VALIDATION_ERROR`.
+- A recommendation above the stored final eligible amount is rejected unless that stored
+  loan-limit projection already has `exception_required_flag = true`; 006E does not create an
+  exception approval.
+- PATCH is draft-only and changes supplied fields only. It requires `credit.appraisal.update`;
+  changing nested risk fields additionally requires `credit.risk_assessment.manage`.
+- GET is side-effect free and is allowed to scoped holders of create/update/submit-review or the
+  Credit Manager review permission. Missing notes return `404 NOT_FOUND`.
+- `tat_due_at` is application `created_at + 2 days` and never resets. At the exact due instant TAT
+  is `within_tat`; later preparation/submission is `breached`.
+- Submit requires `credit.appraisal.submit_review`, object scope, and non-blank `remarks`; it
+  atomically transitions `draft -> review_pending` once. Repeated submit and later PATCH return
+  `409 INVALID_STATE_TRANSITION`.
+- Create/update/submit write `appraisal.created`, `appraisal.updated`, or
+  `appraisal.submitted_for_review` metadata-only audit/workflow evidence. Free-text summaries,
+  mitigation notes, and submit remarks are never copied into evidence JSON.
+
+Response data includes appraisal/application/prerequisite IDs, prepared-user summary/time,
+immutable TAT due/status, all stored appraisal fields, linked risk assessment, recommendation, and
+`appraisal_status = draft|review_pending`.

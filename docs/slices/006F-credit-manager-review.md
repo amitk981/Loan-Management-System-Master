@@ -19,8 +19,13 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - 006E
 
 ## Prior Slice Handoff
-- 006E owns one appraisal note/risk assessment per application, draft editing, two-day TAT facts,
-  and `draft -> review_pending` submission.
+- 006E owns one `credit.models.LoanAppraisalNote` and linked `RiskAssessment` per application,
+  draft editing, immutable two-day TAT facts, and `draft -> review_pending` submission through
+  `AppraisalWorkflow`. The note stores prerequisite assessment UUID snapshots without concrete
+  assessment-model FKs.
+- Extend the existing `AppraisalWorkflow.review(...)` interface and existing thin application view
+  pattern. Do not move review behavior into `applications.services` or query eligibility/loan-limit
+  rows from the view.
 - 006F must review that stored note without recalculating 006B eligibility or the 006D loan-limit
   snapshot. 006G separately owns `submit-to-sanction-committee` and approval-case creation.
 - Credit assessment persistence is credit-owned after 006D3, but concrete eligibility/loan-limit
@@ -59,7 +64,8 @@ None for this slice, except updating frontend documentation or fixtures if requi
 
 ## Database/Model Impact
 Use 006E's nullable `reviewed_by_user`, `reviewed_at`, and appraisal status fields. Add only the
-smallest non-destructive review-comment/last-decision fields needed if 006E did not persist them;
+smallest non-destructive `review_comments` and `last_review_decision` fields (006E does not persist
+them), with one migration; retain prior return history in audit/workflow evidence;
 do not add sanction or approval tables in this slice.
 
 ## API Contracts

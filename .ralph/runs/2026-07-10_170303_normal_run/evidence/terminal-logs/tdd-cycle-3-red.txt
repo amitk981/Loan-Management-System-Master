@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_create_rejects_unknown_fields_without_success_evidence (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_create_rejects_unknown_fields_without_success_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_170303_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 178, in test_create_rejects_unknown_fields_without_success_evidence
+    self.assertEqual(response.status_code, 400)
+AssertionError: 200 != 400
+
+----------------------------------------------------------------------
+Ran 1 test in 0.022s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

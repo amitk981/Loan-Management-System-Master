@@ -148,6 +148,16 @@ urlpatterns = [
         name="loan-application-loan-limit-calculate",
     ),
     path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/appraisal-note/",
+        application_views.loan_application_appraisal_note,
+        name="loan-application-appraisal-note",
+    ),
+    path(
+        "api/v1/appraisal-notes/<uuid:loan_appraisal_note_id>/submit-for-review/",
+        application_views.appraisal_note_submit_for_review,
+        name="appraisal-note-submit-for-review",
+    ),
+    path(
         "api/v1/loan-applications/<uuid:loan_application_id>/return-with-deficiencies/",
         application_views.loan_application_return_with_deficiencies,
         name="loan-application-return-with-deficiencies",

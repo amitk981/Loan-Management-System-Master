@@ -1,5 +1,20 @@
 # Ralph Progress Log
 
+## 2026-07-10 17:30 - 2026-07-10_170303_normal_run
+- Agent tool used: codex.
+- Slice attempted: `006E-appraisal-note-create-edit-submit`.
+- Summary: Added credit-owned risk/appraisal persistence and implemented appraisal create/read/
+  draft PATCH/submit-for-review through `AppraisalWorkflow`. The workflow consumes only stored
+  eligibility/loan-limit projections, snapshots their IDs, enforces strict nested validation and
+  the stored exception boundary, tracks immutable two-day TAT, and writes redacted atomic evidence.
+- Tests run: 14 TDD red/green cycles; 21 focused appraisal/static-seam tests; Django check and
+  migration sync; 341 backend tests at 95% coverage; frontend lint/typecheck, 107 tests, and build;
+  `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_170303_normal_run/`, including API response examples and
+  red/green terminal logs.
+- Result: Success, pending orchestrator validation/commit. Risk: High under standing approval.
+  Architecture review is due next; then run sharpened `006F-credit-manager-review`.
+
 ## 2026-07-10 17:00 - 2026-07-10_165107_normal_run
 - Agent tool used: codex.
 - Slice attempted: `006D3-credit-assessment-model-ownership-state-migration`.
@@ -2592,6 +2607,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_165107_normal_run/.ralph/runs/2026-07-10_165107_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_165107_normal_run/.ralph/runs/2026-07-10_165107_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 17:31:02 - 2026-07-10_170303_normal_run
+- Agent tool used: codex
+- Slice attempted: 006E-appraisal-note-create-edit-submit
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_170303_normal_run/.ralph/runs/2026-07-10_170303_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_170303_normal_run/.ralph/runs/2026-07-10_170303_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

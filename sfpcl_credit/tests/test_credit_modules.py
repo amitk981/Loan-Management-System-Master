@@ -308,6 +308,16 @@ class CreditEligibilityModuleTests(TestCase):
         self.assertFalse(
             self._imports_from(appraisal_tree, "sfpcl_credit.applications.services")
         )
+        self.assertFalse(
+            self._imports_from_module(
+                appraisal_tree,
+                "sfpcl_credit.credit.models",
+            )
+            & {
+                ("EligibilityAssessment", None),
+                ("LoanLimitAssessment", None),
+            }
+        )
         self.assertTrue(
             self._imports_from_module(
                 appraisal_tree,
@@ -320,7 +330,7 @@ class CreditEligibilityModuleTests(TestCase):
         )
         self.assertEqual(
             {node.name for node in appraisal_class.body if isinstance(node, ast.FunctionDef)},
-            {"create_or_update", "submit_for_review", "review", "submit_to_sanction"},
+            {"create_or_update", "get", "submit_for_review", "review", "submit_to_sanction"},
         )
         self.assertIn(
             "AppraisalWorkflow",
