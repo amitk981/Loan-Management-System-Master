@@ -42,6 +42,11 @@ Enforced by `scripts/ralph-validate.sh` on every run:
 - Backend (`sfpcl_credit/`): `manage.py check`, full test suite, `makemigrations --check` (models and migrations must stay in sync), and coverage with a hard floor (`coverage_fail_under` in `.ralph/config.yaml`, currently 85%; measured 92% on 2026-07-02 — raise the floor as coverage grows, never lower it).
 - Protected-paths check: the run fails if any guardrail file was modified.
 - Contract fidelity (checked in review, not by script): API-touching slices follow `docs/source/api-contracts.md` §3 (design principles), §6-8 (envelopes, errors, pagination) and §45 (idempotency for financial actions); model-touching slices follow `docs/source/data-model.md` §30 (indexing) and §34 (transactional integrity); backend module layout follows `docs/source/codebase-design.md`.
+
+Slices that require the authoritative PostgreSQL five-race gate declare
+`postgresql-five-race-acceptance` under an exact `## Runtime Capabilities` heading. The declaration
+drives both the scoped Codex socket permission and independent orchestrator validation; unknown
+capabilities fail closed. Ordinary and undeclared slices use the `:workspace` permission profile.
 A failing gate fails the whole run; failing work is never committed, merged, or pushed. ESLint arrives via slice 002FL, then flip `quality_gates.lint` to true.
 
 ## Stopping Conditions

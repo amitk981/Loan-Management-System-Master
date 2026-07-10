@@ -3,6 +3,7 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/../lib/ralph-exit-protocol.sh"
+source "$script_dir/../lib/ralph-runtime-capabilities.sh"
 
 for assignment in "$@"; do
   export "$assignment"
@@ -23,19 +24,15 @@ CODEX_PROFILE="${CODEX_PROFILE:-default}"
 CODEX_REASONING_EFFORT="${CODEX_REASONING_EFFORT:-medium}"
 CODEX_VERBOSITY="${CODEX_VERBOSITY:-medium}"
 CODEX_APPROVAL_MODE="${CODEX_APPROVAL_MODE:-never}"
-# Headless AFK runs need a writable worktree but no network and no git-metadata
-# writes. codex's `workspace-write` sandbox is exactly that. Newer codex releases
-# default `exec` to `read-only`, which — with approval `never` — blocks every
-# write (even the mandatory execution-plan.md) and dead-ends the run.
-CODEX_SANDBOX="${CODEX_SANDBOX:-workspace-write}"
 CODEX_MODEL="${CODEX_MODEL:-}"
 CODEX_ADDITIONAL_ARGS="${CODEX_ADDITIONAL_ARGS:-exec}"
-CODEX_PERMISSION_PROFILE=""
-if [[ "$SELECTED_SLICE" == "006F4-postgresql-credit-concurrency-acceptance" ]]; then
-  CODEX_PERMISSION_PROFILE="ralph-postgres"
+slice_file="$WORKTREE_DIR/docs/slices/${SELECTED_SLICE}.md"
+if [[ -n "$SELECTED_SLICE" && ! -f "$slice_file" ]]; then
+  echo "Selected slice file is missing: $slice_file" >&2
+  exit 1
 fi
-codex_sandbox_label="$CODEX_SANDBOX"
-[[ -n "$CODEX_PERMISSION_PROFILE" ]] && codex_sandbox_label="permission-profile"
+CODEX_PERMISSION_PROFILE="$(ralph_codex_permission_profile_for_slice "$slice_file")"
+codex_sandbox_label="permission-profile"
 
 mkdir -p "$RUN_DIR/evidence/terminal-logs"
 
@@ -66,7 +63,7 @@ fi
 args+=(-c "model_reasoning_effort=$CODEX_REASONING_EFFORT")
 args+=(-c "model_verbosity=$CODEX_VERBOSITY")
 args+=(--ask-for-approval "$CODEX_APPROVAL_MODE")
-if [[ -n "$CODEX_PERMISSION_PROFILE" ]]; then
+if [[ "$CODEX_PERMISSION_PROFILE" == "ralph-postgres" ]]; then
   # Permission profiles and --sandbox are mutually exclusive. This profile
   # preserves workspace isolation while allowing only PostgreSQL's test socket.
   # Repeat the profile as launch overrides so dynamic nested worktree trust
@@ -76,7 +73,9 @@ if [[ -n "$CODEX_PERMISSION_PROFILE" ]]; then
   args+=(-c 'permissions.ralph-postgres.network.unix_sockets={"/tmp/.s.PGSQL.5432"="allow"}')
   args+=(-c "default_permissions=\"$CODEX_PERMISSION_PROFILE\"")
 else
-  args+=(--sandbox "$CODEX_SANDBOX")
+  # Repeat the workspace profile at launch so nested Ralph worktrees never
+  # fall back to read-only when project trust/config discovery changes.
+  args+=(-c 'default_permissions=":workspace"')
 fi
 
 # Watchdog: a hung agent must fail the run (into the repair path), not

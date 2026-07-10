@@ -3,6 +3,9 @@
 ## Status
 Complete
 
+## Runtime Capabilities
+- `postgresql-five-race-acceptance`
+
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
 Epic file: `docs/epics/006-eligibility-loan-limit-appraisal.md`

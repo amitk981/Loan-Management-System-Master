@@ -1,7 +1,8 @@
 # Normal Codex and Ralph work uses the workspace sandbox.
 default_permissions = ":workspace"
 
-# Only the exceptional 006F4 slice should select this profile explicitly.
+# Ralph selects this profile only for slices that declare the
+# `postgresql-five-race-acceptance` runtime capability.
 [permissions.ralph-postgres]
 description = "Ralph workspace access plus the local PostgreSQL test socket."
 extends = ":workspace"

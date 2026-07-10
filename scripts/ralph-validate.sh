@@ -4,6 +4,7 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
 source "$repo_root/scripts/lib/ralph-postgresql-acceptance.sh"
+source "$repo_root/scripts/lib/ralph-runtime-capabilities.sh"
 
 run_id=""
 worktree_dir="$repo_root"
@@ -34,6 +35,19 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+slice_file="$worktree_dir/docs/slices/${slice_id}.md"
+postgres_acceptance_required=0
+if [[ -n "$slice_id" ]]; then
+  if [[ ! -f "$slice_file" ]]; then
+    echo "Selected slice file is missing: $slice_file" >&2
+    exit 2
+  fi
+  ralph_validate_slice_capabilities "$slice_file" || exit 2
+  if ralph_slice_has_capability "$slice_file" "$RALPH_CAPABILITY_POSTGRESQL_FIVE_RACE_ACCEPTANCE"; then
+    postgres_acceptance_required=1
+  fi
+fi
 
 run_id="${run_id:-$(date '+%Y-%m-%d_%H%M%S')_validate}"
 run_dir="$worktree_dir/.ralph/runs/$run_id"
@@ -175,11 +189,11 @@ PY
   return 1
 }
 
-# 006F4 is an evidence-only acceptance slice. Its authoritative races must be
-# executed independently by the orchestrator, not trusted from agent-authored
-# artifacts. Run both repetitions even when the first fails so the packet is
-# explicit about each required attempt.
-if [[ "$mode" == "normal_run" && "$slice_id" == "006F4-postgresql-credit-concurrency-acceptance" ]]; then
+# Any slice declaring the PostgreSQL five-race capability must execute those
+# races independently through the orchestrator. The permission selector and
+# acceptance gate consume the same declaration so future slice names cannot
+# cause them to drift apart. Run both repetitions even when the first fails.
+if [[ "$mode" =~ ^(normal_run|repair)$ && "$postgres_acceptance_required" == "1" ]]; then
   postgres_first=0
   postgres_second=0
   postgres_environment=0

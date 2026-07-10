@@ -13,6 +13,10 @@ fail() {
 # shellcheck source=../lib/ralph-exit-protocol.sh
 source scripts/lib/ralph-exit-protocol.sh
 
+[[ -f scripts/lib/ralph-runtime-capabilities.sh ]] || fail "missing Ralph runtime capability parser"
+# shellcheck source=../lib/ralph-runtime-capabilities.sh
+source scripts/lib/ralph-runtime-capabilities.sh
+
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_SUCCESS")" == "success" ]] || fail "success status misclassified"
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_QUEUE_EMPTY")" == "queue_empty" ]] || fail "queue-empty status misclassified"
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_OWNER_VETO")" == "owner_veto" ]] || fail "owner-veto status misclassified"
@@ -40,15 +44,45 @@ if postgresql_acceptance_log_passes "$fixture_dir/fail.log"; then
   fail "failed PostgreSQL evidence was accepted"
 fi
 
+cat > "$fixture_dir/future-postgres-slice.md" <<'EOF'
+## Status
+Not Started
+
+## Runtime Capabilities
+- `postgresql-five-race-acceptance`
+
+## Goal
+Exercise a future PostgreSQL-sensitive slice name.
+EOF
+cat > "$fixture_dir/ordinary-slice.md" <<'EOF'
+## Status
+Not Started
+
+## Runtime Capabilities
+- `none`
+EOF
+cat > "$fixture_dir/unknown-capability.md" <<'EOF'
+## Runtime Capabilities
+- `unrestricted-network`
+EOF
+
+[[ "$(ralph_codex_permission_profile_for_slice "$fixture_dir/future-postgres-slice.md")" == "ralph-postgres" ]] \
+  || fail "future PostgreSQL slice did not select the scoped socket profile"
+[[ "$(ralph_codex_permission_profile_for_slice "$fixture_dir/ordinary-slice.md")" == ":workspace" ]] \
+  || fail "ordinary slice did not retain workspace permissions"
+if ralph_validate_slice_capabilities "$fixture_dir/unknown-capability.md" >/dev/null 2>&1; then
+  fail "unknown runtime capability did not fail closed"
+fi
+
 # Agent output is untrusted text. It must never drive loop control flow.
 if rg -n 'grep -q .*No eligible slice found|grep -q .*has been vetoed by the owner|grep -q .*MERGE_FAILED|grep -q .*AGENT_LIMIT_EXHAUSTED' scripts/ralph-loop.sh; then
   fail "ralph-loop.sh still derives control flow from agent transcript text"
 fi
 
-rg -q 'CODEX_PERMISSION_PROFILE="ralph-postgres"' scripts/agent-adapters/codex.sh \
-  || fail "006F4 does not name the scoped PostgreSQL permission profile"
-rg -q 'default_permissions=' scripts/agent-adapters/codex.sh \
-  || fail "006F4 does not select the scoped PostgreSQL permission profile"
+rg -q 'ralph_codex_permission_profile_for_slice' scripts/agent-adapters/codex.sh \
+  || fail "Codex adapter does not select permissions from slice capabilities"
+rg -q 'default_permissions=":workspace"' scripts/agent-adapters/codex.sh \
+  || fail "ordinary Ralph runs do not explicitly retain workspace permissions"
 rg -q 'permissions\.ralph-postgres\.network\.unix_sockets=\{"/tmp/\.s\.PGSQL\.5432"="allow"\}' scripts/agent-adapters/codex.sh \
   || fail "nested Ralph worktrees do not receive the explicit PostgreSQL socket override"
 rg -q '"/tmp/\.s\.PGSQL\.5432"[[:space:]]*=[[:space:]]*"allow"' .codex/config.toml \
@@ -59,6 +93,8 @@ rg -q 'run_postgresql_acceptance_once 1' scripts/ralph-validate.sh \
   || fail "independent first PostgreSQL acceptance run is missing"
 rg -q 'run_postgresql_acceptance_once 2' scripts/ralph-validate.sh \
   || fail "independent second PostgreSQL acceptance run is missing"
+rg -q 'postgres_acceptance_required' scripts/ralph-validate.sh \
+  || fail "PostgreSQL validation is not selected from the shared capability declaration"
 rg -q 'verified acceptance-only slice' scripts/ralph-validate.sh \
   || fail "006F4 no-op exception is not tied to verified acceptance"
 
