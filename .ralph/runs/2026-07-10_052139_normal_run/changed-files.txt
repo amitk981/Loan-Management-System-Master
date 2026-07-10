@@ -1,0 +1,11 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006B-default-document-purpose-and-terms-eligibility-checks.md
+ M docs/slices/006C-loan-limit-configuration-and-calculator.md
+ M docs/slices/006D-loan-limit-snapshot-storage.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M sfpcl_credit/applications/services.py
+ M sfpcl_credit/tests/test_loan_applications_api.py
+?? .ralph/runs/2026-07-10_052139_normal_run/

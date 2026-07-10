@@ -53,6 +53,21 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - Normal ineligible results must not move the application into appraisal/sanction states. Rejection
   note generation remains the source-backed rejection-note mechanism from 005H or later appraisal
   rejection slices.
+- Implemented in 006B:
+  - `default_check`: `no_default` only for `Member.default_status = no_default`; existing or
+    default-like statuses return `default_found` and make the assessment `ineligible`.
+  - `document_check`: uses 005D/005E required checklist metadata; any blocking required item
+    returns `incomplete` and makes the assessment `ineligible`.
+  - `terms_acceptance_check`: `accepted` only for `LoanApplication.terms_acceptance_flag = true`;
+    otherwise `pending` and `overall_result = ineligible`.
+  - `purpose_check`: `agriculture_aligned` only for `crop_production` or `agriculture_activity`;
+    other categories return `non_agriculture` and make the assessment `ineligible`.
+  - `nominee_check`: uses `Nominee.loan_application_id` only when present. Adult nominees return
+    `valid`; minor nominees return `minor` and make the assessment `ineligible`; missing
+    application-specific nominee evidence remains `pending` with `overall_result =
+    pending_manual_evidence`.
+  - `overall_result = eligible` only when member-active, default, document, terms, purpose, and
+    nominee checks all pass. Successful reruns update the existing one-to-one assessment.
 
 ## 006C Loan Limit Configuration And Calculator
 - Source endpoint:

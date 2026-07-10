@@ -42,7 +42,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 | Local demo staff seed | Implemented in slice 002K; corrected in 002K2 | Login, dashboard smoke, admin/tracer permission smoke | `implementation-roadmap.md` §10, §20-22; `technical-architecture.md` §8-12, §17-18; `auth-permissions.md`; `api-contracts.md` §11-12, §43-44 | `python manage.py seed_demo_users` is a guarded local/dev seed path. It refuses unless `SFPCL_DEBUG=true` and `SFPCL_ALLOW_DEMO_SEED=true`, calls `seed_catalogue()`, creates or updates deterministic `demo.*@sfpcl.example` staff users with active primary roles and memberships, and does not alter `e2e.*` users. Demo users authenticate through the real `/auth/login/` and `/auth/me/` endpoints; there is no demo auth bypass. The zero-permission user returns `permissions: []` and `available_actions: []`; the tracer-only user uses the guarded local/dev-only `local_demo_tracer_user` role and returns only `tracer.lifecycle.run`; the shared source-catalogue `sales_team_user` role remains permission-neutral until source documents define grants; system admin preserves canonical action-specific user-admin permissions without broad `manage_users` aliases. |
 | Role/permission/team catalogue | Seeded in slice 002C; exposed for current user in 002D | None directly | `auth-permissions.md` §12-15, §38 | Canonical `Permission`, `Role`, `Team`, `RolePermission` catalogue seeded idempotently via `python manage.py seed_role_catalogue` (`sfpcl_credit/identity/catalogue.py`). `/api/v1/auth/me/` exposes the authenticated user's effective permission codes from this data. |
 | Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; shareholding list/create implemented in 004F; land/crop list/create implemented in 004G; KYC profile/document upload/verify implemented in 004H; member bank-account/cancelled-cheque metadata implemented in 004J; Borrower 360 Epic 004 UI wiring implemented in 004K with corrective DTO hardening queued in 004K2 | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3/§15.1-§15.2/§17.1-§18.4; `data-model.md` §10.1-§10.4/§11.1/§11.7-§12.4; `auth-permissions.md` §12.2-§12.3/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/`, `/shareholdings/`, `/land-holdings/`, `/crop-plans/`, `/bank-accounts/`, and `/cancelled-cheques/` are API-backed with their documented validations and metadata-only create audits. `GET/POST/PATCH /api/v1/kyc-profiles/`, KYC document upload, and KYC document verify are implemented for member parties only with KYC permissions. Sensitive bank-account reveal, re-KYC task management, share certificate/demat, bank verification letters, disbursement bank gates, and loan-application/loan-account/repayment/risk/audit Borrower 360 data remain future scope. |
-| Loan applications | Draft create/read/update implemented in 005A; submit in 005B; reference generation/register persistence in 005C; object access hardened in 005C2; application document/checklist metadata implemented in 005D; completeness workbench/pass implemented in 005E; deficiency return/list/resolve implemented in 005F; rejection-note create/send shell implemented in 005H; staff list/register UI wiring reads implemented in 005I; staff detail rejection-note summary hardening implemented in 005I2 | Applications, completeness, rejection note shell, Loan Request Register | `api-contracts.md` §8, §19.1-§21; `screen-spec.md` S13; `data-model.md` §13.1 and application-document/deficiency/rejection-note/register tables; `auth-permissions.md` §12.4, §19.2, §34.3, §37.3 | `GET/POST /api/v1/loan-applications/`, `GET /api/v1/loan-applications/{id}/`, `PATCH /api/v1/loan-applications/{id}/`, `GET /api/v1/loan-request-register/`, submit, reference-generation, application-document list/upload/verify, document-checklist read/refresh, completeness-check read/pass, return-with-deficiencies, deficiency list/resolve, rejection-note create, and rejection-note send endpoints persist and advance application facts with stable UUID IDs, nullable/formal `LO...` reference numbers, member summaries, optional land/crop/bank/cancelled-cheque references, masked bank metadata, document-file links, permissions, object access, audit, workflow events, paginated list metadata, register metadata, structured deficiency metadata, and metadata-only rejection notes. Staff detail reads include nullable `rejection_note` summary metadata when a staff rejection note exists; `application_status` remains backend-owned and unchanged by the summary. Staff list reads support standard `search`, `application_status`/`status`, `current_stage`, `member_id`, `ordering`, `page`, and `page_size` with `page_size` capped at 100. Register reads support `search`, `register_status`/`status`, `current_stage`, `member_type`, `ordering`, `page`, and `page_size`. Eligibility, loan limits, appraisal, sanction, document generation, real communication delivery, and disbursement remain future slices. |
+| Loan applications | Draft create/read/update implemented in 005A; submit in 005B; reference generation/register persistence in 005C; object access hardened in 005C2; application document/checklist metadata implemented in 005D; completeness workbench/pass implemented in 005E; deficiency return/list/resolve implemented in 005F; rejection-note create/send shell implemented in 005H; staff list/register UI wiring reads implemented in 005I; staff detail rejection-note summary hardening implemented in 005I2; eligibility assessment through default/document/terms/purpose/nominee checks implemented in 006A-006B | Applications, completeness, rejection note shell, Loan Request Register, eligibility assessment | `api-contracts.md` §8, §19.1-§22; `screen-spec.md` S13/S15; `data-model.md` §13.1, application-document/deficiency/rejection-note/register tables, and §14.1; `auth-permissions.md` §12.4, §19.2, §34.3, §37.3 | `GET/POST /api/v1/loan-applications/`, `GET /api/v1/loan-applications/{id}/`, `PATCH /api/v1/loan-applications/{id}/`, `GET /api/v1/loan-request-register/`, submit, reference-generation, application-document list/upload/verify, document-checklist read/refresh, completeness-check read/pass, return-with-deficiencies, deficiency list/resolve, rejection-note create/send, and eligibility-assessment run/read endpoints persist and advance application facts with stable UUID IDs, nullable/formal `LO...` reference numbers, member summaries, optional land/crop/bank/cancelled-cheque references, masked bank metadata, document-file links, permissions, object access, audit, workflow events, paginated list metadata, register metadata, structured deficiency metadata, metadata-only rejection notes, and source-backed eligibility results. Staff detail reads include nullable `rejection_note` summary metadata when a staff rejection note exists; `application_status` remains backend-owned and unchanged by the summary. Staff list reads support standard `search`, `application_status`/`status`, `current_stage`, `member_id`, `ordering`, `page`, and `page_size` with `page_size` capped at 100. Register reads support `search`, `register_status`/`status`, `current_stage`, `member_type`, `ordering`, `page`, and `page_size`. Loan limits, appraisal, sanction, document generation, real communication delivery, and disbursement remain future slices. |
 | Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
 | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
@@ -1700,7 +1700,7 @@ Frontend wiring:
 - MP10 renders selected application status/detail from
   `GET /api/v1/portal/applications/{loan_application_id}/`.
 
-## Eligibility assessment APIs (006A)
+## Eligibility assessment APIs (006A-006B)
 
 Protected staff endpoints:
 - `POST /api/v1/loan-applications/{loan_application_id}/eligibility-assessment/run/`
@@ -1717,9 +1717,6 @@ Rules:
 - Run is allowed only after formal reference generation: `application_reference_number` starts
   with `LO`, `application_status = reference_generated`, `completeness_status = complete`, and
   `current_stage = credit_assessment`. Other states return `409 INVALID_STATE_TRANSITION`.
-- 006A computes only `member_active_check`. `default_check`, `document_check`,
-  `terms_acceptance_check`, `purpose_check`, and `nominee_check` are persisted as `pending` until
-  their owning slices implement source-backed rules.
 - `member_active_check` is:
   - `pass` only when existing member facts include `active_member_status = active` and an
     `active_member_verified_at` timestamp.
@@ -1728,6 +1725,23 @@ Rules:
   - `fail` when the member's `membership_status` is not `active`.
   - `manual_evidence_required` when BR-004 through BR-007 require produce/service history but the
     current persistence has no source-backed history rows to calculate it.
+- 006B computes these additional source-backed checks:
+  - `default_check = no_default` only when `Member.default_status = no_default`; other existing
+    default-like values return `default_found`.
+  - `document_check = complete` only when the 005D/005E required checklist metadata has no
+    blocking submitted/verified item; otherwise it returns `incomplete`.
+  - `terms_acceptance_check = accepted` only when `LoanApplication.terms_acceptance_flag = true`;
+    otherwise it returns `pending`.
+  - `purpose_check = agriculture_aligned` only when `purpose_category` is `crop_production` or
+    `agriculture_activity`; otherwise it returns `non_agriculture`.
+  - `nominee_check = valid` when an application-specific nominee fact exists and is not minor,
+    `minor` when that nominee is minor, and `pending` when the current application schema has no
+    source-backed submitted nominee fact.
+- `overall_result = eligible` only when every implemented check passes. It is `ineligible` when
+  membership/default/document/terms/purpose/minor-nominee blockers fail, and
+  `pending_manual_evidence` when active-member or application-specific nominee evidence remains
+  unresolved.
+- Ineligible assessment results do not advance `application_status` or `current_stage`.
 - Successful run writes metadata-only `eligibility.assessed` audit and an
   `eligibility_assessment` workflow event. Denied and invalid-state paths create no assessment,
   audit row, or workflow event.
@@ -1738,14 +1752,14 @@ Response data fields:
 {
   "eligibility_assessment_id": "uuid",
   "loan_application_id": "uuid",
-  "member_active_check": "manual_evidence_required",
-  "default_check": "pending",
-  "document_check": "pending",
-  "terms_acceptance_check": "pending",
-  "purpose_check": "pending",
-  "nominee_check": "pending",
-  "overall_result": "pending_manual_evidence",
-  "assessment_notes": "BR-004 through BR-007 require continuous produce/service history...",
+  "member_active_check": "pass",
+  "default_check": "no_default",
+  "document_check": "complete",
+  "terms_acceptance_check": "accepted",
+  "purpose_check": "agriculture_aligned",
+  "nominee_check": "valid",
+  "overall_result": "eligible",
+  "assessment_notes": "All mandatory eligibility criteria passed.",
   "assessed_by_user_id": "uuid",
   "assessed_at": "2026-07-10T00:00:00Z"
 }

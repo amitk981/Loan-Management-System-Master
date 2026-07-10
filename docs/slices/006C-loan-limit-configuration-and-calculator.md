@@ -17,6 +17,16 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 ## Depends On
 - 006B
 
+## Prior Slice Handoff
+- 006B completed `POST/GET /eligibility-assessment/` source-backed checks for default,
+  document checklist metadata, terms acceptance, purpose, and application-specific nominee facts.
+- Loan-limit calculation must require a stored 006B assessment with `overall_result = eligible`.
+  Treat `pending_manual_evidence` from active-member or missing application-specific nominee
+  evidence as not eligible for normal calculation unless a future override slice implements a
+  source-backed exception path.
+- A 006B `ineligible` result does not advance the application into appraisal/sanction states and
+  must not be bypassed by 006C.
+
 ## Source References
 - docs/source/implementation-roadmap.md section 11
 - docs/source/api-contracts.md sections 22-24

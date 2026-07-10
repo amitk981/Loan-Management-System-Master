@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import AuditLog, Permission, PortalAccount, Role, RolePermission, User
-from sfpcl_credit.members.models import BankAccount, CancelledCheque, CropPlan, LandHolding, Member
+from sfpcl_credit.members.models import BankAccount, CancelledCheque, CropPlan, LandHolding, Member, Nominee
 from sfpcl_credit.tests.api_contracts import assert_error_envelope, assert_success_envelope
 from sfpcl_credit.workflows.models import WorkflowEvent
 
@@ -266,7 +266,7 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(row["register_status"], "reference_generated")
 
     def test_eligibility_assessment_run_and_read_persists_manual_evidence_active_member_result(self):
-        application_id = self._reference_generated_application()
+        application_id = self._reference_generated_application(terms_acceptance_flag=True)
 
         run_response = self.client.post(
             f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
@@ -285,10 +285,10 @@ class LoanApplicationDraftApiTests(TestCase):
         assessment = body["data"]
         self.assertEqual(assessment["loan_application_id"], application_id)
         self.assertEqual(assessment["member_active_check"], "manual_evidence_required")
-        self.assertEqual(assessment["default_check"], "pending")
-        self.assertEqual(assessment["document_check"], "pending")
-        self.assertEqual(assessment["terms_acceptance_check"], "pending")
-        self.assertEqual(assessment["purpose_check"], "pending")
+        self.assertEqual(assessment["default_check"], "no_default")
+        self.assertEqual(assessment["document_check"], "complete")
+        self.assertEqual(assessment["terms_acceptance_check"], "accepted")
+        self.assertEqual(assessment["purpose_check"], "agriculture_aligned")
         self.assertEqual(assessment["nominee_check"], "pending")
         self.assertEqual(assessment["overall_result"], "pending_manual_evidence")
         self.assertIn("BR-004", assessment["assessment_notes"])
@@ -320,7 +320,7 @@ class LoanApplicationDraftApiTests(TestCase):
         self.member.active_member_status = "active"
         self.member.active_member_verified_at = timezone.now()
         self.member.save(update_fields=["active_member_status", "active_member_verified_at"])
-        application_id = self._reference_generated_application()
+        application_id = self._reference_generated_application(terms_acceptance_flag=True)
 
         response = self.client.post(
             f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
@@ -333,12 +333,166 @@ class LoanApplicationDraftApiTests(TestCase):
         body = response.json()
         assert_success_envelope(self, body)
         self.assertEqual(body["data"]["member_active_check"], "pass")
-        self.assertEqual(body["data"]["overall_result"], "pending")
-        self.assertEqual(body["data"]["default_check"], "pending")
+        self.assertEqual(body["data"]["default_check"], "no_default")
+        self.assertEqual(body["data"]["document_check"], "complete")
+        self.assertEqual(body["data"]["terms_acceptance_check"], "accepted")
+        self.assertEqual(body["data"]["purpose_check"], "agriculture_aligned")
+        self.assertEqual(body["data"]["nominee_check"], "pending")
+        self.assertEqual(body["data"]["overall_result"], "pending_manual_evidence")
         self.assertIn(
-            "Default, document, terms, purpose, and nominee checks are pending",
+            "Application-specific nominee evidence is pending",
             body["data"]["assessment_notes"],
         )
+
+    def test_eligibility_assessment_marks_application_eligible_when_all_source_checks_pass(self):
+        self.member.active_member_status = "active"
+        self.member.active_member_verified_at = timezone.now()
+        self.member.save(update_fields=["active_member_status", "active_member_verified_at"])
+        application_id = self._reference_generated_application(terms_acceptance_flag=True)
+        Nominee.objects.create(
+            member=self.member,
+            loan_application_id=application_id,
+            nominee_name="Sita Patil",
+            age_at_application=42,
+            gender="female",
+            relationship_to_borrower="Spouse",
+            pan_encrypted="nominee-pan-token",
+            pan_hash="nominee-pan-hash",
+            aadhaar_encrypted="nominee-aadhaar-token",
+            aadhaar_hash="nominee-aadhaar-hash",
+            kyc_status="verified",
+            minor_flag=False,
+        )
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        assert_success_envelope(self, body)
+        self.assertEqual(body["data"]["member_active_check"], "pass")
+        self.assertEqual(body["data"]["default_check"], "no_default")
+        self.assertEqual(body["data"]["document_check"], "complete")
+        self.assertEqual(body["data"]["terms_acceptance_check"], "accepted")
+        self.assertEqual(body["data"]["purpose_check"], "agriculture_aligned")
+        self.assertEqual(body["data"]["nominee_check"], "valid")
+        self.assertEqual(body["data"]["overall_result"], "eligible")
+
+    def test_eligibility_assessment_marks_blockers_ineligible_without_advancing_application(self):
+        self.member.active_member_status = "active"
+        self.member.active_member_verified_at = timezone.now()
+        self.member.default_status = "existing_default"
+        self.member.save(
+            update_fields=[
+                "active_member_status",
+                "active_member_verified_at",
+                "default_status",
+            ]
+        )
+        application_id = self._reference_generated_application(
+            terms_acceptance_flag=True,
+            purpose_category="working_capital",
+        )
+        self._create_nominee(application_id, minor_flag=True, age_at_application=16)
+        application_document = apps.get_model("applications", "ApplicationDocument").objects.get(
+            loan_application_id=application_id,
+            document_type="land_document_7_12",
+        )
+        reject_document_response = self.client.post(
+            f"/api/v1/application-documents/{application_document.application_document_id}/verify/",
+            data={"verification_status": "rejected", "remarks": "Not accepted."},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(reject_document_response.status_code, 200)
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        assert_success_envelope(self, body)
+        self.assertEqual(body["data"]["default_check"], "default_found")
+        self.assertEqual(body["data"]["document_check"], "incomplete")
+        self.assertEqual(body["data"]["terms_acceptance_check"], "accepted")
+        self.assertEqual(body["data"]["purpose_check"], "non_agriculture")
+        self.assertEqual(body["data"]["nominee_check"], "minor")
+        self.assertEqual(body["data"]["overall_result"], "ineligible")
+        self.assertIn("BR-008", body["data"]["assessment_notes"])
+        self.assertIn("BR-009", body["data"]["assessment_notes"])
+        self.assertIn("BR-013/BR-014", body["data"]["assessment_notes"])
+        self.assertIn("BR-018", body["data"]["assessment_notes"])
+
+        detail_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(detail_response.status_code, 200)
+        detail = detail_response.json()["data"]
+        self.assertEqual(detail["application_status"], "reference_generated")
+        self.assertEqual(detail["current_stage"], "credit_assessment")
+
+    def test_eligibility_assessment_missing_terms_is_ineligible(self):
+        self.member.active_member_status = "active"
+        self.member.active_member_verified_at = timezone.now()
+        self.member.save(update_fields=["active_member_status", "active_member_verified_at"])
+        application_id = self._reference_generated_application(terms_acceptance_flag=False)
+        self._create_nominee(application_id)
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        assert_success_envelope(self, body)
+        self.assertEqual(body["data"]["terms_acceptance_check"], "pending")
+        self.assertEqual(body["data"]["overall_result"], "ineligible")
+        self.assertIn("S15 terms acceptance is pending", body["data"]["assessment_notes"])
+
+    def test_eligibility_assessment_rerun_updates_existing_assessment(self):
+        self.member.active_member_status = "active"
+        self.member.active_member_verified_at = timezone.now()
+        self.member.save(update_fields=["active_member_status", "active_member_verified_at"])
+        application_id = self._reference_generated_application(terms_acceptance_flag=True)
+        self._create_nominee(application_id)
+
+        first_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(first_response.status_code, 200)
+        self.member.default_status = "existing_default"
+        self.member.save(update_fields=["default_status"])
+        second_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
+            data={},
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(
+            first_response.json()["data"]["eligibility_assessment_id"],
+            second_response.json()["data"]["eligibility_assessment_id"],
+        )
+        self.assertEqual(second_response.json()["data"]["default_check"], "default_found")
+        self.assertEqual(second_response.json()["data"]["overall_result"], "ineligible")
+        assessment_model = apps.get_model("applications", "EligibilityAssessment")
+        self.assertEqual(assessment_model.objects.filter(loan_application_id=application_id).count(), 1)
 
     def test_eligibility_assessment_denials_and_invalid_state_create_no_success_evidence(self):
         draft_response = self.client.post(
@@ -2364,3 +2518,21 @@ class LoanApplicationDraftApiTests(TestCase):
             uploaded_by_user=self.creator,
             sensitivity_level="restricted",
         )
+
+    def _create_nominee(self, application_id, **overrides):
+        defaults = {
+            "member": self.member,
+            "loan_application_id": application_id,
+            "nominee_name": "Sita Patil",
+            "age_at_application": 42,
+            "gender": "female",
+            "relationship_to_borrower": "Spouse",
+            "pan_encrypted": "nominee-pan-token",
+            "pan_hash": f"{application_id}-nominee-pan-hash",
+            "aadhaar_encrypted": "nominee-aadhaar-token",
+            "aadhaar_hash": f"{application_id}-nominee-aadhaar-hash",
+            "kyc_status": "verified",
+            "minor_flag": False,
+        }
+        defaults.update(overrides)
+        return Nominee.objects.create(**defaults)

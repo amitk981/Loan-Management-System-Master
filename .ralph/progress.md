@@ -1,5 +1,27 @@
 # Ralph Progress Log
 
+## 2026-07-10 05:21:39 - 2026-07-10_052139_normal_run
+- Agent tool used: codex
+- Slice attempted: 006B-default-document-purpose-and-terms-eligibility-checks
+- Summary: Extended the existing 006A eligibility assessment run/read API with source-backed
+  default, document checklist, terms acceptance, purpose, and nominee checks. Eligible results now
+  require active-member pass, `Member.default_status = no_default`, complete 005D/005E checklist
+  metadata, accepted terms, crop/agriculture purpose, and an adult application-specific nominee.
+  Active defaults, incomplete checklist evidence, missing terms, non-agriculture purpose, and minor
+  nominees return `overall_result = ineligible` without advancing application status/stage.
+  Missing application-specific nominee evidence remains `pending_manual_evidence` rather than
+  inventing nominee-selection rules. Reruns update the existing one-to-one assessment.
+- Tests run: TDD red/green for eligible eligibility assessment; focused loan-application API tests
+  (31/31); backend `manage.py check`; backend tests (282/282); `makemigrations --check
+  --dry-run`; backend coverage 95% above 85% floor; frontend lint; frontend typecheck; frontend
+  tests (98/98); frontend build; `git diff --check`.
+- Evidence saved: `.ralph/runs/2026-07-10_052139_normal_run/`, including red/green and gate logs
+  under `evidence/terminal-logs/`.
+- Result: Success.
+- Risk level: Medium.
+- Next action: Run `006C-loan-limit-configuration-and-calculator`, then
+  `006D-loan-limit-snapshot-storage`; both were sharpened from the Epic 006 digest/source extracts.
+
 ## 2026-07-10 04:41:14 - 2026-07-10_044114_normal_run
 - Agent tool used: codex
 - Slice attempted: 005I2-application-detail-api-state-hardening
@@ -2290,6 +2312,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_044114_normal_run/.ralph/runs/2026-07-10_044114_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_044114_normal_run/.ralph/runs/2026-07-10_044114_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 06:19:12 - 2026-07-10_052139_normal_run
+- Agent tool used: codex
+- Slice attempted: 006B-default-document-purpose-and-terms-eligibility-checks
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_052139_normal_run/.ralph/runs/2026-07-10_052139_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_052139_normal_run/.ralph/runs/2026-07-10_052139_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
