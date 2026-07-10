@@ -4,8 +4,9 @@ from django.db import transaction
 from django.utils import timezone
 
 from sfpcl_credit.applications.modules.nominee_validation import evaluate_nominee_selection
-from sfpcl_credit.applications.models import EligibilityAssessment, LoanApplication
+from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.applications.services import build_completeness_workbench
+from sfpcl_credit.credit.models import EligibilityAssessment
 from sfpcl_credit.credit.modules.common import (
     APPLICATION_READ_PERMISSION,
     ELIGIBILITY_RUN_PERMISSION,

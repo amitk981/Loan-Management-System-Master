@@ -6,11 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
-from sfpcl_credit.applications.models import (
-    EligibilityAssessment,
-    LoanApplication,
-    LoanLimitAssessment,
-)
+from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.configurations.modules.configuration_resolver import (
     ConfigurationResolutionError,
     resolve_effective_loan_policy,
@@ -26,6 +22,7 @@ from sfpcl_credit.credit.modules.common import (
     require_application_access,
     require_permission,
 )
+from sfpcl_credit.credit.models import EligibilityAssessment, LoanLimitAssessment
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.members.models import (
     CropPlan,

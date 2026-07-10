@@ -9,11 +9,10 @@ from django.utils import timezone
 
 from sfpcl_credit.applications.models import (
     ApplicationDocument,
-    EligibilityAssessment,
     LoanApplication,
-    LoanLimitAssessment,
 )
 from sfpcl_credit.configurations.models import LoanPolicyConfig
+from sfpcl_credit.credit.models import EligibilityAssessment, LoanLimitAssessment
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import (

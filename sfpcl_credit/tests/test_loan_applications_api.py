@@ -604,7 +604,7 @@ class LoanApplicationDraftApiTests(TestCase):
         assert_success_envelope(self, read_response.json())
         self.assertEqual(read_response.json()["data"], assessment)
 
-        assessment_model = apps.get_model("applications", "EligibilityAssessment")
+        assessment_model = apps.get_model("credit", "EligibilityAssessment")
         self.assertEqual(assessment_model.objects.filter(loan_application_id=application_id).count(), 1)
         audit = AuditLog.objects.filter(action="eligibility.assessed").get()
         self.assertEqual(audit.entity_type, "eligibility_assessment")
@@ -819,7 +819,7 @@ class LoanApplicationDraftApiTests(TestCase):
         )
         self.assertEqual(second_response.json()["data"]["default_check"], "default_found")
         self.assertEqual(second_response.json()["data"]["overall_result"], "ineligible")
-        assessment_model = apps.get_model("applications", "EligibilityAssessment")
+        assessment_model = apps.get_model("credit", "EligibilityAssessment")
         self.assertEqual(assessment_model.objects.filter(loan_application_id=application_id).count(), 1)
 
     def test_eligibility_assessment_denials_and_invalid_state_create_no_success_evidence(self):
@@ -860,7 +860,7 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(out_of_scope.status_code, 403)
         assert_error_envelope(self, out_of_scope.json(), "OBJECT_ACCESS_DENIED")
 
-        assessment_model = apps.get_model("applications", "EligibilityAssessment")
+        assessment_model = apps.get_model("credit", "EligibilityAssessment")
         self.assertEqual(assessment_model.objects.count(), 0)
         self.assertEqual(AuditLog.objects.filter(action="eligibility.assessed").count(), 0)
         self.assertEqual(
@@ -938,7 +938,7 @@ class LoanApplicationDraftApiTests(TestCase):
         )
         self.assertIsNotNone(assessment["calculated_at"])
 
-        loan_limit_model = apps.get_model("applications", "LoanLimitAssessment")
+        loan_limit_model = apps.get_model("credit", "LoanLimitAssessment")
         self.assertEqual(loan_limit_model.objects.filter(loan_application_id=application_id).count(), 1)
         self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 1)
         self.assertEqual(
@@ -1005,7 +1005,7 @@ class LoanApplicationDraftApiTests(TestCase):
             body["error"]["field_errors"]["cultivated_acreage"],
             "CULTIVATED_ACREAGE_UNRESOLVED",
         )
-        loan_limit_model = apps.get_model("applications", "LoanLimitAssessment")
+        loan_limit_model = apps.get_model("credit", "LoanLimitAssessment")
         self.assertEqual(loan_limit_model.objects.filter(loan_application_id=application_id).count(), 0)
         self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 0)
         self.assertEqual(
@@ -1158,7 +1158,7 @@ class LoanApplicationDraftApiTests(TestCase):
         )
         self.assertEqual(read.status_code, 200)
         self.assertEqual(read.json()["data"], stored_snapshot)
-        loan_limit_model = apps.get_model("applications", "LoanLimitAssessment")
+        loan_limit_model = apps.get_model("credit", "LoanLimitAssessment")
         self.assertEqual(loan_limit_model.objects.filter(loan_application_id=application_id).count(), 1)
         self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 1)
         self.assertEqual(
@@ -1270,7 +1270,7 @@ class LoanApplicationDraftApiTests(TestCase):
                 assert_error_envelope(self, response.json(), "VALIDATION_ERROR")
                 self.assertIn(expected_field, response.json()["error"]["field_errors"])
 
-        loan_limit_model = apps.get_model("applications", "LoanLimitAssessment")
+        loan_limit_model = apps.get_model("credit", "LoanLimitAssessment")
         self.assertEqual(loan_limit_model.objects.filter(loan_application_id=application_id).count(), 0)
         self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 0)
         self.assertEqual(
@@ -1431,7 +1431,7 @@ class LoanApplicationDraftApiTests(TestCase):
             "requested_amount": "10000.00",
             "calculation_date": timezone.localdate().isoformat(),
         }
-        eligibility_model = apps.get_model("applications", "EligibilityAssessment")
+        eligibility_model = apps.get_model("credit", "EligibilityAssessment")
         eligibility_model.objects.filter(loan_application_id=application_id).update(
             overall_result="ineligible"
         )
@@ -1615,7 +1615,7 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(second_result["requested_amount"], "15000.00")
         self.assertTrue(second_result["amount_within_limit_flag"])
         self.assertFalse(second_result["exception_required_flag"])
-        loan_limit_model = apps.get_model("applications", "LoanLimitAssessment")
+        loan_limit_model = apps.get_model("credit", "LoanLimitAssessment")
         self.assertEqual(loan_limit_model.objects.filter(loan_application_id=application_id).count(), 1)
         self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 2)
 
@@ -1733,7 +1733,7 @@ class LoanApplicationDraftApiTests(TestCase):
             unresolved_policy.json()["error"]["field_errors"],
         )
 
-        loan_limit_model = apps.get_model("applications", "LoanLimitAssessment")
+        loan_limit_model = apps.get_model("credit", "LoanLimitAssessment")
         self.assertEqual(loan_limit_model.objects.count(), 0)
         self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 0)
         self.assertEqual(
@@ -1820,7 +1820,7 @@ class LoanApplicationDraftApiTests(TestCase):
                 assert_error_envelope(self, response.json(), "VALIDATION_ERROR")
                 self.assertIn(expected_field, response.json()["error"]["field_errors"])
 
-        loan_limit_model = apps.get_model("applications", "LoanLimitAssessment")
+        loan_limit_model = apps.get_model("credit", "LoanLimitAssessment")
         self.assertEqual(loan_limit_model.objects.count(), 0)
         self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 0)
         self.assertEqual(
@@ -1864,7 +1864,7 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(out_of_scope.status_code, 403)
         assert_error_envelope(self, out_of_scope.json(), "OBJECT_ACCESS_DENIED")
 
-        loan_limit_model = apps.get_model("applications", "LoanLimitAssessment")
+        loan_limit_model = apps.get_model("credit", "LoanLimitAssessment")
         self.assertEqual(loan_limit_model.objects.count(), 0)
         self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 0)
         self.assertEqual(

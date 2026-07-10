@@ -1,5 +1,19 @@
 # Ralph Progress Log
 
+## 2026-07-10 17:00 - 2026-07-10_165107_normal_run
+- Agent tool used: codex.
+- Slice attempted: `006D3-credit-assessment-model-ownership-state-migration`.
+- Summary: Moved eligibility and loan-limit assessment Django model state from `applications` to
+  `credit` through one reversible state-only migration. Physical tables, UUIDs, one-to-one/FK
+  relationships, audit entity IDs, workflow entity IDs, and the established credit module
+  interfaces remain unchanged. `sqlmigrate` confirms no database SQL is emitted.
+- Tests run: migration RED/GREEN and rollback proof; 64 focused credit module/API tests; backend
+  check and migration sync; 321 backend tests at 95% coverage; frontend lint, typecheck, 107 tests,
+  and build; diff/protected-path checks.
+- Evidence saved: `.ralph/runs/2026-07-10_165107_normal_run/`.
+- Result: Success, pending orchestrator validation. Risk: High under standing approval. Next:
+  `006E-appraisal-note-create-edit-submit` through the projection-only `AppraisalWorkflow` seam.
+
 ## 2026-07-10 15:46 - 2026-07-10_154638_architecture_review
 - Agent tool used: codex.
 - Slice attempted: `architecture-review`.
@@ -2568,6 +2582,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_162322_normal_run/.ralph/runs/2026-07-10_162322_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_162322_normal_run/.ralph/runs/2026-07-10_162322_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-10 17:02:55 - 2026-07-10_165107_normal_run
+- Agent tool used: codex
+- Slice attempted: 006D3-credit-assessment-model-ownership-state-migration
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_165107_normal_run/.ralph/runs/2026-07-10_165107_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_165107_normal_run/.ralph/runs/2026-07-10_165107_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

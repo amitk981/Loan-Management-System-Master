@@ -23,6 +23,9 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
   and `draft -> review_pending` submission.
 - 006F must review that stored note without recalculating 006B eligibility or the 006D loan-limit
   snapshot. 006G separately owns `submit-to-sanction-committee` and approval-case creation.
+- Credit assessment persistence is credit-owned after 006D3, but concrete eligibility/loan-limit
+  models remain implementation details. Review must operate on 006E's appraisal interface/state
+  and must not import or mutate either assessment model.
 
 ## Source References
 - docs/source/implementation-roadmap.md section 11

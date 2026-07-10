@@ -194,6 +194,18 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
   crop plan, applicable profile, and policy in one transaction. Failed reruns preserve evidence.
 - `AppraisalWorkflow` is the projection-only 006E entry seam; no appraisal rule was added here.
 
+## 006D3 Credit Assessment Model Ownership
+- `EligibilityAssessment` and `LoanLimitAssessment` Django model state now belongs to
+  `credit.models`; the legacy physical tables remain exactly `eligibility_assessments` and
+  `loan_limit_assessments`.
+- The single reversible migration performs state transfer only. It emits no SQL and does not
+  rename, recreate, copy, backfill, truncate, or drop either table.
+- Forward and reverse migration-executor proofs preserve both primary-key UUIDs, application/member/
+  shareholding/user relationships, and audit/workflow entity UUID references.
+- The public behavior seam remains `EligibilityAssessmentModule`, `LoanLimitCalculator`,
+  `LoanLimitAssessmentResult`, `LoanLimitSnapshot`, and `AppraisalWorkflow`; future appraisal code
+  must not import the concrete assessment models.
+
 ## 006E-006F Appraisal And Credit Review Source Extract
 - `api-contracts.md` §24 defines appraisal create/read, submit-for-review, Credit Manager review,
   and submit-to-sanction as separate actions. 006E owns create/read/edit/submit-for-review; 006F

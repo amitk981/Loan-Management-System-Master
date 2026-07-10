@@ -20,6 +20,7 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - 005I4
 - 006C2
 - 006D2B
+- 006D3
 - 005I5
 
 ## Prior Slice Handoff
@@ -35,6 +36,10 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
   summaries/IDs rather than re-running eligibility or loan-limit formulas.
 - 006D2B exposes stored loan-limit facts as a projection-only `LoanLimitAssessmentResult`; consume
   `LoanLimitCalculator.get_assessment(...).snapshot` and never retain or mutate a Django assessment.
+- 006D3 moved `EligibilityAssessment` and `LoanLimitAssessment` Django state ownership to
+  `credit.models` without changing their physical tables or UUIDs. Appraisal must still consume
+  only `EligibilityAssessmentModule` and `LoanLimitCalculator` projections; it must not import
+  either assessment model from `credit.models` or rely on their concrete ownership.
 - Configuration resolution failures are configuration-owned and translated at the calculator
   seam; appraisal must not import the resolver or configuration error type.
 - Architecture review `2026-07-10_092630_architecture_review` queued 005I3/005I4 to complete the
