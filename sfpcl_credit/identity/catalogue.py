@@ -47,6 +47,10 @@ PERMISSIONS = [
     ("members.nominee.read", "View nominees", "medium"),
     ("members.nominee.create", "Create nominee", "high"),
     ("members.nominee.update", "Update nominee", "high"),
+    # A-062: source stage matrix names witness read/capture roles while the
+    # canonical catalogue omits the atomic codes.
+    ("members.witness.read", "View witnesses", "medium"),
+    ("members.witness.create", "Create witnesses", "high"),
     ("members.shareholding.read", "View shareholding", "medium"),
     ("members.shareholding.create", "Create shareholding", "high"),
     ("members.shareholding.update", "Update shareholding", "high"),
@@ -325,6 +329,7 @@ ROLE_PERMISSIONS = {
         "credit.risk_assessment.manage",
     ],
     "credit_manager": [
+        "members.witness.read",
         "applications.loan_application.read",
         "applications.loan_application.create",
         "applications.loan_application.complete_check",
@@ -352,6 +357,8 @@ ROLE_PERMISSIONS = {
         "management_readonly",
     ],
     "compliance_team_member": [
+        "members.witness.read",
+        "members.witness.create",
         "documents.loan_document.generate",
         "documents.loan_document.read",
         "documents.loan_document.verify",
@@ -369,6 +376,8 @@ ROLE_PERMISSIONS = {
         "management_readonly",
     ],
     "company_secretary": [
+        "members.witness.read",
+        "members.witness.create",
         "documents.checklist.approve_cs",
         "documents.loan_document.verify",
         "documents.signature.resolve_mismatch",
@@ -448,6 +457,7 @@ ROLE_PERMISSIONS = {
         "management_readonly",
     ],
     "internal_auditor": [
+        "members.witness.read",
         "audit.audit_log.read",
         "audit.workflow_event.read",
         "audit.version_history.read",

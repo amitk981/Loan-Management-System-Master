@@ -1,5 +1,17 @@
 # Ralph Progress Log
 
+## 2026-07-11 00:05 - 2026-07-10_235256_normal_run
+- Agent tool used: codex.
+- Slice attempted: `004E-witness-shareholder-validation`.
+- Summary: Added application-scoped witness list/create with persisted member/KYC/shareholding
+  verification, protected PAN/Aadhaar, narrow role permissions, object access, and metadata-only
+  audit evidence. No frontend or application-state behavior changed.
+- Tests run: two red/green API cycles; six focused witness tests; Django check and migration sync;
+  384 backend tests at 94% coverage; frontend lint/typecheck, 126 tests, and build; diff checks.
+- Evidence saved: `.ralph/runs/2026-07-10_235256_normal_run/`.
+- Result: Success, pending orchestrator validation. Risk: Medium. Next: `006G2`; 006G2 and 006H2
+  were reviewed and remain concretely sharpened, so no speculative edits were added.
+
 ## 2026-07-10 22:06 - 2026-07-10_215124_normal_run
 - Agent tool used: codex.
 - Slice attempted: `006E4-legacy-appraisal-remediation-and-history-backfill`.
@@ -2958,6 +2970,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_230547_repair/.ralph/runs/2026-07-10_230547_repair/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_230547_repair/.ralph/runs/2026-07-10_230547_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-11 00:06:42 - 2026-07-10_235256_normal_run
+- Agent tool used: codex
+- Slice attempted: 004E-witness-shareholder-validation
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_235256_normal_run/.ralph/runs/2026-07-10_235256_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_235256_normal_run/.ralph/runs/2026-07-10_235256_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

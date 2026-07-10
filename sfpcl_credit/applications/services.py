@@ -1,4 +1,5 @@
 import uuid
+import re
 from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
@@ -14,6 +15,7 @@ from sfpcl_credit.applications.models import (
     LoanRequestRegisterEntry,
     RejectionNote,
     SystemSequence,
+    Witness,
 )
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import AuditLog
@@ -26,6 +28,11 @@ from sfpcl_credit.members.models import (
     LandHolding,
     Member,
     Nominee,
+)
+from sfpcl_credit.members.protected_identity import (
+    identity_hash,
+    mask_protected_identity,
+    protected_identity_token,
 )
 from sfpcl_credit.workflows.events import record_workflow_event
 from sfpcl_credit.workflows.guard import (
@@ -42,6 +49,8 @@ APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
 APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_check"
 APPLICATION_DOCUMENT_UPLOAD_PERMISSION = "applications.document.upload"
 APPLICATION_DOCUMENT_VERIFY_PERMISSION = "applications.document.verify"
+WITNESS_READ_PERMISSION = "members.witness.read"
+WITNESS_CREATE_PERMISSION = "members.witness.create"
 LOAN_APPLICATION_REFERENCE_SEQUENCE_CODE = "loan_application_reference"
 APPLICATION_DOCUMENT_ATTACH_AUDIT_ACTION = "applications.application_document.attached"
 APPLICATION_DOCUMENT_VERIFY_AUDIT_ACTION = "applications.application_document.verified"
@@ -126,6 +135,14 @@ class LoanApplicationInvalidStateError(Exception):
     pass
 
 
+class WitnessValidationError(Exception):
+    def __init__(self, code, message, field_errors=None):
+        self.code = code
+        self.message = message
+        self.field_errors = field_errors or {}
+        super().__init__(message)
+
+
 def user_can_read_applications(user):
     return APPLICATION_READ_PERMISSION in auth_service.effective_permission_codes(user)
 
@@ -144,6 +161,131 @@ def user_can_submit_applications(user):
 
 def user_can_complete_check_applications(user):
     return APPLICATION_COMPLETE_CHECK_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_read_witnesses(user):
+    return WITNESS_READ_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_create_witnesses(user):
+    return WITNESS_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+@transaction.atomic
+def create_witness(application, payload, actor_user, request_ip="", request_user_agent=""):
+    allowed_fields = {"member_id", "witness_name", "pan", "aadhaar"}
+    unknown_fields = sorted(set(payload) - allowed_fields)
+    if unknown_fields:
+        raise WitnessValidationError(
+            "VALIDATION_ERROR",
+            "Witness payload failed validation.",
+            {field: "Unknown field." for field in unknown_fields},
+        )
+    try:
+        member_id = uuid.UUID(str(payload.get("member_id") or ""))
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise WitnessValidationError(
+            "MISSING_REQUIRED_FIELD" if not payload.get("member_id") else "VALIDATION_ERROR",
+            "Witness member is required.",
+            {"member_id": "A valid member UUID is required."},
+        ) from exc
+    member = Member.objects.filter(member_id=member_id, is_deleted=False).first()
+    if member is None:
+        raise WitnessValidationError("NOT_FOUND", "Witness member was not found.")
+    witness_name = str(payload.get("witness_name") or "").strip()
+    if not witness_name:
+        raise WitnessValidationError(
+            "MISSING_REQUIRED_FIELD",
+            "Witness name is required.",
+            {"witness_name": "This field is required."},
+        )
+    if witness_name.casefold() not in {member.legal_name.strip().casefold(), member.display_name.strip().casefold()}:
+        raise WitnessValidationError(
+            "VALIDATION_ERROR",
+            "Witness name does not match the selected member.",
+            {"witness_name": "Must match the selected member name."},
+        )
+    shareholding = (
+        member.shareholdings.filter(status="active", number_of_shares__gt=0)
+        .order_by("created_at", "shareholding_id")
+        .first()
+    )
+    if shareholding is None:
+        raise WitnessValidationError(
+            "WITNESS_NOT_SHAREHOLDER",
+            "Witness is not an existing shareholder.",
+            {"member_id": "Member has no active positive shareholding."},
+        )
+    if member.kyc_status != "verified":
+        raise WitnessValidationError(
+            "VALIDATION_ERROR",
+            "Witness KYC must be verified.",
+            {"member_id": "Selected member does not have verified KYC."},
+        )
+    pan = str(payload.get("pan") or "").strip().upper()
+    aadhaar = str(payload.get("aadhaar") or "").replace(" ", "").strip()
+    if not pan:
+        raise WitnessValidationError("MISSING_REQUIRED_FIELD", "PAN is required.", {"pan": "This field is required."})
+    if not re.fullmatch(r"[A-Z]{5}[0-9]{4}[A-Z]", pan):
+        raise WitnessValidationError("INVALID_PAN_FORMAT", "PAN format is invalid.", {"pan": "PAN must match the source-defined format."})
+    if not aadhaar:
+        raise WitnessValidationError("MISSING_REQUIRED_FIELD", "Aadhaar is required.", {"aadhaar": "This field is required."})
+    if not re.fullmatch(r"[0-9]{12}", aadhaar):
+        raise WitnessValidationError("INVALID_AADHAAR_FORMAT", "Aadhaar format is invalid.", {"aadhaar": "Aadhaar must be a 12 digit number."})
+    verified_at = timezone.now()
+    witness = Witness.objects.create(
+        loan_application=application,
+        member=member,
+        witness_name=witness_name,
+        pan_encrypted=protected_identity_token(pan, 10),
+        pan_hash=identity_hash(pan),
+        aadhaar_encrypted=protected_identity_token(aadhaar, 12),
+        aadhaar_hash=identity_hash(aadhaar),
+        shareholder_verified_flag=True,
+        verification_status="verified",
+        verified_by_user=actor_user,
+        verified_at=verified_at,
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user,
+        action="applications.witness.created",
+        entity_type="witness",
+        entity_id=witness.witness_id,
+        new_value_json={
+            "loan_application_id": str(application.loan_application_id),
+            "witness_id": str(witness.witness_id),
+            "member_id": str(member.member_id),
+            "folio_number": shareholding.folio_number,
+            "witness_name": witness.witness_name,
+            "shareholder_verified_flag": True,
+            "verification_status": "verified",
+        },
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+    return witness
+
+
+def serialize_witness(witness):
+    shareholding = (
+        witness.member.shareholdings.filter(status="active", number_of_shares__gt=0)
+        .order_by("created_at", "shareholding_id")
+        .first()
+    )
+    return {
+        "witness_id": str(witness.witness_id),
+        "loan_application_id": str(witness.loan_application_id),
+        "member_id": str(witness.member_id),
+        "folio_number": shareholding.folio_number if shareholding else witness.member.folio_number,
+        "witness_name": witness.witness_name,
+        "pan": {"masked": mask_protected_identity(witness.pan_encrypted, 10), "can_view_full": False},
+        "aadhaar": {"masked": mask_protected_identity(witness.aadhaar_encrypted, 12), "can_view_full": False},
+        "shareholder_verified_flag": witness.shareholder_verified_flag,
+        "verification_status": witness.verification_status,
+        "verified_by_user_id": str(witness.verified_by_user_id) if witness.verified_by_user_id else None,
+        "verified_at": witness.verified_at.isoformat().replace("+00:00", "Z") if witness.verified_at else None,
+        "created_at": witness.created_at.isoformat().replace("+00:00", "Z"),
+    }
 
 
 def user_can_upload_application_documents(user):

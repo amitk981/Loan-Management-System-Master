@@ -297,6 +297,11 @@ urlpatterns = [
         name="member-detail",
     ),
     path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/witnesses/",
+        application_views.loan_application_witnesses,
+        name="loan-application-witnesses",
+    ),
+    path(
         "api/v1/members/<uuid:member_id>/nominees/",
         member_views.member_nominees,
         name="member-nominees",

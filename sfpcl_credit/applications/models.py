@@ -167,6 +167,67 @@ class LoanApplication(models.Model):
         return super().save(*args, **kwargs)
 
 
+class Witness(models.Model):
+    VERIFICATION_STATUSES = {"pending", "verified", "rejected"}
+
+    witness_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    loan_application = models.ForeignKey(
+        LoanApplication,
+        on_delete=models.PROTECT,
+        related_name="witnesses",
+    )
+    member = models.ForeignKey(
+        "members.Member",
+        on_delete=models.PROTECT,
+        related_name="application_witnesses",
+    )
+    witness_name = models.CharField(max_length=255)
+    pan_encrypted = models.TextField()
+    pan_hash = models.CharField(max_length=128, db_index=True)
+    aadhaar_encrypted = models.TextField()
+    aadhaar_hash = models.CharField(max_length=128, db_index=True)
+    shareholder_verified_flag = models.BooleanField(default=False)
+    verification_status = models.CharField(max_length=60, default="pending", db_index=True)
+    verified_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="verified_witnesses",
+    )
+    verified_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "witnesses"
+        indexes = [
+            models.Index(fields=["loan_application"], name="idx_witnesses_application"),
+            models.Index(fields=["pan_hash"], name="idx_witnesses_pan_hash"),
+            models.Index(fields=["aadhaar_hash"], name="idx_witnesses_aadhaar_hash"),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.verification_status not in self.VERIFICATION_STATUSES:
+            raise ValidationError({"verification_status": "Unsupported verification status."})
+        if self.shareholder_verified_flag and self.verification_status != "verified":
+            raise ValidationError(
+                {"verification_status": "Verified shareholders require verified status."}
+            )
+        if self.verification_status == "verified" and (
+            not self.shareholder_verified_flag
+            or self.verified_by_user_id is None
+            or self.verified_at is None
+        ):
+            raise ValidationError(
+                {"verification_status": "Verified status requires complete verification metadata."}
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
 class SystemSequence(models.Model):
     system_sequence_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     sequence_code = models.CharField(max_length=80, unique=True)

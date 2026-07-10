@@ -175,6 +175,60 @@ def loan_application_detail(request, loan_application_id):
     return success_response(services.serialize_application_detail(application, user), request)
 
 
+@require_http_methods(["GET", "POST"])
+def loan_application_witnesses(request, loan_application_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    required_permission = (
+        services.WITNESS_READ_PERMISSION
+        if request.method == "GET"
+        else services.WITNESS_CREATE_PERMISSION
+    )
+    has_permission = (
+        services.user_can_read_witnesses(user)
+        if request.method == "GET"
+        else services.user_can_create_witnesses(user)
+    )
+    if not has_permission:
+        return error_response(request, 403, "PERMISSION_DENIED", "You do not have permission to access witnesses.")
+    application = services.get_application(loan_application_id)
+    if application is None:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+    object_access = services.evaluate_application_object_access(
+        application, user, required_permission, permissions
+    )
+    if not object_access.allowed:
+        return _object_access_denied_response(request, object_access)
+    if request.method == "GET":
+        rows = application.witnesses.select_related("member", "verified_by_user").order_by("created_at", "witness_id")
+        items = [services.serialize_witness(row) for row in rows]
+        return list_response(
+            items,
+            {
+                "page": 1,
+                "page_size": len(items) or 20,
+                "total_count": len(items),
+                "total_pages": 1,
+                "has_next": False,
+                "has_previous": False,
+            },
+            request,
+        )
+    try:
+        witness = services.create_witness(
+            application,
+            parse_json_body(request),
+            user,
+            request_ip(request),
+            request_user_agent(request),
+        )
+    except services.WitnessValidationError as exc:
+        status = 404 if exc.code == "NOT_FOUND" else 400
+        return error_response(request, status, exc.code, exc.message, exc.field_errors)
+    return success_response(services.serialize_witness(witness), request)
+
+
 @require_http_methods(["POST"])
 def loan_application_submit(request, loan_application_id):
     user, permissions, response = http_auth.authenticated_user_with_permissions(request)

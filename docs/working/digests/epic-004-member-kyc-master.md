@@ -174,6 +174,21 @@ before implementation.
   distinctive range, share count, optional document FK, and active/pledged/transferred status should
   be implemented in a small follow-up slice, not folded into unrelated land/KYC work.
 
+## 004E Witness Validation Extracts
+- `data-model.md` §10.5 makes a witness application-scoped and requires protected PAN/Aadhaar,
+  persisted shareholder verification, verification metadata, and KYC. `screen-spec.md` S09 requires
+  a real SFPCL shareholder/member or folio and says documentation cannot complete before witness
+  verification.
+- `auth-permissions.md` §15.4 and §26.4 allow Compliance and Company Secretary to record witness
+  KYC, Credit Manager to read, and audit access to remain read-only. The §12.2 catalogue and §34
+  endpoint map omit exact witness permission codes; 004E records this gap and uses narrow
+  `members.witness.read/create` permissions following the source naming convention instead of
+  borrowing nominee/shareholding/KYC permissions.
+- 004E uses nested `GET/POST /api/v1/loan-applications/{id}/witnesses/`, validates application object
+  access, and qualifies only a member with matching name, verified KYC, and at least one active
+  positive shareholding. Caller verification metadata is forbidden; successful creation sets it
+  from persisted facts and writes a metadata-only audit row.
+
 ## 004G/004H Queue-Sharpening Extracts
 - `api-contracts.md` §17.1 defines land-holding endpoints:
   `GET`/`POST /api/v1/members/{member_id}/land-holdings/` and detail/update

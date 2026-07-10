@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import re
 import uuid
 from datetime import date
@@ -8,7 +6,6 @@ from decimal import Decimal, InvalidOperation
 from math import ceil
 from pathlib import Path
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q, Sum
@@ -30,6 +27,11 @@ from sfpcl_credit.members.models import (
     Member,
     Nominee,
     Shareholding,
+)
+from sfpcl_credit.members.protected_identity import (
+    identity_hash,
+    mask_protected_identity,
+    protected_identity_token,
 )
 
 
@@ -367,10 +369,10 @@ def create_nominee(member, payload, actor_user, request_ip="", request_user_agen
         age_at_application=values["age_at_application"],
         gender=values["gender"],
         relationship_to_borrower=values["relationship_to_borrower"],
-        pan_encrypted=_protected_identity_token(values["pan"], 10),
-        pan_hash=_identity_hash(values["pan"]),
-        aadhaar_encrypted=_protected_identity_token(values["aadhaar"], 12),
-        aadhaar_hash=_identity_hash(values["aadhaar"]),
+        pan_encrypted=protected_identity_token(values["pan"], 10),
+        pan_hash=identity_hash(values["pan"]),
+        aadhaar_encrypted=protected_identity_token(values["aadhaar"], 12),
+        aadhaar_hash=identity_hash(values["aadhaar"]),
         kyc_status="pending",
         minor_flag=False,
         signature_required_flag=values["signature_required_flag"],
@@ -404,11 +406,11 @@ def serialize_nominee(nominee):
         "gender": nominee.gender,
         "relationship_to_borrower": nominee.relationship_to_borrower or None,
         "pan": {
-            "masked": _mask_protected_identity(nominee.pan_encrypted, 10),
+            "masked": mask_protected_identity(nominee.pan_encrypted, 10),
             "can_view_full": False,
         },
         "aadhaar": {
-            "masked": _mask_protected_identity(nominee.aadhaar_encrypted, 12),
+            "masked": mask_protected_identity(nominee.aadhaar_encrypted, 12),
             "can_view_full": False,
         },
         "kyc_status": nominee.kyc_status,
@@ -715,7 +717,7 @@ def create_bank_account(member, payload, actor_user, request_ip="", request_user
         owner_party_id=member.member_id,
         account_holder_name=values["account_holder_name"],
         account_number_encrypted=_protected_account_number_token(values["account_number"]),
-        account_number_hash=_identity_hash(values["account_number"]),
+        account_number_hash=identity_hash(values["account_number"]),
         account_number_last4=values["account_number"][-4:],
         ifsc=values["ifsc"],
         bank_name=values["bank_name"],
@@ -804,7 +806,7 @@ def create_cancelled_cheque(member, payload, actor_user, request_ip="", request_
         member=member,
         document_id=values["document_id"],
         account_number_encrypted=_protected_account_number_token(values["account_number"]),
-        account_number_hash=_identity_hash(values["account_number"]),
+        account_number_hash=identity_hash(values["account_number"]),
         account_number_last4=values["account_number"][-4:],
         ifsc=values["ifsc"],
         branch_name=values["branch_name"],
@@ -1615,19 +1617,6 @@ def _age_on(born, today):
     return today.year - born.year - int(before_birthday)
 
 
-def _identity_hash(value):
-    return hmac.new(
-        settings.SECRET_KEY.encode("utf-8"),
-        value.encode("utf-8"),
-        hashlib.sha256,
-    ).hexdigest()
-
-
-def _protected_identity_token(value, expected_length):
-    digest = _identity_hash(f"enc:{value}")
-    return f"enc:v1:{expected_length}:{digest}:{value[-4:]}"
-
-
 def _required_account_number(value):
     digits = "".join(char for char in str(value or "").strip() if char.isdigit())
     if not digits:
@@ -1638,7 +1627,7 @@ def _required_account_number(value):
 
 
 def _protected_account_number_token(value):
-    digest = _identity_hash(f"bank-account:{value}")
+    digest = identity_hash(f"bank-account:{value}")
     return f"enc:v1:{len(value)}:{digest}:{value[-4:]}"
 
 
@@ -1656,17 +1645,6 @@ def _mask_account_last4(last4, total_length):
     if not last4:
         return None
     return f"{'*' * max(int(total_length or 4) - 4, 0)}{last4}"
-
-
-def _mask_protected_identity(token, default_length):
-    parts = str(token or "").split(":")
-    if len(parts) == 5 and parts[0] == "enc" and parts[1] == "v1":
-        try:
-            length = int(parts[2])
-        except ValueError:
-            length = default_length
-        return f"{'*' * max(length - 4, 0)}{parts[4]}"
-    return _mask_last_four(token)
 
 
 def _individual_profile(member):

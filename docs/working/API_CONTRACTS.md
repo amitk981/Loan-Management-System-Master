@@ -2053,3 +2053,26 @@ Successful submission writes one `appraisal.submitted_to_sanction` audit record 
 actor/time, exception flag, and request ID. Generic evidence excludes request remarks, review
 comments, appraisal summaries, risk notes, and rejection text. Approval-case storage retains the
 trimmed request remarks as the action reason.
+
+## Application Witness API (004E)
+
+Application-scoped endpoints:
+
+- `GET /api/v1/loan-applications/{loan_application_id}/witnesses/`
+- `POST /api/v1/loan-applications/{loan_application_id}/witnesses/`
+
+GET requires `members.witness.read` plus application object access and returns the standard list
+envelope in deterministic created order. POST requires `members.witness.create` plus application
+object access and accepts exactly `member_id`, `witness_name`, `pan`, and `aadhaar`.
+
+The selected member must exist, the trimmed/case-normalized witness name must match its legal or
+display name, member KYC must be `verified`, and persisted shareholding evidence must include an
+`active` row with `number_of_shares > 0`. Missing records return `404 NOT_FOUND`; non-shareholders
+return `400 WITNESS_NOT_SHAREHOLDER`; missing/invalid identity, KYC, name, unknown, or
+caller-supplied verification fields return the applicable standard 400 envelope.
+
+Successful response data contains `witness_id`, application/member IDs, resolved `folio_number`,
+name, masked PAN/Aadhaar objects, `shareholder_verified_flag: true`,
+`verification_status: verified`, verifier/time, and creation time. Plaintext identities, protected
+tokens, and keyed hashes are never returned or audited. Creation writes one metadata-only
+`applications.witness.created` audit row and no workflow event or application-state transition.
