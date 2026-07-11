@@ -3393,3 +3393,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-11_211453_normal_run
+
+- Completed 006H6: moved credit action projections behind public module boundaries, disabled
+  eligibility/limit reruns after appraisal starts, and removed the HTTP key-name heuristic.
+- React retains full six-field actions, shows disabled reasons, and awaits the canonical four-read
+  reload after successful mutations.
+- Frontend lint/typecheck/build and 150 tests passed; backend check/migration sync and 400 tests
+  passed with five expected PostgreSQL-only skips at 94% coverage.
+- Next action: run 006H3-appraisal-workbench-prototype-fidelity-restoration.
+
+## 2026-07-11 21:27:31 - 2026-07-11_211453_normal_run
+- Agent tool used: codex
+- Slice attempted: 006H6-workbench-action-projection-and-interaction-proof
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_211453_normal_run/.ralph/runs/2026-07-11_211453_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_211453_normal_run/.ralph/runs/2026-07-11_211453_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

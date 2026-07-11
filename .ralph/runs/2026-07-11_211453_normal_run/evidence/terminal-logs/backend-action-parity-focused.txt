@@ -1,0 +1,40 @@
+Creating test database for alias 'default'...
+Found 54 test(s).
+System check identified no issues (0 silenced).
+EE...................F...............................s
+======================================================================
+ERROR: test_eligibility_api (unittest.loader._FailedTest.test_eligibility_api)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_eligibility_api
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'sfpcl_credit.tests.test_eligibility_api'
+
+
+======================================================================
+ERROR: test_loan_limit_api (unittest.loader._FailedTest.test_loan_limit_api)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_loan_limit_api
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'sfpcl_credit.tests.test_loan_limit_api'
+
+
+======================================================================
+FAIL: test_owner_creates_and_reads_appraisal_with_linked_risk_and_tat (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_owner_creates_and_reads_appraisal_with_linked_risk_and_tat)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_211453_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 122, in test_owner_creates_and_reads_appraisal_with_linked_risk_and_tat
+    self.assertEqual(
+AssertionError: {'eli[527 chars]0:00', 'available_actions': [{'action_code': '[231 chars]ne}]} != {'eli[527 chars]0:00'}
+Diff is 1031 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 54 tests in 1.330s
+
+FAILED (failures=1, errors=2, skipped=1)
+Destroying test database for alias 'default'...

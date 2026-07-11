@@ -22,7 +22,7 @@ from sfpcl_credit.credit.modules.common import (
     require_application_access,
     require_permission,
 )
-from sfpcl_credit.credit.models import EligibilityAssessment, LoanLimitAssessment
+from sfpcl_credit.credit.models import EligibilityAssessment, LoanAppraisalNote, LoanLimitAssessment
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.members.models import (
     CropPlan,
@@ -75,11 +75,13 @@ class LoanLimitSnapshot:
 @dataclass(frozen=True)
 class LoanLimitAssessmentResult:
     projection: LoanLimitSnapshot
+    available_actions: tuple = ()
 
     @property
     def snapshot(self):
         snapshot = self.projection.as_dict()
         snapshot["warnings"] = _warnings(self.projection.exception_required_flag)
+        snapshot["available_actions"] = list(self.available_actions)
         return snapshot
 
 
@@ -110,7 +112,7 @@ class LoanLimitCalculator:
         )
         if assessment is None:
             raise CreditModuleNotFound("Loan-limit assessment was not found.")
-        return _result(assessment)
+        return _result(assessment, actor, permissions)
 
     @transaction.atomic
     def calculate_for_application(
@@ -143,6 +145,10 @@ class LoanLimitCalculator:
             LOAN_LIMIT_CALCULATE_PERMISSION,
             permissions,
         )
+        if LoanAppraisalNote.objects.filter(loan_application=application).exists():
+            raise CreditModuleInvalidStateError(
+                "Loan-limit calculation cannot be rerun after appraisal has started."
+            )
         if callable(payload):
             payload = payload()
         eligibility = (
@@ -245,11 +251,25 @@ class LoanLimitCalculator:
             trigger_reason="Source-backed loan limit calculated.",
             action_code=LOAN_LIMIT_CALCULATED_AUDIT_ACTION,
         )
-        return LoanLimitAssessmentResult(projection=projection)
+        return LoanLimitAssessmentResult(projection=projection, available_actions=tuple(_loan_limit_actions(application, actor, permissions)))
 
 
-def _result(assessment):
-    return LoanLimitAssessmentResult(projection=_projection(assessment))
+def _result(assessment, actor, permissions):
+    return LoanLimitAssessmentResult(projection=_projection(assessment), available_actions=tuple(_loan_limit_actions(assessment.loan_application, actor, permissions)))
+
+
+def _loan_limit_actions(application, actor, permissions):
+    permissions = set(permissions)
+    appraisal_started = LoanAppraisalNote.objects.filter(loan_application=application).exists()
+    calculate_enabled = not appraisal_started and LOAN_LIMIT_CALCULATE_PERMISSION in permissions
+    create_enabled = not appraisal_started and "credit.appraisal.create" in permissions and "credit.risk_assessment.manage" in permissions
+    def item(code, label, permission, enabled, reason):
+        return {"action_code": code, "label": label, "enabled": enabled, "disabled_reason": None if enabled else reason, "required_permission": permission, "required_role": None}
+    reason = "Unavailable after appraisal has started." if appraisal_started else "Required permission is missing."
+    return [
+        item(LOAN_LIMIT_CALCULATE_PERMISSION, "Calculate Loan Limit", LOAN_LIMIT_CALCULATE_PERMISSION, calculate_enabled, reason),
+        item("credit.appraisal.create", "Create Appraisal Draft", "credit.appraisal.create", create_enabled, reason),
+    ]
 
 
 def _projection(assessment):

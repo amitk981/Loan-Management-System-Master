@@ -98,3 +98,11 @@ Medium
   direction while moving controls back into the approved prototype composition.
 - The declared Playwright state matrix and self-contained screenshots are acceptance evidence, not
   optional local feedback; no sanction queue wiring or mock application state belongs here.
+
+## Run-Ahead Sharpening Review (006H6, 2026-07-11)
+
+- Preserve module-owned eligibility, loan-limit, and appraisal action projections; presentation
+  restoration must not recreate `_credit_action_snapshot` or any response-key action heuristic.
+- The current container awaits one canonical four-read reload after every successful mutation and
+  retains disabled six-field actions for their reasons. Visual movement must preserve both facts
+  and must keep response-only `available_actions` out of frozen appraisal/audit snapshots.

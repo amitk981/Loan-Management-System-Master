@@ -1,5 +1,15 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006H6 Workbench Action Projection
+
+- Eligibility, loan-limit, and appraisal public modules now attach the six-field resource action
+  projection; the applications HTTP adapter no longer infers actions from response keys.
+- Eligibility and loan-limit reruns are rejected and projected disabled after appraisal begins.
+  Appraisal actions retain state, permission, role, legacy-remediation, and risk-authority facts;
+  response-only actions are excluded from frozen prerequisite and audit snapshots.
+- React retains full action objects, displays disabled reasons, and awaits the canonical four-read
+  assessment/case reload after every successful mutation instead of synthesizing statuses.
+
 ## 006G5 Relative-Import Dependency Guard
 
 - The test-side AST resolver now canonicalizes `ast.ImportFrom.level` against each scanned source

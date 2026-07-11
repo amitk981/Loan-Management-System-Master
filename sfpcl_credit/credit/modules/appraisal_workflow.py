@@ -55,6 +55,39 @@ class AppraisalNoteResult:
     snapshot: dict
 
 
+def appraisal_available_actions(note, actor, permissions):
+    """Project the actions governed by this module's public transition predicates."""
+    permissions = set(permissions)
+    roles = set(actor.role_codes())
+
+    def action(code, label, permission, allowed, role=None, reason=None):
+        enabled = allowed and permission in permissions and (role is None or role in roles)
+        return {
+            "action_code": code,
+            "label": label,
+            "enabled": enabled,
+            "disabled_reason": None if enabled else reason or "Unavailable for this appraisal state or authority.",
+            "required_permission": permission,
+            "required_role": role,
+        }
+
+    state = note.appraisal_status
+    legacy = note.prerequisite_provenance == "legacy_unverified"
+    return [
+        action(APPRAISAL_UPDATE_PERMISSION, "Update Appraisal Draft", APPRAISAL_UPDATE_PERMISSION, state == LoanAppraisalNote.STATUS_DRAFT and RISK_MANAGE_PERMISSION in permissions),
+        action("revalidate_appraisal_prerequisites", "Revalidate Prerequisites", APPRAISAL_UPDATE_PERMISSION, legacy and state in {LoanAppraisalNote.STATUS_DRAFT, LoanAppraisalNote.STATUS_REVIEW_PENDING, LoanAppraisalNote.STATUS_REVIEWED} and RISK_MANAGE_PERMISSION in permissions),
+        action(APPRAISAL_SUBMIT_PERMISSION, "Submit for Credit Review", APPRAISAL_SUBMIT_PERMISSION, state == LoanAppraisalNote.STATUS_DRAFT and not legacy),
+        action(APPRAISAL_REVIEW_PERMISSION, "Record Credit Review", APPRAISAL_REVIEW_PERMISSION, state == LoanAppraisalNote.STATUS_REVIEW_PENDING, role="credit_manager"),
+        action(APPRAISAL_SANCTION_SUBMIT_PERMISSION, "Submit to Sanction Committee", APPRAISAL_SANCTION_SUBMIT_PERMISSION, state == LoanAppraisalNote.STATUS_REVIEWED, role="credit_manager"),
+    ]
+
+
+def _result_with_actions(note, actor, permissions, snapshot=None):
+    projected = dict(snapshot or appraisal_note_snapshot(note))
+    projected["available_actions"] = appraisal_available_actions(note, actor, permissions)
+    return AppraisalNoteResult(snapshot=projected)
+
+
 @dataclass(frozen=True)
 class ReviewedAppraisalHandoff:
     application: LoanApplication
@@ -119,6 +152,7 @@ class AppraisalWorkflow:
                     application_id=application_id,
                     actor_permissions=projection_permissions,
                 ).snapshot
+                eligibility = {key: value for key, value in eligibility.items() if key != "available_actions"}
             except CreditModuleNotFound as exc:
                 raise CreditModuleInvalidStateError(
                     "A stored eligible eligibility assessment is required before appraisal."
@@ -133,6 +167,7 @@ class AppraisalWorkflow:
                     application_id=application_id,
                     actor_permissions=projection_permissions,
                 ).snapshot
+                loan_limit = {key: value for key, value in loan_limit.items() if key != "available_actions"}
             except CreditModuleNotFound as exc:
                 raise CreditModuleInvalidStateError(
                     "A stored loan-limit assessment is required before appraisal."
@@ -216,7 +251,7 @@ class AppraisalWorkflow:
                 trigger_reason="Appraisal note draft updated.",
                 action_code="appraisal.updated",
             )
-            return AppraisalNoteResult(snapshot=appraisal_note_snapshot(current))
+            return _result_with_actions(current, actor, permissions)
         if current is not None:
             raise CreditModuleInvalidStateError(
                 "An appraisal note already exists for this loan application."
@@ -287,7 +322,7 @@ class AppraisalWorkflow:
             trigger_reason="Appraisal note draft created.",
             action_code="appraisal.created",
         )
-        return AppraisalNoteResult(snapshot=appraisal_note_snapshot(note))
+        return _result_with_actions(note, actor, permissions)
 
     def get(self, *, actor, application_id, actor_permissions=None):
         permissions = actor_permissions or auth_service.effective_permission_codes(actor)
@@ -321,7 +356,7 @@ class AppraisalWorkflow:
         )
         if note is None:
             raise CreditModuleNotFound("Appraisal note was not found.")
-        return AppraisalNoteResult(snapshot=appraisal_note_snapshot(note))
+        return _result_with_actions(note, actor, permissions)
 
     @transaction.atomic
     def submit_for_review(
@@ -397,7 +432,7 @@ class AppraisalWorkflow:
             trigger_reason="Appraisal note submitted for Credit Manager review.",
             action_code="appraisal.submitted_for_review",
         )
-        return AppraisalNoteResult(snapshot=appraisal_note_snapshot(note))
+        return _result_with_actions(note, actor, permissions)
 
     @transaction.atomic
     def revalidate_prerequisites(
@@ -450,6 +485,7 @@ class AppraisalWorkflow:
             application_id=note.loan_application_id,
             actor_permissions=projection_permissions,
         ).snapshot
+        eligibility = {key: value for key, value in eligibility.items() if key != "available_actions"}
         if eligibility["overall_result"] != "eligible":
             raise CreditModuleInvalidStateError(
                 "Revalidation requires eligibility overall_result eligible."
@@ -459,6 +495,7 @@ class AppraisalWorkflow:
             application_id=note.loan_application_id,
             actor_permissions=projection_permissions,
         ).snapshot
+        loan_limit = {key: value for key, value in loan_limit.items() if key != "available_actions"}
         prior_state = note.appraisal_status
         note.eligibility_assessment_id_snapshot = eligibility[
             "eligibility_assessment_id"
@@ -529,7 +566,7 @@ class AppraisalWorkflow:
             trigger_reason="Appraisal prerequisite projections revalidated.",
             action_code="appraisal.prerequisites_revalidated",
         )
-        return AppraisalNoteResult(snapshot=appraisal_note_snapshot(note))
+        return _result_with_actions(note, actor, permissions)
 
     @transaction.atomic
     def review(
@@ -701,7 +738,7 @@ class AppraisalWorkflow:
         snapshot = appraisal_note_snapshot(note)
         if rejection_note is not None:
             snapshot["rejection_note"] = rejection_note.snapshot
-        return AppraisalNoteResult(snapshot=snapshot)
+        return _result_with_actions(note, actor, permissions, snapshot)
 
     def prepare_sanction_handoff(
         self,

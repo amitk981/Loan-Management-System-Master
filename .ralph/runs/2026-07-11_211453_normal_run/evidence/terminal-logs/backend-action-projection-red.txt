@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_public_appraisal_module_projects_disabled_and_enabled_resource_actions (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_public_appraisal_module_projects_disabled_and_enabled_resource_actions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_211453_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 189, in test_public_appraisal_module_projects_disabled_and_enabled_resource_actions
+    actions = {item["action_code"]: item for item in snapshot["available_actions"]}
+                                                     ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'available_actions'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.026s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

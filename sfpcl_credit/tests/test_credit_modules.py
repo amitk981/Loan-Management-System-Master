@@ -518,6 +518,7 @@ class AppraisalWorkflow:
         )
         public_shared = dict(result.snapshot)
         public_shared.pop("warnings")
+        public_shared.pop("available_actions")
         audit_snapshot = AuditLog.objects.get(action="loan_limit.calculated").new_value_json
         self.assertEqual(audit_snapshot.pop("request_id"), "req-credit-module-loan-limit")
         self.assertEqual(audit_snapshot, public_shared)

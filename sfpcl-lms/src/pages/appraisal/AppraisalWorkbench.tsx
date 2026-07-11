@@ -12,7 +12,7 @@ import {
   calculateLoanLimit, createAppraisal, fetchAppraisal, fetchEligibilityAssessment,
   fetchLoanLimitAssessment, fetchSanctionCase, projectAppraisalDraft, revalidateAppraisalPrerequisites, reviewAppraisal,
   runEligibilityAssessment, submitAppraisalForReview, submitAppraisalToSanction, updateAppraisal,
-  type AppraisalDraft, type AppraisalNote, type EligibilityAssessment,
+  type AppraisalDraft, type AppraisalNote, type AvailableAction, type EligibilityAssessment,
   type LoanLimitAssessment, type ReviewRequest, type SanctionSubmission,
 } from '../../services/creditAssessmentApi';
 
@@ -28,7 +28,7 @@ interface ViewProps {
   status: ViewStatus; message: string; messageType?: 'success' | 'error'; applications: StaffApplication[];
   selectedApplication: StaffApplication | null; eligibility: EligibilityAssessment | null;
   loanLimit: LoanLimitAssessment | null; appraisal: AppraisalNote | null;
-  sanctionSubmission: SanctionSubmission | null; permissions: string[]; roleCodes: string[]; availableActions?: string[];
+  sanctionSubmission: SanctionSubmission | null; permissions: string[]; roleCodes: string[]; availableActions?: AvailableAction[];
   form: AppraisalDraft; limitForm?: LimitForm; remarks?: string; reviewDecision?: ReviewRequest['decision'];
   rejectionCategory?: string; rejectionMode?: string; detailedReason?: string; reapplyAllowed?: boolean;
   onSelect: (id: string) => void; onField: (field: string, value: unknown) => void;
@@ -44,8 +44,9 @@ export const AppraisalWorkbenchView: React.FC<ViewProps> = props => {
   const app = props.selectedApplication; const note = props.appraisal;
   const permissions = props.permissions; const manager = props.roleCodes.includes('credit_manager');
   const serverAllows = (action: Action) => action === 'save'
-    ? (props.availableActions ?? []).some(code => code === 'credit.appraisal.create' || code === 'credit.appraisal.update')
-    : (props.availableActions ?? []).includes(actionCodes[action]);
+    ? (props.availableActions ?? []).some(item => item.enabled && (item.action_code === 'credit.appraisal.create' || item.action_code === 'credit.appraisal.update'))
+    : (props.availableActions ?? []).some(item => item.enabled && item.action_code === actionCodes[action]);
+  const disabledReasons = (props.availableActions ?? []).filter(item => !item.enabled && item.disabled_reason);
   const canCreate = !note && serverAllows('save') && has(permissions, 'credit.appraisal.create') && has(permissions, 'credit.risk_assessment.manage');
   const canEdit = note?.appraisal_status === 'draft' && serverAllows('save') && has(permissions, 'credit.appraisal.update') && has(permissions, 'credit.risk_assessment.manage');
   const canSubmit = note?.appraisal_status === 'draft' && serverAllows('submit-review') && has(permissions, 'credit.appraisal.submit_review');
@@ -64,6 +65,7 @@ export const AppraisalWorkbenchView: React.FC<ViewProps> = props => {
     <div className="p-6 space-y-4">
       <div><h1 className="text-xl font-bold text-slate-900">Appraisal Workbench</h1><p className="text-sm text-slate-500 mt-0.5">{props.applications.length} API-backed application{props.applications.length === 1 ? '' : 's'} in the workbench</p></div>
       {props.message && <AlertBanner type={props.sanctionSubmission || props.messageType === 'success' ? 'success' : 'error'} title={props.sanctionSubmission ? 'Submitted to Sanction Committee' : props.messageType === 'success' ? 'Action updated' : 'Action failed'} message={props.message} />}
+      {disabledReasons.length > 0 && <AlertBanner type="info" title="Unavailable actions" message={disabledReasons.map(item => `${item.label ?? item.action_code}: ${item.disabled_reason}`).join(' · ')} />}
       {props.sanctionSubmission && <AlertBanner type="success" title="Pending sanction case created" message={`Case ${props.sanctionSubmission.approval_case_id} · ${props.sanctionSubmission.submission_status}.`} />}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="card p-0 overflow-hidden lg:col-span-1">
@@ -213,13 +215,14 @@ const AppraisalWorkbench: React.FC<{ onOpenApplication: (id: string) => void; in
   const action = async (name: Action) => {
     if (!selectedId) return; setMessage(''); setMessageType('error');
     try {
-      if (name === 'eligibility') setEligibility(await runEligibilityAssessment(selectedId));
-      if (name === 'limit') setLoanLimit(await calculateLoanLimit(selectedId, { ...limitForm, land_holding_ids: limitForm.land_holding_ids.split(',').map(id => id.trim()).filter(Boolean) }));
-      if (name === 'save') { const result = appraisal ? await updateAppraisal(selectedId, projectAppraisalDraft(form)) : await createAppraisal(selectedId, projectAppraisalDraft(form)); setAppraisal(result); setForm(projectAppraisalDraft(result)); }
-      if (name === 'revalidate' && appraisal) setAppraisal(await revalidateAppraisalPrerequisites(appraisal.loan_appraisal_note_id));
-      if (name === 'submit-review' && appraisal) setAppraisal(await submitAppraisalForReview(appraisal.loan_appraisal_note_id, { remarks }));
-      if (name === 'review' && appraisal) setAppraisal(await reviewAppraisal(appraisal.loan_appraisal_note_id, { decision: reviewDecision, review_comments: remarks, ...(reviewDecision === 'rejected' ? { rejection_reason_category: rejectionCategory, detailed_reason: detailedReason, reapply_allowed_flag: reapplyAllowed, communication_mode: rejectionMode } : {}) }));
-      if (name === 'sanction') { const result = await submitAppraisalToSanction(selectedId, { remarks }); setSanction(result); if (result.appraisal_status) setAppraisal(current => current ? { ...current, appraisal_status: result.appraisal_status! } : current); if (result.application_status) setApplications(current => current.map(item => item.loan_application_id === selectedId ? { ...item, application_status: result.application_status! } : item)); }
+      if (name === 'eligibility') await runEligibilityAssessment(selectedId);
+      if (name === 'limit') await calculateLoanLimit(selectedId, { ...limitForm, land_holding_ids: limitForm.land_holding_ids.split(',').map(id => id.trim()).filter(Boolean) });
+      if (name === 'save') await (appraisal ? updateAppraisal(selectedId, projectAppraisalDraft(form)) : createAppraisal(selectedId, projectAppraisalDraft(form)));
+      if (name === 'revalidate' && appraisal) await revalidateAppraisalPrerequisites(appraisal.loan_appraisal_note_id);
+      if (name === 'submit-review' && appraisal) await submitAppraisalForReview(appraisal.loan_appraisal_note_id, { remarks });
+      if (name === 'review' && appraisal) await reviewAppraisal(appraisal.loan_appraisal_note_id, { decision: reviewDecision, review_comments: remarks, ...(reviewDecision === 'rejected' ? { rejection_reason_category: rejectionCategory, detailed_reason: detailedReason, reapply_allowed_flag: reapplyAllowed, communication_mode: rejectionMode } : {}) });
+      if (name === 'sanction') await submitAppraisalToSanction(selectedId, { remarks });
+      await loadAssessments(selectedId);
       setMessageType('success'); setMessage(name === 'sanction' ? 'The server created a pending sanction case.' : 'Stored server state updated.');
     } catch (error) { setMessageType('error'); setMessage(errorText(error)); }
   };
@@ -229,7 +232,7 @@ const AppraisalWorkbench: React.FC<{ onOpenApplication: (id: string) => void; in
     ...(loanLimit?.available_actions ?? []),
     ...(appraisal?.available_actions ?? []),
     ...(sanction?.available_actions ?? []),
-  ].filter(action => action.enabled).map(action => action.action_code);
+  ];
   return <AppraisalWorkbenchView status={status} message={message} messageType={messageType} applications={applications} selectedApplication={applications.find(item => item.loan_application_id === selectedId) ?? null} eligibility={eligibility} loanLimit={loanLimit} appraisal={appraisal} sanctionSubmission={sanction} permissions={currentUser.permissions} roleCodes={currentUser.roleCodes} availableActions={availableActions} form={form} limitForm={limitForm} remarks={remarks} reviewDecision={reviewDecision} rejectionCategory={rejectionCategory} rejectionMode={rejectionMode} detailedReason={detailedReason} reapplyAllowed={reapplyAllowed} onSelect={select} onField={field} onAction={action} onOpenApplication={onOpenApplication} />;
 };
 

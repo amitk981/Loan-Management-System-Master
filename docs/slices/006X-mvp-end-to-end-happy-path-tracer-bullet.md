@@ -117,3 +117,10 @@ High
 - [ ] Handoff updated
 - [ ] State updated
 - [ ] Commit created only after passing gates
+
+## Run-Ahead Sharpening Review (006H6, 2026-07-11)
+
+- Treat disabled actions as first-class response facts: assert their exact reason, permission, and
+  role before the cross-role happy path consumes the enabled counterpart.
+- Each successful UI mutation must be followed by exactly the eligibility, loan-limit, appraisal,
+  and sanction-case reads; stale `409` proof remains one mutation with no retry or refresh.

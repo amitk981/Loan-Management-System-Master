@@ -6,7 +6,7 @@ from django.utils import timezone
 from sfpcl_credit.applications.modules.nominee_validation import evaluate_nominee_selection
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.applications.services import build_completeness_workbench
-from sfpcl_credit.credit.models import EligibilityAssessment
+from sfpcl_credit.credit.models import EligibilityAssessment, LoanAppraisalNote
 from sfpcl_credit.credit.modules.common import (
     APPLICATION_READ_PERMISSION,
     ELIGIBILITY_RUN_PERMISSION,
@@ -54,7 +54,7 @@ class EligibilityAssessmentModule:
             raise CreditModuleNotFound("Eligibility assessment was not found.")
         return EligibilityAssessmentResult(
             assessment=assessment,
-            snapshot=eligibility_assessment_snapshot(assessment),
+            snapshot=_snapshot_with_actions(assessment, application, actor, permissions),
         )
 
     @transaction.atomic
@@ -124,11 +124,13 @@ class EligibilityAssessmentModule:
         )
         return EligibilityAssessmentResult(
             assessment=assessment,
-            snapshot=eligibility_assessment_snapshot(assessment),
+            snapshot=_snapshot_with_actions(assessment, application, actor, permissions),
         )
 
 
 def eligibility_run_invalid_state_message(application):
+    if LoanAppraisalNote.objects.filter(loan_application=application).exists():
+        return "Eligibility assessment cannot be rerun after appraisal has started."
     if not (application.application_reference_number or "").startswith("LO"):
         return "Eligibility assessment requires a formal LO application reference."
     if application.application_status != LoanApplication.STATUS_REFERENCE_GENERATED:
@@ -141,6 +143,21 @@ def eligibility_run_invalid_state_message(application):
     if application.current_stage != LoanApplication.STAGE_CREDIT_ASSESSMENT:
         return "Eligibility assessment is allowed only in credit assessment stage."
     return None
+
+
+def _snapshot_with_actions(assessment, application, actor, permissions):
+    snapshot = eligibility_assessment_snapshot(assessment)
+    allowed = eligibility_run_invalid_state_message(application) is None
+    enabled = allowed and ELIGIBILITY_RUN_PERMISSION in permissions
+    snapshot["available_actions"] = [{
+        "action_code": ELIGIBILITY_RUN_PERMISSION,
+        "label": "Run Eligibility Assessment",
+        "enabled": enabled,
+        "disabled_reason": None if enabled else eligibility_run_invalid_state_message(application) or "You do not have permission to run eligibility assessments.",
+        "required_permission": ELIGIBILITY_RUN_PERMISSION,
+        "required_role": None,
+    }]
+    return snapshot
 
 
 def eligibility_assessment_snapshot(assessment):

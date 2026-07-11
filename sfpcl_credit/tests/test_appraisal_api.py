@@ -15,6 +15,7 @@ from django.utils import timezone
 
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.credit.models import EligibilityAssessment, LoanLimitAssessment
+from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import Member
 from sfpcl_credit.tests.api_contracts import assert_success_envelope
@@ -172,6 +173,27 @@ class AppraisalApiTests(TestCase):
         self.assertNotIn("Active individual", workflow.trigger_reason)
         self.assertEqual(AuditLog.objects.filter(action__startswith="appraisal.").count(), 1)
         self.assertEqual(WorkflowEvent.objects.filter(workflow_name="appraisal_note").count(), 1)
+
+    def test_public_appraisal_module_projects_disabled_and_enabled_resource_actions(self):
+        created = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
+            data=self._payload(),
+            content_type="application/json",
+            headers=self._headers(),
+        ).json()["data"]
+
+        snapshot = AppraisalWorkflow().get(
+            actor=self.actor,
+            application_id=self.application.pk,
+        ).snapshot
+        actions = {item["action_code"]: item for item in snapshot["available_actions"]}
+
+        self.assertTrue(actions["credit.appraisal.update"]["enabled"])
+        self.assertTrue(actions["credit.appraisal.submit_review"]["enabled"])
+        self.assertFalse(actions["credit.appraisal.review"]["enabled"])
+        self.assertEqual(actions["credit.appraisal.review"]["required_role"], "credit_manager")
+        self.assertIsNotNone(actions["credit.appraisal.review"]["disabled_reason"])
+        self.assertEqual(created["loan_appraisal_note_id"], snapshot["loan_appraisal_note_id"])
 
     def test_patch_updates_only_supplied_draft_fields_and_preserves_due_time(self):
         created = self.client.post(
