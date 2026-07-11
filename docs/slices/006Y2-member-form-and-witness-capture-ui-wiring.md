@@ -50,6 +50,15 @@ Medium
 - A member can be created and corrected, and witnesses captured, end to end through the UI with audit trails.
 - All gates pass; screenshots of forms, locked-field state, witness panel, and unauthorized state saved.
 
+## Run-Ahead Sharpening Review (006X, 2026-07-11)
+
+- Mount the real directory/profile/application-detail containers in interaction tests: assert
+  exact member POST/PATCH and witness create/update bodies, then refresh from their canonical GET
+  endpoints rather than merging response facts into local state.
+- Treat backend identity-lock and stale-write errors as authoritative field/state facts. A global
+  permission from `/auth/me` must not expose mutation controls when the selected member or witness
+  resource disables the action; retain the existing directory/profile/witness panel composition.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

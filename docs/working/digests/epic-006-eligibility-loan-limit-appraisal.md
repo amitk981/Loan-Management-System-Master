@@ -1,5 +1,16 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006X End-to-End Closure
+
+- A public HTTP integration tracer now keeps one application, eligibility assessment, loan-limit
+  assessment, appraisal, review-decision, workflow event, and pending approval-case chain linked by
+  exact UUIDs across Deputy Manager Finance and Credit Manager sessions.
+- The in-limit path finishes at `submitted_to_sanction_committee` with one pending case and no
+  committee decision. Preparer review, review-only sanction, and sanction-before-reviewed attempts
+  are denied; repeat sanction submission returns `409` without increasing case/audit/event counts.
+- Focused 006H Playwright collection declares reviewed and pending-sanction evidence. Local browser
+  startup remains sandbox-denied; independent browser validation decides screenshot acceptance.
+
 ## Architecture Review 2026-07-11 21:34 - Action Parity and Container Closure
 
 - 006G5 is verified closed: absolute/relative/aliased/wildcard/package imports receive the same

@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_epic_006_cross_role_happy_path_reaches_one_pending_sanction_case (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_epic_006_cross_role_happy_path_reaches_one_pending_sanction_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_225010_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 4045, in test_epic_006_cross_role_happy_path_reaches_one_pending_sanction_case
+    self.fail("RED: Epic 006 public-boundary tracer is not implemented yet")
+AssertionError: RED: Epic 006 public-boundary tracer is not implemented yet
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

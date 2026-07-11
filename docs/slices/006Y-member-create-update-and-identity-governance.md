@@ -53,6 +53,15 @@ High
 - Member create/update works only through the governed contract with history and locking enforced server-side.
 - All gates pass; API request/response examples saved with synthetic data.
 
+## Run-Ahead Sharpening Review (006X, 2026-07-11)
+
+- Preserve the existing `GET /api/v1/members/` and `GET /api/v1/members/{member_id}/` envelopes
+  while adding POST/PATCH; use the same canonical member UUID and object-scope projection across
+  create, update, history, audit, and reverification responses.
+- Tests must prove a denied verified-identity mutation writes neither member state nor change
+  history, while the explicit reverification transition records actor, reason ownership, masked
+  before/after identity facts, and the resulting KYC status atomically.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

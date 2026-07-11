@@ -4041,6 +4041,226 @@ class LoanApplicationDraftApiTests(TestCase):
                 assert_error_envelope(self, body, "VALIDATION_ERROR")
                 self.assertIn(field, body["error"]["field_errors"])
 
+    def test_epic_006_cross_role_happy_path_reaches_one_pending_sanction_case(self):
+        appraisal_permissions = [
+            self._permission("credit.appraisal.create", "Create appraisal"),
+            self._permission("credit.appraisal.update", "Update appraisal"),
+            self._permission("credit.appraisal.submit_review", "Submit appraisal review"),
+            self._permission("credit.risk_assessment.manage", "Manage risk assessment"),
+        ]
+        self.creator.primary_role.role_code = "deputy_manager_finance"
+        self.creator.primary_role.role_name = "Deputy Manager Finance"
+        self.creator.primary_role.save(update_fields=["role_code", "role_name"])
+        for permission in appraisal_permissions:
+            RolePermission.objects.create(role=self.creator.primary_role, permission=permission)
+        review_permission = self._permission("credit.appraisal.review", "Review appraisal")
+        sanction_permission = self._permission(
+            "credit.appraisal.submit_sanction", "Submit appraisal to sanction"
+        )
+        reviewer = self._user(
+            "credit.manager.tracer@sfpcl.example",
+            "CreditManagerTracer123!",
+            self.read_permission,
+            review_permission,
+            role_code="credit_manager",
+        )
+
+        self.member.active_member_status = "active"
+        self.member.active_member_verified_at = timezone.now()
+        self.member.save(update_fields=["active_member_status", "active_member_verified_at"])
+        application_id = self._reference_generated_application(
+            terms_acceptance_flag=True,
+            required_loan_amount="15000.00",
+        )
+        self._create_nominee(application_id)
+        preparer_headers = self._headers(
+            "applications.creator@sfpcl.example", "CreatorPass123!"
+        )
+        eligibility_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
+            data={}, content_type="application/json", headers=preparer_headers,
+        )
+        self.assertEqual(eligibility_response.status_code, 200)
+        eligibility = eligibility_response.json()["data"]
+        self.assertEqual(eligibility["overall_result"], "eligible")
+
+        shareholding = Shareholding.objects.create(
+            member=self.member,
+            folio_number=self.member.folio_number,
+            number_of_shares=100,
+            holding_mode="physical",
+            valuation_per_share="2000.00",
+            valuation_effective_date=timezone.localdate(),
+            pledged_share_count=0,
+            available_share_count=100,
+            status="active",
+        )
+        self._active_loan_policy(
+            share_limit_percentage="10.0000", per_share_cap_amount="200.00"
+        )
+        limit_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/loan-limit-assessment/calculate/",
+            data={
+                "shareholding_id": str(shareholding.shareholding_id),
+                "land_holding_ids": [str(self.land.land_holding_id)],
+                "crop_plan_id": str(self.crop.crop_plan_id),
+                "requested_amount": "15000.00",
+                "calculation_date": timezone.localdate().isoformat(),
+            },
+            content_type="application/json",
+            headers=preparer_headers,
+        )
+        self.assertEqual(limit_response.status_code, 200)
+        loan_limit = limit_response.json()["data"]
+        self.assertTrue(loan_limit["amount_within_limit_flag"])
+        self.assertFalse(loan_limit["exception_required_flag"])
+
+        writable = {
+            "borrower_summary": "Verified member and complete application.",
+            "eligibility_summary": "All stored eligibility checks passed.",
+            "loan_limit_summary": "Requested amount is within the frozen limit.",
+            "recommended_amount": "15000.00",
+            "recommended_tenure_months": 12,
+            "recommended_interest_type": "floating",
+            "recommended_security_summary": "Existing verified security facts reviewed.",
+            "repayment_capacity_notes": "Seasonal crop proceeds cover repayment.",
+            "risk_assessment": {
+                "market_risk_rating": "low",
+                "operational_risk_rating": "low",
+                "borrower_risk_rating": "low",
+                "overall_risk_rating": "low",
+                "risk_mitigation_notes": "Monitor the stored crop cycle.",
+            },
+            "recommendation": "approve",
+        }
+        create_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/appraisal-note/",
+            data=writable, content_type="application/json", headers=preparer_headers,
+        )
+        self.assertEqual(create_response.status_code, 200)
+        appraisal = create_response.json()["data"]
+        self.assertEqual(appraisal["eligibility_assessment_id"], eligibility["eligibility_assessment_id"])
+        self.assertEqual(appraisal["loan_limit_assessment_id"], loan_limit["loan_limit_assessment_id"])
+        appraisal_id = appraisal["loan_appraisal_note_id"]
+
+        patch_response = self.client.patch(
+            f"/api/v1/loan-applications/{application_id}/appraisal-note/",
+            data=writable, content_type="application/json", headers=preparer_headers,
+        )
+        self.assertEqual(patch_response.status_code, 200)
+        submit_review = self.client.post(
+            f"/api/v1/appraisal-notes/{appraisal_id}/submit-for-review/",
+            data={"remarks": "Ready for independent review."},
+            content_type="application/json", headers=preparer_headers,
+        )
+        self.assertEqual(submit_review.status_code, 200)
+
+        RolePermission.objects.create(role=reviewer.primary_role, permission=sanction_permission)
+        reviewer_headers = self._headers(
+            "credit.manager.tracer@sfpcl.example", "CreditManagerTracer123!"
+        )
+        premature_sanction = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/submit-to-sanction-committee/",
+            data={"remarks": "Reviewed state must not be bypassed."},
+            content_type="application/json", headers=reviewer_headers,
+        )
+        self.assertEqual(premature_sanction.status_code, 409)
+        self.assertEqual(
+            premature_sanction.json()["error"]["code"], "INVALID_STATE_TRANSITION"
+        )
+        RolePermission.objects.filter(
+            role=reviewer.primary_role, permission=sanction_permission
+        ).delete()
+
+        preparer_review = self.client.post(
+            f"/api/v1/appraisal-notes/{appraisal_id}/review/",
+            data={"decision": "reviewed", "review_comments": "Must be denied."},
+            content_type="application/json", headers=preparer_headers,
+        )
+        self.assertEqual(preparer_review.status_code, 403)
+        reviewer_headers = self._headers(
+            "credit.manager.tracer@sfpcl.example", "CreditManagerTracer123!"
+        )
+        reviewed_response = self.client.post(
+            f"/api/v1/appraisal-notes/{appraisal_id}/review/",
+            data={"decision": "reviewed", "review_comments": "Independent review complete."},
+            content_type="application/json", headers=reviewer_headers,
+        )
+        self.assertEqual(reviewed_response.status_code, 200)
+        reviewed = reviewed_response.json()["data"]
+        decision_id = reviewed["review_history"][-1]["appraisal_review_decision_id"]
+
+        sanction_url = f"/api/v1/loan-applications/{application_id}/submit-to-sanction-committee/"
+        review_only_denied = self.client.post(
+            sanction_url,
+            data={"remarks": "Permission boundary proof."},
+            content_type="application/json", headers=reviewer_headers,
+        )
+        self.assertEqual(review_only_denied.status_code, 403)
+        RolePermission.objects.create(role=reviewer.primary_role, permission=sanction_permission)
+        reviewer_headers = self._headers(
+            "credit.manager.tracer@sfpcl.example", "CreditManagerTracer123!"
+        )
+        sanction_response = self.client.post(
+            sanction_url,
+            data={"remarks": "Reviewed package ready for committee."},
+            content_type="application/json", headers=reviewer_headers,
+        )
+        self.assertEqual(sanction_response.status_code, 200)
+        sanction = sanction_response.json()["data"]
+        self.assertEqual(sanction["loan_application_id"], str(application_id))
+        self.assertEqual(sanction["loan_appraisal_note_id"], appraisal_id)
+        self.assertEqual(sanction["appraisal_review_decision_id"], decision_id)
+        self.assertEqual(sanction["submission_status"], "pending")
+        self.assertFalse(sanction["exception_required_flag"])
+        self.assertEqual(sanction["application_status"], "submitted_to_sanction_committee")
+        self.assertEqual(sanction["appraisal_status"], "submitted_to_sanction_committee")
+
+        readback = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/sanction-case/",
+            headers=reviewer_headers,
+        )
+        self.assertEqual(readback.status_code, 200)
+        self.assertEqual(readback.json()["data"], sanction)
+        approval_case_model = apps.get_model("approvals", "ApprovalCase")
+        counts = (
+            approval_case_model.objects.count(),
+            AuditLog.objects.filter(action="appraisal.submitted_to_sanction").count(),
+            WorkflowEvent.objects.filter(workflow_name="sanction_submission").count(),
+        )
+        repeated = self.client.post(
+            sanction_url,
+            data={"remarks": "Must remain idempotent."},
+            content_type="application/json", headers=reviewer_headers,
+        )
+        self.assertEqual(repeated.status_code, 409)
+        self.assertEqual(repeated.json()["error"]["code"], "INVALID_STATE_TRANSITION")
+        self.assertEqual(
+            counts,
+            (
+                approval_case_model.objects.count(),
+                AuditLog.objects.filter(action="appraisal.submitted_to_sanction").count(),
+                WorkflowEvent.objects.filter(workflow_name="sanction_submission").count(),
+            ),
+        )
+        evidence = " ".join(
+            str(value)
+            for audit in AuditLog.objects.filter(
+                action__in=[
+                    "eligibility.assessed", "loan_limit.calculated",
+                    "appraisal.submitted_for_review", "appraisal.reviewed",
+                    "appraisal.submitted_to_sanction",
+                ]
+            )
+            for value in (audit.old_value_json, audit.new_value_json)
+        )
+        for free_text in (
+            writable["borrower_summary"], writable["risk_assessment"]["risk_mitigation_notes"],
+            "Ready for independent review.", "Independent review complete.",
+            "Reviewed package ready for committee.",
+        ):
+            self.assertNotIn(free_text, evidence)
+
     def _draft_payload(self, **overrides):
         payload = {
             "member_id": str(self.member.member_id),
