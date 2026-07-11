@@ -5,6 +5,7 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
 source "$repo_root/scripts/lib/ralph-exit-protocol.sh"
 source "$repo_root/scripts/lib/ralph-postgresql-acceptance.sh"
+source "$repo_root/scripts/lib/ralph-slice-selection.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -56,13 +57,14 @@ select_slice() {
     found="$(find docs/slices -maxdepth 1 -type f -name "${selected_slice}*.md" | sort | head -n 1)"
     [[ -n "$found" ]] && basename "$found" && return
   fi
-  local file status
+  local file unmet
   for file in $(find docs/slices -maxdepth 1 -type f -name '*.md' | sort); do
-    status="$(awk '/^## Status/ { getline; print; exit }' "$file")"
-    if [[ "$status" == "Not Started" ]]; then
+    [[ "$(ralph_slice_status "$file")" == "Not Started" ]] || continue
+    if unmet="$(ralph_slice_unmet_dependencies "$file")"; then
       basename "$file"
       return
     fi
+    echo "Skipping $(basename "$file" .md): waiting on $(printf '%s' "$unmet" | tr '\n' ' ' | sed 's/ $//')" >&2
   done
 }
 
@@ -72,7 +74,22 @@ if [[ "$mode" == "architecture_review" ]]; then
 else
   slice_file="$(select_slice || true)"
   if [[ -z "$slice_file" ]]; then
+    pending_slices="$(ralph_pending_slices)"
     mkdir -p "$run_dir"
+    if [[ -n "$pending_slices" ]]; then
+      {
+        echo "# Final Summary"
+        echo
+        echo "Result: Blocked — Dependency-Blocked Queue"
+        echo
+        echo "Not Started slices remain, but every one is waiting on an unmet Depends On"
+        echo "prerequisite (missing prerequisite slice or dependency cycle):"
+        echo
+        printf -- '- %s\n' $pending_slices
+      } > "$run_dir/final-summary.md"
+      echo "Queue blocked: Not Started slices remain but none has its dependencies met." >&2
+      exit "$RALPH_EXIT_QUEUE_BLOCKED"
+    fi
     cat > "$run_dir/final-summary.md" <<'EOF'
 # Final Summary
 

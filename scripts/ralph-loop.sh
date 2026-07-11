@@ -125,6 +125,11 @@ for ((i = 1; i <= max_iterations; i++)); do
       echo "Queue complete: no eligible slices remain. Ralph loop finished." | tee -a "$loop_log"
       exit 0
       ;;
+    queue_blocked)
+      echo "Stopping: Not Started slices remain but every one is waiting on an unmet Depends On prerequisite (missing slice or dependency cycle)." | tee -a "$loop_log"
+      echo "See the Skipping lines above and the latest .ralph/runs/ final-summary.md, fix the Depends On graph, then rerun the loop." | tee -a "$loop_log"
+      exit 2
+      ;;
     owner_veto)
       echo "Stopping: the next slice is vetoed. Remove the [revoked] line or run another slice with --slice." | tee -a "$loop_log"
       exit 2

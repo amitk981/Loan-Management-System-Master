@@ -262,4 +262,65 @@ if kill -0 "$grandchild_pid" 2>/dev/null; then
   fail "validation watchdog left descendant process $grandchild_pid running"
 fi
 
+[[ "$(ralph_outcome_for_status "$RALPH_EXIT_QUEUE_BLOCKED")" == "queue_blocked" ]] \
+  || fail "queue-blocked status misclassified"
+
+[[ -f scripts/lib/ralph-slice-selection.sh ]] || fail "missing dependency-aware slice selection helpers"
+# shellcheck source=../lib/ralph-slice-selection.sh
+source scripts/lib/ralph-slice-selection.sh
+
+slices_fixture="$fixture_dir/slices"
+mkdir -p "$slices_fixture"
+make_fixture_slice() {
+  local id="$1" status="$2"
+  shift 2
+  {
+    echo "# Slice $id: Fixture"
+    echo
+    echo "## Status"
+    echo "$status"
+    echo
+    echo "## Depends On"
+    if (( $# == 0 )); then
+      echo "- None"
+    else
+      printf -- '- %s\n' "$@"
+    fi
+    echo "Prose commentary in this section must never be parsed as a dependency."
+  } > "$slices_fixture/$id-fixture.md"
+}
+make_fixture_slice 001A Complete
+make_fixture_slice 001B "Not Started" "001A (annotation text after the id)"
+make_fixture_slice 001C "Not Started" 001D
+make_fixture_slice 001D "Not Started"
+make_fixture_slice 001E "Not Started" 009Z
+make_fixture_slice 001F Superseded
+make_fixture_slice 001G "Not Started" 001F
+
+[[ "$(ralph_slice_status "$slices_fixture/001A-fixture.md")" == "Complete" ]] \
+  || fail "slice status helper misread a Complete slice"
+[[ "$(ralph_slice_dependencies "$slices_fixture/001B-fixture.md")" == "001A" ]] \
+  || fail "annotated dependency entry did not parse to its bare id"
+[[ -z "$(ralph_slice_dependencies "$slices_fixture/001D-fixture.md")" ]] \
+  || fail "'- None' was parsed as a real dependency"
+
+ralph_slice_unmet_dependencies "$slices_fixture/001B-fixture.md" "$slices_fixture" >/dev/null \
+  || fail "slice with a Complete dependency was reported blocked"
+ralph_slice_unmet_dependencies "$slices_fixture/001G-fixture.md" "$slices_fixture" >/dev/null \
+  || fail "slice with a Superseded dependency was reported blocked"
+if unmet="$(ralph_slice_unmet_dependencies "$slices_fixture/001C-fixture.md" "$slices_fixture")"; then
+  fail "slice with a Not Started dependency was reported grabbable"
+fi
+[[ "$unmet" == "001D" ]] || fail "unmet dependency id was not reported (got: $unmet)"
+if unmet="$(ralph_slice_unmet_dependencies "$slices_fixture/001E-fixture.md" "$slices_fixture")"; then
+  fail "slice with a dangling dependency reference was reported grabbable"
+fi
+[[ "$unmet" == 009Z* ]] || fail "dangling dependency was not surfaced (got: $unmet)"
+
+[[ "$(ralph_pending_slices "$slices_fixture")" == "001B-fixture.md
+001C-fixture.md
+001D-fixture.md
+001E-fixture.md
+001G-fixture.md" ]] || fail "pending-slice listing did not return Not Started slices in queue order"
+
 echo "PASS: Ralph workflow regressions"

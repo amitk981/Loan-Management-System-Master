@@ -34,7 +34,7 @@ The owner granted standing approval for autonomous runs (2026-07-02). Agents nev
 Note on agent approval mode: codex runs headless (`exec` mode, approval mode `never`) because nobody is at the terminal during AFK runs. The human safety control is the orchestrator-level high-risk gate plus quality gates and this runbook — not interactive prompts.
 
 ## Slice Selection
-Use `.ralph/state.json` first. If architecture review is due, run it unless explicitly overridden. If the previous run failed, prefer repair. Otherwise choose the lowest-numbered `Not Started` slice.
+Use `.ralph/state.json` first. If architecture review is due, run it unless explicitly overridden. If the previous run failed, prefer repair. Otherwise choose the lowest-numbered `Not Started` slice whose `## Depends On` prerequisites are all `Complete` or `Superseded` (the to-issues standard: a slice is grabbable only when its blockers are done). The orchestrator (`select_slice` in `scripts/ralph-run.sh`) enforces this and skips dependency-blocked slices, so never start a slice whose prerequisites are unmet — if the orchestrator hands you one anyway, that is a defect; stop and report rather than no-op. If every remaining slice is blocked, the run exits `queue_blocked` for human review instead of claiming the queue is empty.
 
 ## Quality Gates
 Enforced by `scripts/ralph-validate.sh` on every run:
