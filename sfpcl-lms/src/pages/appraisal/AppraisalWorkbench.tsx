@@ -224,7 +224,12 @@ const AppraisalWorkbench: React.FC<{ onOpenApplication: (id: string) => void; in
     } catch (error) { setMessageType('error'); setMessage(errorText(error)); }
   };
 
-  const availableActions = [...currentUser.availableActions, ...[...(appraisal?.available_actions ?? []), ...(sanction?.available_actions ?? [])].filter(action => action.enabled).map(action => action.action_code)];
+  const availableActions = [
+    ...(eligibility?.available_actions ?? []),
+    ...(loanLimit?.available_actions ?? []),
+    ...(appraisal?.available_actions ?? []),
+    ...(sanction?.available_actions ?? []),
+  ].filter(action => action.enabled).map(action => action.action_code);
   return <AppraisalWorkbenchView status={status} message={message} messageType={messageType} applications={applications} selectedApplication={applications.find(item => item.loan_application_id === selectedId) ?? null} eligibility={eligibility} loanLimit={loanLimit} appraisal={appraisal} sanctionSubmission={sanction} permissions={currentUser.permissions} roleCodes={currentUser.roleCodes} availableActions={availableActions} form={form} limitForm={limitForm} remarks={remarks} reviewDecision={reviewDecision} rejectionCategory={rejectionCategory} rejectionMode={rejectionMode} detailedReason={detailedReason} reapplyAllowed={reapplyAllowed} onSelect={select} onField={field} onAction={action} onOpenApplication={onOpenApplication} />;
 };
 

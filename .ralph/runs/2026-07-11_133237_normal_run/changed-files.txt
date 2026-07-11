@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006H4-workbench-authoritative-actions-and-container-tests.md
+ M docs/slices/006X-mvp-end-to-end-happy-path-tracer-bullet.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.test.tsx
+ M sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx
+ M sfpcl-lms/src/services/creditAssessmentApi.ts
+ M sfpcl_credit/applications/views.py
+ M sfpcl_credit/tests/test_appraisal_api.py
+?? .ralph/runs/2026-07-11_133237_normal_run/

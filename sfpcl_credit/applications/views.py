@@ -25,6 +25,44 @@ from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.workflows.guard import InvalidStateTransition
 
 
+def _credit_action_snapshot(snapshot, user, permissions):
+    """Attach the authoritative §44 action projection for the selected credit resource."""
+    data = {**snapshot}
+    role_codes = set(user.role_codes())
+
+    def action(code, label, permission, *, allowed=True, role=None, reason=None):
+        enabled = allowed and permission in permissions and (role is None or role in role_codes)
+        return {
+            "action_code": code,
+            "label": label,
+            "enabled": enabled,
+            "disabled_reason": None if enabled else reason or "Unavailable for this resource, state, or authority.",
+            "required_permission": permission,
+            "required_role": role,
+        }
+
+    actions = []
+    if "eligibility_assessment_id" in data and "loan_appraisal_note_id" not in data:
+        actions.append(action("credit.eligibility.run", "Run Eligibility Assessment", "credit.eligibility.run"))
+    if "loan_limit_assessment_id" in data and "loan_appraisal_note_id" not in data:
+        actions.extend([
+            action("credit.loan_limit.calculate", "Calculate Loan Limit", "credit.loan_limit.calculate"),
+            action("credit.appraisal.create", "Create Appraisal Draft", "credit.appraisal.create", allowed="credit.risk_assessment.manage" in permissions),
+        ])
+    if "loan_appraisal_note_id" in data and "approval_case_id" not in data:
+        state = data.get("appraisal_status")
+        legacy = data.get("prerequisite_provenance") == "legacy_unverified"
+        actions.extend([
+            action("credit.appraisal.update", "Update Appraisal Draft", "credit.appraisal.update", allowed=state == "draft" and "credit.risk_assessment.manage" in permissions),
+            action("revalidate_appraisal_prerequisites", "Revalidate Prerequisites", "credit.appraisal.update", allowed=legacy and state in {"draft", "review_pending", "reviewed"} and "credit.risk_assessment.manage" in permissions),
+            action("credit.appraisal.submit_review", "Submit for Credit Review", "credit.appraisal.submit_review", allowed=state == "draft" and not legacy),
+            action("credit.appraisal.review", "Record Credit Review", "credit.appraisal.review", allowed=state == "review_pending", role="credit_manager"),
+            action("credit.appraisal.submit_sanction", "Submit to Sanction Committee", "credit.appraisal.submit_sanction", allowed=state == "reviewed", role="credit_manager"),
+        ])
+    data["available_actions"] = actions
+    return data
+
+
 @require_http_methods(["GET", "POST"])
 def loan_application_collection(request):
     if request.method == "GET":
@@ -583,7 +621,7 @@ def loan_application_eligibility_assessment(request, loan_application_id):
         CreditModulePermissionDenied,
     ) as exc:
         return _credit_module_error_response(request, exc)
-    return success_response(result.snapshot, request)
+    return success_response(_credit_action_snapshot(result.snapshot, user, permissions), request)
 
 
 @require_http_methods(["POST"])
@@ -615,7 +653,7 @@ def loan_application_eligibility_assessment_run(request, loan_application_id):
         CreditModulePermissionDenied,
     ) as exc:
         return _credit_module_error_response(request, exc)
-    return success_response(result.snapshot, request)
+    return success_response(_credit_action_snapshot(result.snapshot, user, permissions), request)
 
 
 @require_http_methods(["POST"])
@@ -655,7 +693,7 @@ def loan_application_loan_limit_calculate(request, loan_application_id):
         CreditModulePermissionDenied,
     ) as exc:
         return _credit_module_error_response(request, exc)
-    return success_response(result.snapshot, request)
+    return success_response(_credit_action_snapshot(result.snapshot, user, permissions), request)
 
 
 @require_http_methods(["GET"])
@@ -675,7 +713,7 @@ def loan_application_sanction_case(request, loan_application_id):
         CreditModulePermissionDenied,
     ) as exc:
         return _credit_module_error_response(request, exc)
-    return success_response(result.snapshot, request)
+    return success_response(_credit_action_snapshot(result.snapshot, user, permissions), request)
 
 
 @require_http_methods(["GET"])
@@ -695,7 +733,7 @@ def loan_application_loan_limit_assessment(request, loan_application_id):
         CreditModulePermissionDenied,
     ) as exc:
         return _credit_module_error_response(request, exc)
-    return success_response(result.snapshot, request)
+    return success_response(_credit_action_snapshot(result.snapshot, user, permissions), request)
 
 
 @require_http_methods(["GET", "POST", "PATCH"])
@@ -735,7 +773,7 @@ def loan_application_appraisal_note(request, loan_application_id):
         CreditModulePermissionDenied,
     ) as exc:
         return _credit_module_error_response(request, exc)
-    return success_response(result.snapshot, request)
+    return success_response(_credit_action_snapshot(result.snapshot, user, permissions), request)
 
 
 @require_http_methods(["POST"])
@@ -767,7 +805,7 @@ def appraisal_note_submit_for_review(request, loan_appraisal_note_id):
         CreditModulePermissionDenied,
     ) as exc:
         return _credit_module_error_response(request, exc)
-    return success_response(result.snapshot, request)
+    return success_response(_credit_action_snapshot(result.snapshot, user, permissions), request)
 
 
 @require_http_methods(["POST"])
@@ -802,7 +840,7 @@ def appraisal_note_review(request, loan_appraisal_note_id):
         CreditModulePermissionDenied,
     ) as exc:
         return _credit_module_error_response(request, exc)
-    return success_response(result.snapshot, request)
+    return success_response(_credit_action_snapshot(result.snapshot, user, permissions), request)
 
 
 @require_http_methods(["POST"])
@@ -842,7 +880,7 @@ def appraisal_note_revalidate_prerequisites(request, loan_appraisal_note_id):
         CreditModulePermissionDenied,
     ) as exc:
         return _credit_module_error_response(request, exc)
-    return success_response(result.snapshot, request)
+    return success_response(_credit_action_snapshot(result.snapshot, user, permissions), request)
 
 
 @require_http_methods(["POST"])
@@ -882,7 +920,7 @@ def loan_application_submit_to_sanction(request, loan_application_id):
         CreditModulePermissionDenied,
     ) as exc:
         return _credit_module_error_response(request, exc)
-    return success_response(result.snapshot, request)
+    return success_response(_credit_action_snapshot(result.snapshot, user, permissions), request)
 
 
 @require_http_methods(["POST"])

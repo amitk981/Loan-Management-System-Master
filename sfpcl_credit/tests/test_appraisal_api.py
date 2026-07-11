@@ -1476,7 +1476,24 @@ class AppraisalApiTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["data"], expected)
+        actual = response.json()["data"]
+        self.assertEqual(
+            {key: value for key, value in actual.items() if key != "available_actions"},
+            {key: value for key, value in expected.items() if key != "available_actions"},
+        )
+        actions = {item["action_code"]: item for item in actual["available_actions"]}
+        self.assertEqual(
+            set(actions),
+            {
+                "credit.appraisal.update",
+                "revalidate_appraisal_prerequisites",
+                "credit.appraisal.submit_review",
+                "credit.appraisal.review",
+                "credit.appraisal.submit_sanction",
+            },
+        )
+        self.assertFalse(actions["credit.appraisal.review"]["enabled"])
+        self.assertEqual(actions["credit.appraisal.review"]["required_role"], "credit_manager")
 
     def test_submit_rejects_blank_remarks_without_transition_evidence(self):
         created = self.client.post(

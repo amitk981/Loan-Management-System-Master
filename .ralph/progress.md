@@ -1455,6 +1455,16 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-11_133237_normal_run
+
+- Completed 006H4: backend credit responses now carry object/state/permission/role-aware §44
+  actions, and the Appraisal Workbench consumes only enabled selected-resource actions.
+- Legacy revalidation is explicitly advertised; global `/auth/me` actions can no longer manufacture
+  a control. Writable PATCH and sanction identity contracts remain unchanged.
+- Frontend build/typecheck/lint and 138 tests passed; backend check/migration sync and 394 tests at
+  94% coverage passed.
+- Next action: due architecture review, then 006H3 and 006X.
 ## 2026-07-11 - 2026-07-11_020739_repair
 - Agent tool used: codex
 - Slice attempted: 006H2-workbench-action-contract-hardening
@@ -3151,6 +3161,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_132423_normal_run/.ralph/runs/2026-07-11_132423_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_132423_normal_run/.ralph/runs/2026-07-11_132423_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-11 13:51:11 - 2026-07-11_133237_normal_run
+- Agent tool used: codex
+- Slice attempted: 006H4-workbench-authoritative-actions-and-container-tests
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_133237_normal_run/.ralph/runs/2026-07-11_133237_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_133237_normal_run/.ralph/runs/2026-07-11_133237_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

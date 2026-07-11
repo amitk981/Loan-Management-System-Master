@@ -84,6 +84,9 @@ approval is explicitly not part of this tracer.
 - Capture the exact appraisal PATCH body and prove it contains only 006H2's writable appraisal/risk
   allowlist; the tracer must fail if response-only status, snapshot, history, reviewer, TAT, or case
   fields are sent.
+- Consume only enabled resource `available_actions` from the 006H4 six-field projection. The E2E
+  path must explicitly prove that a permission present in `/auth/me` does not expose a control when
+  the selected resource omits or disables the matching action.
 
 ## Visual Acceptance Criteria
 None.

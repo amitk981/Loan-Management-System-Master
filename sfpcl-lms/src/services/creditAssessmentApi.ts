@@ -7,6 +7,7 @@ export interface EligibilityAssessment {
   member_active_check: string; default_check: string; document_check: string;
   terms_acceptance_check: string; purpose_check: string; nominee_check: string;
   overall_result: string; assessment_notes: string; assessed_by_user_id: string; assessed_at: string;
+  available_actions?: AvailableAction[];
 }
 export interface LoanLimitAssessment {
   loan_limit_assessment_id: string; loan_application_id: string; member_id: string;
@@ -18,6 +19,7 @@ export interface LoanLimitAssessment {
   exception_required_flag: boolean; calculation_rule_version: string;
   configuration_source: { type: string; loan_policy_config_id: string | null; policy_name: string | null; board_approval_reference: string | null };
   warnings: { code: string; message: string }[]; calculated_by_user_id: string | null; calculated_at: string | null;
+  available_actions?: AvailableAction[];
 }
 export interface RiskAssessment {
   risk_assessment_id?: string; market_risk_rating: Rating; operational_risk_rating: Rating;

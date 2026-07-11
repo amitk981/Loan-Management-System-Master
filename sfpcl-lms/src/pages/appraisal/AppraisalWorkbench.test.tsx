@@ -15,6 +15,9 @@ const sanction = { approval_case_id: 'case-006H', loan_application_id: 'applicat
 const render = (overrides: Partial<React.ComponentProps<typeof AppraisalWorkbenchView>> = {}) => renderToStaticMarkup(<AppraisalWorkbenchView status="success" message="" applications={[application]} selectedApplication={application} eligibility={eligibility} loanLimit={loanLimit} appraisal={appraisal} sanctionSubmission={null} permissions={['credit.appraisal.update', 'credit.appraisal.submit_review', 'credit.risk_assessment.manage']} roleCodes={['deputy_manager_finance']} availableActions={['credit.appraisal.update', 'credit.appraisal.submit_review']} form={appraisal} reviewDecision="reviewed" onSelect={vi.fn()} onField={vi.fn()} onAction={vi.fn()} {...overrides} />);
 
 describe('Appraisal Workbench server-state rendering', () => {
+  it('does not union globally granted auth actions into selected-resource authority', () => {
+    expect(workbenchSource).not.toMatch(/availableActions\s*=\s*\[\.\.\.currentUser\.availableActions/);
+  });
   it.each([['eligible', 'Eligible'], ['ineligible', 'Ineligible'], ['pending_manual_evidence', 'Pending Manual Evidence']])('renders stored %s eligibility', (overall_result, expected) => {
     const html = render({ eligibility: { ...eligibility, overall_result } }); expect(html).toContain(expected); expect(html).toContain('Stored assessment explanation.');
   });

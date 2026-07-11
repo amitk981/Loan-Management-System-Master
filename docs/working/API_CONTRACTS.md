@@ -2107,3 +2107,12 @@ tokens, and keyed hashes are never returned or audited. Creation writes one meta
 Later shareholding folio/status/count changes or newly created holdings do not change witness read
 evidence. Legacy rows whose creation audit folio does not resolve to exactly one member
 shareholding expose both evidence fields as `null` rather than selecting current facts.
+# Epic 006 authoritative workbench actions (006H4)
+
+Eligibility, loan-limit, appraisal-note, appraisal transition, and sanction submit/read success
+responses now include `data.available_actions[]` in the source §44 shape: `action_code`, `label`,
+`enabled`, `disabled_reason`, `required_permission`, and nullable `required_role`. The projection is
+object-, state-, permission-, and role-aware. Appraisal actions are `credit.appraisal.update`,
+`revalidate_appraisal_prerequisites`, `credit.appraisal.submit_review`, `credit.appraisal.review`,
+and `credit.appraisal.submit_sanction`; disabled actions remain present with a reason. Clients must
+not supplement this resource projection from `/auth/me.available_actions`.
