@@ -21,6 +21,10 @@ source scripts/lib/ralph-runtime-capabilities.sh
 # shellcheck source=../lib/ralph-browser-acceptance.sh
 source scripts/lib/ralph-browser-acceptance.sh
 
+[[ -f scripts/lib/ralph-retry-policy.sh ]] || fail "missing bounded Ralph retry policy helper"
+# shellcheck source=../lib/ralph-retry-policy.sh
+source scripts/lib/ralph-retry-policy.sh
+
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_SUCCESS")" == "success" ]] || fail "success status misclassified"
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_QUEUE_EMPTY")" == "queue_empty" ]] || fail "queue-empty status misclassified"
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_OWNER_VETO")" == "owner_veto" ]] || fail "owner-veto status misclassified"
@@ -33,6 +37,18 @@ source scripts/lib/ralph-browser-acceptance.sh
 source scripts/lib/ralph-postgresql-acceptance.sh
 fixture_dir="$(mktemp -d)"
 trap 'rm -rf "$fixture_dir"' EXIT
+cat > "$fixture_dir/retries.yaml" <<'EOF'
+run:
+  max_retries: 2
+EOF
+cat > "$fixture_dir/invalid-retries.yaml" <<'EOF'
+run:
+  max_retries: forever
+EOF
+[[ "$(ralph_max_repair_attempts "$fixture_dir/retries.yaml")" == "2" ]] \
+  || fail "configured repair-attempt budget was not honored"
+[[ "$(ralph_max_repair_attempts "$fixture_dir/invalid-retries.yaml")" == "1" ]] \
+  || fail "invalid repair-attempt budget did not fail safely to one"
 cat > "$fixture_dir/pass.log" <<'EOF'
 Found 5 test(s).
 Ran 5 tests in 1.234s
@@ -189,6 +205,13 @@ fi
 # Agent output is untrusted text. It must never drive loop control flow.
 if rg -n 'grep -q .*No eligible slice found|grep -q .*has been vetoed by the owner|grep -q .*MERGE_FAILED|grep -q .*AGENT_LIMIT_EXHAUSTED' scripts/ralph-loop.sh; then
   fail "ralph-loop.sh still derives control flow from agent transcript text"
+fi
+rg -q 'ralph_max_repair_attempts' scripts/ralph-loop.sh \
+  || fail "Ralph loop ignores run.max_retries"
+rg -q 'repair_attempt <= max_repair_attempts' scripts/ralph-loop.sh \
+  || fail "Ralph loop does not iterate through the bounded repair budget"
+if rg -q 'Attempting one repair run|Repair run also failed' scripts/ralph-loop.sh; then
+  fail "Ralph loop still hard-stops after one repair attempt"
 fi
 
 rg -q 'ralph_codex_permission_profile_for_slice' scripts/agent-adapters/codex.sh \

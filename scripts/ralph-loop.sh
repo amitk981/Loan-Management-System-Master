@@ -3,14 +3,15 @@
 # Usage: ./scripts/ralph-loop.sh [max_iterations]   (default 25)
 #
 # Per iteration: one normal Ralph run (preflight -> agent -> gates -> commit -> merge -> push).
-# On a failed run: one repair run is attempted, then the slice is retried once.
-# The loop stops when: the queue is empty, a slice still fails after repair,
+# On a failed run: the bounded repair budget from run.max_retries is attempted.
+# The loop stops when: the queue is empty, a slice still fails after that budget,
 # 3 total failures accumulate, or a slice is vetoed by the owner.
 set -uo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
 source "$repo_root/scripts/lib/ralph-exit-protocol.sh"
+source "$repo_root/scripts/lib/ralph-retry-policy.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -23,6 +24,7 @@ loop_log=".ralph/logs/loop-$(date '+%Y-%m-%d_%H%M%S').log"
 last_out=".ralph/logs/last-run-output.log"
 total_failures=0
 review_failures_this_loop=0
+max_repair_attempts="$(ralph_max_repair_attempts .ralph/config.yaml)"
 
 # Loop mutex: a second concurrent loop makes every run fail preflight on the
 # other loop's live run lock, burning this loop's failure budget on collisions.
@@ -178,20 +180,31 @@ for ((i = 1; i <= max_iterations; i++)); do
 
   if (( status != 0 )); then
     total_failures=$((total_failures + 1))
-    echo "Run failed (failure $total_failures/3). Attempting one repair run." | tee -a "$loop_log"
+    echo "Run failed (failure $total_failures/3). Up to $max_repair_attempts bounded repair attempt(s) are available." | tee -a "$loop_log"
 
-    run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair
-    repair_status=$?
-    if (( repair_status == RALPH_EXIT_AGENT_LIMIT )); then
-      switch_agent_or_stop
-      echo "Retrying the repair run with $active_tool." | tee -a "$loop_log"
+    repair_status=$status
+    for ((repair_attempt = 1; repair_attempt <= max_repair_attempts; repair_attempt++)); do
+      echo "Repair attempt $repair_attempt/$max_repair_attempts." | tee -a "$loop_log"
       run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair
       repair_status=$?
-    fi
-    context_tripwire_check
+      if (( repair_status == RALPH_EXIT_AGENT_LIMIT )); then
+        switch_agent_or_stop
+        echo "Retrying repair attempt $repair_attempt/$max_repair_attempts with $active_tool." | tee -a "$loop_log"
+        run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode repair
+        repair_status=$?
+      fi
+      context_tripwire_check
+
+      if (( repair_status == 0 )); then
+        break
+      fi
+      if (( repair_attempt < max_repair_attempts )); then
+        echo "Repair attempt $repair_attempt failed; the next repair will diagnose its newly generated failure-summary.md." | tee -a "$loop_log"
+      fi
+    done
 
     if (( repair_status != 0 )); then
-      echo "Repair run also failed. Stopping the loop for human review — see $loop_log and the latest .ralph/runs/ folder." | tee -a "$loop_log"
+      echo "All $max_repair_attempts bounded repair attempts failed. Stopping for human review — see $loop_log and the latest .ralph/runs/ folder." | tee -a "$loop_log"
       exit 1
     fi
 
