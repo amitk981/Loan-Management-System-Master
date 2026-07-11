@@ -16,6 +16,10 @@ Medium
 
 - Freeze only the two dashboard screenshot scenarios at the instant represented by the committed
   baselines: `Good afternoon, E2E` and `Friday 10 July, 2026`.
+- When asserting the complete dashboard header, use the seeded role names rather than inferring
+  them from the test label: the tracer header is
+  `SFPCL LMS · E2E Tracer Staff · Friday 10 July, 2026`, while the zero-permission header is
+  `SFPCL LMS · IT Head · Friday 10 July, 2026`.
 - Set Playwright's browser timezone explicitly to `Asia/Kolkata`; an offset-bearing fixed instant
   alone is not sufficient for deterministic rendering on hosts in other timezones.
 - Both README E2E commands must derive the shared Ralph virtualenv through Git's common directory,
