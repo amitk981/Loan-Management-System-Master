@@ -122,29 +122,38 @@ run_postgresql_acceptance_once() {
   local ordinal="$1"
   local log="$run_dir/evidence/terminal-logs/postgresql-acceptance-validation-${ordinal}.txt"
   local rc=0
+  local cleanup_rc=0
+  local postgres_test_db
+  postgres_test_db="$(postgresql_test_database_name "$run_id" "$ordinal")"
   mkdir -p "$(dirname "$log")"
   {
     echo "Command:"
-    echo "$venv_python manage.py test sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests --settings=sfpcl_credit.config.postgres_test_settings -v 2"
+    echo "SFPCL_POSTGRES_TEST_DB=$postgres_test_db $venv_python manage.py test sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2"
     echo
     echo "Working directory: $backend_dir/"
     echo
   } > "$log"
   if (
     cd "$worktree_dir/$backend_dir"
-    "$venv_python" manage.py test \
+    SFPCL_POSTGRES_TEST_DB="$postgres_test_db" "$venv_python" manage.py test \
       sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests \
       sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests \
       sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests \
-      --settings=sfpcl_credit.config.postgres_test_settings -v 2
+      --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2
   ) >> "$log" 2>&1; then
     rc=0
   else
     rc=$?
   fi
+  postgresql_drop_test_database "$venv_python" "$worktree_dir" "$postgres_test_db" >> "$log" 2>&1 \
+    || cleanup_rc=$?
+  if (( cleanup_rc != 0 )); then
+    echo "FAIL: unable to remove isolated PostgreSQL test database $postgres_test_db." >> "$log"
+  fi
   echo >> "$log"
   echo "Exit code: $rc" >> "$log"
-  (( rc == 0 )) && postgresql_acceptance_log_passes "$log"
+  echo "Cleanup exit code: $cleanup_rc" >> "$log"
+  (( rc == 0 && cleanup_rc == 0 )) && postgresql_acceptance_log_passes "$log"
 }
 
 write_postgresql_environment() {

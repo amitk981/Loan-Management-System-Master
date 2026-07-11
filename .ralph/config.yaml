@@ -88,6 +88,8 @@ run:
   # (see docs/working/RELEASE_PROMOTION.md). ralph-run.sh refuses to run on any other branch.
   integration_branch: staging
   agent_timeout_seconds: 7200  # watchdog: a hung agent fails into the repair path
+  environment_setup_timeout_seconds: 900  # dependency preparation is non-interactive and bounded
+  validation_timeout_seconds: 3600  # watchdog: gates are unattended and must never wait forever
   auto_deploy: false
   architecture_review_every_completed_slices: 4
 

@@ -4,6 +4,7 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
 source "$repo_root/scripts/lib/ralph-exit-protocol.sh"
+source "$repo_root/scripts/lib/ralph-postgresql-acceptance.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -131,15 +132,45 @@ backend_python="$(awk -F': *' '/^[[:space:]]*backend_python:/ {sub(/[[:space:]]*
 backend_python="${backend_python:-python3}"
 backend_dir_cfg="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | tr -d '"' | xargs || true)"
 venv_dir="$repo_root/.ralph/venv"
+environment_setup_timeout="$(awk -F': *' '/^[[:space:]]*environment_setup_timeout_seconds:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+run_environment_command() {
+  local label="${1:?environment command label is required}"
+  shift
+  python3 "$repo_root/scripts/lib/ralph-run-with-timeout.py" \
+    --timeout "${environment_setup_timeout:-900}" \
+    --label "$label" \
+    -- "$@"
+}
+run_postgresql_timeout_cleanup() {
+  local python_bin="${1:?cleanup Python executable is required}"
+  local database_name="${2:?cleanup database name is required}"
+  python3 "$repo_root/scripts/lib/ralph-run-with-timeout.py" \
+    --timeout 60 \
+    --grace 5 \
+    --label "PostgreSQL timeout cleanup for $database_name" \
+    -- \
+    /bin/bash -c \
+      'source "$1"; postgresql_drop_test_database "$2" "$3" "$4"' \
+      ralph-postgresql-cleanup \
+      "$repo_root/scripts/lib/ralph-postgresql-acceptance.sh" \
+      "$python_bin" \
+      "$worktree_dir" \
+      "$database_name"
+}
 ensure_backend_env() {
   local req="$worktree_dir/${backend_dir_cfg}/requirements-dev.txt"
   [[ -n "$backend_dir_cfg" && -f "$req" ]] || return 0
   if [[ ! -x "$venv_dir/bin/python" ]]; then
-    "$backend_python" -m venv "$venv_dir"
+    if ! run_environment_command "backend virtual environment creation" \
+        "$backend_python" -m venv "$venv_dir"; then
+      echo "WARN: backend virtual environment creation failed or timed out; gates will surface it." >&2
+      return 0
+    fi
   fi
-  if ! "$venv_dir/bin/python" -m pip install --quiet --disable-pip-version-check -r "$req" \
+  if ! run_environment_command "backend dependency installation" \
+      "$venv_dir/bin/python" -m pip install --quiet --disable-pip-version-check -r "$req" \
       >> "$run_dir/evidence/terminal-logs/orchestrator-backend-deps.log" 2>&1; then
-    echo "WARN: backend dependency install failed (offline with new pins?); gates will surface any missing module." >&2
+    echo "WARN: backend dependency install failed or timed out; gates will surface any missing module." >&2
   fi
 }
 project_dir_cfg="$(awk -F': *' '/^[[:space:]]*project_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | tr -d '"' | xargs || true)"
@@ -147,14 +178,16 @@ ensure_frontend_env() {
   local fe_dir="$worktree_dir/${project_dir_cfg}"
   [[ -n "$project_dir_cfg" && -f "$fe_dir/package-lock.json" ]] || return 0
   if [[ ! -d "$fe_dir/node_modules" ]]; then
-    if ! (cd "$fe_dir" && npm ci --prefer-offline --no-audit --no-fund) \
+    if ! (cd "$fe_dir" && run_environment_command "frontend dependency installation" \
+        npm ci --prefer-offline --no-audit --no-fund) \
         >> "$run_dir/evidence/terminal-logs/orchestrator-frontend-deps.log" 2>&1; then
-      echo "WARN: frontend dependency install failed; gates will surface it." >&2
+      echo "WARN: frontend dependency install failed or timed out; gates will surface it." >&2
     fi
   else
-    if ! (cd "$fe_dir" && npm install --prefer-offline --no-audit --no-fund) \
+    if ! (cd "$fe_dir" && run_environment_command "frontend dependency synchronization" \
+        npm install --prefer-offline --no-audit --no-fund) \
         >> "$run_dir/evidence/terminal-logs/orchestrator-frontend-deps.log" 2>&1; then
-      echo "WARN: frontend dependency sync failed; gates will surface it." >&2
+      echo "WARN: frontend dependency sync failed or timed out; gates will surface it." >&2
     fi
   fi
 }
@@ -267,6 +300,7 @@ Ralph run started for $slice_id.
 EOF
 
 agent_timeout="$(awk -F': *' '/^[[:space:]]*agent_timeout_seconds:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+validation_timeout="$(awk -F': *' '/^[[:space:]]*validation_timeout_seconds:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
 
 # The orchestrator is the single owner of the review-cadence counter. Capture
 # the pre-run value now, from the integration checkout the agent never touches:
@@ -296,7 +330,52 @@ fi
 ensure_backend_env
 ensure_frontend_env
 
-"$repo_root/scripts/ralph-validate.sh" --run-id "$run_id" --worktree "$worktree_dir" --mode "$mode" --slice "$slice_id"
+validation_rc=0
+python3 "$repo_root/scripts/lib/ralph-run-with-timeout.py" \
+  --timeout "${validation_timeout:-3600}" \
+  --label "Ralph independent validation for $slice_id" \
+  -- \
+  "$repo_root/scripts/ralph-validate.sh" \
+  --run-id "$run_id" \
+  --worktree "$worktree_dir" \
+  --mode "$mode" \
+  --slice "$slice_id" || validation_rc=$?
+
+if (( validation_rc != 0 )); then
+  if (( validation_rc == 124 )); then
+    cleanup_python="$venv_dir/bin/python"
+    [[ -x "$cleanup_python" ]] || cleanup_python="$backend_python"
+    cleanup_log="$run_dir/evidence/terminal-logs/postgresql-timeout-cleanup.log"
+    for ordinal in 1 2; do
+      postgres_test_db="$(postgresql_test_database_name "$run_id" "$ordinal")"
+      run_postgresql_timeout_cleanup "$cleanup_python" "$postgres_test_db" \
+        >> "$cleanup_log" 2>&1 || true
+    done
+    cat > "$run_dir/validation-timeout-results.md" <<EOF
+# Validation Timeout Results
+
+FAIL: independent validation exceeded ${validation_timeout:-3600} seconds.
+The watchdog terminated the validator and its child process group so the outer
+loop can enter the bounded repair path instead of waiting indefinitely.
+EOF
+    cat > "$run_dir/failure-summary.md" <<EOF
+# Validation Failure Summary
+
+## validation-timeout-results.md
+
+Independent validation for $slice_id exceeded ${validation_timeout:-3600} seconds.
+Inspect the most recently updated gate result and terminal log for the blocked command.
+EOF
+  elif [[ ! -s "$run_dir/failure-summary.md" ]]; then
+    cat > "$run_dir/failure-summary.md" <<EOF
+# Validation Failure Summary
+
+The independent validation runner exited with status $validation_rc before it
+could write a detailed failure summary. Inspect the run's gate result files.
+EOF
+  fi
+  exit "$validation_rc"
+fi
 
 cat > "$run_dir/final-summary.md" <<EOF
 # Final Summary
