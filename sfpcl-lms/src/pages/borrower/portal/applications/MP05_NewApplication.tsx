@@ -110,9 +110,6 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
   ];
 
   const currentStepIndex = applicationSteps.findIndex(step => step.id === applicationStep);
-  const shareholdingLimit = borrowerApplication.sharesHeld * borrowerApplication.valuationPerShare;
-  const landBasedLimit = 675000;
-  const maximumPermissibleLimit = Math.min(shareholdingLimit, landBasedLimit);
   const uploadedRequiredDocs = requiredApplicationDocuments.filter(doc => applicationDocs[doc.id]?.uploaded && applicationDocs[doc.id]?.selfAttested).length;
   const allDocsComplete = uploadedRequiredDocs === requiredApplicationDocuments.length;
   const allDeclarationsAccepted = Object.values(borrowerApplication.declarations).every(Boolean);
@@ -155,8 +152,8 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
       message: 'Shares held and shareholding mode are mandatory; Demat BO ID is required for demat shares.',
     },
     loan: {
-      ok: borrowerApplication.requestedAmount > 0 && borrowerApplication.requestedAmount <= maximumPermissibleLimit && borrowerApplication.loanPurpose.includes('crop') && Boolean(borrowerApplication.crop && borrowerApplication.expectedRepaymentDate),
-      message: 'Loan amount must be within eligible limit and purpose must be crop production or agriculture related.',
+      ok: borrowerApplication.requestedAmount > 0 && borrowerApplication.loanPurpose.includes('crop') && Boolean(borrowerApplication.crop && borrowerApplication.expectedRepaymentDate),
+      message: 'Loan amount, crop purpose, crop details, and expected repayment date are mandatory. Your eligible limit is verified during credit assessment.',
     },
     nominee: {
       ok: Boolean(selectedNomineeId),
@@ -402,17 +399,12 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  ['Shareholding Limit', shareholdingLimit],
-                  ['Land-Based Limit', landBasedLimit],
-                  ['Maximum Permissible Limit', maximumPermissibleLimit],
-                ].map(([label, amount]) => (
-                  <div key={label} className="rounded-lg border border-green-100 bg-green-50 p-3">
-                    <div className="text-xs text-green-700">{label}</div>
-                    <div className="mt-1 text-lg font-bold text-green-900">{formatCurrency(Number(amount))}</div>
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 gap-3">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                  Your eligible loan limit is determined by SFPCL during credit assessment as the lower of the
+                  shareholding-based limit and the land-based (Scale of Finance) limit. The confirmed limit will
+                  appear on your application status after completeness verification.
+                </div>
               </div>
             </div>
           )}
@@ -459,12 +451,10 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
                   </select>
                 </div>
               </div>
-              {borrowerApplication.requestedAmount > maximumPermissibleLimit && (
-                <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                  <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
-                  Requested amount exceeds maximum permissible limit of {formatCurrency(maximumPermissibleLimit)}.
-                </div>
-              )}
+              <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                <AlertTriangle size={16} className="mt-0.5 flex-shrink-0 text-slate-400" />
+                Requested amounts above your eligible limit are reviewed during credit assessment and may be reduced or returned.
+              </div>
             </div>
           )}
 
@@ -566,7 +556,6 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
                       ['Applicant', borrowerApplication.borrowerName],
                       ['Folio / Shares', `${borrowerApplication.folioNumber} / ${borrowerApplication.sharesHeld}`],
                       ['Requested Amount', formatCurrency(borrowerApplication.requestedAmount)],
-                      ['Maximum Limit', formatCurrency(maximumPermissibleLimit)],
                       ['Purpose', borrowerApplication.loanPurpose.replace(/_/g, ' ')],
                       ['Nominee', selectedNominee ? `${selectedNominee.nominee_name}, age ${selectedNominee.age_at_application ?? 'not recorded'}` : 'Not selected'],
                     ].map(([label, value]) => (

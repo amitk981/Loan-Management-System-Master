@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Leaf, Lock, Mail, Smartphone, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 interface MP00_LoginProps {
-  onLogin: () => void;
-  onSubmitLogin?: (credentials: { identifier: string; password: string }) => Promise<void>;
+  onSubmitLogin: (credentials: { identifier: string; password: string }) => Promise<void>;
   onNavigateToActivation: () => void;
   onNavigateToForgot: () => void;
   onBackToStaffLogin?: () => void;
@@ -11,7 +10,7 @@ interface MP00_LoginProps {
   isSubmitting?: boolean;
 }
 
-const MP00_Login: React.FC<MP00_LoginProps> = ({ onLogin, onSubmitLogin, onNavigateToActivation, onNavigateToForgot, onBackToStaffLogin, error, isSubmitting = false }) => {
+const MP00_Login: React.FC<MP00_LoginProps> = ({ onSubmitLogin, onNavigateToActivation, onNavigateToForgot, onBackToStaffLogin, error, isSubmitting = false }) => {
   const [method, setMethod] = useState<'password' | 'otp'>('password');
   const [identifier, setIdentifier] = useState('');
   const [secret, setSecret] = useState('');
@@ -24,11 +23,11 @@ const MP00_Login: React.FC<MP00_LoginProps> = ({ onLogin, onSubmitLogin, onNavig
       setLocalError('OTP login will be available after portal OTP preference setup.');
       return;
     }
-    if (identifier && secret && onSubmitLogin) {
-      await onSubmitLogin({ identifier, password: secret });
-    } else if (identifier && secret) {
-      onLogin();
+    if (!identifier || !secret) {
+      setLocalError('Enter your registered contact and password.');
+      return;
     }
+    await onSubmitLogin({ identifier, password: secret });
   };
 
   return (

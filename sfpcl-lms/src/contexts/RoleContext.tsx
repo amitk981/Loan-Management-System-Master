@@ -84,6 +84,7 @@ interface RoleContextValue {
   currentUser: User;
   setRole: (role: Role) => void;
   setBackendUser: (user: FrontendCurrentUser) => void;
+  clearUser: () => void;
   can: (permission: Permission) => boolean;
 }
 
@@ -214,19 +215,37 @@ const ROLE_USERS: Record<Role, User> = {
   backend_staff:          makeDemoUser({ id: 'u14', name: 'Backend Staff',     email: 'backend.staff@sfpcl.in',   role: 'backend_staff' }),
 };
 
+// Pre-login state: no identity, no role codes, no permissions. Nothing role-gated
+// may render from this user; a real session arrives only via setBackendUser (or the
+// flag-gated demo setRole).
+export const UNAUTHENTICATED_USER: User = {
+  id: 'anonymous',
+  name: 'Not signed in',
+  email: '',
+  role: 'backend_staff',
+  roleName: 'Not signed in',
+  roleCodes: [],
+  teamCodes: [],
+  permissions: [],
+  availableActions: [],
+  prototypePermissions: [],
+  isBackendSession: false,
+};
+
 const RoleContext = createContext<RoleContextValue | null>(null);
 
 export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User>(ROLE_USERS.deputy_manager_finance);
+  const [currentUser, setCurrentUser] = useState<User>(UNAUTHENTICATED_USER);
 
   const setRole = useCallback((role: Role) => setCurrentUser(ROLE_USERS[role]), []);
   const setBackendUser = useCallback((user: FrontendCurrentUser) => setCurrentUser(makeBackendUser(user)), []);
+  const clearUser = useCallback(() => setCurrentUser(UNAUTHENTICATED_USER), []);
 
   const can = useCallback((permission: Permission): boolean =>
     currentUser.prototypePermissions.includes(permission), [currentUser.prototypePermissions]);
 
   return (
-    <RoleContext.Provider value={{ currentUser, setRole, setBackendUser, can }}>
+    <RoleContext.Provider value={{ currentUser, setRole, setBackendUser, clearUser, can }}>
       {children}
     </RoleContext.Provider>
   );

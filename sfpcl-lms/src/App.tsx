@@ -57,7 +57,7 @@ type AuthView = 'staff' | 'memberLogin' | 'memberActivation' | 'memberForgot';
 
 // Inner component so it can use useRole hook (inside RoleProvider)
 const AppInner: React.FC = () => {
-  const { currentUser, setRole, setBackendUser, can } = useRole();
+  const { currentUser, setRole, setBackendUser, clearUser, can } = useRole();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
@@ -151,6 +151,7 @@ const AppInner: React.FC = () => {
         // Local session is cleared even if the network logout fails.
       }
     }
+    clearUser();
     setIsLoggedIn(false);
     setPage('dashboard');
     setAuthView('staff');
@@ -161,7 +162,6 @@ const AppInner: React.FC = () => {
     if (authView === 'memberLogin') {
       return (
         <MP00_Login
-          onLogin={() => handleDemoLogin('borrower')}
           onSubmitLogin={handleMemberLogin}
           onNavigateToActivation={() => setAuthView('memberActivation')}
           onNavigateToForgot={() => setAuthView('memberForgot')}
