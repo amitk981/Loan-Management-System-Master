@@ -100,14 +100,15 @@
     "005FA2-portal-demo-login-gating-and-session-authority",
     "CR-001-e2e-visual-baselines-nondeterministic",
     "006H4-workbench-authoritative-actions-and-container-tests",
-    "005E2-completeness-workbench-real-data-corrective"
+    "005E2-completeness-workbench-real-data-corrective",
+    "005FA3-portal-auth-interaction-and-demo-flag-proof"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e7f3f3b",
-  "last_run_id": "2026-07-11_140734_normal_run",
+  "last_run_id": "2026-07-11_142750_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
+  "slices_completed_since_architecture_review": 2,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

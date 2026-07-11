@@ -1,5 +1,18 @@
 # Ralph Progress Log
 
+## 2026-07-11 14:35 - 2026-07-11_142750_normal_run
+- Agent tool used: codex with interaction-first regression proof.
+- Slice completed: `005FA3-portal-auth-interaction-and-demo-flag-proof`.
+- Summary: Added real portal/app-boundary browser interactions for validation, exact session login,
+  pre-login denial, restored backend identity, and fail-closed logout; added isolated unset/false/true
+  demo-flag tests. Removed two native `required` attributes so existing rendered validation owns
+  empty submission; no visual or credential-authority change.
+- Tests run: focused 7-test auth suite; frontend lint/typecheck/build and 144 tests; backend
+  check/migration sync and 394 tests at 94% coverage. Playwright server startup was sandbox-denied
+  and is preserved in red evidence; screenshot capture was unavailable.
+- Evidence: `.ralph/runs/2026-07-11_142750_normal_run/`.
+- Result: Success pending orchestrator validation. Risk: High. Next: sharpened `006G4`, then `006H5`.
+
 ## 2026-07-11 14:24 - 2026-07-11_140734_normal_run
 - Agent tool used: codex with TDD red/green cycles.
 - Slice completed: `005E2-completeness-workbench-real-data-corrective`.
@@ -3226,6 +3239,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_140734_normal_run/.ralph/runs/2026-07-11_140734_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_140734_normal_run/.ralph/runs/2026-07-11_140734_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-11 14:36:40 - 2026-07-11_142750_normal_run
+- Agent tool used: codex
+- Slice attempted: 005FA3-portal-auth-interaction-and-demo-flag-proof
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_142750_normal_run/.ralph/runs/2026-07-11_142750_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_142750_normal_run/.ralph/runs/2026-07-11_142750_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

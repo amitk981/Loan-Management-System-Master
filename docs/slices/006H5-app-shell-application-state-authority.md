@@ -59,3 +59,10 @@ Medium
 - [ ] Handoff updated
 - [ ] State updated
 - [ ] Commit created only after passing gates
+
+## Run-Ahead Sharpening Review (005FA3, 2026-07-11)
+
+- The owned removal is exactly `App.tsx`'s `mockData` application seed and local update chain.
+  Audit every prop consumer, but do not absorb 007I sanction API wiring.
+- Mount each affected consumer with an empty authoritative input and assert the existing explicit
+  empty/not-wired composition; also assert no replacement inline fixture or new mock import.

@@ -77,7 +77,6 @@ const MP00_Login: React.FC<MP00_LoginProps> = ({ onSubmitLogin, onNavigateToActi
                 <input
                   id="identifier"
                   type="text"
-                  required
                   value={identifier}
                   onChange={e => setIdentifier(e.target.value)}
                   className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-lg focus:ring-green-500 focus:border-green-500 sm:text-sm bg-slate-50 focus:bg-white transition-colors"
@@ -97,7 +96,6 @@ const MP00_Login: React.FC<MP00_LoginProps> = ({ onSubmitLogin, onNavigateToActi
                 <input
                   id="secret"
                   type={method === 'password' ? 'password' : 'text'}
-                  required
                   value={secret}
                   onChange={e => setSecret(e.target.value)}
                   className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-lg focus:ring-green-500 focus:border-green-500 sm:text-sm bg-slate-50 focus:bg-white transition-colors"

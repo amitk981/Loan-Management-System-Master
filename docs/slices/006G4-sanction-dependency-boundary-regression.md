@@ -55,3 +55,10 @@ Medium
 - The dependency guard detects every import syntax named by 006G3 and cannot pass without observing
   the intended public edge.
 
+## Run-Ahead Sharpening Review (005FA3, 2026-07-11)
+
+- Implementation-ready and narrowly test-only: resolve direct, aliased, `from`-package, and
+  package-`__init__` imports; fail every credit-to-approvals and private approvals-to-credit
+  fixture; positively observe the documented public approvals-to-credit edge.
+- Preserve production imports and sanction behavior. The red fixture must demonstrate a syntax the
+  current collector misses before implementing the package-aware resolver.

@@ -1,0 +1,11 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/005FA3-portal-auth-interaction-and-demo-flag-proof.md
+ M docs/slices/006G4-sanction-dependency-boundary-regression.md
+ M docs/slices/006H5-app-shell-application-state-authority.md
+ M docs/working/HANDOFF.md
+ M sfpcl-lms/src/pages/borrower/portal/auth/MP00_Login.test.tsx
+ M sfpcl-lms/src/pages/borrower/portal/auth/MP00_Login.tsx
+?? .ralph/runs/2026-07-11_142750_normal_run/
+?? sfpcl-lms/e2e/portal-auth-interaction.e2e.spec.ts
+?? sfpcl-lms/src/services/demoAuthFlag.test.tsx

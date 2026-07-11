@@ -1,0 +1,17 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/borrower/portal/auth/MP00_Login.test.tsx src/services/demoAuthFlag.test.tsx src/contexts/RoleContext.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_142750_normal_run/sfpcl-lms
+
+ ✓ src/contexts/RoleContext.test.tsx (2 tests) 6ms
+ ✓ src/pages/borrower/portal/auth/MP00_Login.test.tsx (2 tests) 9ms
+ ✓ src/services/demoAuthFlag.test.tsx (3 tests) 15ms
+
+ Test Files  3 passed (3)
+      Tests  7 passed (7)
+   Start at  14:31:33
+   Duration  486ms (transform 252ms, setup 0ms, collect 509ms, tests 30ms, environment 0ms, prepare 235ms)
+

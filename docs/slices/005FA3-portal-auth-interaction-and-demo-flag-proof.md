@@ -1,7 +1,7 @@
 # Slice 005FA3: Portal Auth Interaction and Demo-Flag Proof
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 005: Application Intake and Completeness
@@ -68,3 +68,13 @@ High
 - The `VITE_ENABLE_DEMO_AUTH` true and false/unset cases must reset the module environment between
   runs so build-time flag state cannot leak. No production styling or portal credential behavior is
   in scope unless these public-boundary tests expose a defect.
+
+## Completion Note (2026-07-11)
+
+- Real Playwright interactions cover empty/populated portal submission, pre-login denial, exact
+  portal login request count/payload, backend-session restore, and local fail-closed logout when
+  the transport rejects. Empty interaction exposed native validation intercepting the existing
+  React message; removing two `required` attributes restored it without changing auth authority.
+- Module-isolated Vitest cases prove unset/false hides and true shows only the existing staff demo
+  controls. The sandbox denied local E2E server startup, so its failure log is retained for
+  independent execution; no screenshot was fabricated.
