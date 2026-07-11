@@ -168,6 +168,12 @@ rg -q '"/tmp/\.s\.PGSQL\.5432"[[:space:]]*=[[:space:]]*"allow"' .codex/config.to
   || fail "PostgreSQL Unix socket is not narrowly allowlisted"
 rg -q '"localhost"[[:space:]]*=[[:space:]]*"allow"' .codex/config.toml \
   || fail "localhost E2E traffic is not narrowly allowlisted"
+rg -q 'localhost_e2e_required' scripts/ralph-validate.sh \
+  || fail "independent validation does not select localhost E2E from the shared capability"
+rg -q 'E2E_DJANGO_PYTHON=.*npm run e2e' scripts/ralph-validate.sh \
+  || fail "independent localhost E2E validation command is missing"
+rg -q 'slice does not declare localhost-e2e-server' scripts/ralph-validate.sh \
+  || fail "ordinary slices do not explicitly skip the capability-only E2E gate"
 rg -q 'postgresql-acceptance-validation-\$\{ordinal\}\.txt' scripts/ralph-validate.sh \
   || fail "independent PostgreSQL acceptance log path is missing"
 rg -q 'run_postgresql_acceptance_once 1' scripts/ralph-validate.sh \

@@ -38,6 +38,7 @@ done
 
 slice_file="$worktree_dir/docs/slices/${slice_id}.md"
 postgres_acceptance_required=0
+localhost_e2e_required=0
 if [[ -n "$slice_id" ]]; then
   if [[ ! -f "$slice_file" ]]; then
     echo "Selected slice file is missing: $slice_file" >&2
@@ -46,6 +47,9 @@ if [[ -n "$slice_id" ]]; then
   ralph_validate_slice_capabilities "$slice_file" || exit 2
   if ralph_slice_has_capability "$slice_file" "$RALPH_CAPABILITY_POSTGRESQL_FIVE_RACE_ACCEPTANCE"; then
     postgres_acceptance_required=1
+  fi
+  if ralph_slice_has_capability "$slice_file" "$RALPH_CAPABILITY_LOCALHOST_E2E_SERVER"; then
+    localhost_e2e_required=1
   fi
 fi
 
@@ -234,6 +238,17 @@ if [[ "$(enabled unit_tests)" == "true" ]]; then
   run_gate test "npm test --if-present" || failures=$((failures + 1))
 else
   write_skipped test "disabled in .ralph/config.yaml"
+fi
+
+# Browser processes need macOS services that are intentionally unavailable to
+# the coding-agent sandbox. A slice declaring localhost E2E capability must
+# therefore prove its browser acceptance through this trusted independent gate.
+# The capability makes the gate mandatory even though broad queue runs keep E2E
+# optional by default.
+if [[ "$mode" =~ ^(normal_run|repair)$ && "$localhost_e2e_required" == "1" ]]; then
+  run_gate e2e "E2E_DJANGO_PYTHON=\"$venv_python\" npm run e2e" || failures=$((failures + 1))
+else
+  write_skipped e2e "slice does not declare localhost-e2e-server"
 fi
 
 run_backend_gate() {
