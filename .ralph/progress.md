@@ -1,5 +1,17 @@
 # Ralph Progress Log
 
+## 2026-07-11 22:48 - 2026-07-11_224007_normal_run
+- Agent tool used: codex with implement, TDD, and two-axis review workflows.
+- Slice completed: `006H3-appraisal-workbench-prototype-fidelity-restoration`.
+- Summary: Restored the approved queue/header/three-stage workbench composition and the prototype
+  checklist/calculator density using API facts only; retained six-field actions, disabled reasons,
+  exact writable seams, and canonical four-read refresh. Added the focused Chromium visual matrix.
+- Tests run: frontend lint/typecheck/build and 151 tests passed. Playwright collection passed;
+  sandbox web-server startup was denied. Backend check/migration sync passed; native dependency
+  architecture mismatch blocked the local suite. Independent validation owns those environment gates.
+- Evidence saved: `.ralph/runs/2026-07-11_224007_normal_run/`.
+- Result: Complete pending orchestrator validation. Risk: Medium. Next: 006X.
+
 ## 2026-07-11 22:08 - 2026-07-11_215244_repair
 - Agent tool used: codex with diagnosing-bugs and TDD red/green loops.
 - Slice completed: `005E4-completeness-action-authority-and-browser-proof`.
@@ -3478,6 +3490,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_223208_normal_run/.ralph/runs/2026-07-11_223208_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_223208_normal_run/.ralph/runs/2026-07-11_223208_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-11 22:49:56 - 2026-07-11_224007_normal_run
+- Agent tool used: codex
+- Slice attempted: 006H3-appraisal-workbench-prototype-fidelity-restoration
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_224007_normal_run/.ralph/runs/2026-07-11_224007_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_224007_normal_run/.ralph/runs/2026-07-11_224007_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

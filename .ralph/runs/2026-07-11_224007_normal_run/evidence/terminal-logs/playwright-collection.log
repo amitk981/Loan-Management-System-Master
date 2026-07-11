@@ -1,0 +1,16 @@
+
+ReferenceError: Cannot access 'title' before initialization
+
+   at appraisal-workbench-fidelity.e2e.spec.ts:70
+
+  68 |   loan_application_id: id,
+  69 |   application_reference_number: `LO00010${String(index).padStart(2, '0')}`,
+> 70 |   member: { member_id: `member-${id}`, display_name: `Visual ${title(id)} Borrower`, member_type: 'individual_farmer', folio_number: `FOL-${index}` },
+     |                                                                ^
+  71 |   application_date: '2026-07-10', required_loan_amount: id === 'above' ? '300000.00' : id === 'below' ? '200000.00' : '250000.00',
+  72 |   purpose_category: 'crop_production', application_status: id === 'submitted' ? 'submitted_to_sanction_committee' : 'reference_generated', current_stage: 'credit_assessment', completeness_status: 'complete',
+  73 | }));
+    at map (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_224007_normal_run/sfpcl-lms/e2e/appraisal-workbench-fidelity.e2e.spec.ts:70:64)
+    at Object.<anonymous> (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_224007_normal_run/sfpcl-lms/e2e/appraisal-workbench-fidelity.e2e.spec.ts:67:29)
+Listing tests:
+Total: 0 tests in 0 files

@@ -1,7 +1,7 @@
 # Slice 006H3: Appraisal Workbench Prototype Fidelity Restoration
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review

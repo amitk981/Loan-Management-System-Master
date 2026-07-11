@@ -36,6 +36,12 @@ interface ViewProps {
 }
 
 export const AppraisalWorkbenchView: React.FC<ViewProps> = props => {
+  const serverProjectsReview = (props.availableActions ?? []).some(action => action.enabled && (action.action_code === 'credit.appraisal.review' || action.action_code === 'credit.appraisal.submit_sanction'));
+  const serverStage = serverProjectsReview || props.appraisal?.appraisal_status === 'review_pending' || props.appraisal?.appraisal_status === 'reviewed' || props.appraisal?.appraisal_status === 'rejected' || props.appraisal?.appraisal_status === 'submitted_to_sanction_committee' || props.sanctionSubmission
+    ? 'review'
+    : props.loanLimit || props.appraisal ? 'appraisal' : 'eligibility';
+  const [visibleStage, setVisibleStage] = useState(serverStage);
+  useEffect(() => setVisibleStage(serverStage), [props.selectedApplication?.loan_application_id, serverStage]);
   if (props.status === 'loading') return <div className="p-6"><AlertBanner type="info" title="Loading appraisal workbench" message="Loading stored credit-assessment facts from the staff API." /></div>;
   if (props.status === 'denied') return <div className="p-6"><AlertBanner type="warning" title="Appraisal access denied" message={props.message} /></div>;
   if (props.status === 'error') return <div className="p-6"><AlertBanner type="error" title="Appraisal unavailable" message={props.message} /></div>;
@@ -61,9 +67,9 @@ export const AppraisalWorkbenchView: React.FC<ViewProps> = props => {
   const canSanction = Boolean(note) && serverAllows('sanction');
   const submitted = note?.appraisal_status === 'submitted_to_sanction_committee' || Boolean(props.sanctionSubmission);
   const steps = [
-    { id: 'eligibility', label: 'Eligibility', state: props.eligibility ? 'completed' as const : 'in_progress' as const },
-    { id: 'appraisal', label: 'Appraisal', state: note ? 'completed' as const : props.loanLimit ? 'in_progress' as const : 'not_started' as const },
-    { id: 'review', label: submitted ? 'Submitted' : 'Credit Review', state: submitted ? 'completed' as const : note?.appraisal_status === 'review_pending' || note?.appraisal_status === 'reviewed' ? 'in_progress' as const : 'not_started' as const },
+    { id: 'eligibility', label: 'Step 1', sublabel: 'Verify', state: props.eligibility ? 'completed' as const : 'in_progress' as const },
+    { id: 'appraisal', label: 'Step 2', sublabel: 'Appraise', state: note?.appraisal_status === 'review_pending' || note?.appraisal_status === 'reviewed' || submitted ? 'completed' as const : visibleStage === 'appraisal' ? 'in_progress' as const : 'not_started' as const },
+    { id: 'review', label: 'Step 3', sublabel: submitted ? 'Submitted' : 'Review', state: submitted ? 'completed' as const : visibleStage === 'review' ? 'in_progress' as const : 'not_started' as const },
   ];
   const limit = props.limitForm ?? { shareholding_id: '', land_holding_ids: '', crop_plan_id: '', requested_amount: app.required_loan_amount ?? '', calculation_date: '' };
 
@@ -89,16 +95,18 @@ export const AppraisalWorkbenchView: React.FC<ViewProps> = props => {
               <div><div className="flex items-center gap-2"><h2 className="text-lg font-bold text-slate-900 num">{app.application_reference_number ?? app.loan_application_id.slice(0, 8)}</h2><StatusBadge label={note?.appraisal_status ?? app.application_status} size="sm" /></div><p className="text-sm text-slate-500">{app.member.display_name} · {money(app.required_loan_amount)}</p></div>
               {props.onOpenApplication && <button onClick={() => props.onOpenApplication?.(app.loan_application_id)} className="btn-secondary text-sm flex items-center gap-2"><FileText size={14} /> Full Application</button>}
             </div>
-            <StageStepper steps={steps} />
+            <StageStepper steps={steps} onStepClick={id => setVisibleStage(id as typeof visibleStage)} />
           </div>
 
+          {(visibleStage === 'eligibility' || visibleStage === 'appraisal') && <div className="space-y-4">
+          <AlertBanner type="info" title={visibleStage === 'eligibility' ? 'Step 1: Verify stored eligibility' : 'Step 2: Prepare appraisal note'} message={visibleStage === 'eligibility' ? 'Review the server assessment and complete any available eligibility action.' : 'Review eligibility, calculate the stored limit, and prepare the appraisal recommendation.'} />
           <div className="card space-y-4">
             <div className="flex items-center justify-between"><h3 className="font-bold text-slate-900">Eligibility Assessment</h3>{props.eligibility && <StatusBadge label={props.eligibility.overall_result} size="sm" />}</div>
             {props.eligibility ? <EligibilityChecklist assessment={props.eligibility} /> : <p className="text-sm text-slate-500">No stored eligibility assessment is available.</p>}
             {serverAllows('eligibility') && has(permissions, 'credit.eligibility.run') && <button onClick={() => props.onAction('eligibility')} className="btn-secondary text-sm">Run Eligibility Assessment</button>}
           </div>
 
-          <div className="card space-y-4">
+          {visibleStage === 'appraisal' && <><div className="card space-y-4">
             <div className="flex items-center justify-between"><h3 className="font-bold text-slate-900">Loan Limit Calculator</h3>{props.loanLimit && <StatusBadge label={props.loanLimit.exception_required_flag ? 'exception_required' : 'within_limit'} size="sm" />}</div>
             {props.loanLimit ? <LoanLimitCalculator assessment={props.loanLimit} /> : <p className="text-sm text-slate-500">No stored loan-limit assessment is available.</p>}
             {serverAllows('limit') && has(permissions, 'credit.loan_limit.calculate') && <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -139,7 +147,13 @@ export const AppraisalWorkbenchView: React.FC<ViewProps> = props => {
             </>}
             {note?.prerequisite_provenance && <p className="text-xs text-slate-500">Prerequisite provenance: <strong>{label(note.prerequisite_provenance)}</strong> · TAT: <strong>{label(note.tat_status)}</strong></p>}
             {note?.appraisal_status === 'rejected' && <AlertBanner type="error" title="Appraisal rejected" message={note.rejection_note ? `Rejection note ${label(note.rejection_note.note_status)} · ${label(note.rejection_note.rejection_reason_category)} · reapply ${note.rejection_note.reapply_allowed_flag ? 'allowed' : 'not allowed'}. Sanction submission is unavailable.` : 'No rejection-note summary is available. Sanction submission is unavailable.'} />}
-          </div>
+          </div></>}
+          </div>}
+
+          {visibleStage === 'review' && <div className="space-y-4">
+          <AlertBanner type="info" title="Step 3: Credit Manager review" message="Review the stored appraisal package and use only the actions enabled by the server." />
+          {note?.appraisal_status === 'rejected' && <AlertBanner type="error" title="Appraisal rejected" message={note.rejection_note ? `Rejection note ${label(note.rejection_note.note_status)} · ${label(note.rejection_note.rejection_reason_category)} · reapply ${note.rejection_note.reapply_allowed_flag ? 'allowed' : 'not allowed'}. Sanction submission is unavailable.` : 'No rejection-note summary is available. Sanction submission is unavailable.'} />}
+          {note && <div className="card space-y-4"><div className="flex items-center justify-between"><h3 className="font-bold text-slate-900">Credit Manager Review Package</h3><StatusBadge label={note.appraisal_status} size="sm" /></div><div className="grid grid-cols-2 sm:grid-cols-3 gap-3">{[['Recommended amount', money(note.recommended_amount)], ['Tenure', note.recommended_tenure_months ? `${note.recommended_tenure_months} months` : '—'], ['Overall risk', label(note.risk_assessment.overall_risk_rating)], ['Recommendation', label(note.recommendation)], ['Prepared by', note.prepared_by.full_name], ['TAT', label(note.tat_status)]].map(([caption, value]) => <div key={caption} className="bg-slate-50 rounded-lg p-3"><p className="text-xs text-slate-500">{caption}</p><p className="text-sm font-semibold text-slate-900 capitalize mt-0.5">{value}</p></div>)}</div><p className="text-sm text-slate-600">{note.borrower_summary}</p></div>}
 
           {note && <div className="card space-y-3"><h3 className="font-bold text-slate-900">Immutable Review History</h3>{note.review_history.length === 0 ? <p className="text-sm text-slate-500">No review decisions recorded.</p> : note.review_history.map(item => <div key={item.appraisal_review_decision_id} className="bg-slate-50 rounded-lg p-3"><div className="flex justify-between gap-2"><span className="text-sm font-semibold capitalize">{label(item.decision)}</span><span className="text-xs text-slate-500">{new Date(item.decided_at).toLocaleString('en-IN')}</span></div><p className="text-sm text-slate-600 mt-1">{item.review_comments}</p><p className="text-xs text-slate-400 mt-1">{item.reviewer.full_name} · {label(item.from_state)} → {label(item.to_state)}</p></div>)}</div>}
 
@@ -157,6 +171,7 @@ export const AppraisalWorkbenchView: React.FC<ViewProps> = props => {
             {canSanction && <button onClick={() => props.onAction('sanction')} className="btn-primary text-sm flex items-center gap-2"><Send size={14} /> Submit to Sanction Committee</button>}
           </div>}
           {submitted && <AlertBanner type="success" title="Submitted to Sanction Committee" message={props.sanctionSubmission ? `Pending case ${props.sanctionSubmission.approval_case_id} retained for Epic 007 navigation.` : 'The server reports this appraisal as submitted.'} />}
+          </div>}
         </div>
       </div>
     </div>

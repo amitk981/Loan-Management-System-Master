@@ -1,0 +1,52 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/appraisal/AppraisalWorkbench.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_224007_normal_run/sfpcl-lms
+
+ ❯ src/pages/appraisal/AppraisalWorkbench.test.tsx (21 tests | 1 failed) 122ms
+   ✓ Appraisal Workbench server-state rendering > does not union globally granted auth actions into selected-resource authority 1ms
+   ✓ Appraisal Workbench server-state rendering > renders stored eligible eligibility 24ms
+   ✓ Appraisal Workbench server-state rendering > renders stored ineligible eligibility 6ms
+   ✓ Appraisal Workbench server-state rendering > renders stored pending_manual_evidence eligibility 6ms
+   ✓ Appraisal Workbench server-state rendering > renders stored boundary 200000.00 6ms
+   ✓ Appraisal Workbench server-state rendering > renders stored boundary 250000.00 6ms
+   ✓ Appraisal Workbench server-state rendering > renders stored boundary 300000.00 5ms
+   ✓ Appraisal Workbench server-state rendering > gates server state draft 5ms
+   ✓ Appraisal Workbench server-state rendering > gates server state review_pending 3ms
+   ✓ Appraisal Workbench server-state rendering > gates server state reviewed 3ms
+   ✓ Appraisal Workbench server-state rendering > gates server state rejected 3ms
+   ✓ Appraisal Workbench server-state rendering > gates server state submitted_to_sanction_committee 3ms
+   × Appraisal Workbench server-state rendering > preserves ordered review history and returned/rejection facts 9ms
+     → expected -1 to be less than -1
+   ✓ Appraisal Workbench server-state rendering > renders production empty, denied, error, validation and sanction success states 11ms
+   ✓ Appraisal Workbench server-state rendering > separates Deputy Manager, Credit Manager, and no-permission controls 10ms
+   ✓ Appraisal Workbench server-state rendering > requires the dedicated backend legacy revalidation action and update/risk authority 9ms
+   ✓ Appraisal Workbench server-state rendering > hides controls when backend available actions deny them despite usable permissions 4ms
+   ✓ Appraisal Workbench server-state rendering > does not re-decide workflow availability from appraisal status or provenance 3ms
+   ✓ Appraisal Workbench server-state rendering > retains six-field disabled actions and renders the backend reason 4ms
+   ✓ Appraisal Workbench server-state rendering > reloads all four canonical resources after a successful mutation 0ms
+   ✓ Appraisal Workbench server-state rendering > contains no appraisal mock import or frontend loan-limit formula 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/appraisal/AppraisalWorkbench.test.tsx > Appraisal Workbench server-state rendering > preserves ordered review history and returned/rejection facts
+AssertionError: expected -1 to be less than -1
+ ❯ src/pages/appraisal/AppraisalWorkbench.test.tsx:38:57
+     36|     ];
+     37|     const html = render({ appraisal: { ...appraisal, review_history, a…
+     38|     expect(html.indexOf('Missing repayment evidence.')).toBeLessThan(h…
+       |                                                         ^
+     39|   });
+     40|   it('renders production empty, denied, error, validation and sanction…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+   Start at  22:45:12
+   Duration  674ms (transform 149ms, setup 0ms, collect 230ms, tests 122ms, environment 0ms, prepare 33ms)
+
