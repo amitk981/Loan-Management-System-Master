@@ -178,6 +178,8 @@ rg -q "README E2E command does not resolve the shared venv" scripts/ralph-valida
   || fail "independent localhost E2E validation does not enforce the worktree-safe README command"
 rg -q "Playwright does not pin the dashboard baseline timezone" scripts/ralph-validate.sh \
   || fail "independent localhost E2E validation does not enforce the fixed browser timezone"
+rg -q "grep -Eq '\^\[\[:space:\]\]\*\[0-9\]" scripts/ralph-validate.sh \
+  || fail "artifact validation does not distinguish a filled numbered plan from an untouched template"
 rg -q 'slice does not declare localhost-e2e-server' scripts/ralph-validate.sh \
   || fail "ordinary slices do not explicitly skip the capability-only E2E gate"
 rg -q 'postgresql-acceptance-validation-\$\{ordinal\}\.txt' scripts/ralph-validate.sh \

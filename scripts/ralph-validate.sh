@@ -410,7 +410,8 @@ aq_file="$run_dir/artifact-quality-check.md"
   echo "# Artifact Quality Check"
   echo
 } > "$aq_file"
-if grep -qF "must replace this template" "$run_dir/execution-plan.md" 2>/dev/null; then
+if grep -qF "must replace this template" "$run_dir/execution-plan.md" 2>/dev/null \
+   && ! grep -Eq '^[[:space:]]*[0-9]+\.[[:space:]]+' "$run_dir/execution-plan.md" 2>/dev/null; then
   echo "- FAIL: execution-plan.md is still the unfilled template." >> "$aq_file"
   failures=$((failures + 1))
 else
