@@ -3133,3 +3133,24 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-11_132423_normal_run
+
+- Completed CR-001: froze only the two dashboard visual scenarios at the committed-baseline
+  instant, selected Asia/Kolkata explicitly, and asserted exact tracer/zero-role headers.
+- Updated both E2E README commands to locate the shared Ralph virtualenv through Git's common
+  directory from primary checkouts or worktrees; production UI behavior is unchanged.
+- Frontend build/typecheck/lint and 137 tests passed; backend check/migration sync and 394 tests at
+  94% coverage passed. Local Chromium launch was sandbox-blocked and is delegated to the declared
+  independent orchestrator E2E validation.
+- Next action: run the due architecture review, then sharpened 006H4 and 006H3.
+
+## 2026-07-11 13:32:20 - 2026-07-11_132423_normal_run
+- Agent tool used: codex
+- Slice attempted: CR-001-e2e-visual-baselines-nondeterministic
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_132423_normal_run/.ralph/runs/2026-07-11_132423_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_132423_normal_run/.ralph/runs/2026-07-11_132423_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

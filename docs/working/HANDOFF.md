@@ -1,24 +1,25 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-11_090234_normal_run
+2026-07-11_132423_normal_run
 
 ## Current Status
 
-006G3 is complete. Credit no longer imports approvals. The approvals-owned sanction handoff now
-owns the atomic case, status, audit, and workflow-event writes and stores the exact event UUID on
-the unique pending case. Submit and reload return that durable identity without a latest-event
-query. Shared errors moved below both apps, and the five PostgreSQL races passed twice with exact
-canonical evidence assertions.
+CR-001 is complete. The two dashboard screenshot scenarios alone now freeze the browser clock at
+14:00 IST on Friday 10 July 2026, assert the exact seeded-role greeting/header contract, and run
+under an explicit Asia/Kolkata Playwright timezone. Production dashboard clock behavior is
+unchanged. Both README commands derive the shared Ralph interpreter from Git's common directory,
+so they work from primary checkouts and isolated worktrees.
 
 ## Validation
 
-TDD, API/migration, two PostgreSQL five-race runs, and configured gate logs are under
-`.ralph/runs/2026-07-11_090234_normal_run/`. The full backend suite passed 394 tests with five
-expected skips at 94% coverage; frontend build/typecheck/lint and 130 tests passed.
+Evidence is under `.ralph/runs/2026-07-11_132423_normal_run/`. Frontend build, typecheck, lint, and
+137 tests passed; Django check/migration sync and 394 backend tests with five expected skips passed
+at 94% coverage. Local Playwright browser launch was blocked by the agent's macOS Mach rendezvous
+sandbox; the orchestrator must run the declared independent two-pass dashboard E2E contract.
 
 ## Next Run
 
-Run `006H4-workbench-authoritative-actions-and-container-tests`, then 006H3 and 006X in dependency
-order. Sanction dependency/evidence ownership is accepted; the current Workbench action UI remains
-unaccepted until its corrective slices pass.
+Run the due architecture review, then `006H4-workbench-authoritative-actions-and-container-tests`,
+006H3, and 006X in dependency order. The next two slices were reviewed and are already concrete;
+their Epic 006 digest carries the required integration details.

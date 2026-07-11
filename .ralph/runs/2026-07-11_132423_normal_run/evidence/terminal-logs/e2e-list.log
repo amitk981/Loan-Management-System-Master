@@ -1,0 +1,12 @@
+Listing tests:
+  [chromium] › application-detail-controller.e2e.spec.ts:53:7 › ApplicationDetail production controller › renders loading and success, then submits and refreshes through mocked HTTP
+  [chromium] › application-detail-controller.e2e.spec.ts:78:7 › ApplicationDetail production controller › renders the production error state when detail HTTP fails
+  [chromium] › auth-negative.e2e.spec.ts:30:7 › auth negatives and restricted staff UI › no stored session shows staff login and exposes no tracer route
+  [chromium] › auth-negative.e2e.spec.ts:41:7 › auth negatives and restricted staff UI › invalid credentials keep the user on the login screen with an error
+  [chromium] › auth-negative.e2e.spec.ts:53:7 › auth negatives and restricted staff UI › zero-permission staff sees the neutral dashboard, no tracer nav, no settings
+  [chromium] › auth-negative.e2e.spec.ts:76:7 › auth negatives and restricted staff UI › tracer-only staff sees Tracer but no other protected staff workspaces
+  [chromium] › auth-negative.e2e.spec.ts:93:7 › auth negatives and restricted staff UI › invalid stored session restores to staff login before protected shell items render
+  [chromium] › portal-nominee-detail.e2e.spec.ts:3:5 › portal detail renders every safe nominee fact and no sensitive controls
+  [chromium] › tracer.e2e.spec.ts:8:7 › staff tracer lifecycle (production auth path) › login screen matches the approved visual baseline
+  [chromium] › tracer.e2e.spec.ts:14:7 › staff tracer lifecycle (production auth path) › logs in, walks the tracer to a closed loan, with dashboard + tracer baselines
+Total: 10 tests in 4 files

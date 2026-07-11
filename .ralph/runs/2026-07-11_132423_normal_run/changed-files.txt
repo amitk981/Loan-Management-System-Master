@@ -1,0 +1,10 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/CR-001-e2e-visual-baselines-nondeterministic.md
+ M docs/working/HANDOFF.md
+ M sfpcl-lms/e2e/README.md
+ M sfpcl-lms/e2e/auth-negative.e2e.spec.ts
+ M sfpcl-lms/e2e/helpers.ts
+ M sfpcl-lms/e2e/tracer.e2e.spec.ts
+ M sfpcl-lms/playwright.config.ts
+?? .ralph/runs/2026-07-11_132423_normal_run/

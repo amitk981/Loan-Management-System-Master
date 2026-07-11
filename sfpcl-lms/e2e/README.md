@@ -50,7 +50,7 @@ npx playwright install chromium
 ## Running
 ```bash
 # From sfpcl-lms/. Point E2E_DJANGO_PYTHON at the Ralph venv interpreter.
-E2E_DJANGO_PYTHON="$(cd .. && pwd)/.ralph/venv/bin/python" npm run e2e
+E2E_DJANGO_PYTHON="$(git rev-parse --path-format=absolute --git-common-dir)/../.ralph/venv/bin/python" npm run e2e
 ```
 
 `E2E_DJANGO_PYTHON` is required. The config fails fast if it is unset rather
@@ -68,7 +68,7 @@ Generate or refresh a baseline (e.g. after an approved design change, or to
 create the first set on a machine with browsers):
 
 ```bash
-E2E_DJANGO_PYTHON="$(cd .. && pwd)/.ralph/venv/bin/python" npm run e2e -- --update-snapshots
+E2E_DJANGO_PYTHON="$(git rev-parse --path-format=absolute --git-common-dir)/../.ralph/venv/bin/python" npm run e2e -- --update-snapshots
 ```
 
 Deleting a baseline PNG and re-running with `--update-snapshots` regenerates just

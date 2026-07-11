@@ -1,7 +1,7 @@
 # Slice CR-001: E2E visual baselines are nondeterministic (rendered date/greeting) and README run command is wrong
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Change request (maintenance stage), accepted 2026-07-10 from docs/change-requests/accepted/CR-001-e2e-visual-baselines-nondeterministic.md.
