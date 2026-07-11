@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
+import fs from 'fs';
 import path from 'path';
 
-const evidenceDir = path.resolve(
-  __dirname,
-  '../../.ralph/runs/2026-07-11_142750_normal_run/evidence/screenshots',
-);
+const evidenceRoot = process.env.RALPH_EVIDENCE_DIR;
+if (!evidenceRoot) throw new Error('RALPH_EVIDENCE_DIR is required for trusted browser acceptance');
+fs.mkdirSync(evidenceRoot, { recursive: true });
 
 const portalUser = {
   user_id: 'portal-user-1',
@@ -23,7 +23,7 @@ const portalUser = {
   member_display_name: 'Rendered Portal Member',
 };
 
-test.describe('portal auth rendered interaction authority (005FA3)', () => {
+test.describe('portal auth rendered interaction authority (005FA4)', () => {
   test('empty and populated portal forms have one real-session path', async ({ page }) => {
     let portalLoginCalls = 0;
     let submittedBody: unknown;
@@ -60,7 +60,7 @@ test.describe('portal auth rendered interaction authority (005FA3)', () => {
     await page.getByRole('button', { name: 'Sign in securely' }).click();
     await expect(page.getByText('Enter your registered contact and password.')).toBeVisible();
     expect(portalLoginCalls).toBe(0);
-    await page.screenshot({ path: path.join(evidenceDir, 'portal-login-validation.png'), fullPage: true });
+    await page.screenshot({ path: path.join(evidenceRoot, 'portal-login-validation.png'), fullPage: true });
 
     await page.getByLabel('Mobile Number or Email').fill('member@example.test');
     await page.getByLabel('Password').fill('correct horse battery staple');
@@ -102,5 +102,6 @@ test.describe('portal auth rendered interaction authority (005FA3)', () => {
     await expect(page.getByText('Dashboard', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Continue with demo role' })).toHaveCount(0);
     await expect(page.evaluate(() => localStorage.getItem('sfpcl_staff_auth_session'))).resolves.toBeNull();
+    await page.screenshot({ path: path.join(evidenceRoot, 'portal-post-logout.png'), fullPage: true });
   });
 });

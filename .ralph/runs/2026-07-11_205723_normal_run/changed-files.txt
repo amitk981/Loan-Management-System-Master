@@ -1,0 +1,11 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/005FA4-portal-auth-real-boundary-flag-proof.md
+ M docs/slices/006G5-relative-import-dependency-guard.md
+ M docs/slices/006H6-workbench-action-projection-and-interaction-proof.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-005-application-intake.md
+ M sfpcl-lms/e2e/portal-auth-interaction.e2e.spec.ts
+ M sfpcl-lms/src/pages/auth/LoginScreen.tsx
+ M sfpcl-lms/src/services/demoAuthFlag.test.tsx
+?? .ralph/runs/2026-07-11_205723_normal_run/

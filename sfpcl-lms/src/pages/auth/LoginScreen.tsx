@@ -13,10 +13,10 @@ interface LoginScreenProps {
   showDemoRoleSelector?: boolean;
 }
 
-const ALL_ROLES: Role[] = [
+const STAFF_DEMO_ROLES: Role[] = [
   'field_officer', 'credit_manager', 'deputy_manager_finance', 'compliance_team',
   'company_secretary', 'sanction_committee', 'cfo', 'director',
-  'senior_manager_finance', 'cfc', 'accounts', 'sales_team_user', 'auditor', 'admin', 'borrower',
+  'senior_manager_finance', 'cfc', 'accounts', 'sales_team_user', 'auditor', 'admin',
 ];
 
 const LoginScreen: React.FC<LoginScreenProps> = ({
@@ -153,14 +153,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
             {showDemoRoleSelector && (
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Demo role (select to preview as any user)
+                  Demo role (select to preview as a staff user)
                 </label>
                 <select
                   value={demoRole}
                   onChange={e => setDemoRole(e.target.value as Role)}
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
                 >
-                  {ALL_ROLES.map(r => (
+                  {STAFF_DEMO_ROLES.map(r => (
                     <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                   ))}
                 </select>

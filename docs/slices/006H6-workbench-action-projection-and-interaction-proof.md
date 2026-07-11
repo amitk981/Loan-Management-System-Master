@@ -86,3 +86,11 @@ High
   second approvals-to-private-credit edge.
 - The backend parity matrix and mounted-container HTTP tests are both mandatory and distinct; keep
   the exact four-read refresh and single-request stale-write assertions already specified.
+
+## Run-Ahead Sharpening Review (005FA4, 2026-07-11)
+
+- Reconfirmed from the already-open architecture findings that the default exported workbench,
+  not a manually projected child, is the required React boundary. Preserve full six-field action
+  objects through that container and prove disabled reasons as well as enabled clicks.
+- 006G5 remains a hard prerequisite: action projection work must retain the canonical dependency
+  direction after relative imports receive the same classification as absolute imports.

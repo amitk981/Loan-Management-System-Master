@@ -1,0 +1,5 @@
+
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+src/services/demoAuthFlag.test.tsx(13,12): error TS2580: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node`.

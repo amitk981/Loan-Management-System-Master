@@ -1,5 +1,15 @@
 # Epic 005 Digest: Application Intake, Completeness, and Deficiencies
 
+## 005FA4 Portal Auth Real-Boundary Flag Proof
+
+- Unset, explicit-false, and true demo flags are now proven through module-isolated renders of the
+  actual `App`/`RoleProvider` boundary, not a manually reconstructed `LoginScreen` projection.
+- The true-flag red case found that the staff demo selector still offered a synthetic borrower and
+  routed it into the portal. The selector now contains staff roles only; portal entry always uses
+  the real credential/session path.
+- The trusted Playwright contract derives both screenshot paths from `RALPH_EVIDENCE_DIR`, covers
+  empty/populated login with one exact request, and captures the fail-closed post-logout state.
+
 ## 005E3 Completeness Authority and Fidelity Closure
 
 - Completeness and deficiency reads now expose four §44-shaped resource actions: pass, return,

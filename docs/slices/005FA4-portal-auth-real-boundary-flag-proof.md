@@ -1,7 +1,7 @@
 # Slice 005FA4: Portal Auth Real-Boundary Flag Proof
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 005: Application Intake and Completeness
@@ -70,3 +70,14 @@ High
 - Demo flag behavior and portal fail-closed session behavior are proven through the real app
   boundary in all three flag states.
 - No test manually reconstructs the production flag-to-UI projection it claims to verify.
+
+## Completion Note (2026-07-11)
+
+- The unset/false/true matrix now module-resets and renders the real `App`/`RoleProvider` boundary;
+  no test projects the flag into `LoginScreen` props.
+- The failing true-flag case exposed a borrower role in the staff demo selector. Removing that one
+  option closes the synthetic portal bypass while preserving every approved staff demo role and
+  the existing visual composition.
+- The pinned browser spec uses `RALPH_EVIDENCE_DIR`, asserts the exact one-call portal request and
+  fail-closed logout, and declares both screenshots. Local Chromium launch was denied by the macOS
+  sandbox; the trusted orchestrator browser gate remains authoritative.

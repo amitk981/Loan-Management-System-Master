@@ -54,3 +54,12 @@ Medium
 - Absolute and relative imports receive the same canonical dependency classification.
 - The dependency guard cannot miss a forbidden edge because it was written relative to a package.
 
+## Run-Ahead Sharpening Review (005FA4, 2026-07-11)
+
+- Reconfirmed from the already-open architecture finding that the minimum red matrix must include
+  `from ..approvals import ...`, `from ... import approvals`, aliased/package exposure, and an
+  approvals-side relative import of a private credit module; an absolute-only regression is not
+  sufficient.
+- Keep this corrective slice backend-test-only unless the resolver proves a real production import
+  violation. It must not change sanction workflow behavior or broaden ADR-0005's single public
+  approvals-to-credit handoff.

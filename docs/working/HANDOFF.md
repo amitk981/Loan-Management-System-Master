@@ -1,27 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-11_194100_normal_run
+2026-07-11_205723_normal_run
 
 ## Current Status
 
-005E3 is complete. Completeness and deficiency reads project backend resource actions from the same
-write validators; the React screen joins both checklist projections, fails closed on disagreement,
-restores the approved S12 category/item/document-chip composition, and reloads canonical queue,
-checklist, completeness, and deficiency history after successful actions. Absent/disabled resource
-actions expose no mutation even when `/auth/me` grants the global permission.
-
-005FA4 and 006G5 remain the next corrective slices and were already concretely sharpened by the
-preceding architecture review; no additional requirements were available from the Epic 005 digest
-opened in this run.
+005FA4 is complete. Demo-flag proof now renders the real App/RoleProvider boundary in isolated
+unset, false, and true environments. The red test exposed and closed a synthetic borrower option in
+the staff demo selector, so demo mode can no longer enter the protected portal; all staff demo roles
+and the approved composition remain unchanged. The pinned browser spec now writes both declared
+screenshots beneath `RALPH_EVIDENCE_DIR` with no hard-coded run ID.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-11_194100_normal_run/`. Frontend lint/typecheck/build and
+Evidence is under `.ralph/runs/2026-07-11_205723_normal_run/`. Frontend lint/typecheck/build and
 148 tests passed. Backend check/migration sync and 397 tests passed with expected PostgreSQL-only
-skips at 94% coverage. The pinned Playwright spec compiles/lists, but Chromium launch was blocked
-by the sandbox's macOS Mach-port denial; the exact failure is preserved in the run log.
+skips at 94% coverage. Both Playwright cases start their servers, but Chromium launch is blocked by
+the sandbox's macOS Mach-port denial; the exact failure is preserved for the trusted orchestrator
+browser gate, and no screenshot was fabricated locally.
 
 ## Next Run
 
-Run 005FA4, then 006G5. 006H6 depends on 006G5; follow with 006H3 and then 006X.
+Run 006G5. 006H6 depends on it; follow with 006H3 and then 006X.

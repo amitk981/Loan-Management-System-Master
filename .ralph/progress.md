@@ -3353,3 +3353,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-11_205723_normal_run
+
+- Completed 005FA4: replaced the static demo-flag projection with isolated real App/RoleProvider
+  boundary proof and removed the discovered borrower option from staff demo mode.
+- The trusted Playwright contract now uses the current evidence directory and captures both portal
+  validation and post-logout states; local Chromium launch remains sandbox-blocked and logged.
+- Frontend lint/typecheck/build and 148 tests passed; backend check/migration sync and 397 tests
+  passed at 94% coverage.
+- Next action: run 006G5-relative-import-dependency-guard.
+
+## 2026-07-11 21:06:28 - 2026-07-11_205723_normal_run
+- Agent tool used: codex
+- Slice attempted: 005FA4-portal-auth-real-boundary-flag-proof
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_205723_normal_run/.ralph/runs/2026-07-11_205723_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_205723_normal_run/.ralph/runs/2026-07-11_205723_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
