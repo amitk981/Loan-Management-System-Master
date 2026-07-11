@@ -55,6 +55,64 @@ class AppraisalNoteResult:
     snapshot: dict
 
 
+@dataclass(frozen=True)
+class AppraisalTransitionEvaluation:
+    allowed: bool
+    reason: str | None
+
+
+def evaluate_appraisal_update(note, permissions):
+    if note.appraisal_status != LoanAppraisalNote.STATUS_DRAFT:
+        return AppraisalTransitionEvaluation(False, "Only draft appraisal notes can be updated.")
+    return AppraisalTransitionEvaluation(True, None)
+
+
+def evaluate_appraisal_revalidation(note, permissions):
+    if RISK_MANAGE_PERMISSION not in permissions:
+        return AppraisalTransitionEvaluation(False, "Risk changes require risk-assessment authority.")
+    if note.appraisal_status not in {LoanAppraisalNote.STATUS_DRAFT, LoanAppraisalNote.STATUS_REVIEW_PENDING, LoanAppraisalNote.STATUS_REVIEWED}:
+        return AppraisalTransitionEvaluation(False, "Rejected or sanction-submitted appraisal notes require governed manual repair.")
+    if note.prerequisite_provenance != "legacy_unverified":
+        return AppraisalTransitionEvaluation(False, "Only legacy-unverified appraisal prerequisites can be revalidated.")
+    return AppraisalTransitionEvaluation(True, None)
+
+
+def evaluate_appraisal_submission(note):
+    if note.appraisal_status != LoanAppraisalNote.STATUS_DRAFT:
+        return AppraisalTransitionEvaluation(False, "Only a draft appraisal note can be submitted for review.")
+    if note.prerequisite_provenance != "verified":
+        return AppraisalTransitionEvaluation(False, "Appraisal prerequisites must be explicitly revalidated before review.")
+    if _submission_errors(note):
+        return AppraisalTransitionEvaluation(False, "Appraisal and risk assessment must be complete before review.")
+    return AppraisalTransitionEvaluation(True, None)
+
+
+def evaluate_appraisal_review(note, actor):
+    if note.appraisal_status != LoanAppraisalNote.STATUS_REVIEW_PENDING:
+        return AppraisalTransitionEvaluation(False, "Only a review-pending appraisal note can be reviewed.")
+    if note.prerequisite_provenance != "verified":
+        return AppraisalTransitionEvaluation(False, "Appraisal review requires verified prerequisite snapshots.")
+    if note.prepared_by_user_id == actor.pk:
+        return AppraisalTransitionEvaluation(False, "The appraisal preparer cannot review their own appraisal note.")
+    return AppraisalTransitionEvaluation(True, None)
+
+
+def evaluate_sanction_submission(note, *, latest_review=None, history_locked=False):
+    if note.appraisal_status != LoanAppraisalNote.STATUS_REVIEWED:
+        return AppraisalTransitionEvaluation(False, "Only a reviewed appraisal note can be submitted for sanction.")
+    if note.prerequisite_provenance != "verified":
+        return AppraisalTransitionEvaluation(False, "Sanction submission requires verified prerequisite snapshots.")
+    if _submission_errors(note):
+        return AppraisalTransitionEvaluation(False, "Sanction submission requires a complete appraisal and risk assessment.")
+    if not _frozen_prerequisites_complete(note):
+        return AppraisalTransitionEvaluation(False, "Sanction submission requires complete frozen eligibility and loan-limit snapshots.")
+    if not history_locked:
+        latest_review = note.review_decisions.order_by("decided_at", "appraisal_review_decision_id").last()
+    if latest_review is None or not _latest_review_matches_note(note, latest_review):
+        return AppraisalTransitionEvaluation(False, "The latest immutable review decision does not match the reviewed appraisal.")
+    return AppraisalTransitionEvaluation(True, None)
+
+
 def appraisal_available_actions(note, actor, permissions):
     """Project the actions governed by this module's public transition predicates."""
     permissions = set(permissions)
@@ -62,23 +120,33 @@ def appraisal_available_actions(note, actor, permissions):
 
     def action(code, label, permission, allowed, role=None, reason=None):
         enabled = allowed and permission in permissions and (role is None or role in roles)
+        disabled_reason = reason or "Unavailable for this appraisal state or authority."
+        if permission not in permissions:
+            disabled_reason = f"Required permission {permission} is missing."
+        elif role is not None and role not in roles:
+            disabled_reason = f"Required role {role} is missing."
         return {
             "action_code": code,
             "label": label,
             "enabled": enabled,
-            "disabled_reason": None if enabled else reason or "Unavailable for this appraisal state or authority.",
+            "disabled_reason": None if enabled else disabled_reason,
             "required_permission": permission,
             "required_role": role,
         }
 
-    state = note.appraisal_status
-    legacy = note.prerequisite_provenance == "legacy_unverified"
+    evaluations = {
+        APPRAISAL_UPDATE_PERMISSION: evaluate_appraisal_update(note, permissions),
+        "revalidate_appraisal_prerequisites": evaluate_appraisal_revalidation(note, permissions),
+        APPRAISAL_SUBMIT_PERMISSION: evaluate_appraisal_submission(note),
+        APPRAISAL_REVIEW_PERMISSION: evaluate_appraisal_review(note, actor),
+        APPRAISAL_SANCTION_SUBMIT_PERMISSION: evaluate_sanction_submission(note),
+    }
     return [
-        action(APPRAISAL_UPDATE_PERMISSION, "Update Appraisal Draft", APPRAISAL_UPDATE_PERMISSION, state == LoanAppraisalNote.STATUS_DRAFT and RISK_MANAGE_PERMISSION in permissions),
-        action("revalidate_appraisal_prerequisites", "Revalidate Prerequisites", APPRAISAL_UPDATE_PERMISSION, legacy and state in {LoanAppraisalNote.STATUS_DRAFT, LoanAppraisalNote.STATUS_REVIEW_PENDING, LoanAppraisalNote.STATUS_REVIEWED} and RISK_MANAGE_PERMISSION in permissions),
-        action(APPRAISAL_SUBMIT_PERMISSION, "Submit for Credit Review", APPRAISAL_SUBMIT_PERMISSION, state == LoanAppraisalNote.STATUS_DRAFT and not legacy),
-        action(APPRAISAL_REVIEW_PERMISSION, "Record Credit Review", APPRAISAL_REVIEW_PERMISSION, state == LoanAppraisalNote.STATUS_REVIEW_PENDING, role="credit_manager"),
-        action(APPRAISAL_SANCTION_SUBMIT_PERMISSION, "Submit to Sanction Committee", APPRAISAL_SANCTION_SUBMIT_PERMISSION, state == LoanAppraisalNote.STATUS_REVIEWED, role="credit_manager"),
+        action(APPRAISAL_UPDATE_PERMISSION, "Update Appraisal Draft", APPRAISAL_UPDATE_PERMISSION, evaluations[APPRAISAL_UPDATE_PERMISSION].allowed, reason=evaluations[APPRAISAL_UPDATE_PERMISSION].reason),
+        action("revalidate_appraisal_prerequisites", "Revalidate Prerequisites", APPRAISAL_UPDATE_PERMISSION, evaluations["revalidate_appraisal_prerequisites"].allowed, reason=evaluations["revalidate_appraisal_prerequisites"].reason),
+        action(APPRAISAL_SUBMIT_PERMISSION, "Submit for Credit Review", APPRAISAL_SUBMIT_PERMISSION, evaluations[APPRAISAL_SUBMIT_PERMISSION].allowed, reason=evaluations[APPRAISAL_SUBMIT_PERMISSION].reason),
+        action(APPRAISAL_REVIEW_PERMISSION, "Record Credit Review", APPRAISAL_REVIEW_PERMISSION, evaluations[APPRAISAL_REVIEW_PERMISSION].allowed, role="credit_manager", reason=evaluations[APPRAISAL_REVIEW_PERMISSION].reason),
+        action(APPRAISAL_SANCTION_SUBMIT_PERMISSION, "Submit to Sanction Committee", APPRAISAL_SANCTION_SUBMIT_PERMISSION, evaluations[APPRAISAL_SANCTION_SUBMIT_PERMISSION].allowed, role="credit_manager", reason=evaluations[APPRAISAL_SANCTION_SUBMIT_PERMISSION].reason),
     ]
 
 
@@ -190,8 +258,9 @@ class AppraisalWorkflow:
         if partial:
             if current is None:
                 raise CreditModuleNotFound("Appraisal note was not found.")
-            if current.appraisal_status != LoanAppraisalNote.STATUS_DRAFT:
-                raise CreditModuleInvalidStateError("Only draft appraisal notes can be updated.")
+            transition = evaluate_appraisal_update(current, permissions)
+            if not transition.allowed:
+                raise CreditModuleInvalidStateError(transition.reason)
             changed_fields = []
             for field in (
                 "borrower_summary",
@@ -387,14 +456,12 @@ class AppraisalWorkflow:
             APPRAISAL_SUBMIT_PERMISSION,
             permissions,
         )
-        if note.appraisal_status != LoanAppraisalNote.STATUS_DRAFT:
-            raise CreditModuleInvalidStateError(
-                "Only a draft appraisal note can be submitted for review."
-            )
-        if note.prerequisite_provenance != "verified":
-            raise CreditModuleInvalidStateError(
-                "Appraisal prerequisites must be explicitly revalidated before review."
-            )
+        transition = evaluate_appraisal_submission(note)
+        if not transition.allowed and (
+            note.appraisal_status != LoanAppraisalNote.STATUS_DRAFT
+            or note.prerequisite_provenance != "verified"
+        ):
+            raise CreditModuleInvalidStateError(transition.reason)
         submission_errors = _submission_errors(note)
         if submission_errors:
             raise CreditModuleValidationError(submission_errors)
@@ -467,18 +534,9 @@ class AppraisalWorkflow:
             APPRAISAL_UPDATE_PERMISSION,
             permissions,
         )
-        if note.appraisal_status not in {
-            LoanAppraisalNote.STATUS_DRAFT,
-            LoanAppraisalNote.STATUS_REVIEW_PENDING,
-            LoanAppraisalNote.STATUS_REVIEWED,
-        }:
-            raise CreditModuleInvalidStateError(
-                "Rejected or sanction-submitted appraisal notes require governed manual repair."
-            )
-        if note.prerequisite_provenance != "legacy_unverified":
-            raise CreditModuleInvalidStateError(
-                "Only legacy-unverified appraisal prerequisites can be revalidated."
-            )
+        transition = evaluate_appraisal_revalidation(note, permissions)
+        if not transition.allowed:
+            raise CreditModuleInvalidStateError(transition.reason)
         projection_permissions = set(permissions) | {APPLICATION_READ_PERMISSION}
         eligibility = EligibilityAssessmentModule().get(
             actor=actor,
@@ -617,18 +675,11 @@ class AppraisalWorkflow:
             APPRAISAL_REVIEW_PERMISSION,
             permissions,
         )
-        if note.appraisal_status != LoanAppraisalNote.STATUS_REVIEW_PENDING:
-            raise CreditModuleInvalidStateError(
-                "Only a review-pending appraisal note can be reviewed."
-            )
-        if note.prerequisite_provenance != "verified":
-            raise CreditModuleInvalidStateError(
-                "Appraisal review requires verified prerequisite snapshots."
-            )
-        if note.prepared_by_user_id == actor.pk:
-            raise CreditModulePermissionDenied(
-                "The appraisal preparer cannot review their own appraisal note."
-            )
+        transition = evaluate_appraisal_review(note, actor)
+        if not transition.allowed:
+            if note.prepared_by_user_id == actor.pk:
+                raise CreditModulePermissionDenied(transition.reason)
+            raise CreditModuleInvalidStateError(transition.reason)
         # Existing immutable history is locked only after its owning application and
         # appraisal. The appraisal lock serializes an empty history as well.
         list(note.review_decisions.select_for_update().only("pk"))
@@ -793,29 +844,18 @@ class AppraisalWorkflow:
             raise CreditModuleInvalidStateError(
                 "A reviewed appraisal note is required for sanction submission."
             )
-        if note.appraisal_status != LoanAppraisalNote.STATUS_REVIEWED:
-            raise CreditModuleInvalidStateError(
-                "Only a reviewed appraisal note can be submitted for sanction."
-            )
-        if note.prerequisite_provenance != "verified":
-            raise CreditModuleInvalidStateError(
-                "Sanction submission requires verified prerequisite snapshots."
-            )
-        if _submission_errors(note):
-            raise CreditModuleInvalidStateError(
-                "Sanction submission requires a complete appraisal and risk assessment."
-            )
-        _require_complete_frozen_prerequisites(note)
-
         history = list(
             note.review_decisions.select_for_update(of=("self",))
             .select_related("reviewer_user")
             .order_by("decided_at", "appraisal_review_decision_id")
         )
-        if not history or not _latest_review_matches_note(note, history[-1]):
-            raise CreditModuleInvalidStateError(
-                "The latest immutable review decision does not match the reviewed appraisal."
-            )
+        transition = evaluate_sanction_submission(
+            note,
+            latest_review=history[-1] if history else None,
+            history_locked=True,
+        )
+        if not transition.allowed:
+            raise CreditModuleInvalidStateError(transition.reason)
         latest_review = history[-1]
 
         exception_required = (
@@ -946,6 +986,13 @@ def _tat_status(at, due_at):
 
 
 def _require_complete_frozen_prerequisites(note):
+    if not _frozen_prerequisites_complete(note):
+        raise CreditModuleInvalidStateError(
+            "Sanction submission requires complete frozen eligibility and loan-limit snapshots."
+        )
+
+
+def _frozen_prerequisites_complete(note):
     eligibility = note.eligibility_snapshot_json
     loan_limit = note.loan_limit_snapshot_json
     consistent = (
@@ -960,10 +1007,7 @@ def _require_complete_frozen_prerequisites(note):
         and loan_limit.get("loan_application_id") == str(note.loan_application_id)
         and isinstance(loan_limit.get("exception_required_flag"), bool)
     )
-    if not consistent:
-        raise CreditModuleInvalidStateError(
-            "Sanction submission requires complete frozen eligibility and loan-limit snapshots."
-        )
+    return consistent
 
 
 def _latest_review_matches_note(note, latest_review):

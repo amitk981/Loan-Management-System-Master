@@ -1,5 +1,17 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006X2 Credit Action Predicate and Container Closure
+
+- Eligibility, loan-limit, and appraisal projections now consume reusable transition evaluations;
+  sanction immutable history is re-evaluated only after the canonical review-decision lock.
+- Stored eligibility exposes loan-limit calculation through loan-limit's public six-field action
+  projector, closing the first-calculation reachability gap without client-side inference.
+- The default `AppraisalWorkbench` is mounted through the authenticated request boundary for all
+  named mutations, exact bodies, the canonical four-read refresh, PATCH response-field exclusion,
+  stable disabled reasons, absent actions, and one-call 400/403/409 error behavior.
+- Initial selection now supplies the fetched queue to assessment loading so a first appraisal
+  create projects the selected application's requested amount instead of a stale empty form value.
+
 ## Architecture Review 2026-07-11 23:02 - False Closure of Action and Browser Proof
 
 - 006H7 implements shared transition evaluation only for loan-limit. Eligibility/appraisal actions

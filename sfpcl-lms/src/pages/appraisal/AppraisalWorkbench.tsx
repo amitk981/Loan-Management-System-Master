@@ -196,7 +196,7 @@ const AppraisalWorkbench: React.FC<{ onOpenApplication: (id: string) => void; in
   const [rejectionCategory, setRejectionCategory] = useState('eligibility'); const [rejectionMode, setRejectionMode] = useState('email');
   const [detailedReason, setDetailedReason] = useState(''); const [reapplyAllowed, setReapplyAllowed] = useState(true);
 
-  const loadAssessments = async (id: string) => {
+  const loadAssessments = async (id: string, applicationPool = applications) => {
     const values = await Promise.allSettled([fetchEligibilityAssessment(id), fetchLoanLimitAssessment(id), fetchAppraisal(id), fetchSanctionCase(id)]);
     const failure = values.find(result => result.status === 'rejected' && !missing(result.reason));
     if (failure?.status === 'rejected') throw failure.reason;
@@ -206,7 +206,7 @@ const AppraisalWorkbench: React.FC<{ onOpenApplication: (id: string) => void; in
     const nextSanction = values[3].status === 'fulfilled' ? values[3].value : null;
     setEligibility(nextEligibility); setLoanLimit(nextLimit); setAppraisal(nextAppraisal); setSanction(nextSanction);
     if (nextSanction) setApplications(current => current.map(item => item.loan_application_id === id && nextSanction.application_status ? { ...item, application_status: nextSanction.application_status } : item));
-    const selected = applications.find(item => item.loan_application_id === id);
+    const selected = applicationPool.find(item => item.loan_application_id === id);
     setForm(nextAppraisal ? projectAppraisalDraft(nextAppraisal) : emptyDraft(selected?.required_loan_amount ?? ''));
     setLimitForm(emptyLimit(selected?.required_loan_amount ?? '')); setStatus('success');
   };
@@ -217,7 +217,7 @@ const AppraisalWorkbench: React.FC<{ onOpenApplication: (id: string) => void; in
       if (cancelled) return;
       const queue = result.items.filter(item => ['reference_generated', 'submitted_to_sanction_committee'].includes(item.application_status));
       setApplications(queue); const id = queue.some(item => item.loan_application_id === initialSelectedId) ? initialSelectedId! : queue[0]?.loan_application_id ?? '';
-      setSelectedId(id); if (!id) setStatus('success'); else loadAssessments(id).catch(error => { setStatus(denied(error) ? 'denied' : 'error'); setMessage(errorText(error)); });
+      setSelectedId(id); if (!id) setStatus('success'); else loadAssessments(id, queue).catch(error => { setStatus(denied(error) ? 'denied' : 'error'); setMessage(errorText(error)); });
     }).catch(error => { if (!cancelled) { setStatus(denied(error) ? 'denied' : 'error'); setMessage(errorText(error)); } });
     return () => { cancelled = true; };
   // Initial route selection owns this load; later selection uses the explicit handler.

@@ -279,9 +279,24 @@ def _loan_limit_actions(application, actor, permissions):
         return {"action_code": code, "label": label, "enabled": enabled, "disabled_reason": None if enabled else reason, "required_permission": permission, "required_role": None}
     reason = transition.reason or "Required permission is missing."
     return [
-        item(LOAN_LIMIT_CALCULATE_PERMISSION, "Calculate Loan Limit", LOAN_LIMIT_CALCULATE_PERMISSION, calculate_enabled, reason),
+        loan_limit_calculate_action(application, permissions),
         item("credit.appraisal.create", "Create Appraisal Draft", "credit.appraisal.create", create_enabled, reason),
     ]
+
+
+def loan_limit_calculate_action(application, permissions):
+    """Public six-field projection shared by every container that can start calculation."""
+    permissions = set(permissions)
+    transition = evaluate_loan_limit_calculation(application)
+    enabled = transition.allowed and LOAN_LIMIT_CALCULATE_PERMISSION in permissions
+    return {
+        "action_code": LOAN_LIMIT_CALCULATE_PERMISSION,
+        "label": "Calculate Loan Limit",
+        "enabled": enabled,
+        "disabled_reason": None if enabled else transition.reason or "You do not have permission to calculate loan limits.",
+        "required_permission": LOAN_LIMIT_CALCULATE_PERMISSION,
+        "required_role": None,
+    }
 
 
 def _projection(assessment):

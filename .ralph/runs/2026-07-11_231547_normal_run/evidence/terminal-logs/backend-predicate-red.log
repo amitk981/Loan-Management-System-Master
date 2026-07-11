@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_eligibility_action_and_write_share_the_locked_transition_evaluation (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_eligibility_action_and_write_share_the_locked_transition_evaluation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_231547_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 169, in test_eligibility_action_and_write_share_the_locked_transition_evaluation
+    from sfpcl_credit.credit.modules.eligibility_assessment import (
+ImportError: cannot import name 'evaluate_eligibility_run' from 'sfpcl_credit.credit.modules.eligibility_assessment' (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_231547_normal_run/sfpcl_credit/credit/modules/eligibility_assessment.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.016s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

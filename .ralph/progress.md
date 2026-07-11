@@ -3556,3 +3556,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-11_231547_normal_run
+
+- Completed 006X2: centralized credit transition projection/write checks and moved sanction
+  history validation behind the canonical lock.
+- Added 14 mounted authenticated-container tests covering every named mutation, exact HTTP bodies,
+  four-read refreshes, PATCH allowlisting, disabled/absent controls, and one-call 400/403/409 paths.
+- Frontend lint/typecheck/build and 165 tests passed; backend check/migration sync and 405 tests
+  passed with five expected PostgreSQL skips at 94% coverage; dependency scan passed.
+- Next action: run 006X3-credit-visual-and-real-browser-closure.
+
+## 2026-07-11 23:37:56 - 2026-07-11_231547_normal_run
+- Agent tool used: codex
+- Slice attempted: 006X2-credit-action-predicate-and-container-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_231547_normal_run/.ralph/runs/2026-07-11_231547_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_231547_normal_run/.ralph/runs/2026-07-11_231547_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

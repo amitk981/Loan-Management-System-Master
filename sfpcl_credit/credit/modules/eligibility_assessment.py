@@ -30,6 +30,12 @@ class EligibilityAssessmentResult:
     snapshot: dict
 
 
+@dataclass(frozen=True)
+class EligibilityRunEvaluation:
+    allowed: bool
+    reason: str | None
+
+
 class EligibilityAssessmentModule:
     def get(self, *, actor, application_id, actor_permissions=None):
         permissions = require_permission(
@@ -80,9 +86,9 @@ class EligibilityAssessmentModule:
             ELIGIBILITY_RUN_PERMISSION,
             permissions,
         )
-        invalid_state_message = eligibility_run_invalid_state_message(application)
-        if invalid_state_message:
-            raise CreditModuleInvalidStateError(invalid_state_message)
+        transition = evaluate_eligibility_run(application)
+        if not transition.allowed:
+            raise CreditModuleInvalidStateError(transition.reason)
 
         active_result = _active_member_check(application.member)
         source_checks = _source_backed_eligibility_checks(application)
@@ -128,35 +134,42 @@ class EligibilityAssessmentModule:
         )
 
 
-def eligibility_run_invalid_state_message(application):
+def evaluate_eligibility_run(application):
     if LoanAppraisalNote.objects.filter(loan_application=application).exists():
-        return "Eligibility assessment cannot be rerun after appraisal has started."
+        return EligibilityRunEvaluation(False, "Eligibility assessment cannot be rerun after appraisal has started.")
     if not (application.application_reference_number or "").startswith("LO"):
-        return "Eligibility assessment requires a formal LO application reference."
+        return EligibilityRunEvaluation(False, "Eligibility assessment requires a formal LO application reference.")
     if application.application_status != LoanApplication.STATUS_REFERENCE_GENERATED:
-        return (
+        return EligibilityRunEvaluation(False, (
             "Invalid state transition for loan_application: eligibility_assessment.run "
             f"is not allowed from {application.application_status}."
-        )
+        ))
     if application.completeness_status != LoanApplication.COMPLETENESS_COMPLETE:
-        return "Eligibility assessment requires complete application documentation."
+        return EligibilityRunEvaluation(False, "Eligibility assessment requires complete application documentation.")
     if application.current_stage != LoanApplication.STAGE_CREDIT_ASSESSMENT:
-        return "Eligibility assessment is allowed only in credit assessment stage."
-    return None
+        return EligibilityRunEvaluation(False, "Eligibility assessment is allowed only in credit assessment stage.")
+    return EligibilityRunEvaluation(True, None)
+
+
+def eligibility_run_invalid_state_message(application):
+    """Compatibility wrapper; transition authority lives in evaluate_eligibility_run."""
+    return evaluate_eligibility_run(application).reason
 
 
 def _snapshot_with_actions(assessment, application, actor, permissions):
+    from sfpcl_credit.credit.modules.loan_limit_calculator import loan_limit_calculate_action
+
     snapshot = eligibility_assessment_snapshot(assessment)
-    allowed = eligibility_run_invalid_state_message(application) is None
-    enabled = allowed and ELIGIBILITY_RUN_PERMISSION in permissions
+    transition = evaluate_eligibility_run(application)
+    enabled = transition.allowed and ELIGIBILITY_RUN_PERMISSION in permissions
     snapshot["available_actions"] = [{
         "action_code": ELIGIBILITY_RUN_PERMISSION,
         "label": "Run Eligibility Assessment",
         "enabled": enabled,
-        "disabled_reason": None if enabled else eligibility_run_invalid_state_message(application) or "You do not have permission to run eligibility assessments.",
+        "disabled_reason": None if enabled else transition.reason or "You do not have permission to run eligibility assessments.",
         "required_permission": ELIGIBILITY_RUN_PERMISSION,
         "required_role": None,
-    }]
+    }, loan_limit_calculate_action(application, permissions)]
     return snapshot
 
 

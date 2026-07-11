@@ -94,3 +94,11 @@ High
 - One real-browser, real-backend, two-role path reaches exactly one pending sanction case without
   mock credit facts or client-owned workflow decisions.
 
+## Run-Ahead Sharpening Review (006X2, 2026-07-11)
+
+- Consume the exact authenticated-container mutation matrix established by 006X2: eligibility,
+  limit, create/update/revalidate/submit, reviewed/returned/rejected, and sanction each issue one
+  write and exactly one four-resource refresh; 400/403/409 paths issue no refresh.
+- The trusted-browser tracer must begin from the server-projected loan-limit action now returned
+  with stored eligibility, and must prove absent/disabled actions remain non-invokable before each
+  cross-role mutation. Do not replace these assertions with global permission or stage heuristics.

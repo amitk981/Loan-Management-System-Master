@@ -164,6 +164,32 @@ class CreditEligibilityModuleTests(TestCase):
             ).exists()
         )
 
+    def test_eligibility_action_and_write_share_the_locked_transition_evaluation(self):
+        from sfpcl_credit.credit.modules.common import CreditModuleInvalidStateError
+        from sfpcl_credit.credit.modules.eligibility_assessment import (
+            EligibilityAssessmentModule,
+            evaluate_eligibility_run,
+        )
+
+        LoanApplication.objects.filter(pk=self.application.pk).update(
+            completeness_status=LoanApplication.COMPLETENESS_INCOMPLETE
+        )
+        self.application.refresh_from_db()
+        evaluation = evaluate_eligibility_run(self.application)
+
+        self.assertFalse(evaluation.allowed)
+        self.assertEqual(
+            evaluation.reason,
+            "Eligibility assessment requires complete application documentation.",
+        )
+        with self.assertRaisesMessage(CreditModuleInvalidStateError, evaluation.reason):
+            EligibilityAssessmentModule().run(
+                actor=self.actor,
+                application_id=self.application.loan_application_id,
+            )
+        self.assertFalse(AuditLog.objects.filter(action="eligibility.assessed").exists())
+        self.assertFalse(WorkflowEvent.objects.filter(workflow_name="eligibility_assessment").exists())
+
     def test_ineligible_assessment_returns_source_backed_blockers(self):
         from sfpcl_credit.credit.modules.eligibility_assessment import EligibilityAssessmentModule
 
