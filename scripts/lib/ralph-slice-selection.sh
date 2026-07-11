@@ -45,6 +45,83 @@ ralph_slice_unmet_dependencies() {
   fi
 }
 
+# Lint the whole slice queue so newly created slices (architecture-review
+# correctives especially) stay executable: every slice has a recognized
+# status, every pending slice declares "## Depends On", every reference
+# resolves to a real slice file, and the pending graph drains completely
+# (no cycles, no permanently stuck chains). Prints one "problem: ..." line
+# per finding and returns 1 when any exist. Runs on bash 3.2: membership is
+# tracked in newline-delimited strings, not associative arrays.
+ralph_slice_queue_lint() {
+  local slices_dir="${1:-docs/slices}"
+  local problems=0 file base status dep dep_file resolved
+  local drained=$'\n' pending=""
+  for file in "$slices_dir"/*.md; do
+    [[ -f "$file" ]] || continue
+    base="$(basename "$file" .md)"
+    status="$(ralph_slice_status "$file")"
+    case "$status" in
+      Complete|Superseded)
+        drained="${drained}${base}"$'\n'
+        ;;
+      "Not Started"|Blocked)
+        if ! grep -q '^## Depends On' "$file"; then
+          echo "problem: $base has no '## Depends On' section (declare '- None' when it has no blockers)"
+          problems=$((problems + 1))
+        fi
+        resolved=""
+        while IFS= read -r dep; do
+          [[ -n "$dep" ]] || continue
+          dep_file="$(find "$slices_dir" -maxdepth 1 -type f -name "${dep}-*.md" | sort | head -n 1)"
+          if [[ -z "$dep_file" ]]; then
+            echo "problem: $base depends on '$dep' but no ${dep}-*.md slice file exists"
+            problems=$((problems + 1))
+            continue
+          fi
+          resolved="$resolved $(basename "$dep_file" .md)"
+        done < <(ralph_slice_dependencies "$file")
+        pending="${pending}${base}|${resolved# }"$'\n'
+        ;;
+      *)
+        echo "problem: $base has unrecognized status '$status' (expected Not Started, Blocked, Complete, or Superseded)"
+        problems=$((problems + 1))
+        ;;
+    esac
+  done
+  local changed=1 line rest dep_base ok remaining
+  while (( changed )); do
+    changed=0
+    remaining=""
+    while IFS= read -r line; do
+      [[ -n "$line" ]] || continue
+      base="${line%%|*}"
+      rest="${line#*|}"
+      ok=1
+      for dep_base in $rest; do
+        case "$drained" in
+          *$'\n'"$dep_base"$'\n'*) ;;
+          *) ok=0; break ;;
+        esac
+      done
+      if (( ok )); then
+        drained="${drained}${base}"$'\n'
+        changed=1
+      else
+        remaining="${remaining}${line}"$'\n'
+      fi
+    done <<< "$pending"
+    pending="$remaining"
+  done
+  if [[ -n "${pending//$'\n'/}" ]]; then
+    while IFS= read -r line; do
+      [[ -n "$line" ]] || continue
+      echo "problem: ${line%%|*} can never become eligible (dependency cycle or stuck chain via: ${line#*|})"
+      problems=$((problems + 1))
+    done <<< "$pending"
+  fi
+  (( problems == 0 ))
+}
+
 # Print the basenames of every `Not Started` slice, in queue order.
 ralph_pending_slices() {
   local slices_dir="${1:-docs/slices}" file

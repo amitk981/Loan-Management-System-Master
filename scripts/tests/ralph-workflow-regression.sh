@@ -323,4 +323,64 @@ fi
 001E-fixture.md
 001G-fixture.md" ]] || fail "pending-slice listing did not return Not Started slices in queue order"
 
+# Queue lint: a healthy queue passes; malformed or undrainable queues are
+# rejected with one problem line per finding.
+lint_fixture="$fixture_dir/lint-slices"
+mkdir -p "$lint_fixture"
+make_lint_slice() {
+  local id="$1" status="$2"
+  shift 2
+  {
+    echo "# Slice $id: Fixture"
+    echo
+    echo "## Status"
+    echo "$status"
+    echo
+    echo "## Depends On"
+    if (( $# == 0 )); then
+      echo "- None"
+    else
+      printf -- '- %s\n' "$@"
+    fi
+  } > "$lint_fixture/$id-fixture.md"
+}
+make_lint_slice 010A Complete
+make_lint_slice 010B "Not Started" 010A
+make_lint_slice 010C "Not Started" 010B
+ralph_slice_queue_lint "$lint_fixture" >/dev/null \
+  || fail "healthy slice queue failed the lint"
+
+make_lint_slice 010D "Not Started" 010Z
+if lint_out="$(ralph_slice_queue_lint "$lint_fixture")"; then
+  fail "dangling dependency reference passed the lint"
+fi
+[[ "$lint_out" == *"010D"*"010Z"* ]] || fail "dangling reference was not named (got: $lint_out)"
+rm "$lint_fixture/010D-fixture.md"
+
+make_lint_slice 010E "Not Started" 010F
+make_lint_slice 010F "Not Started" 010E
+if lint_out="$(ralph_slice_queue_lint "$lint_fixture")"; then
+  fail "dependency cycle passed the lint"
+fi
+[[ "$lint_out" == *"can never become eligible"* ]] || fail "cycle was not reported as undrainable (got: $lint_out)"
+rm "$lint_fixture/010E-fixture.md" "$lint_fixture/010F-fixture.md"
+
+printf '# Slice 010G: Fixture\n\n## Status\nNot Started\n' > "$lint_fixture/010G-fixture.md"
+if lint_out="$(ralph_slice_queue_lint "$lint_fixture")"; then
+  fail "pending slice without a Depends On section passed the lint"
+fi
+[[ "$lint_out" == *"no '## Depends On' section"* ]] || fail "missing Depends On section was not reported (got: $lint_out)"
+rm "$lint_fixture/010G-fixture.md"
+
+make_lint_slice 010H "Not started" 010A
+if lint_out="$(ralph_slice_queue_lint "$lint_fixture")"; then
+  fail "unrecognized status value passed the lint"
+fi
+[[ "$lint_out" == *"unrecognized status"* ]] || fail "status typo was not reported (got: $lint_out)"
+rm "$lint_fixture/010H-fixture.md"
+
+make_lint_slice 010I Blocked 010C
+ralph_slice_queue_lint "$lint_fixture" >/dev/null \
+  || fail "Blocked slice on a drainable chain failed the lint"
+
 echo "PASS: Ralph workflow regressions"

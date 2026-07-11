@@ -5,6 +5,7 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
 source "$repo_root/scripts/lib/ralph-postgresql-acceptance.sh"
 source "$repo_root/scripts/lib/ralph-runtime-capabilities.sh"
+source "$repo_root/scripts/lib/ralph-slice-selection.sh"
 
 run_id=""
 worktree_dir="$repo_root"
@@ -346,6 +347,29 @@ if (( protected_violations > 0 )); then
   failures=$((failures + protected_violations))
 else
   echo "- PASS: no protected paths were modified." >> "$guard_file"
+fi
+
+# Slice queue lint: any run may create or sharpen slices (architecture
+# reviews especially), and a new slice only executes seamlessly if the queue
+# stays parseable and its Depends On graph still drains. Reject dangling
+# references, malformed sections, and dependency cycles before they merge.
+queue_lint_file="$run_dir/slice-queue-lint.md"
+{
+  echo "# Slice Queue Lint"
+  echo
+} > "$queue_lint_file"
+queue_lint_problems="$(ralph_slice_queue_lint "$worktree_dir/docs/slices" || true)"
+if [[ -z "$queue_lint_problems" ]]; then
+  echo "- PASS: every slice parses and the pending Depends On graph drains completely." >> "$queue_lint_file"
+else
+  while IFS= read -r lint_line; do
+    if [[ -n "$lint_line" ]]; then
+      echo "- FAIL: ${lint_line#problem: }" >> "$queue_lint_file"
+    fi
+  done <<< "$queue_lint_problems"
+  echo "" >> "$queue_lint_file"
+  echo "New or edited slices must follow the to-issues slice standard (## Status, ## Depends On with real slice ids) so the queue stays executable." >> "$queue_lint_file"
+  failures=$((failures + 1))
 fi
 
 # Impact-analysis gate: change-request slices (CR-*) must map their blast
