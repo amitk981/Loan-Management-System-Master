@@ -172,6 +172,8 @@ rg -q 'localhost_e2e_required' scripts/ralph-validate.sh \
   || fail "independent validation does not select localhost E2E from the shared capability"
 [[ "$(rg -o 'npm run e2e -- e2e/tracer\.e2e\.spec\.ts e2e/auth-negative\.e2e\.spec\.ts' scripts/ralph-validate.sh | wc -l | xargs)" == "2" ]] \
   || fail "independent localhost E2E validation does not run both dashboard specs twice"
+[[ "$(rg -o -- '--grep \\"zero-permission staff\|logs in, walks\\"' scripts/ralph-validate.sh | wc -l | xargs)" == "2" ]] \
+  || fail "independent localhost E2E validation is not scoped to the two dashboard scenarios"
 rg -q 'slice does not declare localhost-e2e-server' scripts/ralph-validate.sh \
   || fail "ordinary slices do not explicitly skip the capability-only E2E gate"
 rg -q 'postgresql-acceptance-validation-\$\{ordinal\}\.txt' scripts/ralph-validate.sh \

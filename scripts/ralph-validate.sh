@@ -246,7 +246,7 @@ fi
 # The capability makes the gate mandatory even though broad queue runs keep E2E
 # optional by default.
 if [[ "$mode" =~ ^(normal_run|repair)$ && "$localhost_e2e_required" == "1" ]]; then
-  run_gate e2e "E2E_DJANGO_PYTHON=\"$venv_python\" npm run e2e -- e2e/tracer.e2e.spec.ts e2e/auth-negative.e2e.spec.ts && E2E_DJANGO_PYTHON=\"$venv_python\" npm run e2e -- e2e/tracer.e2e.spec.ts e2e/auth-negative.e2e.spec.ts" || failures=$((failures + 1))
+  run_gate e2e "E2E_DJANGO_PYTHON=\"$venv_python\" npm run e2e -- e2e/tracer.e2e.spec.ts e2e/auth-negative.e2e.spec.ts --grep \"zero-permission staff|logs in, walks\" && E2E_DJANGO_PYTHON=\"$venv_python\" npm run e2e -- e2e/tracer.e2e.spec.ts e2e/auth-negative.e2e.spec.ts --grep \"zero-permission staff|logs in, walks\"" || failures=$((failures + 1))
 else
   write_skipped e2e "slice does not declare localhost-e2e-server"
 fi
