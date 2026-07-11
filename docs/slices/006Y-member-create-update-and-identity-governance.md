@@ -16,7 +16,7 @@ Deliver the member create/update backend contract with change history, verified-
 Staff can register and correct member records through governed APIs instead of relying on seed data; verified identity facts cannot be silently rewritten.
 
 ## Depends On
-- 006X
+- 006X3
 
 ## Source References
 - docs/source/api-contracts.md section 13 (member create/update endpoints and payloads)
@@ -61,6 +61,15 @@ High
 - Tests must prove a denied verified-identity mutation writes neither member state nor change
   history, while the explicit reverification transition records actor, reason ownership, masked
   before/after identity facts, and the resulting KYC status atomically.
+
+## Run-Ahead Sharpening Review (architecture review 2026-07-11_230238)
+
+- Follow 006X2's action/write parity contract for member update and reverification: the member
+  detail projection and authoritative mutation must consume the same permission, object-scope,
+  identity-lock, KYC-state, maker-checker, and stale-version evaluation.
+- Tests must pair every enabled/disabled six-field action with the matching write outcome and prove
+  that denied/stale identity changes leave the member, masked history, KYC status, and audit counts
+  unchanged. Do not use global `/auth/me` permissions as resource authority.
 
 ## Done Checklist
 - [ ] Execution plan written

@@ -2,6 +2,93 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-11 23:02 - Architecture Review 2026-07-11_230238_architecture_review
+
+Reviewed completed product work since architecture-review commit `1ff6cb8`:
+- `005E4-completeness-action-authority-and-browser-proof` (`b9c8442`)
+- `006H7-credit-action-parity-and-container-proof` (`0ed9b32`)
+- `006H3-appraisal-workbench-prototype-fidelity-restoration` (`dc5de3a`)
+- `006X-mvp-end-to-end-happy-path-tracer-bullet` (`045f5d2`)
+
+The review checked `git diff 1ff6cb8...HEAD`, the four run packets, actual implementation/tests,
+trusted-browser evidence, Epic 005/006 digests, ADR-0005, cited source sections, and functional IDs.
+Intervening `b2e8ac2` is Ralph-orchestrator-only and was excluded from product findings. Standards
+and spec fidelity were reviewed independently. Production code was not changed; `CONTEXT.md`
+remains truthful, and `.ralph/state.json` has no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - 006H7 repeats the proxy-test architecture it was created to remove
+
+The contract requires mounted default-container behavior through mocked authenticated HTTP, but
+`AppraisalWorkbench.test.tsx` still imports only `AppraisalWorkbenchView`, uses
+`renderToStaticMarkup`, and checks raw source strings/regular expressions. It never exercises the
+production controller, requests, refresh, or errors. This violates codebase-design §26.3's UI-
+behavior seam and already missed the remaining local `serverStage` projection. High-risk `006X2`
+owns the full mounted matrix plus observable assertions rather than source-text proxies.
+
+#### Finding 2 - High - Action/write rules remain duplicated across the credit workflow
+
+006H7 adds one shared loan-limit transition evaluation, but eligibility and appraisal projections
+still use independent state/role/permission heuristics. Appraisal writes additionally enforce
+provenance, maker-checker, object scope, locked history, rejection facts, frozen prerequisites, and
+sanction handoff consistency. An enabled action can therefore fail deterministically at its public
+write, contrary to API §44 and codebase-design §§12.3/23.4/42.2. `006X2` requires one reusable
+evaluation per mutation while preserving ADR-0005's approvals-owned handoff.
+
+#### Finding 3 - Medium - Restored presentation includes locally derived summary/stage facts
+
+`EligibilityChecklist` counts result codes into a pass fraction/progress width, and
+`AppraisalWorkbench` derives a visible stage from status/action combinations. The colours, cards,
+stepper, and formula disclosure are recoveries of the cited pre-006H prototype—not new visual
+design—but the derived facts need proof that they remain display-only and never become workflow or
+eligibility authority under the mock-surface ratchet and codebase-design §§23.3/42.3. `006X2`
+removes action authority from React; `006X3` preserves the prototype composition using stored facts
+and real-browser action-denial proof.
+
+Judgment call: the 219-line real API tracer is strong (success, denials, exact IDs, cardinality, and
+audit redaction) but duplicates narrower setup and will be costly to maintain. It is not a hard
+standard breach. Backend dependency direction and ADR-0005 ownership remain intact.
+
+### Spec
+
+#### Finding 1 - High - 006H7 implements only a fraction of its named closure
+
+006H7 requires shared write predicates and a state/role/object parity matrix for eligibility,
+loan-limit, and every appraisal mutation, plus mounted clicks for all mutations and 400/403/409
+paths. Commit `0ed9b32` adds a shared predicate only for loan-limit, ten lines of static view tests,
+and no eligibility/appraisal parity matrix. Its run packet traces only loan-limit while describing
+the rest as preserved. `006X2` owns the unimplemented contract without broadening business scope.
+
+#### Finding 2 - High - 006H3's required browser contract collects zero tests
+
+The slice requires the full visual state matrix, committed baselines/screenshots, and explicitly
+says browser execution/screenshot failure is not a deferral. Its collection log throws
+`ReferenceError: Cannot access 'title' before initialization` before discovery, reports zero tests,
+omits the loading capture, and has no screenshots or baselines. The slice also lacks the runtime
+capability that would trigger independent browser acceptance. High-risk `006X3` declares the exact
+contract and twenty outputs, including all eighteen visual states.
+
+#### Finding 3 - High - 006X's browser tracer is fully mocked rather than real end to end
+
+The slice requires a real backend, real role sessions, eligibility/limit/appraisal/review/sanction
+controls, exact action facts/PATCH/readback IDs, denied resource actions, and reviewed/pending-case
+screenshots. `epic-006-happy-path.e2e.spec.ts` intercepts every API with `page.route`, begins at a
+draft appraisal, does not click eligibility/limit/create, incompletely checks the PATCH/readback,
+and produced no screenshots. The real backend integration test is substantive but cannot prove the
+UI path. `006X3` keeps that backend test and adds one real-server, two-role browser tracer.
+
+No material scope creep was found. 005E4 is verified closed with distinct permission/write parity,
+two green trusted-browser runs, and all nine screenshots. M03-FR-010 through M03-FR-012 retain
+implemented confidence. M04-FR-001/002 remain explicitly deferred to 012EA under A-053;
+M04-FR-003 retains A-054's `created_at` proxy. M04-FR-004 through M04-FR-011 have substantive
+backend behavior, but action/container/visual reachability remains High risk until 006X2 and 006X3.
+
+No ADR was added because API §44, codebase-design §26.3, ADR-0005, and the existing frontend rules
+already settle the durable decisions. Summary: Standards found 2 High and 1 Medium issue; worst are
+the repeated proxy-test seam and action/write divergence. Spec found 3 High issues; worst are 006H7's
+missing core matrix, zero-test visual acceptance, and a mocked substitute for the real browser path.
+
 ## 2026-07-11 21:34 - Architecture Review 2026-07-11_212738_architecture_review
 
 Reviewed completed work since architecture-review commit `7a3d1c9`:

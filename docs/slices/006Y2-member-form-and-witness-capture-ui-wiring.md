@@ -59,6 +59,15 @@ Medium
   permission from `/auth/me` must not expose mutation controls when the selected member or witness
   resource disables the action; retain the existing directory/profile/witness panel composition.
 
+## Run-Ahead Sharpening Review (architecture review 2026-07-11_230238)
+
+- Use a mounted default-container Testing Library matrix from the first failing test; static child
+  markup, source-string assertions, and route-only Playwright fixtures do not prove member/witness
+  HTTP wiring. Assert exact mutation plus canonical GET refresh counts and one-call 400/403/409.
+- Declare a `localhost-e2e-server` runtime and exact `Trusted Browser Acceptance` spec/screenshots
+  before implementation. The contract must collect non-zero tests and exercise real authenticated
+  backend sessions for create, locked-field/reverification, witness capture, and unauthorized state.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

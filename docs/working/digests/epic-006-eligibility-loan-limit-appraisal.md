@@ -1,5 +1,19 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-11 23:02 - False Closure of Action and Browser Proof
+
+- 006H7 implements shared transition evaluation only for loan-limit. Eligibility/appraisal actions
+  still duplicate narrower heuristics, and the promised mounted default-container HTTP matrix is
+  absent; static child/source assertions cannot prove requests, refresh, or errors. Corrective
+  006X2 owns all public action/write predicates plus the full mounted interaction matrix.
+- 006H3's focused Playwright file fails collection with a temporal-dead-zone `ReferenceError`, finds
+  zero tests, omits loading, and has no screenshots/baselines. 006X's browser tracer mocks every API,
+  begins at a draft appraisal, and produced no screenshots, so it is not the specified real-backend
+  UI chain. Corrective 006X3 declares the exact twenty-output trusted-browser contract.
+- M04-FR-001/002 remain deferred to 012EA under A-053 and M04-FR-003 retains A-054's receipt proxy.
+  M04-FR-004 through M04-FR-011 have substantive backend behavior, but UI/action reachability
+  remains High risk until 006X2 -> 006X3. ADR-0005's dependency direction remains intact.
+
 ## 006X End-to-End Closure
 
 - A public HTTP integration tracer now keeps one application, eligibility assessment, loan-limit
