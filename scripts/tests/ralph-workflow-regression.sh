@@ -383,4 +383,42 @@ make_lint_slice 010I Blocked 010C
 ralph_slice_queue_lint "$lint_fixture" >/dev/null \
   || fail "Blocked slice on a drainable chain failed the lint"
 
+# Ambiguous dependency references: two slice files matching one id must fail
+# the lint — selection would silently resolve to whichever sorts first.
+make_lint_slice 010J "Not Started" 010K
+make_lint_slice 010K Complete
+cp "$lint_fixture/010K-fixture.md" "$lint_fixture/010K-fixture-duplicate.md"
+if lint_out="$(ralph_slice_queue_lint "$lint_fixture")"; then
+  fail "ambiguous dependency reference passed the lint"
+fi
+[[ "$lint_out" == *"ambiguous"* ]] || fail "ambiguity was not reported (got: $lint_out)"
+rm "$lint_fixture/010J-fixture.md" "$lint_fixture/010K-fixture.md" "$lint_fixture/010K-fixture-duplicate.md"
+
+# Remaining-work listing: Blocked slices are unfinished work, so a queue
+# holding only Blocked slices must never read as complete.
+make_fixture_slice 001H Blocked
+remaining="$(ralph_remaining_slices "$slices_fixture")"
+[[ "$remaining" == *"001H-fixture (Blocked)"* ]] || fail "remaining-slice listing omits Blocked slices"
+[[ "$remaining" == *"001B-fixture (Not Started)"* ]] || fail "remaining-slice listing omits Not Started slices"
+
+# Status transition rules: only the executed slice may change status, and no
+# run may complete a slice it did not execute.
+ralph_slice_transition_allowed normal_run 001X-f 001X-f "Not Started" "Complete" \
+  || fail "selected slice completion was rejected"
+ralph_slice_transition_allowed normal_run 001X-f 001Y-f "Not Started" "Not Started" \
+  || fail "unchanged status was rejected"
+if ralph_slice_transition_allowed normal_run 001X-f 001Y-f "Not Started" "Complete"; then
+  fail "a normal run completing a non-selected slice was allowed"
+fi
+if ralph_slice_transition_allowed repair 001X-f 001Y-f "Not Started" "Blocked"; then
+  fail "a repair run re-parking a non-selected slice was allowed"
+fi
+ralph_slice_transition_allowed architecture_review architecture-review 001Y-f "Blocked" "Not Started" \
+  || fail "a review unblocking a stale slice was rejected"
+ralph_slice_transition_allowed architecture_review architecture-review 001Y-f "Not Started" "Superseded" \
+  || fail "a review superseding a slice was rejected"
+if ralph_slice_transition_allowed architecture_review architecture-review 001Y-f "Not Started" "Complete"; then
+  fail "a review completing a slice was allowed"
+fi
+
 echo "PASS: Ralph workflow regressions"

@@ -22,6 +22,23 @@ mkdir -p .ralph/logs
 loop_log=".ralph/logs/loop-$(date '+%Y-%m-%d_%H%M%S').log"
 last_out=".ralph/logs/last-run-output.log"
 total_failures=0
+review_failures_this_loop=0
+
+# Loop mutex: a second concurrent loop makes every run fail preflight on the
+# other loop's live run lock, burning this loop's failure budget on collisions.
+# Named loop.pid (not *.lock) so preflight's run-lock check never sees it.
+mkdir -p .ralph/locks
+loop_lock=".ralph/locks/loop.pid"
+if [[ -f "$loop_lock" ]]; then
+  existing_pid="$(sed -n '2p' "$loop_lock" 2>/dev/null || true)"
+  if [[ -n "$existing_pid" ]] && kill -0 "$existing_pid" 2>/dev/null; then
+    echo "Refusing to start: another Ralph loop is already running (PID $existing_pid)." >&2
+    echo "Wait for it or stop it first; two loops interleaving corrupt each other's failure budget." >&2
+    exit 1
+  fi
+fi
+printf 'ralph-loop\n%s\n' "$$" > "$loop_lock"
+trap 'rm -f "$loop_lock"' EXIT
 
 # Stream a run's output live to the terminal and the loop log instead of
 # buffering it in a command substitution: buffering shows a blank screen for
@@ -59,8 +76,10 @@ context_watch_log=".ralph/logs/context-watch.log"
 context_tripwire_check() {
   command -v python3 >/dev/null 2>&1 || return 0
   [[ -f scripts/ralph-context-tripwire.py ]] || return 0
+  # Look at the last few runs, not just the newest-named one: right after a
+  # failed review (no agent log) a --last 1 check analyses nothing at all.
   local fail="${CONTEXT_TRIPWIRE_FAIL:-0.85}" watch="${CONTEXT_TRIPWIRE_WATCH:-0.70}" out rc
-  out="$(python3 scripts/ralph-context-tripwire.py --last 1 --threshold "$fail" --watch "$watch" 2>/dev/null)"
+  out="$(python3 scripts/ralph-context-tripwire.py --last "${CONTEXT_TRIPWIRE_LAST:-5}" --threshold "$fail" --watch "$watch" 2>/dev/null)"
   rc=$?
   printf '%s\n' "$out" | tee -a "$loop_log"
   if (( rc != 0 )) || printf '%s' "$out" | grep -q '\[watch \]'; then
@@ -102,16 +121,27 @@ for ((i = 1; i <= max_iterations; i++)); do
 
   review_due="$(python3 -c "import json; print(json.load(open('.ralph/state.json')).get('architecture_review_due', False))" 2>/dev/null || echo False)"
   if [[ "$review_due" == "True" ]]; then
-    echo "Architecture review is due; running it before the next slice." | tee -a "$loop_log"
-    run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode architecture-review
-    review_status=$?
-    context_tripwire_check
-    if (( review_status != 0 )); then
-      if (( review_status == RALPH_EXIT_AGENT_LIMIT )); then
-        switch_agent_or_stop
-        continue
+    # A failed review keeps architecture_review_due set (it only resets on a
+    # validated success), so without a cap a persistent failure cause taxes
+    # every iteration with a doomed review attempt. Two strikes per loop run,
+    # then continue the queue; the review stays due for the next loop start.
+    if (( review_failures_this_loop >= 2 )); then
+      echo "Architecture review already failed $review_failures_this_loop times this loop; skipping further attempts and continuing the queue (it stays due for the next loop run)." | tee -a "$loop_log"
+    else
+      echo "Architecture review is due; running it before the next slice." | tee -a "$loop_log"
+      run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh 1 --mode architecture-review
+      review_status=$?
+      context_tripwire_check
+      if (( review_status != 0 )); then
+        if (( review_status == RALPH_EXIT_AGENT_LIMIT )); then
+          switch_agent_or_stop
+          continue
+        fi
+        review_failures_this_loop=$((review_failures_this_loop + 1))
+        echo "Architecture review failed (non-fatal, strike $review_failures_this_loop/2 this loop); continuing with the queue." | tee -a "$loop_log"
+      else
+        review_failures_this_loop=0
       fi
-      echo "Architecture review failed (non-fatal); continuing with the queue." | tee -a "$loop_log"
     fi
   fi
 
@@ -126,8 +156,8 @@ for ((i = 1; i <= max_iterations; i++)); do
       exit 0
       ;;
     queue_blocked)
-      echo "Stopping: Not Started slices remain but every one is waiting on an unmet Depends On prerequisite (missing slice or dependency cycle)." | tee -a "$loop_log"
-      echo "See the Skipping lines above and the latest .ralph/runs/ final-summary.md, fix the Depends On graph, then rerun the loop." | tee -a "$loop_log"
+      echo "Stopping: unfinished slices remain but none is grabbable — each is waiting on an unmet Depends On prerequisite (missing slice or dependency cycle) or parked as Blocked." | tee -a "$loop_log"
+      echo "See the Skipping lines above and the latest .ralph/runs/ final-summary.md, fix the Depends On graph or unblock the parked slices, then rerun the loop." | tee -a "$loop_log"
       exit 2
       ;;
     owner_veto)

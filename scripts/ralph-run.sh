@@ -74,20 +74,24 @@ if [[ "$mode" == "architecture_review" ]]; then
 else
   slice_file="$(select_slice || true)"
   if [[ -z "$slice_file" ]]; then
-    pending_slices="$(ralph_pending_slices)"
+    remaining_slices="$(ralph_remaining_slices)"
     mkdir -p "$run_dir"
-    if [[ -n "$pending_slices" ]]; then
+    if [[ -n "$remaining_slices" ]]; then
       {
         echo "# Final Summary"
         echo
         echo "Result: Blocked — Dependency-Blocked Queue"
         echo
-        echo "Not Started slices remain, but every one is waiting on an unmet Depends On"
-        echo "prerequisite (missing prerequisite slice or dependency cycle):"
+        echo "Unfinished slices remain, but none is grabbable: each is waiting on an unmet"
+        echo "Depends On prerequisite (missing slice or dependency cycle) or parked as Blocked:"
         echo
-        printf -- '- %s\n' $pending_slices
+        while IFS= read -r remaining_line; do
+          if [[ -n "$remaining_line" ]]; then
+            echo "- $remaining_line"
+          fi
+        done <<< "$remaining_slices"
       } > "$run_dir/final-summary.md"
-      echo "Queue blocked: Not Started slices remain but none has its dependencies met." >&2
+      echo "Queue blocked: unfinished slices remain but none is grabbable." >&2
       exit "$RALPH_EXIT_QUEUE_BLOCKED"
     fi
     cat > "$run_dir/final-summary.md" <<'EOF'
@@ -174,6 +178,36 @@ run_postgresql_timeout_cleanup() {
       "$worktree_dir" \
       "$database_name"
 }
+# On Apple Silicon the x86_64 codex CLI spawns x86_64 children, so a plain
+# venv python loads no arm64 native wheels (coverage C tracer, cffi) and the
+# coverage gate silently degrades. Keep bin/python an arm64-forcing wrapper;
+# a venv rebuild restores plain symlinks, so re-install it on every run.
+ensure_backend_python_arch_wrapper() {
+  [[ "$(uname -s)" == "Darwin" ]] || return 0
+  [[ "$(sysctl -n hw.optional.arm64 2>/dev/null || true)" == "1" ]] || return 0
+  [[ -x /usr/bin/arch ]] || return 0
+  local py="$venv_dir/bin/python" real
+  [[ -e "$py" ]] || return 0
+  if [[ -f "$py" ]] && grep -q "arch -arm64" "$py" 2>/dev/null; then
+    return 0
+  fi
+  real="$(cd "$venv_dir/bin" && ls python3.[0-9]* 2>/dev/null | sort | head -n 1 || true)"
+  if [[ -z "$real" ]]; then
+    echo "WARN: no versioned interpreter in $venv_dir/bin; cannot install the arm64 python wrapper." >&2
+    return 0
+  fi
+  rm -f "$py"
+  cat > "$py" <<WRAP
+#!/bin/sh
+# Orchestrator-maintained (ralph-run.sh): force the arm64 slice of the
+# universal CPython so native arm64 wheels (coverage C tracer, cffi) load
+# even when the caller runs under Rosetta (the x86_64 codex CLI spawns
+# x86_64 children). Recreated automatically after any venv rebuild.
+exec /usr/bin/arch -arm64 "\$(dirname "\$0")/$real" "\$@"
+WRAP
+  chmod +x "$py"
+  echo "Installed the arm64-forcing python wrapper at $py (real interpreter: $real)."
+}
 ensure_backend_env() {
   local req="$worktree_dir/${backend_dir_cfg}/requirements-dev.txt"
   [[ -n "$backend_dir_cfg" && -f "$req" ]] || return 0
@@ -184,6 +218,7 @@ ensure_backend_env() {
       return 0
     fi
   fi
+  ensure_backend_python_arch_wrapper
   if ! run_environment_command "backend dependency installation" \
       "$venv_dir/bin/python" -m pip install --quiet --disable-pip-version-check -r "$req" \
       >> "$run_dir/evidence/terminal-logs/orchestrator-backend-deps.log" 2>&1; then

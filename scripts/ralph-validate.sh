@@ -372,6 +372,52 @@ else
   failures=$((failures + 1))
 fi
 
+# Slice status transitions: only the selected slice may change status in a
+# normal/repair run, and no run may flip a slice it did not execute to
+# Complete — that silently removes queued work. Reviews may re-park slices
+# (Blocked <-> Not Started, Superseded) but never complete them.
+st_file="$run_dir/slice-status-transition-check.md"
+{
+  echo "# Slice Status Transition Check"
+  echo
+} > "$st_file"
+st_violations=0
+st_checked=0
+while IFS= read -r st_path; do
+  case "$st_path" in
+    docs/slices/*.md) ;;
+    *) continue ;;
+  esac
+  st_old="$( (cd "$worktree_dir" && git show "HEAD:$st_path" 2>/dev/null || true) | awk '/^## Status/ { getline; print; exit }' )"
+  if [[ -z "$st_old" ]]; then
+    continue
+  fi
+  if [[ -f "$worktree_dir/$st_path" ]]; then
+    st_new="$(ralph_slice_status "$worktree_dir/$st_path")"
+  else
+    st_new="(deleted)"
+  fi
+  st_base="$(basename "$st_path" .md)"
+  st_checked=$((st_checked + 1))
+  if ralph_slice_transition_allowed "$mode" "${slice_id:-}" "$st_base" "$st_old" "$st_new"; then
+    if [[ "$st_old" != "$st_new" ]]; then
+      echo "- PASS: $st_base status '$st_old' -> '$st_new' (allowed for this run)." >> "$st_file"
+    fi
+  else
+    echo "- FAIL: $st_base status changed '$st_old' -> '$st_new' but this run executed '${slice_id:-<none>}'." >> "$st_file"
+    st_violations=$((st_violations + 1))
+  fi
+done <<< "$changed_paths"
+if (( st_violations > 0 )); then
+  echo "" >> "$st_file"
+  echo "A run may only transition the slice it executed; reviews may re-park other slices but never mark them Complete." >> "$st_file"
+  failures=$((failures + st_violations))
+elif (( st_checked == 0 )); then
+  echo "- PASS: no existing slice files were modified." >> "$st_file"
+else
+  echo "- PASS: all slice status transitions are allowed for this run." >> "$st_file"
+fi
+
 # Impact-analysis gate: change-request slices (CR-*) must map their blast
 # radius before any code change is accepted.
 if [[ "$mode" == "normal_run" && "$slice_id" == CR-* ]]; then

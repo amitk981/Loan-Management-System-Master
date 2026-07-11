@@ -54,7 +54,7 @@ ralph_slice_unmet_dependencies() {
 # tracked in newline-delimited strings, not associative arrays.
 ralph_slice_queue_lint() {
   local slices_dir="${1:-docs/slices}"
-  local problems=0 file base status dep dep_file resolved
+  local problems=0 file base status dep dep_file dep_matches dep_count resolved
   local drained=$'\n' pending=""
   for file in "$slices_dir"/*.md; do
     [[ -f "$file" ]] || continue
@@ -72,12 +72,18 @@ ralph_slice_queue_lint() {
         resolved=""
         while IFS= read -r dep; do
           [[ -n "$dep" ]] || continue
-          dep_file="$(find "$slices_dir" -maxdepth 1 -type f -name "${dep}-*.md" | sort | head -n 1)"
-          if [[ -z "$dep_file" ]]; then
+          dep_matches="$(find "$slices_dir" -maxdepth 1 -type f -name "${dep}-*.md" | sort)"
+          dep_count="$(printf '%s\n' "$dep_matches" | grep -c . || true)"
+          if (( dep_count == 0 )); then
             echo "problem: $base depends on '$dep' but no ${dep}-*.md slice file exists"
             problems=$((problems + 1))
             continue
           fi
+          if (( dep_count > 1 )); then
+            echo "problem: $base dependency '$dep' is ambiguous — it matches $dep_count slice files"
+            problems=$((problems + 1))
+          fi
+          dep_file="$(printf '%s\n' "$dep_matches" | head -n 1)"
           resolved="$resolved $(basename "$dep_file" .md)"
         done < <(ralph_slice_dependencies "$file")
         pending="${pending}${base}|${resolved# }"$'\n'
@@ -130,4 +136,38 @@ ralph_pending_slices() {
     [[ "$(ralph_slice_status "$file")" == "Not Started" ]] && basename "$file"
   done
   return 0
+}
+
+# Print every slice that still represents queued work — `Not Started` or
+# `Blocked` — as "basename (status)", in queue order. A queue whose only
+# remaining slices are Blocked is unfinished work, not a completed queue.
+ralph_remaining_slices() {
+  local slices_dir="${1:-docs/slices}" file status
+  for file in "$slices_dir"/*.md; do
+    [[ -f "$file" ]] || continue
+    status="$(ralph_slice_status "$file")"
+    case "$status" in
+      "Not Started"|Blocked) echo "$(basename "$file" .md) ($status)" ;;
+    esac
+  done
+  return 0
+}
+
+# Decide whether one slice-status transition observed in a run's diff is
+# allowed. Args: mode, selected slice basename, changed slice basename,
+# old status, new status. The selected slice may transition freely (its run
+# is what validation is judging); any other slice may only be re-parked by
+# an architecture review (Blocked <-> Not Started, or Superseded) — no run
+# may flip a slice it did not execute to Complete, which would silently
+# remove queued work.
+ralph_slice_transition_allowed() {
+  local mode="${1:?mode is required}" selected="${2:?selected slice is required}"
+  local base="${3:?slice basename is required}" old="$4" new="$5"
+  [[ "$old" == "$new" ]] && return 0
+  [[ "$base" == "$selected" ]] && return 0
+  if [[ "$mode" == "architecture_review" ]]; then
+    [[ "$new" == "Complete" ]] && return 1
+    return 0
+  fi
+  return 1
 }

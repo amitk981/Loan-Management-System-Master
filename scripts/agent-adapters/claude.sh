@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/../lib/ralph-exit-protocol.sh"
+
 for assignment in "$@"; do
   export "$assignment"
 done
@@ -86,6 +89,7 @@ if (( status != 0 )) && tail -n 40 "$log" | grep -qiE "usage limit|rate limit|li
     echo
     echo "claude exited $status; the log tail names a usage/rate limit. See evidence/terminal-logs/claude.log."
   } > "$RUN_DIR/agent-limit-exhausted.md"
+  exit "$RALPH_EXIT_AGENT_LIMIT"
 fi
 
 exit "$status"

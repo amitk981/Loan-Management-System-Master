@@ -41,6 +41,8 @@ Enforced by `scripts/ralph-validate.sh` on every run:
 - Frontend (`sfpcl-lms/`): `npm run build`, `npm run typecheck`, `npm test` (vitest).
 - Backend (`sfpcl_credit/`): `manage.py check`, full test suite, `makemigrations --check` (models and migrations must stay in sync), and coverage with a hard floor (`coverage_fail_under` in `.ralph/config.yaml`, currently 85%; measured 92% on 2026-07-02 — raise the floor as coverage grows, never lower it).
 - Protected-paths check: the run fails if any guardrail file was modified.
+- Slice-queue lint: the run fails if it leaves `docs/slices/` unexecutable — a slice with an unrecognized status, a pending slice without `## Depends On`, a dangling or ambiguous dependency reference, or a dependency cycle.
+- Status-transition check: only the executed slice may change its `## Status`; architecture reviews may re-park other slices (`Blocked` <-> `Not Started`, `Superseded`) but no run may flip a slice it did not execute to `Complete`.
 - Contract fidelity (checked in review, not by script): API-touching slices follow `docs/source/api-contracts.md` §3 (design principles), §6-8 (envelopes, errors, pagination) and §45 (idempotency for financial actions); model-touching slices follow `docs/source/data-model.md` §30 (indexing) and §34 (transactional integrity); backend module layout follows `docs/source/codebase-design.md`.
 
 Slices that require the authoritative PostgreSQL five-race gate declare
