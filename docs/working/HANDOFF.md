@@ -1,24 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-11_205723_normal_run
+2026-07-11_210636_normal_run
 
 ## Current Status
 
-005FA4 is complete. Demo-flag proof now renders the real App/RoleProvider boundary in isolated
-unset, false, and true environments. The red test exposed and closed a synthetic borrower option in
-the staff demo selector, so demo mode can no longer enter the protected portal; all staff demo roles
-and the approved composition remain unchanged. The pinned browser spec now writes both declared
-screenshots beneath `RALPH_EVIDENCE_DIR` with no hard-coded run ID.
+006G5 is complete. The sanction architecture guard now resolves every relative `ImportFrom`
+against the scanned file's concrete package before applying the same canonical business-app
+classifier used for absolute imports. Parent/deeper-relative, alias, wildcard, package exposure,
+safe same-package, private-credit, and the sole ADR-0005 public handoff forms are covered. No
+production import or sanction behavior changed.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-11_205723_normal_run/`. Frontend lint/typecheck/build and
-148 tests passed. Backend check/migration sync and 397 tests passed with expected PostgreSQL-only
-skips at 94% coverage. Both Playwright cases start their servers, but Chromium launch is blocked by
-the sandbox's macOS Mach-port denial; the exact failure is preserved for the trusted orchestrator
-browser gate, and no screenshot was fabricated locally.
+Evidence is under `.ralph/runs/2026-07-11_210636_normal_run/`. The red fixture matrix failed nine
+relative cases before the fix. The green syntax/repository matrix passed five tests; the focused
+sanction/module suite passed 33 tests with three expected PostgreSQL-only skips. Frontend
+lint/typecheck/build and 148 tests passed. Backend check/migration sync and 399 tests passed with
+five expected PostgreSQL-only skips at 94% coverage.
 
 ## Next Run
 
-Run 006G5. 006H6 depends on it; follow with 006H3 and then 006X.
+Run 006H6, then 006H3 and 006X.

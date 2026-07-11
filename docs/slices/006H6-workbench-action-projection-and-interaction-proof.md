@@ -94,3 +94,12 @@ High
   objects through that container and prove disabled reasons as well as enabled clicks.
 - 006G5 remains a hard prerequisite: action projection work must retain the canonical dependency
   direction after relative imports receive the same classification as absolute imports.
+
+## Run-Ahead Sharpening Review (006G5, 2026-07-11)
+
+- The dependency prerequisite is now executable against absolute and relative syntax. Keep all
+  new credit/approvals imports within the ADR-0005 public handoff and leave the non-vacuous public
+  edge in the repository scan while relocating the six-field action projection.
+- The already-specified parity matrix must compare disabled as well as enabled service outcomes;
+  the mounted default-container matrix remains responsible for exact mutation counts and the four
+  canonical refresh reads after success.

@@ -1,5 +1,17 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006G5 Relative-Import Dependency Guard
+
+- The test-side AST resolver now canonicalizes `ast.ImportFrom.level` against each scanned source
+  file's concrete package, including package `__init__`, parent/deeper-relative, alias, wildcard,
+  and package-exposure forms.
+- Relative and absolute imports share the same classifier: every credit-to-approvals edge and every
+  approvals-to-private-credit edge is forbidden; only ADR-0005's public appraisal-workflow handoff
+  remains allowed. The repository scan still must observe that exact public edge non-vacuously.
+- This correction changes no production import, transaction, sanction identity, or workflow
+  outcome. The focused sanction/module suite and full backend suite preserve the expected
+  PostgreSQL-only skips under SQLite.
+
 ## Architecture Review 2026-07-11 19:23 - Relative Dependency Guard
 
 - 006G4 now catches absolute direct/aliased/package-exposed imports and positively requires the

@@ -90,3 +90,11 @@ Medium
 - The focused Playwright matrix remains appraisal-only. Sanction queue screenshots and API wiring
   belong to 007I; this slice may show only the canonical sanction-case readback already required
   by 006H6.
+
+## Run-Ahead Sharpening Review (006G5, 2026-07-11)
+
+- Reconfirmed that this is presentation restoration only: preserve 006H6's public module action
+  seams, full action objects, exact four-read refresh, and the canonical credit/approvals dependency
+  direction while moving controls back into the approved prototype composition.
+- The declared Playwright state matrix and self-contained screenshots are acceptance evidence, not
+  optional local feedback; no sanction queue wiring or mock application state belongs here.

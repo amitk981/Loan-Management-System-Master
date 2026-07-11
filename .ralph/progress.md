@@ -3373,3 +3373,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-11_210636_normal_run
+
+- Completed 006G5: canonicalized relative imports against each scanned source package before
+  applying the credit/approvals dependency classifier.
+- The red matrix failed nine relative forms; the green absolute/relative matrix and non-vacuous
+  repository scan passed. No production imports or sanction behavior changed.
+- Frontend lint/typecheck/build and 148 tests passed; backend check/migration sync and 399 tests
+  passed with five expected PostgreSQL-only skips at 94% coverage.
+- Next action: run 006H6-workbench-action-projection-and-interaction-proof.
+
+## 2026-07-11 21:14:47 - 2026-07-11_210636_normal_run
+- Agent tool used: codex
+- Slice attempted: 006G5-relative-import-dependency-guard
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_210636_normal_run/.ralph/runs/2026-07-11_210636_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_210636_normal_run/.ralph/runs/2026-07-11_210636_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

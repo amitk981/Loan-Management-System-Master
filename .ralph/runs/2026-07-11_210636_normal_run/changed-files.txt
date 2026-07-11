@@ -1,0 +1,9 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006G5-relative-import-dependency-guard.md
+ M docs/slices/006H3-appraisal-workbench-prototype-fidelity-restoration.md
+ M docs/slices/006H6-workbench-action-projection-and-interaction-proof.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M sfpcl_credit/tests/test_sanction_submission_api.py
+?? .ralph/runs/2026-07-11_210636_normal_run/

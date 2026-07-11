@@ -2,6 +2,7 @@ from copy import deepcopy
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 import ast
+from importlib.util import resolve_name
 from pathlib import Path
 from threading import Event
 from unittest import skipUnless
@@ -29,17 +30,27 @@ PUBLIC_CREDIT_HANDOFF_MODULES = frozenset(
 )
 
 
-def resolved_import_references(source):
-    """Return package-aware references for every absolute import in source."""
+def resolved_import_references(source, *, package=None):
+    """Return canonical package-aware references for every import in source."""
     references = set()
     for node in ast.walk(ast.parse(source)):
         if isinstance(node, ast.Import):
             references.update(alias.name for alias in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module:
+        elif isinstance(node, ast.ImportFrom):
+            if node.level:
+                if package is None:
+                    raise ValueError("Relative imports require package context")
+                imported_from = resolve_name(
+                    f"{'.' * node.level}{node.module or ''}", package
+                )
+            else:
+                imported_from = node.module
+            if imported_from is None:
+                continue
             if any(alias.name == "*" for alias in node.names):
-                references.add(node.module)
+                references.add(imported_from)
             references.update(
-                f"{node.module}.{alias.name}"
+                f"{imported_from}.{alias.name}"
                 for alias in node.names
                 if alias.name != "*"
             )
@@ -285,9 +296,14 @@ class SanctionSubmissionApiTests(TestCase):
             for module_path in path.rglob("*.py"):
                 if "migrations" in module_path.parts or "tests" in module_path.parts:
                     continue
+                relative_module = module_path.relative_to(package_root).with_suffix("")
+                package_parts = relative_module.parts[:-1]
+                package = ".".join((package_root.name, *package_parts))
                 imported.extend(
                     (module_path, reference)
-                    for reference in resolved_import_references(module_path.read_text())
+                    for reference in resolved_import_references(
+                        module_path.read_text(), package=package
+                    )
                 )
             return imported
 
@@ -338,6 +354,83 @@ from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow as 
             "sfpcl_credit.credit.modules.appraisal_workflow.AppraisalWorkflow",
             imported,
         )
+
+    def test_dependency_import_collector_resolves_relative_syntax_matrix(self):
+        cases = (
+            (
+                "from ..approvals import modules as approval_modules",
+                "sfpcl_credit.credit",
+                "sfpcl_credit.approvals.modules",
+            ),
+            (
+                "from ... import approvals as approval_package",
+                "sfpcl_credit.credit.modules",
+                "sfpcl_credit.approvals",
+            ),
+            (
+                "from . import models as concrete_models",
+                "sfpcl_credit.credit",
+                "sfpcl_credit.credit.models",
+            ),
+            (
+                "from ..credit.modules import common as private_common",
+                "sfpcl_credit.approvals",
+                "sfpcl_credit.credit.modules.common",
+            ),
+            (
+                "from ..credit.modules.appraisal_workflow import *",
+                "sfpcl_credit.approvals",
+                "sfpcl_credit.credit.modules.appraisal_workflow",
+            ),
+        )
+        for source, package, expected in cases:
+            with self.subTest(source=source, package=package):
+                self.assertIn(
+                    expected,
+                    resolved_import_references(source, package=package),
+                )
+
+    def test_dependency_guard_classifies_relative_imports_like_absolute_imports(self):
+        cases = (
+            ("credit", "sfpcl_credit.credit", "from .. import approvals", True),
+            (
+                "credit",
+                "sfpcl_credit.credit.modules",
+                "from ...approvals import modules as approval_modules",
+                True,
+            ),
+            (
+                "approvals",
+                "sfpcl_credit.approvals.modules",
+                "from ...credit import models as concrete_models",
+                True,
+            ),
+            (
+                "approvals",
+                "sfpcl_credit.approvals",
+                "from ..credit.modules import common as private_common",
+                True,
+            ),
+            (
+                "approvals",
+                "sfpcl_credit.approvals.modules",
+                "from ...credit.modules.appraisal_workflow import AppraisalWorkflow as Workflow",
+                False,
+            ),
+            (
+                "credit",
+                "sfpcl_credit.credit.modules",
+                "from . import eligibility",
+                False,
+            ),
+        )
+        for owner, package, source, forbidden in cases:
+            with self.subTest(owner=owner, source=source):
+                violations = business_app_dependency_violations(
+                    owner=owner,
+                    references=resolved_import_references(source, package=package),
+                )
+                self.assertEqual(bool(violations), forbidden)
 
     def test_dependency_guard_rejects_forbidden_forms_and_allows_public_handoff(self):
         forbidden_credit_sources = (

@@ -1,0 +1,81 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+FFFFFFFFF
+======================================================================
+FAIL: test_dependency_import_collector_resolves_relative_syntax_matrix (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_dependency_import_collector_resolves_relative_syntax_matrix) (source='from ..approvals import modules as approval_modules', package='sfpcl_credit.credit')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_210636_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 372, in test_dependency_import_collector_resolves_relative_syntax_matrix
+    self.assertIn(
+AssertionError: 'sfpcl_credit.approvals.modules' not found in {'approvals.modules'}
+
+======================================================================
+FAIL: test_dependency_import_collector_resolves_relative_syntax_matrix (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_dependency_import_collector_resolves_relative_syntax_matrix) (source='from ... import approvals as approval_package', package='sfpcl_credit.credit.modules')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_210636_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 372, in test_dependency_import_collector_resolves_relative_syntax_matrix
+    self.assertIn(
+AssertionError: 'sfpcl_credit.approvals' not found in set()
+
+======================================================================
+FAIL: test_dependency_import_collector_resolves_relative_syntax_matrix (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_dependency_import_collector_resolves_relative_syntax_matrix) (source='from . import models as concrete_models', package='sfpcl_credit.credit')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_210636_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 372, in test_dependency_import_collector_resolves_relative_syntax_matrix
+    self.assertIn(
+AssertionError: 'sfpcl_credit.credit.models' not found in set()
+
+======================================================================
+FAIL: test_dependency_import_collector_resolves_relative_syntax_matrix (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_dependency_import_collector_resolves_relative_syntax_matrix) (source='from ..credit.modules import common as private_common', package='sfpcl_credit.approvals')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_210636_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 372, in test_dependency_import_collector_resolves_relative_syntax_matrix
+    self.assertIn(
+AssertionError: 'sfpcl_credit.credit.modules.common' not found in {'credit.modules.common'}
+
+======================================================================
+FAIL: test_dependency_import_collector_resolves_relative_syntax_matrix (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_dependency_import_collector_resolves_relative_syntax_matrix) (source='from ..credit.modules.appraisal_workflow import *', package='sfpcl_credit.approvals')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_210636_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 372, in test_dependency_import_collector_resolves_relative_syntax_matrix
+    self.assertIn(
+AssertionError: 'sfpcl_credit.credit.modules.appraisal_workflow' not found in {'credit.modules.appraisal_workflow'}
+
+======================================================================
+FAIL: test_dependency_guard_classifies_relative_imports_like_absolute_imports (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_dependency_guard_classifies_relative_imports_like_absolute_imports) (owner='credit', source='from .. import approvals')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_210636_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 417, in test_dependency_guard_classifies_relative_imports_like_absolute_imports
+    self.assertEqual(bool(violations), forbidden)
+AssertionError: False != True
+
+======================================================================
+FAIL: test_dependency_guard_classifies_relative_imports_like_absolute_imports (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_dependency_guard_classifies_relative_imports_like_absolute_imports) (owner='credit', source='from ...approvals import modules as approval_modules')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_210636_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 417, in test_dependency_guard_classifies_relative_imports_like_absolute_imports
+    self.assertEqual(bool(violations), forbidden)
+AssertionError: False != True
+
+======================================================================
+FAIL: test_dependency_guard_classifies_relative_imports_like_absolute_imports (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_dependency_guard_classifies_relative_imports_like_absolute_imports) (owner='approvals', source='from ...credit import models as concrete_models')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_210636_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 417, in test_dependency_guard_classifies_relative_imports_like_absolute_imports
+    self.assertEqual(bool(violations), forbidden)
+AssertionError: False != True
+
+======================================================================
+FAIL: test_dependency_guard_classifies_relative_imports_like_absolute_imports (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_dependency_guard_classifies_relative_imports_like_absolute_imports) (owner='approvals', source='from ..credit.modules import common as private_common')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_210636_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 417, in test_dependency_guard_classifies_relative_imports_like_absolute_imports
+    self.assertEqual(bool(violations), forbidden)
+AssertionError: False != True
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.010s
+
+FAILED (failures=9)
+Destroying test database for alias 'default'...
