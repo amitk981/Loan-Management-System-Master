@@ -1,5 +1,17 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-11 19:23 - Relative Dependency Guard
+
+- 006G4 now catches absolute direct/aliased/package-exposed imports and positively requires the
+  ADR-0005 public approvals-to-credit edge. Its resolver ignores `ast.ImportFrom.level`, so
+  relative cross-app imports can bypass classification. 006G5 resolves imports against each
+  scanned file's package and adds failing-first relative/package/alias fixtures.
+- 006H5 correctly removes App's mock application seed and local status updater. The routed sanction
+  screen now receives an explicit empty input and shows honest not-connected copy until 007I; the
+  component's file-level mock fallback remains owned by 007I.
+- Epic 006 remains incomplete. No M04 functional ID is newly closed; 006H6 now depends on 006G5,
+  then 006H3 and 006X retain the action/fidelity/end-to-end closure sequence.
+
 ## 006H5 App Shell Application State Authority
 
 - `App.tsx` no longer imports `mockData`, seeds a `LoanApplication[]`, or exposes a client-side

@@ -1,0 +1,13 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006H6-workbench-action-projection-and-interaction-proof.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/IMPLEMENTATION_SLICE_INDEX.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-005-application-intake.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+?? .ralph/runs/2026-07-11_191720_architecture_review/
+?? docs/slices/005E3-completeness-authority-fidelity-and-interaction-closure.md
+?? docs/slices/005FA4-portal-auth-real-boundary-flag-proof.md
+?? docs/slices/006G5-relative-import-dependency-guard.md

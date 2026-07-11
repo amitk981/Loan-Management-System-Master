@@ -1,5 +1,20 @@
 # Epic 005 Digest: Application Intake, Completeness, and Deficiencies
 
+## Architecture Review 2026-07-11 19:23 - Completeness and Portal Proof Corrections
+
+- 005E2 removed mock/reference/state authority and its API wrappers assert exact existing request
+  contracts. However, the screen discards the `document-checklist` result, uses one global
+  completeness permission plus local status facts for every mutation, and replaced the approved
+  S12 category/item/document composition. 005E3 owns explicit two-projection authority, backend
+  resource actions/service parity, restored prototype composition, and real-container proof for
+  pass/return/resolve/reject/denial/validation/stale paths.
+- 005FA3's default browser controller proves real empty/populated portal login and fail-closed
+  network-error logout, but its unset/false/true flag unit test manually projects the flag into
+  `LoginScreen`. 005FA4 must mount the real App/RoleProvider boundary in isolated flag states and
+  successfully run/capture the browser acceptance evidence.
+- Epic 005 is not complete. No M03 functional ID is newly closed by this review; completeness UI
+  confidence awaits 005E3 and member deficiency resubmission remains 008L2.
+
 ## Architecture Review 2026-07-11 - Corrective UI/Auth Anchors
 
 - 005E2 must consume the implemented 005D/005E/005F/005F2 APIs: the nine-document blocker list,

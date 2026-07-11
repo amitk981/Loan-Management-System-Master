@@ -16,6 +16,7 @@ prove every default-container action through mocked HTTP and refreshed state.
 ## Depends On
 - 006H4
 - 006G4
+- 006G5
 
 ## Source / Review References
 - `docs/source/codebase-design.md` §6.3, §23.3-§23.6, §26.3, §36.1, and §42.2-§42.3

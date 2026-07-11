@@ -2,6 +2,105 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-11 19:23 - Architecture Review 2026-07-11_191720_architecture_review
+
+Reviewed completed product/corrective work since architecture-review commit `d5632d2`:
+- `005E2-completeness-workbench-real-data-corrective` (`b4496eb`)
+- `005FA3-portal-auth-interaction-and-demo-flag-proof` (`f147886`)
+- `006G4-sanction-dependency-boundary-regression` (`bad2049`)
+- `006H5-app-shell-application-state-authority` (`4d1351f`)
+
+The review checked `git diff d5632d2...HEAD`, the four slice/run packets, implementation and tests,
+Epic 005/006 digests, ADR-0005, the cited source sections, and the previous review findings.
+Intervening commits `05d0793`, `d4c804d`, and `a4941b2` are Ralph-orchestrator-only and were not
+treated as product slices. Standards and spec fidelity were reviewed independently. Production code
+was not changed. `.ralph/state.json` has no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - Completeness action authority remains global and frontend-owned
+
+`CompletenessWorkbench.tsx` uses one global `applications.loan_application.complete_check` flag
+for pass, return, deficiency resolution, and rejection, then combines it with local blocker/status
+conditions. The completeness APIs expose no resource `available_actions`, so object/state denial
+cannot remove or explain an individual control before the backend rejects it. The 005E2 slice
+documented this as an interim fallback, but it remains architecture drift from codebase-design
+§23.3-§23.4 and api-contracts §44. Corrective High-risk `005E3` adds action/service parity behind
+the applications module and makes React consume the full projection.
+
+#### Finding 2 - High - 005E2 redesigned the approved S12 composition
+
+The real-data rewrite flattened the prototype's category groups, item detail/document-chip rows,
+and established deficiency/action composition into a new checklist/card layout. That exceeds the
+binding Frontend Design Rules' data/label/visibility/action allowance and repeats the visual drift
+pattern already found in 006H. `005E3` restores the pre-005E2 composition without restoring mock
+facts or local decisions.
+
+#### Finding 3 - Medium - Most completeness mutations are not tested through the container
+
+The API wrapper tests have exact requests and the Playwright controller substantively exercises
+pass and return, but resolve/reject, per-action denial, validation, canonical reload, and one-call
+stale behavior are not clicked through the production container. Static markup/source assertions
+cannot catch broken controller wiring. `005E3` owns the full mocked-HTTP and deterministic
+Playwright matrix required by codebase-design §26.3.
+
+#### Finding 4 - High - 006G4's guard ignores relative imports
+
+`resolved_import_references` ignores `ast.ImportFrom.level`. A production import such as
+`from ..approvals import modules` is reduced to `approvals.modules`, never matches the absolute
+`sfpcl_credit.approvals` prefix, and silently passes. This leaves the exact ADR-0005 cycle 006G4
+promised to prevent. Corrective Medium-risk `006G5` resolves every import against the scanned
+module's package and keeps the non-vacuous public-edge assertion; 006H6 now depends on it.
+
+### Spec
+
+#### Finding 1 - High - 005E2 performs a decorative checklist request
+
+005E2 requires checklist state from both `document-checklist` and `completeness-check`, while S12
+separates application, document, nominee, and deficiency facts. `loadSelected` awaits the document
+checklist but discards its result and renders only `completeness.required_checklist_items`. A
+divergence therefore fails neither closed nor visibly. `005E3` assigns each projection explicit
+authority, joins them by document type, and tests mismatches.
+
+#### Finding 2 - Medium - 005FA3 does not prove all flag states through the real boundary
+
+The default Playwright path exercises the real App, login, and logout, but
+`demoAuthFlag.test.tsx` manually passes the imported flag into a static `LoginScreen`. It does not
+mount the promised real App/RoleProvider boundary for explicit false and true, and its no-bypass
+check is only an absent literal. Corrective High-risk `005FA4` supplies module-isolated real-boundary
+proof plus successful browser evidence for unset/false/true and failed-network logout.
+
+#### Finding 3 - High - 006G4 does not reject every promised import form
+
+The slice explicitly requires every credit-to-approvals dependency form to fail. Relative imports
+bypass the implemented absolute-prefix classifier, and no synthetic relative fixture exists.
+`006G5` owns failing-first relative/package/alias fixtures and a context-aware repository scan.
+
+#### Finding 4 - Low - 006H5 lacks its required screenshot
+
+006H5 correctly removes App's mock seed and local status mutation, and its real component render
+proves the sole SanctionWorkbench consumer shows honest not-connected copy. The sandbox prevented
+the acceptance-criteria screenshot, leaving only `visual-state.md`; no production correction is
+needed because 007I owns final sanction wiring and future visual evidence.
+
+### Verified Closures, Functional IDs, Context, and Queue
+
+005E2 removes mock/reference/state authority and uses exact existing endpoints; 005FA3's real
+default browser spec proves empty/populated login and fail-closed logout; 006G4 handles absolute
+aliases/package exposure and prevents vacuous scans; 006H5 removes App-owned mock workflow state.
+No epic became fully complete in this window, so no new M03/M04 functional-ID closure is claimed.
+M03 completeness confidence awaits 005E3; the existing M04 deferrals and 006H6/006H3 chain remain.
+
+`CONTEXT.md` was corrected because the routed sanction screen now intentionally shows an empty
+not-connected state rather than rendering its file-level mock fallback. There were no Blocked
+slices. No new ADR was needed: ADR-0005 and existing frontend/action-authority standards already
+settle the durable decisions. The next corrective sequence is 005E3 -> 005FA4 -> 006G5 -> 006H6 ->
+006H3 -> 006X.
+
+Summary: Standards found 3 High and 1 Medium issues; worst are completeness action/visual drift and
+the relative-import escape. Spec found 2 High, 1 Medium, and 1 Low issue; worst are discarded
+checklist authority and a dependency guard that misses a promised import class.
+
 ## 2026-07-11 14:00 - Architecture Review 2026-07-11_135129_architecture_review
 
 Reviewed completed product/corrective work since architecture-review commit `1f1d500`:

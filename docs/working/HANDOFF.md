@@ -1,24 +1,28 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-11_190759_normal_run
+2026-07-11_191720_architecture_review
 
 ## Current Status
 
-006H5 is complete. `App.tsx` no longer imports or seeds mock loan applications and no longer owns a
-client-side application status mutation chain. Its sole affected consumer, SanctionWorkbench,
-receives an explicit empty input and shows honest not-connected copy until 007I wires sanction APIs.
-Already API-backed application, completeness, and appraisal screens remain independent.
+Architecture review covered 005E2, 005FA3, 006G4, and 006H5 from fixed point `d5632d2`.
+006H5 correctly removed App-owned mock application state. 005E2's real API wiring is incomplete as
+an architectural closure: it discards the document-checklist response, relies on one global
+permission plus local state for all actions, changes the approved S12 composition, and does not
+interaction-test resolve/reject/denial/stale paths. 005E3 owns the complete correction.
+
+005FA3 proves the default real login/logout path but manually projects explicit flag states into a
+static LoginScreen; 005FA4 owns real App/RoleProvider unset/false/true proof. 006G4's absolute import
+guard is non-vacuous but misses relative imports; 006G5 owns the context-aware resolver. Production
+code was not changed by this review.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-11_190759_normal_run/`. Failing-first and green focused logs
-are saved; frontend lint/typecheck/build and 146 tests passed; backend check/migration sync and 396
-tests passed at 94% coverage. The sandbox denied the Vite listener and the in-app browser exposed
-no backend, so the required screenshot could not be captured; rendered component assertions cover
-the exact empty-state copy.
+Evidence is under `.ralph/runs/2026-07-11_191720_architecture_review/`. Frontend lint/typecheck/
+build and 146 tests passed. Backend check/migration sync and 396 tests passed with five expected
+PostgreSQL-only skips at 94% coverage. Bash queue lint, diff check, and production-code-unchanged
+checks passed.
 
 ## Next Run
 
-An architecture review is due after this fourth completed slice. Then run sharpened 006H6, followed
-by 006H3; run 006X only after 006H3.
+Run 005E3, then 005FA4 and 006G5. 006H6 now depends on 006G5; follow with 006H3 and then 006X.

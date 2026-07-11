@@ -54,10 +54,12 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 38 | `005D` Application Document Checklist | Epic 005 | 005C2, | Medium | No | Yes | Yes | Yes |
 | 39 | `005E` Completeness Workbench | Epic 005 | 005D, | Medium | Yes | Yes | Yes | Yes |
 | 39a | `005E2` Completeness Workbench Real-Data Corrective | Epic 005 | 005I, | Medium | Yes | Yes | No | Yes |
+| 39b | `005E3` Completeness Authority, Fidelity, and Interaction Closure | Epic 005 | 005E2, | High | Yes | Yes | No | Yes |
 | 40 | `005F` Deficiency Creation and Resolution | Epic 005 | 005E, | Medium | No | Yes | Yes | Yes |
 | 40a | `005FA` Member Portal Authentication | Epic 005 | 005F, | High | Yes | Yes | Yes | Yes |
 | 40a2 | `005FA2` Portal Demo-Login Gating and Session Authority | Epic 005 | 005FA, | High | Yes | No | No | Yes |
 | 40a3 | `005FA3` Portal Auth Interaction and Demo-Flag Proof | Epic 005 | 005FA2, | High | Yes | No | No | Yes |
+| 40a4 | `005FA4` Portal Auth Real-Boundary Flag Proof | Epic 005 | 005FA3, | High | Yes | No | No | Yes |
 | 40b | `005FB` Member Portal Dashboard, Profile, and Supply View | Epic 005 | 005FA, | Medium | Yes | Yes | No | Yes |
 | 41 | `005G` Member Portal Application Start Status | Epic 005 | 005FB, | Medium | Yes | Yes | Yes | Yes |
 | 42 | `005H` Rejection Note Shell | Epic 005 | 005G, | Medium | Yes | Yes | Yes | Yes |
@@ -70,11 +72,12 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 48 | `006F` Credit Manager Review | Epic 006 | 006E, | Medium | Yes | Yes | Yes | Yes |
 | 49 | `006G` Submit to Sanction | Epic 006 | 006F, | Medium | No | Yes | Yes | Yes |
 | 49a | `006G4` Sanction Dependency Boundary Regression | Epic 006 | 006G3, | Medium | No | Yes | No | Yes |
+| 49b | `006G5` Relative-Import Dependency Guard | Epic 006 | 006G4, | Medium | No | Yes | No | Yes |
 | 50 | `006H` Eligibility Appraisal Frontend Integration | Epic 006 | 006G, | Medium | Yes | Yes | No | Yes |
 | 50a | `006H5` App Shell Application State Authority | Epic 006 | 006H4, | Medium | Yes | No | No | Yes |
-| 50b | `006H6` Workbench Action Projection and Interaction Proof | Epic 006 | 006H4 and 006G4, | High | Yes | Yes | No | Yes |
+| 50b | `006H6` Workbench Action Projection and Interaction Proof | Epic 006 | 006H4 and 006G4 and 006G5, | High | Yes | Yes | No | Yes |
 | 50c | `006H3` Appraisal Workbench Prototype Fidelity Restoration | Epic 006 | 006H6, | Medium | Yes | No | No | Yes |
-| 51 | `006X` MVP End-to-End Happy Path Tracer Bullet | Epic 006 | 006H, | High | No | Yes | Yes | Yes |
+| 51 | `006X` MVP End-to-End Happy Path Tracer Bullet | Epic 006 | 006H3, | High | No | Yes | Yes | Yes |
 | 51a | `006Y` Member Create/Update and Identity Governance | Epic 004 | 006X, | High | No | Yes | Yes | Yes |
 | 51b | `006Y2` Member Form and Witness Capture UI Wiring | Epic 004 | 006Y, | Medium | Yes | Yes | No | Yes |
 | 51c | `006Z` Produce Supply History Persistence | Epic 006 | 006Y2, | High | Yes | Yes | Yes | Yes |

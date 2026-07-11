@@ -15,9 +15,11 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   began as the approved visual prototype and is being wired to the real backend one vertical
   slice at a time. Auth shell, navigation, dashboard, notifications, admin, member/KYC,
   Borrower 360, application intake, member portal (auth/dashboard/profile/applications), and the
-  Epic 006 credit screens are API-backed. Later module screens (sanction, documentation,
-  disbursement, servicing, compliance, reports, task inbox) still render `src/data/mockData.ts`
-  until their owning wiring slices run — `docs/working/PROTOTYPE_GAP_REPORT.md` and
+  Epic 006 credit screens are API-backed. The routed sanction screen deliberately shows an empty
+  not-connected state until 007I; its component-level mock fallback remains isolated from the app
+  route. Other later module screens (documentation, disbursement, servicing, compliance, reports,
+  task inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
+  `docs/working/PROTOTYPE_GAP_REPORT.md` and
   `PROTOTYPE_INVENTORY.md` are the authoritative ledger.
 - Backend: `sfpcl_credit/` — Django modular monolith (identity, members, applications, credit,
   approvals, documents, workflows, communications, dashboard, configurations, scheduler, tracer)
