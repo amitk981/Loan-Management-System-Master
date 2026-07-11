@@ -170,8 +170,8 @@ rg -q '"localhost"[[:space:]]*=[[:space:]]*"allow"' .codex/config.toml \
   || fail "localhost E2E traffic is not narrowly allowlisted"
 rg -q 'localhost_e2e_required' scripts/ralph-validate.sh \
   || fail "independent validation does not select localhost E2E from the shared capability"
-rg -q 'E2E_DJANGO_PYTHON=.*npm run e2e' scripts/ralph-validate.sh \
-  || fail "independent localhost E2E validation command is missing"
+[[ "$(rg -o 'npm run e2e -- e2e/tracer\.e2e\.spec\.ts e2e/auth-negative\.e2e\.spec\.ts' scripts/ralph-validate.sh | wc -l | xargs)" == "2" ]] \
+  || fail "independent localhost E2E validation does not run both dashboard specs twice"
 rg -q 'slice does not declare localhost-e2e-server' scripts/ralph-validate.sh \
   || fail "ordinary slices do not explicitly skip the capability-only E2E gate"
 rg -q 'postgresql-acceptance-validation-\$\{ordinal\}\.txt' scripts/ralph-validate.sh \
