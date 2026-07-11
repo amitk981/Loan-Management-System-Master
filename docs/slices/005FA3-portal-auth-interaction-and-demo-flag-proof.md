@@ -59,3 +59,12 @@ High
 - Portal entry has one real-session success path and no demo fallback when the flag is off.
 - Pre-login and post-logout state cannot expose any permission-gated UI.
 
+## Run-Ahead Sharpening Review (005E2, 2026-07-11)
+
+- Confirmed against the Epic 005 digest already opened for 005E2: the interaction suite must mount
+  the real portal login and `RoleProvider` boundary, not a copied form or synthetic permission
+  projection. Empty submission makes zero session calls; populated submission makes exactly one;
+  logout clears identity/role/permission/action fields even when its transport rejects.
+- The `VITE_ENABLE_DEMO_AUTH` true and false/unset cases must reset the module environment between
+  runs so build-time flag state cannot leak. No production styling or portal credential behavior is
+  in scope unless these public-boundary tests expose a defect.

@@ -99,14 +99,15 @@
     "006G3-sanction-handoff-dependency-and-evidence-ownership",
     "005FA2-portal-demo-login-gating-and-session-authority",
     "CR-001-e2e-visual-baselines-nondeterministic",
-    "006H4-workbench-authoritative-actions-and-container-tests"
+    "006H4-workbench-authoritative-actions-and-container-tests",
+    "005E2-completeness-workbench-real-data-corrective"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e7f3f3b",
-  "last_run_id": "2026-07-11_135129_architecture_review",
+  "last_run_id": "2026-07-11_140734_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
+  "slices_completed_since_architecture_review": 1,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

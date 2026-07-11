@@ -1,0 +1,15 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/005E2-completeness-workbench-real-data-corrective.md
+ M docs/slices/005FA3-portal-auth-interaction-and-demo-flag-proof.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/PROTOTYPE_GAP_REPORT.md
+ M docs/working/PROTOTYPE_INVENTORY.md
+ M docs/working/digests/epic-005-application-intake.md
+ M sfpcl-lms/src/pages/applications/CompletenessWorkbench.tsx
+ M sfpcl-lms/src/services/applicationIntakeApi.test.ts
+ M sfpcl-lms/src/services/applicationIntakeApi.ts
+?? .ralph/runs/2026-07-11_140734_normal_run/
+?? sfpcl-lms/e2e/completeness-workbench.e2e.spec.ts
+?? sfpcl-lms/src/pages/applications/CompletenessWorkbench.test.tsx

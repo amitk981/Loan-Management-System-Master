@@ -10,6 +10,18 @@
   unauthenticated user, but its static tests do not execute empty submission, demo-flag variants,
   or logout clearing. Corrective 005FA3 owns real DOM/session-boundary proof without visual changes.
 
+## 005E2 Real-Data Workbench Closure
+
+- The staff completeness queue requests only `submitted` and `incomplete_returned` rows from the
+  staff list API. Selection loads the backend completeness projection and the complete deficiency
+  history; no application/member/document mock or seeded deficiency remains.
+- Completeness pass, return, resolution, and rejection-note creation use the exact existing 005E,
+  005F/005F2, and 005H payloads, then re-read server state. The UI never generates a reference or
+  advances a state locally.
+- Until a future backend projection adds completeness resource `available_actions`, the UI uses
+  the canonical `/auth/me` `applications.loan_application.complete_check` code only for action
+  visibility. Object access and all business/state decisions remain backend-enforced.
+
 Sources distilled during slice `005A-loan-application-draft-create-update`:
 - `docs/source/implementation-roadmap.md` §11
 - `docs/source/api-contracts.md` §19.1-§19.4

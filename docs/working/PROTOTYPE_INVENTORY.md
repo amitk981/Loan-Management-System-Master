@@ -41,6 +41,7 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
 | `NotificationsCenter` | `GET /api/v1/notifications/`; `POST /api/v1/notifications/{notification_id}/mark-read/` | API-backed staff inbox | Uses backend direct/role/team notification rows. Mark-read sends the current `read_state_version`; stale writes surface the existing refresh/error pattern for `409 STALE_WRITE`. No local mock fallback should be reintroduced. |
 | `MyProfile` | `GET /api/v1/auth/me/` | API-backed read-only profile | Shows the authenticated user's backend identity, active role, teams, and permissions. Profile editing remains future scope. |
 | `TaskInbox` | None implemented yet | Prototype/mock shell | Source S03 requires actionable assigned/role tasks with filters and workflow actions. 003J added only internal `scheduled_jobs` metadata/services and did not add a task inbox endpoint, dashboard task generation, notification generation rules, or scheduler UI. |
+| `CompletenessWorkbench` | `GET /api/v1/loan-applications/`; `GET /document-checklist/`; `GET/POST /completeness-check/`; deficiency and rejection-note actions | API-backed staff workbench | 005E2 removes application/member/document mocks, seeded deficiency decisions, and client reference generation. Queue/checklist/history facts and all action outcomes are re-read from backend state; canonical `/auth/me` permission controls interim action visibility. |
 
 ## API-Backed Borrower Portal Screens
 

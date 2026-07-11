@@ -533,6 +533,16 @@ Rules:
   `applications.loan_application.read`; pass requires
   `applications.loan_application.complete_check`. Both endpoints reuse the application object-access
   boundary after global permission and `404` checks.
+- 005E2 wires the staff Completeness Workbench to the list, document-checklist,
+  completeness-check, deficiency, and rejection-note APIs with no mock fallback. Submitted and
+  `incomplete_returned` queue rows are requested as separate status-filtered list reads. Because
+  the current completeness response does not expose resource `available_actions`, the interim UI
+  action boundary is the canonical `applications.loan_application.complete_check` permission from
+  `/api/v1/auth/me/`; the backend still enforces object access, state, field validation, audit, and
+  workflow effects for every mutation. Pass sends `{}`; return sends only
+  `communication_mode`, `message`, and current blocker `items[{item_code, remarks?}]`; deficiency
+  resolution sends only `resolution_notes`; rejection-note creation sends the exact 005H draft
+  fields. Every successful action re-reads completeness and full deficiency history.
 - The pass endpoint first enforces submitted/non-duplicate state and returns
   `409 INVALID_STATE_TRANSITION` for draft, already-reference-generated, or register-existing
   applications. It then evaluates the latest 005D metadata row for each mandatory application-stage
