@@ -1,5 +1,15 @@
 # Epic 005 Digest: Application Intake, Completeness, and Deficiencies
 
+## Architecture Review 2026-07-11 - Corrective UI/Auth Anchors
+
+- 005E2 must consume the implemented 005D/005E/005F/005F2 APIs: the nine-document blocker list,
+  backend-only reference generation, `incomplete_returned` status, no register/sequence advancement
+  on deficiency return, and append-only deficiency history. M03-FR-010/S12 assign the review to
+  Deputy Manager – Finance; the UI must not infer assignment from creator/receiver fields.
+- The owner-applied 005FA2 code removes the portal demo fallback and defaults RoleContext to an
+  unauthenticated user, but its static tests do not execute empty submission, demo-flag variants,
+  or logout clearing. Corrective 005FA3 owns real DOM/session-boundary proof without visual changes.
+
 Sources distilled during slice `005A-loan-application-draft-create-update`:
 - `docs/source/implementation-roadmap.md` §11
 - `docs/source/api-contracts.md` §19.1-§19.4

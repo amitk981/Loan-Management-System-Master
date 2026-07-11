@@ -2,6 +2,111 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-11 14:00 - Architecture Review 2026-07-11_135129_architecture_review
+
+Reviewed completed product/corrective work since architecture-review commit `1f1d500`:
+- `002J2-forbidden-permission-error-contract-alignment` (`9e226e2`)
+- `004E2-witness-evidence-snapshot-and-input-hardening` (`b3a688b`)
+- `006G3-sanction-handoff-dependency-and-evidence-ownership` (`4d1dafe`)
+- owner-applied `005FA2` portal-auth and `006Z2` interim loan-limit cleanup (`9195ab9`)
+- `CR-001-e2e-visual-baselines-nondeterministic` (`0d284fb`)
+- `006H4-workbench-authoritative-actions-and-container-tests` (`e7f3f3b`)
+
+The review checked `git diff 1f1d500...HEAD`, the five Ralph run packets, the owner-applied
+corrective commit, migrations, implementation/tests, Epic 002/004/005/006 digests, and cited source
+sections. Standards and spec fidelity were reviewed independently. Production code was not changed.
+`CONTEXT.md` remains truthful, and `.ralph/state.json` has no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - Credit action authority is duplicated in the HTTP view and disagrees with service gates
+
+`applications.views._credit_action_snapshot` decides workflow state, legacy repair, role, and
+permission availability from response-key heuristics. That violates codebase-design §6.3/§36.1/
+§42.2's thin-view boundary. It also enables eligibility and loan-limit actions whenever their
+snapshots and global permissions exist, without checking the formal reference, completeness,
+application stage, later appraisal, or sanction conditions enforced by the underlying modules.
+An advertised action can therefore be rejected by the supposedly matching authoritative service.
+Corrective action: created High-risk `006H6-workbench-action-projection-and-interaction-proof` to
+move projection behind the public module seam and prove action/service parity.
+
+#### Finding 2 - High - 006H4 again omits the required real-container HTTP/action tests
+
+The slice requires mounting the default workbench, selecting an application, clicking every action,
+and asserting exact requests, one-call stale behavior, canonical reload, and visible state. The
+committed test still imports only `AppraisalWorkbenchView`, server-renders static markup, and adds a
+raw-source regex. This repeats the prior review finding and violates codebase-design §26.3's mocked-
+HTTP frontend test seam. `006H6` now owns the full interaction matrix before visual restoration.
+
+#### Finding 3 - Medium - The workbench discards most of the standard action contract
+
+`AppraisalWorkbench.tsx` flattens four typed §44 action collections into enabled code strings,
+discarding disabled reasons, labels, roles, and required permissions, then reinterprets status/
+permission rules locally. This is safer than the former global-action union but still drifts from
+api-contracts §44 and codebase-design §23.3-§23.4. `006H6` preserves full action objects and renders
+the backend's denial facts without a parallel React workflow matrix.
+
+#### Finding 4 - Medium - The interim portal limit cleanup changed the approved visual system
+
+Removing client-owned money arithmetic was necessary, but `MP05_NewApplication.tsx` replaced the
+approved three-column green limit-card composition with a one-column slate notice and changed the
+red over-limit alert to slate. That violates the binding Frontend Design Rules' colour, layout, and
+card constraints. Existing `006Z2` is sharpened to restore the original composition with server
+projections and source-safe advisory copy.
+
+### Spec
+
+#### Finding 1 - High - 006H4's named acceptance proof is essentially unimplemented
+
+The slice's Test Cases require exact default-container URL/body/request-count/refresh/output proof
+for eligibility, limit, appraisal create/update/revalidate/submit/review/return/reject/sanction,
+roles, object denial, stale writes, and sanction identity. None is exercised through the container.
+The static tests can pass while the real effects and action handler are broken. Corrective action:
+`006H6`, and `006H3` now depends on it.
+
+#### Finding 2 - High - The owner-applied 005FA2 auth fix lacks its required interaction/flag proof
+
+The production fallback was removed, but `005FA2` is marked Complete outside Ralph while absent
+from `completed_slices`; its checklist/evidence is empty. Tests inspect source strings and static
+context markup rather than submitting an empty form, proving false/true demo-flag behavior, or
+exercising logout identity clearing. Created High-risk
+`005FA3-portal-auth-interaction-and-demo-flag-proof`. The state ledger now records the owner-applied
+005FA2 work while 005FA3 owns independent closure.
+
+#### Finding 3 - Medium - 006G3's import guard does not cover every promised alias/package form
+
+The production dependency direction and exact event ownership are correct, but the AST collector
+records only `ImportFrom.module`. It misses forms such as `from sfpcl_credit import approvals as a`,
+and its approvals-side private-boundary check rejects only one exact `credit.modules.common`
+literal. This is narrower than 006G3's explicit aliased/package/private-module test contract.
+Created Medium-risk `006G4-sanction-dependency-boundary-regression` with positive and negative
+synthetic fixtures plus a non-vacuous repository scan.
+
+#### Finding 4 - Medium - Interim portal copy invents an unstated over-limit outcome
+
+The interim panel says an above-limit request “may be reduced or returned.” Source Epic 006
+contracts say it sets an exception-required flag/warning and enters the configured exception
+workflow; they do not promise reduction or return. `006Z2` is sharpened to display only the server
+projection/warning and configured exception status while restoring prototype fidelity.
+
+### Verified Closures, Test Quality, and Functional IDs
+
+002J2 externally emits `FORBIDDEN` and preserves specialized denial codes; its compatibility
+adapter intentionally remains while older test expectations are migrated. 004E2's current writes,
+conservative A-063 legacy backfill, immutable reads, malformed-body zero-write cases, and exact
+index/migration assertions close M02-FR-009/BR-010. 006G3 removes the app cycle and durably binds the
+exact workflow event with substantive rollback and PostgreSQL race assertions. CR-001 freezes only
+the two dashboard baselines, pins `Asia/Kolkata`, resolves the shared venv from Git common-dir, and
+its independent log runs both scenarios twice successfully.
+
+No epic became fully complete in this window. M04-FR-004 through M04-FR-011 remain backend-present;
+FR-010/FR-011 UI confidence remains High risk until 006H6 and 006H3. M04-FR-001/M04-FR-002 remain
+explicitly deferred to 012EA under A-053, and M04-FR-003 retains A-054's receipt-time proxy.
+
+Summary: Standards found 2 High and 2 Medium issues; worst is a view-owned action projection that
+can contradict backend transition gates. Spec found 2 High and 2 Medium issues; worst is 006H4
+being marked complete for a real-container contract it did not test.
+
 ## 2026-07-11 03:08 - Architecture Review 2026-07-11_030117_architecture_review
 
 Reviewed completed product slices since architecture-review commit `6efe1a8`:

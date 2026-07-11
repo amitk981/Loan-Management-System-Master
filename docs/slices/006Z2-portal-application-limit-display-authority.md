@@ -34,6 +34,15 @@ Borrowers see the same limit the backend will actually apply — served by the E
 3. The client-side "requested amount within limit" submission gate becomes advisory display driven by the server response; the authoritative rejection stays the 005G/006 server validation, surfaced as a field error on submit.
 4. Amounts render with the standard Money formatting; loading/error/unavailable states for the limit panel (a member without evaluable limit facts sees an explicit "limit not yet available" state, not a computed guess).
 5. Regression: no arithmetic on shares/valuation/acreage remains in portal application code.
+6. Restore the approved pre-interim three-card green limit composition once server projections are
+   available: Shareholding Limit, Land-Based Limit, and Maximum Permissible Limit remain in the
+   existing responsive grid and use the existing green card classes. The unavailable state must
+   reuse that composition or an existing portal empty-state pattern; do not retain the interim
+   one-column slate redesign.
+7. A server-reported over-limit advisory uses the existing red alert composition, and the review
+   step restores its Maximum Limit row from the server projection. Copy must say the request is
+   subject to the configured exception/credit workflow; React must not promise an automatic block,
+   reduction, or return that the source contract does not state.
 
 ## Owned Mock Removals
 - `src/pages/borrower/portal/applications/MP05_NewApplication.tsx` — inline limit constants and client-side limit math removed.
@@ -43,6 +52,8 @@ Borrowers see the same limit the backend will actually apply — served by the E
 - Requested amount above the server limit: UI shows the server-driven warning and submit surfaces the backend validation error.
 - No client-side limit arithmetic remains (static regression on the removed expressions).
 - Member without limit facts sees the explicit unavailable state.
+- Visual regression compares the server-backed panel, unavailable panel, advisory, and review row
+  with the pre-interim prototype composition; no colour/layout/card change is accepted.
 
 ## Out of Scope
 Limit formula/configuration changes (006C owns), staff calculator UI (006H owns), produce-supply persistence (006Z), application submission contract changes (005G owns).

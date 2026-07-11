@@ -1,0 +1,14 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/005E2-completeness-workbench-real-data-corrective.md
+ M docs/slices/006H3-appraisal-workbench-prototype-fidelity-restoration.md
+ M docs/slices/006Z2-portal-application-limit-display-authority.md
+ M docs/working/HANDOFF.md
+ M docs/working/IMPLEMENTATION_SLICE_INDEX.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-005-application-intake.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+?? .ralph/runs/2026-07-11_135129_architecture_review/
+?? docs/slices/005FA3-portal-auth-interaction-and-demo-flag-proof.md
+?? docs/slices/006G4-sanction-dependency-boundary-regression.md
+?? docs/slices/006H6-workbench-action-projection-and-interaction-proof.md

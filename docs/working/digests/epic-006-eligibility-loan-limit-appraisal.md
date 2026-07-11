@@ -1,5 +1,19 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-11 - Action Projection and UI Proof
+
+- 006H4 removed the global-action union, but its response-key helper lives in the HTTP view and can
+  enable eligibility/limit actions after their real module preconditions stop applying. Its test
+  still static-renders only the view and never clicks the default container through mocked HTTP.
+- Corrective 006H6 moves the six-field §44 projection behind public credit seams, requires parity
+  with the actual transition predicates, preserves disabled reasons in React, and adds every
+  container mutation/refresh/denial/stale assertion originally promised by 006H4.
+- 006G3's production direction/event ownership is correct; corrective 006G4 strengthens only the
+  package/alias/private-module regression promised by that slice.
+- The interim portal loan-limit cleanup correctly removed client money math but changed approved
+  colors/layout and states an unsourced reduction/return outcome. 006Z2 now restores the existing
+  three-card/red-alert composition with server projections and configured-exception wording.
+
 ## 006G3 Sanction Handoff Dependency and Evidence Ownership
 
 - Production credit code has no approvals import. The approvals-owned public handoff opens the

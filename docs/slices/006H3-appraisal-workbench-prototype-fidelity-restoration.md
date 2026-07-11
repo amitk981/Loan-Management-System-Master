@@ -13,7 +13,7 @@ Restore the approved staged Appraisal Workbench, eligibility checklist, and calc
 while retaining the corrected 006H2 backend wiring and introducing no new visual design.
 
 ## Depends On
-- 006H4
+- 006H6
 
 ## Source / Review References
 - `docs/working/FRONTEND_DESIGN_RULES.md`
@@ -56,6 +56,10 @@ while retaining the corrected 006H2 backend wiring and introducing no new visual
 - Restored controls must continue to require the matching resource action code plus current-user
   permission/role usability; global permissions must never be unioned into resource actions, and
   legacy revalidation remains distinct from submit-for-review.
+- Preserve 006H6's full six-field `AvailableAction` objects and real-container HTTP tests unchanged;
+  the fidelity restoration may move controls within the approved prototype composition, but it may
+  not flatten actions to strings, hide disabled reasons, reintroduce local state gates, or replace
+  the canonical four-way post-mutation reload with optimistic status synthesis.
 
 ## Evidence Required
 

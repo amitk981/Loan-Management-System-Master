@@ -43,6 +43,21 @@ The Credit Assessment Team performs the real completeness gate on real applicati
 - Completeness pass shows the backend-issued reference; no reference is computed client-side.
 - Non-permitted role sees no actions and direct API calls return 403.
 
+## Sharpened Source Anchors (2026-07-11 Architecture Review)
+
+- M03-FR-010 and S12 assign completeness review to Deputy Manager – Finance; Credit Manager may
+  participate only through the already-seeded backend permission/object boundary. The frontend
+  must not infer ownership from application creator/receiver fields.
+- The canonical pass endpoint is the implemented
+  `POST /api/v1/loan-applications/{id}/completeness-check/pass/`, not the source example's older
+  generic `complete-check` shape. It must surface the backend's nine required document blockers
+  and delegate reference generation to the existing 005C transaction.
+- Returned rows are `application_status = incomplete_returned`, `completeness_status = incomplete`,
+  with no reference/register/sequence advancement. Repeat staff return remains a backend `409`
+  until the borrower resubmission slice supplies a source-backed transition.
+- Preserve complete deficiency history. The UI may display current open rows and resolved rows but
+  must not overwrite or collapse earlier deficiency cycles into one local map.
+
 ## Out of Scope
 Member portal deficiency response (008L2), rejection-note content changes (005H), checklist rule changes (005D).
 
