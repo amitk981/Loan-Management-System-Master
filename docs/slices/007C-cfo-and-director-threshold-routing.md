@@ -8,76 +8,54 @@ Epic 007: Sanction Approval Workflow and Registers
 Epic file: `docs/epics/007-sanction-approval-workflow.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Expose routed approval cases to their approvers: list/retrieve APIs with `assigned_to_me` filtering and a resource-level `available_actions` projection, so each CFO/Director sees exactly the cases awaiting their decision.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Committee members work a real queue routed by the matrix (M05-FR-001/003) instead of being told out-of-band which applications await them.
 
 ## Depends On
 - 007B
 
 ## Source References
-- docs/source/implementation-roadmap.md section 12
-- docs/source/api-contracts.md section 25
-- docs/source/data-model.md approval/sanction tables
-- docs/source/auth-permissions.md
+- docs/source/api-contracts.md §25.3 (`GET /api/v1/approval-cases/?current_status=&approval_type=&assigned_to_me=`), §25.4 (retrieve with `required_approvers` decisions, `excluded_approvers`, `available_actions`), §44 (action projection shape)
+- docs/source/data-model.md §15.3 `approval_cases`
+- docs/source/auth-permissions.md §12.6 (`approvals.case.read`), §16.2
+- docs/source/functional-spec.md M05-FR-001/002/003 and the ten-point Sanction Committee checklist facts
+- docs/source/codebase-design.md §13.1 Approval Case Engine
 
 ## Prototype Reference
-- sfpcl-lms/src/pages/sanction/SanctionWorkbench.tsx
-- sfpcl-lms/src/pages/registers/RegistersHub.tsx
-- sfpcl-lms/src/pages/settings/SettingsHub.tsx
+- sfpcl-lms/src/pages/sanction/SanctionWorkbench.tsx (queue/detail consumer; wiring is 007I)
 
-## Screens Involved
-None directly.
-
-## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
-
-## Backend/API Scope
-Implement the named backend/API capability only.
-
-## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+## Concrete Requirements
+1. `GET /api/v1/approval-cases/` per §25.3: standard pagination, filters `current_status`, `approval_type`, `assigned_to_me`; `assigned_to_me=true` returns only cases whose immutable snapshot names the current user and whose decision from that user is still pending. Reject unknown params with the standard 400 pattern.
+2. `GET /api/v1/approval-cases/{id}/` per §25.4: required approvers with per-approver decision/acted_at, excluded approvers, and `available_actions` in the §44 shape (approve/reject/return with enabled flag and disabled reason).
+3. Object-level access: a user not in the snapshot (and without a broader source-backed read permission) gets 403/404 per the object-access harness conventions (002I); `approvals.case.read` alone must not expose assignment-scoped actions.
+4. The detail response exposes the M05-FR-002 review facts needed by the checklist (eligibility, amounts, purpose, compliance, history, risk, documentation completeness) as read-through references to the owning modules' data — do not copy/denormalise business facts the owning APIs already serve; list which fields are projections in API_CONTRACTS.md.
+5. Boundary behaviour: routing/authority always reflects the 007B snapshot, never a live matrix lookup.
+6. Audit: read access is not audited; assignment-scope denials follow the standard 403 contract (002J2).
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- `assigned_to_me` returns pending-for-me cases only; acted and excluded users drop out; pagination envelope and unknown-filter rejection covered.
+- Snapshot user sees enabled actions; non-snapshot user with global read sees the case per permission but no enabled actions; unauthorized user gets 403/404.
+- Boundary case at exactly 500000.00 routes to the ≤5L snapshot (per 007A assumption).
 
-## Visual Acceptance Criteria
-None.
-
-## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+## Out of Scope
+Action execution (007D), conflict exclusion population (007E), sanction decision (007D response wiring), UI (007I).
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- Approver queues derive purely from immutable snapshots with object-level enforcement.
+- All gates pass; list/detail API examples saved.
 
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated
 - [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
+- [ ] API contracts updated
+- [ ] Permissions tested
+- [ ] Audit events tested
 - [ ] Tests/typecheck/lint/build passed
 - [ ] Risk assessment completed
 - [ ] Handoff updated

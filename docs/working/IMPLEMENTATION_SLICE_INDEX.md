@@ -53,8 +53,10 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 37a | `005C2` Application Object Access Hardening | Epic 005 | 005C, | Medium | No | Yes | No | Yes |
 | 38 | `005D` Application Document Checklist | Epic 005 | 005C2, | Medium | No | Yes | Yes | Yes |
 | 39 | `005E` Completeness Workbench | Epic 005 | 005D, | Medium | Yes | Yes | Yes | Yes |
+| 39a | `005E2` Completeness Workbench Real-Data Corrective | Epic 005 | 005I, | Medium | Yes | Yes | No | Yes |
 | 40 | `005F` Deficiency Creation and Resolution | Epic 005 | 005E, | Medium | No | Yes | Yes | Yes |
 | 40a | `005FA` Member Portal Authentication | Epic 005 | 005F, | High | Yes | Yes | Yes | Yes |
+| 40a2 | `005FA2` Portal Demo-Login Gating and Session Authority | Epic 005 | 005FA, | High | Yes | No | No | Yes |
 | 40b | `005FB` Member Portal Dashboard, Profile, and Supply View | Epic 005 | 005FA, | Medium | Yes | Yes | No | Yes |
 | 41 | `005G` Member Portal Application Start Status | Epic 005 | 005FB, | Medium | Yes | Yes | Yes | Yes |
 | 42 | `005H` Rejection Note Shell | Epic 005 | 005G, | Medium | Yes | Yes | Yes | Yes |
@@ -67,7 +69,12 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 48 | `006F` Credit Manager Review | Epic 006 | 006E, | Medium | Yes | Yes | Yes | Yes |
 | 49 | `006G` Submit to Sanction | Epic 006 | 006F, | Medium | No | Yes | Yes | Yes |
 | 50 | `006H` Eligibility Appraisal Frontend Integration | Epic 006 | 006G, | Medium | Yes | Yes | No | Yes |
+| 50a | `006H5` App Shell Application State Authority | Epic 006 | 006H4, | Medium | Yes | No | No | Yes |
 | 51 | `006X` MVP End-to-End Happy Path Tracer Bullet | Epic 006 | 006H, | High | No | Yes | Yes | Yes |
+| 51a | `006Y` Member Create/Update and Identity Governance | Epic 004 | 006X, | High | No | Yes | Yes | Yes |
+| 51b | `006Y2` Member Form and Witness Capture UI Wiring | Epic 004 | 006Y, | Medium | Yes | Yes | No | Yes |
+| 51c | `006Z` Produce Supply History Persistence | Epic 006 | 006Y2, | High | Yes | Yes | Yes | Yes |
+| 51d | `006Z2` Portal Application Limit Display Authority | Epic 006 | 006Z, | Medium | Yes | Yes | No | Yes |
 | 52 | `007A` Approval Matrix Configuration | Epic 007 | 006X, | Medium | No | Yes | Yes | Yes |
 | 53 | `007B` Approval Case Creation from Appraisal | Epic 007 | 007A, | Medium | No | Yes | Yes | Yes |
 | 54 | `007C` CFO and Director Threshold Routing | Epic 007 | 007B, | Medium | No | Yes | Yes | Yes |
@@ -78,6 +85,7 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 59 | `007H` Credit Sanction Register | Epic 007 | 007G, | Medium | No | Yes | Yes | Yes |
 | 60 | `007I` Sanction Workbench UI | Epic 007 | 007H, | Medium | Yes | Yes | No | Yes |
 | 60a | `007J` Registers and Approval Matrix Settings UI Wiring | Epic 007 | 007I, | Medium | Yes | Yes | No | Yes |
+| 60b | `007J2` SettingsHub Remaining Panels Wiring or Lockdown | Epic 007 | 007J, | Medium | Yes | Yes | No | Yes |
 | 61 | `008A` Document Template Model and Versioning | Epic 008 | 007I, | Medium | No | Yes | Yes | Yes |
 | 62 | `008B` Document Generation Shell | Epic 008 | 008A, | Medium | Yes | Yes | Yes | Yes |
 | 63 | `008C` Documentation Checklist Applicability | Epic 008 | 008B, | Medium | No | Yes | Yes | Yes |
@@ -90,6 +98,7 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 70 | `008J` Blank-Dated Cheque and Cancelled Cheque Custody | Epic 008 | 008I, | Medium | No | Yes | Yes | Yes |
 | 71 | `008K` Final Documentation Approval Sequence | Epic 008 | 008J, | Medium | No | Yes | Yes | Yes |
 | 72 | `008L` Member Portal Documentation Actions | Epic 008 | 008K, | Medium | Yes | Yes | Yes | Yes |
+| 72b | `008L2` Member Portal Deficiency Response and Resubmission | Epic 005 | 008L, | High | Yes | Yes | Yes | Yes |
 | 72a | `008M` Documentation Hub Frontend Wiring | Epic 008 | 008L, | Medium | Yes | Yes | No | Yes |
 | 73 | `009A` SAP Customer Code Request | Epic 009 | 008L, | High | No | Yes | Yes | Yes |
 | 74 | `009B` SAP Customer Code Confirmation and Reuse | Epic 009 | 009A, | High | No | Yes | Yes | Yes |
@@ -116,6 +125,7 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 94 | `010L` Member Portal Repayment View | Epic 010 | 010K, | High | Yes | Yes | No | Yes |
 | 94a | `010M` Servicing and Monitoring Frontend Wiring | Epic 010 | 010L, | High | Yes | Yes | No | Yes |
 | 94b | `010N` Global Search API and UI | Epic 010 | 010M, | Medium | Yes | Yes | Yes | Yes |
+| 94c | `010O` Header Notification Summary Wiring | Epic 003 | 010N, | Low | Yes | Yes | No | Yes |
 | 95 | `011A` Default Case Opening | Epic 011 | 010L, | Medium | No | Yes | Yes | Yes |
 | 96 | `011B` Grace Period Tracking | Epic 011 | 011A, | Medium | No | Yes | Yes | Yes |
 | 97 | `011C` Extension Note Workflow | Epic 011 | 011B, | Medium | No | Yes | Yes | Yes |
@@ -129,6 +139,7 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 105 | `011K` Compliance Control Tracker Foundation | Epic 011 | 011J, | Medium | No | Yes | Yes | Yes |
 | 106 | `011L` Section 186 and NBFC Test Trackers | Epic 011 | 011K, | Medium | No | Yes | Yes | Yes |
 | 107 | `011M` KYC Re-KYC Compliance Tracker | Epic 011 | 011L, | High | No | Yes | Yes | Yes |
+| 107a | `011M2` Member Portal KYC Correction Request | Epic 011 | 011M, | High | Yes | Yes | Yes | Yes |
 | 108 | `011N` Grievance Workflow | Epic 011 | 011M, | Medium | No | Yes | Yes | Yes |
 | 108a | `011NA` Member Portal Notices, Grievances, and Notifications | Epic 011 | 011N, | Medium | Yes | Yes | No | Yes |
 | 109 | `011O` Auditor Read-Only Views | Epic 011 | 011N, | Medium | Yes | Yes | No | Yes |
@@ -139,6 +150,8 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 113 | `012D` Audit Explorer | Epic 012 | 012C, | Medium | No | Yes | Yes | Yes |
 | 113a | `012DA` Reports, Exports, and Audit Explorer Frontend Wiring | Epic 012 | 012D, | Medium | Yes | Yes | No | Yes |
 | 114 | `012E` Operational Dashboard Hardening | Epic 012 | 012D, | Medium | Yes | Yes | Yes | Yes |
+| 114a0 | `012E2` Tracer and Demo Route Production Isolation | Epic 012 | 012E, | High | Yes | Yes | No | Yes |
+| 114a1 | `012E3` Field-Encryption Key Separation and Rotation | Epic 012 | 012E2, | High | No | Yes | Yes | Yes |
 | 114a | `012EA` Workflow Task Engine and Task Inbox APIs | Epic 012 | 012E, | Medium | No | Yes | Yes | Yes |
 | 114b | `012EB` Task Inbox Frontend Wiring | Epic 012 | 012EA, | Medium | Yes | Yes | No | Yes |
 | 115 | `012F` Security Privacy Regression Checks | Epic 012 | 012E, | High | No | Yes | No | Yes |

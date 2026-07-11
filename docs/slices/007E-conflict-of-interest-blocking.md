@@ -8,76 +8,55 @@ Epic 007: Sanction Approval Workflow and Registers
 Epic file: `docs/epics/007-sanction-approval-workflow.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Detect conflicted approvers, exclude them from the required-approver set, block any conflicted approval attempt with the exact source error contract, and support abstention.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+A Director, committee member, or preparer can never approve their own or a relative's loan; the exclusion and reason are recorded and auditable (M05-FR-011).
 
 ## Depends On
 - 007D
 
 ## Source References
-- docs/source/implementation-roadmap.md section 12
-- docs/source/api-contracts.md section 25
-- docs/source/data-model.md approval/sanction tables
-- docs/source/auth-permissions.md
+- docs/source/auth-permissions.md §17.1 (conflicted cases: committee member/Director/relative as borrower, material interest, own application, maker-checker), §17.2 (COI-001..006), §17.3 (`CONFLICTED_APPROVER_NOT_ALLOWED` error body)
+- docs/source/data-model.md §15.3 `excluded_approvers_json`
+- docs/source/functional-spec.md M05-FR-011/012
+- docs/source/security-privacy.md §12/§12.2 (segregation of duties, conflict controls)
+- docs/source/codebase-design.md §13.2 Conflict of Interest Module
 
 ## Prototype Reference
-- sfpcl-lms/src/pages/sanction/SanctionWorkbench.tsx
-- sfpcl-lms/src/pages/registers/RegistersHub.tsx
-- sfpcl-lms/src/pages/settings/SettingsHub.tsx
+- sfpcl-lms/src/pages/sanction/SanctionWorkbench.tsx (conflict/abstention display; wiring is 007I)
 
-## Screens Involved
-None directly.
-
-## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
-
-## Backend/API Scope
-Implement the named backend/API capability only.
-
-## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+## Concrete Requirements
+1. Conflict determination service (codebase-design §13.2 module seam) evaluating the §17.1 cases against a case's borrower and snapshot: borrower-is-approver, recorded Director/relative relationship, material interest, own application, and maker-checker (actor created/materially prepared the application or appraisal).
+2. At enrichment (007B hook): conflicted users move from `required_approvers_json` to `excluded_approvers_json` with the conflict reason (COI-002/003); the remaining members form the required set per §16.2. If exclusions leave the case without the rule's required authority, the case is blocked with a contract error naming the gap — do not silently reduce authority.
+3. At action time (007D hook): a conflicted or excluded user's approve/reject/return returns the exact §17.3 error (`CONFLICTED_APPROVER_NOT_ALLOWED` with case id and conflict reason) and writes an audit event for the denied attempt (COI-006).
+4. Abstention: an assigned approver may record a conflict-abstention on their own decision slot with a reason; the case then requires the authority rule to still be satisfiable or blocks per requirement 2 (M05-FR-011).
+5. Director/relative cases set the general-meeting-evidence requirement flag consumed by 007G (COI-004, M05-FR-012).
+6. Conflicted users retain at most limited read where legally required (COI-005) — default to no assignment-scoped visibility; record the choice as an assumption.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Each §17.1 conflict class excludes at enrichment with recorded reason; attempted approval by each returns the exact §17.3 body and an audit row.
+- Exclusion that breaks required authority blocks the case rather than completing with fewer approvers.
+- Abstention flow keeps or blocks the case correctly; director/relative case flags the 007G requirement.
+- Maker-checker: appraisal author cannot approve the same application's case.
 
-## Visual Acceptance Criteria
-None.
-
-## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+## Out of Scope
+General-meeting evidence recording (007G), exception register (007F), relationship data capture UI (member master owns relationships).
 
 ## Risk Level
 High
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- No conflicted approval can be recorded by any path; exclusions, reasons, and denied attempts are all evidenced.
+- All gates pass; error-contract examples saved.
 
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated
 - [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
+- [ ] API contracts updated
+- [ ] Permissions tested
+- [ ] Audit events tested
 - [ ] Tests/typecheck/lint/build passed
 - [ ] Risk assessment completed
 - [ ] Handoff updated

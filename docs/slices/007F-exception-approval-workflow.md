@@ -8,76 +8,56 @@ Epic 007: Sanction Approval Workflow and Registers
 Epic file: `docs/epics/007-sanction-approval-workflow.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Implement the exception route: cases that exceed the permissible limit (or are forced onto the exception route) require CFO + two Directors and produce an Exception Register entry whose status tracks the case outcome.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+Above-limit or policy-exception lending is possible only through the stricter authority route and always leaves a register trail (M05-FR-006).
 
 ## Depends On
 - 007E
 
 ## Source References
-- docs/source/implementation-roadmap.md section 12
-- docs/source/api-contracts.md section 25
-- docs/source/data-model.md approval/sanction tables
-- docs/source/auth-permissions.md
+- docs/source/data-model.md §15.7 `exception_register_entries` (exception_type: exceeds limit / stage bypass / waiver; business_reason; risk_assessment; status lifecycle)
+- docs/source/api-contracts.md §25.2 (`force_exception_route`), §25.10 (exception register read)
+- docs/source/auth-permissions.md §12.6 (`approvals.exception.create` Critical), §16.2 (exceeds-limit and stage-bypass authority rows)
+- docs/source/functional-spec.md M05-FR-006
+- docs/slices/006D-loan-limit-snapshot-storage.md (the limit facts that define "exceeds")
 
 ## Prototype Reference
-- sfpcl-lms/src/pages/sanction/SanctionWorkbench.tsx
-- sfpcl-lms/src/pages/registers/RegistersHub.tsx
-- sfpcl-lms/src/pages/settings/SettingsHub.tsx
+- sfpcl-lms/src/pages/registers/RegistersHub.tsx (exception register view; wiring is 007J)
 
-## Screens Involved
-None directly.
-
-## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
-
-## Backend/API Scope
-Implement the named backend/API capability only.
-
-## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+## Concrete Requirements
+1. Exception determination: at 007B enrichment, a recommended amount above the 006D loan-limit snapshot, or `force_exception_route: true`, selects the exception matrix rule (CFO + 2 Directors, register_required=exception) and records the exception condition/reason on the case.
+2. Create the §15.7 exception register entry when the exception case is created: exception_type `exceeds_loan_limit` (or the source-backed type), description, business_reason (mandatory from the request), risk_assessment when provided, linked approval case; status `pending`.
+3. Entry status follows the case outcome inside the 007D completion transaction: approved / rejected; `closed_at` set when the case closes. Register entries are system-generated — no manual create/edit API beyond the enrichment path; `approvals.exception.create` guards the system path per catalogue.
+4. Stage-bypass exceptions (§16.2: CFO approval + register) reuse the same entry model with exception_type `stage_bypass`; implement the vocabulary and validation now, even if the first caller arrives later — reject unknown exception types.
+5. `GET /api/v1/exception-register/?status=&exception_type=` per §25.10 with `approvals.exception_register.read`, pagination, and generated-view semantics (read-only).
+6. Audit/workflow events for entry creation and status transitions.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Above-limit amount routes to the exception rule and creates a pending entry; within-limit does not.
+- `force_exception_route` without business_reason → 400; entry status flips with case approval/rejection atomically.
+- Register read: filters, pagination, permission negatives; no mutation endpoint exists.
+- Unknown exception_type rejected.
 
-## Visual Acceptance Criteria
-None.
-
-## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+## Out of Scope
+Loan-limit calculation (006C/006D), general-meeting evidence (007G), register UI (007J), waiver workflows beyond vocabulary.
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- Every exception-routed case has exactly one register entry whose status matches the case outcome.
+- All gates pass; API examples saved.
 
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated
 - [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
+- [ ] API contracts updated
+- [ ] Database rules followed
+- [ ] Permissions tested
+- [ ] Audit events tested
 - [ ] Tests/typecheck/lint/build passed
 - [ ] Risk assessment completed
 - [ ] Handoff updated

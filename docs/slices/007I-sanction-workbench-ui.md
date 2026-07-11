@@ -8,76 +8,61 @@ Epic 007: Sanction Approval Workflow and Registers
 Epic file: `docs/epics/007-sanction-approval-workflow.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Wire the Sanction Workbench (screen-spec S21 committee workbench, S22 case detail, S24 special-case approval) to the Epic 007 APIs, replacing the screen's mock data with the real approval queue, checklist, and decision actions.
 
 ## User Value
-Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
+The Sanction Committee reviews and decides real cases — with the ten-point checklist, conflict/abstention visibility, exception flags, and mandatory reasons — in the approved prototype composition.
 
 ## Depends On
 - 007H
 
 ## Source References
-- docs/source/implementation-roadmap.md section 12
-- docs/source/api-contracts.md section 25
-- docs/source/data-model.md approval/sanction tables
-- docs/source/auth-permissions.md
+- docs/source/screen-spec.md S21, S22, S24
+- docs/source/functional-spec.md M05-FR-002/007/008/011 and the ten-point Sanction Committee checklist
+- docs/source/api-contracts.md §25.3-§25.7, §25.11, §44 (available_actions authority)
+- docs/source/content-spec.md S14/S15 (committee and special-case content)
+- docs/source/component-spec.md §12.1 (committee review component)
+- docs/slices/006H4-workbench-authoritative-actions-and-container-tests.md (resource-action authority pattern to reuse)
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/sanction/SanctionWorkbench.tsx
-- sfpcl-lms/src/pages/registers/RegistersHub.tsx
-- sfpcl-lms/src/pages/settings/SettingsHub.tsx
 
-## Screens Involved
-Relevant prototype screen area for this capability.
+## Concrete Requirements
+1. Queue from `GET /api/v1/approval-cases/?assigned_to_me=true` plus permitted status filters; detail from §25.4 with required/excluded approvers, per-approver decisions, exception flag, and related-party/GM status.
+2. Render the M05 ten-point checklist confirmations from the detail projection (eligibility, amount, purpose, compliance, history, risk, documentation, authority, exception flag, conflict flag) — display only; no client-side derivation of any checklist fact.
+3. Actions approve / reject / return call §25.5-§25.7 with mandatory reason enforcement surfaced as field errors; action visibility follows resource `available_actions` intersected with `/auth/me` usability exactly per the 006H4 pattern (never union global permissions into resource actions).
+4. Special-case panel (S24): related-party cases show GM evidence status and the record affordance for permitted roles via §25.11; sanction attempts blocked by the 007G gate render the contract error meaningfully.
+5. Conflict/abstention: excluded approvers and reasons visible per content-spec; a conflicted viewer gets the restricted treatment (no enabled actions, §17.3 error surfaced if attempted).
+6. Remove the screen's mock reads; App-shell mock seeding is already gone (006H5) — this slice wires the real data in. Keep the approved prototype composition; no new visual patterns (006H3 fidelity conventions apply).
+7. Loading, empty, error, unauthorized, validation, stale, and denied states throughout.
 
-## Frontend Scope
-Small UI wiring for the named workflow, if applicable.
-
-## Backend/API Scope
-Implement the named backend/API capability only.
-
-## Database/Model Impact
-None.
-
-## API Contracts
-Create or update the API contract for this capability.
-
-## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
-
-## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
-
-## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+## Owned Mock Removals
+- `src/pages/sanction/SanctionWorkbench.tsx` — no `mockData` import or inline case fixtures remain.
+- `src/components/loan/ApprovalPanel.tsx` — the hard-coded ₹5,00,000 authority matrix (line ~50), the client-side "my slot" role matching, and the `can('approve_sanction')` decision gating must all be replaced by the case snapshot and resource `available_actions` from the API; no authority fact may be computed in this component.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Container tests per the 006H4 pattern: mount the real workbench, click every action, assert exact URL/body, joint-approval pending/complete renders, mandatory-reason validation, conflict denial, GM-gate error rendering.
+- Regression: no `mockData` import on the wired path.
+- Role matrix: CFO/Director see enabled actions on assigned cases only; Credit Manager sees read-only; unauthorized role blocked.
 
 ## Visual Acceptance Criteria
-Match the existing prototype patterns and include loading, empty, error, unauthorized, validation, and success states where relevant.
-
-## Evidence Required
-Test output, API response examples, and screenshots when frontend is touched.
+Queue, case detail (pending/partially approved/approved/rejected/returned), exception-flagged case, special-case panel, conflict/abstention display, empty, loading, denied, and error states; deterministic Playwright baselines per the 006H3 harness conventions.
 
 ## Risk Level
 Medium
 
 ## Acceptance Criteria
-- The named capability works through the intended backend/API/frontend path, where applicable.
-- Source-doc business rules are enforced or documented as assumptions.
-- Permissions and audit expectations are tested when applicable.
-- The implementation stays within one small Ralph slice.
+- S21/S22/S24 run on backend truth with role-correct actions and the full checklist visible.
+- All gates pass; screenshots/baselines saved via the pinned e2e harness.
 
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated
 - [ ] Code implemented
 - [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
+- [ ] Permissions tested
+- [ ] Audit events tested
+- [ ] Visual evidence saved
 - [ ] Tests/typecheck/lint/build passed
 - [ ] Risk assessment completed
 - [ ] Handoff updated

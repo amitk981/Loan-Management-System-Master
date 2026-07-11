@@ -36,6 +36,13 @@ Accounts, Credit, and CFO work real repayments, interest runs, and overdue monit
 4. Wire `MonitoringDashboard.tsx`: DPD buckets (010I), reminder queue (010J) with existing KPI/queue patterns.
 5. Money values use the Money type; loading, empty, error, unauthorized, validation states throughout.
 
+## Owned Mock Removals
+This slice is the final owner of these files' mock surface — after it, none of them may import `src/data/mockData.ts` or keep inline business fixtures:
+- `src/pages/repayments/RepaymentsHub.tsx`
+- `src/pages/monitoring/MonitoringDashboard.tsx`
+- `src/pages/loan-accounts/LoanAccount360.tsx` (initial wiring by 009J; final removal here)
+- `src/components/loan/RepaymentLedger.tsx`
+
 ## Test Cases
 - Posting a repayment shows the backend allocation breakdown (principal-first) and refreshes the ledger.
 - Duplicate repayment reference shows the backend rejection cleanly; idempotent replay does not double-post.
