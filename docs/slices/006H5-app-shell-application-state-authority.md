@@ -66,3 +66,10 @@ Medium
   Audit every prop consumer, but do not absorb 007I sanction API wiring.
 - Mount each affected consumer with an empty authoritative input and assert the existing explicit
   empty/not-wired composition; also assert no replacement inline fixture or new mock import.
+
+## Run-Ahead Sharpening Review (006G4, 2026-07-11)
+
+- Requirements remain implementation-ready: remove only App.tsx's mock-owned application state,
+  enumerate every affected prop consumer, and preserve already API-backed screen authority.
+- Evidence must name each affected consumer and prove its existing empty/not-wired composition;
+  007I remains the sole owner of sanction API wiring.

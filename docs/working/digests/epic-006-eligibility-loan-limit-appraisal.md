@@ -1,5 +1,15 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006G4 Sanction Dependency Boundary Regression
+
+- Test-only package-aware AST resolution now covers direct imports, aliases, `from package import
+  child`, and package `__init__` exposure forms.
+- Every production credit-to-approvals edge is forbidden. Approvals may consume only
+  `sfpcl_credit.credit.modules.appraisal_workflow`; credit package/model/common/private-module
+  imports are rejected.
+- The repository scan must positively observe the documented public handoff edge as well as report
+  zero forbidden edges, so the architecture guard cannot pass vacuously.
+
 ## Architecture Review 2026-07-11 - Action Projection and UI Proof
 
 - 006H4 removed the global-action union, but its response-key helper lives in the HTTP view and can

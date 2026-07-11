@@ -3252,3 +3252,32 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-11_143648_normal_run
+
+- Completed 006G4: strengthened the sanction dependency regression with package-aware, aliased,
+  package-exposed, public-allowlist, and non-vacuous positive-edge coverage.
+- No production code, API, schema, frontend, transaction, or sanction behavior changed.
+- Focused sanction suite passed; frontend lint/typecheck/build and 144 tests passed; backend
+  check/migration sync and 396 tests passed at 94% coverage.
+- Next action: run sharpened 006H5, then 006H6.
+
+## 2026-07-11 14:44:00 - 2026-07-11_143648_normal_run
+- Agent tool used: codex
+- Slice attempted: 006G4-sanction-dependency-boundary-regression
+- Summary: Ralph run completed.
+- Tests run: See `.ralph/runs/2026-07-11_143648_normal_run/evidence/terminal-logs/`.
+- Evidence saved: `.ralph/runs/2026-07-11_143648_normal_run/`.
+- Result: Success
+- Risk level: Medium.
+- Next action: Run 006H5-app-shell-application-state-authority.
+
+## 2026-07-11 14:46:00 - 2026-07-11_143648_normal_run
+- Agent tool used: codex
+- Slice attempted: 006G4-sanction-dependency-boundary-regression
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_143648_normal_run/.ralph/runs/2026-07-11_143648_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_143648_normal_run/.ralph/runs/2026-07-11_143648_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

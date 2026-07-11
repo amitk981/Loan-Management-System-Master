@@ -1,0 +1,64 @@
+
+> sfpcl-lms@1.0.0 lint
+> eslint src
+
+
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+
+> sfpcl-lms@1.0.0 build
+> vite build
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+vite v5.4.21 building for production...
+transforming...
+✓ 1870 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.75 kB │ gzip:   0.43 kB
+dist/assets/index-BDEKD1Jg.css     51.35 kB │ gzip:   8.89 kB
+dist/assets/index-BYI0yTGz.js   1,122.40 kB │ gzip: 240.10 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.17s
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_143648_normal_run/sfpcl-lms
+
+ ✓ src/pages/Dashboard.test.tsx (13 tests) 46ms
+ ✓ src/pages/applications/CompletenessWorkbench.test.tsx (3 tests) 44ms
+ ✓ src/pages/borrower/portal/PortalMemberViews.test.tsx (4 tests) 47ms
+ ✓ src/pages/members/Borrower360.test.tsx (4 tests) 81ms
+ ✓ src/pages/applications/ApplicationDetail.test.tsx (9 tests) 84ms
+ ✓ src/pages/members/MemberProfile.test.tsx (25 tests) 216ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.test.tsx (18 tests) 208ms
+ ✓ src/services/authSession.test.ts (15 tests) 17ms
+ ✓ src/pages/applications/ApplicationList.test.tsx (2 tests) 39ms
+ ✓ src/pages/members/MemberDirectory.test.tsx (5 tests) 40ms
+ ✓ src/services/demoAuthFlag.test.tsx (3 tests) 28ms
+ ✓ src/pages/notifications/NotificationsCenter.test.tsx (6 tests) 37ms
+ ✓ src/pages/borrower/portal/auth/MP00_Login.test.tsx (2 tests) 12ms
+ ✓ src/pages/applications/NomineeSelectionViews.test.tsx (3 tests) 8ms
+ ✓ src/services/tracerApi.test.ts (2 tests) 3ms
+ ✓ src/utils/applicationDisplay.test.ts (5 tests) 8ms
+ ✓ src/services/applicationIntakeApi.test.ts (4 tests) 13ms
+ ✓ src/services/creditAssessmentApi.test.ts (5 tests) 17ms
+ ✓ src/pages/profile/MyProfile.test.tsx (1 test) 25ms
+ ✓ src/contexts/RoleContext.test.tsx (2 tests) 12ms
+ ✓ src/services/portalApi.test.ts (4 tests) 7ms
+ ✓ src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx (2 tests) 2ms
+ ✓ src/services/navigationPermissions.test.ts (7 tests) 8ms
+
+ Test Files  23 passed (23)
+      Tests  144 passed (144)
+   Start at  14:41:46
+   Duration  1.79s (transform 1.37s, setup 0ms, collect 4.27s, tests 1.00s, environment 3ms, prepare 1.52s)
+

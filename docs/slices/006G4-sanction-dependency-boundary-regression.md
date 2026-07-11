@@ -1,7 +1,7 @@
 # Slice 006G4: Sanction Dependency Boundary Regression
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
@@ -62,3 +62,13 @@ Medium
   fixture; positively observe the documented public approvals-to-credit edge.
 - Preserve production imports and sanction behavior. The red fixture must demonstrate a syntax the
   current collector misses before implementing the package-aware resolver.
+
+## Completion Notes (006G4, 2026-07-11)
+
+- The package-aware AST resolver records direct and aliased imports plus the concrete child named
+  by `from package import child`, including package `__init__` exposure forms.
+- Synthetic fixtures reject every credit-to-approvals form and approvals imports of credit package,
+  model, common, and private module paths. Only the documented appraisal-workflow handoff is
+  allowlisted.
+- The production scan finds zero violations and must observe the allowlisted public edge, preventing
+  a vacuous pass. No production code or behavior changed.

@@ -24,6 +24,55 @@ from sfpcl_credit.tests.api_contracts import assert_success_envelope
 from sfpcl_credit.workflows.models import WorkflowEvent
 
 
+PUBLIC_CREDIT_HANDOFF_MODULES = frozenset(
+    {"sfpcl_credit.credit.modules.appraisal_workflow"}
+)
+
+
+def resolved_import_references(source):
+    """Return package-aware references for every absolute import in source."""
+    references = set()
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Import):
+            references.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            if any(alias.name == "*" for alias in node.names):
+                references.add(node.module)
+            references.update(
+                f"{node.module}.{alias.name}"
+                for alias in node.names
+                if alias.name != "*"
+            )
+    return references
+
+
+def business_app_dependency_violations(*, owner, references):
+    if owner == "credit":
+        return sorted(
+            reference
+            for reference in references
+            if reference == "sfpcl_credit.approvals"
+            or reference.startswith("sfpcl_credit.approvals.")
+        )
+    if owner == "approvals":
+        credit_references = {
+            reference
+            for reference in references
+            if reference == "sfpcl_credit.credit"
+            or reference.startswith("sfpcl_credit.credit.")
+        }
+        return sorted(
+            reference
+            for reference in credit_references
+            if not any(
+                reference == public_module
+                or reference.startswith(f"{public_module}.")
+                for public_module in PUBLIC_CREDIT_HANDOFF_MODULES
+            )
+        )
+    raise ValueError(f"Unsupported business app owner: {owner}")
+
+
 class SanctionSubmissionApiTests(TestCase):
     def setUp(self):
         self.client = Client()
@@ -236,29 +285,105 @@ class SanctionSubmissionApiTests(TestCase):
             for module_path in path.rglob("*.py"):
                 if "migrations" in module_path.parts or "tests" in module_path.parts:
                     continue
-                for node in ast.walk(ast.parse(module_path.read_text())):
-                    if isinstance(node, ast.ImportFrom) and node.module:
-                        imported.append((module_path, node.module))
-                    elif isinstance(node, ast.Import):
-                        imported.extend((module_path, alias.name) for alias in node.names)
+                imported.extend(
+                    (module_path, reference)
+                    for reference in resolved_import_references(module_path.read_text())
+                )
             return imported
 
+        credit_imports = imports_under(package_root / "credit")
+        approvals_imports = imports_under(package_root / "approvals")
         self.assertEqual(
             [
                 (path, name)
-                for path, name in imports_under(package_root / "credit")
-                if name == "sfpcl_credit.approvals"
-                or name.startswith("sfpcl_credit.approvals.")
+                for path, name in credit_imports
+                if business_app_dependency_violations(
+                    owner="credit", references={name}
+                )
             ],
             [],
         )
         self.assertEqual(
             [
                 (path, name)
-                for path, name in imports_under(package_root / "approvals")
-                if name == "sfpcl_credit.credit.modules.common"
+                for path, name in approvals_imports
+                if business_app_dependency_violations(
+                    owner="approvals", references={name}
+                )
             ],
             [],
+        )
+        public_edges = {
+            public_module
+            for _, name in approvals_imports
+            for public_module in PUBLIC_CREDIT_HANDOFF_MODULES
+            if name == public_module or name.startswith(f"{public_module}.")
+        }
+        self.assertEqual(public_edges, PUBLIC_CREDIT_HANDOFF_MODULES)
+
+    def test_dependency_import_collector_resolves_package_and_alias_forms(self):
+        source = """
+import sfpcl_credit.approvals.modules.sanction_handoff as handoff
+from sfpcl_credit import approvals as approvals_package
+from sfpcl_credit.credit import modules as credit_modules
+from sfpcl_credit.credit.modules import common as private_common
+from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow as Workflow
+"""
+        imported = resolved_import_references(source)
+
+        self.assertIn("sfpcl_credit.approvals", imported)
+        self.assertIn("sfpcl_credit.credit.modules", imported)
+        self.assertIn("sfpcl_credit.credit.modules.common", imported)
+        self.assertIn(
+            "sfpcl_credit.credit.modules.appraisal_workflow.AppraisalWorkflow",
+            imported,
+        )
+
+    def test_dependency_guard_rejects_forbidden_forms_and_allows_public_handoff(self):
+        forbidden_credit_sources = (
+            "import sfpcl_credit.approvals",
+            "import sfpcl_credit.approvals.modules as approval_modules",
+            "from sfpcl_credit import approvals",
+            "from sfpcl_credit import approvals as approval_package",
+        )
+        for source in forbidden_credit_sources:
+            with self.subTest(owner="credit", source=source):
+                self.assertTrue(
+                    business_app_dependency_violations(
+                        owner="credit",
+                        references=resolved_import_references(source),
+                    )
+                )
+
+        forbidden_approvals_sources = (
+            "import sfpcl_credit.credit.modules.common",
+            "from sfpcl_credit.credit.modules import common",
+            "from sfpcl_credit.credit.modules import common as credit_common",
+            "from sfpcl_credit.credit import models",
+            "from sfpcl_credit import credit",
+        )
+        for source in forbidden_approvals_sources:
+            with self.subTest(owner="approvals", source=source):
+                self.assertTrue(
+                    business_app_dependency_violations(
+                        owner="approvals",
+                        references=resolved_import_references(source),
+                    )
+                )
+
+        public_source = (
+            "from sfpcl_credit.credit.modules.appraisal_workflow "
+            "import AppraisalWorkflow as Workflow"
+        )
+        public_references = resolved_import_references(public_source)
+        self.assertFalse(
+            business_app_dependency_violations(
+                owner="approvals", references=public_references
+            )
+        )
+        self.assertIn(
+            "sfpcl_credit.credit.modules.appraisal_workflow.AppraisalWorkflow",
+            public_references,
         )
 
     def test_payload_permission_role_and_object_scope_are_independent(self):

@@ -1,0 +1,9 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006G4-sanction-dependency-boundary-regression.md
+ M docs/slices/006H5-app-shell-application-state-authority.md
+ M docs/slices/006H6-workbench-action-projection-and-interaction-proof.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M sfpcl_credit/tests/test_sanction_submission_api.py
+?? .ralph/runs/2026-07-11_143648_normal_run/

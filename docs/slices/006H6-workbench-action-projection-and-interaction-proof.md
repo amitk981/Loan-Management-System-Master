@@ -70,3 +70,10 @@ High
 - Every workbench action is proven through the real container and mocked HTTP boundary, including
   refresh, denial, validation, and one-call stale behavior.
 
+## Run-Ahead Sharpening Review (006G4, 2026-07-11)
+
+- Keep the public dependency direction proven by 006G4: approvals may consume only the documented
+  appraisal-workflow handoff; action projection work must not add a credit-to-approvals import or a
+  second approvals-to-private-credit edge.
+- The backend parity matrix and mounted-container HTTP tests are both mandatory and distinct; keep
+  the exact four-read refresh and single-request stale-write assertions already specified.
