@@ -13,7 +13,7 @@ Restore the approved staged Appraisal Workbench, eligibility checklist, and calc
 while retaining the corrected 006H2 backend wiring and introducing no new visual design.
 
 ## Depends On
-- 006H6
+- 006H7
 
 ## Source / Review References
 - `docs/working/FRONTEND_DESIGN_RULES.md`
@@ -106,3 +106,11 @@ Medium
 - The current container awaits one canonical four-read reload after every successful mutation and
   retains disabled six-field actions for their reasons. Visual movement must preserve both facts
   and must keep response-only `available_actions` out of frozen appraisal/audit snapshots.
+
+## Run-Ahead Sharpening Review (architecture review 2026-07-11_212738)
+
+- 006H7 now owns the missing mounted-container interaction matrix and exact public-service action
+  parity. This fidelity slice must keep that suite unchanged and green; server-rendered child tests
+  or source-text assertions are not substitutes if controls move within the restored composition.
+- The restored UI must display backend disabled reasons without inferring maker-checker, reference,
+  eligibility, provenance, history, state, role, or object-scope rules in React.

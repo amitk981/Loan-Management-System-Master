@@ -1,5 +1,21 @@
 # Epic 005 Digest: Application Intake, Completeness, and Deficiencies
 
+## Architecture Review 2026-07-11 21:34 - Completeness Authority and Browser Closure
+
+- 005E3 correctly joins authoritative document/completeness projections and restores S12's
+  approved composition, but it assigns `applications.loan_application.complete_check` to pass,
+  return, resolve, and rejection-note actions and endpoints. Source auth §§12.4/25.2/34.3 instead
+  requires distinct `complete_check`, `return_deficiency`, `deficiency.resolve`, and
+  `rejection_note.create` authority. Corrective 005E4 aligns projection and write gates and restores
+  the full six-field action shape.
+- 005E3's focused Playwright controller hard-codes its prior run path, never produced screenshots,
+  and lacks promised denied/API-error states. 005E4 declares the trusted contract and all nine
+  portable `RALPH_EVIDENCE_DIR` captures.
+- 005FA4 is verified closed: the real App boundary covers unset/false/true flags, the staff demo
+  selector no longer exposes borrower entry, and trusted login/logout acceptance passed twice.
+- M03-FR-010 through M03-FR-012 remain backend-present, but completeness UI/authority confidence
+  stays High risk until 005E4. Member deficiency resubmission remains owned by 008L2.
+
 ## 005FA4 Portal Auth Real-Boundary Flag Proof
 
 - Unset, explicit-false, and true demo flags are now proven through module-isolated renders of the

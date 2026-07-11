@@ -124,3 +124,12 @@ High
   role before the cross-role happy path consumes the enabled counterpart.
 - Each successful UI mutation must be followed by exactly the eligibility, loan-limit, appraisal,
   and sanction-case reads; stale `409` proof remains one mutation with no retry or refresh.
+
+## Run-Ahead Sharpening Review (architecture review 2026-07-11_212738)
+
+- Consume 006H7's predicate-parity projections: before each cross-role click, assert the action's
+  exact `required_permission`, `required_role`, and disabled reason in a paired denied state, then
+  prove the enabled counterpart succeeds through the same public boundary.
+- This tracer may begin only after 006H3 preserves the mounted-container matrix through visual
+  restoration. It must not weaken those focused assertions or use the happy path to stand in for
+  maker-checker, object-denial, field-error, or stale-write coverage.

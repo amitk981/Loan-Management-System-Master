@@ -2,6 +2,102 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-11 21:34 - Architecture Review 2026-07-11_212738_architecture_review
+
+Reviewed completed work since architecture-review commit `7a3d1c9`:
+- `005E3-completeness-authority-fidelity-and-interaction-closure` (`debc496`)
+- `005FA4-portal-auth-real-boundary-flag-proof` (`c63194f`)
+- `006G5-relative-import-dependency-guard` (`36bcd6d`)
+- `006H6-workbench-action-projection-and-interaction-proof` (`4e5d5d2`)
+
+The review checked `git diff 7a3d1c9...HEAD`, the four slice/run packets, implementation and tests,
+Epic 005/006 digests, ADR-0005, cited source sections, and functional IDs. Intervening commit
+`0d235e5` changes only the protected Ralph browser orchestrator and was not treated as a product
+slice. Standards and spec fidelity were reviewed independently. Production code was not changed,
+`CONTEXT.md` remains truthful, and `.ralph/state.json` has no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - Credit actions still do not share their write predicates
+
+`appraisal_available_actions()` enables sanction from status, role, and permission, while the public
+handoff additionally enforces verified provenance, complete frozen appraisal/risk facts, and exact
+immutable-review consistency. Loan-limit availability likewise omits the write's stored-eligible-
+assessment predicate. An enabled action can therefore be rejected by the same owning module,
+contrary to API §44 and codebase-design §§12.3/23.4/42.2. Corrective High-risk `006H7` requires one
+transition evaluation per public mutation, consumed by both projection and execution.
+
+#### Finding 2 - High - 006H6 again completed without its named real-container proof
+
+The committed frontend test server-renders the injected `AppraisalWorkbenchView` and checks raw
+source text. It never mounts the default container, clicks mutations, or observes mocked HTTP,
+four-read refresh, field errors, denial, or one-call stale behavior. The attempted Testing Library
+suite failed because the package was absent and was then not committed; the passing wrapper tests
+cannot detect broken controller wiring. `006H7` pins the standard test package and makes the full
+mounted interaction matrix an acceptance condition under codebase-design §26.3.
+
+#### Finding 3 - Medium - React still owns a parallel appraisal action matrix
+
+Although 006H6 now retains six-field action objects and disabled reasons, `canEdit`, `canSubmit`,
+`canRevalidate`, `canReview`, and `canSanction` independently combine status, provenance, role, and
+permission rules. This remains a second workflow matrix under codebase-design §§23.3-23.4/42.3.
+`006H7` makes backend `enabled` authoritative and limits `/auth/me` intersection to usability.
+
+### Spec
+
+#### Finding 1 - High - 005E3 still applies one permission to four distinct actions
+
+The slice explicitly required the exact pass, return, resolve, and rejection-note validators and
+removal of the global `complete_check` switch. Instead, `completeness_available_actions()` derives
+one completeness-check authority and assigns it to every action; the write endpoints do the same.
+Source auth §§12.4/25.2/34.3 assigns distinct `complete_check`, `return_deficiency`,
+`deficiency.resolve`, and `rejection_note.create` permissions. The action also omits
+`required_role`, so it is not the promised six-field projection. High-risk `005E4` aligns every
+endpoint and projection with its source-defined permission/object/state/resource gate.
+
+#### Finding 2 - High - 006H6 action projections contradict named service gates
+
+The slice requires parity across reference, completeness, stage, prerequisite, appraisal, role,
+permission, object, maker-checker, provenance, history, and rejection conditions. Loan-limit
+projection checks only appraisal existence/permissions, and appraisal review/sanction projection
+omits maker-checker and handoff integrity predicates. `006H7` owns the exhaustive public-boundary
+parity matrix and zero-success-evidence denial assertions.
+
+#### Finding 3 - High - 006H6's mandatory interaction matrix is unimplemented
+
+The slice required the default export to exercise every workbench mutation through mocked HTTP
+with exact bodies/counts, canonical reads, validation, `403`, and `409`. Static child rendering and
+source-string checks implement none of that contract. `006H7` restores the same acceptance without
+allowing another proxy test.
+
+#### Finding 4 - Medium - 005E3 browser evidence is incomplete and tied to a deleted worktree
+
+The Playwright spec hard-codes run `2026-07-11_194100`, produced no screenshots, and omits its
+required denied and API-error captures; the independent E2E gate ran unrelated tracer/auth specs.
+`005E4` declares the focused trusted-browser contract, derives paths from `RALPH_EVIDENCE_DIR`, and
+requires all nine named screenshots twice.
+
+### Verified Closures, Functional IDs, Context, and Queue
+
+005E3 genuinely joins the document and completeness projections and restores S12 category/item/
+document composition. 005FA4 genuinely tests unset/false/true through real App imports, removes the
+borrower from staff demo roles, and its trusted portal login/logout contract passed twice with both
+screenshots. 006G5 genuinely classifies relative, aliased, wildcard, and package-context imports
+while retaining ADR-0005's non-vacuous public edge. 006H6 removes the HTTP-owned action matrix,
+retains full action objects/reasons, and implements the four-read refresh shape, but parity and
+interaction acceptance remain open.
+
+No epic becomes complete. M03-FR-010 through M03-FR-012 have backend behavior, but completeness
+authority/browser confidence remains High risk until 005E4. M04-FR-004 through M04-FR-011 remain
+backend-present, but frontend/action confidence remains High risk until 006H7 -> 006H3 -> 006X;
+M04-FR-001/002 remain deferred to 012EA under A-053 and M04-FR-003 retains A-054's proxy. No ADR is
+needed because the cited source permissions, API §44, codebase-design rules, and ADR-0005 already
+settle the durable decisions. The next sequence is 005E4 -> 006H7 -> 006H3 -> 006X.
+
+Summary: Standards found 2 High and 1 Medium issue; worst are false-positive credit actions and the
+missing real-container proof. Spec found 3 High and 1 Medium issue; worst are wrong completeness
+authority and credit projections/tests that still do not meet 006H6's explicit contract.
+
 ## 2026-07-11 19:23 - Architecture Review 2026-07-11_191720_architecture_review
 
 Reviewed completed product/corrective work since architecture-review commit `d5632d2`:

@@ -1,5 +1,23 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-11 21:34 - Action Parity and Container Closure
+
+- 006G5 is verified closed: absolute/relative/aliased/wildcard/package imports receive the same
+  canonical dependency classification and ADR-0005's approvals-to-public-credit edge remains
+  positively observed.
+- 006H6 removes action projection from the applications HTTP adapter, retains six-field action
+  objects/reasons, and performs the canonical four-read post-mutation refresh. Its action helpers,
+  however, do not consume the exact public write predicates: loan-limit omits eligibility and
+  named application gates, while appraisal review/sanction omit maker-checker, provenance, frozen-
+  fact, and immutable-history consistency. React also rechecks status/provenance/role rules.
+- The required default-container Testing Library matrix was attempted but failed for an unpinned
+  package, then was omitted; committed tests only server-render a child and inspect source text.
+  Corrective 006H7 owns shared transition predicates, full backend parity, the pinned standard test
+  harness, and exact mounted HTTP/refresh/denial/validation/stale interactions.
+- M04-FR-004 through M04-FR-011 remain backend-present but UI/action confidence remains High risk
+  until 006H7, visual restoration 006H3, and tracer 006X complete. M04-FR-001/002 remain deferred to
+  012EA under A-053; M04-FR-003 retains A-054's receipt-time proxy.
+
 ## 006H6 Workbench Action Projection
 
 - Eligibility, loan-limit, and appraisal public modules now attach the six-field resource action

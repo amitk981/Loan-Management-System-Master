@@ -76,7 +76,8 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 50 | `006H` Eligibility Appraisal Frontend Integration | Epic 006 | 006G, | Medium | Yes | Yes | No | Yes |
 | 50a | `006H5` App Shell Application State Authority | Epic 006 | 006H4, | Medium | Yes | No | No | Yes |
 | 50b | `006H6` Workbench Action Projection and Interaction Proof | Epic 006 | 006H4 and 006G4 and 006G5, | High | Yes | Yes | No | Yes |
-| 50c | `006H3` Appraisal Workbench Prototype Fidelity Restoration | Epic 006 | 006H6, | Medium | Yes | No | No | Yes |
+| 50c | `006H7` Credit Action Parity and Container Proof | Epic 006 | 006H6 and 006G5, | High | Yes | Yes | No | Yes |
+| 50d | `006H3` Appraisal Workbench Prototype Fidelity Restoration | Epic 006 | 006H7, | Medium | Yes | No | No | Yes |
 | 51 | `006X` MVP End-to-End Happy Path Tracer Bullet | Epic 006 | 006H3, | High | No | Yes | Yes | Yes |
 | 51a | `006Y` Member Create/Update and Identity Governance | Epic 004 | 006X, | High | No | Yes | Yes | Yes |
 | 51b | `006Y2` Member Form and Witness Capture UI Wiring | Epic 004 | 006Y, | Medium | Yes | Yes | No | Yes |
