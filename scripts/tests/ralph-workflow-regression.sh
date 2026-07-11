@@ -17,6 +17,10 @@ source scripts/lib/ralph-exit-protocol.sh
 # shellcheck source=../lib/ralph-runtime-capabilities.sh
 source scripts/lib/ralph-runtime-capabilities.sh
 
+[[ -f scripts/lib/ralph-browser-acceptance.sh ]] || fail "missing trusted browser acceptance helper"
+# shellcheck source=../lib/ralph-browser-acceptance.sh
+source scripts/lib/ralph-browser-acceptance.sh
+
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_SUCCESS")" == "success" ]] || fail "success status misclassified"
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_QUEUE_EMPTY")" == "queue_empty" ]] || fail "queue-empty status misclassified"
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_OWNER_VETO")" == "owner_veto" ]] || fail "owner-veto status misclassified"
@@ -125,6 +129,11 @@ Not Started
 
 ## Runtime Capabilities
 - `localhost-e2e-server`
+
+## Trusted Browser Acceptance
+- Spec: `e2e/future-browser.e2e.spec.ts`
+- Screenshot: `future-validation.png`
+- Screenshot: `future-success.png`
 EOF
 cat > "$fixture_dir/future-combined-slice.md" <<'EOF'
 ## Status
@@ -138,6 +147,19 @@ cat > "$fixture_dir/unknown-capability.md" <<'EOF'
 ## Runtime Capabilities
 - `unrestricted-network`
 EOF
+mkdir -p "$fixture_dir/browser-project/e2e"
+touch "$fixture_dir/browser-project/e2e/future-browser.e2e.spec.ts"
+cat > "$fixture_dir/unsafe-browser-slice.md" <<'EOF'
+## Runtime Capabilities
+- `localhost-e2e-server`
+
+## Trusted Browser Acceptance
+- Spec: `e2e/../../scripts/escape.e2e.spec.ts`
+EOF
+cat > "$fixture_dir/missing-browser-contract-slice.md" <<'EOF'
+## Runtime Capabilities
+- `localhost-e2e-server`
+EOF
 
 [[ "$(ralph_codex_permission_profile_for_slice "$fixture_dir/future-postgres-slice.md")" == "ralph-postgres" ]] \
   || fail "future PostgreSQL slice did not select the scoped socket profile"
@@ -149,6 +171,19 @@ EOF
   || fail "combined local runtime capabilities did not select the composed profile"
 if ralph_validate_slice_capabilities "$fixture_dir/unknown-capability.md" >/dev/null 2>&1; then
   fail "unknown runtime capability did not fail closed"
+fi
+ralph_validate_trusted_browser_acceptance \
+  "$fixture_dir/future-localhost-slice.md" "$fixture_dir/browser-project" \
+  || fail "valid trusted browser acceptance contract was rejected"
+[[ "$(ralph_trusted_e2e_specs "$fixture_dir/future-localhost-slice.md")" == "e2e/future-browser.e2e.spec.ts" ]] \
+  || fail "trusted browser spec parser returned the wrong path"
+[[ "$(ralph_trusted_e2e_screenshots "$fixture_dir/future-localhost-slice.md" | paste -sd ',' -)" == "future-validation.png,future-success.png" ]] \
+  || fail "trusted browser screenshot parser returned the wrong filenames"
+if ralph_validate_trusted_browser_acceptance "$fixture_dir/unsafe-browser-slice.md" "$fixture_dir/browser-project" >/dev/null 2>&1; then
+  fail "unsafe trusted browser spec path did not fail closed"
+fi
+if ralph_validate_trusted_browser_acceptance "$fixture_dir/missing-browser-contract-slice.md" "$fixture_dir/browser-project" >/dev/null 2>&1; then
+  fail "localhost E2E slice without a trusted browser contract did not fail closed"
 fi
 
 # Agent output is untrusted text. It must never drive loop control flow.
@@ -170,10 +205,16 @@ rg -q '"localhost"[[:space:]]*=[[:space:]]*"allow"' .codex/config.toml \
   || fail "localhost E2E traffic is not narrowly allowlisted"
 rg -q 'localhost_e2e_required' scripts/ralph-validate.sh \
   || fail "independent validation does not select localhost E2E from the shared capability"
-[[ "$(rg -o 'npm run e2e -- e2e/tracer\.e2e\.spec\.ts e2e/auth-negative\.e2e\.spec\.ts' scripts/ralph-validate.sh | wc -l | xargs)" == "2" ]] \
-  || fail "independent localhost E2E validation does not run both dashboard specs twice"
-[[ "$(rg -o -- '--grep \\"zero-permission staff\|logs in, walks\\"' scripts/ralph-validate.sh | wc -l | xargs)" == "2" ]] \
-  || fail "independent localhost E2E validation is not scoped to the two dashboard scenarios"
+rg -q 'ralph_validate_trusted_browser_acceptance' scripts/ralph-validate.sh \
+  || fail "independent validation does not validate the slice-specific browser contract"
+rg -q 'run_trusted_browser_acceptance_once 1' scripts/ralph-validate.sh \
+  || fail "first trusted slice-specific browser run is missing"
+rg -q 'run_trusted_browser_acceptance_once 2' scripts/ralph-validate.sh \
+  || fail "second trusted slice-specific browser run is missing"
+rg -q 'RALPH_EVIDENCE_DIR' scripts/ralph-validate.sh \
+  || fail "trusted browser acceptance does not receive the current run evidence directory"
+rg -q 'ralph_trusted_e2e_screenshots' scripts/ralph-validate.sh \
+  || fail "trusted browser acceptance does not verify declared screenshots"
 rg -q "README E2E command does not resolve the shared venv" scripts/ralph-validate.sh \
   || fail "independent localhost E2E validation does not enforce the worktree-safe README command"
 rg -q "Playwright does not pin the dashboard baseline timezone" scripts/ralph-validate.sh \
@@ -182,6 +223,8 @@ rg -q "grep -Eq '\^\[\[:space:\]\]\*\[0-9\]" scripts/ralph-validate.sh \
   || fail "artifact validation does not distinguish a filled numbered plan from an untouched template"
 rg -q 'slice does not declare localhost-e2e-server' scripts/ralph-validate.sh \
   || fail "ordinary slices do not explicitly skip the capability-only E2E gate"
+rg -q 'do not declare the run failed solely because Chromium cannot launch' scripts/ralph-run.sh \
+  || fail "coding-agent prompt does not delegate sandbox-blocked browser execution to trusted validation"
 rg -q 'postgresql-acceptance-validation-\$\{ordinal\}\.txt' scripts/ralph-validate.sh \
   || fail "independent PostgreSQL acceptance log path is missing"
 rg -q 'run_postgresql_acceptance_once 1' scripts/ralph-validate.sh \

@@ -5,6 +5,7 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
 source "$repo_root/scripts/lib/ralph-postgresql-acceptance.sh"
 source "$repo_root/scripts/lib/ralph-runtime-capabilities.sh"
+source "$repo_root/scripts/lib/ralph-browser-acceptance.sh"
 source "$repo_root/scripts/lib/ralph-slice-selection.sh"
 
 run_id=""
@@ -161,6 +162,44 @@ run_postgresql_acceptance_once() {
   (( rc == 0 && cleanup_rc == 0 )) && postgresql_acceptance_log_passes "$log"
 }
 
+run_trusted_browser_acceptance_once() {
+  local ordinal="$1"
+  local log="$run_dir/evidence/terminal-logs/trusted-browser-acceptance-${ordinal}.log"
+  local specs=()
+  local spec=""
+  local rc=0
+  while IFS= read -r spec; do
+    [[ -n "$spec" ]] && specs+=("$spec")
+  done < <(ralph_trusted_e2e_specs "$slice_file")
+
+  mkdir -p "$(dirname "$log")" "$run_dir/evidence/screenshots"
+  {
+    echo "Command:"
+    printf 'RALPH_EVIDENCE_DIR=%q E2E_DJANGO_PYTHON=%q npm run e2e --' \
+      "$run_dir/evidence/screenshots" "$venv_python"
+    printf ' %q' "${specs[@]}"
+    echo
+    echo
+    echo "Working directory: $project_dir/"
+    echo
+  } > "$log"
+
+  if (
+    cd "$project_path"
+    [[ -z "$node_bin_dir" ]] || export PATH="$node_bin_dir:$PATH"
+    RALPH_EVIDENCE_DIR="$run_dir/evidence/screenshots" \
+      E2E_DJANGO_PYTHON="$venv_python" \
+      npm run e2e -- "${specs[@]}"
+  ) >> "$log" 2>&1; then
+    rc=0
+  else
+    rc=$?
+  fi
+  echo >> "$log"
+  echo "Exit code: $rc" >> "$log"
+  (( rc == 0 ))
+}
+
 write_postgresql_environment() {
   local file="$run_dir/evidence/postgresql-environment-validation.md"
   if postgresql_environment_probe "$venv_python" "$worktree_dir" > "$file.tmp" 2>&1; then
@@ -243,11 +282,57 @@ fi
 
 # Browser processes need macOS services that are intentionally unavailable to
 # the coding-agent sandbox. A slice declaring localhost E2E capability must
-# therefore prove its browser acceptance through this trusted independent gate.
-# The capability makes the gate mandatory even though broad queue runs keep E2E
-# optional by default.
+# therefore name its exact Playwright specs and expected screenshots in a
+# strict Trusted Browser Acceptance section. The orchestrator executes that
+# slice-specific contract twice outside the coding sandbox.
 if [[ "$mode" =~ ^(normal_run|repair)$ && "$localhost_e2e_required" == "1" ]]; then
-  run_gate e2e "rg -q \"git rev-parse .*--git-common-dir\" e2e/README.md || { echo \"FAIL: README E2E command does not resolve the shared venv through Git's common directory.\"; exit 1; }; rg -q \"timezoneId: 'Asia/Kolkata'\" playwright.config.ts || { echo \"FAIL: Playwright does not pin the dashboard baseline timezone to Asia/Kolkata.\"; exit 1; }; E2E_DJANGO_PYTHON=\"$venv_python\" npm run e2e -- e2e/tracer.e2e.spec.ts e2e/auth-negative.e2e.spec.ts --grep \"zero-permission staff|logs in, walks\" && E2E_DJANGO_PYTHON=\"$venv_python\" npm run e2e -- e2e/tracer.e2e.spec.ts e2e/auth-negative.e2e.spec.ts --grep \"zero-permission staff|logs in, walks\"" || failures=$((failures + 1))
+  browser_contract=0
+  browser_readme=0
+  browser_timezone=0
+  browser_first=0
+  browser_second=0
+  browser_screenshots=1
+  ralph_validate_trusted_browser_acceptance "$slice_file" "$project_path" && browser_contract=1
+  rg -q "git rev-parse .*--git-common-dir" "$project_path/e2e/README.md" && browser_readme=1
+  rg -q "timezoneId: 'Asia/Kolkata'" "$project_path/playwright.config.ts" && browser_timezone=1
+
+  if (( browser_contract == 1 && browser_readme == 1 && browser_timezone == 1 )); then
+    while IFS= read -r screenshot; do
+      [[ -n "$screenshot" ]] && rm -f "$run_dir/evidence/screenshots/$screenshot"
+    done < <(ralph_trusted_e2e_screenshots "$slice_file")
+    run_trusted_browser_acceptance_once 1 && browser_first=1
+    run_trusted_browser_acceptance_once 2 && browser_second=1
+    while IFS= read -r screenshot; do
+      [[ -z "$screenshot" ]] && continue
+      [[ -s "$run_dir/evidence/screenshots/$screenshot" ]] || browser_screenshots=0
+    done < <(ralph_trusted_e2e_screenshots "$slice_file")
+  else
+    browser_screenshots=0
+  fi
+
+  {
+    echo "# e2e Results"
+    echo
+    (( browser_contract == 1 )) && echo "- PASS: slice-specific trusted browser contract is valid." || echo "- FAIL: slice-specific trusted browser contract is missing or invalid."
+    (( browser_readme == 1 )) && echo "- PASS: README E2E command resolves the shared venv through Git's common directory." || echo "- FAIL: README E2E command does not resolve the shared venv through Git's common directory."
+    (( browser_timezone == 1 )) && echo "- PASS: Playwright pins the dashboard baseline timezone to Asia/Kolkata." || echo "- FAIL: Playwright does not pin the dashboard baseline timezone to Asia/Kolkata."
+    (( browser_first == 1 )) && echo "- PASS: first trusted slice-specific browser run passed." || echo "- FAIL: first trusted slice-specific browser run did not pass."
+    (( browser_second == 1 )) && echo "- PASS: second trusted slice-specific browser run passed." || echo "- FAIL: second trusted slice-specific browser run did not pass."
+    (( browser_screenshots == 1 )) && echo "- PASS: every declared browser screenshot exists and is non-empty." || echo "- FAIL: one or more declared browser screenshots are missing or empty."
+    echo
+    echo "Declared specs:"
+    ralph_trusted_e2e_specs "$slice_file" | sed 's/^/- /'
+    echo "Declared screenshots:"
+    ralph_trusted_e2e_screenshots "$slice_file" | sed 's/^/- /'
+  } > "$run_dir/e2e-results.md"
+
+  if (( browser_contract == 1 && browser_readme == 1 && browser_timezone == 1 \
+        && browser_first == 1 && browser_second == 1 && browser_screenshots == 1 )); then
+    :
+  else
+    failures=$((failures + 1))
+    failed_gate_logs+=("e2e-results.md")
+  fi
 else
   write_skipped e2e "slice does not declare localhost-e2e-server"
 fi

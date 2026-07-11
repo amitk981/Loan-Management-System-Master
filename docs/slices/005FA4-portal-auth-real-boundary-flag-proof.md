@@ -19,6 +19,11 @@ contract accepted as evidence.
 ## Runtime Capabilities
 - `localhost-e2e-server`
 
+## Trusted Browser Acceptance
+- Spec: `e2e/portal-auth-interaction.e2e.spec.ts`
+- Screenshot: `portal-login-validation.png`
+- Screenshot: `portal-post-logout.png`
+
 ## Source / Review References
 - `docs/source/auth-permissions.md` authentication, session, and frontend guard sections
 - `docs/source/security-privacy.md` session revocation/logout controls
@@ -37,6 +42,8 @@ contract accepted as evidence.
 - Exercise the real portal form's empty and populated submissions and failed-network logout through
   the same boundary. Assert exactly one real login request and that logout clears stored tokens,
   identity, roles, role codes, permissions, actions, member/portal claims, and protected content.
+- Write both Playwright screenshots beneath `RALPH_EVIDENCE_DIR`; never hard-code a run ID in the
+  spec. The trusted orchestrator gate supplies the current run's evidence directory.
 - Keep production behavior and visual composition unchanged unless a failing boundary test exposes
   a real defect.
 
@@ -63,4 +70,3 @@ High
 - Demo flag behavior and portal fail-closed session behavior are proven through the real app
   boundary in all three flag states.
 - No test manually reconstructs the production flag-to-UI projection it claims to verify.
-
