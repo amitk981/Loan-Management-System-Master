@@ -1,5 +1,18 @@
 # Ralph Progress Log
 
+## 2026-07-11 22:08 - 2026-07-11_215244_repair
+- Agent tool used: codex with diagnosing-bugs and TDD red/green loops.
+- Slice completed: `005E4-completeness-action-authority-and-browser-proof`.
+- Summary: Replaced the shared completeness authority shortcut with exact pass, return, resolve,
+  and rejection-create permissions; restored six-field actions and the Deputy Manager return grant;
+  added permission-only projection/write parity and zero-evidence denial coverage. Made the focused
+  Playwright contract portable, exact-counted, and complete for all nine declared states.
+- Tests run: focused backend authority and role-seed red/green; frontend lint/typecheck/build and
+  150 tests; backend check/migration sync and 403 tests with five expected PostgreSQL skips at 94%
+  coverage. The independent trusted-browser gate passed twice and verified all nine screenshots.
+- Evidence saved: `.ralph/runs/2026-07-11_215244_repair/`.
+- Result: Success. Risk: High. Next: 006H7, then 006H3 and 006X.
+
 ## 2026-07-11 21:34 - 2026-07-11_212738_architecture_review
 - Agent tool used: codex with independent Standards and Spec review axes.
 - Slice attempted: `architecture-review`; production code was not changed.

@@ -93,6 +93,7 @@ describe('ApplicationDetail API-backed rendering', () => {
         enabled: false,
         disabled_reason: 'Complete required application facts before submit.',
         required_permission: 'applications.loan_application.submit',
+        required_role: null,
       }],
     };
     mockApplicationDetailServices(draft, [], []);

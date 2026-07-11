@@ -1,0 +1,8 @@
+
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+src/pages/applications/ApplicationDetail.test.tsx(98,35): error TS2345: Argument of type '{ application_status: string; available_actions: { action_code: string; label: string; enabled: boolean; disabled_reason: string; required_permission: string; }[]; loan_application_id: string; ... 19 more ...; nominee?: applicationIntakeApi.ApplicationNomineeSummary | null; }' is not assignable to parameter of type 'StaffApplication'.
+  Types of property 'available_actions' are incompatible.
+    Type '{ action_code: string; label: string; enabled: boolean; disabled_reason: string; required_permission: string; }[]' is not assignable to type 'ApplicationAvailableAction[]'.
+      Property 'required_role' is missing in type '{ action_code: string; label: string; enabled: boolean; disabled_reason: string; required_permission: string; }' but required in type 'ApplicationAvailableAction'.

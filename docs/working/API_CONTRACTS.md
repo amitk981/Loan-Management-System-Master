@@ -382,7 +382,8 @@ Returns the derived completeness workbench for a submitted application:
       "label": "Generate reference number",
       "enabled": false,
       "disabled_reason": "Required nominee and document checks must be complete.",
-      "required_permission": "applications.loan_application.complete_check"
+      "required_permission": "applications.loan_application.complete_check",
+      "required_role": "deputy_manager_finance"
     }
   ]
 }
@@ -546,11 +547,14 @@ Rules:
   boundary after global permission and `404` checks.
 - 005E2 wires the staff Completeness Workbench to the list, document-checklist,
   completeness-check, deficiency, and rejection-note APIs with no mock fallback. Submitted and
-  `incomplete_returned` queue rows are requested as separate status-filtered list reads. 005E3
-  adds §44-shaped `available_actions` to completeness and deficiency reads. Each pass, return,
-  resolve, and rejection-note action reuses the write endpoint's permission, object, state, and
-  resource validator; the UI intersects that projection with `/auth/me` only for usability and
-  never infers resource authority. Pass sends `{}`; return sends only
+  `incomplete_returned` queue rows are requested as separate status-filtered list reads. 005E4
+  completes the six-field §44 `available_actions` on completeness and deficiency reads. Pass,
+  return, resolve, and rejection-note creation respectively require
+  `applications.loan_application.complete_check`,
+  `applications.loan_application.return_deficiency`, `applications.deficiency.resolve`, and
+  `applications.rejection_note.create`; each projection and write boundary uses the same
+  application object scope and state/resource predicate. The UI intersects that projection with
+  `/auth/me` only for usability and never infers resource authority. Pass sends `{}`; return sends only
   `communication_mode`, `message`, and current blocker `items[{item_code, remarks?}]`; deficiency
   resolution sends only `resolution_notes`; rejection-note creation sends the exact 005H draft
   fields. Every successful action re-reads the canonical queue, document checklist, completeness,
@@ -564,13 +568,13 @@ Rules:
   missing_metadata`; submitted but pending/rejected latest metadata returns `reason_code =
   not_verified`. Validation failures return `400 VALIDATION_ERROR` with item-level
   `required_checklist_items` and create no sequence/register/audit/workflow side effects.
-- 005F return-with-deficiencies requires `applications.loan_application.complete_check`; deficiency
+- Return-with-deficiencies requires `applications.loan_application.return_deficiency`; deficiency
   list requires `applications.loan_application.read`; deficiency resolve requires
-  `applications.loan_application.complete_check`. All reuse
+  `applications.deficiency.resolve`. All reuse
   `applications.services.evaluate_application_object_access(...)` after global permission and
   `404` checks.
-- 005H rejection-note create/send requires `applications.loan_application.complete_check` because
-  no narrower source-backed rejection-note permission exists yet. Both endpoints reuse the same
+- Rejection-note creation requires `applications.rejection_note.create`; the separate send shell
+  retains its existing send boundary pending its owning workflow work. Both endpoints reuse the
   application object-access boundary after global permission and `404` checks. Borrower portal
   tokens have only portal own-data permissions and receive `403 FORBIDDEN` on staff
   rejection-note routes; suspended portal sessions receive `401 INVALID_TOKEN` before any

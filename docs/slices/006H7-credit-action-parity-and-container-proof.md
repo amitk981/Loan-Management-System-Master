@@ -76,3 +76,13 @@ High
   actor/resource, and every disabled projection explains the matching rejection.
 - The production container—not a child or source-text proxy—proves every mutation, refresh,
   denial, validation, and stale path.
+
+## Run-Ahead Sharpening Review (005E4, 2026-07-11)
+
+- Apply codebase-design §§23.3-23.5 and API §44 exactly as proven by 005E4: every default-container
+  control must retain the full backend action object, and `/auth/me` permission/role intersection is
+  usability only. A disabled or absent backend action must remain non-invokable even when the actor
+  has a matching global permission.
+- The mounted interaction matrix must count the mutation and each canonical post-success read; a
+  `403`, `400`, or `409` response is evidence only when it traverses the real API client/container
+  error boundary and proves no retry or optimistic workflow synthesis.

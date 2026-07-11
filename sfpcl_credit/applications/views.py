@@ -890,12 +890,12 @@ def loan_application_return_with_deficiencies(request, loan_application_id):
     user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:
         return response
-    if not services.user_can_complete_check_applications(user):
+    if not services.user_can_perform_completeness_action(user, "return_with_deficiencies"):
         return error_response(
             request,
             403,
             "FORBIDDEN",
-            "You do not have permission to complete-check loan applications.",
+            "You do not have permission to return loan applications with deficiencies.",
         )
     application = services.get_application(loan_application_id)
     if application is None:
@@ -903,7 +903,7 @@ def loan_application_return_with_deficiencies(request, loan_application_id):
     object_access = services.evaluate_application_object_access(
         application,
         user,
-        services.APPLICATION_COMPLETE_CHECK_PERMISSION,
+        services.APPLICATION_RETURN_DEFICIENCY_PERMISSION,
         permissions,
     )
     if not object_access.allowed:
@@ -981,12 +981,12 @@ def application_deficiency_resolve(request, deficiency_id):
     user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:
         return response
-    if not services.user_can_complete_check_applications(user):
+    if not services.user_can_perform_completeness_action(user, "resolve_deficiency"):
         return error_response(
             request,
             403,
             "FORBIDDEN",
-            "You do not have permission to complete-check loan applications.",
+            "You do not have permission to resolve application deficiencies.",
         )
     deficiency = services.get_application_deficiency(deficiency_id)
     if deficiency is None:
@@ -994,7 +994,7 @@ def application_deficiency_resolve(request, deficiency_id):
     object_access = services.evaluate_application_object_access(
         deficiency.loan_application,
         user,
-        services.APPLICATION_COMPLETE_CHECK_PERMISSION,
+        services.APPLICATION_DEFICIENCY_RESOLVE_PERMISSION,
         permissions,
     )
     if not object_access.allowed:
@@ -1025,12 +1025,12 @@ def loan_application_rejection_note(request, loan_application_id):
     user, permissions, response = http_auth.authenticated_user_with_permissions(request)
     if response is not None:
         return response
-    if not services.user_can_complete_check_applications(user):
+    if not services.user_can_perform_completeness_action(user, "create_rejection_note"):
         return error_response(
             request,
             403,
             "FORBIDDEN",
-            "You do not have permission to complete-check loan applications.",
+            "You do not have permission to create rejection notes.",
         )
     application = services.get_application(loan_application_id)
     if application is None:
@@ -1038,7 +1038,7 @@ def loan_application_rejection_note(request, loan_application_id):
     object_access = services.evaluate_application_object_access(
         application,
         user,
-        services.APPLICATION_COMPLETE_CHECK_PERMISSION,
+        services.APPLICATION_REJECTION_NOTE_CREATE_PERMISSION,
         permissions,
     )
     if not object_access.allowed:

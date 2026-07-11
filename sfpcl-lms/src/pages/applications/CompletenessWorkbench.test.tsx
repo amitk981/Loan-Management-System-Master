@@ -171,6 +171,7 @@ const availableAction = (action_code: string, enabled: boolean, disabled_reason:
   enabled,
   disabled_reason,
   required_permission: 'applications.loan_application.complete_check',
+  required_role: 'deputy_manager_finance',
 });
 
 const deficiencies: ApplicationDeficiency[] = [

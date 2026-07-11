@@ -1,0 +1,50 @@
+Creating test database for alias 'default'...
+Found 403 test(s).
+System check identified no issues (0 silenced).
+..................................................................................................................Catalogue seeded: 179 permissions, 20 roles, 8 teams, 168 role-permission links.
+Catalogue seeded: 179 permissions, 20 roles, 8 teams, 168 role-permission links.
+...................................................................................................................F..............................................................................................Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+...Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions).
+.........................ss............ss.............s..........
+======================================================================
+FAIL: test_staff_application_detail_returns_neutral_owner_and_authorized_actions (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_staff_application_detail_returns_neutral_owner_and_authorized_actions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_215244_repair/sfpcl_credit/tests/test_loan_applications_api.py", line 268, in test_staff_application_detail_returns_neutral_owner_and_authorized_actions
+    self.assertEqual(
+AssertionError: Lists differ: [{'ac[118 chars]'applications.loan_application.submit', 'required_role': None}] != [{'ac[118 chars]'applications.loan_application.submit'}]
+
+First differing element 0:
+{'act[116 chars] 'applications.loan_application.submit', 'required_role': None}
+{'act[116 chars] 'applications.loan_application.submit'}
+
+  [{'action_code': 'submit',
+    'disabled_reason': None,
+    'enabled': True,
+    'label': 'Submit Application',
+-   'required_permission': 'applications.loan_application.submit',
+?                                                                ^
+
++   'required_permission': 'applications.loan_application.submit'}]
+?                                                                ^^
+
+-   'required_role': None}]
+
+----------------------------------------------------------------------
+Ran 403 tests in 38.269s
+
+FAILED (failures=1, skipped=5)
+Destroying test database for alias 'default'...

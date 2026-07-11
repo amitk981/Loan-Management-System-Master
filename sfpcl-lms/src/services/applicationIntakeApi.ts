@@ -66,6 +66,7 @@ export interface ApplicationAvailableAction {
   enabled: boolean;
   disabled_reason: string | null;
   required_permission: string;
+  required_role: string | null;
 }
 
 export interface ApplicationNomineeSummary {

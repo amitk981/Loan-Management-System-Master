@@ -47,6 +47,9 @@ APPLICATION_CREATE_PERMISSION = "applications.loan_application.create"
 APPLICATION_UPDATE_PERMISSION = "applications.loan_application.update"
 APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
 APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_check"
+APPLICATION_RETURN_DEFICIENCY_PERMISSION = "applications.loan_application.return_deficiency"
+APPLICATION_DEFICIENCY_RESOLVE_PERMISSION = "applications.deficiency.resolve"
+APPLICATION_REJECTION_NOTE_CREATE_PERMISSION = "applications.rejection_note.create"
 APPLICATION_DOCUMENT_UPLOAD_PERMISSION = "applications.document.upload"
 APPLICATION_DOCUMENT_VERIFY_PERMISSION = "applications.document.verify"
 WITNESS_READ_PERMISSION = "members.witness.read"
@@ -161,6 +164,11 @@ def user_can_submit_applications(user):
 
 def user_can_complete_check_applications(user):
     return APPLICATION_COMPLETE_CHECK_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_perform_completeness_action(user, action_code):
+    action = COMPLETENESS_ACTIONS[action_code]
+    return action["required_permission"] in auth_service.effective_permission_codes(user)
 
 
 def user_can_read_witnesses(user):
@@ -897,27 +905,19 @@ def build_completeness_workbench(application, actor=None):
 def completeness_available_actions(application, actor, workbench=None):
     """Project completeness actions from the same gates used by their write services."""
     permissions = auth_service.effective_permission_codes(actor)
-    object_access = evaluate_application_object_access(
-        application,
-        actor,
-        APPLICATION_COMPLETE_CHECK_PERMISSION,
-        permissions,
-    )
-    authority_reason = None
-    if APPLICATION_COMPLETE_CHECK_PERMISSION not in permissions:
-        authority_reason = "Required completeness-check permission is not granted."
-    elif not object_access.allowed:
-        authority_reason = object_access.reason
-
     snapshot = workbench or build_completeness_workbench(application)
-    pass_reason = authority_reason or completeness_pass_invalid_state_message(application)
+    pass_reason = _completeness_authority_reason(
+        application, actor, "pass_completeness", permissions
+    ) or completeness_pass_invalid_state_message(application)
     if pass_reason is None:
         try:
             validate_completeness_ready_for_reference(application)
         except LoanApplicationValidationError:
             pass_reason = "Required nominee and document checks must be complete."
 
-    return_reason = authority_reason or return_deficiencies_invalid_state_message(application)
+    return_reason = _completeness_authority_reason(
+        application, actor, "return_with_deficiencies", permissions
+    ) or return_deficiencies_invalid_state_message(application)
     if return_reason is None and not snapshot["blocking_document_types"]:
         return_reason = "No blocking document deficiencies are available to return."
 
@@ -925,11 +925,15 @@ def completeness_available_actions(application, actor, workbench=None):
         loan_application=application,
         resolution_status=ApplicationDeficiency.STATUS_OPEN,
     ).exists()
-    resolve_reason = authority_reason
+    resolve_reason = _completeness_authority_reason(
+        application, actor, "resolve_deficiency", permissions
+    )
     if resolve_reason is None and not open_deficiency:
         resolve_reason = "No open deficiency is available to resolve."
 
-    reject_reason = authority_reason or rejection_note_create_invalid_state_message(application)
+    reject_reason = _completeness_authority_reason(
+        application, actor, "create_rejection_note", permissions
+    ) or rejection_note_create_invalid_state_message(application)
     return [
         _completeness_action("pass_completeness", "Generate reference number", pass_reason),
         _completeness_action("return_with_deficiencies", "Return for deficiency", return_reason),
@@ -939,13 +943,50 @@ def completeness_available_actions(application, actor, workbench=None):
 
 
 def _completeness_action(action_code, label, disabled_reason):
+    authority = COMPLETENESS_ACTIONS[action_code]
     return {
         "action_code": action_code,
         "label": label,
         "enabled": disabled_reason is None,
         "disabled_reason": disabled_reason,
-        "required_permission": APPLICATION_COMPLETE_CHECK_PERMISSION,
+        "required_permission": authority["required_permission"],
+        "required_role": authority["required_role"],
     }
+
+
+COMPLETENESS_ACTIONS = {
+    "pass_completeness": {
+        "required_permission": APPLICATION_COMPLETE_CHECK_PERMISSION,
+        "required_role": "deputy_manager_finance",
+    },
+    "return_with_deficiencies": {
+        "required_permission": APPLICATION_RETURN_DEFICIENCY_PERMISSION,
+        "required_role": "deputy_manager_finance",
+    },
+    "resolve_deficiency": {
+        "required_permission": APPLICATION_DEFICIENCY_RESOLVE_PERMISSION,
+        "required_role": "deputy_manager_finance",
+    },
+    "create_rejection_note": {
+        "required_permission": APPLICATION_REJECTION_NOTE_CREATE_PERMISSION,
+        "required_role": "credit_manager",
+    },
+}
+
+
+def _completeness_authority_reason(application, actor, action_code, permissions):
+    required_permission = COMPLETENESS_ACTIONS[action_code]["required_permission"]
+    if required_permission not in permissions:
+        return f"Required permission {required_permission} is not granted."
+    object_access = evaluate_application_object_access(
+        application,
+        actor,
+        required_permission,
+        permissions,
+    )
+    if not object_access.allowed:
+        return object_access.reason
+    return None
 
 
 def validate_completeness_ready_for_reference(application):
@@ -1373,6 +1414,7 @@ def _application_available_actions(application, actor):
             "enabled": enabled,
             "disabled_reason": disabled_reason,
             "required_permission": APPLICATION_SUBMIT_PERMISSION,
+            "required_role": None,
         }
     ]
 

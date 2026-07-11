@@ -31,6 +31,9 @@ APPLICATION_CREATE_PERMISSION = "applications.loan_application.create"
 APPLICATION_UPDATE_PERMISSION = "applications.loan_application.update"
 APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
 APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_check"
+APPLICATION_RETURN_DEFICIENCY_PERMISSION = "applications.loan_application.return_deficiency"
+APPLICATION_DEFICIENCY_RESOLVE_PERMISSION = "applications.deficiency.resolve"
+APPLICATION_REJECTION_NOTE_CREATE_PERMISSION = "applications.rejection_note.create"
 APPLICATION_DOCUMENT_UPLOAD_PERMISSION = "applications.document.upload"
 APPLICATION_DOCUMENT_VERIFY_PERMISSION = "applications.document.verify"
 ELIGIBILITY_RUN_PERMISSION = "credit.eligibility.run"
@@ -61,6 +64,18 @@ class LoanApplicationDraftApiTests(TestCase):
             APPLICATION_COMPLETE_CHECK_PERMISSION,
             "Mark completeness result",
         )
+        self.return_deficiency_permission = self._permission(
+            APPLICATION_RETURN_DEFICIENCY_PERMISSION,
+            "Return application with deficiencies",
+        )
+        self.deficiency_resolve_permission = self._permission(
+            APPLICATION_DEFICIENCY_RESOLVE_PERMISSION,
+            "Resolve application deficiencies",
+        )
+        self.rejection_note_create_permission = self._permission(
+            APPLICATION_REJECTION_NOTE_CREATE_PERMISSION,
+            "Create application rejection note",
+        )
         self.document_upload_permission = self._permission(
             APPLICATION_DOCUMENT_UPLOAD_PERMISSION,
             "Upload application documents",
@@ -85,6 +100,9 @@ class LoanApplicationDraftApiTests(TestCase):
             self.update_permission,
             self.submit_permission,
             self.complete_check_permission,
+            self.return_deficiency_permission,
+            self.deficiency_resolve_permission,
+            self.rejection_note_create_permission,
             self.document_upload_permission,
             self.document_verify_permission,
             self.eligibility_run_permission,
@@ -97,6 +115,9 @@ class LoanApplicationDraftApiTests(TestCase):
             self.update_permission,
             self.submit_permission,
             self.complete_check_permission,
+            self.return_deficiency_permission,
+            self.deficiency_resolve_permission,
+            self.rejection_note_create_permission,
             self.document_upload_permission,
             self.eligibility_run_permission,
             self.loan_limit_calculate_permission,
@@ -253,6 +274,7 @@ class LoanApplicationDraftApiTests(TestCase):
                     "enabled": True,
                     "disabled_reason": None,
                     "required_permission": APPLICATION_SUBMIT_PERMISSION,
+                    "required_role": None,
                 }
             ],
         )
@@ -2665,6 +2687,210 @@ class LoanApplicationDraftApiTests(TestCase):
         }
         self.assertFalse(rejected_actions["create_rejection_note"]["enabled"])
         self.assertIn("already has", rejected_actions["create_rejection_note"]["disabled_reason"])
+
+    def test_completeness_actions_use_distinct_six_field_authority_contract(self):
+        return_only_actor = self._user(
+            "applications.return-only@sfpcl.example",
+            "ReturnOnlyPass123!",
+            self.read_permission,
+            self.return_deficiency_permission,
+            role_code="deputy_manager_finance",
+        )
+        application_id = self._create_and_submit_application(
+            declared_purpose="Distinct completeness authority projection"
+        )
+        apps.get_model("applications", "LoanApplication").objects.filter(
+            loan_application_id=application_id
+        ).update(received_by_user=return_only_actor)
+
+        response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/completeness-check/",
+            headers=self._headers(
+                "applications.return-only@sfpcl.example",
+                "ReturnOnlyPass123!",
+            ),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        actions = {
+            action["action_code"]: action
+            for action in response.json()["data"]["available_actions"]
+        }
+        self.assertEqual(
+            {code: action["required_permission"] for code, action in actions.items()},
+            {
+                "pass_completeness": APPLICATION_COMPLETE_CHECK_PERMISSION,
+                "return_with_deficiencies": APPLICATION_RETURN_DEFICIENCY_PERMISSION,
+                "resolve_deficiency": APPLICATION_DEFICIENCY_RESOLVE_PERMISSION,
+                "create_rejection_note": APPLICATION_REJECTION_NOTE_CREATE_PERMISSION,
+            },
+        )
+        self.assertEqual(
+            {code: action["required_role"] for code, action in actions.items()},
+            {
+                "pass_completeness": "deputy_manager_finance",
+                "return_with_deficiencies": "deputy_manager_finance",
+                "resolve_deficiency": "deputy_manager_finance",
+                "create_rejection_note": "credit_manager",
+            },
+        )
+        self.assertEqual(
+            {code for code, action in actions.items() if action["enabled"]},
+            {"return_with_deficiencies"},
+        )
+
+    def test_each_completeness_permission_projects_and_invokes_only_its_own_action(self):
+        actors = {
+            "pass_completeness": self._user(
+                "applications.pass-only@sfpcl.example",
+                "PassOnlyPass123!",
+                self.read_permission,
+                self.complete_check_permission,
+            ),
+            "return_with_deficiencies": self._user(
+                "applications.return-matrix@sfpcl.example",
+                "ReturnMatrixPass123!",
+                self.read_permission,
+                self.return_deficiency_permission,
+            ),
+            "resolve_deficiency": self._user(
+                "applications.resolve-only@sfpcl.example",
+                "ResolveOnlyPass123!",
+                self.read_permission,
+                self.deficiency_resolve_permission,
+            ),
+            "create_rejection_note": self._user(
+                "applications.reject-only@sfpcl.example",
+                "RejectOnlyPass123!",
+                self.read_permission,
+                self.rejection_note_create_permission,
+            ),
+        }
+        passwords = {
+            "pass_completeness": "PassOnlyPass123!",
+            "return_with_deficiencies": "ReturnMatrixPass123!",
+            "resolve_deficiency": "ResolveOnlyPass123!",
+            "create_rejection_note": "RejectOnlyPass123!",
+        }
+
+        applications_by_action = {}
+        pass_id = self._create_and_submit_application(declared_purpose="Pass-only authority")
+        self._verify_required_application_documents(pass_id)
+        applications_by_action["pass_completeness"] = (pass_id, None)
+
+        return_id = self._create_and_submit_application(declared_purpose="Return-only authority")
+        applications_by_action["return_with_deficiencies"] = (return_id, None)
+
+        resolve_id = self._create_and_submit_application(declared_purpose="Resolve-only authority")
+        returned = self.client.post(
+            f"/api/v1/loan-applications/{resolve_id}/return-with-deficiencies/",
+            data={
+                "communication_mode": "email",
+                "message": "Please replace the missing PAN copy.",
+                "items": [{"item_code": "borrower_pan"}],
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(returned.status_code, 200)
+        resolve_deficiency_id = returned.json()["data"]["items"][0]["deficiency_id"]
+        applications_by_action["resolve_deficiency"] = (resolve_id, resolve_deficiency_id)
+
+        reject_id = self._create_and_submit_application(declared_purpose="Reject-only authority")
+        applications_by_action["create_rejection_note"] = (reject_id, None)
+
+        loan_application_model = apps.get_model("applications", "LoanApplication")
+        deficiency_model = apps.get_model("applications", "ApplicationDeficiency")
+        rejection_note_model = apps.get_model("applications", "RejectionNote")
+        register_model = apps.get_model("applications", "LoanRequestRegisterEntry")
+
+        for action_code, actor in actors.items():
+            with self.subTest(action_code=action_code):
+                application_id, deficiency_id = applications_by_action[action_code]
+                loan_application_model.objects.filter(
+                    loan_application_id=application_id
+                ).update(received_by_user=actor)
+                headers = self._headers(actor.email, passwords[action_code])
+                read = self.client.get(
+                    f"/api/v1/loan-applications/{application_id}/completeness-check/",
+                    headers=headers,
+                )
+                self.assertEqual(read.status_code, 200)
+                enabled = {
+                    action["action_code"]
+                    for action in read.json()["data"]["available_actions"]
+                    if action["enabled"]
+                }
+                self.assertEqual(enabled, {action_code})
+
+                action_requests = {
+                    "pass_completeness": (
+                        f"/api/v1/loan-applications/{application_id}/completeness-check/pass/",
+                        {},
+                    ),
+                    "return_with_deficiencies": (
+                        f"/api/v1/loan-applications/{application_id}/return-with-deficiencies/",
+                        {
+                            "communication_mode": "email",
+                            "message": "Please supply the missing PAN copy.",
+                            "items": [{"item_code": "borrower_pan"}],
+                        },
+                    ),
+                    "resolve_deficiency": (
+                        f"/api/v1/deficiencies/{deficiency_id or uuid4()}/resolve/",
+                        {"resolution_notes": "Replacement PAN verified."},
+                    ),
+                    "create_rejection_note": (
+                        f"/api/v1/loan-applications/{application_id}/rejection-note/",
+                        self._rejection_note_payload(rejection_stage="completeness"),
+                    ),
+                }
+                own_path, own_payload = action_requests[action_code]
+                own_response = self.client.post(
+                    own_path,
+                    data=own_payload,
+                    content_type="application/json",
+                    headers=headers,
+                )
+                self.assertEqual(own_response.status_code, 200)
+
+                application = loan_application_model.objects.get(
+                    loan_application_id=application_id
+                )
+                evidence_before_denials = (
+                    application.application_status,
+                    application.application_reference_number,
+                    AuditLog.objects.count(),
+                    WorkflowEvent.objects.count(),
+                    deficiency_model.objects.count(),
+                    rejection_note_model.objects.count(),
+                    register_model.objects.count(),
+                )
+                for denied_code, (path, payload) in action_requests.items():
+                    if denied_code == action_code:
+                        continue
+                    denied = self.client.post(
+                        path,
+                        data=payload,
+                        content_type="application/json",
+                        headers=headers,
+                    )
+                    self.assertEqual(denied.status_code, 403)
+                    assert_error_envelope(self, denied.json(), "PERMISSION_DENIED")
+
+                application.refresh_from_db()
+                self.assertEqual(
+                    (
+                        application.application_status,
+                        application.application_reference_number,
+                        AuditLog.objects.count(),
+                        WorkflowEvent.objects.count(),
+                        deficiency_model.objects.count(),
+                        rejection_note_model.objects.count(),
+                        register_model.objects.count(),
+                    ),
+                    evidence_before_denials,
+                )
 
     def test_completeness_pass_requires_verified_checklist_then_generates_reference(self):
         application_id = self._create_and_submit_application()

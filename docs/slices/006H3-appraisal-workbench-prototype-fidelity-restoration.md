@@ -114,3 +114,11 @@ Medium
   or source-text assertions are not substitutes if controls move within the restored composition.
 - The restored UI must display backend disabled reasons without inferring maker-checker, reference,
   eligibility, provenance, history, state, role, or object-scope rules in React.
+
+## Run-Ahead Sharpening Review (005E4, 2026-07-11)
+
+- Preserve the six-field action type, including nullable `required_role`, through the restored
+  composition. Do not narrow actions to the five-field legacy application shape or replace backend
+  disabled reasons with status-derived React copy.
+- Keep browser evidence portable through the current run's `RALPH_EVIDENCE_DIR`; hard-coded prior
+  run/worktree paths and collection-only proof do not satisfy the declared visual state matrix.

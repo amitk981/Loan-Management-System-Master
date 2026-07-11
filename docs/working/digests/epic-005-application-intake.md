@@ -1,5 +1,23 @@
 # Epic 005 Digest: Application Intake, Completeness, and Deficiencies
 
+## 005E4 Completeness Action Authority and Browser Proof
+
+- Completeness actions now use distinct source permissions end to end: pass uses
+  `applications.loan_application.complete_check`, return uses
+  `applications.loan_application.return_deficiency`, resolution uses
+  `applications.deficiency.resolve`, and rejection-note creation uses
+  `applications.rejection_note.create`. Each six-field projection evaluates object scope and the
+  same state/resource functions as its public write boundary.
+- Permission-only matrix coverage proves each action independently and proves all three ungranted
+  mutations return the standard permission denial without state, reference, audit, workflow,
+  register, deficiency, or rejection-note writes. Deputy Manager – Finance now receives the
+  source-backed return permission in the canonical seed.
+- The focused routed-container Playwright contract requires `RALPH_EVIDENCE_DIR`, asserts exact
+  pass/return/resolve/reject bodies and one-call behavior plus canonical checklist/completeness/
+  deficiency reloads, and captures queue-detail, pass, deficiency, returned, resolved, rejected,
+  denied, stale, and API-error states. Local collection passes; trusted execution is an independent
+  orchestrator gate because Chromium cannot acquire macOS services inside the agent sandbox.
+
 ## Architecture Review 2026-07-11 21:34 - Completeness Authority and Browser Closure
 
 - 005E3 correctly joins authoritative document/completeness projections and restores S12's

@@ -319,6 +319,7 @@ ROLE_PERMISSIONS = {
     "deputy_manager_finance": [
         "applications.loan_application.read",
         "applications.loan_application.complete_check",
+        "applications.loan_application.return_deficiency",
         "applications.deficiency.create",
         "applications.deficiency.resolve",
         "credit.eligibility.run",
