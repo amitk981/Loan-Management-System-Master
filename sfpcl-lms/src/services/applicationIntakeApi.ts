@@ -122,7 +122,31 @@ export interface ApplicationCompleteness {
   required_checklist_items: ApplicationDocumentChecklistItem[];
   blocking_document_types: string[];
   can_generate_reference: boolean;
+  available_actions: ApplicationAvailableAction[];
 }
+
+export const joinChecklistProjections = (
+  completeness: ApplicationCompleteness,
+  documents: ApplicationDocumentChecklist,
+): ApplicationCompleteness => {
+  if (documents.loan_application_id !== completeness.loan_application_id) {
+    throw new Error('Checklist projections disagree on the loan application.');
+  }
+  const documentRows = new Map(documents.items.map(item => [item.document_type, item]));
+  if (documentRows.size !== completeness.required_checklist_items.length) {
+    throw new Error('Checklist projections disagree on required document types.');
+  }
+  const required_checklist_items = completeness.required_checklist_items.map(item => {
+    const document = documentRows.get(item.document_type);
+    const same = document
+      && document.submission_status === item.submission_status
+      && document.verification_status === item.verification_status
+      && (document.latest_application_document_id ?? null) === (item.latest_application_document_id ?? null);
+    if (!same) throw new Error(`Checklist projections disagree for ${item.document_type}.`);
+    return { ...item, ...document, complete: item.complete, reason_code: item.reason_code };
+  });
+  return { ...completeness, required_checklist_items };
+};
 
 export interface ApplicationDeficiency {
   deficiency_id: string;
@@ -140,6 +164,7 @@ export interface ApplicationDeficiency {
 export interface ApplicationDeficiencies {
   loan_application_id: string;
   items: ApplicationDeficiency[];
+  available_actions?: ApplicationAvailableAction[];
 }
 
 export interface ReturnWithDeficienciesPayload {
@@ -275,7 +300,7 @@ export const fetchApplicationDeficiencies = async (
   applicationId: string,
 ): Promise<ApplicationDeficiencies> => {
   const envelope = await request<ApplicationDeficiencies>(`/api/v1/loan-applications/${applicationId}/deficiencies/`);
-  return envelope.data ?? { loan_application_id: applicationId, items: [] };
+  return envelope.data ?? { loan_application_id: applicationId, items: [], available_actions: [] };
 };
 
 export const passApplicationCompleteness = async (

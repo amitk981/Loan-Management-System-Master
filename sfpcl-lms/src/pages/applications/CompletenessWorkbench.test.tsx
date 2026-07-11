@@ -8,8 +8,32 @@ import type {
   ApplicationDeficiency,
   StaffApplication,
 } from '../../services/applicationIntakeApi';
+import { joinChecklistProjections } from '../../services/applicationIntakeApi';
 
 describe('CompletenessWorkbenchView', () => {
+  it('joins the document authority into completeness rows and fails closed on disagreement', () => {
+    const joined = joinChecklistProjections(completeness, {
+      loan_application_id: 'app-1',
+      items: [{
+        document_type: 'borrower_pan',
+        required_flag: true,
+        submission_status: 'missing',
+        verification_status: 'pending',
+        latest_application_document_id: null,
+      }],
+    });
+    expect(joined.required_checklist_items[0].submission_status).toBe('missing');
+    expect(() => joinChecklistProjections(completeness, {
+      loan_application_id: 'app-1',
+      items: [{
+        document_type: 'borrower_pan',
+        required_flag: true,
+        submission_status: 'submitted',
+        verification_status: 'pending',
+        latest_application_document_id: 'document-1',
+      }],
+    })).toThrow(/checklist projections disagree/i);
+  });
   it('renders backend queue, checklist, and complete deficiency history without mock authority', () => {
     const html = render('success', true);
     expect(html).toContain('API Borrower One');
@@ -38,6 +62,18 @@ describe('CompletenessWorkbenchView', () => {
     expect(completed).toContain('Read-only');
   });
 
+  it('does not expose absent or disabled resource mutations to a globally permissioned actor', () => {
+    const absent = render('success', true);
+    expect(absent).not.toContain('Generate reference number');
+    expect(absent).not.toContain('Return for deficiency');
+    const disabled = render('success', true, {
+      ...completeness,
+      available_actions: [availableAction('pass_completeness', false, 'Required document checks must be complete.')],
+    });
+    expect(disabled).not.toContain('<button disabled="" class="btn-primary');
+    expect(disabled).toContain('Required document checks must be complete.');
+  });
+
   it('renders loading, empty, unauthorized, validation, and stale conflict states', () => {
     expect(render('loading', false)).toContain('Loading completeness queue');
     expect(render('empty', false)).toContain('Completeness queue is clear');
@@ -59,7 +95,7 @@ const render = (
     selectedId="app-1"
     completeness={selectedCompleteness}
     deficiencies={deficiencies}
-    canAct={canAct}
+    permissions={canAct ? ['applications.loan_application.complete_check'] : []}
     comment="Please submit the missing document."
     reasons={{ borrower_pan: 'Current PAN copy is missing.' }}
     rejectionCategory="missing_document"
@@ -126,7 +162,16 @@ const completeness: ApplicationCompleteness = {
   }],
   blocking_document_types: ['borrower_pan'],
   can_generate_reference: false,
+  available_actions: [],
 };
+
+const availableAction = (action_code: string, enabled: boolean, disabled_reason: string | null) => ({
+  action_code,
+  label: 'Generate reference number',
+  enabled,
+  disabled_reason,
+  required_permission: 'applications.loan_application.complete_check',
+});
 
 const deficiencies: ApplicationDeficiency[] = [
   {

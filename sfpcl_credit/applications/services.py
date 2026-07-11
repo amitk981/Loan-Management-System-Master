@@ -859,7 +859,7 @@ def build_document_checklist(application):
     }
 
 
-def build_completeness_workbench(application):
+def build_completeness_workbench(application, actor=None):
     checklist = build_document_checklist(application)
     required_items = [_completeness_checklist_item(item) for item in checklist["items"]]
     blocking_document_types = [
@@ -868,7 +868,7 @@ def build_completeness_workbench(application):
     nominee_error = evaluate_nominee_selection(
         application.nominee, application.member
     ).field_error
-    return {
+    snapshot = {
         "loan_application_id": str(application.loan_application_id),
         "application_reference_number": application.application_reference_number,
         "application_status": application.application_status,
@@ -886,6 +886,65 @@ def build_completeness_workbench(application):
             and not blocking_document_types
             and nominee_error is None
         ),
+    }
+    if actor is not None:
+        snapshot["available_actions"] = completeness_available_actions(
+            application, actor, snapshot
+        )
+    return snapshot
+
+
+def completeness_available_actions(application, actor, workbench=None):
+    """Project completeness actions from the same gates used by their write services."""
+    permissions = auth_service.effective_permission_codes(actor)
+    object_access = evaluate_application_object_access(
+        application,
+        actor,
+        APPLICATION_COMPLETE_CHECK_PERMISSION,
+        permissions,
+    )
+    authority_reason = None
+    if APPLICATION_COMPLETE_CHECK_PERMISSION not in permissions:
+        authority_reason = "Required completeness-check permission is not granted."
+    elif not object_access.allowed:
+        authority_reason = object_access.reason
+
+    snapshot = workbench or build_completeness_workbench(application)
+    pass_reason = authority_reason or completeness_pass_invalid_state_message(application)
+    if pass_reason is None:
+        try:
+            validate_completeness_ready_for_reference(application)
+        except LoanApplicationValidationError:
+            pass_reason = "Required nominee and document checks must be complete."
+
+    return_reason = authority_reason or return_deficiencies_invalid_state_message(application)
+    if return_reason is None and not snapshot["blocking_document_types"]:
+        return_reason = "No blocking document deficiencies are available to return."
+
+    open_deficiency = ApplicationDeficiency.objects.filter(
+        loan_application=application,
+        resolution_status=ApplicationDeficiency.STATUS_OPEN,
+    ).exists()
+    resolve_reason = authority_reason
+    if resolve_reason is None and not open_deficiency:
+        resolve_reason = "No open deficiency is available to resolve."
+
+    reject_reason = authority_reason or rejection_note_create_invalid_state_message(application)
+    return [
+        _completeness_action("pass_completeness", "Generate reference number", pass_reason),
+        _completeness_action("return_with_deficiencies", "Return for deficiency", return_reason),
+        _completeness_action("resolve_deficiency", "Resolve deficiency", resolve_reason),
+        _completeness_action("create_rejection_note", "Recommend rejection", reject_reason),
+    ]
+
+
+def _completeness_action(action_code, label, disabled_reason):
+    return {
+        "action_code": action_code,
+        "label": label,
+        "enabled": disabled_reason is None,
+        "disabled_reason": disabled_reason,
+        "required_permission": APPLICATION_COMPLETE_CHECK_PERMISSION,
     }
 
 

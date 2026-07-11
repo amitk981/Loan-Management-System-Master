@@ -375,7 +375,16 @@ Returns the derived completeness workbench for a submitted application:
     }
   ],
   "blocking_document_types": ["borrower_pan", "crop_plan"],
-  "can_generate_reference": false
+  "can_generate_reference": false,
+  "available_actions": [
+    {
+      "action_code": "pass_completeness",
+      "label": "Generate reference number",
+      "enabled": false,
+      "disabled_reason": "Required nominee and document checks must be complete.",
+      "required_permission": "applications.loan_application.complete_check"
+    }
+  ]
 }
 ```
 
@@ -439,7 +448,9 @@ Success data:
 
 `GET /api/v1/loan-applications/{loan_application_id}/deficiencies/`
 
-Returns `{ "loan_application_id": "uuid", "items": [...] }` using the deficiency item shape above.
+Returns `{ "loan_application_id": "uuid", "items": [...], "available_actions": [...] }` using
+the deficiency item shape above and the same completeness resource-action projection as the
+completeness read.
 
 `POST /api/v1/deficiencies/{deficiency_id}/resolve/`
 
@@ -535,14 +546,16 @@ Rules:
   boundary after global permission and `404` checks.
 - 005E2 wires the staff Completeness Workbench to the list, document-checklist,
   completeness-check, deficiency, and rejection-note APIs with no mock fallback. Submitted and
-  `incomplete_returned` queue rows are requested as separate status-filtered list reads. Because
-  the current completeness response does not expose resource `available_actions`, the interim UI
-  action boundary is the canonical `applications.loan_application.complete_check` permission from
-  `/api/v1/auth/me/`; the backend still enforces object access, state, field validation, audit, and
-  workflow effects for every mutation. Pass sends `{}`; return sends only
+  `incomplete_returned` queue rows are requested as separate status-filtered list reads. 005E3
+  adds §44-shaped `available_actions` to completeness and deficiency reads. Each pass, return,
+  resolve, and rejection-note action reuses the write endpoint's permission, object, state, and
+  resource validator; the UI intersects that projection with `/auth/me` only for usability and
+  never infers resource authority. Pass sends `{}`; return sends only
   `communication_mode`, `message`, and current blocker `items[{item_code, remarks?}]`; deficiency
   resolution sends only `resolution_notes`; rejection-note creation sends the exact 005H draft
-  fields. Every successful action re-reads completeness and full deficiency history.
+  fields. Every successful action re-reads the canonical queue, document checklist, completeness,
+  and full deficiency history. A `409` is not retried and refresh occurs only after an explicit
+  user choice.
 - The pass endpoint first enforces submitted/non-duplicate state and returns
   `409 INVALID_STATE_TRANSITION` for draft, already-reference-generated, or register-existing
   applications. It then evaluates the latest 005D metadata row for each mandatory application-stage

@@ -1,11 +1,14 @@
 import path from 'path';
 import { expect, test, type Route } from '@playwright/test';
 
-const evidenceDir = path.resolve(__dirname, '../../.ralph/runs/2026-07-11_140734_normal_run/evidence/screenshots');
+const evidenceDir = path.resolve(__dirname, '../../.ralph/runs/2026-07-11_194100_normal_run/evidence/screenshots');
 
 test('completeness workbench uses backend actions and captures required states', async ({ page }) => {
   let passed = false;
   let returned = false;
+  let resolved = false;
+  let rejected = false;
+  let stalePassCalls = 0;
   const actionBodies: Record<string, unknown> = {};
 
   await page.addInitScript(() => {
@@ -16,6 +19,11 @@ test('completeness workbench uses backend actions and captures required states',
   });
   await page.route('**/api/v1/auth/me/', route => json(route, currentUser));
   await page.route('**/api/v1/dashboard/', route => json(route, { role_context: {}, cards: [], tasks: [] }));
+  await page.route('**/api/v1/deficiencies/**', route => {
+    actionBodies.resolve = route.request().postDataJSON();
+    resolved = true;
+    return json(route, { ...openDeficiency, resolution_status: 'resolved', resolution_notes: 'Verified replacement received.' });
+  });
   await page.route('**/api/v1/loan-applications/**', async route => {
     const request = route.request();
     const pathname = new URL(request.url()).pathname;
@@ -24,6 +32,10 @@ test('completeness workbench uses backend actions and captures required states',
       return json(route, status === 'submitted' ? applications : [], pagination);
     }
     if (pathname.endsWith('/completeness-check/pass/')) {
+      if (pathname.includes('app-stale')) {
+        stalePassCalls += 1;
+        return route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ success: false, error: { code: 'INVALID_STATE_TRANSITION', message: 'This application changed on the server.' } }) });
+      }
       actionBodies.pass = request.postDataJSON();
       passed = true;
       return json(route, { ...applications[0], application_reference_number: 'LO00000042', application_status: 'reference_generated' });
@@ -33,20 +45,28 @@ test('completeness workbench uses backend actions and captures required states',
       returned = true;
       return json(route, { ...applications[1], application_status: 'incomplete_returned', items: [openDeficiency] });
     }
+    if (pathname.endsWith('/rejection-note/')) {
+      actionBodies.reject = request.postDataJSON();
+      rejected = true;
+      return json(route, { rejection_note_id: 'note-1', loan_application_id: 'app-reject', note_status: 'draft' });
+    }
     if (pathname.endsWith('/document-checklist/')) {
       const first = pathname.includes('app-ready');
+      const application = pathname.includes('app-reject') ? applications[2] : pathname.includes('app-stale') ? applications[3] : null;
       return json(route, {
-        loan_application_id: first ? 'app-ready' : 'app-deficient',
-        items: first ? readyCompleteness(passed).required_checklist_items : deficientCompleteness(returned).required_checklist_items,
+        loan_application_id: application?.loan_application_id ?? (first ? 'app-ready' : 'app-deficient'),
+        items: application ? readyCompletenessFor(application, false, rejected).required_checklist_items : first ? readyCompleteness(passed).required_checklist_items : deficientCompleteness(returned).required_checklist_items,
       });
     }
     if (pathname.endsWith('/completeness-check/')) {
       const first = pathname.includes('app-ready');
-      return json(route, first ? readyCompleteness(passed) : deficientCompleteness(returned));
+      if (pathname.includes('app-reject')) return json(route, readyCompletenessFor(applications[2], false, rejected));
+      if (pathname.includes('app-stale')) return json(route, readyCompletenessFor(applications[3], false, false, true));
+      return json(route, first ? readyCompleteness(passed) : deficientCompleteness(returned, resolved));
     }
     if (pathname.endsWith('/deficiencies/')) {
       const first = pathname.includes('app-ready');
-      return json(route, { loan_application_id: first ? 'app-ready' : 'app-deficient', items: first ? [] : [openDeficiency, resolvedDeficiency] });
+      return json(route, { loan_application_id: first ? 'app-ready' : 'app-deficient', items: first ? [] : [{ ...openDeficiency, ...(resolved ? { resolution_status: 'resolved', resolution_notes: 'Verified replacement received.' } : {}) }, resolvedDeficiency], available_actions: first ? readyCompleteness(passed).available_actions : deficientCompleteness(returned, resolved).available_actions });
     }
     return route.abort();
   });
@@ -76,6 +96,26 @@ test('completeness workbench uses backend actions and captures required states',
     items: [{ item_code: 'borrower_pan', remarks: 'Current PAN copy is missing.' }],
   });
   await page.screenshot({ path: path.join(evidenceDir, 'returned.png'), fullPage: true });
+
+  await page.getByPlaceholder('Required communication, rejection reason, or resolution notes').fill('Verified replacement received.');
+  await page.getByRole('button', { name: 'Resolve' }).first().click();
+  await expect(page.getByText('Verified replacement received.')).toBeVisible();
+  expect(actionBodies.resolve).toEqual({ resolution_notes: 'Verified replacement received.' });
+  await page.screenshot({ path: path.join(evidenceDir, 'resolved.png'), fullPage: true });
+
+  await page.getByText('Visual Rejection Borrower').click();
+  await page.getByPlaceholder('Required communication, rejection reason, or resolution notes').fill('Required evidence cannot be supplied.');
+  await page.getByRole('button', { name: 'Recommend rejection' }).click();
+  expect(actionBodies.reject).toEqual({ rejection_stage: 'completeness', rejection_reason_category: 'missing_document', detailed_reason: 'Required evidence cannot be supplied.', reapply_allowed_flag: true, communication_mode: 'email' });
+  await page.screenshot({ path: path.join(evidenceDir, 'rejected.png'), fullPage: true });
+
+  await page.getByText('Visual Stale Borrower').click();
+  await page.getByRole('button', { name: 'Generate reference number' }).click();
+  await expect(page.getByText(/changed on the server/i)).toBeVisible();
+  expect(stalePassCalls).toBe(1);
+  await page.screenshot({ path: path.join(evidenceDir, 'stale.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Refresh' }).click();
+  expect(stalePassCalls).toBe(1);
 });
 
 const applications = [
@@ -103,6 +143,16 @@ const applications = [
     current_stage: 'initial_loan_request',
     completeness_status: 'not_started',
   },
+  {
+    loan_application_id: 'app-reject', application_reference_number: null,
+    member: { member_id: 'member-reject', display_name: 'Visual Rejection Borrower', member_type: 'individual_farmer', folio_number: 'FOL-REJECT', kyc_status: 'verified' },
+    application_date: '2026-07-11', required_loan_amount: '190000.00', declared_purpose: 'Farm equipment', purpose_category: 'farm_equipment', application_status: 'submitted', current_stage: 'initial_loan_request', completeness_status: 'not_started',
+  },
+  {
+    loan_application_id: 'app-stale', application_reference_number: null,
+    member: { member_id: 'member-stale', display_name: 'Visual Stale Borrower', member_type: 'individual_farmer', folio_number: 'FOL-STALE', kyc_status: 'verified' },
+    application_date: '2026-07-11', required_loan_amount: '200000.00', declared_purpose: 'Crop production', purpose_category: 'crop_production', application_status: 'submitted', current_stage: 'initial_loan_request', completeness_status: 'not_started',
+  },
 ];
 
 const readyCompleteness = (complete: boolean) => ({
@@ -117,9 +167,21 @@ const readyCompleteness = (complete: boolean) => ({
   required_checklist_items: [{ document_type: 'borrower_pan', submission_status: 'submitted', verification_status: 'verified', complete: true, reason_code: null }],
   blocking_document_types: [],
   can_generate_reference: !complete,
+  available_actions: complete
+    ? completenessActions()
+    : completenessActions({ pass_completeness: true, create_rejection_note: true }),
 });
 
-const deficientCompleteness = (isReturned: boolean) => ({
+const readyCompletenessFor = (application: typeof applications[number], complete: boolean, hasRejection: boolean, stale = false) => ({
+  ...readyCompleteness(complete),
+  loan_application_id: application.loan_application_id,
+  member: application.member,
+  available_actions: hasRejection
+    ? completenessActions()
+    : completenessActions(stale ? { pass_completeness: true } : { create_rejection_note: true }),
+});
+
+const deficientCompleteness = (isReturned: boolean, isResolved = false) => ({
   loan_application_id: 'app-deficient',
   application_reference_number: null,
   application_status: isReturned ? 'incomplete_returned' : 'submitted',
@@ -131,7 +193,23 @@ const deficientCompleteness = (isReturned: boolean) => ({
   required_checklist_items: [{ document_type: 'borrower_pan', submission_status: 'missing', verification_status: 'pending', complete: false, reason_code: 'missing_metadata' }],
   blocking_document_types: ['borrower_pan'],
   can_generate_reference: false,
+  available_actions: isReturned
+    ? completenessActions({ resolve_deficiency: !isResolved })
+    : completenessActions({ return_with_deficiencies: true, create_rejection_note: true }),
 });
+
+const completenessActions = (enabled: Record<string, boolean> = {}) => [
+  ['pass_completeness', 'Generate reference number'],
+  ['return_with_deficiencies', 'Return for deficiency'],
+  ['resolve_deficiency', 'Resolve deficiency'],
+  ['create_rejection_note', 'Recommend rejection'],
+].map(([action_code, label]) => ({
+  action_code,
+  label,
+  enabled: enabled[action_code] ?? false,
+  disabled_reason: enabled[action_code] ? null : 'Unavailable for this canonical application state.',
+  required_permission: 'applications.loan_application.complete_check',
+}));
 
 const openDeficiency = { deficiency_id: 'def-open', item_code: 'borrower_pan', description: 'Current PAN copy is missing.', resolution_status: 'open' };
 const resolvedDeficiency = { deficiency_id: 'def-resolved', item_code: 'borrower_pan', description: 'Earlier PAN copy was unclear.', resolution_status: 'resolved', resolution_notes: 'Verified replacement from borrower.' };

@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_completeness_read_projects_resource_actions_from_write_validators (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_completeness_read_projects_resource_actions_from_write_validators)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_194100_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 2611, in test_completeness_read_projects_resource_actions_from_write_validators
+    for action in deficiencies_response.json()["data"]["available_actions"]
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'available_actions'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.188s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

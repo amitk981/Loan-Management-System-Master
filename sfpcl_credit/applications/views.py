@@ -538,7 +538,7 @@ def loan_application_completeness_check(request, loan_application_id):
     )
     if not object_access.allowed:
         return _object_access_denied_response(request, object_access)
-    return success_response(services.build_completeness_workbench(application), request)
+    return success_response(services.build_completeness_workbench(application, user), request)
 
 
 @require_http_methods(["POST"])
@@ -1005,7 +1005,11 @@ def loan_application_deficiencies(request, loan_application_id):
         for deficiency in services.list_application_deficiencies(application)
     ]
     return success_response(
-        {"loan_application_id": str(application.loan_application_id), "items": deficiencies},
+        {
+            "loan_application_id": str(application.loan_application_id),
+            "items": deficiencies,
+            "available_actions": services.completeness_available_actions(application, user),
+        },
         request,
     )
 

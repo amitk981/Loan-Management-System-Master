@@ -2566,6 +2566,106 @@ class LoanApplicationDraftApiTests(TestCase):
             0,
         )
 
+    def test_completeness_read_projects_resource_actions_from_write_validators(self):
+        application_id = self._create_and_submit_application()
+
+        blocked_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/completeness-check/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(blocked_response.status_code, 200)
+        blocked_actions = {
+            action["action_code"]: action
+            for action in blocked_response.json()["data"]["available_actions"]
+        }
+        self.assertEqual(
+            set(blocked_actions),
+            {"pass_completeness", "return_with_deficiencies", "resolve_deficiency", "create_rejection_note"},
+        )
+        assert_available_actions_shape(self, list(blocked_actions.values()))
+        self.assertFalse(blocked_actions["pass_completeness"]["enabled"])
+        self.assertIn("document", blocked_actions["pass_completeness"]["disabled_reason"].lower())
+        self.assertTrue(blocked_actions["return_with_deficiencies"]["enabled"])
+        self.assertFalse(blocked_actions["resolve_deficiency"]["enabled"])
+        self.assertTrue(blocked_actions["create_rejection_note"]["enabled"])
+
+        apps.get_model("applications", "LoanApplication").objects.filter(
+            loan_application_id=application_id
+        ).update(received_by_user=self.reader)
+        reader_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/completeness-check/",
+            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
+        )
+        self.assertTrue(all(
+            not action["enabled"]
+            for action in reader_response.json()["data"]["available_actions"]
+        ))
+
+        self._verify_required_application_documents(application_id)
+        ready_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/completeness-check/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        ready_actions = {
+            action["action_code"]: action
+            for action in ready_response.json()["data"]["available_actions"]
+        }
+        self.assertTrue(ready_actions["pass_completeness"]["enabled"])
+        self.assertFalse(ready_actions["return_with_deficiencies"]["enabled"])
+
+        deficiencies_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/deficiencies/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        deficiency_actions = {
+            action["action_code"]: action
+            for action in deficiencies_response.json()["data"]["available_actions"]
+        }
+        self.assertFalse(deficiency_actions["resolve_deficiency"]["enabled"])
+
+        returned_id = self._create_and_submit_application(declared_purpose="Action projection return")
+        returned = self.client.post(
+            f"/api/v1/loan-applications/{returned_id}/return-with-deficiencies/",
+            data={
+                "communication_mode": "email",
+                "message": "Please correct the missing document.",
+                "items": [{"item_code": "borrower_pan"}],
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(returned.status_code, 200)
+        returned_read = self.client.get(
+            f"/api/v1/loan-applications/{returned_id}/deficiencies/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        returned_actions = {
+            action["action_code"]: action
+            for action in returned_read.json()["data"]["available_actions"]
+        }
+        self.assertTrue(returned_actions["resolve_deficiency"]["enabled"])
+        self.assertFalse(returned_actions["return_with_deficiencies"]["enabled"])
+
+        rejected_id = self._create_and_submit_application(declared_purpose="Action projection rejection")
+        rejected = self.client.post(
+            f"/api/v1/loan-applications/{rejected_id}/rejection-note/",
+            data=self._rejection_note_payload(rejection_stage="completeness"),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(rejected.status_code, 200)
+        rejected_read = self.client.get(
+            f"/api/v1/loan-applications/{rejected_id}/completeness-check/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        rejected_actions = {
+            action["action_code"]: action
+            for action in rejected_read.json()["data"]["available_actions"]
+        }
+        self.assertFalse(rejected_actions["create_rejection_note"]["enabled"])
+        self.assertIn("already has", rejected_actions["create_rejection_note"]["disabled_reason"])
+
     def test_completeness_pass_requires_verified_checklist_then_generates_reference(self):
         application_id = self._create_and_submit_application()
         self._verify_required_application_documents(application_id)

@@ -1,5 +1,20 @@
 # Epic 005 Digest: Application Intake, Completeness, and Deficiencies
 
+## 005E3 Completeness Authority and Fidelity Closure
+
+- Completeness and deficiency reads now expose four §44-shaped resource actions: pass, return,
+  resolve, and rejection-note creation. Their enabled states reuse the write services' permission,
+  object-access, application-state, blocker, open-deficiency, duplicate-note, reference, and
+  register gates; the React screen never builds a second action matrix.
+- The workbench joins the document-checklist projection (submission/verification metadata) to the
+  completeness projection (application/nominee/blocker/reference/workflow facts) by document type
+  and fails closed on any ID, row-set, status, verification, or latest-document disagreement.
+- Successful actions reload both status-filtered queues plus canonical checklist, completeness,
+  and complete deficiency history. A 409 remains a one-shot mutation and refreshes only after the
+  operator chooses Refresh.
+- S12's category cards, progress bar, item rows, document chips, density, and action placement were
+  restored with the existing visual vocabulary and real API facts only.
+
 ## Architecture Review 2026-07-11 19:23 - Completeness and Portal Proof Corrections
 
 - 005E2 removed mock/reference/state authority and its API wrappers assert exact existing request

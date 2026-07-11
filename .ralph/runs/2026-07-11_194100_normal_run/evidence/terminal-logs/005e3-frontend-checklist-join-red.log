@@ -1,0 +1,35 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/applications/CompletenessWorkbench.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_194100_normal_run/sfpcl-lms
+
+ ❯ src/pages/applications/CompletenessWorkbench.test.tsx (4 tests | 1 failed) 69ms
+   × CompletenessWorkbenchView > joins the document authority into completeness rows and fails closed on disagreement 3ms
+     → joinChecklistProjections is not a function
+   ✓ CompletenessWorkbenchView > renders backend queue, checklist, and complete deficiency history without mock authority 49ms
+   ✓ CompletenessWorkbenchView > renders backend-issued reference and hides mutation actions without canonical permission 4ms
+   ✓ CompletenessWorkbenchView > renders loading, empty, unauthorized, validation, and stale conflict states 13ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/applications/CompletenessWorkbench.test.tsx > CompletenessWorkbenchView > joins the document authority into completeness rows and fails closed on disagreement
+TypeError: joinChecklistProjections is not a function
+ ❯ src/pages/applications/CompletenessWorkbench.test.tsx:14:20
+     12| describe('CompletenessWorkbenchView', () => {
+     13|   it('joins the document authority into completeness rows and fails cl…
+     14|     const joined = joinChecklistProjections(completeness, {
+       |                    ^
+     15|       loan_application_id: 'app-1',
+     16|       items: [{
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  19:45:58
+   Duration  632ms (transform 152ms, setup 0ms, collect 229ms, tests 69ms, environment 0ms, prepare 58ms)
+

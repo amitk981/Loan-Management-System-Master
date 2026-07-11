@@ -22,6 +22,7 @@ import {
   passApplicationCompleteness,
   resolveApplicationDeficiency,
   returnApplicationWithDeficiencies,
+  joinChecklistProjections,
   type ApplicationCompleteness,
   type ApplicationDeficiency,
   type StaffApplication,
@@ -43,7 +44,7 @@ interface CompletenessWorkbenchViewProps {
   selectedId: string | null;
   completeness: ApplicationCompleteness | null;
   deficiencies: ApplicationDeficiency[];
-  canAct: boolean;
+  permissions: string[];
   comment: string;
   reasons: Record<string, string>;
   rejectionCategory: string;
@@ -62,8 +63,6 @@ interface CompletenessWorkbenchViewProps {
   onOpenApplication: (id: string) => void;
   onOpenAppraisal: (id: string) => void;
 }
-
-const COMPLETE_CHECK_PERMISSION = 'applications.loan_application.complete_check';
 
 const documentLabel = (code: string) => code
   .replace(/_/g, ' ')
@@ -84,6 +83,13 @@ const queueStatusLabel = (status: string) => status === 'submitted'
   : status === 'incomplete_returned'
     ? 'Returned for Rectification'
     : status.replace(/_/g, ' ');
+
+const CHECKLIST_CATEGORIES = [
+  { label: 'Application & Member', codes: ['loan_application_form', 'share_certificate_copy'] },
+  { label: 'Borrower KYC', codes: ['borrower_pan', 'borrower_aadhaar_ovd'] },
+  { label: 'Nominee KYC', codes: ['nominee_pan', 'nominee_aadhaar_ovd'] },
+  { label: 'Land, Crop & Banking', codes: ['land_document_7_12', 'crop_plan', 'six_month_bank_statement'] },
+];
 
 const errorState = (error: unknown): { status: LoadStatus; message: string } => {
   if (!(error instanceof AuthSessionError)) {
@@ -126,12 +132,12 @@ const CompletenessWorkbench: React.FC<CompletenessWorkbenchProps> = ({
     setStatus('loading');
     setMessage('');
     try {
-      const [, nextCompleteness, nextDeficiencies] = await Promise.all([
+      const [nextChecklist, nextCompleteness, nextDeficiencies] = await Promise.all([
         fetchApplicationDocumentChecklist(applicationId),
         fetchApplicationCompleteness(applicationId),
         fetchApplicationDeficiencies(applicationId),
       ]);
-      setCompleteness(nextCompleteness);
+      setCompleteness(joinChecklistProjections(nextCompleteness, nextChecklist));
       setDeficiencies(nextDeficiencies.items);
       setReasons(Object.fromEntries(nextCompleteness.required_checklist_items
         .filter(item => !item.complete)
@@ -146,7 +152,7 @@ const CompletenessWorkbench: React.FC<CompletenessWorkbenchProps> = ({
     }
   }, []);
 
-  const loadQueue = useCallback(async () => {
+  const loadQueue = useCallback(async (preferredId?: string) => {
     setStatus('loading');
     setMessage('');
     try {
@@ -164,7 +170,9 @@ const CompletenessWorkbench: React.FC<CompletenessWorkbenchProps> = ({
         return;
       }
       const selected = queue.find(item =>
-        item.loan_application_id === initialSelectedId
+        item.loan_application_id === preferredId
+        || item.application_reference_number === preferredId
+        || item.loan_application_id === initialSelectedId
         || item.application_reference_number === initialSelectedId)
         ?? queue[0];
       setSelectedId(selected.loan_application_id);
@@ -181,31 +189,12 @@ const CompletenessWorkbench: React.FC<CompletenessWorkbenchProps> = ({
     void loadQueue();
   }, [loadQueue]);
 
-  const refreshAfterAction = useCallback(async () => {
-    if (!selectedId) return;
-    const detail = await fetchApplicationCompleteness(selectedId);
-    const history = await fetchApplicationDeficiencies(selectedId);
-    setCompleteness(detail);
-    setDeficiencies(history.items);
-    setApplications(items => items.map(item => item.loan_application_id === selectedId
-      ? {
-          ...item,
-          application_reference_number: detail.application_reference_number,
-          application_status: detail.application_status,
-          current_stage: detail.current_stage,
-          completeness_status: detail.completeness_status,
-        }
-      : item));
-    setStatus('success');
-    setMessage('');
-  }, [selectedId]);
-
   const runAction = useCallback(async (action: Exclude<BusyAction, null>, task: () => Promise<unknown>) => {
     setBusyAction(action);
     setMessage('');
     try {
       await task();
-      await refreshAfterAction();
+      await loadQueue(selectedId ?? undefined);
     } catch (error) {
       const next = errorState(error);
       setStatus(next.status);
@@ -213,7 +202,7 @@ const CompletenessWorkbench: React.FC<CompletenessWorkbenchProps> = ({
     } finally {
       setBusyAction(null);
     }
-  }, [refreshAfterAction]);
+  }, [loadQueue, selectedId]);
 
   const pass = () => selectedId && runAction('pass', () => passApplicationCompleteness(selectedId));
   const returnWithDeficiencies = () => selectedId && completeness && runAction('return', () =>
@@ -235,8 +224,6 @@ const CompletenessWorkbench: React.FC<CompletenessWorkbenchProps> = ({
   const resolve = (deficiencyId: string) => runAction(`resolve:${deficiencyId}`, () =>
     resolveApplicationDeficiency(deficiencyId, { resolution_notes: comment }));
 
-  const canAct = currentUser.permissions.includes(COMPLETE_CHECK_PERMISSION);
-
   return (
     <CompletenessWorkbenchView
       status={status}
@@ -245,7 +232,7 @@ const CompletenessWorkbench: React.FC<CompletenessWorkbenchProps> = ({
       selectedId={selectedId}
       completeness={completeness}
       deficiencies={deficiencies}
-      canAct={canAct}
+      permissions={currentUser.permissions}
       comment={comment}
       reasons={reasons}
       rejectionCategory={rejectionCategory}
@@ -264,7 +251,7 @@ const CompletenessWorkbench: React.FC<CompletenessWorkbenchProps> = ({
       onReturn={returnWithDeficiencies}
       onReject={reject}
       onResolve={resolve}
-      onRetry={loadQueue}
+      onRetry={() => { void loadQueue(); }}
       onOpenApplication={onOpenApplication}
       onOpenAppraisal={onOpenAppraisal}
     />
@@ -278,7 +265,7 @@ export const CompletenessWorkbenchView: React.FC<CompletenessWorkbenchViewProps>
   selectedId,
   completeness,
   deficiencies,
-  canAct,
+  permissions,
   comment,
   reasons,
   rejectionCategory,
@@ -305,7 +292,6 @@ export const CompletenessWorkbenchView: React.FC<CompletenessWorkbenchViewProps>
   const readyCount = applications.filter(item => item.completeness_status === 'complete').length
     + (completeness?.can_generate_reference ? 1 : 0);
   const showStateAlert = ['error', 'unauthorized', 'validation', 'stale'].includes(status);
-
   if (status === 'loading') {
     return <div className="p-6"><div className="card text-center py-16 text-slate-500">Loading completeness queue…</div></div>;
   }
@@ -330,6 +316,13 @@ export const CompletenessWorkbenchView: React.FC<CompletenessWorkbenchViewProps>
       </div>
     );
   }
+  const action = (code: string) => completeness.available_actions.find(item => item.action_code === code);
+  const usable = (code: string) => {
+    const projected = action(code);
+    return Boolean(projected?.enabled && permissions.includes(projected.required_permission));
+  };
+  const hasUsableAction = completeness.available_actions.some(projected =>
+    projected.enabled && permissions.includes(projected.required_permission));
 
   return (
     <div className="p-6 space-y-4">
@@ -338,9 +331,9 @@ export const CompletenessWorkbenchView: React.FC<CompletenessWorkbenchViewProps>
         <p className="text-sm text-slate-500 mt-0.5">S12 review · {applications.length} application{applications.length === 1 ? '' : 's'} awaiting completeness decision</p>
       </div>
 
-      {!canAct && (
+      {!hasUsableAction && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 flex items-center gap-2">
-          <Info size={16} /> Read-only. Your signed-in account does not have completeness-check permission.
+          <Info size={16} /> Read-only. No completeness action is available for this application and signed-in authority.
         </div>
       )}
       {showStateAlert && (
@@ -416,23 +409,33 @@ export const CompletenessWorkbenchView: React.FC<CompletenessWorkbenchViewProps>
             </div>
           </div>
 
-          <div className="card p-0 overflow-hidden">
-            <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide flex items-center gap-2"><ClipboardList size={15} /> Mandatory Completeness Checklist</p>
+          <div className="card">
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-semibold text-slate-800 flex items-center gap-2"><ClipboardList size={16} className="text-green-600" /> Mandatory Completeness Checklist</p>
               <span className="text-xs text-slate-500">{completeCount}/{checklist.length} verified</span>
             </div>
-            <div className="divide-y divide-slate-100">
-              {checklist.map(item => (
+            <div className="w-full bg-slate-100 rounded-full h-2"><div className={`h-2 rounded-full ${blockers.length ? 'bg-red-400' : 'bg-green-500'}`} style={{ width: `${checklist.length ? Math.round((completeCount / checklist.length) * 100) : 0}%` }} /></div>
+          </div>
+
+          {CHECKLIST_CATEGORIES.map(category => (
+            <div key={category.label} className="card p-0 overflow-hidden">
+              <div className="px-5 py-3 bg-slate-50 border-b border-slate-100"><p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{category.label}</p></div>
+              <div className="divide-y divide-slate-100">
+              {checklist.filter(item => category.codes.includes(item.document_type)).map(item => (
                 <div key={item.document_type} className={`px-5 py-4 ${item.complete ? 'bg-green-50/30' : 'bg-red-50'}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-slate-800">{documentLabel(item.document_type)}</p>
-                      <p className="text-xs text-slate-500 mt-1">Submission: {documentLabel(item.submission_status || 'missing')} · Verification: {documentLabel(item.verification_status || 'pending')}</p>
+                      <div className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border mt-2 ${item.complete ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                        {item.complete ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
+                        <span className="font-medium">{documentLabel(item.document_type)}</span>
+                        <span className="text-[10px] uppercase font-semibold px-1 py-0.5 rounded bg-white/70 border border-current opacity-70">{documentLabel(item.submission_status || 'missing')} · {documentLabel(item.verification_status || 'pending')}</span>
+                      </div>
                       {!item.complete && <p className="text-xs text-red-700 mt-1">{documentLabel(item.reason_code || 'incomplete')}</p>}
                     </div>
                     <StatusBadge label={item.complete ? 'complete' : 'deficiency_raised'} size="sm" />
                   </div>
-                  {!item.complete && canAct && (
+                  {!item.complete && usable('return_with_deficiencies') && (
                     <input
                       value={reasons[item.document_type] || ''}
                       onChange={event => onReasonChange(item.document_type, event.target.value)}
@@ -442,8 +445,9 @@ export const CompletenessWorkbenchView: React.FC<CompletenessWorkbenchViewProps>
                   )}
                 </div>
               ))}
+              </div>
             </div>
-          </div>
+          ))}
 
           <div className="card space-y-4">
             <div className="flex items-center justify-between gap-3">
@@ -462,15 +466,22 @@ export const CompletenessWorkbenchView: React.FC<CompletenessWorkbenchViewProps>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <StatusBadge label={item.resolution_status} size="sm" />
-                  {canAct && item.resolution_status === 'open' && (
+                  {usable('resolve_deficiency') && item.resolution_status === 'open' && (
                     <button disabled={!comment.trim() || busyAction !== null} onClick={() => onResolve(item.deficiency_id)} className="btn-secondary text-xs">Resolve</button>
                   )}
                 </div>
               </div>
             ))}
 
-            {canAct && (
+            {completeness.available_actions.length > 0 && (
               <>
+                {completeness.available_actions.some(projected => !projected.enabled && projected.disabled_reason) && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 space-y-1">
+                    {completeness.available_actions.filter(projected => !projected.enabled && projected.disabled_reason).map(projected => (
+                      <p key={projected.action_code}>{projected.label}: {projected.disabled_reason}</p>
+                    ))}
+                  </div>
+                )}
                 <textarea
                   value={comment}
                   onChange={event => onCommentChange(event.target.value)}
@@ -492,13 +503,13 @@ export const CompletenessWorkbenchView: React.FC<CompletenessWorkbenchViewProps>
                   </label>
                 </div>
                 <div className="border-t border-slate-100 pt-4 flex items-center justify-end gap-3 flex-wrap">
-                  {completeness.can_generate_reference && (
+                  {usable('pass_completeness') && (
                     <button disabled={busyAction !== null} onClick={onPass} className="btn-primary flex items-center gap-2"><ArrowRight size={14} /> Generate reference number</button>
                   )}
-                  {blockers.length > 0 && (
+                  {usable('return_with_deficiencies') && (
                     <button disabled={!comment.trim() || busyAction !== null} onClick={onReturn} className="btn-secondary flex items-center gap-2"><Send size={14} /> Return for deficiency</button>
                   )}
-                  {completeness.application_status === 'submitted' && (
+                  {usable('create_rejection_note') && (
                     <button disabled={!comment.trim() || busyAction !== null} onClick={onReject} className="btn-destructive flex items-center gap-2"><XCircle size={14} /> Recommend rejection</button>
                   )}
                 </div>
