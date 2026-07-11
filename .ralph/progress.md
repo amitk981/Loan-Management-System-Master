@@ -3114,3 +3114,22 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+# Run 2026-07-11_090234_normal_run
+
+- Completed 006G3: removed every production credit -> approvals import and moved shared domain
+  errors below both business apps.
+- Approvals now owns the atomic sanction handoff and persists the exact created workflow-event UUID
+  on the pending case; submit/reload return that same identity.
+- TDD red/green passed; five PostgreSQL races passed twice with zero skips; backend 394 tests passed
+  at 94% coverage and frontend build/typecheck/lint plus 130 tests passed.
+- Next action: run sharpened 006H4, then 006H3 and 006X.
+
+## 2026-07-11 09:17:15 - 2026-07-11_090234_normal_run
+- Agent tool used: codex
+- Slice attempted: 006G3-sanction-handoff-dependency-and-evidence-ownership
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_090234_normal_run/.ralph/runs/2026-07-11_090234_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_090234_normal_run/.ralph/runs/2026-07-11_090234_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

@@ -2628,9 +2628,10 @@ class AppraisalConcurrencyTests(TransactionTestCase):
             from_state="review_pending",
             to_state="rejected",
         )
-        self.assertIn(
-            str(winning_history["appraisal_review_decision_id"]),
+        self.assertEqual(
             winning_event.trigger_reason,
+            f"Appraisal review decision {winning_history['appraisal_review_decision_id']} "
+            "recorded as rejected.",
         )
         self.assertEqual(winning_event.from_state, "review_pending")
         self.assertEqual(winning_event.to_state, "rejected")

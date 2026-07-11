@@ -95,14 +95,15 @@
     "006G2-sanction-handoff-module-and-read-contract",
     "006H2-workbench-action-contract-hardening",
     "002J2-forbidden-permission-error-contract-alignment",
-    "004E2-witness-evidence-snapshot-and-input-hardening"
+    "004E2-witness-evidence-snapshot-and-input-hardening",
+    "006G3-sanction-handoff-dependency-and-evidence-ownership"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "9f9ae0b",
-  "last_run_id": "2026-07-11_032719_normal_run",
+  "last_run_id": "2026-07-11_090234_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 2,
+  "slices_completed_since_architecture_review": 3,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

@@ -184,6 +184,8 @@ class SanctionSubmissionApiTests(TestCase):
         self.assertEqual(audit.new_value_json["request_id"], "submit-sanction-006g")
         workflow = WorkflowEvent.objects.get(workflow_name="sanction_submission")
         self.assertEqual(workflow.entity_id, self.application.pk)
+        self.assertEqual(case.workflow_event_id, workflow.pk)
+        self.assertEqual(data["workflow_event_id"], str(case.workflow_event_id))
         evidence_text = f"{audit.old_value_json} {audit.new_value_json} {workflow.trigger_reason}"
         for secret in (
             self.note.borrower_summary,
@@ -226,21 +228,38 @@ class SanctionSubmissionApiTests(TestCase):
                 self.assertEqual(response.json()["error"]["code"], "VALIDATION_ERROR")
                 self._assert_no_submission_writes()
 
-    def test_credit_module_does_not_import_concrete_approval_models(self):
-        module_path = (
-            Path(__file__).resolve().parents[1]
-            / "credit"
-            / "modules"
-            / "appraisal_workflow.py"
+    def test_business_app_dependency_direction_is_approvals_to_credit_only(self):
+        package_root = Path(__file__).resolve().parents[1]
+
+        def imports_under(path):
+            imported = []
+            for module_path in path.rglob("*.py"):
+                if "migrations" in module_path.parts or "tests" in module_path.parts:
+                    continue
+                for node in ast.walk(ast.parse(module_path.read_text())):
+                    if isinstance(node, ast.ImportFrom) and node.module:
+                        imported.append((module_path, node.module))
+                    elif isinstance(node, ast.Import):
+                        imported.extend((module_path, alias.name) for alias in node.names)
+            return imported
+
+        self.assertEqual(
+            [
+                (path, name)
+                for path, name in imports_under(package_root / "credit")
+                if name == "sfpcl_credit.approvals"
+                or name.startswith("sfpcl_credit.approvals.")
+            ],
+            [],
         )
-        imports = []
-        for node in ast.walk(ast.parse(module_path.read_text())):
-            if isinstance(node, ast.ImportFrom) and node.module:
-                imports.append(node.module)
-            elif isinstance(node, ast.Import):
-                imports.extend(alias.name for alias in node.names)
-        self.assertNotIn("sfpcl_credit.approvals.models", imports)
-        self.assertIn("sfpcl_credit.approvals.modules.sanction_handoff", imports)
+        self.assertEqual(
+            [
+                (path, name)
+                for path, name in imports_under(package_root / "approvals")
+                if name == "sfpcl_credit.credit.modules.common"
+            ],
+            [],
+        )
 
     def test_payload_permission_role_and_object_scope_are_independent(self):
         for payload, field in (
@@ -393,7 +412,7 @@ class SanctionSubmissionApiTests(TestCase):
         self._assert_no_submission_writes()
 
         with patch(
-            "sfpcl_credit.credit.modules.appraisal_workflow.record_workflow_event",
+            "sfpcl_credit.approvals.modules.sanction_handoff.record_workflow_event",
             side_effect=RuntimeError("workflow unavailable"),
         ):
             with self.assertRaisesMessage(RuntimeError, "workflow unavailable"):
@@ -547,10 +566,8 @@ class SanctionSubmissionConcurrencyTests(TransactionTestCase):
 
     def test_duplicate_submissions_serialize_to_one_case_and_one_evidence_set(self):
         from sfpcl_credit.approvals.models import ApprovalCase
-        from sfpcl_credit.credit.modules.appraisal_workflow import (
-            AppraisalWorkflow,
-            CreditModuleInvalidStateError,
-        )
+        from sfpcl_credit.approvals.modules.sanction_handoff import SanctionHandoffModule
+        from sfpcl_credit.credit.modules.appraisal_workflow import CreditModuleInvalidStateError
 
         history_before = list(
             AppraisalReviewDecision.objects.filter(loan_appraisal_note=self.note).values()
@@ -572,7 +589,7 @@ class SanctionSubmissionConcurrencyTests(TransactionTestCase):
                 if started_event is not None:
                     started_event.set()
                 actor = User.objects.get(pk=self.reviewer.pk)
-                return AppraisalWorkflow().submit_to_sanction(
+                return SanctionHandoffModule().submit_reviewed_appraisal(
                     actor=actor,
                     application_id=self.application.pk,
                     payload={"remarks": f"Submission {request_id}."},
@@ -626,6 +643,16 @@ class SanctionSubmissionConcurrencyTests(TransactionTestCase):
         self.assertEqual(
             WorkflowEvent.objects.filter(workflow_name="sanction_submission").count(),
             1,
+        )
+        winning_event = WorkflowEvent.objects.get(workflow_name="sanction_submission")
+        self.assertEqual(winner["workflow_event_id"], str(winning_event.pk))
+        self.assertEqual(case.workflow_event_id, winning_event.pk)
+        self.assertEqual(winning_event.from_state, "reviewed")
+        self.assertEqual(winning_event.to_state, "submitted_to_sanction_committee")
+        self.assertEqual(
+            winning_event.trigger_reason,
+            f"Appraisal {self.note.pk} submitted as approval case {case.pk} "
+            f"from review decision {self.history.pk}.",
         )
         self.assertFalse(
             AuditLog.objects.filter(

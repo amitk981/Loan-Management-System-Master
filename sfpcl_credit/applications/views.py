@@ -851,7 +851,7 @@ def loan_application_submit_to_sanction(request, loan_application_id):
     if response is not None:
         return response
     try:
-        result = AppraisalWorkflow().submit_to_sanction(
+        result = SanctionHandoffModule().submit_reviewed_appraisal(
             actor=user,
             application_id=loan_application_id,
             payload=parse_json_body(request),

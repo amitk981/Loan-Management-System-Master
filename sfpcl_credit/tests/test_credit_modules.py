@@ -350,7 +350,7 @@ class CreditEligibilityModuleTests(TestCase):
                 "submit_for_review",
                 "revalidate_prerequisites",
                 "review",
-                "submit_to_sanction",
+                "prepare_sanction_handoff",
             }
             .issubset(
                 {

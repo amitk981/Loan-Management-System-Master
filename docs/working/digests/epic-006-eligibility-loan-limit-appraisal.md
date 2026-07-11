@@ -1,5 +1,17 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006G3 Sanction Handoff Dependency and Evidence Ownership
+
+- Production credit code has no approvals import. The approvals-owned public handoff opens the
+  atomic transaction, calls credit's public reviewed-appraisal preparation interface in the
+  application -> appraisal -> review-history lock order, and owns case/status/audit/event writes.
+- `ApprovalCase.workflow_event` durably links the unique pending case to the exact created sanction
+  event. Submit and reload serialize that stored UUID; the read path has no latest-event query.
+- Shared domain errors live below both business apps. Approvals imports credit's public appraisal
+  interface and application object-access service, not credit's private common/error module.
+- All five PostgreSQL races passed twice with zero skips after exact review-decision and sanction
+  case/event/state/reason assertions replaced substring-only evidence checks.
+
 ## Architecture Review 2026-07-11 - 006G2/006H2 Corrective Follow-ups
 
 - 006G2 hides the concrete case model, but `credit -> approvals.modules -> credit.modules.common`

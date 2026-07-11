@@ -33,6 +33,12 @@ class ApprovalCase(models.Model):
         related_name="submitted_sanction_cases",
     )
     submitted_at = models.DateTimeField(default=timezone.now, db_index=True)
+    workflow_event = models.OneToOneField(
+        "workflows.WorkflowEvent",
+        on_delete=models.PROTECT,
+        related_name="sanction_approval_case",
+        null=True,
+    )
 
     class Meta:
         db_table = "approval_cases"

@@ -15,6 +15,12 @@ container action through its HTTP/state boundary.
 ## Depends On
 - 006G3
 
+## Sharpened Integration Anchor (2026-07-11)
+
+- Treat the sanction-case `workflow_event_id` as the durable event identity returned by 006G3;
+  container refresh tests must preserve that exact UUID and must not select or synthesize a newer
+  application workflow event.
+
 ## Source / Review References
 - `docs/source/codebase-design.md` §23.3-§23.6 and §26.3
 - `docs/source/api-contracts.md` §24 and §44
@@ -60,4 +66,3 @@ High
 - Resource actions can deny globally permissioned users, and legacy remediation is reachable only
   when the backend explicitly advertises it.
 - Tests exercise the real container/action path, not only static markup or API wrappers.
-

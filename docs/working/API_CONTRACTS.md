@@ -2017,12 +2017,15 @@ ordered immutable `review_history[]`, and
 also includes the nested existing rejection-note representation and links its UUID to the appraisal
 audit metadata.
 
-## Submit appraisal to Sanction Committee API (006G/006G2)
+## Submit appraisal to Sanction Committee API (006G/006G2/006G3)
 
 Protected Credit Manager endpoint:
 
 - `POST /api/v1/loan-applications/{loan_application_id}/submit-to-sanction-committee/`
 - `GET /api/v1/loan-applications/{loan_application_id}/sanction-case/`
+
+The submit response and every later case read return the exact workflow-event UUID durably linked
+to that approval case. The read path never substitutes a newer application workflow event.
 
 POST request is exactly `{ "remarks": "non-blank reason" }`. Malformed JSON, a non-object body,
 missing/blank remarks, or any unknown field returns `400 VALIDATION_ERROR`. The action requires active `credit_manager` role authority,

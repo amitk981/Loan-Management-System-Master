@@ -7,7 +7,6 @@ from decimal import Decimal, InvalidOperation
 from django.db import transaction
 from django.utils import timezone
 
-from sfpcl_credit.approvals.modules.sanction_handoff import SanctionHandoffModule
 from sfpcl_credit.applications.modules.rejection_notes import (
     RejectionNoteInvalidStateError,
     RejectionNoteModule,
@@ -54,6 +53,16 @@ APPRAISAL_READ_PERMISSIONS = {
 @dataclass(frozen=True)
 class AppraisalNoteResult:
     snapshot: dict
+
+
+@dataclass(frozen=True)
+class ReviewedAppraisalHandoff:
+    application: LoanApplication
+    appraisal_note: LoanAppraisalNote
+    latest_review: AppraisalReviewDecision
+    previous_application_status: str
+    previous_appraisal_status: str
+    exception_required_flag: bool
 
 
 class AppraisalWorkflow:
@@ -694,14 +703,12 @@ class AppraisalWorkflow:
             snapshot["rejection_note"] = rejection_note.snapshot
         return AppraisalNoteResult(snapshot=snapshot)
 
-    @transaction.atomic
-    def submit_to_sanction(
+    def prepare_sanction_handoff(
         self,
         *,
         actor,
         application_id,
         payload,
-        request_meta=None,
         actor_permissions=None,
     ):
         permissions = require_permission(
@@ -774,67 +781,18 @@ class AppraisalWorkflow:
             )
         latest_review = history[-1]
 
-        now = timezone.now()
         exception_required = (
             note.loan_limit_snapshot_json.get("exception_required_flag") is True
         )
-        handoff = SanctionHandoffModule()
-        approval_case = handoff.create_pending(
+        previous_application_status = application.application_status
+        previous_appraisal_status = note.appraisal_status
+        return ReviewedAppraisalHandoff(
             application=application,
             appraisal_note=note,
-            actor=actor,
-            remarks=payload["remarks"].strip(),
+            latest_review=latest_review,
+            previous_application_status=previous_application_status,
+            previous_appraisal_status=previous_appraisal_status,
             exception_required_flag=exception_required,
-            submitted_at=now,
-        )
-        previous_application_status = application.application_status
-        application.application_status = LoanApplication.STATUS_SUBMITTED_TO_SANCTION
-        application.save(update_fields=["application_status"])
-        previous_appraisal_status = note.appraisal_status
-        note.appraisal_status = LoanAppraisalNote.STATUS_SUBMITTED_TO_SANCTION
-        note.save(update_fields=["appraisal_status"])
-
-        request_meta = normalize_request_meta(request_meta)
-        AuditLog.objects.create(
-            actor_user=actor,
-            action="appraisal.submitted_to_sanction",
-            entity_type="loan_appraisal_note",
-            entity_id=note.pk,
-            old_value_json={
-                "application_status": previous_application_status,
-                "appraisal_status": previous_appraisal_status,
-            },
-            new_value_json={
-                "approval_case_id": str(approval_case.pk),
-                "loan_application_id": str(application.pk),
-                "loan_appraisal_note_id": str(note.pk),
-                "appraisal_review_decision_id": str(latest_review.pk),
-                "application_status": application.application_status,
-                "appraisal_status": note.appraisal_status,
-                "submission_status": approval_case.current_status,
-                "exception_required_flag": exception_required,
-                "submitted_by_user_id": str(actor.pk),
-                "submitted_at": timezone.localtime(now).isoformat(),
-                "request_id": request_meta.request_id,
-            },
-            ip_address=request_meta.ip_address,
-            user_agent=request_meta.user_agent,
-        )
-        workflow_event = record_workflow_event(
-            actor=actor,
-            workflow_name="sanction_submission",
-            entity_type="loan_application",
-            entity_id=application.pk,
-            from_state=previous_appraisal_status,
-            to_state=note.appraisal_status,
-            trigger_reason=(
-                f"Appraisal {note.pk} submitted as approval case {approval_case.pk} "
-                f"from review decision {latest_review.pk}."
-            ),
-            action_code="appraisal.submitted_to_sanction",
-        )
-        return AppraisalNoteResult(
-            snapshot=handoff.serialize(approval_case, latest_review, workflow_event)
         )
 
 

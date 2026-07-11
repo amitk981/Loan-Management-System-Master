@@ -1,0 +1,34 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+FE
+======================================================================
+ERROR: test_reviewed_appraisal_creates_one_pending_case_and_metadata_only_evidence (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_reviewed_appraisal_creates_one_pending_case_and_metadata_only_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_090234_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 187, in test_reviewed_appraisal_creates_one_pending_case_and_metadata_only_evidence
+    self.assertEqual(case.workflow_event_id, workflow.pk)
+                     ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'ApprovalCase' object has no attribute 'workflow_event_id'
+
+======================================================================
+FAIL: test_business_app_dependency_direction_is_approvals_to_credit_only (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_business_app_dependency_direction_is_approvals_to_credit_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_090234_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 246, in test_business_app_dependency_direction_is_approvals_to_credit_only
+    self.assertEqual(
+AssertionError: Lists differ: [(PosixPath('/Users/amitkallapa/LMS/.ralph[139 chars]ff')] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+(PosixPath('/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_090234_normal_run/sfpcl_credit/credit/modules/appraisal_workflow.py'), 'sfpcl_credit.approvals.modules.sanction_handoff')
+
++ []
+- [(PosixPath('/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_090234_normal_run/sfpcl_credit/credit/modules/appraisal_workflow.py'),
+-   'sfpcl_credit.approvals.modules.sanction_handoff')]
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.041s
+
+FAILED (failures=1, errors=1)
+Destroying test database for alias 'default'...
