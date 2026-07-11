@@ -12,6 +12,17 @@ Medium
 ## Runtime Capabilities
 - `localhost-e2e-server`
 
+## Independent E2E Contract
+
+- Freeze only the two dashboard screenshot scenarios at the instant represented by the committed
+  baselines: `Good afternoon, E2E` and `Friday 10 July, 2026`.
+- Set Playwright's browser timezone explicitly to `Asia/Kolkata`; an offset-bearing fixed instant
+  alone is not sufficient for deterministic rendering on hosts in other timezones.
+- Both README E2E commands must derive the shared Ralph virtualenv through Git's common directory,
+  so the documented command resolves correctly from a primary checkout and an isolated worktree.
+- Independent validation runs the zero-permission dashboard and tracer dashboard scenarios twice
+  without updating snapshots. Both repetitions must pass before this slice can be accepted.
+
 ## Change Request (verbatim)
 
 # E2E visual baselines are nondeterministic (rendered date/greeting) and README run command is wrong
