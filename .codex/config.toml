@@ -16,3 +16,31 @@ enabled = true
 # Allow only the local PostgreSQL Unix socket.
 [permissions.ralph-postgres.network.unix_sockets]
 "/tmp/.s.PGSQL.5432" = "allow"
+
+# Ralph selects this profile only for slices that declare the
+# `localhost-e2e-server` runtime capability.
+[permissions.ralph-localhost]
+description = "Ralph workspace access plus local Django/Vite E2E servers."
+extends = ":workspace"
+
+[permissions.ralph-localhost.network]
+enabled = true
+
+[permissions.ralph-localhost.network.domains]
+"localhost" = "allow"
+"127.0.0.1" = "allow"
+
+# A slice may explicitly require both local runtime capabilities.
+[permissions.ralph-postgres-localhost]
+description = "Ralph workspace access plus PostgreSQL and local E2E servers."
+extends = ":workspace"
+
+[permissions.ralph-postgres-localhost.network]
+enabled = true
+
+[permissions.ralph-postgres-localhost.network.domains]
+"localhost" = "allow"
+"127.0.0.1" = "allow"
+
+[permissions.ralph-postgres-localhost.network.unix_sockets]
+"/tmp/.s.PGSQL.5432" = "allow"

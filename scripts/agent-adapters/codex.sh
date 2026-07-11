@@ -72,6 +72,21 @@ if [[ "$CODEX_PERMISSION_PROFILE" == "ralph-postgres" ]]; then
   args+=(-c 'permissions.ralph-postgres.network.enabled=true')
   args+=(-c 'permissions.ralph-postgres.network.unix_sockets={"/tmp/.s.PGSQL.5432"="allow"}')
   args+=(-c "default_permissions=\"$CODEX_PERMISSION_PROFILE\"")
+elif [[ "$CODEX_PERMISSION_PROFILE" == "ralph-localhost" ]]; then
+  # E2E browser suites need to bind and connect only to the local Django/Vite
+  # servers. Keep normal internet destinations unavailable.
+  args+=(-c 'permissions.ralph-localhost.extends=":workspace"')
+  args+=(-c 'permissions.ralph-localhost.network.enabled=true')
+  args+=(-c 'permissions.ralph-localhost.network.domains={"localhost"="allow","127.0.0.1"="allow"}')
+  args+=(-c "default_permissions=\"$CODEX_PERMISSION_PROFILE\"")
+elif [[ "$CODEX_PERMISSION_PROFILE" == "ralph-postgres-localhost" ]]; then
+  # Compose both declared local capabilities without granting general network
+  # access or changing the default profile for ordinary slices.
+  args+=(-c 'permissions.ralph-postgres-localhost.extends=":workspace"')
+  args+=(-c 'permissions.ralph-postgres-localhost.network.enabled=true')
+  args+=(-c 'permissions.ralph-postgres-localhost.network.domains={"localhost"="allow","127.0.0.1"="allow"}')
+  args+=(-c 'permissions.ralph-postgres-localhost.network.unix_sockets={"/tmp/.s.PGSQL.5432"="allow"}')
+  args+=(-c "default_permissions=\"$CODEX_PERMISSION_PROFILE\"")
 else
   # Repeat the workspace profile at launch so nested Ralph worktrees never
   # fall back to read-only when project trust/config discovery changes.

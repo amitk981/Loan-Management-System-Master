@@ -9,6 +9,9 @@ Change request (maintenance stage), accepted 2026-07-10 from docs/change-request
 ## Risk Level
 Medium
 
+## Runtime Capabilities
+- `localhost-e2e-server`
+
 ## Change Request (verbatim)
 
 # E2E visual baselines are nondeterministic (rendered date/greeting) and README run command is wrong

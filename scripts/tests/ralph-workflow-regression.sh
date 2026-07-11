@@ -119,6 +119,21 @@ Not Started
 ## Runtime Capabilities
 - `none`
 EOF
+cat > "$fixture_dir/future-localhost-slice.md" <<'EOF'
+## Status
+Not Started
+
+## Runtime Capabilities
+- `localhost-e2e-server`
+EOF
+cat > "$fixture_dir/future-combined-slice.md" <<'EOF'
+## Status
+Not Started
+
+## Runtime Capabilities
+- `postgresql-five-race-acceptance`
+- `localhost-e2e-server`
+EOF
 cat > "$fixture_dir/unknown-capability.md" <<'EOF'
 ## Runtime Capabilities
 - `unrestricted-network`
@@ -128,6 +143,10 @@ EOF
   || fail "future PostgreSQL slice did not select the scoped socket profile"
 [[ "$(ralph_codex_permission_profile_for_slice "$fixture_dir/ordinary-slice.md")" == ":workspace" ]] \
   || fail "ordinary slice did not retain workspace permissions"
+[[ "$(ralph_codex_permission_profile_for_slice "$fixture_dir/future-localhost-slice.md")" == "ralph-localhost" ]] \
+  || fail "future localhost E2E slice did not select the scoped localhost profile"
+[[ "$(ralph_codex_permission_profile_for_slice "$fixture_dir/future-combined-slice.md")" == "ralph-postgres-localhost" ]] \
+  || fail "combined local runtime capabilities did not select the composed profile"
 if ralph_validate_slice_capabilities "$fixture_dir/unknown-capability.md" >/dev/null 2>&1; then
   fail "unknown runtime capability did not fail closed"
 fi
@@ -143,8 +162,12 @@ rg -q 'default_permissions=":workspace"' scripts/agent-adapters/codex.sh \
   || fail "ordinary Ralph runs do not explicitly retain workspace permissions"
 rg -q 'permissions\.ralph-postgres\.network\.unix_sockets=\{"/tmp/\.s\.PGSQL\.5432"="allow"\}' scripts/agent-adapters/codex.sh \
   || fail "nested Ralph worktrees do not receive the explicit PostgreSQL socket override"
+rg -q 'permissions\.ralph-localhost\.network\.domains=\{"localhost"="allow","127\.0\.0\.1"="allow"\}' scripts/agent-adapters/codex.sh \
+  || fail "nested Ralph worktrees do not receive the explicit localhost override"
 rg -q '"/tmp/\.s\.PGSQL\.5432"[[:space:]]*=[[:space:]]*"allow"' .codex/config.toml \
   || fail "PostgreSQL Unix socket is not narrowly allowlisted"
+rg -q '"localhost"[[:space:]]*=[[:space:]]*"allow"' .codex/config.toml \
+  || fail "localhost E2E traffic is not narrowly allowlisted"
 rg -q 'postgresql-acceptance-validation-\$\{ordinal\}\.txt' scripts/ralph-validate.sh \
   || fail "independent PostgreSQL acceptance log path is missing"
 rg -q 'run_postgresql_acceptance_once 1' scripts/ralph-validate.sh \
