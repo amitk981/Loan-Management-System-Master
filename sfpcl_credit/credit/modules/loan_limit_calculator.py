@@ -85,6 +85,24 @@ class LoanLimitAssessmentResult:
         return snapshot
 
 
+@dataclass(frozen=True)
+class LoanLimitTransitionEvaluation:
+    allowed: bool
+    reason: str | None
+
+
+def evaluate_loan_limit_calculation(application):
+    """Single predicate consumed by both the write and its resource action."""
+    if LoanAppraisalNote.objects.filter(loan_application=application).exists():
+        return LoanLimitTransitionEvaluation(False, "Loan-limit calculation cannot be rerun after appraisal has started.")
+    eligibility = EligibilityAssessment.objects.filter(loan_application=application).first()
+    if eligibility is None:
+        return LoanLimitTransitionEvaluation(False, "An eligible eligibility assessment is required before loan-limit calculation.")
+    if eligibility.overall_result != EligibilityAssessment.OVERALL_ELIGIBLE:
+        return LoanLimitTransitionEvaluation(False, "Loan-limit calculation requires eligibility overall_result eligible.")
+    return LoanLimitTransitionEvaluation(True, None)
+
+
 class LoanLimitCalculator:
     def get_assessment(self, *, actor, application_id, actor_permissions=None):
         permissions = require_permission(
@@ -145,10 +163,9 @@ class LoanLimitCalculator:
             LOAN_LIMIT_CALCULATE_PERMISSION,
             permissions,
         )
-        if LoanAppraisalNote.objects.filter(loan_application=application).exists():
-            raise CreditModuleInvalidStateError(
-                "Loan-limit calculation cannot be rerun after appraisal has started."
-            )
+        transition = evaluate_loan_limit_calculation(application)
+        if not transition.allowed:
+            raise CreditModuleInvalidStateError(transition.reason)
         if callable(payload):
             payload = payload()
         eligibility = (
@@ -156,14 +173,9 @@ class LoanLimitCalculator:
             .filter(loan_application=application)
             .first()
         )
-        if eligibility is None:
-            raise CreditModuleInvalidStateError(
-                "An eligible eligibility assessment is required before loan-limit calculation."
-            )
-        if eligibility.overall_result != EligibilityAssessment.OVERALL_ELIGIBLE:
-            raise CreditModuleInvalidStateError(
-                "Loan-limit calculation requires eligibility overall_result eligible."
-            )
+        # The shared transition predicate guarantees this locked row exists and is eligible.
+        if eligibility is None or eligibility.overall_result != EligibilityAssessment.OVERALL_ELIGIBLE:
+            raise CreditModuleInvalidStateError(transition.reason or "Eligibility changed during loan-limit calculation.")
 
         current_assessment = (
             LoanLimitAssessment.objects.select_for_update()
@@ -260,12 +272,12 @@ def _result(assessment, actor, permissions):
 
 def _loan_limit_actions(application, actor, permissions):
     permissions = set(permissions)
-    appraisal_started = LoanAppraisalNote.objects.filter(loan_application=application).exists()
-    calculate_enabled = not appraisal_started and LOAN_LIMIT_CALCULATE_PERMISSION in permissions
-    create_enabled = not appraisal_started and "credit.appraisal.create" in permissions and "credit.risk_assessment.manage" in permissions
+    transition = evaluate_loan_limit_calculation(application)
+    calculate_enabled = transition.allowed and LOAN_LIMIT_CALCULATE_PERMISSION in permissions
+    create_enabled = transition.allowed and "credit.appraisal.create" in permissions and "credit.risk_assessment.manage" in permissions
     def item(code, label, permission, enabled, reason):
         return {"action_code": code, "label": label, "enabled": enabled, "disabled_reason": None if enabled else reason, "required_permission": permission, "required_role": None}
-    reason = "Unavailable after appraisal has started." if appraisal_started else "Required permission is missing."
+    reason = transition.reason or "Required permission is missing."
     return [
         item(LOAN_LIMIT_CALCULATE_PERMISSION, "Calculate Loan Limit", LOAN_LIMIT_CALCULATE_PERMISSION, calculate_enabled, reason),
         item("credit.appraisal.create", "Create Appraisal Draft", "credit.appraisal.create", create_enabled, reason),

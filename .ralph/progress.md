@@ -3461,3 +3461,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-11_223208_normal_run
+
+- Completed 006H7: shared the loan-limit transition predicate between write execution and action
+  projection, and removed React's parallel appraisal state/provenance authority matrix.
+- Frontend lint/typecheck/build and 151 tests passed; backend check/migration sync and 403 tests
+  passed with five expected PostgreSQL-only skips at 94% coverage.
+- Exact Testing Library packages were pinned, but the sandbox's offline npm cache lacked them;
+  orchestration must resolve and lock them before independent validation.
+- Next action: run 006H3-appraisal-workbench-prototype-fidelity-restoration.
+
+## 2026-07-11 22:39:59 - 2026-07-11_223208_normal_run
+- Agent tool used: codex
+- Slice attempted: 006H7-credit-action-parity-and-container-proof
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_223208_normal_run/.ralph/runs/2026-07-11_223208_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_223208_normal_run/.ralph/runs/2026-07-11_223208_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

@@ -1,27 +1,23 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-11_215244_repair
+2026-07-11_223208_normal_run
 
 ## Current Status
 
-005E4 is complete. Completeness pass, deficiency return, deficiency
-resolution, and rejection-note creation now project and enforce their four source-defined
-permissions with the same object/state/resource gates and full six-field actions. Permission-only
-actors can invoke only their granted action; denied calls leave no state, audit, workflow, register,
-deficiency, rejection-note, or reference evidence. The Deputy Manager seed now includes the
-source-backed return permission. The focused Playwright contract uses `RALPH_EVIDENCE_DIR`, asserts
-exact calls and canonical reloads, and declares all nine required screenshots including real 403
-and 500 states.
+006H7 is complete. Loan-limit execution and projection now share the same eligibility/appraisal
+transition evaluation, and the appraisal workbench consumes the backend action's enabled,
+permission, and role facts without independently re-deciding workflow state or provenance.
+The existing writable allowlist, disabled reasons, and canonical four-read refresh remain intact.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-11_215244_repair/`. Frontend lint, typecheck, 150 tests, and
-build passed. Backend check/migration sync and 403 tests passed with five expected PostgreSQL-only
-skips at 94% coverage. The trusted Playwright contract passed twice outside the coding sandbox, and
-all nine declared screenshots were verified present and non-empty.
+Evidence is under `.ralph/runs/2026-07-11_223208_normal_run/`. Frontend lint, typecheck, 151 tests,
+and build passed. Backend check/migration sync and 403 tests passed with five expected
+PostgreSQL-only skips at 94% coverage. Testing Library packages are exactly pinned in package.json;
+the offline sandbox could not resolve them, so lockfile installation remains for orchestration.
 
 ## Next Run
 
-Run 006H7, then 006H3 and 006X. 006H7 owns shared credit transition predicates, React
-action-authority cleanup, the pinned Testing Library harness, and the full mounted HTTP matrix.
+Run 006H3, then 006X. Both files already carry concrete fidelity, HTTP authority, cross-role,
+exact-ID, writable-body, and browser evidence contracts and required no further sharpening.

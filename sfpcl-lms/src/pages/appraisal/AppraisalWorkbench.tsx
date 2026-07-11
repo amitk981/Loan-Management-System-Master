@@ -42,17 +42,23 @@ export const AppraisalWorkbenchView: React.FC<ViewProps> = props => {
   if (!props.selectedApplication || props.applications.length === 0) return <div className="p-6"><div className="card text-center py-16"><Check size={32} className="text-green-500 mx-auto mb-3" /><p className="text-slate-600 font-semibold">Appraisal queue is clear</p><p className="text-slate-400 text-sm mt-1">No API-backed applications are available.</p></div></div>;
 
   const app = props.selectedApplication; const note = props.appraisal;
-  const permissions = props.permissions; const manager = props.roleCodes.includes('credit_manager');
-  const serverAllows = (action: Action) => action === 'save'
-    ? (props.availableActions ?? []).some(item => item.enabled && (item.action_code === 'credit.appraisal.create' || item.action_code === 'credit.appraisal.update'))
-    : (props.availableActions ?? []).some(item => item.enabled && item.action_code === actionCodes[action]);
+  const permissions = props.permissions;
+  const serverAction = (action: Action) => (props.availableActions ?? []).find(item => action === 'save'
+    ? item.action_code === (note ? 'credit.appraisal.update' : 'credit.appraisal.create')
+    : item.action_code === actionCodes[action]);
+  const serverAllows = (action: Action) => {
+    const projected = serverAction(action);
+    if (!projected?.enabled) return false;
+    if (projected.required_permission && !has(permissions, projected.required_permission)) return false;
+    return !projected.required_role || props.roleCodes.includes(projected.required_role);
+  };
   const disabledReasons = (props.availableActions ?? []).filter(item => !item.enabled && item.disabled_reason);
-  const canCreate = !note && serverAllows('save') && has(permissions, 'credit.appraisal.create') && has(permissions, 'credit.risk_assessment.manage');
-  const canEdit = note?.appraisal_status === 'draft' && serverAllows('save') && has(permissions, 'credit.appraisal.update') && has(permissions, 'credit.risk_assessment.manage');
-  const canSubmit = note?.appraisal_status === 'draft' && serverAllows('submit-review') && has(permissions, 'credit.appraisal.submit_review');
-  const canRevalidate = note?.prerequisite_provenance === 'legacy_unverified' && serverAllows('revalidate') && has(permissions, 'credit.appraisal.update') && has(permissions, 'credit.risk_assessment.manage');
-  const canReview = note?.appraisal_status === 'review_pending' && serverAllows('review') && manager && has(permissions, 'credit.appraisal.review');
-  const canSanction = note?.appraisal_status === 'reviewed' && serverAllows('sanction') && manager && has(permissions, 'credit.appraisal.submit_sanction');
+  const canCreate = !note && serverAllows('save');
+  const canEdit = Boolean(note) && serverAllows('save');
+  const canSubmit = Boolean(note) && serverAllows('submit-review');
+  const canRevalidate = Boolean(note) && serverAllows('revalidate');
+  const canReview = Boolean(note) && serverAllows('review');
+  const canSanction = Boolean(note) && serverAllows('sanction');
   const submitted = note?.appraisal_status === 'submitted_to_sanction_committee' || Boolean(props.sanctionSubmission);
   const steps = [
     { id: 'eligibility', label: 'Eligibility', state: props.eligibility ? 'completed' as const : 'in_progress' as const },
