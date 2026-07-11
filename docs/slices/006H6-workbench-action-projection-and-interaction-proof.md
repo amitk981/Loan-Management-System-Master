@@ -70,6 +70,14 @@ High
 - Every workbench action is proven through the real container and mocked HTTP boundary, including
   refresh, denial, validation, and one-call stale behavior.
 
+## Run-Ahead Sharpening Review (006H5, 2026-07-11)
+
+- `App.tsx` no longer provides a client-owned application mutation callback to any workbench.
+  Container interaction tests must therefore assert only canonical HTTP mutation plus four-read
+  refresh behavior; they must not add shell callbacks or optimistic application status state.
+- Keep 006H5's sanction route explicitly empty until 007I. The four-way appraisal reload may read
+  the existing sanction-case contract, but 006H6 must not wire or repopulate SanctionWorkbench.
+
 ## Run-Ahead Sharpening Review (006G4, 2026-07-11)
 
 - Keep the public dependency direction proven by 006G4: approvals may consume only the documented

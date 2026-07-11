@@ -81,3 +81,12 @@ Medium
 
 - The real API-backed workbench is visually indistinguishable from the approved prototype language.
 - No business rule or mock credit fact returns to React.
+
+## Run-Ahead Sharpening Review (006H5, 2026-07-11)
+
+- Visual restoration must preserve the shell's zero mock application authority: do not re-add an
+  `App.tsx` application collection, status updater, or `mockData` import while composing the
+  appraisal stages.
+- The focused Playwright matrix remains appraisal-only. Sanction queue screenshots and API wiring
+  belong to 007I; this slice may show only the canonical sanction-case readback already required
+  by 006H6.

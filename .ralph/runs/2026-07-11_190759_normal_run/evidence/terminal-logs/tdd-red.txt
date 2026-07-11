@@ -1,7 +1,31 @@
-import React, { useState, useEffect } from 'react';
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/sanction/SanctionWorkbench.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_190759_normal_run/sfpcl-lms
+
+ ❯ src/pages/sanction/SanctionWorkbench.test.tsx (2 tests | 2 failed) 13ms
+   × app shell application authority > does not seed or mutate application workflow state in App.tsx 4ms
+     → expected 'import React, { useState, useCallback…' not to match /from ['"].*data\/mockData…/mockData['"]
+   × app shell application authority > renders an explicit not-wired state for the shell consumer without mock records 9ms
+     → expected '<div class="p-6 space-y-4"><div class…' to contain 'Sanction queue data is not connected …'
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/sanction/SanctionWorkbench.test.tsx > app shell application authority > does not seed or mutate application workflow state in App.tsx
+AssertionError: expected 'import React, { useState, useCallback…' not to match /from ['"].*data\/mockData…/mockData['"]
+
+- Expected: 
+/from ['"].*data\/mockData['"]/
+
++ Received: 
+"import React, { useState, useCallback, useEffect } from 'react';
 import { Agentation } from 'agentation';
 import { RoleProvider, useRole } from './contexts/RoleContext';
-import { Role } from './types';
+import { Role, LoanApplication } from './types';
+import { loanApplications as initialApplications } from './data/mockData';
 import {
   AuthSessionError,
   DEMO_AUTH_ENABLED,
@@ -68,6 +92,10 @@ const AppInner: React.FC = () => {
   const [authView, setAuthView] = useState<AuthView>('staff');
   const [blockedPage, setBlockedPage] = useState<Page | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [applications, setApplications] = useState<LoanApplication[]>(initialApplications);
+  const updateApplicationStatus = useCallback((id: string, newStatus: string) => {
+    setApplications(prev => prev.map(a => a.id === id ? { ...a, status: newStatus as LoanApplication['status'] } : a));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -280,7 +308,7 @@ const AppInner: React.FC = () => {
       case 'appraisal':
         return <AppraisalWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} />;
       case 'sanction':
-        return <SanctionWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} applications={[]} />;
+        return <SanctionWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} applications={applications} onUpdateStatus={updateApplicationStatus} />;
       case 'documentation':
         return <DocumentationHub onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} />;
       case 'disbursement':
@@ -335,11 +363,11 @@ const AppInner: React.FC = () => {
   return (
     <AppShell activePage={activePage} onNavigate={p => navigate(p as Page)} onSearch={handleSearch} onLogout={handleLogout}>
       {blockedPage && (
-        <div className="px-6 pt-6">
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            <p className="font-semibold">Access blocked for {currentUser.roleName}</p>
-            <p className="mt-0.5">
-              The requested workspace ({blockedPage.replace(/\//g, ' / ')}) is hidden for this role and actions remain disabled unless the role has the required permission.
+        <div className=\"px-6 pt-6\">
+          <div className=\"rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800\">
+            <p className=\"font-semibold\">Access blocked for {currentUser.roleName}</p>
+            <p className=\"mt-0.5\">
+              The requested workspace ({blockedPage.replace(/\\//g, ' / ')}) is hidden for this role and actions remain disabled unless the role has the required permission.
             </p>
           </div>
         </div>
@@ -362,8 +390,42 @@ const sessionErrorMessage = (error: unknown): string => {
 const App: React.FC = () => (
   <RoleProvider>
     <AppInner />
-    {import.meta.env.DEV && <Agentation endpoint="http://localhost:4747" />}
+    {import.meta.env.DEV && <Agentation endpoint=\"http://localhost:4747\" />}
   </RoleProvider>
 );
 
 export default App;
+"
+
+ ❯ src/pages/sanction/SanctionWorkbench.test.tsx:16:27
+     14|     );
+     15| 
+     16|     expect(appSource).not.toMatch(/from ['"].*data\/mockData['"]/);
+       |                           ^
+     17|     expect(appSource).not.toContain('initialApplications');
+     18|     expect(appSource).not.toContain('setApplications');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/pages/sanction/SanctionWorkbench.test.tsx > app shell application authority > renders an explicit not-wired state for the shell consumer without mock records
+AssertionError: expected '<div class="p-6 space-y-4"><div class…' to contain 'Sanction queue data is not connected …'
+
+Expected: "Sanction queue data is not connected yet"
+Received: "<div class="p-6 space-y-4"><div class="flex items-center justify-between flex-wrap gap-3"><div><h1 class="text-xl font-bold text-slate-900">Sanction Workbench</h1><p class="text-sm text-slate-500 mt-0.5">0 pending · 0 exceptions · 0 special cases</p></div><div class="flex gap-2"></div></div><div class="card text-center py-16"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check text-green-500 mx-auto mb-3" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg><p class="text-slate-600 font-semibold">Sanction queue is clear</p></div></div>"
+
+ ❯ src/pages/sanction/SanctionWorkbench.test.tsx:32:18
+     30|     );
+     31| 
+     32|     expect(html).toContain('Sanction queue data is not connected yet');
+       |                  ^
+     33|     expect(html).toContain('No application records are shown until san…
+     34|     expect(html).not.toContain('Sanction queue is clear');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  19:10:24
+   Duration  575ms (transform 133ms, setup 0ms, collect 218ms, tests 13ms, environment 0ms, prepare 35ms)
+

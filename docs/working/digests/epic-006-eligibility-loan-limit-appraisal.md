@@ -1,5 +1,17 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006H5 App Shell Application State Authority
+
+- `App.tsx` no longer imports `mockData`, seeds a `LoanApplication[]`, or exposes a client-side
+  status mutation callback. Its sanction route supplies an explicit empty input until 007I owns
+  the real sanction API wiring.
+- The only affected consumer is `SanctionWorkbench`; application list/detail, completeness, and
+  appraisal screens already own API-backed state independently. The sanction consumer reuses its
+  existing empty card with explicit not-connected wording rather than claiming a mock-derived
+  queue is real or clear.
+- SanctionWorkbench's own standalone mock fallback remains final-removal scope for 007I, as listed
+  in the binding mock-surface ownership table. No new mock or inline business fixture was added.
+
 ## 006G4 Sanction Dependency Boundary Regression
 
 - Test-only package-aware AST resolution now covers direct imports, aliases, `from package import

@@ -3281,3 +3281,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-11_190759_normal_run
+
+- Completed 006H5: removed App.tsx's mock application import, seeded workflow collection, and
+  client-side status mutation callback.
+- The sanction route now supplies an explicit empty input and reuses the existing empty card with
+  honest not-connected wording; 007I retains sanction API and local-fallback removal ownership.
+- Frontend lint/typecheck/build and 146 tests passed; backend check/migration sync and 396 tests
+  passed at 94% coverage. Browser screenshot capture was unavailable and is recorded in evidence.
+- Next action: run the due architecture review, then 006H6.
+
+## 2026-07-11 19:17:12 - 2026-07-11_190759_normal_run
+- Agent tool used: codex
+- Slice attempted: 006H5-app-shell-application-state-authority
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_190759_normal_run/.ralph/runs/2026-07-11_190759_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_190759_normal_run/.ralph/runs/2026-07-11_190759_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
