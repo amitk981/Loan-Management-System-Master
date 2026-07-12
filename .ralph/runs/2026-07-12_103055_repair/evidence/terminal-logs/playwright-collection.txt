@@ -1,0 +1,3 @@
+Listing tests:
+  [chromium] › member-governance-closure.e2e.spec.ts:15:5 › member creation, canonical update, approved identity correction, and denial use real sessions
+Total: 1 test in 1 file

@@ -116,14 +116,15 @@
     "006X3-credit-visual-and-real-browser-closure",
     "006Y-member-create-update-and-identity-governance",
     "006Y2-member-form-and-witness-capture-ui-wiring",
-    "006X4-credit-action-parity-regression-matrix"
+    "006X4-credit-action-parity-regression-matrix",
+    "006Y3-member-registry-and-identity-change-approval-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "6c6a4da",
-  "last_run_id": "2026-07-12_093545_normal_run",
+  "last_run_id": "2026-07-12_103847_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
+  "slices_completed_since_architecture_review": 2,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

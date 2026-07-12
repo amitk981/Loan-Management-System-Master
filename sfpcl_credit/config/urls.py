@@ -296,6 +296,8 @@ urlpatterns = [
         member_views.member_reverification,
         name="member-reverification",
     ),
+    path("api/v1/members/<uuid:member_id>/identity-change-requests/", member_views.member_identity_change_requests, name="member-identity-change-request"),
+    path("api/v1/member-identity-change-requests/<uuid:request_id>/approve/", member_views.approve_member_identity_change, name="member-identity-change-approve"),
     path(
         "api/v1/members/<uuid:member_id>/reveal-sensitive-field/",
         member_views.reveal_sensitive_field,

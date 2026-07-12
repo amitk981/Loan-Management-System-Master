@@ -1,0 +1,12 @@
+Command:
+RALPH_EVIDENCE_DIR=.ralph/runs/2026-07-12_103847_repair/evidence/screenshots \
+E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python \
+npm run e2e -- e2e/member-governance-closure.e2e.spec.ts
+
+Result: Chromium blocked before test execution by the local macOS sandbox.
+Fatal browser log:
+mach_port_rendezvous.cc(399) Check failed: kr == KERN_SUCCESS.
+bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer: Permission denied (1100)
+
+No screenshot evidence is claimed from this blocked local run. Ralph's two trusted browser runs
+outside the coding sandbox own acceptance.

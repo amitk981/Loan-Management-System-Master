@@ -3,7 +3,7 @@ import json
 from django.test import Client, TestCase
 
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
-from sfpcl_credit.members.models import Member
+from sfpcl_credit.members.models import Member, MemberIdentityChangeRequest
 from sfpcl_credit.tests.api_contracts import assert_success_envelope
 
 
@@ -134,6 +134,54 @@ class MemberGovernanceApiTests(TestCase):
         self.assertEqual(forbidden.status_code, 403)
         self.assertEqual(Member.objects.count(), 0)
 
+    def test_duplicate_pan_and_aadhaar_are_field_errors_with_zero_writes(self):
+        payload = {
+            "member_type": "individual_farmer", "legal_name": "First", "display_name": "First",
+            "folio_number": "DUP-1", "pan": "ABCDE1234F", "aadhaar": "123412341234",
+            "registered_address": {}, "individual_profile": {"first_name": "First", "last_name": "Member"},
+        }
+        first = self.client.post("/api/v1/members/", data=payload, content_type="application/json", **self._headers())
+        self.assertEqual(first.status_code, 200)
+        headers = self._headers()
+        counts = (Member.objects.count(), AuditLog.objects.count())
+        payload.update({"folio_number": "DUP-2", "legal_name": "Second"})
+        duplicate = self.client.post("/api/v1/members/", data=payload, content_type="application/json", **headers)
+        self.assertEqual(duplicate.status_code, 400)
+        self.assertEqual(set(duplicate.json()["error"]["field_errors"]), {"pan", "aadhaar"})
+        self.assertEqual((Member.objects.count(), AuditLog.objects.count()), counts)
+
+    def test_update_with_membership_date_persists_json_safe_history(self):
+        updater = self._user("date-updater@sfpcl.example", "members.member.update")
+        member = Member.objects.create(
+            member_type="individual_farmer",
+            legal_name="Dated Member",
+            display_name="Dated Member",
+            folio_number="DATE-1",
+            membership_start_date="2024-04-01",
+            membership_status="active",
+            kyc_status="pending",
+            default_status="no_default",
+            created_by_user=self.creator,
+        )
+
+        response = self.client.patch(
+            f"/api/v1/members/{member.member_id}/",
+            data={
+                "display_name": "Dated Member Updated",
+                "membership_start_date": "2024-04-01",
+                "version": 1,
+            },
+            content_type="application/json",
+            **self._headers(updater),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        history = member.change_history.get()
+        self.assertEqual(history.old_value_json["membership_start_date"], "2024-04-01")
+        self.assertEqual(history.new_value_json["membership_start_date"], "2024-04-01")
+        json.dumps(history.old_value_json)
+        json.dumps(history.new_value_json)
+
     def test_verified_identity_requires_reverification_and_stale_writes_are_atomic(self):
         updater = self._user("updater@sfpcl.example", "members.member.update", "members.member.read")
         member = Member.objects.create(
@@ -163,15 +211,15 @@ class MemberGovernanceApiTests(TestCase):
         )
         self.assertEqual(changed.status_code, 200)
         member.refresh_from_db()
-        self.assertEqual(member.kyc_status, "pending")
-        self.assertEqual(member.version, 2)
-        history = member.change_history.get(change_type="reverification")
-        self.assertNotIn("PQRST6789U", json.dumps(history.new_value_json))
+        self.assertEqual(member.kyc_status, "verified")
+        self.assertEqual(member.version, 1)
+        self.assertEqual(MemberIdentityChangeRequest.objects.get().status, "pending")
+        self.assertNotIn("PQRST6789U", json.dumps(changed.json()))
 
         counts = (member.change_history.count(), AuditLog.objects.count())
         stale = self.client.patch(
             f"/api/v1/members/{member.member_id}/",
-            data={"email": "stale@example.test", "version": 1},
+            data={"email": "stale@example.test", "version": 0},
             content_type="application/json", **headers,
         )
         self.assertEqual(stale.status_code, 409)
@@ -179,8 +227,48 @@ class MemberGovernanceApiTests(TestCase):
 
         detail = self.client.get(f"/api/v1/members/{member.member_id}/", **headers)
         actions = {item["action_code"]: item for item in detail.json()["data"]["available_actions"]}
-        self.assertEqual(set(actions), {"members.member.update", "members.member.reverify_identity"})
+        self.assertEqual(set(actions), {"members.member.update", "members.member.reverify_identity", "members.member.identity_change.approve"})
         self.assertTrue(actions["members.member.update"]["enabled"])
         self.assertFalse(actions["members.member.reverify_identity"]["enabled"])
         for action in actions.values():
             self.assertEqual(len(action), 6)
+
+    def test_identity_change_requires_a_different_permissioned_approver(self):
+        requester = self._user("requester@sfpcl.example", "members.member.update", "members.member.read")
+        approver = self._user("approver@sfpcl.example", "members.member.identity_change.approve", "members.member.read")
+        member = Member.objects.create(
+            member_type="individual_farmer", legal_name="Governed Farmer", display_name="Governed Farmer",
+            folio_number="GOV-1", membership_status="active", pan_encrypted="enc:v1:10:test:1234",
+            pan_hash="old-pan", aadhaar_encrypted="enc:v1:12:test:1234", aadhaar_hash="old-aadhaar",
+            kyc_status="verified", rekyc_due_date="2027-01-01", default_status="no_default",
+            created_by_user=self.creator,
+        )
+        requested = self.client.post(
+            f"/api/v1/members/{member.member_id}/identity-change-requests/",
+            data={"version": 1, "pan": "PQRST6789U", "reason": "Correction backed by source record"},
+            content_type="application/json", **self._headers(requester),
+        )
+        self.assertEqual(requested.status_code, 200)
+        change_request = MemberIdentityChangeRequest.objects.get()
+        self.assertEqual(change_request.status, "pending")
+        self.assertNotIn("PQRST6789U", json.dumps(requested.json()))
+        member.refresh_from_db()
+        self.assertEqual(member.pan_hash, "old-pan")
+
+        self_approval = self.client.post(
+            f"/api/v1/member-identity-change-requests/{change_request.identity_change_request_id}/approve/",
+            data={}, content_type="application/json", **self._headers(requester),
+        )
+        self.assertEqual(self_approval.status_code, 403)
+
+        approved = self.client.post(
+            f"/api/v1/member-identity-change-requests/{change_request.identity_change_request_id}/approve/",
+            data={}, content_type="application/json", **self._headers(approver),
+        )
+        self.assertEqual(approved.status_code, 200)
+        member.refresh_from_db(); change_request.refresh_from_db()
+        self.assertEqual(change_request.status, "approved")
+        self.assertEqual(member.kyc_status, "pending")
+        self.assertIsNone(member.rekyc_due_date)
+        self.assertEqual(member.version, 2)
+        self.assertNotEqual(member.pan_hash, "old-pan")

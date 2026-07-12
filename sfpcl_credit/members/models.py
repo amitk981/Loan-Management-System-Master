@@ -71,6 +71,10 @@ class Member(models.Model):
             models.Index(fields=["kyc_status"], name="idx_members_kyc_status"),
             models.Index(fields=["default_status"], name="idx_members_default_status"),
         ]
+        constraints = [
+            models.UniqueConstraint(fields=["pan_hash"], condition=~models.Q(pan_hash=""), name="uniq_member_pan_hash"),
+            models.UniqueConstraint(fields=["aadhaar_hash"], condition=~models.Q(aadhaar_hash=""), name="uniq_member_aadhaar_hash"),
+        ]
 
     def __str__(self):
         return self.member_number or str(self.member_id)
@@ -94,6 +98,25 @@ class MemberChangeHistory(models.Model):
     class Meta:
         db_table = "member_change_history"
         ordering = ["created_at", "member_change_history_id"]
+
+
+class MemberIdentityChangeRequest(models.Model):
+    identity_change_request_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="identity_change_requests")
+    requester_user = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="requested_member_identity_changes")
+    approver_user = models.ForeignKey("identity.User", blank=True, null=True, on_delete=models.PROTECT, related_name="approved_member_identity_changes")
+    proposed_pan_encrypted = models.TextField(blank=True)
+    proposed_pan_hash = models.CharField(max_length=128, blank=True)
+    proposed_aadhaar_encrypted = models.TextField(blank=True)
+    proposed_aadhaar_hash = models.CharField(max_length=128, blank=True)
+    reason = models.TextField()
+    member_version = models.PositiveIntegerField()
+    status = models.CharField(max_length=20, default="pending", db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    approved_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = "member_identity_change_requests"
 
 
 class IndividualMemberProfile(models.Model):

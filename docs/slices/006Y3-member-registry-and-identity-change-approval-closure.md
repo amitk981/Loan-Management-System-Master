@@ -1,7 +1,7 @@
 # Slice 006Y3: Member Registry and Identity Change Approval Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master
@@ -87,4 +87,3 @@ High
   approval, and every mutation is safe through the public Member Registry interface.
 - Full source payload variants, duplicate rejection, masked field history, and routed staff flows
   are proven end to end without changing the approved visual system.
-

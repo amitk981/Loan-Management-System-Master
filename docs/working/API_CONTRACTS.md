@@ -2172,3 +2172,18 @@ not supplement this resource projection from `/auth/me.available_actions`.
   although 006Y2 asks for an edit surface. The UI does not invent an edit request. Correction stays
   deferred until a backend contract names editable fields, optimistic version semantics, a resource
   action/permission, immutable-evidence behavior, and audit rules.
+
+## Member Registry and approved identity change (006Y3)
+
+- `POST /api/v1/members/{member_id}/identity-change-requests/` requires
+  `members.member.update`, current `version`, a reason, and at least one valid PAN/Aadhaar. It
+  persists protected proposed values and returns only request metadata; the member remains verified
+  and unchanged until approval. The legacy `/reverification/` route is a compatibility adapter to
+  this request operation.
+- `POST /api/v1/member-identity-change-requests/{request_id}/approve/` requires the dedicated
+  `members.member.identity_change.approve` permission and a different actor. It applies a pending,
+  current-version request once, resets KYC to pending, clears the re-KYC due date, increments member
+  version, and writes masked history/audit. Stale or repeated approval returns `409`.
+- Member detail includes nullable `pending_identity_change` metadata and six-field request/approval
+  actions. Duplicate PAN/Aadhaar create attempts return `400 VALIDATION_ERROR` field errors and the
+  database also enforces nonblank hash uniqueness.

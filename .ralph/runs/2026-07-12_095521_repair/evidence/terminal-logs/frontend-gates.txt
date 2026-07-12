@@ -1,0 +1,72 @@
+
+> sfpcl-lms@1.0.0 build
+> vite build
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+vite v5.4.21 building for production...
+transforming...
+✓ 1872 modules transformed.
+[plugin:vite:reporter] [plugin vite:reporter] 
+(!) /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms/src/services/memberProfileApi.ts is dynamically imported by /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms/src/pages/members/MemberProfile.tsx but also statically imported by /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms/src/pages/applications/NewApplication.tsx, /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms/src/pages/members/Borrower360.tsx, /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms/src/pages/members/MemberGovernanceForm.tsx, /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms/src/pages/members/MemberProfile.tsx, dynamic import will not move module into another chunk.
+
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.75 kB │ gzip:   0.43 kB
+dist/assets/index-BAE8F0XK.css     51.80 kB │ gzip:   8.98 kB
+dist/assets/index-p0BguzlA.js   1,141.10 kB │ gzip: 245.23 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.32s
+
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+
+> sfpcl-lms@1.0.0 lint
+> eslint src
+
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms
+
+ ✓ src/pages/Dashboard.test.tsx (13 tests) 59ms
+ ✓ src/pages/applications/CompletenessWorkbench.test.tsx (5 tests) 78ms
+ ✓ src/pages/applications/ApplicationDetail.test.tsx (9 tests) 85ms
+ ✓ src/pages/members/Borrower360.test.tsx (4 tests) 98ms
+ ✓ src/pages/members/MemberProfile.test.tsx (26 tests) 219ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.test.tsx (22 tests) 226ms
+ ✓ src/pages/notifications/NotificationsCenter.test.tsx (6 tests) 43ms
+ ✓ src/pages/borrower/portal/PortalMemberViews.test.tsx (4 tests) 47ms
+ ✓ src/pages/applications/ApplicationList.test.tsx (2 tests) 29ms
+ ✓ src/pages/members/MemberDirectory.test.tsx (5 tests) 33ms
+ ✓ src/services/authSession.test.ts (15 tests) 18ms
+ ✓ src/pages/sanction/SanctionWorkbench.test.tsx (2 tests) 15ms
+ ✓ src/services/applicationIntakeApi.test.ts (5 tests) 7ms
+ ✓ src/pages/profile/MyProfile.test.tsx (1 test) 15ms
+ ✓ src/services/creditAssessmentApi.test.ts (5 tests) 7ms
+ ✓ src/pages/borrower/portal/auth/MP00_Login.test.tsx (2 tests) 13ms
+ ✓ src/pages/applications/NomineeSelectionViews.test.tsx (3 tests) 12ms
+ ✓ src/contexts/RoleContext.test.tsx (2 tests) 6ms
+ ✓ src/services/navigationPermissions.test.ts (7 tests) 6ms
+ ✓ src/services/portalApi.test.ts (4 tests) 6ms
+ ✓ src/utils/applicationDisplay.test.ts (5 tests) 4ms
+ ✓ src/services/tracerApi.test.ts (2 tests) 9ms
+ ✓ src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx (2 tests) 3ms
+ ✓ src/services/demoAuthFlag.test.tsx (3 tests) 2069ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > fails closed when the flag is unset  1870ms
+ ✓ src/pages/members/MemberGovernanceForm.test.tsx (3 tests) 560ms
+   ✓ MemberGovernanceForm > submits the institution create variant without individual identity/profile fields  448ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.container.test.tsx (14 tests) 921ms
+
+ Test Files  26 passed (26)
+      Tests  171 passed (171)
+   Start at  10:00:20
+   Duration  3.57s (transform 2.74s, setup 0ms, collect 4.97s, tests 4.59s, environment 658ms, prepare 1.52s)
+

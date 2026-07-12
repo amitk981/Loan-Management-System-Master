@@ -49,10 +49,13 @@ const MemberGovernanceForm: React.FC<Props> = ({ profile, canReverify = false, o
       ...(values.pan ? { pan: values.pan } : {}), ...(values.aadhaar && memberType === 'individual_farmer' ? { aadhaar: values.aadhaar } : {}), reason: values.reason,
     });
     try {
-      const saved = profile
-        ? mode === 'reverification' ? await reverifyMemberIdentity(profile.member_id, payload) : await updateMember(profile.member_id, payload)
-        : await createMember(payload);
-      await onSaved(saved);
+      if (profile && mode === 'reverification') {
+        await reverifyMemberIdentity(profile.member_id, payload);
+        await onSaved(profile);
+      } else {
+        const saved = profile ? await updateMember(profile.member_id, payload) : await createMember(payload);
+        await onSaved(saved);
+      }
     } catch (error) {
       if (error instanceof AuthSessionError) { setErrors(error.fieldErrors ?? {}); setMessage(error.code === 'STALE_WRITE' ? 'Member changed on the server. Refresh and retry.' : error.message); }
       else setMessage('Unable to save member.');
@@ -68,7 +71,7 @@ const MemberGovernanceForm: React.FC<Props> = ({ profile, canReverify = false, o
     {identityLocked && <AlertBanner type="info" title="Verified identity locked" message="PAN and Aadhaar are read-only. Use the reasoned reverification action to correct them." />}
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{field('pan', 'PAN', 'text', identityLocked)}{memberType === 'individual_farmer' && field('aadhaar', 'Aadhaar', 'text', identityLocked)}{profile && mode === 'reverification' && field('reason', 'Reverification Reason')}</div>
     {profile && canReverify && <button type="button" className="btn-secondary text-sm" onClick={() => { setMode(current => current === 'ordinary' ? 'reverification' : 'ordinary'); set('pan', ''); set('aadhaar', ''); set('reason', ''); }}>{mode === 'ordinary' ? 'Correct verified identity' : 'Cancel reverification'}</button>}
-    <button className="btn-primary text-sm" disabled={submitting || (mode === 'reverification' && (!values.reason.trim() || (!values.pan && !values.aadhaar)))}>{submitting ? 'Saving…' : mode === 'reverification' ? 'Start reverification' : 'Save member'}</button>
+    <button className="btn-primary text-sm" disabled={submitting || (mode === 'reverification' && (!values.reason.trim() || (!values.pan && !values.aadhaar)))}>{submitting ? 'Saving…' : mode === 'reverification' ? 'Request identity change' : 'Save member'}</button>
   </form>;
 };
 

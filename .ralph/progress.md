@@ -1,5 +1,41 @@
 # Ralph Progress Log
 
+## 2026-07-12 10:36 - 2026-07-12_103055_repair
+- Agent tool used: codex with the diagnosing-bugs workflow.
+- Slice repaired: `006Y3-member-registry-and-identity-change-approval-closure`.
+- Finding: the real approval mutation button and the resource-action projection intentionally share
+  the accessible name `Approve identity change`; the E2E contract used an ambiguous global locator
+  and failed Playwright strict mode before approval in both trusted runs.
+- Fix: scope approval visibility, click, and disappearance assertions to the existing primary
+  mutation control. No production UI or business behavior changed.
+- Tests run: Playwright collection; frontend build/typecheck/lint and 171 tests; backend check,
+  migration sync, and 415 tests at 94% coverage. Local Chromium remained sandbox-denied before the
+  test body; independent validation owns both trusted browser runs and five screenshots.
+- Evidence: `.ralph/runs/2026-07-12_103055_repair/`. Next: already-sharpened 006Y4, then 006Z.
+
+## 2026-07-12 10:10 - 2026-07-12_100436_repair
+- Agent tool used: codex with the diagnosing-bugs and TDD workflows.
+- Slice repaired: `006Y3-member-registry-and-identity-change-approval-closure`.
+- Finding: the trusted browser's canonical member update included `membership_start_date`; complete
+  change history passed the resulting Python `date` to a JSONField and returned `500`.
+- Fix: normalize old/new membership dates to ISO strings at the masked history boundary and add a
+  failing-first API regression through the public member update seam.
+- Tests run: focused backend red/green; Playwright collection; frontend build/typecheck/lint and
+  171 tests; backend check/migration sync and 415 tests at 94% coverage.
+- Evidence: `.ralph/runs/2026-07-12_100436_repair/`. Local Chromium was sandbox-denied before the
+  test body; independent validation owns both trusted browser runs and five screenshots.
+- Risk: High. Next: already-sharpened 006Y4, then 006Z.
+
+## 2026-07-12 09:53 - 2026-07-12_094433_normal_run
+- Agent tool used: codex with the TDD workflow.
+- Slice completed: `006Y3-member-registry-and-identity-change-approval-closure`.
+- Summary: Added the permission-safe Member Registry seam, duplicate identity constraints/errors,
+  complete masked nested/address history, persisted optimistic identity-change requests, separate
+  checker approval, resource actions, and staff request/approval/refetch wiring.
+- Tests run: focused backend red/green; frontend build/typecheck/lint and 171 tests; backend check,
+  migration sync, and 414 tests at 94% coverage.
+- Evidence: `.ralph/runs/2026-07-12_094433_normal_run/`. Risk: High. Next: 006Y4, then 006Z.
+
 ## 2026-07-12 09:25 - 2026-07-12_092009_architecture_review
 - Agent tool used: codex with independent Standards/Spec review axes and to-issues slice shaping.
 - Slice attempted: `architecture-review`; production code was not changed.
@@ -3689,6 +3725,37 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_093545_normal_run/.ralph/runs/2026-07-12_093545_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_093545_normal_run/.ralph/runs/2026-07-12_093545_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+# Repair 2026-07-12_095521_repair
+
+- Repaired 006Y3's independent browser failure by replacing the inherited 006Y2 visual-baseline
+  flow with the five-state real-session governance contract declared by the slice.
+- Added failing-first coverage proving the isolated E2E Credit Manager receives member read and
+  identity-change approval authority; the production permission remains unassigned by default.
+- Frontend build/typecheck/lint and 171 tests passed; backend check/migration sync and 414 tests
+  passed at 94% coverage. Playwright collection passed; local Chromium hit the documented macOS
+  Mach service sandbox denial before test execution.
+- Next action: independent validation runs the trusted browser contract twice, then 006Y4.
+
+# Repair 2026-07-12_103847_repair
+
+- Repaired 006Y3's final trusted-browser mismatch by aligning the zero-permission denial assertion
+  with the established `403 FORBIDDEN` API contract; no production behavior changed.
+- Frontend build/typecheck/lint and 171 tests passed; backend check/migration sync and 415 tests
+  passed at 94% coverage. Playwright collection passed; local Chromium hit the documented macOS
+  Mach service sandbox denial before test execution.
+- Next action: independent validation runs the trusted browser contract twice and requires all five
+  screenshots, then 006Y4.
+
+## 2026-07-12 10:47:04 - 2026-07-12_103847_repair
+- Agent tool used: codex
+- Slice attempted: 006Y3-member-registry-and-identity-change-approval-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/.ralph/runs/2026-07-12_103847_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/.ralph/runs/2026-07-12_103847_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

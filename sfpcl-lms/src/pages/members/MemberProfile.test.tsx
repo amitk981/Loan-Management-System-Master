@@ -58,7 +58,7 @@ describe('member profile API client', () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:8000/api/v1/members/', expect.objectContaining({ method: 'POST', body: JSON.stringify({ member_type: 'individual_farmer', legal_name: 'Test Member' }) }));
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://127.0.0.1:8000/api/v1/members/member-1/', expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ version: 1, email: 'member@example.test' }) }));
-    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://127.0.0.1:8000/api/v1/members/member-1/reverification/', expect.objectContaining({ method: 'POST', body: JSON.stringify({ version: 2, pan: 'ABCDE1234F', reason: 'Source correction' }) }));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://127.0.0.1:8000/api/v1/members/member-1/identity-change-requests/', expect.objectContaining({ method: 'POST', body: JSON.stringify({ version: 2, pan: 'ABCDE1234F', reason: 'Source correction' }) }));
   });
   it('loads a member profile detail from the backend with the stored bearer token', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(ok(member));

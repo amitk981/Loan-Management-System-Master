@@ -1,0 +1,25 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006Y3-member-registry-and-identity-change-approval-closure.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M sfpcl-lms/e2e/member-governance-closure.e2e.spec.ts
+ M sfpcl-lms/src/pages/members/MemberGovernanceForm.test.tsx
+ M sfpcl-lms/src/pages/members/MemberGovernanceForm.tsx
+ M sfpcl-lms/src/pages/members/MemberProfile.test.tsx
+ M sfpcl-lms/src/pages/members/MemberProfile.tsx
+ M sfpcl-lms/src/services/memberProfileApi.ts
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/identity/catalogue.py
+ M sfpcl_credit/identity/management/commands/seed_e2e_users.py
+ M sfpcl_credit/members/models.py
+ M sfpcl_credit/members/services.py
+ M sfpcl_credit/members/views.py
+ M sfpcl_credit/tests/test_member_governance_api.py
+ M sfpcl_credit/tests/test_member_profile_api.py
+ M sfpcl_credit/tests/test_seed_e2e_users.py
+?? .ralph/runs/2026-07-12_094433_normal_run/
+?? .ralph/runs/2026-07-12_095521_repair/
+?? sfpcl_credit/members/migrations/0010_member_identity_change_request.py
+?? sfpcl_credit/members/modules/

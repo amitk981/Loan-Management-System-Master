@@ -41,6 +41,7 @@ PERMISSIONS = [
     ("members.member.read", "View member list / details", "medium"),
     ("members.member.create", "Create member", "high"),
     ("members.member.update", "Update member", "high"),
+    ("members.member.identity_change.approve", "Approve member identity change", "high"),
     ("members.member.deactivate", "Deactivate member", "critical"),
     ("members.sensitive.reveal_pan", "Reveal full PAN", "critical"),
     ("members.sensitive.reveal_aadhaar", "Reveal full Aadhaar", "critical"),

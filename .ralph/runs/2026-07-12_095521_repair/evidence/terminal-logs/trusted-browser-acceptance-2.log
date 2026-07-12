@@ -1,0 +1,150 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/.ralph/runs/2026-07-12_095521_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-governance-closure.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-governance-closure.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 04:33:42] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "GET /api/v1/auth/me/ HTTP/1.1" 200 1671
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "GET /api/v1/members/ HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "GET /api/v1/members/ HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "POST /api/v1/members/ HTTP/1.1" 200 2250
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "OPTIONS /api/v1/members/39d3ad2f-1d9a-45ca-81da-6675457bf1d9/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "OPTIONS /api/v1/members/39d3ad2f-1d9a-45ca-81da-6675457bf1d9/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "GET /api/v1/members/39d3ad2f-1d9a-45ca-81da-6675457bf1d9/ HTTP/1.1" 200 2250
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "GET /api/v1/members/39d3ad2f-1d9a-45ca-81da-6675457bf1d9/ HTTP/1.1" 200 2250
+[2m[WebServer] [22mInternal Server Error: /api/v1/members/39d3ad2f-1d9a-45ca-81da-6675457bf1d9/
+[2m[WebServer] [22mTraceback (most recent call last):
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+[2m[WebServer] [22m    response = get_response(request)
+[2m[WebServer] [22m               ^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+[2m[WebServer] [22m    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+[2m[WebServer] [22m               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+[2m[WebServer] [22m    return func(request, *args, **kwargs)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl_credit/members/views.py", line 61, in member_detail
+[2m[WebServer] [22m    return _member_update_response(request, member_id, user, reverification=False)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl_credit/members/views.py", line 118, in _member_update_response
+[2m[WebServer] [22m    member = MemberRegistry.update(member_id, parse_json_body(request), user, request_ip(request), request_user_agent(request))
+[2m[WebServer] [22m             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl_credit/members/modules/member_registry.py", line 25, in update
+[2m[WebServer] [22m    return services.update_member(member_id, payload, actor_user, request_ip_value=request_ip_value, request_user_agent_value=request_user_agent_value)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+[2m[WebServer] [22m    return func(*args, **kwds)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl_credit/members/services.py", line 292, in update_member
+[2m[WebServer] [22m    MemberChangeHistory.objects.create(
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+[2m[WebServer] [22m    return getattr(self.get_queryset(), name)(*args, **kwargs)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 679, in create
+[2m[WebServer] [22m    obj.save(force_insert=True, using=self.db)
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 822, in save
+[2m[WebServer] [22m    self.save_base(
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 909, in save_base
+[2m[WebServer] [22m    updated = self._save_table(
+[2m[WebServer] [22m              ^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 1071, in _save_table
+[2m[WebServer] [22m    results = self._do_insert(
+[2m[WebServer] [22m              ^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 1112, in _do_insert
+[2m[WebServer] [22m    return manager._insert(
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+[2m[WebServer] [22m    return getattr(self.get_queryset(), name)(*args, **kwargs)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1847, in _insert
+[2m[WebServer] [22m    return query.get_compiler(using=using).execute_sql(returning_fields)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1822, in execute_sql
+[2m[WebServer] [22m    for sql, params in self.as_sql():
+[2m[WebServer] [22m                       ^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1745, in as_sql
+[2m[WebServer] [22m    value_rows = [
+[2m[WebServer] [22m                 ^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1746, in <listcomp>
+[2m[WebServer] [22m    [
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1747, in <listcomp>
+[2m[WebServer] [22m    self.prepare_value(field, self.pre_save_val(field, obj))
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1686, in prepare_value
+[2m[WebServer] [22m    return field.get_db_prep_save(value, connection=self.connection)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/fields/json.py", line 136, in get_db_prep_save
+[2m[WebServer] [22m    return self.get_db_prep_value(value, connection)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/fields/json.py", line 131, in get_db_prep_value
+[2m[WebServer] [22m    return connection.ops.adapt_json_value(value, self.encoder)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/backends/base/operations.py", line 594, in adapt_json_value
+[2m[WebServer] [22m    return json.dumps(value, cls=encoder)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/__init__.py", line 231, in dumps
+[2m[WebServer] [22m    return _default_encoder.encode(obj)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/encoder.py", line 200, in encode
+[2m[WebServer] [22m    chunks = self.iterencode(o, _one_shot=True)
+[2m[WebServer] [22m             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/encoder.py", line 258, in iterencode
+[2m[WebServer] [22m    return _iterencode(o, 0)
+[2m[WebServer] [22m           ^^^^^^^^^^^^^^^^^
+[2m[WebServer] [22m  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/json/encoder.py", line 180, in default
+[2m[WebServer] [22m    raise TypeError(f'Object of type {o.__class__.__name__} '
+[2m[WebServer] [22mTypeError: Object of type date is not JSON serializable
+[2m[WebServer] [22m[12/Jul/2026 04:33:45] "PATCH /api/v1/members/39d3ad2f-1d9a-45ca-81da-6675457bf1d9/ HTTP/1.1" 500 23314
+  ✘  1 [chromium] › member-governance-closure.e2e.spec.ts:15:5 › member creation, canonical update, approved identity correction, and denial use real sessions (2.3s)
+
+
+  1) [chromium] › member-governance-closure.e2e.spec.ts:15:5 › member creation, canonical update, approved identity correction, and denial use real sessions 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m200[39m
+    Received: [31m500[39m
+
+      46 |   const updatedCanonical = waitForCanonicalMember(page);
+      47 |   await page.getByRole('button', { name: 'Save member' }).click();
+    > 48 |   expect((await updated).status()).toBe(200);
+         |                                    ^
+      49 |   expect((await updatedCanonical).status()).toBe(200);
+      50 |   await expect(page.getByRole('heading', { name: 'Governance Closure Farmer Updated' })).toBeVisible();
+      51 |   await capture(page, 'member-update-refetched.png');
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms/e2e/member-governance-closure.e2e.spec.ts:48:36
+
+    Error: page.waitForResponse: Test ended.
+
+      111 |     ? new RegExp(`/api/v1/members/${memberId}/$`)
+      112 |     : /\/api\/v1\/members\/[0-9a-f-]+\/$/;
+    > 113 |   return page.waitForResponse(response => response.request().method() === 'GET' && pathname.test(new URL(response.url()).pathname));
+          |               ^
+      114 | }
+      115 |
+      116 | async function browserPost(page: Page, pathname: string, body: Record<string, unknown>) {
+        at waitForCanonicalMember (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms/e2e/member-governance-closure.e2e.spec.ts:113:15)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms/e2e/member-governance-closure.e2e.spec.ts:46:28
+
+  1 failed
+    [chromium] › member-governance-closure.e2e.spec.ts:15:5 › member creation, canonical update, approved identity correction, and denial use real sessions 
+
+Exit code: 1

@@ -74,6 +74,7 @@ export interface MemberProfileDetail {
     disabled_reason: string | null;
     required_permission: string;
   }[];
+  pending_identity_change?: { identity_change_request_id: string; status: string } | null;
 }
 
 export type MemberMutationPayload = Record<string, unknown>;
@@ -90,8 +91,14 @@ export const updateMember = async (memberId: string, payload: MemberMutationPayl
   return normalize(envelope.data);
 };
 
-export const reverifyMemberIdentity = async (memberId: string, payload: MemberMutationPayload): Promise<MemberProfileDetail> => {
-  const envelope = await request<MemberProfileDetail>(`/api/v1/members/${memberId}/reverification/`, 'POST', payload);
+export const reverifyMemberIdentity = async (memberId: string, payload: MemberMutationPayload): Promise<{ identity_change_request_id: string; member_id: string; status: string; member_version: number }> => {
+  const envelope = await request<{ identity_change_request_id: string; member_id: string; status: string; member_version: number }>(`/api/v1/members/${memberId}/identity-change-requests/`, 'POST', payload);
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return envelope.data;
+};
+
+export const approveMemberIdentityChange = async (requestId: string): Promise<MemberProfileDetail> => {
+  const envelope = await request<MemberProfileDetail>(`/api/v1/member-identity-change-requests/${requestId}/approve/`, 'POST', {});
   if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
   return normalize(envelope.data);
 };

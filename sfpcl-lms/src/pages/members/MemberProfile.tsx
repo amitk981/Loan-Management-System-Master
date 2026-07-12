@@ -427,6 +427,7 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
 
   const updateAction = profile?.available_actions.find(action => action.action_code === 'members.member.update');
   const reverifyAction = profile?.available_actions.find(action => action.action_code === 'members.member.reverify_identity');
+  const approveIdentityAction = profile?.available_actions.find(action => action.action_code === 'members.member.identity_change.approve');
   const refreshProfile = async () => {
     const canonical = await fetchMemberProfile(memberId);
     setProfile(canonical);
@@ -434,6 +435,7 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
   };
 
   return <>
+    {profile?.pending_identity_change && approveIdentityAction?.enabled && <div className="p-6 pb-0"><button className="btn-primary text-sm" onClick={async () => { const { approveMemberIdentityChange } = await import('../../services/memberProfileApi'); await approveMemberIdentityChange(profile.pending_identity_change!.identity_change_request_id); await refreshProfile(); }}>Approve identity change</button></div>}
     {profile && updateAction?.enabled && <div className="p-6 pb-0"><MemberGovernanceForm profile={profile} canReverify={Boolean(reverifyAction?.enabled)} onSaved={refreshProfile} /></div>}
     <MemberProfileView
       status={status}

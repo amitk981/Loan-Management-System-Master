@@ -1,24 +1,23 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-12_093545_normal_run
+2026-07-12_103847_repair
 
 ## Current Status
 
-006X4 is complete. The credit action/write trace enumerates all eligibility, limit, appraisal,
-review-decision, and sanction actions. Appraisal projections now return the same stable permission
-denial text as their public writes, and denial preserves state/evidence. The authoritative five-race
-PostgreSQL suite and ADR-0005 dependency scan pass. Member-governance findings from the prior review
-remain queued for 006Y3 and 006Y4.
+006Y3 remains complete. This repair fixed the final trusted-browser contract mismatch: the
+zero-permission identity-change denial correctly returns the repository-standard `403 FORBIDDEN`,
+but the E2E spec expected the retired `PERMISSION_DENIED` code. Only that assertion changed;
+production UI, backend behavior, permissions, and governance rules were unchanged.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-12_093545_normal_run/`. Frontend build/typecheck/lint and 171
-tests pass. Backend check/migration sync and 412 tests pass at 94% coverage. The focused matrix,
-five PostgreSQL races, and dependency scan are green.
+Repair evidence is under `.ralph/runs/2026-07-12_103847_repair/`. Frontend build/typecheck/lint and
+171 tests pass. Backend check/migration sync and 415 tests pass at 94% coverage. Playwright
+collection passes. Local Chromium remains blocked before test execution by macOS Mach service
+sandboxing; Ralph's two independent trusted-browser runs own final five-screenshot acceptance.
 
 ## Next Run
 
-Run High-risk 006Y3 for the Member Registry, duplicates/history, approved identity-change request,
-complete member forms, and real browser mutations; then run 006Y4 for governed witness correction
-and resource actions. Both next slices were already concretely sharpened by the architecture review.
+Run High-risk 006Y4 for governed witness correction and resource actions, then 006Z for persisted
+produce-supply evidence. Both slices are already concretely sharpened from opened Epic 004 material.

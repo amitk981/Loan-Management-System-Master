@@ -1,4 +1,5 @@
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import IntegrityError
 from django.views.decorators.http import require_GET, require_http_methods
 
 from sfpcl_credit.api import (
@@ -11,6 +12,7 @@ from sfpcl_credit.api import (
 )
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.members import services
+from sfpcl_credit.members.modules import MemberRegistry
 
 
 @require_http_methods(["GET", "POST"])
@@ -19,14 +21,16 @@ def member_collection(request):
     if response is not None:
         return response
     if request.method == "POST":
-        if not services.user_can_create_members(user):
-            return error_response(request, 403, "FORBIDDEN", "You do not have permission to create members.")
         try:
-            member = services.create_member(
+            member = MemberRegistry.create(
                 parse_json_body(request), user, request_ip(request), request_user_agent(request)
             )
+        except PermissionDenied as exc:
+            return error_response(request, 403, "FORBIDDEN", str(exc))
         except ValidationError as exc:
             return error_response(request, 400, "VALIDATION_ERROR", "Member payload failed validation.", services.validation_field_errors(exc))
+        except IntegrityError:
+            return error_response(request, 400, "VALIDATION_ERROR", "Member identity already exists.", {"pan": "PAN or Aadhaar already belongs to a member.", "aadhaar": "PAN or Aadhaar already belongs to a member."})
         return success_response(services.serialize_member_profile(member, user), request)
     if not services.user_can_read_members(user):
         return error_response(
@@ -54,8 +58,6 @@ def member_detail(request, member_id):
     if response is not None:
         return response
     if request.method == "PATCH":
-        if not services.user_can_update_members(user):
-            return error_response(request, 403, "FORBIDDEN", "You do not have permission to update members.")
         return _member_update_response(request, member_id, user, reverification=False)
     if not services.user_can_read_members(user):
         return error_response(
@@ -77,15 +79,45 @@ def member_reverification(request, member_id):
         return response
     if not services.user_can_update_members(user):
         return error_response(request, 403, "FORBIDDEN", "You do not have permission to update members.")
-    return _member_update_response(request, member_id, user, reverification=True)
+    return member_identity_change_requests(request, member_id)
+
+
+@require_http_methods(["POST"])
+def member_identity_change_requests(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None: return response
+    try:
+        change = MemberRegistry.request_identity_change(member_id, parse_json_body(request), user)
+    except PermissionDenied as exc:
+        return error_response(request, 403, "FORBIDDEN", str(exc))
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Identity change request failed validation.", services.validation_field_errors(exc))
+    if change is None: return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+    return success_response({"identity_change_request_id": str(change.identity_change_request_id), "member_id": str(change.member_id), "status": change.status, "member_version": change.member_version}, request)
+
+
+@require_http_methods(["POST"])
+def approve_member_identity_change(request, request_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None: return response
+    try:
+        parse_json_body(request)
+        member = MemberRegistry.approve_identity_change(request_id, user)
+    except PermissionDenied as exc:
+        return error_response(request, 403, "FORBIDDEN", str(exc))
+    except services.MemberWriteConflict as exc:
+        return error_response(request, 409, exc.code, exc.message, exc.field_errors)
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Approval payload failed validation.", services.validation_field_errors(exc))
+    if member is None: return error_response(request, 404, "NOT_FOUND", "Identity change request was not found.")
+    return success_response(services.serialize_member_profile(member, user), request)
 
 
 def _member_update_response(request, member_id, user, reverification):
     try:
-        member = services.update_member(
-            member_id, parse_json_body(request), user, reverification=reverification,
-            request_ip_value=request_ip(request), request_user_agent_value=request_user_agent(request),
-        )
+        member = MemberRegistry.update(member_id, parse_json_body(request), user, request_ip(request), request_user_agent(request))
+    except PermissionDenied as exc:
+        return error_response(request, 403, "FORBIDDEN", str(exc))
     except services.MemberWriteConflict as exc:
         if exc.audit_rejection:
             services.audit_identity_change_rejected(

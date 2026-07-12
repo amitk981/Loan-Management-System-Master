@@ -1,0 +1,7 @@
+Backend gate results (all commands used /Users/amitkallapa/LMS/.ralph/venv/bin/python):
+
+- `manage.py check`: PASS; system check identified no issues.
+- `manage.py makemigrations --check --dry-run`: PASS; no changes detected.
+- targeted MemberGovernanceApiTests identity-change approval test: PASS; 1 test in 0.024s.
+- full `coverage run manage.py test`: PASS; 415 tests in 45.607s, 5 skipped.
+- `coverage report --fail-under=85`: PASS; 16149 statements, 1010 missed, 94% total.

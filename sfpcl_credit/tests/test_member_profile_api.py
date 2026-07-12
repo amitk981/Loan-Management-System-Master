@@ -202,7 +202,7 @@ class MemberProfileApiTests(TestCase):
         assert_available_actions_shape(self, data["available_actions"])
         self.assertEqual(
             {action["action_code"] for action in data["available_actions"]},
-            {"members.member.update", "members.member.reverify_identity"},
+            {"members.member.update", "members.member.reverify_identity", "members.member.identity_change.approve"},
         )
         self.assertTrue(all(not action["enabled"] for action in data["available_actions"]))
         serialized = str(data).lower()

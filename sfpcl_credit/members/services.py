@@ -100,6 +100,12 @@ def _masked_change(field, value):
     return value
 
 
+def _masked_payload(value, key=""):
+    if isinstance(value, dict):
+        return {child: _masked_payload(item, child) for child, item in value.items()}
+    return _masked_change(key, value)
+
+
 @transaction.atomic
 def create_member(payload, actor_user, request_ip_value="", request_user_agent_value=""):
     allowed = {
@@ -126,6 +132,10 @@ def create_member(payload, actor_user, request_ip_value="", request_user_agent_v
         errors["aadhaar"] = "This field is required for an individual farmer."
     if aadhaar and not _AADHAAR_RE.fullmatch(aadhaar):
         errors["aadhaar"] = "Invalid Aadhaar format."
+    if pan and Member.objects.filter(pan_hash=identity_hash(pan), is_deleted=False).exists():
+        errors["pan"] = "A member with this PAN already exists."
+    if aadhaar and Member.objects.filter(aadhaar_hash=identity_hash(aadhaar), is_deleted=False).exists():
+        errors["aadhaar"] = "A member with this Aadhaar already exists."
     profile_payload = (
         payload.get("individual_profile") if member_type == "individual_farmer"
         else payload.get("producer_institution_profile")
@@ -174,9 +184,7 @@ def create_member(payload, actor_user, request_ip_value="", request_user_agent_v
         })
         ProducerInstitutionProfile.objects.create(member=member, **clean_profile)
     changed = sorted(payload.keys())
-    safe_new = {key: _masked_change(key, value) for key, value in payload.items() if key not in {
-        "individual_profile", "producer_institution_profile"
-    }}
+    safe_new = {key: _masked_payload(value, key) for key, value in payload.items()}
     safe_new["pan"] = _masked_change("pan", pan)
     if aadhaar:
         safe_new["aadhaar"] = _masked_change("aadhaar", aadhaar)
@@ -210,6 +218,15 @@ def _safe_member_values(member, fields):
     for field in fields:
         if field in _IDENTITY_FIELDS:
             result[field] = mask_protected_identity(getattr(member, f"{field}_encrypted"), 10 if field == "pan" else 12)
+        elif field == "registered_address":
+            result[field] = {
+                "line1": member.registered_address_line1, "line2": member.registered_address_line2,
+                "village_city": member.registered_village_city, "district": member.registered_district,
+                "state": member.registered_state, "pincode": member.registered_pincode,
+            }
+        elif field == "membership_start_date":
+            value = member.membership_start_date
+            result[field] = value.isoformat() if value else None
         else:
             result[field] = getattr(member, field, None)
     return result
@@ -521,6 +538,7 @@ def reveal_member_sensitive_field(
 
 
 def serialize_member_profile(member, user):
+    pending_change = member.identity_change_requests.filter(status="pending").order_by("created_at").first()
     return {
         **serialize_member(member),
         "membership_start_date": (
@@ -547,6 +565,7 @@ def serialize_member_profile(member, user):
         "individual_profile": _individual_profile(member),
         "producer_institution_profile": _producer_profile(member),
         "available_actions": _available_actions(member, user),
+        "pending_identity_change": ({"identity_change_request_id": str(pending_change.identity_change_request_id), "status": pending_change.status} if pending_change else None),
         "version": member.version,
     }
 
@@ -1935,6 +1954,8 @@ def _producer_profile(member):
 def _available_actions(member, user):
     can_update = user_can_update_members(user)
     locked = member.kyc_status == "verified"
+    request_pending = member.identity_change_requests.filter(status="pending").exists()
+    can_approve = "members.member.identity_change.approve" in auth_service.effective_permission_codes(user)
     return [
         {
             "action_code": "members.member.update", "label": "Update member",
@@ -1943,9 +1964,15 @@ def _available_actions(member, user):
         },
         {
             "action_code": "members.member.reverify_identity", "label": "Reverify identity",
-            "enabled": can_update and locked,
-            "disabled_reason": None if can_update and locked else ("Identity is not verified." if can_update else "Missing member update permission."),
+            "enabled": can_update and locked and not request_pending,
+            "disabled_reason": None if can_update and locked and not request_pending else ("An identity change request is already pending." if request_pending else ("Identity is not verified." if can_update else "Missing member update permission.")),
             "required_permission": MEMBER_UPDATE_PERMISSION, "required_role": None,
+        },
+        {
+            "action_code": "members.member.identity_change.approve", "label": "Approve identity change",
+            "enabled": can_approve and request_pending,
+            "disabled_reason": None if can_approve and request_pending else ("No identity change request is pending." if can_approve else "Missing identity change approval permission."),
+            "required_permission": "members.member.identity_change.approve", "required_role": None,
         },
     ]
 

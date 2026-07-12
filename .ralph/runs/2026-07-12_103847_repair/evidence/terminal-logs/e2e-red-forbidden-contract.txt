@@ -1,0 +1,21 @@
+Red-capable command executed twice by trusted validation for prior repair 2026-07-12_103055_repair:
+
+RALPH_EVIDENCE_DIR=.ralph/runs/2026-07-12_103055_repair/evidence/screenshots \
+E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python \
+npm run e2e -- e2e/member-governance-closure.e2e.spec.ts
+
+Both runs deterministically reached the final zero-permission identity-change request and received:
+
+HTTP status: 403
+Actual body subset: { "success": false, "error": { "code": "FORBIDDEN" } }
+Incorrect expected code: PERMISSION_DENIED
+
+Playwright failed at member-governance-closure.e2e.spec.ts:91 before capturing
+member-governance-denied.png. Four preceding mutation/refetch screenshots were produced.
+
+Contract evidence:
+- docs/working/API_CONTRACTS.md, "Shared authenticated permission denial (002J2)", establishes
+  HTTP 403 / FORBIDDEN for missing global permissions.
+- sfpcl_credit/members/views.py catches PermissionDenied from MemberRegistry and emits FORBIDDEN.
+
+The repair changes only the stale E2E expected code; the real denied mutation remains unchanged.

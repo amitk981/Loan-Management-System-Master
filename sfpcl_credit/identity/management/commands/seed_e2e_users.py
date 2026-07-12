@@ -47,7 +47,8 @@ EPIC_006_FINANCE_PERMISSIONS = (
     "credit.appraisal.submit_sanction", "credit.risk_assessment.manage",
 )
 EPIC_006_MANAGER_PERMISSIONS = (
-    "applications.loan_application.read", "credit.appraisal.review",
+    "applications.loan_application.read", "members.member.read",
+    "members.member.identity_change.approve", "credit.appraisal.review",
     "credit.appraisal.submit_sanction",
 )
 EPIC_006_DOCUMENT_TYPES = (

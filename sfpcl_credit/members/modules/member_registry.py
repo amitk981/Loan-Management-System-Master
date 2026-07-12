@@ -1,0 +1,76 @@
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
+from django.utils import timezone
+
+from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.members import services
+from sfpcl_credit.members.models import Member, MemberChangeHistory, MemberIdentityChangeRequest
+from sfpcl_credit.members.protected_identity import identity_hash, mask_protected_identity, protected_identity_token
+
+
+class MemberRegistry:
+    APPROVE_PERMISSION = "members.member.identity_change.approve"
+
+    @staticmethod
+    def create(payload, actor_user, request_ip_value="", request_user_agent_value=""):
+        if not services.user_can_create_members(actor_user):
+            raise PermissionDenied("You do not have permission to create members.")
+        return services.create_member(payload, actor_user, request_ip_value, request_user_agent_value)
+
+    @staticmethod
+    def update(member_id, payload, actor_user, request_ip_value="", request_user_agent_value=""):
+        if not services.user_can_update_members(actor_user):
+            raise PermissionDenied("You do not have permission to update members.")
+        return services.update_member(member_id, payload, actor_user, request_ip_value=request_ip_value, request_user_agent_value=request_user_agent_value)
+
+    @classmethod
+    @transaction.atomic
+    def request_identity_change(cls, member_id, payload, actor_user):
+        if not services.user_can_update_members(actor_user):
+            raise PermissionDenied("You do not have permission to update members.")
+        member = Member.objects.select_for_update().filter(member_id=member_id, is_deleted=False).first()
+        if member is None:
+            return None
+        version = payload.get("version")
+        reason = payload.get("reason")
+        pan, aadhaar = payload.get("pan"), payload.get("aadhaar")
+        errors = {}
+        if version != member.version: errors["version"] = "Version is stale."
+        if member.kyc_status != "verified": errors["member"] = "Identity changes require verified KYC."
+        if not isinstance(reason, str) or not reason.strip(): errors["reason"] = "A reason is required."
+        if not pan and not aadhaar: errors["pan"] = "At least one identity field is required."
+        if pan and (not isinstance(pan, str) or not services._PAN_RE.fullmatch(pan)): errors["pan"] = "Invalid PAN format."
+        if aadhaar and (not isinstance(aadhaar, str) or not services._AADHAAR_RE.fullmatch(aadhaar)): errors["aadhaar"] = "Invalid Aadhaar format."
+        if errors: raise ValidationError(errors)
+        return MemberIdentityChangeRequest.objects.create(
+            member=member, requester_user=actor_user, reason=reason.strip(), member_version=member.version,
+            proposed_pan_encrypted=protected_identity_token(pan, 10) if pan else "", proposed_pan_hash=identity_hash(pan) if pan else "",
+            proposed_aadhaar_encrypted=protected_identity_token(aadhaar, 12) if aadhaar else "", proposed_aadhaar_hash=identity_hash(aadhaar) if aadhaar else "",
+        )
+
+    @classmethod
+    @transaction.atomic
+    def approve_identity_change(cls, request_id, actor_user):
+        if cls.APPROVE_PERMISSION not in auth_service.effective_permission_codes(actor_user):
+            raise PermissionDenied("You do not have permission to approve identity changes.")
+        change = MemberIdentityChangeRequest.objects.select_for_update().select_related("member").filter(identity_change_request_id=request_id).first()
+        if change is None: return None
+        member = Member.objects.select_for_update().get(member_id=change.member_id)
+        if change.requester_user_id == actor_user.user_id: raise PermissionDenied("Requester cannot approve their own change.")
+        if change.status != "pending": raise services.MemberWriteConflict("IDENTITY_CHANGE_NOT_PENDING", "Identity change request is not pending.")
+        if member.version != change.member_version or member.kyc_status != "verified":
+            raise services.MemberWriteConflict("STALE_WRITE", "Member has changed; refresh and retry.")
+        old_values, new_values, changed = {}, {}, []
+        for field, length in (("pan", 10), ("aadhaar", 12)):
+            token = getattr(change, f"proposed_{field}_encrypted")
+            if token:
+                changed.append(field); old_values[field] = mask_protected_identity(getattr(member, f"{field}_encrypted"), length)
+                setattr(member, f"{field}_encrypted", token); setattr(member, f"{field}_hash", getattr(change, f"proposed_{field}_hash"))
+                new_values[field] = mask_protected_identity(token, length)
+        member.kyc_status = "pending"; member.rekyc_due_date = None; member.version += 1
+        member.updated_by_user = actor_user; member.updated_at = timezone.now(); member.save()
+        change.status = "approved"; change.approver_user = actor_user; change.approved_at = timezone.now(); change.save()
+        MemberChangeHistory.objects.create(member=member, actor_user=actor_user, change_type="identity_change_approved", changed_fields=changed, old_value_json=old_values, new_value_json=new_values, reason=change.reason)
+        AuditLog.objects.create(actor_user=actor_user, action="members.member.identity_change_approved", entity_type="member", entity_id=member.member_id, new_value_json={"request_id": str(change.identity_change_request_id), "changed_fields": changed})
+        return member

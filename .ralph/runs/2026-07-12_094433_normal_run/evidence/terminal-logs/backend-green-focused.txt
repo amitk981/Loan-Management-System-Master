@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 6 test(s).
+System check identified no issues (0 silenced).
+.....F
+======================================================================
+FAIL: test_verified_identity_requires_reverification_and_stale_writes_are_atomic (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_verified_identity_requires_reverification_and_stale_writes_are_atomic)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 193, in test_verified_identity_requires_reverification_and_stale_writes_are_atomic
+    self.assertEqual(stale.status_code, 409)
+AssertionError: 200 != 409
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.068s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

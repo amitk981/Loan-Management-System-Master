@@ -129,6 +129,10 @@ class SeedE2eUsersTests(TestCase):
             Permission.objects.filter(role_permissions__role=finance.primary_role)
             .values_list("permission_code", flat=True)
         )
+        manager_permissions = set(
+            Permission.objects.filter(role_permissions__role=manager.primary_role)
+            .values_list("permission_code", flat=True)
+        )
         self.assertIn("credit.appraisal.submit_sanction", finance_permissions)
         self.assertTrue(
             {
@@ -138,6 +142,12 @@ class SeedE2eUsersTests(TestCase):
                 "members.witness.read",
                 "members.witness.create",
             }.issubset(finance_permissions)
+        )
+        self.assertTrue(
+            {
+                "members.member.read",
+                "members.member.identity_change.approve",
+            }.issubset(manager_permissions)
         )
 
         application = LoanApplication.objects.select_related("member", "nominee").get(

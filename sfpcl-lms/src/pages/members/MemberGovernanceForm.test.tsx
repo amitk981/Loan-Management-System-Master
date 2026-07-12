@@ -42,6 +42,7 @@ describe('MemberGovernanceForm', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Correct verified identity' }));
     expect(screen.getByLabelText('Reverification Reason')).toBeTruthy();
     expect(screen.getByLabelText('PAN')).toHaveProperty('readOnly', false);
+    expect(screen.getByRole('button', { name: 'Request identity change' })).toBeTruthy();
   });
 
   it('sends the current version once and renders authoritative backend field errors inline', async () => {
