@@ -9,6 +9,7 @@ from django.utils import timezone
 from sfpcl_credit.applications.models import Witness, WitnessChangeHistory
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.identity.modules.object_permissions import evaluate_object_access
 from sfpcl_credit.members.protected_identity import identity_hash, mask_protected_identity, protected_identity_token
 
 
@@ -36,13 +37,28 @@ def evaluate_witness_correction(*, witness, actor_user, correction_kind, expecte
     permissions = auth_service.effective_permission_codes(actor_user)
     if WITNESS_UPDATE_PERMISSION not in permissions:
         return WitnessCorrectionEvaluation(False, "Missing witness update permission.", "FORBIDDEN")
-    # Local import keeps this module as the correction seam without making generic
-    # application serialization depend on HTTP adapters.
-    from sfpcl_credit.applications.services import evaluate_application_object_access
-
-    access = evaluate_application_object_access(
-        witness.loan_application, actor_user, WITNESS_UPDATE_PERMISSION, permissions
+    application = witness.loan_application
+    allow_global = (
+        "credit_manager" in actor_user.role_codes()
+        and application.current_stage == application.STAGE_CREDIT_ASSESSMENT
     )
+    access = evaluate_object_access(
+        actor_user_id=actor_user.user_id,
+        actor_team_codes=actor_user.team_codes(),
+        actor_permission_codes=permissions,
+        required_permission=WITNESS_UPDATE_PERMISSION,
+        object_owner_user_id=application.created_by_user_id,
+        allow_global=allow_global,
+    )
+    if not access.allowed and application.received_by_user_id != application.created_by_user_id:
+        access = evaluate_object_access(
+            actor_user_id=actor_user.user_id,
+            actor_team_codes=actor_user.team_codes(),
+            actor_permission_codes=permissions,
+            required_permission=WITNESS_UPDATE_PERMISSION,
+            object_owner_user_id=application.received_by_user_id,
+            allow_global=allow_global,
+        )
     if not access.allowed:
         return WitnessCorrectionEvaluation(
             False, "Witness is outside your application access scope.", "OBJECT_ACCESS_DENIED"
@@ -54,8 +70,25 @@ def evaluate_witness_correction(*, witness, actor_user, correction_kind, expecte
             "VERSION_CONFLICT",
         )
     if correction_kind == "identity" and witness.verified_by_user_id == actor_user.user_id:
-        return WitnessCorrectionEvaluation(False, MAKER_CHECKER_REASON, "MAKER_CHECKER_REQUIRED")
+        return WitnessCorrectionEvaluation(False, MAKER_CHECKER_REASON, "FORBIDDEN")
     return WitnessCorrectionEvaluation(True)
+
+
+def witness_correction_actions(*, witness, actor_user):
+    return [
+        {
+            "action_code": code,
+            "label": label,
+            "enabled": evaluation.allowed,
+            "disabled_reason": evaluation.reason,
+            "required_permission": WITNESS_UPDATE_PERMISSION,
+            "required_role": None,
+        }
+        for code, label, evaluation in (
+            ("correct_contact", "Correct Witness Contact", evaluate_witness_correction(witness=witness, actor_user=actor_user, correction_kind="contact")),
+            ("correct_identity", "Correct Witness Identity", evaluate_witness_correction(witness=witness, actor_user=actor_user, correction_kind="identity")),
+        )
+    ]
 
 
 @transaction.atomic

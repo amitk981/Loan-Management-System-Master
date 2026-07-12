@@ -3,6 +3,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as api from '../../services/applicationIntakeApi';
+import { AuthSessionError } from '../../services/authSession';
 import { WitnessPanel } from './ApplicationDetail';
 
 const action = (action_code: string) => ({ action_code, label: action_code, enabled: true, disabled_reason: null, required_permission: `members.witness.${action_code}`, required_role: null });
@@ -18,6 +19,26 @@ const witness: api.ApplicationWitness = {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe('mounted witness resource actions', () => {
+  it.each([
+    ['Contact', 400, 'VALIDATION_ERROR', { address: 'Server address error.' }],
+    ['Contact', 403, 'OBJECT_ACCESS_DENIED', {}],
+    ['Contact', 409, 'VERSION_CONFLICT', {}],
+    ['Identity', 400, 'VALIDATION_ERROR', { pan: 'Server PAN error.' }],
+    ['Identity', 403, 'FORBIDDEN', {}],
+    ['Identity', 409, 'VERSION_CONFLICT', {}],
+  ] as const)('retains %s correction server facts after one %i failure without refetch', async (kind, status, code, fieldErrors) => {
+    const fetch = vi.spyOn(api, 'fetchApplicationWitnesses').mockResolvedValue({ items: [witness], actions: [] });
+    const update = vi.spyOn(api, 'updateApplicationWitness').mockRejectedValue(new AuthSessionError(code, `Server ${code} reason.`, status, fieldErrors));
+    render(<WitnessPanel applicationId="application-1" />);
+    await userEvent.click(await screen.findByRole('button', { name: `Correct Witness ${kind}` }));
+    await userEvent.click(screen.getByRole('button', { name: `Save ${kind} Correction` }));
+    expect(await screen.findByText(`Server ${code} reason.`)).toBeTruthy();
+    for (const error of Object.values(fieldErrors)) expect(screen.getByText(error)).toBeTruthy();
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: `Save ${kind} Correction` })).toBeTruthy();
+  });
+
   it('captures with the exact body and refetches the canonical collection once', async () => {
     const fetch = vi.spyOn(api, 'fetchApplicationWitnesses')
       .mockResolvedValueOnce({ items: [], actions: [action('create')] })

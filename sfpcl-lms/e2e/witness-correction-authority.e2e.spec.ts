@@ -14,6 +14,12 @@ const APPLICATION_REFERENCE = 'LOE2E00601';
 const WITNESS_MEMBER_ID = '00000000-0000-4000-8000-000000000611';
 
 test('contact and maker-checker identity corrections persist through routed real sessions', async ({ page }) => {
+  const witnessRequests: Array<{ method: string; body: unknown }> = [];
+  page.on('request', request => {
+    if (/\/witnesses\/(?:[^/]+\/)?$/.test(new URL(request.url()).pathname)) {
+      witnessRequests.push({ method: request.method(), body: request.postDataJSON() });
+    }
+  });
   await staffLogin(page, FINANCE_EMAIL, E2E_PASSWORD);
   await openWitnessTab(page);
 
@@ -27,10 +33,15 @@ test('contact and maker-checker identity corrections persist through routed real
   await expect(page.getByText('Initial Witness Road')).toBeVisible();
 
   await page.getByRole('button', { name: 'Correct Witness Contact' }).click();
+  witnessRequests.length = 0;
   await page.getByLabel('Correction Address').fill('Canonical Contact Road');
   await page.getByLabel('Correction Mobile').fill('9123456780');
   await page.getByRole('button', { name: 'Save Contact Correction' }).click();
   await expect(page.getByText('Canonical Contact Road')).toBeVisible();
+  expect(witnessRequests).toEqual([
+    { method: 'PATCH', body: { version: 1, address: 'Canonical Contact Road', mobile: '9123456780' } },
+    { method: 'GET', body: null },
+  ]);
   await page.reload();
   await openWitnessTab(page);
   await expect(page.getByText('Canonical Contact Road')).toBeVisible();
@@ -38,16 +49,24 @@ test('contact and maker-checker identity corrections persist through routed real
 
   await expect(page.getByText('A different authorised user must correct verified witness identity.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Correct Witness Identity' })).toHaveCount(0);
+  witnessRequests.length = 0;
+  await page.waitForTimeout(100);
+  expect(witnessRequests.filter(request => request.method === 'PATCH')).toHaveLength(0);
   await capture(page, 'witness-verifier-identity-denied.png');
 
   await signOut(page);
   await staffLogin(page, CHECKER_EMAIL, E2E_PASSWORD);
   await openWitnessTab(page);
   await page.getByRole('button', { name: 'Correct Witness Identity' }).click();
+  witnessRequests.length = 0;
   await page.getByLabel('Correction PAN').fill('KLMNO9876P');
   await page.getByLabel('Correction Aadhaar').fill('987698769876');
   await page.getByRole('button', { name: 'Save Identity Correction' }).click();
   await expect(page.getByText('******876P')).toBeVisible();
+  expect(witnessRequests).toEqual([
+    { method: 'PATCH', body: { version: 2, witness_name: 'Epic 006 Browser Witness', pan: 'KLMNO9876P', aadhaar: '987698769876' } },
+    { method: 'GET', body: null },
+  ]);
   await page.reload();
   await openWitnessTab(page);
   await expect(page.getByText('******876P')).toBeVisible();

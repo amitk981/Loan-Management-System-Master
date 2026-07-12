@@ -8,6 +8,7 @@ from django.db.models import Max, Q
 from django.utils import timezone
 
 from sfpcl_credit.applications.modules.nominee_validation import evaluate_nominee_selection
+from sfpcl_credit.applications.modules.witness_corrections import witness_correction_actions
 from sfpcl_credit.applications.models import (
     ApplicationDeficiency,
     ApplicationDocument,
@@ -200,26 +201,10 @@ def witness_collection_actions(application, actor, permissions=None):
 
 
 def witness_resource_actions(witness, actor, permissions=None):
-    from sfpcl_credit.applications.modules.witness_corrections import evaluate_witness_correction
-
     permissions = permissions or auth_service.effective_permission_codes(actor)
-    actions = []
-    for code, label, required, correction_kind in (
-        ("read", "View Witness", WITNESS_READ_PERMISSION, None),
-        ("correct_contact", "Correct Witness Contact", WITNESS_UPDATE_PERMISSION, "contact"),
-        ("correct_identity", "Correct Witness Identity", WITNESS_UPDATE_PERMISSION, "identity"),
-    ):
-        access = evaluate_application_object_access(witness.loan_application, actor, required, permissions)
-        if correction_kind:
-            evaluation = evaluate_witness_correction(
-                witness=witness, actor_user=actor, correction_kind=correction_kind
-            )
-            enabled, reason = evaluation.allowed, evaluation.reason
-        else:
-            enabled = required in permissions and access.allowed
-            reason = None if enabled else ("Missing witness read permission." if required not in permissions else "Witness is outside your application access scope.")
-        actions.append({"action_code": code, "label": label, "enabled": enabled, "disabled_reason": reason, "required_permission": required, "required_role": None})
-    return actions
+    access = evaluate_application_object_access(witness.loan_application, actor, WITNESS_READ_PERMISSION, permissions)
+    read = {"action_code": "read", "label": "View Witness", "enabled": WITNESS_READ_PERMISSION in permissions and access.allowed, "disabled_reason": None if WITNESS_READ_PERMISSION in permissions and access.allowed else ("Missing witness read permission." if WITNESS_READ_PERMISSION not in permissions else "Witness is outside your application access scope."), "required_permission": WITNESS_READ_PERMISSION, "required_role": None}
+    return [read, *witness_correction_actions(witness=witness, actor_user=actor)]
 
 
 @transaction.atomic

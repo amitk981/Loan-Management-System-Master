@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from uuid import uuid4
 
 from django.test import Client, TestCase
@@ -15,6 +16,12 @@ from sfpcl_credit.workflows.models import WorkflowEvent
 WITNESS_CREATE_PERMISSION = "members.witness.create"
 WITNESS_READ_PERMISSION = "members.witness.read"
 WITNESS_UPDATE_PERMISSION = "members.witness.update"
+
+
+class WitnessCorrectionBoundaryTests(TestCase):
+    def test_correction_module_does_not_import_generic_application_services(self):
+        source = Path(__file__).parents[1] / "applications/modules/witness_corrections.py"
+        self.assertNotIn("applications.services", source.read_text())
 
 
 class WitnessApiTests(TestCase):
@@ -195,7 +202,7 @@ class WitnessApiTests(TestCase):
             headers=verifier_headers,
         )
         self.assertEqual(denied_write.status_code, 403)
-        assert_error_envelope(self, denied_write.json(), "MAKER_CHECKER_REQUIRED")
+        assert_error_envelope(self, denied_write.json(), "FORBIDDEN")
         self.assertEqual(denied_write.json()["error"]["message"], verifier_actions["correct_identity"]["disabled_reason"])
         self.assertEqual(WitnessChangeHistory.objects.count(), 0)
         self.assertEqual(AuditLog.objects.count(), baseline_audits)
