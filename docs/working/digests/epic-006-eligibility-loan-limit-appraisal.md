@@ -1,5 +1,18 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006X3 Credit Visual and Real-Browser Closure
+
+- One focused Playwright file collects exactly two tests: the eighteen-state Appraisal Workbench
+  matrix and a real-Django, real-login Deputy Manager Finance/Credit Manager tracer to one pending
+  sanction case. The former zero-test wrapper and fully mocked tracer are retired.
+- Reload scenarios reopen the routed workbench explicitly. The real path asserts exact six-field
+  actions, writable PATCH keys, four canonical reads per successful mutation, no conflict refresh,
+  shared assessment/decision/case/event IDs, and one repeat-submit `409`.
+- Guarded deterministic seed data is synthetic and idempotent. A real HTTP backend regression proves
+  the full two-role path, one-case cardinality, and metadata-only audit evidence.
+- Submit-for-review remarks are now reachable through the existing textarea composition. Chromium
+  baselines are stored losslessly as one-line base64 files to keep Ralph's binary line count bounded.
+
 ## 006X2 Credit Action Predicate and Container Closure
 
 - Eligibility, loan-limit, and appraisal projections now consume reusable transition evaluations;

@@ -16,18 +16,23 @@ visually identical to the prototype.
   sees the neutral backend-staff dashboard with no Tracer nav and no Settings
   shortcut in the profile menu. Visual baselines: `login-missing-session`,
   `login-invalid`, `dashboard-zero-permission`.
+- `epic-006-closure.e2e.spec.ts` — captures the eighteen-state Appraisal
+  Workbench matrix, then uses real Deputy Manager Finance and Credit Manager
+  logins to reach one pending sanction case through the real Django API.
 
 Login uses the real backend — no token injection or request mocking — so the
 suite fails if the auth call is ever bypassed.
 
 ## Backend E2E users
-The web server seeds two deterministic users via the backend command
+The web server seeds deterministic users via the backend command
 `seed_e2e_users` (never frontend fixtures):
 - `e2e.tracer@sfpcl.example` — active role `e2e_tracer` with exactly one
   `RolePermission` for `tracer.lifecycle.run`; `/auth/me/` returns exactly that
   permission.
 - `e2e.zero@sfpcl.example` — active role `it_head` (neutral `backend_staff`) with
   no permissions.
+- `e2e.credit.finance@sfpcl.example` and `e2e.credit.manager@sfpcl.example` —
+  synthetic Epic 006 actors plus one resettable `LOE2E00601` credit fixture.
 
 Password for both (local only): `E2eTracer123!`.
 
@@ -63,6 +68,11 @@ The config's `webServer` block starts both the Django dev server (on
 ## Visual baselines
 Baselines are committed under `e2e/*-snapshots/`. Subsequent runs fail on
 unexpected pixel drift beyond Playwright's default threshold.
+
+The Epic 006 contract stores each PNG baseline as a one-line `.png.base64`
+file, decodes it only for comparison, and removes the temporary PNG afterward.
+This preserves the exact Chromium bytes while keeping Ralph's line-count gate
+meaningful for binary files.
 
 Generate or refresh a baseline (e.g. after an approved design change, or to
 create the first set on a machine with browsers):

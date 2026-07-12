@@ -56,6 +56,11 @@ describe('Appraisal Workbench server-state rendering', () => {
     expect(render({ appraisal: legacy, form: legacy, availableActions: actions('revalidate_appraisal_prerequisites'), permissions: ['credit.appraisal.submit_review'] })).not.toContain('Revalidate Prerequisites');
     expect(render({ appraisal: legacy, form: legacy, availableActions: actions('revalidate_appraisal_prerequisites'), permissions: ['credit.appraisal.update', 'credit.risk_assessment.manage'] })).toContain('Revalidate Prerequisites');
   });
+  it('makes the required submit-for-review remarks reachable in the draft stage', () => {
+    const html = render();
+    expect(html).toContain('Submission remarks');
+    expect(html).toContain('Submit for Credit Review');
+  });
   it('hides controls when backend available actions deny them despite usable permissions', () => {
     const html = render({ availableActions: [], permissions: ['credit.eligibility.run', 'credit.loan_limit.calculate', 'credit.appraisal.update', 'credit.risk_assessment.manage', 'credit.appraisal.submit_review'] });
     expect(html).not.toContain('Run Eligibility Assessment');

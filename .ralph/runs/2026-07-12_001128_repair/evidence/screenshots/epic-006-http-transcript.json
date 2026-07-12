@@ -1,0 +1,61 @@
+{
+  "application_id": "00000000-0000-4000-8000-000000000601",
+  "eligibility_assessment_id": "00000000-0000-4000-8000-000000000607",
+  "loan_limit_assessment_id": "e67306ce-4aec-414c-855f-de8a821d360d",
+  "loan_appraisal_note_id": "cd6030a6-7785-4aeb-94ea-14b218d3cdd4",
+  "appraisal_review_decision_id": "682d85ec-ff18-4378-b961-41cbefeabd72",
+  "approval_case_id": "31db2b2c-975e-4ab4-9b6e-113b653326b9",
+  "workflow_event_id": "65a48e8a-cc6a-4f7e-bb47-facb90b2e451",
+  "writes": [
+    {
+      "method": "POST",
+      "pathname": "/api/v1/auth/login/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/run/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/calculate/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "pathname": "/api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/v1/appraisal-notes/cd6030a6-7785-4aeb-94ea-14b218d3cdd4/submit-for-review/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/v1/auth/login/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/v1/appraisal-notes/cd6030a6-7785-4aeb-94ea-14b218d3cdd4/review/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/v1/loan-applications/00000000-0000-4000-8000-000000000601/submit-to-sanction-committee/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/v1/loan-applications/00000000-0000-4000-8000-000000000601/submit-to-sanction-committee/",
+      "status": 409
+    }
+  ]
+}

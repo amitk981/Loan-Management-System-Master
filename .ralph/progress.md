@@ -1,5 +1,19 @@
 # Ralph Progress Log
 
+## 2026-07-12 00:28 - 2026-07-12_001128_repair
+- Agent tool used: codex with the diagnosing-bugs and TDD workflows.
+- Slice completed: `006X3-credit-visual-and-real-browser-closure`.
+- Repair finding: browser reload reset the in-memory route to Dashboard, and the finance fixture
+  could not read the canonical sanction resource. The prior raw PNG baselines also exhausted the
+  line-count gate. The repaired spec reopens Appraisal, uses resource-state suppression despite a
+  global sanction grant, and stores lossless one-line encoded baselines.
+- Tests run: Playwright collection (2 tests); frontend lint/typecheck/build and 166 tests; backend
+  check/migration sync and 407 tests at 94% coverage; focused seed and real two-role HTTP tests.
+- Local Chromium launch is sandbox-denied before test bodies; independent trusted acceptance owns
+  two browser runs and all twenty screenshots.
+- Evidence: `.ralph/runs/2026-07-12_001128_repair/`. Result: ready for independent validation.
+- Risk: High. Next: sharpened 006Y, then 006Y2.
+
 ## 2026-07-11 23:11 - 2026-07-11_230238_architecture_review
 - Agent tool used: codex with independent Standards/Spec review axes and to-issues slice shaping.
 - Slice attempted: `architecture-review`; production code was not changed.
@@ -3576,3 +3590,16 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-12_001128_repair
+
+- Completed 006X3: consolidated Epic 006 into an eighteen-state visual matrix and a real-Django,
+  real-login, two-role path through exactly one pending sanction case.
+- Repaired badge-aware navigation, valid empty-state routing, duplicate fixture action ownership,
+  and the post-role-switch response race exposed by trusted Chromium execution.
+- Frontend lint/typecheck/build and 166 tests passed; backend check/migration sync and 407 tests
+  passed with five expected PostgreSQL skips at 94% coverage.
+- Both trusted browser runs passed and each emitted all twenty declared screenshots; all eighteen
+  encoded visual baselines compared successfully.
+- Result: Success
+- Next action: run 006Y-member-create-update-and-identity-governance.

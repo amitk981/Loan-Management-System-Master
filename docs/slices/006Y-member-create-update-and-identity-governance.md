@@ -71,6 +71,13 @@ High
   that denied/stale identity changes leave the member, masked history, KYC status, and audit counts
   unchanged. Do not use global `/auth/me` permissions as resource authority.
 
+## Run-Ahead Sharpening Review (006X3, 2026-07-12)
+
+- Seed/test identities must remain synthetic and guarded exactly like the Epic 006 browser fixture;
+  no normal demo or production command may create governed member-change data.
+- The create/update/history/reverification API test must assert one shared member UUID, masked
+  sensitive history, exact six-field actions, and zero state/history/audit writes for 400/403/409.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

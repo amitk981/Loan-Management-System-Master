@@ -16,6 +16,17 @@ Staff register members and capture witness/shareholder details in the product in
 ## Depends On
 - 006Y
 
+## Runtime Capabilities
+- `localhost-e2e-server`
+
+## Trusted Browser Acceptance
+- Spec: `e2e/member-governance-closure.e2e.spec.ts`
+- Screenshot: `member-create.png`
+- Screenshot: `member-identity-locked.png`
+- Screenshot: `member-reverification.png`
+- Screenshot: `witness-capture.png`
+- Screenshot: `member-governance-unauthorized.png`
+
 ## Source References
 - docs/source/screen-spec.md member registration/profile screens and witness sections
 - docs/source/api-contracts.md section 13 (member create/update), section covering witness endpoints delivered by 004E
@@ -67,6 +78,14 @@ Medium
 - Declare a `localhost-e2e-server` runtime and exact `Trusted Browser Acceptance` spec/screenshots
   before implementation. The contract must collect non-zero tests and exercise real authenticated
   backend sessions for create, locked-field/reverification, witness capture, and unauthorized state.
+
+## Run-Ahead Sharpening Review (006X3, 2026-07-12)
+
+- Keep one collectable declared spec and committed one-line encoded Chromium baselines so binary
+  artifacts cannot exhaust Ralph's changed-line budget. Trusted run 1 creates only absent
+  baselines; trusted run 2 must compare all five without refresh.
+- Reopen the routed screen after every browser reload; assert resource actions before mutation and
+  canonical GET refreshes after success, with no client merge/retry on 400/403/409.
 
 ## Done Checklist
 - [ ] Execution plan written

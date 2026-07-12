@@ -1,0 +1,4 @@
+Listing tests:
+  [chromium] › epic-006-closure.e2e.spec.ts:19:5 › appraisal workbench preserves the staged prototype across the required state matrix
+  [chromium] › epic-006-closure.e2e.spec.ts:86:5 › real Django and two real finance roles reach exactly one pending sanction case
+Total: 2 tests in 1 file

@@ -144,6 +144,7 @@ export const AppraisalWorkbenchView: React.FC<ViewProps> = props => {
                 {canRevalidate && <button onClick={() => props.onAction('revalidate')} className="btn-secondary text-sm"><RotateCcw size={14} className="inline mr-2" />Revalidate Prerequisites</button>}
                 {canSubmit && <button onClick={() => props.onAction('submit-review')} className="btn-primary text-sm"><Send size={14} className="inline mr-2" />Submit for Credit Review</button>}
               </div>
+              {canSubmit && areaField('Submission remarks', 'remarks', props.remarks ?? '', props.onField)}
             </>}
             {note?.prerequisite_provenance && <p className="text-xs text-slate-500">Prerequisite provenance: <strong>{label(note.prerequisite_provenance)}</strong> · TAT: <strong>{label(note.tat_status)}</strong></p>}
             {note?.appraisal_status === 'rejected' && <AlertBanner type="error" title="Appraisal rejected" message={note.rejection_note ? `Rejection note ${label(note.rejection_note.note_status)} · ${label(note.rejection_note.rejection_reason_category)} · reapply ${note.rejection_note.reapply_allowed_flag ? 'allowed' : 'not allowed'}. Sanction submission is unavailable.` : 'No rejection-note summary is available. Sanction submission is unavailable.'} />}
