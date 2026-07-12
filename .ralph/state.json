@@ -143,14 +143,15 @@
     "006X10-credit-object-scope-executable-row-closure",
     "006Y15-witness-authority-matrix-behavioral-closure",
     "006Z7-active-member-relaxation-authority-and-evidence-race-closure",
-    "006Z8-portal-limit-provenance-module-and-interaction-closure"
+    "006Z8-portal-limit-provenance-module-and-interaction-closure",
+    "006Y16-witness-parent-scope-and-contract-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "6c6a4da",
-  "last_run_id": "2026-07-13_025409_architecture_review",
+  "last_run_id": "2026-07-13_030658_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
+  "slices_completed_since_architecture_review": 1,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

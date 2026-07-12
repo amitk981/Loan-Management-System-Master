@@ -511,28 +511,65 @@ class WitnessApiTests(TestCase):
         self.assertEqual(list(AuditLog.objects.values()), baseline["audit"])
         self.assertEqual(list(WorkflowEvent.objects.values()), baseline["workflow"])
 
-    def test_in_scope_missing_parent_patch_returns_normal_not_found_without_evidence(self):
+    def test_credit_manager_parent_scope_does_not_turn_random_ids_into_an_existence_oracle(self):
         witness_id = self._post().json()["data"]["witness_id"]
         credit_manager = self._user(
             "witness.parent.credit.manager@sfpcl.example",
             "ManagerPass123!",
+            Permission.objects.get(permission_code=WITNESS_READ_PERMISSION),
             Permission.objects.get(permission_code=WITNESS_UPDATE_PERMISSION),
         )
         credit_manager.primary_role.role_code = "credit_manager"
         credit_manager.primary_role.save(update_fields=["role_code"])
+        self.application.current_stage = LoanApplication.STAGE_CREDIT_ASSESSMENT
+        self.application.save(update_fields=["current_stage"])
+        out_of_domain = LoanApplication.objects.create(
+            member=self.member,
+            borrower_type=self.member.member_type,
+            received_by_user=self.user,
+            created_by_user=self.user,
+            current_stage=LoanApplication.STAGE_INITIAL,
+        )
         headers = self._headers_for(credit_manager.email, "ManagerPass123!")
         baseline = self._witness_evidence()
 
-        response = self.client.patch(
-            f"/api/v1/loan-applications/{uuid4()}/witnesses/{witness_id}/",
-            data={"version": 1, "address": "Missing Parent Road"},
+        in_domain_missing_child = self.client.patch(
+            self._detail_url(uuid4()),
+            data={"version": 1, "address": "Missing Child Road"},
             content_type="application/json",
             headers=headers,
         )
+        out_of_domain_parent = self.client.patch(
+            f"/api/v1/loan-applications/{out_of_domain.loan_application_id}/witnesses/{witness_id}/",
+            data={"version": 1, "address": "Denied Parent Road"},
+            content_type="application/json",
+            headers=headers,
+        )
+        random_parent = self.client.patch(
+            f"/api/v1/loan-applications/{uuid4()}/witnesses/{witness_id}/",
+            data={"version": 1, "address": "Denied Parent Road"},
+            content_type="application/json",
+            headers=headers,
+        )
+        out_of_domain_parent_read = self.client.get(
+            f"/api/v1/loan-applications/{out_of_domain.loan_application_id}/witnesses/{witness_id}/",
+            headers=headers,
+        )
+        random_parent_read = self.client.get(
+            f"/api/v1/loan-applications/{uuid4()}/witnesses/{witness_id}/",
+            headers=headers,
+        )
 
-        self.assertEqual(response.status_code, 404)
-        assert_error_envelope(self, response.json(), "NOT_FOUND")
-        self.assertEqual(response.json()["error"]["message"], "Loan application was not found.")
+        self.assertEqual(in_domain_missing_child.status_code, 404)
+        assert_error_envelope(self, in_domain_missing_child.json(), "NOT_FOUND")
+        self.assertEqual(in_domain_missing_child.json()["error"]["message"], "Witness was not found.")
+        self.assertEqual(out_of_domain_parent.status_code, 403)
+        self.assertEqual(random_parent.status_code, 403)
+        assert_error_envelope(self, out_of_domain_parent.json(), "OBJECT_ACCESS_DENIED")
+        self.assertEqual(out_of_domain_parent.json()["error"], random_parent.json()["error"])
+        self.assertEqual(out_of_domain_parent_read.status_code, 403)
+        self.assertEqual(random_parent_read.status_code, 403)
+        self.assertEqual(out_of_domain_parent_read.json()["error"], random_parent_read.json()["error"])
         self.assertEqual(self._witness_evidence(), baseline)
 
     def test_contact_correction_matrix_missing_permission_projection_matches_write(self):

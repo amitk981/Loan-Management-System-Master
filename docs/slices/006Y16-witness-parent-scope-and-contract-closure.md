@@ -1,7 +1,7 @@
 # Slice 006Y16: Witness Parent Scope and Contract Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master

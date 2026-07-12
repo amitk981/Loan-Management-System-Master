@@ -1,5 +1,15 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## 006Y16 Witness Parent Scope Contract Closure
+
+- Credit Manager authority remains stage-bound: an existing Credit Assessment application is in
+  domain, but the role alone is not row-independent global scope for an unresolved identifier.
+- Witness resource authority ordering is permission, parent object scope, parent absence, then
+  child lookup. Existing out-of-domain and random parent UUIDs therefore return the identical `403
+  OBJECT_ACCESS_DENIED`; an in-domain existing parent can reach the normal missing-child `404`.
+- Denied requests preserve complete Witness, correction-history, audit, and workflow evidence. The
+  canonical ordering and envelopes are recorded in `docs/working/API_CONTRACTS.md`.
+
 ## Architecture Review 2026-07-13 - Witness Parent Scope Contract
 
 - 006Y15's absent-parent resolver grants a Credit Manager global scope without the application row

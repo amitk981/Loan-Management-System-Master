@@ -66,3 +66,12 @@ High
 
 - Member object scope is explicit and source-reviewable rather than inferred from role metadata.
 - Stored active-member status cannot contradict the qualification route or maker-checker history.
+
+## Execution Notes
+
+- Do not transfer 006Y16's Credit Manager application rule into member scope: auth §19.2 makes that
+  authority conditional on an existing application's Credit Assessment stage, while §19.1 requires
+  member-global authority to be an explicit, independently reviewable scope.
+- Preserve `OBJECT_ACCESS_DENIED` nondisclosure for an unowned or unresolved member until the cited
+  source pass identifies a row-independent member-global assignment; role provenance alone is not
+  that assignment.

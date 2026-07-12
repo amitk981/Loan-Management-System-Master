@@ -4708,3 +4708,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-13_030658_normal_run
+
+- Completed 006Y16: removed the absent-parent Credit Manager scope shortcut and preserved the
+  source-backed Credit Assessment stage boundary for existing applications.
+- Public GET/PATCH regression proves an in-domain parent reaches missing-child `404`, while an
+  out-of-domain parent and random parent return identical `403 OBJECT_ACCESS_DENIED` responses with
+  unchanged witness/history/audit/workflow evidence.
+- Frontend build/typecheck/lint and 205 tests pass. Backend check/migration sync and 494 tests pass
+  with 12 expected skips and 93% coverage. Next: 006Z9.
+
+## 2026-07-13 03:15:58 - 2026-07-13_030658_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Y16-witness-parent-scope-and-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_030658_normal_run/.ralph/runs/2026-07-13_030658_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_030658_normal_run/.ralph/runs/2026-07-13_030658_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

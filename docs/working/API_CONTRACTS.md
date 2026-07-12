@@ -2202,6 +2202,80 @@ shareholding expose both evidence fields as `null` rather than selecting current
   Denied actions remain present with the exact permission, application-object, or maker-checker
   reason; projection and PATCH consume the same correction evaluation, including current version.
 
+#### Parent authority and non-disclosure ordering (006Y16)
+
+Witness resource GET/PATCH applies response-decision precedence in this order: required witness
+permission, parent application object scope, parent absence, then child lookup. Credit Manager scope is all existing
+applications whose persisted `current_stage` is `credit_assessment`; the role does not confer a
+row-independent global scope for an unresolved application identifier.
+
+Consequently, a Credit Manager with the required witness permission receives normal child lookup
+semantics for an existing Credit Assessment parent, including `404 NOT_FOUND` with message
+`Witness was not found.` when the child is absent. An existing application outside that domain and
+a random parent UUID both stop before witness lookup with the same HTTP 403 error fact:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "OBJECT_ACCESS_DENIED",
+    "message": "You do not have access to this loan application.",
+    "details": {},
+    "field_errors": {}
+  },
+  "meta": {
+    "request_id": "<request-id>",
+    "timestamp": "<timestamp>",
+    "api_version": "v1"
+  }
+}
+```
+
+Only an actor with a separately documented application-wide scope that is independent of facts on
+the unresolved row may pass parent authority and receive `404 NOT_FOUND` with message
+`Loan application was not found.` for a missing parent. No current witness-correction role has that
+scope. Every denied parent/child path leaves Witness, WitnessChangeHistory, AuditLog, and
+WorkflowEvent unchanged.
+
+The normal missing-child envelope after successful parent authority is:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Witness was not found.",
+    "details": {},
+    "field_errors": {}
+  },
+  "meta": {
+    "request_id": "<request-id>",
+    "timestamp": "<timestamp>",
+    "api_version": "v1"
+  }
+}
+```
+
+If a future row-independent application-wide scope is documented, the corresponding missing-parent
+envelope is:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Loan application was not found.",
+    "details": {},
+    "field_errors": {}
+  },
+  "meta": {
+    "request_id": "<request-id>",
+    "timestamp": "<timestamp>",
+    "api_version": "v1"
+  }
+}
+```
+
 # Epic 006 authoritative workbench actions (006H4)
 
 Eligibility, loan-limit, appraisal-note, appraisal transition, and sanction submit/read success
