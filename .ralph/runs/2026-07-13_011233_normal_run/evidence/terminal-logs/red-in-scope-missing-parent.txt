@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_in_scope_missing_parent_patch_returns_normal_not_found_without_evidence (sfpcl_credit.tests.test_witness_api.WitnessApiTests.test_in_scope_missing_parent_patch_returns_normal_not_found_without_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_011233_normal_run/sfpcl_credit/tests/test_witness_api.py", line 525, in test_in_scope_missing_parent_patch_returns_normal_not_found_without_evidence
+    self.assertEqual(response.status_code, 404)
+AssertionError: 403 != 404
+
+----------------------------------------------------------------------
+Ran 1 test in 0.026s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

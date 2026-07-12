@@ -78,3 +78,10 @@ High
 - The borrower limit remains current by evidence provenance rather than wall-clock hash drift.
 - Credit owns all limit decisions; the portal adapter/UI only scopes, redacts, requests, and renders them.
 
+## Run-Ahead Sharpening Review (006Y15, 2026-07-13)
+
+- Confirmed execution-ready against the already-open backend/frontend review rules: credit owns the
+  decision, the portal transports and renders it, and every named response state has an exact
+  interaction contract.
+- Preserve the declared existing compositions and trusted-browser outputs; no new visual pattern or
+  caller-owned authority switch is permitted.

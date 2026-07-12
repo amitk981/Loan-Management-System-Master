@@ -1,5 +1,15 @@
 # Ralph Progress Log
 
+# Run 2026-07-13_011233_normal_run
+
+- Completed 006Y15 by restoring authorized missing-parent `404 NOT_FOUND` semantics while retaining
+  indistinguishable out-of-scope parent `403 OBJECT_ACCESS_DENIED` responses.
+- Contact and identity unknown-field rows now execute separately through exact six-field public
+  actions and one PATCH with unchanged witness/history/audit/workflow evidence.
+- Frontend build/typecheck/lint and 204 tests pass; backend check/migration sync and 486 tests pass
+  with 8 expected PostgreSQL skips at 93% coverage. Evidence is in the matching run folder. Next:
+  006Z7, then 006Z8.
+
 # Run 2026-07-13_010017_normal_run
 
 - Completed 006X10 by replacing static test-name completeness with eight direct executable method
@@ -4562,6 +4572,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_010017_normal_run/.ralph/runs/2026-07-13_010017_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_010017_normal_run/.ralph/runs/2026-07-13_010017_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 01:21:53 - 2026-07-13_011233_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Y15-witness-authority-matrix-behavioral-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_011233_normal_run/.ralph/runs/2026-07-13_011233_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_011233_normal_run/.ralph/runs/2026-07-13_011233_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

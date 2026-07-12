@@ -260,6 +260,8 @@ def loan_application_witness_detail(request, loan_application_id, witness_id):
     )
     if not access.allowed:
         return _object_access_denied_response(request, access)
+    if application is None:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
     witness = application.witnesses.filter(witness_id=witness_id).first()
     if witness is None:
         return error_response(request, 404, "NOT_FOUND", "Witness was not found.")

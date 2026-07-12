@@ -1,5 +1,16 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## 006Y15 Witness Authority Matrix Behavioral Closure
+
+- Globally authorised credit managers with witness-update permission receive the normal `404
+  NOT_FOUND` for an absent parent application. Owners and other non-global actors cannot use random
+  parent identifiers as an existence oracle; existing and random out-of-scope parents retain the
+  identical `403 OBJECT_ACCESS_DENIED` contract.
+- Contact and identity unknown-field rows now execute independently through the public action
+  projection and PATCH boundary. Each asserts the exact six-field enabled action, the authoritative
+  field error, and an unchanged Witness/history/AuditLog/WorkflowEvent snapshot.
+- Behavioral coverage contains no authority-evaluator mocks or internal call-count assertions.
+
 ## Architecture Review 2026-07-13 - Witness Behavioral Matrix Residual
 
 - 006Y14 closes out-of-scope parent enumeration and adds substantive contact/identity corrections,

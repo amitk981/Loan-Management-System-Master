@@ -1,7 +1,7 @@
 # Slice 006Y15: Witness Authority Matrix Behavioral Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master

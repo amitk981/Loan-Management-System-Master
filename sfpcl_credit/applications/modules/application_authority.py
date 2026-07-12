@@ -19,6 +19,7 @@ def resolve_application_access(
             actor_team_codes=actor.team_codes(),
             actor_permission_codes=permissions,
             required_permission=required_permission,
+            allow_global="credit_manager" in actor.role_codes(),
         )
     return application, evaluate_application_object_access(
         application=application,

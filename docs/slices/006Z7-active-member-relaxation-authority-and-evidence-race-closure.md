@@ -75,3 +75,10 @@ High
 - Race snapshots must include Member current pointer/version, ActiveMemberStatus intervals, supply
   and service evidence versions, status history, AuditLog, and WorkflowEvent cardinalities so a
   stale loser cannot pass through a partial comparison.
+
+## Run-Ahead Sharpening Review (006Y15, 2026-07-13)
+
+- Confirmed execution-ready against the already-open authority and deep-module rules: the public
+  member-owned policy, exact persisted evidence boundary, and loser snapshot are explicit.
+- Keep the four evidence-mutation races independently selectable and retain the exact production
+  PostgreSQL capability; no additional rule was inferred during witness closure.

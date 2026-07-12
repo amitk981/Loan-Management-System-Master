@@ -511,11 +511,41 @@ class WitnessApiTests(TestCase):
         self.assertEqual(list(AuditLog.objects.values()), baseline["audit"])
         self.assertEqual(list(WorkflowEvent.objects.values()), baseline["workflow"])
 
+    def test_in_scope_missing_parent_patch_returns_normal_not_found_without_evidence(self):
+        witness_id = self._post().json()["data"]["witness_id"]
+        credit_manager = self._user(
+            "witness.parent.credit.manager@sfpcl.example",
+            "ManagerPass123!",
+            Permission.objects.get(permission_code=WITNESS_UPDATE_PERMISSION),
+        )
+        credit_manager.primary_role.role_code = "credit_manager"
+        credit_manager.primary_role.save(update_fields=["role_code"])
+        headers = self._headers_for(credit_manager.email, "ManagerPass123!")
+        baseline = self._witness_evidence()
+
+        response = self.client.patch(
+            f"/api/v1/loan-applications/{uuid4()}/witnesses/{witness_id}/",
+            data={"version": 1, "address": "Missing Parent Road"},
+            content_type="application/json",
+            headers=headers,
+        )
+
+        self.assertEqual(response.status_code, 404)
+        assert_error_envelope(self, response.json(), "NOT_FOUND")
+        self.assertEqual(response.json()["error"]["message"], "Loan application was not found.")
+        self.assertEqual(self._witness_evidence(), baseline)
+
     def test_contact_correction_matrix_missing_permission_projection_matches_write(self):
         self._assert_missing_update_permission_parity("contact")
 
     def test_identity_correction_matrix_missing_permission_projection_matches_write(self):
         self._assert_missing_update_permission_parity("identity")
+
+    def test_contact_correction_matrix_unknown_field_projection_matches_write(self):
+        self._assert_unknown_field_parity("contact")
+
+    def test_identity_correction_matrix_unknown_field_projection_matches_write(self):
+        self._assert_unknown_field_parity("identity")
 
     def _assert_missing_update_permission_parity(self, kind):
         created = self._post().json()["data"]
@@ -557,6 +587,57 @@ class WitnessApiTests(TestCase):
         self.assertEqual(denied.status_code, 403)
         assert_error_envelope(self, denied.json(), "FORBIDDEN")
         self.assertEqual(denied.json()["error"]["message"], action["disabled_reason"])
+        self.assertEqual(self._witness_evidence(), baseline)
+
+    def _assert_unknown_field_parity(self, kind):
+        created = self._post().json()["data"]
+        actor = self.user
+        headers = self._headers()
+        if kind == "identity":
+            actor = self._user(
+                "witness.matrix.identity.unknown.checker@sfpcl.example",
+                "CheckerPass123!",
+                *Permission.objects.filter(
+                    permission_code__in=[WITNESS_READ_PERMISSION, WITNESS_UPDATE_PERMISSION]
+                ),
+            )
+            self.application.created_by_user = actor
+            self.application.save(update_fields=["created_by_user"])
+            headers = self._headers_for(actor.email, "CheckerPass123!")
+        action_code = f"correct_{kind}"
+        projected = self.client.get(self._url(), headers=headers).json()["data"][0]
+        action = next(row for row in projected["actions"] if row["action_code"] == action_code)
+        self.assertEqual(
+            action,
+            {
+                "action_code": action_code,
+                "label": f"Correct Witness {kind.title()}",
+                "enabled": True,
+                "disabled_reason": None,
+                "required_permission": WITNESS_UPDATE_PERMISSION,
+                "required_role": None,
+            },
+        )
+        baseline = self._witness_evidence()
+        payload = (
+            {"version": 1, "address": "Unknown Field Road", "unexpected_field": "rejected"}
+            if kind == "contact"
+            else {"version": 1, "pan": "KLMNO9876P", "unexpected_field": "rejected"}
+        )
+
+        response = self.client.patch(
+            self._detail_url(created["witness_id"]),
+            data=payload,
+            content_type="application/json",
+            headers=headers,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        assert_error_envelope(self, response.json(), "VALIDATION_ERROR")
+        self.assertEqual(
+            response.json()["error"]["field_errors"],
+            {"unexpected_field": "This verification-time field is immutable."},
+        )
         self.assertEqual(self._witness_evidence(), baseline)
 
     def test_contact_correction_matrix_payload_version_scope_and_success(self):
