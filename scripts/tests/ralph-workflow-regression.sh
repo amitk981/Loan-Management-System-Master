@@ -69,25 +69,37 @@ git -C "$merge_repo" commit -qm base
 git -C "$merge_repo" switch -qc completed-slice
 mkdir -p "$merge_repo/.ralph/runs/failed-run"
 printf 'identical evidence\n' > "$merge_repo/.ralph/runs/failed-run/evidence.md"
+printf 'validated branch plan\n' > "$merge_repo/.ralph/runs/failed-run/execution-plan.md"
 printf 'branch version\n' > "$merge_repo/conflict.txt"
-git -C "$merge_repo" add .ralph/runs/failed-run/evidence.md conflict.txt
+git -C "$merge_repo" add .ralph/runs/failed-run/evidence.md \
+  .ralph/runs/failed-run/execution-plan.md conflict.txt
 git -C "$merge_repo" commit -qm completed
 git -C "$merge_repo" switch -q integration
 mkdir -p "$merge_repo/.ralph/runs/failed-run"
 printf 'identical evidence\n' > "$merge_repo/.ralph/runs/failed-run/evidence.md"
+printf 'earlier diagnostic plan\n' > "$merge_repo/.ralph/runs/failed-run/execution-plan.md"
 printf 'owner version\n' > "$merge_repo/conflict.txt"
-if ralph_remove_identical_untracked_merge_collisions "$merge_repo" completed-slice >/dev/null 2>&1; then
+if ralph_prepare_worktree_for_ff_merge "$merge_repo" completed-slice >/dev/null 2>&1; then
   fail "merge guard accepted a differing untracked collision"
 fi
 [[ -e "$merge_repo/.ralph/runs/failed-run/evidence.md" ]] \
   || fail "merge guard partially cleaned files after finding a differing collision"
+[[ "$(cat "$merge_repo/.ralph/runs/failed-run/execution-plan.md")" == "earlier diagnostic plan" ]] \
+  || fail "merge guard changed generated evidence while a non-generated collision was present"
 [[ "$(cat "$merge_repo/conflict.txt")" == "owner version" ]] \
   || fail "merge guard changed a differing untracked file"
 rm "$merge_repo/conflict.txt"
-ralph_remove_identical_untracked_merge_collisions "$merge_repo" completed-slice \
-  || fail "merge guard rejected a clean branch after identical collisions were removed"
+RALPH_MERGE_BACKUP_ID=regression-backup \
+  ralph_prepare_worktree_for_ff_merge "$merge_repo" completed-slice \
+  || fail "merge guard did not archive a differing generated artifact"
+merge_git_dir="$(git -C "$merge_repo" rev-parse --absolute-git-dir)"
+archived_plan="$merge_git_dir/ralph-merge-collision-backups/regression-backup/.ralph/runs/failed-run/execution-plan.md"
+[[ "$(cat "$archived_plan")" == "earlier diagnostic plan" ]] \
+  || fail "merge guard did not preserve the earlier generated artifact outside the worktree"
 git -C "$merge_repo" merge --ff-only -q completed-slice \
   || fail "merge still failed after safe collision cleanup"
+[[ "$(cat "$merge_repo/.ralph/runs/failed-run/execution-plan.md")" == "validated branch plan" ]] \
+  || fail "validated branch artifact did not become canonical after merge"
 
 [[ -f scripts/lib/ralph-repair-context.sh ]] || fail "missing same-worktree repair context helper"
 # shellcheck source=../lib/ralph-repair-context.sh
@@ -362,8 +374,10 @@ rg -q 'ralph_write_repair_context' scripts/ralph-run.sh \
   || fail "failed validation does not publish structured same-worktree repair context"
 rg -q 'COMMIT_FAILED: validated work' scripts/ralph-run.sh \
   || fail "post-validation commit failure is not fatal and repair-readable"
-rg -q 'ralph_remove_identical_untracked_merge_collisions' scripts/ralph-run.sh \
+rg -q 'ralph_prepare_worktree_for_ff_merge' scripts/ralph-run.sh \
   || fail "Ralph does not clear safe generated-artifact collisions before merging"
+rg -q 'repair_status == RALPH_EXIT_MERGE_FAILED' scripts/ralph-loop.sh \
+  || fail "a post-validation merge failure can consume another product repair attempt"
 rg -q "declaring 'localhost-e2e-server'.*'## Trusted Browser Acceptance'" scripts/ralph-run.sh \
   || fail "trusted browser prompt text is vulnerable to heredoc command substitution"
 python3 - <<'PY'

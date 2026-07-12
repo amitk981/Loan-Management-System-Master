@@ -620,7 +620,7 @@ merged=0
 if (( committed == 1 )) && (( no_worktree == 0 )); then
   auto_merge="$(awk -F': *' '/^[[:space:]]*auto_merge:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
   if [[ "$auto_merge" == "true" ]]; then
-    if ralph_remove_identical_untracked_merge_collisions "$repo_root" "$branch_name" \
+    if ralph_prepare_worktree_for_ff_merge "$repo_root" "$branch_name" \
         && git -C "$repo_root" merge --ff-only "$branch_name"; then
       git -C "$repo_root" worktree remove --force "$worktree_dir"
       git -C "$repo_root" branch -d "$branch_name"
@@ -628,9 +628,9 @@ if (( committed == 1 )) && (( no_worktree == 0 )); then
       merged=1
       echo "Merged $branch_name into $integration_branch and removed the worktree."
     else
-      # A failed ff-only merge means staging moved during the run. Exiting 0 here
-      # made the loop rerun the slice from scratch (silent duplicate work) while
-      # the finished branch sat stranded. Fail loudly instead; the loop stops.
+      # A failed preparation/ff-only merge means staging moved or an unsafe
+      # non-generated collision exists. Exiting 0 here made the loop rerun the
+      # slice while the finished branch sat stranded. Fail loudly instead.
       echo "MERGE_FAILED: auto-merge into $integration_branch failed; branch $branch_name kept with the completed work." >&2
       exit "$RALPH_EXIT_MERGE_FAILED"
     fi

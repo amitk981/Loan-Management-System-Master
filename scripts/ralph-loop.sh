@@ -145,6 +145,11 @@ run_bounded_repair() {
     fi
     context_tripwire_check
 
+    if (( repair_status == RALPH_EXIT_MERGE_FAILED )); then
+      echo "Repair validation passed but final merge failed; stopping with the completed branch preserved instead of launching another product repair." | tee -a "$loop_log"
+      return "$repair_status"
+    fi
+
     if (( repair_status == 0 )); then
       return 0
     fi
@@ -226,7 +231,7 @@ for ((i = 1; i <= max_iterations; i++)); do
       exit 2
       ;;
     merge_failed)
-      echo "Stopping: a completed run could not merge into staging (staging moved during the run)." | tee -a "$loop_log"
+      echo "Stopping: a completed run could not merge into staging (staging moved or an unsafe non-generated collision exists)." | tee -a "$loop_log"
       echo "The finished work is kept on its ralph/* branch — ask an agent in a chat session to merge it, then rerun the loop. Do not rerun the slice." | tee -a "$loop_log"
       exit 1
       ;;
