@@ -1,0 +1,25 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_zz_executed_ledger_equals_all_eight_public_actions (tests.test_credit_action_parity_matrix.ZExecutedObjectScopeLedgerTests.test_zz_executed_ledger_equals_all_eight_public_actions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_235655_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 148, in test_zz_executed_ledger_equals_all_eight_public_actions
+    self.assertEqual(set(EXECUTED_OBJECT_SCOPE_RESULTS), expected)
+AssertionError: Items in the second set but not the first:
+('credit.appraisal.submit_review', 'projection', 'write', 'category', 'evidence')
+('credit.loan_limit.calculate', 'projection', 'write', 'category', 'evidence')
+('credit.appraisal.create', 'projection', 'write', 'category', 'evidence')
+('credit.appraisal.review', 'projection', 'write', 'category', 'evidence')
+('credit.eligibility.run', 'projection', 'write', 'category', 'evidence')
+('revalidate_appraisal_prerequisites', 'projection', 'write', 'category', 'evidence')
+('credit.appraisal.submit_sanction', 'projection', 'write', 'category', 'evidence')
+('credit.appraisal.update', 'projection', 'write', 'category', 'evidence')
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

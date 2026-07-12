@@ -1,0 +1,4 @@
+80:        self.completed_phases.add("projection")
+84:        self.completed_phases.add("write")
+88:        self.completed_phases.add("category")
+92:        self.completed_phases.add("evidence")

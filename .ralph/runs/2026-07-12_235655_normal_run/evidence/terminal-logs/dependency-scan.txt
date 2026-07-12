@@ -1,0 +1,4 @@
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:80:        self.completed_phases.add("projection")
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:84:        self.completed_phases.add("write")
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:88:        self.completed_phases.add("category")
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:92:        self.completed_phases.add("evidence")

@@ -4435,3 +4435,26 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-12_235655_normal_run
+
+- Completed 006X9 by replacing the process-global credit object-scope result ledger with an
+  explicit eight-action table of unique, independently selectable test identifiers.
+- Every substantive row executes the real six-field projection, matching public write denial,
+  exact `OBJECT_ACCESS_DENIED` category, and complete evidence comparison. Incomplete phases fail
+  locally without direct phase-flag mutation.
+- Normal and reversed eight-row selections pass. Focused HTTP non-disclosure passes. Frontend
+  build/typecheck/lint and 202 tests pass; backend check/migration sync and 469 tests pass
+  (8 expected skips) at 93% coverage.
+- No production behavior, API, schema, frontend, dependency, source, or protected file changed.
+  Next: 006Y14.
+
+## 2026-07-13 00:06:42 - 2026-07-12_235655_normal_run
+- Agent tool used: codex
+- Slice attempted: 006X9-credit-object-scope-isolated-execution-matrix
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_235655_normal_run/.ralph/runs/2026-07-12_235655_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_235655_normal_run/.ralph/runs/2026-07-12_235655_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

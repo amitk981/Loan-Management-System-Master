@@ -1,5 +1,17 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006X9 Isolated Credit Object-Scope Matrix
+
+- The eight public credit action codes now have one explicit table of unique, independently
+  selectable test identifiers. Each selected row executes its persisted-resource arrangement,
+  exact disabled six-field projection, matching public write, `OBJECT_ACCESS_DENIED` category, and
+  complete before/after evidence comparison without relying on another test or worker.
+- The process-global `EXECUTED_OBJECT_SCOPE_RESULTS` ledger and class-name ordering are removed.
+  Normal and reversed selection both execute eight substantive rows, while deliberately omitting
+  any assertion phase fails locally without direct bookkeeping mutation.
+- Production credit behavior, HTTP 403 non-disclosure, authority/state/provenance/maker-checker
+  coverage, and PostgreSQL race contracts are unchanged.
+
 ## Architecture Review 2026-07-12 - Evidence Atomicity and Isolated Credit Proof
 
 - 006X8 executes substantive object-scope rows, but its aggregate ledger is a module-global list

@@ -1,5 +1,7 @@
 """Executable public credit action/write parity matrix for slice 006X5."""
 
+from types import SimpleNamespace
+
 from django.apps import apps
 from django.test import TestCase
 
@@ -50,7 +52,16 @@ PUBLIC_ACTIONS = {
     "credit.appraisal.submit_sanction",
 }
 OBJECT_SCOPE_REASON = "You do not have access to this loan application."
-EXECUTED_OBJECT_SCOPE_RESULTS = []
+OBJECT_SCOPE_CASES = (
+    ("credit.eligibility.run", "EligibilityActionWriteMatrixTests.test_object_scope_projects_disabled_action_before_matching_public_run_denial"),
+    ("credit.loan_limit.calculate", "LoanLimitActionWriteMatrixTests.test_state_stale_state_and_object_scope_execute_calculation_without_loser_evidence"),
+    ("credit.appraisal.create", "AppraisalActionWriteMatrixTests.test_create_object_scope_row"),
+    ("credit.appraisal.update", "AppraisalActionWriteMatrixTests.test_update_object_scope_row"),
+    ("revalidate_appraisal_prerequisites", "AppraisalActionWriteMatrixTests.test_revalidate_object_scope_row"),
+    ("credit.appraisal.submit_review", "AppraisalActionWriteMatrixTests.test_submit_review_object_scope_row"),
+    ("credit.appraisal.review", "AppraisalActionWriteMatrixTests.test_review_object_scope_denial_follows_an_enabled_projection_without_evidence"),
+    ("credit.appraisal.submit_sanction", "SanctionActionWriteMatrixTests.test_permission_object_scope_and_stale_state_invoke_the_public_sanction_write"),
+)
 
 
 class ExecutedObjectScopeRow:
@@ -86,9 +97,7 @@ class ExecutedObjectScopeRow:
                 raise AssertionError(
                     f"{self.action_code} missing executed phase: {phase}"
                 )
-        result = (self.action_code, *self.required_phases)
-        EXECUTED_OBJECT_SCOPE_RESULTS.append(result)
-        return result
+        return (self.action_code, *self.required_phases)
 
 
 def action(snapshot, code):
@@ -123,16 +132,32 @@ def full_credit_evidence():
     )
 
 
-class ZExecutedObjectScopeLedgerTests(TestCase):
+class ExecutedObjectScopeContractTests(TestCase):
     def test_incomplete_row_reports_each_missing_executed_phase(self):
         phases = ("projection", "write", "category", "evidence")
+        denied = CreditModuleObjectAccessDenied(
+            SimpleNamespace(error_code="OBJECT_ACCESS_DENIED")
+        )
+        projected = {
+            "action_code": "credit.eligibility.run",
+            "label": "Run eligibility assessment",
+            "enabled": False,
+            "disabled_reason": OBJECT_SCOPE_REASON,
+            "required_permission": "credit.eligibility.run",
+            "required_role": None,
+        }
 
         for omitted in phases:
             with self.subTest(omitted=omitted):
                 row = ExecutedObjectScopeRow("credit.eligibility.run")
-                for phase in phases:
-                    if phase != omitted:
-                        row.completed_phases.add(phase)
+                if omitted != "projection":
+                    row.assert_projection(self, projected)
+                if omitted != "write":
+                    row.assert_write_denial(self, denied)
+                if omitted != "category":
+                    row.assert_denial_category(self, denied)
+                if omitted != "evidence":
+                    row.assert_evidence_unchanged(self, ("before",), ("before",))
 
                 with self.assertRaisesMessage(
                     AssertionError,
@@ -140,13 +165,12 @@ class ZExecutedObjectScopeLedgerTests(TestCase):
                 ):
                     row.result()
 
-    def test_zz_executed_ledger_equals_all_eight_public_actions(self):
-        expected = {
-            (action_code, "projection", "write", "category", "evidence")
-            for action_code in PUBLIC_ACTIONS
-        }
-        self.assertEqual(set(EXECUTED_OBJECT_SCOPE_RESULTS), expected)
-        self.assertEqual(len(EXECUTED_OBJECT_SCOPE_RESULTS), len(PUBLIC_ACTIONS))
+    def test_explicit_case_table_names_all_eight_public_actions_once(self):
+        action_codes = tuple(action_code for action_code, _ in OBJECT_SCOPE_CASES)
+        test_ids = tuple(test_id for _, test_id in OBJECT_SCOPE_CASES)
+        self.assertEqual(set(action_codes), PUBLIC_ACTIONS)
+        self.assertEqual(len(action_codes), len(PUBLIC_ACTIONS))
+        self.assertEqual(len(set(test_ids)), len(PUBLIC_ACTIONS))
 
 
 class EligibilityActionWriteMatrixTests(TestCase):
@@ -480,7 +504,13 @@ class AppraisalActionWriteMatrixTests(TestCase):
         self.assertEqual(note.appraisal_status, "draft")
         self.assertEqual(note.prerequisite_provenance, "legacy_unverified")
 
-    def test_create_update_revalidate_and_submit_execute_state_provenance_and_scope_denials(self):
+    def test_create_object_scope_row(self):
+        self._assert_create_and_update_object_scope_rows()
+
+    def test_update_object_scope_row(self):
+        self._assert_create_and_update_object_scope_rows()
+
+    def _assert_create_and_update_object_scope_rows(self):
         create_row = ExecutedObjectScopeRow("credit.appraisal.create")
         update_row = ExecutedObjectScopeRow("credit.appraisal.update")
         workflow = AppraisalWorkflow()
@@ -654,7 +684,13 @@ class AppraisalActionWriteMatrixTests(TestCase):
     def test_reviewed_action_write_pair(self):
         self._assert_review_pair("reviewed")
 
-    def test_revalidate_and_submit_object_scope_denials_preserve_the_draft(self):
+    def test_revalidate_object_scope_row(self):
+        self._assert_revalidate_and_submit_object_scope_rows()
+
+    def test_submit_review_object_scope_row(self):
+        self._assert_revalidate_and_submit_object_scope_rows()
+
+    def _assert_revalidate_and_submit_object_scope_rows(self):
         revalidate_row = ExecutedObjectScopeRow("revalidate_appraisal_prerequisites")
         submit_row = ExecutedObjectScopeRow("credit.appraisal.submit_review")
         created = self._create()
