@@ -1,5 +1,20 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006X5 Executable Public Action / Write Matrix
+
+- The public regression now executes eligibility run, loan-limit calculate, appraisal create/
+  update/revalidate/submit, reviewed/returned/rejected review, and sanction submission through the
+  deep module interfaces. Each action is a six-field projection and each authority denial asserts
+  stable reason parity plus zero state/audit/workflow/history/rejection-note/case evidence.
+- The matrix exposed and corrected the loan-limit projection's generic appraisal-create denial;
+  it now matches the public write's action-specific permission reason.
+- The authoritative PostgreSQL suite now includes a stale-enabled sanction projection race. The
+  competing transition is the sole winner; the stale write creates no loser evidence. The fixed
+  five-test suite covers all six race scenarios and passed twice without skips.
+- The next corrective slices 006Y5 and 006Y6 were rechecked against the already-open architecture
+  findings: their concrete member-registry duplicate/maker-checker/form contract and witness
+  contact/action-parity requirements remain execution-ready without new business-rule invention.
+
 ## 006X4 Public Action / Write Matrix Closure
 
 - The public action/write trace now enumerates eligibility, loan limit, appraisal create/update/

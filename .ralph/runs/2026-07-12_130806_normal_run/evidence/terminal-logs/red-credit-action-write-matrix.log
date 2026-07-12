@@ -1,0 +1,25 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_matrix_enumerates_every_required_public_write (sfpcl_credit.tests.test_credit_action_parity_matrix.CreditActionParityMatrixTests.test_matrix_enumerates_every_required_public_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 50, in test_matrix_enumerates_every_required_public_write
+    self.assertEqual(
+AssertionError: Items in the first set but not the second:
+'credit.appraisal.review'
+Items in the second set but not the first:
+'credit.appraisal.create'
+'credit.appraisal.review:reviewed'
+'credit.appraisal.review:returned'
+'credit.eligibility.run'
+'credit.appraisal.review:rejected'
+'credit.loan_limit.calculate'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

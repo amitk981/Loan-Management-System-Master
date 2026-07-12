@@ -278,9 +278,15 @@ def _loan_limit_actions(application, actor, permissions):
     def item(code, label, permission, enabled, reason):
         return {"action_code": code, "label": label, "enabled": enabled, "disabled_reason": None if enabled else reason, "required_permission": permission, "required_role": None}
     reason = transition.reason or "Required permission is missing."
+    if transition.allowed and "credit.appraisal.create" not in permissions:
+        create_reason = "You do not have permission to create appraisal notes."
+    elif transition.allowed and "credit.risk_assessment.manage" not in permissions:
+        create_reason = "You do not have permission to manage risk assessments."
+    else:
+        create_reason = reason
     return [
         loan_limit_calculate_action(application, permissions),
-        item("credit.appraisal.create", "Create Appraisal Draft", "credit.appraisal.create", create_enabled, reason),
+        item("credit.appraisal.create", "Create Appraisal Draft", "credit.appraisal.create", create_enabled, create_reason),
     ]
 
 

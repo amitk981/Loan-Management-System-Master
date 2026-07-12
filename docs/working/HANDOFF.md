@@ -1,25 +1,27 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-12_125256_architecture_review
+2026-07-12_132037_repair
 
 ## Current Status
 
-Architecture review of 006X4, 006Y3, 006Y4, and 006Z is complete. 006X4's new matrix executes only
-one denied write. Member Registry remains bypassable, lacks object authority, can emit an uncaught
-duplicate identity approval error, diverges on requester-checker projection, and omits most §13.2
-form fields. Witness correction omits S09 address/mobile and denied action facts. Active-member
-eligibility lives in credit instead of the member module and can pass BR-004 via a legacy active
-flag even when persisted service usage is false; supply capture also accepts non-qualifying facts.
+006X5 is complete. The executable public-module matrix covers eligibility, loan limit, appraisal
+create/update/revalidate/submit, all three review outcomes, and sanction success/denial pairs with
+six-field projections and zero denied evidence. It corrected the generic appraisal-create
+projection denial. Both PostgreSQL runs passed every required race scenario, including a
+stale-enabled sanction projection losing after a competing state change. Repair folded that proof into the
+existing duplicate-submission race so the protected acceptance contract discovers exactly five
+tests. All configured gates passed at 94% coverage.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-12_125256_architecture_review/`. Production code was not
-changed. Standards and spec were reviewed independently; CONTEXT remains truthful and no Blocked
-slice is stale. Corrective slices 006X5, 006Y5, 006Y6, and 006Z3 are concrete and queue-valid.
+Repair evidence is under `.ralph/runs/2026-07-12_132037_repair/`. The full backend suite ran 433
+tests with 5 expected SQLite-only skips, frontend ran 173 tests, and PostgreSQL acceptance ran the
+fixed five-test suite twice with zero skips. No production code, migration, or API contract changed
+in repair.
 
 ## Next Run
 
-Run High-risk 006X5 for the exhaustive public credit matrix, then 006Y5 and 006Y6 for member/witness
-governance closure, then 006Z3 for the member-owned and strictly validated active-status boundary.
-006Z2 now depends on 006Z3 and follows with the PortalAccount-scoped limit projection.
+Run High-risk 006Y5 for Member Registry authority, duplicate races, maker-checker parity, and §13.2
+form completion; then 006Y6 for witness contact/action parity. Both were rechecked and remain
+concrete. Continue with 006Z3 before its dependent 006Z2 portal limit projection.

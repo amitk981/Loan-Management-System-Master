@@ -1,0 +1,39 @@
+Creating test database for alias 'default'...
+Found 11 test(s).
+System check identified no issues (0 silenced).
+..FF.F.....
+======================================================================
+FAIL: test_rejected_action_write_pair_and_exact_note_cardinality (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_rejected_action_write_pair_and_exact_note_cardinality)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 225, in test_rejected_action_write_pair_and_exact_note_cardinality
+    self._assert_review_pair("rejected")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 209, in _assert_review_pair
+    self.assertTrue(review_action["enabled"])
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_returned_action_write_pair (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_returned_action_write_pair)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 222, in test_returned_action_write_pair
+    self._assert_review_pair("returned")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 209, in _assert_review_pair
+    self.assertTrue(review_action["enabled"])
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_reviewed_action_write_pair (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_reviewed_action_write_pair)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 219, in test_reviewed_action_write_pair
+    self._assert_review_pair("reviewed")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 209, in _assert_review_pair
+    self.assertTrue(review_action["enabled"])
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.220s
+
+FAILED (failures=3)
+Destroying test database for alias 'default'...

@@ -785,7 +785,21 @@ class SanctionSubmissionConcurrencyTests(TransactionTestCase):
     def test_duplicate_submissions_serialize_to_one_case_and_one_evidence_set(self):
         from sfpcl_credit.approvals.models import ApprovalCase
         from sfpcl_credit.approvals.modules.sanction_handoff import SanctionHandoffModule
-        from sfpcl_credit.credit.modules.appraisal_workflow import CreditModuleInvalidStateError
+        from sfpcl_credit.credit.modules.appraisal_workflow import (
+            AppraisalWorkflow,
+            CreditModuleInvalidStateError,
+        )
+
+        projected = AppraisalWorkflow().get(
+            actor=self.reviewer,
+            application_id=self.application.pk,
+        ).snapshot
+        sanction_action = next(
+            item
+            for item in projected["available_actions"]
+            if item["action_code"] == "credit.appraisal.submit_sanction"
+        )
+        self.assertTrue(sanction_action["enabled"])
 
         history_before = list(
             AppraisalReviewDecision.objects.filter(loan_appraisal_note=self.note).values()
@@ -838,7 +852,10 @@ class SanctionSubmissionConcurrencyTests(TransactionTestCase):
                 finally:
                     release_winner.set()
                 winner = winner_future.result(timeout=10)
-                with self.assertRaises(CreditModuleInvalidStateError):
+                with self.assertRaisesMessage(
+                    CreditModuleInvalidStateError,
+                    "Only a reviewed appraisal note can be submitted for sanction.",
+                ):
                     loser_future.result(timeout=10)
 
         self.note.refresh_from_db()

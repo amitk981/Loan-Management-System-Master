@@ -1678,6 +1678,17 @@ Validation evidence added:
 - Risk level: See risk assessment.
 - Next action: Review packet.
 
+# Run 2026-07-12_130806_normal_run
+
+- Completed 006X5 with an executable ten-row public credit action/write inventory covering
+  eligibility, limit, appraisal lifecycle, three review outcomes, and sanction success/denial.
+- Corrected appraisal-create denial projection parity and added a PostgreSQL stale-enabled sanction
+  race with one winner and no loser evidence.
+- Frontend build/typecheck/lint and 173 tests passed; after repair, backend check/migration sync and
+  433 tests passed at 94% coverage; the fixed five-test PostgreSQL suite covered all six race
+  scenarios twice with zero skips.
+- Next action: run 006Y5, then 006Y6.
+
 # Run 2026-07-12_105158_normal_run
 
 - Completed 006Y4 witness correction and resource-action closure.
@@ -3828,6 +3839,28 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_125256_architecture_review/.ralph/runs/2026-07-12_125256_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_125256_architecture_review/.ralph/runs/2026-07-12_125256_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+# Repair 2026-07-12_132037_repair
+
+- Diagnosed 006X5's independent PostgreSQL gate failure: product tests passed, but the fixed
+  acceptance predicate rejected `Found 6`/`Ran 6` after the slice added a sixth discovered race.
+- Folded the stale-enabled sanction projection into the existing duplicate-submission concurrency
+  case. The same projected action, winner, exact loser denial, and zero loser evidence remain
+  asserted while the protected command again discovers exactly five tests.
+- Two PostgreSQL 14.20 acceptance runs passed five tests with zero skips. Frontend
+  build/typecheck/lint and 173 tests passed; backend check/migration sync and 433 tests passed
+  (5 expected SQLite-only skips) at 94% coverage.
+- Next action: independent repair validation, then commit 006X5 and run 006Y5.
+
+## 2026-07-12 13:31:36 - 2026-07-12_132037_repair
+- Agent tool used: codex
+- Slice attempted: 006X5-credit-public-action-write-matrix-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/.ralph/runs/2026-07-12_132037_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/.ralph/runs/2026-07-12_132037_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

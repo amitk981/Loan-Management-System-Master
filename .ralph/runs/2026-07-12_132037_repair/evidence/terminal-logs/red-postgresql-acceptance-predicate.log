@@ -1,0 +1,9 @@
+Command:
+source scripts/lib/ralph-postgresql-acceptance.sh
+postgresql_acceptance_log_passes .ralph/runs/2026-07-12_130806_normal_run/evidence/terminal-logs/postgresql-acceptance-validation-1.txt
+
+EXPECTED RED: predicate_exit=1
+Found 6 test(s).
+Ran 6 tests in 4.739s
+OK
+Exact symptom: validator requires Found 5/Ran 5, preserved log reports Found 6/Ran 6.
