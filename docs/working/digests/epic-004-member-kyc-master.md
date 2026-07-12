@@ -1,5 +1,16 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## 006Y11 Member Form Container and Error Matrix Closure
+
+- Complete individual, FPC, and Producer Institution bodies now cross the real member HTTP client and
+  transition into the production Member Profile container, which performs one canonical detail GET
+  and renders masked member identities.
+- Create/update/identity-request mounted failures cover 400/403/409 with one mutation, exact backend
+  field/reason display, and no success callback/refetch. Approval covers the same status matrix in the
+  mounted profile container and now renders the backend reason through the existing alert composition.
+- The browser scenario adds a distinct Producer Institution, a persistent per-evidence-run identity
+  counter, exact mutation/read counts, and the complete six-field enabled approval action assertion.
+
 ## Architecture Review 2026-07-12 - Witness/Member Interaction Acceptance
 
 - 006Y7 substantively closes Registry object-aware identity approval and both PostgreSQL duplicate

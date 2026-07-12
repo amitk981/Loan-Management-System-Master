@@ -13,9 +13,10 @@ const MANAGER_EMAIL = 'e2e.credit.manager@sfpcl.example';
 const VERIFIED_MEMBER_ID = '00000000-0000-4000-8000-000000000602';
 
 test('complete member variants and protected identity approval cross real staff sessions', async ({ page }) => {
-  const suffix = String(Date.now()).slice(-4);
+  const suffix = nextRunSuffix();
   const individual = identities('IND', suffix, 'A');
   const institution = identities('INS', suffix, 'B');
+  const producerInstitution = identities('PRO', suffix, 'C');
   const mutations: Request[] = [];
   const canonicalReads: Request[] = [];
   page.on('request', request => {
@@ -49,6 +50,14 @@ test('complete member variants and protected identity approval cross real staff 
   await expect(page.getByText(maskPan(institution.pan))).toBeVisible();
   await capture(page, 'member-institution-complete-reloaded.png');
 
+  await openMembers(page);
+  await registerInstitution(page, producerInstitution);
+  expect(mutations).toHaveLength(3);
+  expect(canonicalReads).toHaveLength(4);
+  expect(mutations[2].postDataJSON()).toEqual(producerInstitution.body);
+  await expect(page.getByText(maskPan(producerInstitution.pan))).toBeVisible();
+  await capture(page, 'member-producer-institution-complete-reloaded.png');
+
   await openSeededVerifiedMember(page);
   await expect(page.getByText('Verified identity locked')).toBeVisible();
   await page.getByRole('button', { name: 'Correct verified identity' }).click();
@@ -65,7 +74,14 @@ test('complete member variants and protected identity approval cross real staff 
 
   await signOut(page);
   await staffLogin(page, MANAGER_EMAIL, E2E_PASSWORD);
+  const projectedDetail = page.waitForResponse(response => response.request().method() === 'GET'
+    && response.url().endsWith(`/api/v1/members/${VERIFIED_MEMBER_ID}/`));
   await openSeededVerifiedMember(page);
+  const projectedBody = await projectedDetail.then(response => response.json());
+  expect(projectedBody.data.available_actions).toContainEqual({
+    action_code: 'members.member.identity_change.approve', label: 'Approve identity change', enabled: true,
+    disabled_reason: null, required_permission: 'members.member.identity_change.approve', required_role: null,
+  });
   await expect(projectedApproval(page)).toBeEnabled();
   const approve = page.locator('button.btn-primary', { hasText: /^Approve identity change$/ });
   await expect(approve).toBeVisible();
@@ -81,9 +97,9 @@ test('complete member variants and protected identity approval cross real staff 
 function identities(prefix: string, suffix: string, panPrefix: string) {
   const pan = `${panPrefix}BCDE${suffix}F`;
   const aadhaar = `12345678${suffix}`;
-  const legalName = prefix === 'IND' ? 'Complete Synthetic Farmer' : 'Complete Synthetic Producer';
+  const legalName = prefix === 'IND' ? 'Complete Synthetic Farmer' : prefix === 'INS' ? 'Complete Synthetic FPC' : 'Complete Synthetic Producer Institution';
   const common = {
-    member_type: prefix === 'IND' ? 'individual_farmer' : 'fpc', legal_name: legalName,
+    member_type: prefix === 'IND' ? 'individual_farmer' : prefix === 'INS' ? 'fpc' : 'producer_institution', legal_name: legalName,
     display_name: legalName, folio_number: `${prefix}-${Date.now()}-${suffix}`,
     membership_start_date: '2024-04-01', pan, registered_address: {
       line1: 'Synthetic Registry Road', line2: 'Evidence Block', village_city: 'Nashik',
@@ -116,7 +132,7 @@ async function registerIndividual(page: Page, fixture: ReturnType<typeof identit
 
 async function registerInstitution(page: Page, fixture: ReturnType<typeof identities>) {
   await startRegistration(page);
-  await page.getByLabel('Member Type').selectOption('fpc');
+  await page.getByLabel('Member Type').selectOption(String(fixture.body.member_type));
   await fillCommon(page, fixture.body as Record<string, unknown>);
   const profile = fixture.body.producer_institution_profile as Record<string, string | boolean>;
   for (const [label, key] of [['Institution Type', 'institution_type'], ['Registration Number', 'registration_number'], ['Authorised Signatory', 'authorised_signatory_name'], ['Signatory PAN', 'authorised_signatory_pan'], ['Signatory Aadhaar', 'authorised_signatory_aadhaar'], ['Produce Supply Years', 'produce_supply_years']] as const) await page.getByLabel(label).fill(String(profile[key]));
@@ -156,3 +172,11 @@ const projectedApproval = (page: Page) => page.locator('button.btn-secondary', {
 const maskPan = (pan: string) => `******${pan.slice(-4)}`;
 const maskAadhaar = (aadhaar: string) => `********${aadhaar.slice(-4)}`;
 const capture = (page: Page, name: string) => page.screenshot({ path: path.join(evidenceDir, name), fullPage: true, animations: 'disabled' });
+function nextRunSuffix() {
+  const counterPath = path.join(evidenceDir!, '.member-governance-run-counter');
+  const prior = fs.existsSync(counterPath) ? Number(fs.readFileSync(counterPath, 'utf8')) : 0;
+  const next = prior + 1;
+  if (next > 9999) throw new Error('Member governance run counter exhausted');
+  fs.writeFileSync(counterPath, String(next), 'utf8');
+  return String(next).padStart(4, '0');
+}

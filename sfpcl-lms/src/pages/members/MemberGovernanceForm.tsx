@@ -69,7 +69,7 @@ const MemberGovernanceForm: React.FC<Props> = ({ profile, canReverify = false, o
         await onSaved(saved);
       }
     } catch (error) {
-      if (error instanceof AuthSessionError) { setErrors(error.fieldErrors ?? {}); setMessage(error.code === 'STALE_WRITE' ? 'Member changed on the server. Refresh and retry.' : error.message); }
+      if (error instanceof AuthSessionError) { setErrors(error.fieldErrors ?? {}); setMessage(error.message); }
       else setMessage('Unable to save member.');
     } finally { setSubmitting(false); }
   };

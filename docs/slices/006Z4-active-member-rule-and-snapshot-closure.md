@@ -70,3 +70,11 @@ High
 - BR-003 through BR-007 cannot pass from gaps, future rows, missing service facts, or an unsupported
   member route, and every accepted result is dated and reviewable.
 - Credit and portal consume one member-owned verified projection with no duplicated rule logic.
+
+## Run-Ahead Sharpening Review (006Y11, 2026-07-12)
+
+- Mount consumers through the public active-member module boundary, not mocked calculation wrappers.
+  Success must read one canonical dated projection; permission, maker-checker, stale, and repeated
+  decision failures make one write with no retry/refetch/local merge and display exact server facts.
+- The PostgreSQL acceptance must assert the winning verification's complete dated row/result snapshot
+  and zero audit/history/result evidence from each loser, not only the final status.

@@ -125,3 +125,11 @@ Medium
 - [ ] Handoff updated
 - [ ] State updated
 - [ ] Commit created only after passing gates
+
+## Run-Ahead Sharpening Review (006Y11, 2026-07-12)
+
+- Mount the routed portal container at the shared HTTP transport. A successful projection performs
+  exactly one borrower-scoped GET and renders the canonical result date/version with all three money
+  cards; 400/403/409 responses preserve exact server facts with no retry, local merge, or fallback.
+- Trusted-browser data must be collision-safe across both independent executions and assertions must
+  prove the response contains no member identifier, evidence reference, or staff action before capture.

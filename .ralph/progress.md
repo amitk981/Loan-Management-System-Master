@@ -1,5 +1,16 @@
 # Ralph Progress Log
 
+# Run 2026-07-12_213609_repair
+
+- Repaired 006Y11's deterministic trusted-browser failure: the E2E assertion expected the general
+  member-update permission, but the real Registry projected its dedicated identity-approval
+  permission. Only the stale assertion changed; production behavior remained untouched.
+- The original trusted logs reproduce the exact mismatch twice. The local browser is sandbox-denied
+  before execution, while Playwright collection finds the one declared scenario.
+- Frontend build/typecheck/lint and 199 tests pass. Backend check/migration sync and 453 tests pass
+  (7 expected SQLite skips) at 93% coverage; focused mounted and backend authority tests pass.
+- Evidence: `.ralph/runs/2026-07-12_213609_repair/`. Next: independent browser validation, then 006Z4.
+
 ## 2026-07-12 10:36 - 2026-07-12_103055_repair
 - Agent tool used: codex with the diagnosing-bugs workflow.
 - Slice repaired: `006Y3-member-registry-and-identity-change-approval-closure`.
@@ -4217,6 +4228,27 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_211007_normal_run/.ralph/runs/2026-07-12_211007_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_211007_normal_run/.ralph/runs/2026-07-12_211007_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+# Run 2026-07-12_211948_normal_run
+
+- Completed 006Y11 with complete individual, FPC, and Producer Institution bodies crossing the shared
+  authenticated HTTP transport into a single canonical masked Member Profile readback.
+- Mounted create/update/request/approval matrices cover 400/403/409 with exact backend facts, one
+  mutation, and no retry/error refetch. The stale-write client synthesis was removed.
+- Browser collection discovers one real-session scenario with persistent per-run collision avoidance,
+  exact request counts, five declared screenshots, and the six-field enabled approval action.
+- Frontend build/typecheck/lint and 199 tests pass. Backend check/migration sync and 453 tests pass
+  (7 expected SQLite skips) at 94% coverage. Next: trusted browser acceptance, then 006Z4.
+
+## 2026-07-12 21:45:48 - 2026-07-12_213609_repair
+- Agent tool used: codex
+- Slice attempted: 006Y11-member-form-container-and-error-matrix-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_211948_normal_run/.ralph/runs/2026-07-12_213609_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_211948_normal_run/.ralph/runs/2026-07-12_213609_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

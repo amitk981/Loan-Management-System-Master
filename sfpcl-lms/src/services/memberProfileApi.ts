@@ -74,6 +74,7 @@ export interface MemberProfileDetail {
     enabled: boolean;
     disabled_reason: string | null;
     required_permission: string;
+    required_role?: string | null;
   }[];
   pending_identity_change?: { identity_change_request_id: string; status: string } | null;
 }

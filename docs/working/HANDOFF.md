@@ -1,21 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-12_211007_normal_run
+2026-07-12_213609_repair
 
 ## Current Status
 
-006Y10 is complete. Witness contact and identity correction projection/write authority now lives in
-one acyclic application-owned module; PATCH no longer repeats permission/object checks in the view.
-Maker-checker denial uses `FORBIDDEN`. Mounted tests execute both kinds through 400/403/409 with one
-PATCH and no error refetch; browser collection includes exact PATCH/GET and zero-verifier-PATCH proof.
+006Y11 remains complete. Repair diagnosed the two trusted-browser failures as one stale test
+expectation: the assertion named `members.member.update`, while the real Registry correctly projects
+the dedicated `members.member.identity_change.approve` permission. Only that E2E expectation changed;
+production member behavior and the preserved mounted/error implementation are unchanged.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-12_211007_normal_run/`. Frontend build/typecheck/lint and 183
-tests pass. Backend check/migration sync and 453 tests pass (7 expected SQLite skips) at 94% coverage.
-Focused backend (14) and mounted (10) witness suites pass. The orchestrator owns trusted screenshots.
+Repair evidence is under `.ralph/runs/2026-07-12_213609_repair/`. Frontend build/typecheck/lint and
+199 tests pass. Backend check/migration sync and 453 tests pass (7 expected SQLite skips) at 93%
+coverage. The focused mounted suite passes 17 tests, the focused backend authority test passes, and
+Playwright collects one declared scenario. Local Chromium is sandbox-denied before the test body; the
+orchestrator must rerun the trusted browser contract twice and verify all five screenshots.
 
 ## Next Run
 
-Run already-sharpened 006Y11 next, then already-sharpened 006Z4. 006Z2 depends on 006Z4.
+After independent repair validation, run sharpened 006Z4 next. Sharpened 006Z2 remains dependent on
+006Z4.

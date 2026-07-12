@@ -1,7 +1,7 @@
 # Slice 006Y11: Member Form Container and Error Matrix Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master

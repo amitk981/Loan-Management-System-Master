@@ -19,6 +19,7 @@ import StatusBadge from '../../components/ui/StatusBadge';
 import Tabs from '../../components/ui/Tabs';
 import { AuthSessionError } from '../../services/authSession';
 import {
+  approveMemberIdentityChange,
   createMemberCropPlan,
   createMemberKycProfile,
   createMemberLandHolding,
@@ -103,6 +104,8 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
   const [kycVerifyFieldErrors, setKycVerifyFieldErrors] = useState<Record<string, string>>({});
   const [kycVerifyMessage, setKycVerifyMessage] = useState('');
   const [kycVerifySubmitting, setKycVerifySubmitting] = useState(false);
+  const [identityApprovalMessage, setIdentityApprovalMessage] = useState('');
+  const [identityApprovalSubmitting, setIdentityApprovalSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -437,9 +440,23 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
     setProfile(canonical);
     setStatus('success');
   };
+  const handleApproveIdentityChange = async () => {
+    if (!profile?.pending_identity_change) return;
+    setIdentityApprovalSubmitting(true);
+    setIdentityApprovalMessage('');
+    try {
+      await approveMemberIdentityChange(profile.pending_identity_change.identity_change_request_id);
+      await refreshProfile();
+    } catch (error) {
+      setIdentityApprovalMessage(error instanceof Error ? error.message : 'Identity change could not be approved.');
+    } finally {
+      setIdentityApprovalSubmitting(false);
+    }
+  };
 
   return <>
-    {profile?.pending_identity_change && approveIdentityAction?.enabled && <div className="p-6 pb-0"><button className="btn-primary text-sm" onClick={async () => { const { approveMemberIdentityChange } = await import('../../services/memberProfileApi'); await approveMemberIdentityChange(profile.pending_identity_change!.identity_change_request_id); await refreshProfile(); }}>Approve identity change</button></div>}
+    {identityApprovalMessage && <div className="p-6 pb-0"><AlertBanner type="warning" title="Identity change could not be approved" message={identityApprovalMessage} /></div>}
+    {profile?.pending_identity_change && approveIdentityAction?.enabled && <div className="p-6 pb-0"><button className="btn-primary text-sm" disabled={identityApprovalSubmitting} onClick={handleApproveIdentityChange}>{identityApprovalSubmitting ? 'Approving…' : 'Approve identity change'}</button></div>}
     {profile && updateAction?.enabled && <div className="p-6 pb-0"><MemberGovernanceForm profile={profile} canReverify={Boolean(reverifyAction?.enabled)} onSaved={refreshProfile} /></div>}
     <MemberProfileView
       status={status}
