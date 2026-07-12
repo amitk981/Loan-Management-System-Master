@@ -16,7 +16,7 @@ Remove the client-side loan-limit calculation from the wired portal New Applicat
 Borrowers see the same limit the backend will actually apply — served by the Epic 006 calculator/snapshot — instead of an incorrectly computed client-side figure that could invite or block applications wrongly.
 
 ## Depends On
-- 006Z3
+- 006Z4
 
 ## Source References
 - Final SOP - Loan Disbursement V10 (1).pdf p.10 §2.2-§2.3 (limit = lower of shares × 30% of valuation and per-acre scale of finance × cultivated land; ₹20,000/acre cap; ₹200/share current)
@@ -102,6 +102,16 @@ Medium
 - Treat `persisted_no_qualifying_verified_records` and continuity below four years as unavailable
   unless the shared result carries recorded relaxation/manual evidence. Pending, malformed-year,
   wrong-entity/route, and evidence-free rows must never become limit inputs or an apparent zero.
+
+## Run-Ahead Sharpening Review (Architecture Review, 2026-07-12)
+
+- Depend on 006Z4's dated, verified active-member result and immutable evidence snapshot. The portal
+  limit endpoint may not calculate continuity, interpret service/employment years, or read raw supply
+  rows; a result with a future-as-of date, incomplete continuity, or unverified/manual evidence is an
+  explicit unavailable state.
+- Mounted/browser assertions must prove the returned limit's active-member result date/version is
+  retained after a canonical refetch and that no member identifier, row-level evidence reference, or
+  staff verification action leaks into the borrower response.
 
 ## Done Checklist
 - [ ] Execution plan written

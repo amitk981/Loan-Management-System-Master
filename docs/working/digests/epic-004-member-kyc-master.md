@@ -1,5 +1,18 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## Architecture Review 2026-07-12 - Registry/Witness Residual Closures
+
+- 006Y5 completed the §13.2 fields and public Registry facade but did not execute its required
+  PostgreSQL duplicate-create/identity-approval races. Identity approval projection also omits the
+  member object-scope check performed by the write. 006Y7 owns one full evaluation plus concurrent
+  one-winner/standard-duplicate proof.
+- 006Y5's form tests mock API wrappers and provide no real-session/screenshots for complete
+  individual/institution registration or identity approval. 006Y9 owns mounted and trusted-browser
+  canonical readback, masking, and `400`/`403`/`409` proof.
+- 006Y6 persisted S09 address/mobile and protected correction history, but its generic Update action
+  ignores the identity maker-checker check enforced by the write; the slice also omitted its required
+  real browser flow. 006Y8 owns contact/identity-specific authority parity and routed screenshots.
+
 ## Architecture Review 2026-07-12 - Member Governance Correctives
 
 - Codebase design §10.1 requires member writes behind `members.modules.member_registry`, including

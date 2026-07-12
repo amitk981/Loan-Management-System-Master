@@ -1,0 +1,15 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006Z2-portal-application-limit-display-authority.md
+ M docs/slices/007A-approval-matrix-configuration.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-004-member-kyc-master.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+?? .ralph/runs/2026-07-12_141135_architecture_review/
+?? docs/slices/006X6-credit-authority-state-parity-matrix-closure.md
+?? docs/slices/006Y7-member-registry-race-and-action-scope-closure.md
+?? docs/slices/006Y8-witness-maker-checker-and-browser-closure.md
+?? docs/slices/006Y9-member-form-real-session-closure.md
+?? docs/slices/006Z4-active-member-rule-and-snapshot-closure.md

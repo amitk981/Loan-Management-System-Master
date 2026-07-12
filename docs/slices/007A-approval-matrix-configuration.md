@@ -49,6 +49,17 @@ Medium
 - Matrix facts live only in versioned configuration; no threshold constant in the case engine.
 - All gates pass; API examples for list/create/supersede saved.
 
+## Run-Ahead Sharpening Review (Architecture Review, 2026-07-12)
+
+- Expose one approval-matrix resolver public interface returning the effective rule id/version,
+  inclusive amount-bound interpretation, condition match, required roles/director count, joint flag,
+  and register requirement. API serializers and 007B/007C must consume this projection rather than
+  re-evaluating ranges.
+- Add a PostgreSQL competing-create/supersede acceptance case for overlapping effective amount/date
+  ranges. Exactly one rule becomes effective and the loser receives a standard conflict/validation
+  result with no audit or partial configuration evidence; an application/case snapshot referencing
+  the prior rule remains readable and immutable.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

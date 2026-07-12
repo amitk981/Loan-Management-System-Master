@@ -1,24 +1,25 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-12_135447_normal_run
+2026-07-12_141135_architecture_review
 
 ## Current Status
 
-006Z3 is complete. `members.modules.active_member_status` now owns the immutable BR-004/BR-007
-projection used by credit and portal consumers. Legacy active flags cannot replace persisted service
-usage; only canonical, verified, eligible-route, evidence-referenced supply rows contribute.
-Capture strictly validates object shape, fields, years, entity/route UUID relationships, decimals,
-evidence, and current member version, with atomic single-winner evidence.
+Architecture review of 006X5, 006Y5, 006Y6, and 006Z3 is complete. The executable credit matrix is
+still mostly permission-only; Member Registry lacks its declared PostgreSQL duplicate races and
+object-scoped approval projection; witness Update omits identity maker-checker authority and browser
+proof; active-member continuity can count across gaps and the module lacks dated verification,
+BR-006/service routes, immutable credit snapshots, and portal row explanations.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-12_135447_normal_run/`. Focused RED/GREEN and integration
-logs cover the public module, flag-only denial, strict capture, stale/competing writes, maker-checker,
-portal scope, and credit consumption. Frontend build/typecheck/lint plus 175 tests passed; backend
-437 tests passed (5 skipped) at 94% coverage. No migration or dependency was added.
+Evidence is under `.ralph/runs/2026-07-12_141135_architecture_review/`. Production code was not
+changed. Frontend build/typecheck/lint and 175 tests pass; backend check/migration sync and 437 tests
+pass (5 skipped) at 94% coverage. The slice queue and diff whitespace lint pass. CONTEXT remains
+truthful and no Blocked slice is stale.
 
 ## Next Run
 
-Run the architecture review now due after four completed slices; afterward run sharpened 006Z2 for
-the borrower-scoped server limit projection.
+Run 006X6 for the real credit authority/state matrix, 006Y7/006Y8/006Y9 for Registry race/object and
+member/witness routed authority closure, then 006Z4 for active-member rule/snapshot correctness.
+006Z2 now depends on 006Z4; 007A is sharpened for the following approval-matrix epic.

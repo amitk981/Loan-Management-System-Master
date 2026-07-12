@@ -1,5 +1,19 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-12 - Matrix and Active-Member Residual Closures
+
+- 006X5 invokes every named public credit write, but its denials remain mostly permission-only. The
+  required role/object/maker-checker/provenance/history/rejection/stale matrix is not executable, and
+  the inventory uses synthetic decision-suffixed codes rather than projected actions. 006X6 owns the
+  real parameterised action/write authority/state matrix.
+- 006Z3 moved calculation into the member domain and rejects legacy flag-only service evidence, but
+  its continuity helper can count across gaps: six years split across three clusters can report five
+  when the longest run is three. `as_of_date` does not exclude future rows.
+- The active-member module exposes no verify seam, does not preserve the complete dated evidence
+  result in the application snapshot, ignores BR-006's three-year employment/service route, and lacks
+  institution/relaxation/as-of tests. Portal rows hide their computed qualifying reason. 006Z4 owns
+  these source-backed rule, snapshot, verification, and explanation closures before 006Z2.
+
 ## 006X5 Executable Public Action / Write Matrix
 
 - The public regression now executes eligibility run, loan-limit calculate, appraisal create/

@@ -19,6 +19,9 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - Admin/config management requires `approvals.matrix.manage`; reads require
   `approvals.matrix.read`. Effective ranges and amount ranges must not overlap for the same
   decision/condition route, and updates must preserve historical case snapshots.
+- Architecture review sharpening: expose one resolver projection consumed unchanged by API and
+  downstream routing, and prove overlapping effective rule creation/supersession with a PostgreSQL
+  one-winner race while preserving already-referenced historical rule snapshots.
 
 ## 007B Existing 006G Case Enrichment
 

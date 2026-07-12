@@ -2,6 +2,128 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-12 14:17 - Architecture Review 2026-07-12_141135_architecture_review
+
+Reviewed completed product work since architecture-review commit `b6d86cd`:
+- `006X5-credit-public-action-write-matrix-closure` (`654a92b`)
+- `006Y5-member-registry-governance-and-form-contract-closure` (`45c267d`)
+- `006Y6-witness-contact-and-action-parity-closure` (`8dc46e8`)
+- `006Z3-active-member-supply-evidence-boundary-hardening` (`5cbbc5d`)
+
+The review checked `git diff b6d86cd...HEAD`, all four slice/run packets, implementation/tests,
+Epic 004/006 digests, cited source sections, assumptions, and M02/M04 functional IDs. Standards and
+spec fidelity were reviewed independently. Production code was not changed; `CONTEXT.md` remains
+truthful, and `.ralph/state.json` has no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - The active-member public seam is incomplete and governance remains split
+
+`ActiveMemberStatusModule` exposes only `calculate`; capture and verification remain in generic
+member services/views. The caller copies only three strings and does not retain the dated row/result
+snapshot, while `as_of_date` does not exclude future supply facts. This violates codebase-design
+§10.2's calculate/verify interface, dated-result/application-snapshot invariants, and §§26.1-26.2's
+deep-module test surface. High-risk `006Z4` owns the calculate/verify seam, dated immutable snapshot,
+and shared capture/verification governance.
+
+#### Finding 2 - High - Documented active-member routes and interface tests are absent
+
+The module reduces service evidence to a boolean and ignores the BR-006 three-year employment/
+service route and institutional supply-year route. Its only direct test covers an individual/direct
+four-year path and service false; FPC/institution, relaxation, as-of, future, malformed/wrong route,
+and Producer Institution cases are missing. This conflicts with codebase-design §10.2 and §26.3.
+`006Z4` owns the complete public-module table without inventing an approval authority.
+
+#### Finding 3 - High - Witness update actions omit the maker-checker rule enforced by writes
+
+`witness_resource_actions` evaluates permission and application scope only, but protected-identity
+correction rejects the original verifier. That actor can therefore see Update enabled and receive
+`MAKER_CHECKER_REQUIRED` from the write, contrary to API §44 and codebase-design §42.2. High-risk
+`006Y8` centralises field-specific correction evaluation and adds routed/browser authority proof.
+
+#### Finding 4 - High - 006X5's advertised matrix remains an inventory plus permission samples
+
+The static inventory assertion includes synthetic review-decision suffixes that are not projected
+action codes. Executed cases cover permission denials and one sanction state denial, not the required
+role, object, maker-checker, provenance, immutable-review, malformed-rejection, and stale variants.
+This fails codebase-design §26.3's observable interface matrix. High-risk `006X6` owns the generated
+real-action/state/authority matrix and preserves the PostgreSQL race gate.
+
+Judgment call: `MemberRegistry` is still a facade over private generic service functions, with its
+action serializer importing back into the Registry. Public bypasses are substantially reduced, but
+the circular ownership weakens codebase-design §10.1. `006Y7` removes that action-evaluation cycle
+while closing the concrete object/race defects.
+
+### Spec
+
+#### Finding 1 - High - 006X5 omits most of its named exhaustive cases
+
+006X5 requires success/denial execution for state, role, exact permission, object scope,
+maker-checker, frozen provenance, immutable review consistency, rejection payload, and stale state.
+The new tests exercise permission-only denials for most writes, a sanction state denial, and review
+success variants. `006X6` owns the missing executable cases; no M04 requirement is newly deferred.
+
+#### Finding 2 - High - 006Y5 did not run either mandatory PostgreSQL duplicate race
+
+The slice requires competing duplicate create and identity-approval races. Its tests are sequential
+`TestCase` requests with no concurrent transactions, and the slice declares no PostgreSQL runtime
+capability. `006Y7` adds twice-run duplicate races with one success, one standard field error, and
+exact zero-partial-evidence assertions.
+
+#### Finding 3 - High - Member approval projection omits object scope used by the write
+
+`approve_identity_change` performs Registry member-object access before its shared approval check,
+but `_available_actions` calls an evaluation containing only permission, pending status,
+requester-checker, version, and KYC state. An out-of-scope checker can see approval enabled and then
+be denied. `006Y7` makes projection/write consume one complete evaluation.
+
+#### Finding 4 - High - 006Y5's required real-session form proof is absent
+
+The complete §13.2 fields are present, but tests mock API wrapper functions and the run has no
+browser capability or screenshots. It does not prove real authenticated POST/PATCH/request/approval,
+canonical readback, or one-call `400`/`403`/`409` behavior required by the slice. `006Y9` supplies the
+mounted and trusted-browser individual/institution/identity workflow.
+
+#### Finding 5 - High - 006Y6 omitted both maker-checker parity and required browser acceptance
+
+The backend tests cover missing permission but not verifier identity denial, and the run packet
+explicitly treats the absence of a browser capability/contract as permission to omit the real flow
+even though the slice requires it. `006Y8` owns verifier/contact/identity parity plus the real routed
+three-state screenshot contract.
+
+#### Finding 6 - High - Active-member continuity can add years across gaps
+
+`longest_continuous_financial_years` counts every matching offset across the size of the set rather
+than stopping at the first gap. For `2020-21, 2022-23, 2023-24, 2025-26, 2026-27, 2027-28`, it reports
+five although the longest uninterrupted run is three, allowing BR-004/BR-007 to pass incorrectly.
+`006Z4` adds this regression and exact uninterrupted/as-of boundaries.
+
+#### Finding 7 - High - BR-006 and the dated verified active-status contract remain incomplete
+
+The module never consumes `employment_or_service_years`, exposes no `verify`, persists no complete
+dated evidence snapshot with the application, and does not exclude future rows. M02-FR-004 through
+M02-FR-006 therefore remain partial. `006Z4` owns the source-backed routes, dated verification, and
+immutable credit snapshot.
+
+#### Finding 8 - Medium - Portal supply rows hide their computed qualification result
+
+The module computes `qualifying` and `non_qualifying_reason`, but the portal serializes generic rows
+without either field. Pending/malformed/wrong-route rows are visible yet indistinguishable from
+accepted evidence, contrary to 006Z3's sharpened contract. `006Z4` projects stable row explanations
+and keeps totals/continuity qualification-only.
+
+No material scope creep was found. M04-FR-001/002 remain explicitly deferred to 012EA under A-053;
+M04-FR-003 retains A-054's receipt-time proxy. M04-FR-004..011 behavior remains substantive but its
+exhaustive parity acceptance is partial until 006X6. M02-FR-001/012 remain partial until 006Y7/006Y9
+close races, object parity, and reachability; M02-FR-009 remains partial until 006Y8; M02-FR-004..006
+remain partial until 006Z4. No ADR was added because API §44 and codebase-design §§10.1-10.2/26/42
+already settle the durable direction.
+
+Summary: Standards found 4 High issues plus 1 architecture judgment; worst are the incomplete dated
+active-member seam, missing rule routes, witness parity, and non-exhaustive credit matrix. Spec found
+7 High and 1 Medium issue; worst are the repeated credit/member/witness acceptance gaps and active-
+member continuity/rule errors.
+
 ## 2026-07-12 12:52 - Architecture Review 2026-07-12_125256_architecture_review
 
 Reviewed completed product work since architecture-review commit `cea56b2`:
