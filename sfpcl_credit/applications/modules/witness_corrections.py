@@ -20,7 +20,7 @@ class WitnessCorrectionError(Exception):
 
 @transaction.atomic
 def correct_witness(*, witness, payload, actor_user, request_ip="", request_user_agent=""):
-    allowed = {"version", "witness_name", "pan", "aadhaar"}
+    allowed = {"version", "witness_name", "pan", "aadhaar", "address", "mobile"}
     unknown = sorted(set(payload) - allowed)
     if unknown:
         raise WitnessCorrectionError("VALIDATION_ERROR", "Witness payload failed validation.", {field: "This verification-time field is immutable." for field in unknown})
@@ -43,6 +43,22 @@ def correct_witness(*, witness, payload, actor_user, request_ip="", request_user
             new_values["witness_name"] = value
             locked.witness_name = value
     identity_changed = False
+    for field, maximum in (("address", 500), ("mobile", 20)):
+        if field not in payload:
+            continue
+        value = str(payload[field] or "").strip()
+        if field == "mobile":
+            value = value.replace(" ", "")
+            if value and not re.fullmatch(r"[0-9]{7,15}", value):
+                raise WitnessCorrectionError("VALIDATION_ERROR", "Witness payload failed validation.", {field: "Mobile must contain 7 to 15 digits."})
+        elif not value or len(value) > maximum:
+            message = "This field may not be blank." if not value else "Address must be 500 characters or fewer."
+            raise WitnessCorrectionError("VALIDATION_ERROR", "Witness payload failed validation.", {field: message})
+        if value != getattr(locked, field):
+            changed.append(field)
+            old_values[field] = getattr(locked, field)
+            new_values[field] = value
+            setattr(locked, field, value)
     for field, length, pattern, message in (
         ("pan", 10, r"[A-Z]{5}[0-9]{4}[A-Z]", "PAN must match the source-defined format."),
         ("aadhaar", 12, r"[0-9]{12}", "Aadhaar must be a 12 digit number."),

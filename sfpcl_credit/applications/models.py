@@ -183,6 +183,8 @@ class Witness(models.Model):
         related_name="application_witnesses",
     )
     witness_name = models.CharField(max_length=255)
+    address = models.CharField(max_length=500, blank=True, default="")
+    mobile = models.CharField(max_length=20, blank=True, default="")
     pan_encrypted = models.TextField()
     pan_hash = models.CharField(max_length=128)
     aadhaar_encrypted = models.TextField()

@@ -151,7 +151,7 @@ export const WitnessPanel: React.FC<{ applicationId: string }> = ({ applicationI
   const [status, setStatus] = useState<'loading' | 'success' | 'forbidden' | 'error'>('loading');
   const [message, setMessage] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [values, setValues] = useState({ member_id: '', witness_name: '', pan: '', aadhaar: '' });
+  const [values, setValues] = useState({ member_id: '', witness_name: '', pan: '', aadhaar: '', address: '', mobile: '' });
   const [editing, setEditing] = useState<ApplicationWitness | null>(null);
   const refresh = async () => { const canonical = await fetchApplicationWitnesses(applicationId); setItems(canonical.items); setActions(canonical.actions); setStatus('success'); };
   useEffect(() => {
@@ -168,7 +168,7 @@ export const WitnessPanel: React.FC<{ applicationId: string }> = ({ applicationI
     try {
       await createApplicationWitness(applicationId, values);
       await refresh();
-      setValues({ member_id: '', witness_name: '', pan: '', aadhaar: '' });
+      setValues({ member_id: '', witness_name: '', pan: '', aadhaar: '', address: '', mobile: '' });
     } catch (error) {
       if (error instanceof AuthSessionError) { setErrors(error.fieldErrors ?? {}); setMessage(error.message); }
       else setMessage('Witness could not be saved.');
@@ -176,7 +176,7 @@ export const WitnessPanel: React.FC<{ applicationId: string }> = ({ applicationI
   };
   const correct = async (event: React.FormEvent) => {
     event.preventDefault(); if (!editing) return; setErrors({}); setMessage('');
-    try { await updateApplicationWitness(applicationId, editing.witness_id, { version: editing.version, witness_name: values.witness_name, ...(values.pan ? { pan: values.pan } : {}), ...(values.aadhaar ? { aadhaar: values.aadhaar } : {}) }); await refresh(); setEditing(null); setValues({ member_id: '', witness_name: '', pan: '', aadhaar: '' }); }
+    try { await updateApplicationWitness(applicationId, editing.witness_id, { version: editing.version, witness_name: values.witness_name, address: values.address, mobile: values.mobile, ...(values.pan ? { pan: values.pan } : {}), ...(values.aadhaar ? { aadhaar: values.aadhaar } : {}) }); await refresh(); setEditing(null); setValues({ member_id: '', witness_name: '', pan: '', aadhaar: '', address: '', mobile: '' }); }
     catch (error) { if (error instanceof AuthSessionError) { setErrors(error.fieldErrors ?? {}); setMessage(error.message); } else setMessage('Witness could not be corrected.'); }
   };
   if (status === 'loading') return unavailablePanel('Witness Details', 'Loading witness details from the application API.');
@@ -184,10 +184,10 @@ export const WitnessPanel: React.FC<{ applicationId: string }> = ({ applicationI
   return <div className="card space-y-4">
     <h3 className="font-semibold text-slate-800 flex items-center gap-2"><Users size={16} className="text-blue-600" /> Witness Details</h3>
     {message && <AlertBanner type="warning" title={status === 'error' ? 'Witnesses unavailable' : 'Witness could not be saved'} message={message} />}
-    {items.length === 0 ? <p className="text-sm text-slate-500">No witnesses have been captured for this application.</p> : items.map(item => <div key={item.witness_id} className="bg-slate-50 rounded-lg p-3 space-y-2">{factGrid([{ label: 'Witness name', value: item.witness_name }, { label: 'Folio', value: item.folio_number ?? 'Unavailable' }, { label: 'PAN', value: item.pan.masked ?? 'Unavailable' }, { label: 'Aadhaar', value: item.aadhaar.masked ?? 'Unavailable' }, { label: 'Shareholder', value: item.shareholder_verified_flag ? 'Verified' : 'Pending' }, { label: 'Verification', value: item.verification_status }])}{item.actions.some(action => action.action_code === 'update' && action.enabled) && <button className="btn-secondary text-sm" onClick={() => { setEditing(item); setValues({ member_id: '', witness_name: item.witness_name, pan: '', aadhaar: '' }); }}>Correct Witness</button>}</div>)}
-    {editing && <form onSubmit={correct} className="grid grid-cols-1 md:grid-cols-2 gap-3">{(['witness_name', 'pan', 'aadhaar'] as const).map(name => <label key={name} className="space-y-1 text-sm"><span className="text-slate-600 capitalize">{documentLabel(name)}</span><input aria-label={`Correction ${documentLabel(name)}`} className="field-input" value={values[name]} onChange={event => setValues(current => ({ ...current, [name]: event.target.value }))} />{errors[name] && <span className="text-xs text-red-600">{errors[name]}</span>}</label>)}<button className="btn-primary text-sm md:col-span-2">Save Witness Correction</button></form>}
+    {items.length === 0 ? <p className="text-sm text-slate-500">No witnesses have been captured for this application.</p> : items.map(item => { const updateAction = item.actions.find(action => action.action_code === 'update'); return <div key={item.witness_id} className="bg-slate-50 rounded-lg p-3 space-y-2">{factGrid([{ label: 'Witness name', value: item.witness_name }, { label: 'Address', value: item.address || 'Unavailable' }, { label: 'Mobile', value: item.mobile || 'Unavailable' }, { label: 'Folio', value: item.folio_number ?? 'Unavailable' }, { label: 'PAN', value: item.pan.masked ?? 'Unavailable' }, { label: 'Aadhaar', value: item.aadhaar.masked ?? 'Unavailable' }, { label: 'Shareholder', value: item.shareholder_verified_flag ? 'Verified' : 'Pending' }, { label: 'Verification', value: item.verification_status }])}{updateAction?.enabled ? <button className="btn-secondary text-sm" onClick={() => { setEditing(item); setValues({ member_id: '', witness_name: item.witness_name, pan: '', aadhaar: '', address: item.address, mobile: item.mobile }); }}>Correct Witness</button> : updateAction?.disabled_reason ? <p className="text-xs text-slate-500">{updateAction.disabled_reason}</p> : null}</div>; })}
+    {editing && <form onSubmit={correct} className="grid grid-cols-1 md:grid-cols-2 gap-3">{(['witness_name', 'address', 'mobile', 'pan', 'aadhaar'] as const).map(name => <label key={name} className="space-y-1 text-sm"><span className="text-slate-600 capitalize">{documentLabel(name)}</span><input aria-label={`Correction ${documentLabel(name)}`} className="field-input" value={values[name]} onChange={event => setValues(current => ({ ...current, [name]: event.target.value }))} />{errors[name] && <span className="text-xs text-red-600">{errors[name]}</span>}</label>)}<button className="btn-primary text-sm md:col-span-2">Save Witness Correction</button></form>}
     {actions.some(action => action.action_code === 'create' && action.enabled) && !editing && <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      {(['member_id', 'witness_name', 'pan', 'aadhaar'] as const).map(name => <label key={name} className="space-y-1 text-sm"><span className="text-slate-600 capitalize">{documentLabel(name)}</span><input aria-label={documentLabel(name)} className="field-input" value={values[name]} onChange={event => setValues(current => ({ ...current, [name]: event.target.value }))} />{errors[name] && <span className="text-xs text-red-600">{errors[name]}</span>}</label>)}
+      {(['member_id', 'witness_name', 'address', 'mobile', 'pan', 'aadhaar'] as const).map(name => <label key={name} className="space-y-1 text-sm"><span className="text-slate-600 capitalize">{documentLabel(name)}</span><input aria-label={documentLabel(name)} className="field-input" value={values[name]} onChange={event => setValues(current => ({ ...current, [name]: event.target.value }))} />{errors[name] && <span className="text-xs text-red-600">{errors[name]}</span>}</label>)}
       <button className="btn-primary text-sm md:col-span-2">Capture Witness</button>
     </form>}
   </div>;

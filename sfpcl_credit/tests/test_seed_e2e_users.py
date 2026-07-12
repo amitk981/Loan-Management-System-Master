@@ -204,6 +204,7 @@ class SeedE2eUsersTests(TestCase):
             data={
                 "member_id": str(witness_member.pk),
                 "witness_name": witness_member.legal_name,
+                "address": "Village Road, Pune",
                 "pan": "ABCDE1234F",
                 "aadhaar": "123412341234",
             },

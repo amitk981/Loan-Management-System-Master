@@ -68,6 +68,8 @@ export interface ApplicationWitness {
   verification_shareholding_id: string | null;
   folio_number: string | null;
   witness_name: string;
+  address: string;
+  mobile: string;
   pan: { masked: string | null; can_view_full: boolean };
   aadhaar: { masked: string | null; can_view_full: boolean };
   shareholder_verified_flag: boolean;
@@ -87,6 +89,8 @@ export interface CreateApplicationWitnessPayload {
   witness_name: string;
   pan: string;
   aadhaar: string;
+  address: string;
+  mobile: string;
 }
 
 export interface ApplicationAvailableAction {
@@ -328,7 +332,7 @@ export const createApplicationWitness = async (
 export const updateApplicationWitness = async (
   applicationId: string,
   witnessId: string,
-  payload: { version: number; witness_name?: string; pan?: string; aadhaar?: string },
+  payload: { version: number; witness_name?: string; address?: string; mobile?: string; pan?: string; aadhaar?: string },
 ): Promise<ApplicationWitness> => {
   const envelope = await request<ApplicationWitness>(`/api/v1/loan-applications/${applicationId}/witnesses/${witnessId}/`, 'PATCH', payload);
   return envelope.data as ApplicationWitness;

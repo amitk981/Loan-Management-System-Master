@@ -1,0 +1,32 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+FF
+======================================================================
+FAIL: test_witness_contact_fields_round_trip_and_contact_only_correction_records_history (sfpcl_credit.tests.test_witness_api.WitnessApiTests.test_witness_contact_fields_round_trip_and_contact_only_correction_records_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_134315_normal_run/sfpcl_credit/tests/test_witness_api.py", line 170, in test_witness_contact_fields_round_trip_and_contact_only_correction_records_history
+    self.assertEqual(created.status_code, 200)
+AssertionError: 400 != 200
+
+======================================================================
+FAIL: test_witness_resources_project_versioned_read_create_and_update_actions (sfpcl_credit.tests.test_witness_api.WitnessApiTests.test_witness_resources_project_versioned_read_create_and_update_actions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_134315_normal_run/sfpcl_credit/tests/test_witness_api.py", line 162, in test_witness_resources_project_versioned_read_create_and_update_actions
+    self.assertEqual([action["action_code"] for action in denied["actions"]], ["read", "create"])
+AssertionError: Lists differ: ['read'] != ['read', 'create']
+
+Second list contains 1 additional elements.
+First extra element 1:
+'create'
+
+- ['read']
++ ['read', 'create']
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.047s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

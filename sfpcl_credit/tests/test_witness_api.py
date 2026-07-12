@@ -91,6 +91,7 @@ class WitnessApiTests(TestCase):
             data={
                 "member_id": str(self.member.member_id),
                 "witness_name": "Sita Patil",
+                "address": "Village Road, Pune",
                 "pan": "ABCDE1234F",
                 "aadhaar": "123412341234",
             },
@@ -154,6 +155,34 @@ class WitnessApiTests(TestCase):
             [action["action_code"] for action in witness["actions"]],
             ["read", "update"],
         )
+
+        reader = self._user("projection.reader@sfpcl.example", "ReaderPass123!", Permission.objects.get(permission_code=WITNESS_READ_PERMISSION))
+        self.application.created_by_user = reader
+        self.application.save(update_fields=["created_by_user"])
+        denied = self.client.get(self._url(), headers=self._headers_for(reader.email, "ReaderPass123!")).json()
+        self.assertEqual([action["action_code"] for action in denied["actions"]], ["read", "create"])
+        self.assertEqual([action["enabled"] for action in denied["actions"]], [True, False])
+        self.assertEqual([action["action_code"] for action in denied["data"][0]["actions"]], ["read", "update"])
+        self.assertEqual([action["enabled"] for action in denied["data"][0]["actions"]], [True, False])
+        self.assertEqual(denied["data"][0]["actions"][1]["disabled_reason"], "Missing witness update permission.")
+
+    def test_witness_contact_fields_round_trip_and_contact_only_correction_records_history(self):
+        created = self._post(address="Village Road, Pune", mobile="9876543210")
+        self.assertEqual(created.status_code, 200)
+        self.assertEqual(created.json()["data"]["address"], "Village Road, Pune")
+        self.assertEqual(created.json()["data"]["mobile"], "9876543210")
+
+        response = self.client.patch(
+            self._detail_url(created.json()["data"]["witness_id"]),
+            data={"version": 1, "address": "Market Road, Pune", "mobile": "9123456780"},
+            content_type="application/json",
+            headers=self._headers(),
+        )
+        self.assertEqual(response.status_code, 200)
+        history = WitnessChangeHistory.objects.get()
+        self.assertEqual(history.changed_fields, ["address", "mobile"])
+        self.assertEqual(history.old_value_json, {"address": "Village Road, Pune", "mobile": "9876543210"})
+        self.assertEqual(history.new_value_json, {"address": "Market Road, Pune", "mobile": "9123456780"})
 
     def test_witness_correction_is_versioned_masked_audited_and_preserves_evidence(self):
         created = self._post().json()["data"]
@@ -390,6 +419,8 @@ class WitnessApiTests(TestCase):
         payload = {
             "member_id": str(self.member.member_id),
             "witness_name": "Sita Patil",
+            "address": "Village Road, Pune",
+            "mobile": "",
             "pan": "ABCDE1234F",
             "aadhaar": "123412341234",
         }

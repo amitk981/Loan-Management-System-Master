@@ -1,0 +1,263 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/applications/WitnessPanel.container.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_134315_normal_run/sfpcl-lms
+
+ ❯ src/pages/applications/WitnessPanel.container.test.tsx (2 tests | 1 failed) 291ms
+   × mounted witness resource actions > captures with the exact body and refetches the canonical collection once 217ms
+     → Unable to find a label with the text of: /^address$/i
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card space-y-4"[39m
+    [36m>[39m
+      [36m<h3[39m
+        [33mclass[39m=[32m"font-semibold text-slate-800 flex items-center gap-2"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-users text-blue-600"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+          [36m/>[39m
+          [36m<circle[39m
+            [33mcx[39m=[32m"9"[39m
+            [33mcy[39m=[32m"7"[39m
+            [33mr[39m=[32m"4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Witness Details[0m
+      [36m</h3>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"text-sm text-slate-500"[39m
+      [36m>[39m
+        [0mNo witnesses have been captured for this application.[0m
+      [36m</p>[39m
+      [36m<form[39m
+        [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-2 gap-3"[39m
+      [36m>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"space-y-1 text-sm"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-slate-600 capitalize"[39m
+          [36m>[39m
+            [0mmember id[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"member id"[39m
+            [33mclass[39m=[32m"field-input"[39m
+            [33mvalue[39m=[32m"member-1"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"space-y-1 text-sm"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-slate-600 capitalize"[39m
+          [36m>[39m
+            [0mwitness name[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"witness name"[39m
+            [33mclass[39m=[32m"field-input"[39m
+            [33mvalue[39m=[32m"Witness One"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"space-y-1 text-sm"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-slate-600 capitalize"[39m
+          [36m>[39m
+            [0mpan[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"pan"[39m
+            [33mclass[39m=[32m"field-input"[39m
+            [33mvalue[39m=[32m"ABCDE1234F"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"space-y-1 text-sm"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-slate-600 capitalize"[39m
+          [36m>[39m
+            [0maadhaar[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"aadhaar"[39m
+            [33mclass[39m=[32m"field-input"[39m
+            [33mvalue[39m=[32m"123412341234"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-primary text-sm md:col-span-2"[39m
+        [36m>[39m
+          [0mCapture Witness[0m
+        [36m</button>[39m
+      [36m</form>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   ✓ mounted witness resource actions > corrects with current version and never exposes a control when the resource action is absent 73ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/applications/WitnessPanel.container.test.tsx > mounted witness resource actions > captures with the exact body and refetches the canonical collection once
+TestingLibraryElementError: Unable to find a label with the text of: /^address$/i
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card space-y-4"[39m
+    [36m>[39m
+      [36m<h3[39m
+        [33mclass[39m=[32m"font-semibold text-slate-800 flex items-center gap-2"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-users text-blue-600"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+          [36m/>[39m
+          [36m<circle[39m
+            [33mcx[39m=[32m"9"[39m
+            [33mcy[39m=[32m"7"[39m
+            [33mr[39m=[32m"4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Witness Details[0m
+      [36m</h3>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"text-sm text-slate-500"[39m
+      [36m>[39m
+        [0mNo witnesses have been captured for this application.[0m
+      [36m</p>[39m
+      [36m<form[39m
+        [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-2 gap-3"[39m
+      [36m>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"space-y-1 text-sm"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-slate-600 capitalize"[39m
+          [36m>[39m
+            [0mmember id[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"member id"[39m
+            [33mclass[39m=[32m"field-input"[39m
+            [33mvalue[39m=[32m"member-1"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"space-y-1 text-sm"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-slate-600 capitalize"[39m
+          [36m>[39m
+            [0mwitness name[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"witness name"[39m
+            [33mclass[39m=[32m"field-input"[39m
+            [33mvalue[39m=[32m"Witness One"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"space-y-1 text-sm"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-slate-600 capitalize"[39m
+          [36m>[39m
+            [0mpan[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"pan"[39m
+            [33mclass[39m=[32m"field-input"[39m
+            [33mvalue[39m=[32m"ABCDE1234F"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"space-y-1 text-sm"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"text-slate-600 capitalize"[39m
+          [36m>[39m
+            [0maadhaar[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"aadhaar"[39m
+            [33mclass[39m=[32m"field-input"[39m
+            [33mvalue[39m=[32m"123412341234"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn-primary text-sm md:col-span-2"[39m
+        [36m>[39m
+          [0mCapture Witness[0m
+        [36m</button>[39m
+      [36m</form>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/applications/WitnessPanel.container.test.tsx:32:33
+     30|     await userEvent.type(screen.getByLabelText(/^pan$/i), 'ABCDE1234F'…
+     31|     await userEvent.type(screen.getByLabelText(/^aadhaar$/i), '1234123…
+     32|     await userEvent.type(screen.getByLabelText(/^address$/i), 'Village…
+       |                                 ^
+     33|     await userEvent.type(screen.getByLabelText(/^mobile$/i), '98765432…
+     34|     await userEvent.click(screen.getByRole('button', { name: 'Capture …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  13:45:34
+   Duration  1.12s (transform 121ms, setup 0ms, collect 283ms, tests 291ms, environment 310ms, prepare 41ms)
+

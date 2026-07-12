@@ -2118,7 +2118,9 @@ Application-scoped endpoints:
 
 GET requires `members.witness.read` plus application object access and returns the standard list
 envelope in deterministic created order. POST requires `members.witness.create` plus application
-object access and accepts exactly `member_id`, `witness_name`, `pan`, and `aadhaar`.
+object access and accepts exactly `member_id`, `witness_name`, `address`, optional `mobile`, `pan`,
+and `aadhaar`. Address is required free text up to 500 characters; a supplied mobile contains 7-15
+digits after spaces are removed.
 
 The selected member must exist, the trimmed/case-normalized witness name must match its legal or
 display name, member KYC must be `verified`, and persisted shareholding evidence must include an
@@ -2137,19 +2139,23 @@ tokens, and keyed hashes are never returned or audited. Creation writes one meta
 Later shareholding folio/status/count changes or newly created holdings do not change witness read
 evidence. Legacy rows whose creation audit folio does not resolve to exactly one member
 shareholding expose both evidence fields as `null` rather than selecting current facts.
-### Witness correction and resource actions (006Y4)
+### Witness correction and resource actions (006Y4, closed by 006Y6)
 
 - The collection GET additionally returns top-level six-field `actions` for `read` and `create`;
   each witness returns `version` plus six-field `actions` for `read` and `update`. The same
   permission/object-access evaluations guard the writes.
 - `GET/PATCH /api/v1/loan-applications/{loan_application_id}/witnesses/{witness_id}/` requires
   `members.witness.read/update` respectively and exact application object access.
-- PATCH requires current positive-integer `version` and accepts only `witness_name`, `pan`, and
+- PATCH requires current positive-integer `version` and accepts only `witness_name`, `address`,
+  optional `mobile`, `pan`, and
   `aadhaar`. Verification evidence/provenance fields are immutable. Invalid fields return 400;
   stale version returns `409 VERSION_CONFLICT`, both with zero domain/evidence writes.
 - Verified identity correction requires a different authorised actor from the verification actor.
   Success increments version, stores protected identity, returns masked values, writes masked
   history, and emits metadata-only `applications.witness.corrected` audit evidence.
+- Collection/resource action arrays always contain their read/create or read/update entries in the
+  standard six-field shape. Denied actions remain present with the permission/object-access reason;
+  the public write applies the same permission and application-object checks.
 
 # Epic 006 authoritative workbench actions (006H4)
 

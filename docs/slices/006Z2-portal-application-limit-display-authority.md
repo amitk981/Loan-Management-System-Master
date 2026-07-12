@@ -87,6 +87,13 @@ Medium
 - Keep requested-amount comparison server-owned and return the advisory as a projected fact so the
   mounted portal test can prove no arithmetic or inferred authority remains in React.
 
+## Run-Ahead Sharpening Review (006Y6, 2026-07-12)
+
+- Keep every limit/advisory state canonical after submission by refetching the borrower-scoped
+  projection once; never merge the submitted amount into the projection or infer a warning locally.
+- The mounted no-authority/error cases must prove no mutation/retry is invoked, while the three
+  approved cards and review row consume only fields present in the server response.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

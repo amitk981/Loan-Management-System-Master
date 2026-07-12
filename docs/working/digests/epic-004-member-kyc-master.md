@@ -457,3 +457,13 @@ before implementation.
   corrective slice 006Y5; current staff forms submit only a subset.
 - S09 names witness address and mobile in addition to name/PAN/Aadhaar. 006Y6 must persist those
   contact fields and expose disabled six-field witness actions rather than omitting denied actions.
+
+## 006Y6 Witness Contact and Action Parity Closure
+
+- S09 address is required free text (500-character storage boundary); mobile is optional and, when
+  supplied, contains 7-15 digits after spaces are removed. Both are returned by witness APIs and
+  recorded as plain old/new values in versioned correction history because they are not protected
+  identity evidence.
+- Collection and resource projections retain read/create and read/update actions when disabled,
+  with stable permission or application-object reasons. Application Detail consumes these actions,
+  shows the disabled update reason, and never infers mutation authority.

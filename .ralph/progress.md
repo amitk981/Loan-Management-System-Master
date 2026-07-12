@@ -3882,3 +3882,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-12_134315_normal_run
+
+- Completed 006Y6: S09 witness address/mobile now round-trip through capture and governed,
+  versioned correction without rewriting verification evidence.
+- Witness collection/resource actions retain denied entries with stable backend reasons; the real
+  Application Detail container displays the update denial and cannot invoke unauthorized writes.
+- Frontend build/typecheck/lint and 175 tests passed. Backend check/migration sync and 436 tests
+  passed (5 skipped) at 94% coverage.
+- Next action: run 006Z3, then 006Z2.
+
+## 2026-07-12 13:54:37 - 2026-07-12_134315_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Y6-witness-contact-and-action-parity-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_134315_normal_run/.ralph/runs/2026-07-12_134315_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_134315_normal_run/.ralph/runs/2026-07-12_134315_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

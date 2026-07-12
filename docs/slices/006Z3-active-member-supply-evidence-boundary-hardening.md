@@ -65,3 +65,11 @@ High
 - Active-member logic is member-owned, publicly testable, strictly validated, and shared by credit
   and portal projections.
 
+## Run-Ahead Sharpening Review (006Y6, 2026-07-12)
+
+- Treat the public member-owned module as the only writer/projection entry point: its disabled
+  capture/verify actions must remain present in the standard six-field shape and use the exact
+  permission, object-scope, stale-version, and maker-checker reasons returned by writes.
+- Add a mounted consumer regression for the shared verified-row projection before 006Z2 consumes
+  it; pending, malformed-year, and wrong-route rows must remain visibly non-qualifying rather than
+  being filtered into an apparently complete continuity result.

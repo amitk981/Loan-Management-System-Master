@@ -39,7 +39,7 @@ afterEach(() => {
 describe('application intake API client', () => {
   it('reads and creates witnesses through the application-scoped contract', async () => {
     const witness = { witness_id: 'witness-1', witness_name: 'Test Witness' };
-    const payload = { member_id: 'member-1', witness_name: 'Test Witness', pan: 'ABCDE1234F', aadhaar: '123412341234' };
+    const payload = { member_id: 'member-1', witness_name: 'Test Witness', address: 'Village Road', mobile: '', pan: 'ABCDE1234F', aadhaar: '123412341234' };
     const fetchMock = vi.fn().mockResolvedValueOnce(ok([witness])).mockResolvedValueOnce(ok(witness));
     vi.stubGlobal('fetch', fetchMock);
 

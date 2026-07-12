@@ -192,8 +192,10 @@ def witness_collection_actions(application, actor, permissions=None):
         ("read", "View Witnesses", WITNESS_READ_PERMISSION),
         ("create", "Capture Witness", WITNESS_CREATE_PERMISSION),
     ):
-        if required in permissions and evaluate_application_object_access(application, actor, required, permissions).allowed:
-            actions.append({"action_code": code, "label": label, "enabled": True, "disabled_reason": None, "required_permission": required, "required_role": None})
+        access = evaluate_application_object_access(application, actor, required, permissions)
+        enabled = required in permissions and access.allowed
+        reason = None if enabled else (f"Missing witness {code} permission." if required not in permissions else "Witness is outside your application access scope.")
+        actions.append({"action_code": code, "label": label, "enabled": enabled, "disabled_reason": reason, "required_permission": required, "required_role": None})
     return actions
 
 
@@ -204,14 +206,16 @@ def witness_resource_actions(witness, actor, permissions=None):
         ("read", "View Witness", WITNESS_READ_PERMISSION),
         ("update", "Correct Witness", WITNESS_UPDATE_PERMISSION),
     ):
-        if required in permissions and evaluate_application_object_access(witness.loan_application, actor, required, permissions).allowed:
-            actions.append({"action_code": code, "label": label, "enabled": True, "disabled_reason": None, "required_permission": required, "required_role": None})
+        access = evaluate_application_object_access(witness.loan_application, actor, required, permissions)
+        enabled = required in permissions and access.allowed
+        reason = None if enabled else (f"Missing witness {code} permission." if required not in permissions else "Witness is outside your application access scope.")
+        actions.append({"action_code": code, "label": label, "enabled": enabled, "disabled_reason": reason, "required_permission": required, "required_role": None})
     return actions
 
 
 @transaction.atomic
 def create_witness(application, payload, actor_user, request_ip="", request_user_agent=""):
-    allowed_fields = {"member_id", "witness_name", "pan", "aadhaar"}
+    allowed_fields = {"member_id", "witness_name", "pan", "aadhaar", "address", "mobile"}
     unknown_fields = sorted(set(payload) - allowed_fields)
     if unknown_fields:
         raise WitnessValidationError(
@@ -262,6 +266,14 @@ def create_witness(application, payload, actor_user, request_ip="", request_user
         )
     pan = str(payload.get("pan") or "").strip().upper()
     aadhaar = str(payload.get("aadhaar") or "").replace(" ", "").strip()
+    address = str(payload.get("address") or "").strip()
+    mobile = str(payload.get("mobile") or "").replace(" ", "").strip()
+    if not address:
+        raise WitnessValidationError("MISSING_REQUIRED_FIELD", "Witness address is required.", {"address": "This field is required."})
+    if len(address) > 500:
+        raise WitnessValidationError("VALIDATION_ERROR", "Witness payload failed validation.", {"address": "Address must be 500 characters or fewer."})
+    if mobile and not re.fullmatch(r"[0-9]{7,15}", mobile):
+        raise WitnessValidationError("VALIDATION_ERROR", "Witness payload failed validation.", {"mobile": "Mobile must contain 7 to 15 digits."})
     if not pan:
         raise WitnessValidationError("MISSING_REQUIRED_FIELD", "PAN is required.", {"pan": "This field is required."})
     if not re.fullmatch(r"[A-Z]{5}[0-9]{4}[A-Z]", pan):
@@ -275,6 +287,8 @@ def create_witness(application, payload, actor_user, request_ip="", request_user
         loan_application=application,
         member=member,
         witness_name=witness_name,
+        address=address,
+        mobile=mobile,
         pan_encrypted=protected_identity_token(pan, 10),
         pan_hash=identity_hash(pan),
         aadhaar_encrypted=protected_identity_token(aadhaar, 12),
@@ -319,6 +333,8 @@ def serialize_witness(witness, actor=None, permissions=None):
         ),
         "folio_number": witness.verification_folio_number,
         "witness_name": witness.witness_name,
+        "address": witness.address,
+        "mobile": witness.mobile,
         "pan": {"masked": mask_protected_identity(witness.pan_encrypted, 10), "can_view_full": False},
         "aadhaar": {"masked": mask_protected_identity(witness.aadhaar_encrypted, 12), "can_view_full": False},
         "shareholder_verified_flag": witness.shareholder_verified_flag,
