@@ -30,7 +30,8 @@ evidence, verification, credit snapshots, and portal explanations share one corr
 
 - Correct financial-year continuity to measure an uninterrupted run; separated clusters may not be
   added across gaps. Add the known regression where six qualifying years in three clusters currently
-  report five although the longest run is three.
+  report five although the longest run is three. The assertion must retain the six classified rows,
+  report `continuous_years = 3`, and keep every non-qualifying/gap explanation visible.
 - Make `as_of_date` authoritative: exclude future/not-yet-complete supply facts and return a dated,
   immutable evidence projection. Credit must persist the complete result/evidence snapshot used for
   the application rather than copying only three status strings.

@@ -1,5 +1,21 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006X6 Credit Authority and State Matrix Closure
+
+- The executable public matrix now covers the eight real §44 action codes without synthetic
+  review-decision suffixes. Twenty tests invoke the same public projection/write seams across
+  enabled, permission, role, object-scope, maker-checker, state, stale-state, frozen-provenance,
+  immutable-review, and malformed-rejection variants as applicable.
+- Matrix execution exposed two projection defects: appraisal review/sanction role blockers used a
+  generic role message instead of the exact public-write reason, and appraisal creation inherited
+  loan-limit's ineligible reason. Both projections now use the matching write reason.
+- Denied rows retain resource state and audit/workflow/review/rejection/case cardinalities. All
+  three review decisions still use `credit.appraisal.review`; rejection alone creates one draft
+  rejection note.
+- The unchanged authoritative PostgreSQL five-race suite ran twice with five tests and zero skips.
+  Its sanction race begins from an enabled projection, preserves one case/event winner, and writes
+  no loser evidence. No additional projection/write race was exposed by the completed matrix.
+
 ## Architecture Review 2026-07-12 - Matrix and Active-Member Residual Closures
 
 - 006X5 invokes every named public credit write, but its denials remain mostly permission-only. The

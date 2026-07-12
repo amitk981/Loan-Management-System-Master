@@ -1,0 +1,22 @@
+
+> sfpcl-lms@1.0.0 build
+> vite build
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+vite v5.4.21 building for production...
+transforming...
+✓ 1872 modules transformed.
+[plugin:vite:reporter] [plugin vite:reporter] 
+(!) /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_142843_normal_run/sfpcl-lms/src/services/memberProfileApi.ts is dynamically imported by /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_142843_normal_run/sfpcl-lms/src/pages/members/MemberProfile.tsx but also statically imported by /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_142843_normal_run/sfpcl-lms/src/pages/applications/NewApplication.tsx, /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_142843_normal_run/sfpcl-lms/src/pages/members/Borrower360.tsx, /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_142843_normal_run/sfpcl-lms/src/pages/members/MemberGovernanceForm.tsx, /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_142843_normal_run/sfpcl-lms/src/pages/members/MemberProfile.tsx, dynamic import will not move module into another chunk.
+
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.75 kB │ gzip:   0.43 kB
+dist/assets/index-BAE8F0XK.css     51.80 kB │ gzip:   8.98 kB
+dist/assets/index-Cbw7lppg.js   1,147.70 kB │ gzip: 246.51 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.39s

@@ -282,6 +282,12 @@ def _loan_limit_actions(application, actor, permissions):
         create_reason = "You do not have permission to create appraisal notes."
     elif transition.allowed and "credit.risk_assessment.manage" not in permissions:
         create_reason = "You do not have permission to manage risk assessments."
+    elif (
+        (eligibility := EligibilityAssessment.objects.filter(loan_application=application).first())
+        is not None
+        and eligibility.overall_result != EligibilityAssessment.OVERALL_ELIGIBLE
+    ):
+        create_reason = "Appraisal creation requires eligibility overall_result eligible."
     else:
         create_reason = reason
     return [

@@ -3954,3 +3954,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-12_142843_normal_run
+
+- Completed 006X6: the credit matrix executes twenty public projection/write tests across all eight
+  real action codes and applicable authority, state, provenance, history, and payload variants.
+- Corrected exact role-denial projection parity for review/sanction and appraisal-create ineligible
+  reason parity. PostgreSQL five-race acceptance passed twice without skips.
+- Frontend build/typecheck/lint and 175 tests passed; backend check/migration sync and 446 tests
+  passed (5 skipped) at 94% coverage.
+- Next action: run 006Y7-member-registry-race-and-action-scope-closure.
+
+## 2026-07-12 14:54:29 - 2026-07-12_142843_normal_run
+- Agent tool used: codex
+- Slice attempted: 006X6-credit-authority-state-parity-matrix-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_142843_normal_run/.ralph/runs/2026-07-12_142843_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_142843_normal_run/.ralph/runs/2026-07-12_142843_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

@@ -1,7 +1,7 @@
 # Slice 006X6: Credit Authority and State Parity Matrix Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review

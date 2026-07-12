@@ -32,6 +32,9 @@ member object scope as the approval write.
 - Make identity-approval projection and write consume one evaluation covering exact permission,
   member object scope, requester-checker separation, pending state, member/request version, and KYC
   state. An out-of-scope checker must see the same disabled reason/category returned by the write.
+  The projected approval row must contain exactly §44's `action_code`, `label`, `enabled`,
+  `disabled_reason`, `required_permission`, and `required_role` fields; no serializer-local
+  authority inference may supplement them.
 - Add direct public-module tests for create, update, read, request, and approve so view checks or
   patched evaluators cannot substitute for the Registry's own permission/object authority.
 - Add real PostgreSQL duplicate-create and duplicate-identity-approval races. Each race must return
