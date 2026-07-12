@@ -1,0 +1,6 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006Y9-member-form-real-session-closure.md
+ M docs/working/HANDOFF.md
+?? .ralph/runs/2026-07-12_171448_normal_run/
+?? sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts

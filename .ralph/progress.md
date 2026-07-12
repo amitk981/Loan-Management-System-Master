@@ -4058,12 +4058,104 @@ Validation evidence added:
   (7 expected SQLite skips) at 94% coverage.
 - Next action: independently revalidate, then run 006Y9-member-form-real-session-closure.
 
+# Run 2026-07-12_171448_normal_run
+
+- Completed 006Y9's real-session acceptance contract for complete individual/institution member
+  registration, canonical ordinary correction, protected identity request/requester denial, visible
+  staff session switch, and separate-checker approval.
+- Exact create bodies, unique synthetic identities, one mutation/canonical-read cardinality, masked
+  readback, and the four required screenshot paths are asserted without production or styling changes.
+- Frontend build/typecheck/lint and 176 tests pass. Backend check/migration sync and 451 tests pass
+  (7 expected SQLite skips) at 94% coverage. Playwright collects one scenario; local Chromium is
+  sandbox-denied and independent trusted-browser execution remains authoritative.
+- Next action: architecture review, then 006Z4-active-member-rule-and-snapshot-closure.
+
+# Repair 2026-07-12_172349_repair
+
+- Reproduced the 006Y9 trusted-browser contract rejection with Ralph's strict parser: the spec path
+  was repository-relative and the prose/nested screenshot paths were invalid machine entries.
+- Normalized the declaration to one project-relative spec and four screenshot basenames, moving the
+  scenario prose to its own section. Production code and the preserved Playwright flow are unchanged.
+- The strict contract parser passes and Playwright collects one scenario. Frontend build/typecheck/
+  lint and 176 tests pass; backend check/migration sync and 451 tests pass (7 expected SQLite skips)
+  at 94% coverage.
+- Next action: independently execute the browser contract twice with four screenshots, then run the
+  due architecture review before 006Z4.
+
 ## 2026-07-12 15:56:32 - 2026-07-12_154807_repair
 - Agent tool used: codex
 - Slice attempted: 006Y8-witness-maker-checker-and-browser-closure
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_150856_normal_run/.ralph/runs/2026-07-12_154807_repair/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_150856_normal_run/.ralph/runs/2026-07-12_154807_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+# Repair 2026-07-12_173319_repair
+
+- Diagnosed two identical trusted-browser failures after successful member create/refetch: the
+  scenario waited for a nonexistent `Back to Members` control instead of the routed profile heading.
+- Aligned requester/checker locators with the Registry-projected approval action and corrected the
+  expected protected PAN mask. Added a Strict Mode regression and reused the in-flight initial
+  profile request so registration performs one canonical detail GET instead of two.
+- Playwright collects one scenario. Frontend build/typecheck/lint and 177 tests pass; backend
+  check/migration sync and 451 tests pass (7 expected SQLite skips) at 94% coverage. Local Chromium
+  remains sandbox-denied; independent trusted-browser execution must run twice and save four images.
+- The next two pending slices, 006Z4 and its dependent 006Z2, are already concretely sharpened.
+- Next action: independently execute the browser contract twice, then run the due architecture
+  review before 006Z4.
+
+# Repair 2026-07-12_174521_repair
+
+- Diagnosed both trusted runs failing at the same masked-Aadhaar visibility assertion after the
+  create and one canonical detail GET succeeded. Playwright's substring text match selected both
+  the exact masked identity and a longer masked history value.
+- Changed only that E2E assertion to require exact text. No backend, production frontend, styling,
+  permission, or business-rule behavior changed in this repair.
+- Playwright collects one declared scenario. Frontend build/typecheck/lint and 177 tests pass;
+  backend check/migration sync and 451 tests pass (7 expected SQLite skips) at 93% coverage. Local
+  Chromium is sandbox-denied before page creation; independent browser execution remains decisive.
+- The next two pending slices, 006Z4 and dependent 006Z2, remain concretely sharpened.
+- Next action: independently execute the browser contract twice and save all four screenshots, then
+  run the due architecture review before 006Z4.
+
+# Repair 2026-07-12_175317_repair
+
+- Diagnosed both trusted runs failing at the same institution-registration field fill: Playwright's
+  default substring label matching resolved `PAN` to both the common `PAN` and `Signatory PAN`
+  inputs.
+- Changed only the slice-owned E2E helper to require exact labels for common registration fields.
+  No backend, production frontend, styling, permission, or business-rule behavior changed.
+- Playwright collects one declared scenario. Frontend build/typecheck/lint and 177 tests pass;
+  backend check/migration sync and 451 tests pass (7 expected SQLite skips) at 93% coverage. Local
+  Chromium is sandbox-denied before page creation; independent browser execution remains decisive.
+- The next two pending slices, 006Z4 and dependent 006Z2, remain concretely sharpened.
+- Next action: independently execute the browser contract twice and save all four screenshots, then
+  run the due architecture review before 006Z4.
+
+# Repair 2026-07-12_180154_repair
+
+- Diagnosed both trusted runs failing after the requester successfully created a protected identity
+  request and the checker loaded the canonical seeded-member response. The shared navigation helper
+  incorrectly required an edit-form banner that is intentionally absent for the approval-only checker.
+- Changed only the slice-owned E2E expectations: the shared helper waits for the canonical profile
+  heading, and the requester path retains the locked-identity banner assertion. No production,
+  styling, permission, API, persistence, or business-rule behavior changed.
+- Playwright collects one declared scenario. Frontend build/typecheck/lint and 177 tests pass;
+  backend check/migration sync and 451 tests pass (7 expected SQLite skips) at 93% coverage. Local
+  Chromium is sandbox-denied before page creation; independent browser execution remains decisive.
+- The next two pending slices, 006Z4 and dependent 006Z2, were re-reviewed and remain concretely
+  sharpened; no unrelated queue edits were needed.
+- Next action: independently execute the browser contract twice and save all four screenshots, then
+  run the due architecture review before 006Z4.
+
+## 2026-07-12 18:14:54 - 2026-07-12_180154_repair
+- Agent tool used: codex
+- Slice attempted: 006Y9-member-form-real-session-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/.ralph/runs/2026-07-12_180154_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/.ralph/runs/2026-07-12_180154_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

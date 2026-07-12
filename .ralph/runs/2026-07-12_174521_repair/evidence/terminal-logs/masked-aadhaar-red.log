@@ -1,0 +1,11 @@
+Prior trusted-browser red signal (2026-07-12_173319_repair), reproduced identically in two runs:
+
+Error: expect.toBeVisible: strict mode violation: getByText('********6069') resolved to 2 elements:
+1) exact masked Aadhaar text: ********6069
+2) a longer masked change-history text ending in 6069
+
+Failing assertion:
+await expect(page.getByText(maskAadhaar(individual.aadhaar))).toBeVisible();
+
+The POST /api/v1/members/ and the single canonical GET /api/v1/members/{id}/ both returned 200
+before this assertion, isolating the failure to Playwright locator ambiguity.

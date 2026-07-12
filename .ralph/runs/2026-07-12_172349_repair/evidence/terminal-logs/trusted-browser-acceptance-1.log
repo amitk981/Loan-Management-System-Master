@@ -1,0 +1,65 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/.ralph/runs/2026-07-12_172349_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-governance-variants.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-governance-variants.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 12:00:25] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[2m[WebServer] [22m(node:9695) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "GET /api/v1/members/ HTTP/1.1" 200 1394
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "GET /api/v1/members/ HTTP/1.1" 200 1394
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "POST /api/v1/members/ HTTP/1.1" 200 2326
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "OPTIONS /api/v1/members/d29e6297-fe84-4a75-bd00-9f646a7e138a/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "OPTIONS /api/v1/members/d29e6297-fe84-4a75-bd00-9f646a7e138a/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "GET /api/v1/members/d29e6297-fe84-4a75-bd00-9f646a7e138a/ HTTP/1.1" 200 2326
+[2m[WebServer] [22m[12/Jul/2026 12:00:29] "GET /api/v1/members/d29e6297-fe84-4a75-bd00-9f646a7e138a/ HTTP/1.1" 200 2326
+  ✘  1 [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions (7.6s)
+
+
+  1) [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions 
+
+    Error: [31mTimed out 5000ms waiting for [39m[2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m
+
+    Locator: getByRole('button', { name: 'Back to Members' })
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByRole('button', { name: 'Back to Members' })[22m
+
+
+      132 |   await page.getByRole('button', { name: 'Save member' }).click();
+      133 |   expect((await saved).status()).toBe(200);
+    > 134 |   await expect(page.getByRole('button', { name: 'Back to Members' })).toBeVisible();
+          |                                                                       ^
+      135 | }
+      136 | async function openMembers(page: Page) {
+      137 |   await page.getByRole('button', { name: 'Members & Borrowers' }).click();
+        at saveMember (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts:134:71)
+        at registerIndividual (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts:110:3)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts:29:3
+
+  1 failed
+    [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions 
+
+Exit code: 1

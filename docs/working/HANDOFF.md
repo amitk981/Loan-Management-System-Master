@@ -1,24 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-12_154807_repair
+2026-07-12_180154_repair
 
 ## Current Status
 
-006Y8 remains complete. This repair revalidated the demonstrated session-switch fix already present
-in the quarantined worktree: the trusted scenario opens the Header profile menu through the visible
-seeded finance-user name, then uses the real Sign out button. No product or test code changed.
+006Y9 remains complete pending independent trusted-browser acceptance. This repair fixes the exact
+checker-session assertion that failed both prior trusted runs: shared member navigation now waits
+for the canonical profile heading, while the requester path alone asserts the authorized edit
+form's `Verified identity locked` banner. Production behavior and authority are unchanged.
 
 ## Validation
 
-Repair evidence is under `.ralph/runs/2026-07-12_154807_repair/`. Frontend build/typecheck/lint and
-176 tests pass. Backend check/migration sync and 451 tests pass (7 expected SQLite skips) at 94%
-coverage. Playwright collects the one declared scenario. Local Chromium launch is denied by the
-coding sandbox's macOS services. The same current scenario passed twice outside the sandbox in run
-`2026-07-12_153826_repair`, with all three screenshots; this run still relies on fresh independent
-browser revalidation before any commit.
+Repair evidence is under `.ralph/runs/2026-07-12_180154_repair/`. Playwright collects exactly one
+scenario. Frontend build/typecheck/lint and 177 tests pass. Backend check/migration sync and 451
+tests pass (7 expected SQLite skips) at 93% coverage. Local Chromium is blocked before page creation
+by the documented macOS sandbox restriction; the orchestrator must run the scenario twice and
+produce four screenshots.
 
 ## Next Run
 
-Run 006Y9 for real-session member form and identity approval proof. 006Y9 and the next grabbable
-006Z4 are already concretely sharpened; 006Z2 remains dependent on 006Z4.
+Architecture review is due after this fourth completed slice. After review, run the already sharpened
+006Z4 active-member rule/snapshot closure; 006Z2 remains dependent on 006Z4.

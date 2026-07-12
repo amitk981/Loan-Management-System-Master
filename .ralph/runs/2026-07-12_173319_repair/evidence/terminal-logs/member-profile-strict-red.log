@@ -1,0 +1,32 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/members/MemberProfile.container.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/sfpcl-lms
+
+ ❯ src/pages/members/MemberProfile.container.test.tsx (1 test | 1 failed) 24ms
+   × MemberProfile container > loads canonical member detail once when Strict Mode replays the mount effect 23ms
+     → expected "fetchMemberProfile" to be called 1 times, but got 2 times
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/members/MemberProfile.container.test.tsx > MemberProfile container > loads canonical member detail once when Strict Mode replays the mount effect
+AssertionError: expected "fetchMemberProfile" to be called 1 times, but got 2 times
+ ❯ src/pages/members/MemberProfile.container.test.tsx:24:26
+     22|     );
+     23| 
+     24|     expect(fetchProfile).toHaveBeenCalledTimes(1);
+       |                          ^
+     25|     expect(fetchProfile).toHaveBeenCalledWith('member-1');
+     26|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  17:37:11
+   Duration  1.03s (transform 192ms, setup 0ms, collect 354ms, tests 24ms, environment 302ms, prepare 43ms)
+

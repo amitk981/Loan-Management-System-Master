@@ -1,0 +1,10 @@
+Feedback loop:
+RALPH_EVIDENCE_DIR=<run>/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-governance-variants.e2e.spec.ts
+
+Trusted execution 1: FAIL after checker canonical GET; timed out waiting for
+getByText('Verified identity locked') at openSeededVerifiedMember line 147.
+Trusted execution 2: identical FAIL at the same assertion.
+
+The current coding sandbox rerun was blocked before page creation by Chromium's macOS Mach-port
+registration denial, as anticipated by the run prompt. The two trusted-run failures above remain the
+red-capable deterministic signal.

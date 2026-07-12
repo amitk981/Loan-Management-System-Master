@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
   Building2,
@@ -64,6 +64,7 @@ interface MemberProfileProps {
 }
 
 const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
+  const profileRequestRef = useRef<{ memberId: string; request: Promise<MemberProfileDetail> } | null>(null);
   const [status, setStatus] = useState<ProfileStatus>('loading');
   const [message, setMessage] = useState('');
   const [profile, setProfile] = useState<MemberProfileDetail | null>(null);
@@ -135,7 +136,10 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
     setKycDocumentMessage('');
     setKycVerifyFieldErrors({});
     setKycVerifyMessage('');
-    fetchMemberProfile(memberId)
+    if (profileRequestRef.current?.memberId !== memberId) {
+      profileRequestRef.current = { memberId, request: fetchMemberProfile(memberId) };
+    }
+    profileRequestRef.current.request
       .then(result => {
         if (!cancelled) {
           setProfile(result);

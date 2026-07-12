@@ -1,0 +1,11 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006Y9-member-form-real-session-closure.md
+ M docs/working/HANDOFF.md
+ M sfpcl-lms/src/pages/members/MemberProfile.tsx
+?? .ralph/runs/2026-07-12_171448_normal_run/
+?? .ralph/runs/2026-07-12_172349_repair/
+?? .ralph/runs/2026-07-12_173319_repair/
+?? .ralph/runs/2026-07-12_174521_repair/
+?? sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts
+?? sfpcl-lms/src/pages/members/MemberProfile.container.test.tsx

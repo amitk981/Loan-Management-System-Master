@@ -1,0 +1,11 @@
+Invalid trusted browser spec path 'sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts' in docs/slices/006Y9-member-form-real-session-closure.md; use a relative e2e/*.spec.ts path.
+Unknown trusted browser acceptance entry 'Start from the real staff login boundary; no route interception, direct token injection, or mocked' in docs/slices/006Y9-member-form-real-session-closure.md.
+Unknown trusted browser acceptance entry 'member response is allowed.' in docs/slices/006Y9-member-form-real-session-closure.md.
+Unknown trusted browser acceptance entry 'Create and reload one complete individual and one complete institution, then request and approve a' in docs/slices/006Y9-member-form-real-session-closure.md.
+Unknown trusted browser acceptance entry 'protected identity correction with distinct actors.' in docs/slices/006Y9-member-form-real-session-closure.md.
+Unknown trusted browser acceptance entry 'Required screenshots:' in docs/slices/006Y9-member-form-real-session-closure.md.
+Unknown trusted browser acceptance entry 'evidence/screenshots/member-individual-complete-reloaded.png' in docs/slices/006Y9-member-form-real-session-closure.md.
+Unknown trusted browser acceptance entry 'evidence/screenshots/member-institution-complete-reloaded.png' in docs/slices/006Y9-member-form-real-session-closure.md.
+Unknown trusted browser acceptance entry 'evidence/screenshots/member-identity-requester-denied.png' in docs/slices/006Y9-member-form-real-session-closure.md.
+Unknown trusted browser acceptance entry 'evidence/screenshots/member-identity-checker-approved.png' in docs/slices/006Y9-member-form-real-session-closure.md.
+Slice docs/slices/006Y9-member-form-real-session-closure.md declares localhost-e2e-server but no valid trusted browser Spec entry.

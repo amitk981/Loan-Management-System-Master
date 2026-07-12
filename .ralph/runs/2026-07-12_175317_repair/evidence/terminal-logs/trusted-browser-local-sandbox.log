@@ -1,0 +1,11 @@
+Command:
+E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python RALPH_EVIDENCE_DIR=../.ralph/runs/2026-07-12_175317_repair/evidence/screenshots npm run e2e -- e2e/member-governance-variants.e2e.spec.ts
+
+Local result: Chromium was denied before page creation.
+
+Fatal launch fact:
+mach_port_rendezvous.cc: bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer:
+Permission denied (1100)
+
+This is the documented coding-sandbox limitation. No scenario assertion ran, no screenshot was
+fabricated, and Ralph's two independent outside-sandbox executions remain authoritative.

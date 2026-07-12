@@ -1,0 +1,6 @@
+Frontend gate summary
+
+- npm run build: PASS (1872 modules transformed; existing bundle-size warning only)
+- npm run typecheck: PASS
+- npm run lint: PASS
+- npm test -- --run: PASS (28 files, 177 tests)

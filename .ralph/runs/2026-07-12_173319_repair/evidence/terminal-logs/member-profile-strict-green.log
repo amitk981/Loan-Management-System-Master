@@ -1,0 +1,15 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/members/MemberProfile.container.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/sfpcl-lms
+
+ ✓ src/pages/members/MemberProfile.container.test.tsx (1 test) 58ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  17:37:31
+   Duration  920ms (transform 192ms, setup 0ms, collect 365ms, tests 58ms, environment 212ms, prepare 33ms)
+

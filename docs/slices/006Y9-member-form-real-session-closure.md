@@ -1,7 +1,7 @@
 # Slice 006Y9: Member Form Real-Session Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master
@@ -44,16 +44,18 @@ routed staff/auth/API boundary that 006Y5 required but replaced with mocked wrap
 
 ## Trusted Browser Acceptance
 
-- Spec: `sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts`
+- Spec: `e2e/member-governance-variants.e2e.spec.ts`
+- Screenshot: `member-individual-complete-reloaded.png`
+- Screenshot: `member-institution-complete-reloaded.png`
+- Screenshot: `member-identity-requester-denied.png`
+- Screenshot: `member-identity-checker-approved.png`
+
+## Trusted Browser Scenario
+
 - Start from the real staff login boundary; no route interception, direct token injection, or mocked
   member response is allowed.
 - Create and reload one complete individual and one complete institution, then request and approve a
   protected identity correction with distinct actors.
-- Required screenshots:
-  - `evidence/screenshots/member-individual-complete-reloaded.png`
-  - `evidence/screenshots/member-institution-complete-reloaded.png`
-  - `evidence/screenshots/member-identity-requester-denied.png`
-  - `evidence/screenshots/member-identity-checker-approved.png`
 
 ## Test Cases
 
