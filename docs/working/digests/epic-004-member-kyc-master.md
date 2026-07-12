@@ -428,3 +428,17 @@ before implementation.
 - Bank account numbers must remain masked-only with `can_view_full: false`; 004K2 must not add a
   bank-account reveal flow, duplicate-active-borrower warning, signature-mismatch workflow,
   payment initiation, or disbursement-readiness UI.
+
+## Architecture Review 2026-07-12 12:52 - Member and Witness Governance Corrections
+
+- `MemberRegistry` must be the public create/update/read/request/approve seam and enforce exact
+  permission plus member object access internally; auth §34.2 requires object access for member
+  detail/update, and views or public service helpers cannot be the only guard.
+- Proposed PAN/Aadhaar changes must be duplicate-checked again under approval locking and translate
+  database uniqueness races to standard field errors with no partial member/history/audit writes.
+- Identity approval projection must disable the requester even when that actor also has the checker
+  permission, using the same maker-checker evaluation and reason as the write.
+- API §13.2 registration still requires the full individual and institution variants listed in
+  corrective slice 006Y5; current staff forms submit only a subset.
+- S09 names witness address and mobile in addition to name/PAN/Aadhaar. 006Y6 must persist those
+  contact fields and expose disabled six-field witness actions rather than omitting denied actions.

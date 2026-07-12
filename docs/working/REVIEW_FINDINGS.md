@@ -2,6 +2,109 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-12 12:52 - Architecture Review 2026-07-12_125256_architecture_review
+
+Reviewed completed product work since architecture-review commit `cea56b2`:
+- `006X4-credit-action-parity-regression-matrix` (`a75010c`)
+- `006Y3-member-registry-and-identity-change-approval-closure` (`7668c72`)
+- `006Y4-witness-correction-and-resource-action-closure` (`f2ea8d1`)
+- `006Z-produce-supply-history-persistence` (`cd6822f`)
+
+The review checked `git diff cea56b2...HEAD`, slice contracts and run/repair packets, implementation,
+tests, browser/PostgreSQL evidence, Epic 004/006 digests, cited source sections, assumptions, and
+functional IDs. Orchestrator-only commits `62f8d89` and `8cd5f45` were excluded from product
+findings. Standards and spec fidelity were reviewed independently. Production code was not changed;
+`CONTEXT.md` remains truthful, and `.ralph/state.json` contains no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - 006X4's advertised matrix executes only one denied write
+
+`test_credit_action_parity_matrix.py` projects five appraisal actions, then invokes only appraisal
+update and only for a missing-permission denial. It has no enabled/write-success pairs, eligibility,
+loan-limit, appraisal-create, separate review outcomes, authority/provenance matrix, or new stale-
+projection race. The trace table points to disparate older tests but does not execute the paired
+matrix required by codebase-design §26.3 and 006X4. High-risk `006X5` owns the actual enumerated
+public action/write matrix and authoritative race proof.
+
+#### Finding 2 - High - Member Registry remains bypassable and duplicate identity approval can 500
+
+`MemberRegistry` lacks the documented read interface, delegates create/update to still-public
+service functions, and does not enforce member object access internally. Proposed identity hashes
+are not duplicate-checked at request/approval; approval can hit the new unique constraint and neither
+the module nor approval view translates `IntegrityError`. Existing duplicate proof is sequential
+HTTP create only, not module or identity-approval concurrency. This violates codebase-design
+§10.1/§26.1-§26.2/§42.2 and auth §34.2. High-risk `006Y5` owns the deep public seam, object authority,
+and duplicate-safe approval races.
+
+#### Finding 3 - High - Witness action projections omit disabled authority facts
+
+`witness_collection_actions` and `witness_resource_actions` omit actions entirely when permission or
+application scope fails. Tests assert all-enabled action codes and do not pair denied update
+projection with update write. This fails 006Y4's six-field resource-action contract and codebase-
+design §42.2. High-risk `006Y6` owns stable disabled reasons, shared evaluations, and mounted/public
+denial proof.
+
+#### Finding 4 - High - Credit now owns and privately tests a member-domain active-status rule
+
+`credit.modules.eligibility_assessment` directly imports `ProduceSupplyRecord`, implements financial-
+year continuity, and is tested through private `_active_member_check`. The documented
+`members.modules.active_member_status` boundary remains absent, contrary to codebase-design §10.2/
+§26.1 and 006Z requirement 3. High-risk `006Z3` moves calculation/verification behind the member-
+owned public seam and makes credit consume its projection.
+
+Judgment call, High risk: supply capture validates only three required fields. Unknown fields,
+financial-year format, eligible entity/route combinations, UUID relationships, decimal validity,
+and non-negative amounts are unchecked, so malformed ORM inputs or ineligible rows can reach
+eligibility. `006Z3` owns strict boundary validation and standard errors.
+
+### Spec
+
+#### Finding 1 - High - 006X4 did not deliver its named acceptance matrix
+
+006X4 requires every eligibility, limit, appraisal, review-decision, and sanction action to have an
+enabled/write-success and disabled/write-denial pair. Its new test enumerates only five appraisal
+projections and executes one update denial. `006X5` owns the missing acceptance contract.
+
+#### Finding 2 - High - 006Y3 approval projection diverges from maker-checker write authority
+
+`_available_actions` enables approval for any permission holder when a request is pending, including
+the requester, while `approve_identity_change` rejects that actor. The test requester lacks approval
+permission, so its 403 proves only permission denial. 006Y3 also still omits most API §13.2 form
+fields: individual middle name/gender/DOB/occupation/cultivation/crop/services/years and institution
+registration/signatory identities/board-resolution/services/supply years. `006Y5` owns shared
+requester-checker evaluation and both complete registration variants.
+
+#### Finding 3 - High - 006Y4 omits S09 witness address and mobile corrections
+
+The correction allowlist/model/UI contain name, PAN, and Aadhaar only, although the slice promises
+all S09-confirmed contact/identity/display fields and S09 names address and mobile. `006Y6` owns the
+missing persisted contact fields and governed correction flow.
+
+#### Finding 4 - High - 006Z can pass BR-004 without persisted service evidence
+
+For an individual, `_active_member_check` treats a legacy `active_member_status=active` plus timestamp
+as equivalent to `services_availed_flag=true`. Four supply rows can therefore pass while the actual
+service flag is false, contradicting BR-004 and the run packet's service-evidence claim. Capture also
+lacks the sharpened member/resource version and does not restrict rows to S16-eligible entity/route
+facts. `006Z3` owns actual service evidence, qualifying supply validation, optimistic capture, and
+one shared continuity projection before `006Z2` can expose portal limits.
+
+### Functional IDs, Context, and Queue
+
+M04-FR-004..011 retain substantive production behavior, but 006X4 did not add its promised exhaustive
+regression proof; M04-FR-001/002 remain deferred under A-053 and M04-FR-003 under A-054. M02-FR-012
+has a persisted approval workflow but is not accepted until 006Y5 closes action parity, object
+authority, duplicate races, and full reachability. M02-FR-009's shareholder validation remains
+implemented, while S09 correction is partial pending 006Y6. M02-FR-004/BR-004/BR-007 are not accepted
+until 006Z3 prevents legacy/no-service and ineligible-route evidence from passing. No ADR was added:
+the cited module, action, identity, and eligibility standards already settle the durable direction.
+
+Summary: Standards found 4 High issues plus 1 High-risk judgment call; worst are the absent credit
+matrix, bypassable/duplicate-unsafe Member Registry, and misplaced eligibility rule. Spec found 4
+High issues; worst are the incomplete 006X4 acceptance, Member Registry action/form gaps, missing
+witness contact fields, and service-evidence bypass.
+
 ## 2026-07-12 09:25 - Architecture Review 2026-07-12_092009_architecture_review
 
 Reviewed completed product work since architecture-review commit `1f047f5`:

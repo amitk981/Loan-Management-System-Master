@@ -1,25 +1,25 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-12_111736_normal_run
+2026-07-12_125256_architecture_review
 
 ## Current Status
 
-006Z is complete. Produce supply is persisted with source fields, optimistic version, capture actor,
-and immutable independent verification evidence. Active-member eligibility now requires services
-evidence plus four continuous verified financial-year rows; absent, unverified, or discontinuous
-history remains manual-evidence-required. Portal scope derives only from PortalAccount and omits
-member identity/actions; Member Profile and Borrower 360 show the same canonical rows.
+Architecture review of 006X4, 006Y3, 006Y4, and 006Z is complete. 006X4's new matrix executes only
+one denied write. Member Registry remains bypassable, lacks object authority, can emit an uncaught
+duplicate identity approval error, diverges on requester-checker projection, and omits most §13.2
+form fields. Witness correction omits S09 address/mobile and denied action facts. Active-member
+eligibility lives in credit instead of the member module and can pass BR-004 via a legacy active
+flag even when persisted service usage is false; supply capture also accepts non-qualifying facts.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-12_111736_normal_run/`. Frontend build/typecheck/lint and
-173 tests pass. Backend check/migration sync and 423 tests pass (5 skipped) at 94% coverage.
-Focused red/green logs cover capture, maker-checker verification, stale writes, evidence-backed
-eligibility, and portal cross-member scope. This slice declares no trusted-browser capability.
+Evidence is under `.ralph/runs/2026-07-12_125256_architecture_review/`. Production code was not
+changed. Standards and spec were reviewed independently; CONTEXT remains truthful and no Blocked
+slice is stale. Corrective slices 006X5, 006Y5, 006Y6, and 006Z3 are concrete and queue-valid.
 
 ## Next Run
 
-An architecture review is due after the fourth completed slice. After that, run 006Z2 for the
-PortalAccount-scoped server loan-limit projection and approved three-card portal display. 006Z2 was
-rechecked with 006Z's portal projection and verified-fact constraints.
+Run High-risk 006X5 for the exhaustive public credit matrix, then 006Y5 and 006Y6 for member/witness
+governance closure, then 006Z3 for the member-owned and strictly validated active-status boundary.
+006Z2 now depends on 006Z3 and follows with the PortalAccount-scoped limit projection.

@@ -754,3 +754,18 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
   M04-FR-010/M04-FR-011 behavior exists but remains High-risk until 006E4/006F4/006G2 close repair,
   concurrency, and sanction-handoff defects. M04-FR-001/M04-FR-002 remain explicitly deferred to
   012EA by A-053. M04-FR-003 remains the explicit A-054 receipt-time proxy. Epic 006 is not complete.
+
+## Architecture Review 2026-07-12 12:52 - Credit Matrix and Supply Evidence Corrections
+
+- 006X4's new test projects five appraisal actions but executes only one missing-permission update
+  denial. 006X5 must run the promised public enabled/write-success and disabled/write-denial matrix
+  for eligibility, limit, appraisal create/update/revalidate/submit, all review decisions, and
+  sanction, plus the PostgreSQL stale-projection race.
+- BR-004/BR-007 require actual service evidence and qualifying continuous supply. A legacy active
+  flag/timestamp cannot substitute for `services_availed_flag=false`, and only S16-eligible entity/
+  route rows may count.
+- Active-member calculation belongs behind `members.modules.active_member_status`; credit must not
+  import `ProduceSupplyRecord` or own/test private continuity helpers.
+- 006Z3 owns canonical financial-year, entity/route, reference, decimal, member-version, optimistic
+  capture, and shared portal/eligibility continuity validation. 006Z2 must wait for 006Z3 so portal
+  limits cannot project from invalid eligibility evidence.

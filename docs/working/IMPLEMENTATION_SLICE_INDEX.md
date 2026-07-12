@@ -82,12 +82,16 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 51a | `006X2` Credit Action Predicate and Container Closure | Epic 006 | 006X, | High | Yes | Yes | No | Yes |
 | 51b | `006X3` Credit Visual and Real-Browser Closure | Epic 006 | 006X2, | High | Yes | Yes | No | Yes |
 | 51c | `006X4` Credit Action Parity Regression Matrix | Epic 006 | 006X3, | High | No | Yes | No | Yes |
+| 51c1 | `006X5` Credit Public Action/Write Matrix Closure | Epic 006 | 006X4, | High | No | Yes | Yes | Yes |
 | 51d | `006Y` Member Create/Update and Identity Governance | Epic 004 | 006X3, | High | No | Yes | Yes | Yes |
 | 51e | `006Y2` Member Form and Witness Capture UI Wiring | Epic 004 | 006Y, | Medium | Yes | Yes | No | Yes |
 | 51f | `006Y3` Member Registry and Identity Change Approval Closure | Epic 004 | 006X4, | High | Yes | Yes | Yes | Yes |
 | 51g | `006Y4` Witness Correction and Resource Action Closure | Epic 004 | 006Y3, | High | Yes | Yes | Yes | Yes |
+| 51g1 | `006Y5` Member Registry Governance and Form Contract Closure | Epic 004 | 006Y3, | High | Yes | Yes | Yes | Yes |
+| 51g2 | `006Y6` Witness Contact and Action Parity Closure | Epic 004 | 006Y4, | High | Yes | Yes | Yes | Yes |
 | 51h | `006Z` Produce Supply History Persistence | Epic 006 | 006Y4, | High | Yes | Yes | Yes | Yes |
-| 51i | `006Z2` Portal Application Limit Display Authority | Epic 006 | 006Z, | Medium | Yes | Yes | No | Yes |
+| 51h1 | `006Z3` Active-Member Supply Evidence Boundary Hardening | Epic 006 | 006Z, | High | No | Yes | Yes | Yes |
+| 51i | `006Z2` Portal Application Limit Display Authority | Epic 006 | 006Z3, | Medium | Yes | Yes | No | Yes |
 | 52 | `007A` Approval Matrix Configuration | Epic 007 | 006X, | Medium | No | Yes | Yes | Yes |
 | 53 | `007B` Approval Case Creation from Appraisal | Epic 007 | 007A, | Medium | No | Yes | Yes | Yes |
 | 54 | `007C` CFO and Director Threshold Routing | Epic 007 | 007B, | Medium | No | Yes | Yes | Yes |
