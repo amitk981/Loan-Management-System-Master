@@ -378,6 +378,8 @@ def member_produce_supply_records(request, member_id):
         )
     except ValidationError as exc:
         return error_response(request, 400, "VALIDATION_ERROR", "Produce supply payload failed validation.", services.validation_field_errors(exc))
+    except services.ProduceSupplyConflict as exc:
+        return error_response(request, 409, exc.code, exc.message, exc.field_errors)
     return success_response(services.serialize_produce_supply_record(record, user), request)
 
 

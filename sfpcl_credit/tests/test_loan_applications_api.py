@@ -131,10 +131,15 @@ class LoanApplicationDraftApiTests(TestCase):
         self.plain = self._user("applications.plain@sfpcl.example", "PlainPass123!")
         self.member = self._member("005A", "Ramesh Patil")
         self.other_member = self._member("005A-OTHER", "Sita Farms")
+        IndividualMemberProfile.objects.create(
+            member=self.member, first_name="Ramesh", last_name="Patil",
+            services_availed_flag=True,
+        )
         for year in ("2022-23", "2023-24", "2024-25", "2025-26"):
             ProduceSupplyRecord.objects.create(
                 member=self.member, financial_year=year,
                 supplied_to_entity_type="sfpcl", supply_route="direct",
+                evidence_reference=f"ERP-APPLICATION-{year}",
                 captured_by_user=self.creator, verified_flag=True,
                 verified_by_user=self.creator, verified_at=timezone.now(),
             )
@@ -597,6 +602,8 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(row["register_status"], "reference_generated")
 
     def test_eligibility_assessment_run_and_read_persists_manual_evidence_active_member_result(self):
+        self.member.individual_profile.services_availed_flag = False
+        self.member.individual_profile.save(update_fields=["services_availed_flag"])
         application_id = self._reference_generated_application(terms_acceptance_flag=True)
 
         run_response = self.client.post(
@@ -992,12 +999,9 @@ class LoanApplicationDraftApiTests(TestCase):
         self.crop.verified_by_user = self.creator
         self.crop.verified_at = timezone.now()
         self.crop.save()
-        IndividualMemberProfile.objects.create(
+        IndividualMemberProfile.objects.update_or_create(
             member=self.member,
-            first_name="Ramesh",
-            last_name="Patil",
-            land_area_under_cultivation_acres="5.00",
-            services_availed_flag=True,
+            defaults={"first_name": "Ramesh", "last_name": "Patil", "land_area_under_cultivation_acres": "5.00", "services_availed_flag": True},
         )
         shareholding = Shareholding.objects.create(
             member=self.member,
@@ -1049,12 +1053,9 @@ class LoanApplicationDraftApiTests(TestCase):
         self.land.save()
         self.crop.planned_area_acres = "5.0"
         self.crop.save()
-        IndividualMemberProfile.objects.create(
+        IndividualMemberProfile.objects.update_or_create(
             member=self.member,
-            first_name="Ramesh",
-            last_name="Patil",
-            land_area_under_cultivation_acres="5.00",
-            services_availed_flag=True,
+            defaults={"first_name": "Ramesh", "last_name": "Patil", "land_area_under_cultivation_acres": "5.00", "services_availed_flag": True},
         )
         shareholding = Shareholding.objects.create(
             member=self.member,
@@ -1093,12 +1094,9 @@ class LoanApplicationDraftApiTests(TestCase):
 
     def test_loan_limit_uses_selected_land_and_crop_plan_when_profile_acreage_is_null(self):
         application_id = self._eligible_application(required_loan_amount="400000.00")
-        IndividualMemberProfile.objects.create(
+        IndividualMemberProfile.objects.update_or_create(
             member=self.member,
-            first_name="Ramesh",
-            last_name="Patil",
-            land_area_under_cultivation_acres=None,
-            services_availed_flag=True,
+            defaults={"first_name": "Ramesh", "last_name": "Patil", "land_area_under_cultivation_acres": None, "services_availed_flag": True},
         )
         shareholding = Shareholding.objects.create(
             member=self.member,
@@ -1650,6 +1648,8 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 2)
 
     def test_loan_limit_blocks_pending_ineligible_and_missing_policy_without_success_evidence(self):
+        self.member.individual_profile.services_availed_flag = False
+        self.member.individual_profile.save(update_fields=["services_availed_flag"])
         application_id = self._reference_generated_application(terms_acceptance_flag=True)
         shareholding = Shareholding.objects.create(
             member=self.member,
@@ -1730,6 +1730,8 @@ class LoanApplicationDraftApiTests(TestCase):
                 "default_status",
             ]
         )
+        self.member.individual_profile.services_availed_flag = True
+        self.member.individual_profile.save(update_fields=["services_availed_flag"])
         self._create_nominee(application_id)
         eligible = self.client.post(
             eligibility_endpoint,

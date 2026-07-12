@@ -5,6 +5,7 @@ from sfpcl_credit.members import services as member_services
 from django.db.models import Sum
 
 from sfpcl_credit.members.models import BankAccount, KycProfile, ProduceSupplyRecord
+from sfpcl_credit.members.modules.active_member_status import ActiveMemberStatusModule
 
 
 PORTAL_PERMISSION_ERROR = "Borrower portal data is available only to active member portal users."
@@ -82,32 +83,21 @@ def produce_supply(member):
     records = list(
         ProduceSupplyRecord.objects.filter(member=member).order_by("-financial_year", "produce_supply_record_id")
     )
-    totals = ProduceSupplyRecord.objects.filter(member=member).aggregate(
-        total_quantity=Sum("quantity"), total_value=Sum("value_amount")
-    )
-    verified_years = [row.financial_year for row in records if row.verified_flag]
+    status = ActiveMemberStatusModule().calculate(member_id=member.member_id)
+    qualifying_ids = {row.produce_supply_record_id for row in status.supply_rows if row.qualifying}
+    qualifying_records = [row for row in records if str(row.produce_supply_record_id) in qualifying_ids]
+    totals = ProduceSupplyRecord.objects.filter(
+        produce_supply_record_id__in=[row.produce_supply_record_id for row in qualifying_records]
+    ).aggregate(total_quantity=Sum("quantity"), total_value=Sum("value_amount"))
     return {
         "records": [member_services.serialize_produce_supply_record(row, portal=True) for row in records],
         "summary": {
-            "continuous_supply_years": str(_longest_continuous_years(verified_years)),
+            "continuous_supply_years": str(status.continuous_supply_years),
             "total_quantity": f"{totals['total_quantity']:.3f}" if totals["total_quantity"] is not None else None,
             "total_value": f"{totals['total_value']:.2f}" if totals["total_value"] is not None else None,
         },
-        "source_status": "persisted_verified_records" if verified_years else "persisted_no_verified_records",
+        "source_status": "persisted_qualifying_verified_records" if qualifying_records else "persisted_no_qualifying_verified_records",
     }
-
-
-def _longest_continuous_years(financial_years):
-    starts = set()
-    for value in financial_years:
-        try:
-            start, end = value.split("-", 1)
-            year = int(start)
-            if end == str((year + 1) % 100).zfill(2):
-                starts.add(year)
-        except (AttributeError, TypeError, ValueError):
-            continue
-    return max((sum(1 for offset in range(len(starts)) if year + offset in starts) for year in starts), default=0)
 
 
 class PortalObjectAccessError(Exception):

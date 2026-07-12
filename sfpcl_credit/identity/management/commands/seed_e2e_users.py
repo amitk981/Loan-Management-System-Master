@@ -11,7 +11,7 @@ from sfpcl_credit.configurations.models import LoanPolicyConfig
 from sfpcl_credit.credit.models import EligibilityAssessment
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import Permission, Role, RolePermission, User
-from sfpcl_credit.members.models import CropPlan, LandHolding, Member, Nominee, ProduceSupplyRecord, Shareholding
+from sfpcl_credit.members.models import CropPlan, IndividualMemberProfile, LandHolding, Member, Nominee, ProduceSupplyRecord, Shareholding
 
 # Non-secret credentials for the local Playwright suite only. The suite logs in
 # through the production auth path (POST /auth/login/ + GET /auth/me/), so a real
@@ -217,6 +217,13 @@ class Command(BaseCommand):
                 "aadhaar_hash": "synthetic-e2e-aadhaar-hash", "kyc_status": "verified",
                 "default_status": "no_default", "active_member_status": "active",
                 "active_member_verified_at": instant, "created_by_user": finance_user,
+            },
+        )
+        IndividualMemberProfile.objects.update_or_create(
+            member=member,
+            defaults={
+                "first_name": "Epic 006", "last_name": "Member",
+                "services_availed_flag": True,
             },
         )
         for key, financial_year in (

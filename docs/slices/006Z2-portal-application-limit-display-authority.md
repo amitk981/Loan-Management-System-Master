@@ -94,6 +94,15 @@ Medium
 - The mounted no-authority/error cases must prove no mutation/retry is invoked, while the three
   approved cards and review row consume only fields present in the server response.
 
+## Run-Ahead Sharpening Review (006Z3, 2026-07-12)
+
+- Resolve the borrower member only from the active `PortalAccount`, then consume
+  `members.modules.active_member_status.ActiveMemberStatusResult`; do not query or reinterpret raw
+  `ProduceSupplyRecord` rows inside the portal-limit endpoint.
+- Treat `persisted_no_qualifying_verified_records` and continuity below four years as unavailable
+  unless the shared result carries recorded relaxation/manual evidence. Pending, malformed-year,
+  wrong-entity/route, and evidence-free rows must never become limit inputs or an apparent zero.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

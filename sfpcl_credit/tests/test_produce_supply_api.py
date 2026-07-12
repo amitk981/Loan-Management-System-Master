@@ -3,7 +3,7 @@ from django.test import Client, TestCase
 from django.utils import timezone
 
 from sfpcl_credit.identity.models import AuditLog, Permission, PortalAccount, Role, RolePermission, User
-from sfpcl_credit.credit.modules.eligibility_assessment import _active_member_check
+from sfpcl_credit.members.modules.active_member_status import ActiveMemberStatusModule
 from sfpcl_credit.members.models import IndividualMemberProfile, Member, MemberChangeHistory, ProduceSupplyRecord
 
 
@@ -68,6 +68,7 @@ class ProduceSupplyApiTests(TestCase):
                 "quantity": "1250.500",
                 "value_amount": "240000.00",
                 "evidence_reference": "ERP-SYNTHETIC-001",
+                "version": self.member.version,
             },
             content_type="application/json",
             headers=self._headers(),
@@ -153,7 +154,7 @@ class ProduceSupplyApiTests(TestCase):
             ),
         )
 
-    def test_active_member_check_uses_four_continuous_verified_supply_years(self):
+    def test_public_active_member_projection_requires_service_and_qualifying_continuity(self):
         for financial_year, verified in [
             ("2022-23", True), ("2023-24", True), ("2024-25", True), ("2025-26", True),
             ("2021-22", False),
@@ -161,19 +162,63 @@ class ProduceSupplyApiTests(TestCase):
             ProduceSupplyRecord.objects.create(
                 member=self.member, financial_year=financial_year,
                 supplied_to_entity_type="sfpcl", supply_route="direct",
-                captured_by_user=self.actor, verified_flag=verified,
+                evidence_reference=f"ERP-{financial_year}", captured_by_user=self.actor, verified_flag=verified,
             )
 
-        result = _active_member_check(self.member)
+        result = ActiveMemberStatusModule().calculate(member_id=self.member.member_id)
 
-        self.assertEqual(result["member_active_check"], "pass")
-        self.assertIn("four continuous verified financial years", result["assessment_notes"])
+        self.assertEqual(result.member_active_check, "pass")
+        self.assertEqual(result.continuous_supply_years, 4)
+        self.assertEqual(len(result.supply_rows), 5)
+        self.assertEqual(sum(row.qualifying for row in result.supply_rows), 4)
 
         ProduceSupplyRecord.objects.filter(financial_year="2024-25").update(verified_flag=False)
         self.assertEqual(
-            _active_member_check(self.member)["member_active_check"],
+            ActiveMemberStatusModule().calculate(member_id=self.member.member_id).member_active_check,
             "manual_evidence_required",
         )
+
+        self.member.individual_profile.services_availed_flag = False
+        self.member.individual_profile.save(update_fields=["services_availed_flag"])
+        self.member.active_member_status = "active"
+        self.member.active_member_verified_at = timezone.now()
+        self.member.save(update_fields=["active_member_status", "active_member_verified_at"])
+        ProduceSupplyRecord.objects.filter(financial_year="2024-25").update(verified_flag=True)
+        self.assertEqual(
+            ActiveMemberStatusModule().calculate(member_id=self.member.member_id).member_active_check,
+            "manual_evidence_required",
+        )
+
+    def test_capture_rejects_non_object_unknown_stale_and_non_qualifying_facts(self):
+        url = f"/api/v1/members/{self.member.member_id}/produce-supply-records/"
+        headers = self._headers()
+        cases = [
+            (["not", "an", "object"], "non_field_errors"),
+            ({"financial_year": "2025-26", "supplied_to_entity_type": "sfpcl", "supply_route": "direct", "evidence_reference": "ERP-1", "version": self.member.version, "extra": True}, "extra"),
+            ({"financial_year": "25-26", "supplied_to_entity_type": "sfpcl", "supply_route": "direct", "evidence_reference": "ERP-1", "version": self.member.version}, "financial_year"),
+            ({"financial_year": "2025-26", "supplied_to_entity_type": "unknown", "supply_route": "direct", "evidence_reference": "ERP-1", "version": self.member.version}, "supplied_to_entity_type"),
+            ({"financial_year": "2025-26", "supplied_to_entity_type": "sfpcl", "supply_route": "producer_institution", "evidence_reference": "ERP-1", "version": self.member.version}, "producer_institution_member_id"),
+            ({"financial_year": "2025-26", "supplied_to_entity_type": "sfpcl", "supply_route": "direct", "evidence_reference": "ERP-1", "quantity": "-1", "version": self.member.version}, "quantity"),
+            ({"financial_year": "2025-26", "supplied_to_entity_type": "sfpcl", "supply_route": "direct", "evidence_reference": "", "version": self.member.version}, "evidence_reference"),
+        ]
+        for payload, field in cases:
+            response = self.client.post(url, data=payload, content_type="application/json", headers=headers)
+            self.assertEqual(response.status_code, 400, response.content)
+            self.assertIn(field, response.json()["error"]["field_errors"])
+        self.assertEqual(ProduceSupplyRecord.objects.count(), 0)
+
+        stale = self.client.post(url, data={"financial_year": "2025-26", "supplied_to_entity_type": "sfpcl", "supply_route": "direct", "evidence_reference": "ERP-1", "version": self.member.version + 1}, content_type="application/json", headers=headers)
+        self.assertEqual(stale.status_code, 409)
+        self.assertEqual(stale.json()["error"]["code"], "STALE_WRITE")
+
+        competing_payload = {"financial_year": "2025-26", "supplied_to_entity_type": "sfpcl", "supply_route": "direct", "evidence_reference": "ERP-1", "version": self.member.version}
+        winner = self.client.post(url, data=competing_payload, content_type="application/json", headers=headers)
+        loser = self.client.post(url, data=competing_payload, content_type="application/json", headers=headers)
+        self.assertEqual(winner.status_code, 200)
+        self.assertEqual(loser.status_code, 409)
+        self.assertEqual(ProduceSupplyRecord.objects.count(), 1)
+        self.assertEqual(MemberChangeHistory.objects.filter(change_type="produce_supply_captured").count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="members.produce_supply.created").count(), 1)
 
     def test_portal_supply_is_read_only_and_scoped_from_portal_account(self):
         portal_role = Role.objects.create(
@@ -192,7 +237,7 @@ class ProduceSupplyApiTests(TestCase):
         ProduceSupplyRecord.objects.create(
             member=self.member, financial_year="2025-26", supplied_to_entity_type="sfpcl",
             supply_route="direct", quantity="10.000", value_amount="500.00",
-            captured_by_user=self.actor, verified_flag=True,
+            evidence_reference="ERP-PORTAL-1", captured_by_user=self.actor, verified_flag=True,
         )
         other = Member.objects.create(
             member_type="individual_farmer", legal_name="Other Synthetic Farmer",
@@ -222,4 +267,4 @@ class ProduceSupplyApiTests(TestCase):
         self.assertNotIn("member_id", data)
         self.assertNotIn("available_actions", data["records"][0])
         self.assertEqual(data["summary"]["total_quantity"], "10.000")
-        self.assertEqual(data["source_status"], "persisted_verified_records")
+        self.assertEqual(data["source_status"], "persisted_qualifying_verified_records")

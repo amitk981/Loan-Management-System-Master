@@ -266,7 +266,7 @@ class PortalMemberApiTests(TestCase):
         supply = supply_response.json()["data"]
         self.assertNotIn("member_id", supply)
         self.assertEqual(supply["records"], [])
-        self.assertEqual(supply["source_status"], "persisted_no_verified_records")
+        self.assertEqual(supply["source_status"], "persisted_no_qualifying_verified_records")
 
     def test_staff_tokens_cannot_call_portal_own_data_apis(self):
         token = self._staff_token()

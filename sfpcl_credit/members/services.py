@@ -37,6 +37,11 @@ from sfpcl_credit.members.protected_identity import (
     mask_protected_identity,
     protected_identity_token,
 )
+from sfpcl_credit.members.modules.active_member_status import (
+    QUALIFYING_ENTITY_TYPES,
+    QUALIFYING_ROUTES,
+    canonical_financial_year_start,
+)
 
 
 MEMBER_READ_PERMISSION = "members.member.read"
@@ -750,24 +755,90 @@ def create_shareholding(member, payload, actor_user, request_ip="", request_user
     return shareholding
 
 
-def create_produce_supply_record(member, payload, actor_user, request_ip="", request_user_agent=""):
-    required = ("financial_year", "supplied_to_entity_type", "supply_route")
-    errors = {field: "This field is required." for field in required if not payload.get(field)}
+_SUPPLY_CAPTURE_FIELDS = {
+    "financial_year", "supplied_to_entity_type", "supplied_to_entity_id", "supply_route",
+    "producer_institution_member_id", "crop_type", "quantity", "value_amount",
+    "evidence_reference", "version",
+}
+
+
+def _validated_supply_payload(payload):
+    if not isinstance(payload, dict):
+        raise ValidationError({"non_field_errors": "Request body must be an object."})
+    required = ("financial_year", "supplied_to_entity_type", "supply_route", "evidence_reference", "version")
+    errors = {field: "This field is required." for field in required if payload.get(field) in (None, "")}
+    errors.update({field: "Unknown field." for field in payload if field not in _SUPPLY_CAPTURE_FIELDS})
+    if payload.get("financial_year") and canonical_financial_year_start(payload["financial_year"]) is None:
+        errors["financial_year"] = "Use canonical YYYY-YY financial year format."
+    entity_type = payload.get("supplied_to_entity_type")
+    route = payload.get("supply_route")
+    if entity_type and entity_type not in QUALIFYING_ENTITY_TYPES:
+        errors["supplied_to_entity_type"] = "Entity type is not eligible supply evidence."
+    if route and route not in QUALIFYING_ROUTES:
+        errors["supply_route"] = "Supply route is not eligible supply evidence."
+    routed_id = payload.get("producer_institution_member_id")
+    if route == "direct" and routed_id:
+        errors["producer_institution_member_id"] = "Direct supply cannot name a Producer Institution route."
+    if route == "producer_institution" and not routed_id:
+        errors["producer_institution_member_id"] = "Producer Institution member is required for this route."
+    entity_id = payload.get("supplied_to_entity_id")
+    if entity_type in {"subsidiary", "step_down_subsidiary"} and not entity_id:
+        errors["supplied_to_entity_id"] = "Referenced entity UUID is required."
+    for field, places in (("quantity", 3), ("value_amount", 2)):
+        value = payload.get(field)
+        if value not in (None, ""):
+            try:
+                decimal_value = Decimal(str(value))
+                if not decimal_value.is_finite() or decimal_value < 0 or abs(decimal_value.as_tuple().exponent) > places:
+                    raise InvalidOperation
+            except (InvalidOperation, ValueError):
+                errors[field] = f"Enter a non-negative decimal with at most {places} decimal places."
+    if not isinstance(payload.get("evidence_reference"), str) or not payload.get("evidence_reference", "").strip():
+        errors["evidence_reference"] = "Evidence reference is required."
+    if not isinstance(payload.get("version"), int):
+        errors["version"] = "Current integer member version is required."
     if errors:
         raise ValidationError(errors)
+    return payload
+
+
+@transaction.atomic
+def create_produce_supply_record(member, payload, actor_user, request_ip="", request_user_agent=""):
+    payload = _validated_supply_payload(payload)
+    member = Member.objects.select_for_update().get(member_id=member.member_id)
+    if payload["version"] != member.version:
+        raise ProduceSupplyConflict("STALE_WRITE", "Member has changed; refresh and retry.", {"version": "Version is stale."})
+    routed_member = None
+    if payload.get("producer_institution_member_id"):
+        try:
+            routed_member = Member.objects.get(member_id=payload["producer_institution_member_id"], is_deleted=False)
+        except (Member.DoesNotExist, ValueError, TypeError):
+            raise ValidationError({"producer_institution_member_id": "Referenced Producer Institution member was not found."})
+        if routed_member.member_id == member.member_id or routed_member.member_type not in {"fpc", "producer_institution"} or routed_member.membership_status != "active":
+            raise ValidationError({"producer_institution_member_id": "Referenced member is not an eligible Producer Institution route."})
+    for field in ("supplied_to_entity_id",):
+        if payload.get(field):
+            try:
+                uuid.UUID(str(payload[field]))
+            except (ValueError, TypeError, AttributeError):
+                raise ValidationError({field: "Enter a valid UUID."})
     record = ProduceSupplyRecord.objects.create(
         member=member,
         financial_year=payload["financial_year"],
         supplied_to_entity_type=payload["supplied_to_entity_type"],
         supplied_to_entity_id=payload.get("supplied_to_entity_id") or None,
         supply_route=payload["supply_route"],
-        producer_institution_member_id=payload.get("producer_institution_member_id") or None,
+        producer_institution_member=routed_member,
         crop_type=payload.get("crop_type", ""),
         quantity=payload.get("quantity") or None,
         value_amount=payload.get("value_amount") or None,
-        evidence_reference=payload.get("evidence_reference", ""),
+        evidence_reference=payload["evidence_reference"].strip(),
         captured_by_user=actor_user,
     )
+    member.version += 1
+    member.updated_at = timezone.now()
+    member.updated_by_user = actor_user
+    member.save(update_fields=["version", "updated_at", "updated_by_user"])
     record.refresh_from_db()
     projection = {
         "member_id": str(member.member_id),

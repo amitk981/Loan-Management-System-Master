@@ -1,0 +1,378 @@
+Creating test database for alias 'default'...
+Found 75 test(s).
+System check identified no issues (0 silenced).
+.....EE...FE.EEEEEEEE..................F....F.F....FFFFFFFFFFFFF..............ss
+======================================================================
+ERROR: test_calculator_rolls_back_snapshot_and_workflow_when_audit_fails (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_calculator_rolls_back_snapshot_and_workflow_when_audit_fails)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 571, in test_calculator_rolls_back_snapshot_and_workflow_when_audit_fails
+    calculator.calculate_for_application(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/credit/modules/loan_limit_calculator.py", line 168, in calculate_for_application
+    raise CreditModuleInvalidStateError(transition.reason)
+sfpcl_credit.domain_errors.DomainInvalidStateError: Loan-limit calculation requires eligibility overall_result eligible.
+
+======================================================================
+ERROR: test_calculator_translates_ambiguous_policy_at_credit_seam (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_calculator_translates_ambiguous_policy_at_credit_seam)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 702, in test_calculator_translates_ambiguous_policy_at_credit_seam
+    calculator.calculate_for_application(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/credit/modules/loan_limit_calculator.py", line 168, in calculate_for_application
+    raise CreditModuleInvalidStateError(transition.reason)
+sfpcl_credit.domain_errors.DomainInvalidStateError: Loan-limit calculation requires eligibility overall_result eligible.
+
+======================================================================
+ERROR: test_failed_module_rerun_preserves_snapshot_and_success_evidence (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_failed_module_rerun_preserves_snapshot_and_success_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 588, in test_failed_module_rerun_preserves_snapshot_and_success_evidence
+    original = calculator.calculate_for_application(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/credit/modules/loan_limit_calculator.py", line 168, in calculate_for_application
+    raise CreditModuleInvalidStateError(transition.reason)
+sfpcl_credit.domain_errors.DomainInvalidStateError: Loan-limit calculation requires eligibility overall_result eligible.
+
+======================================================================
+ERROR: test_land_lower_equal_and_below_boundaries_preserve_assessment_uuid (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_land_lower_equal_and_below_boundaries_preserve_assessment_uuid)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 638, in test_land_lower_equal_and_below_boundaries_preserve_assessment_uuid
+    equal = calculator.calculate_for_application(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/credit/modules/loan_limit_calculator.py", line 168, in calculate_for_application
+    raise CreditModuleInvalidStateError(transition.reason)
+sfpcl_credit.domain_errors.DomainInvalidStateError: Loan-limit calculation requires eligibility overall_result eligible.
+
+======================================================================
+ERROR: test_loan_limit_calculates_through_module_with_one_public_audit_projection (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_loan_limit_calculates_through_module_with_one_public_audit_projection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 535, in test_loan_limit_calculates_through_module_with_one_public_audit_projection
+    result = calculator.calculate_for_application(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/credit/modules/loan_limit_calculator.py", line 168, in calculate_for_application
+    raise CreditModuleInvalidStateError(transition.reason)
+sfpcl_credit.domain_errors.DomainInvalidStateError: Loan-limit calculation requires eligibility overall_result eligible.
+
+======================================================================
+ERROR: test_module_rejects_unverified_and_unlinked_cultivation_sources (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_module_rejects_unverified_and_unlinked_cultivation_sources) (source='LandHolding', value='pending')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 686, in test_module_rejects_unverified_and_unlinked_cultivation_sources
+    calculator.calculate_for_application(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/credit/modules/loan_limit_calculator.py", line 168, in calculate_for_application
+    raise CreditModuleInvalidStateError(transition.reason)
+sfpcl_credit.domain_errors.DomainInvalidStateError: Loan-limit calculation requires eligibility overall_result eligible.
+
+======================================================================
+ERROR: test_module_rejects_unverified_and_unlinked_cultivation_sources (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_module_rejects_unverified_and_unlinked_cultivation_sources) (source='LandHolding', value='rejected')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 686, in test_module_rejects_unverified_and_unlinked_cultivation_sources
+    calculator.calculate_for_application(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/credit/modules/loan_limit_calculator.py", line 168, in calculate_for_application
+    raise CreditModuleInvalidStateError(transition.reason)
+sfpcl_credit.domain_errors.DomainInvalidStateError: Loan-limit calculation requires eligibility overall_result eligible.
+
+======================================================================
+ERROR: test_module_rejects_unverified_and_unlinked_cultivation_sources (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_module_rejects_unverified_and_unlinked_cultivation_sources) (source='CropPlan', value='pending')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 686, in test_module_rejects_unverified_and_unlinked_cultivation_sources
+    calculator.calculate_for_application(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/credit/modules/loan_limit_calculator.py", line 168, in calculate_for_application
+    raise CreditModuleInvalidStateError(transition.reason)
+sfpcl_credit.domain_errors.DomainInvalidStateError: Loan-limit calculation requires eligibility overall_result eligible.
+
+======================================================================
+ERROR: test_module_rejects_unverified_and_unlinked_cultivation_sources (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_module_rejects_unverified_and_unlinked_cultivation_sources) (source='CropPlan', value='rejected')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 686, in test_module_rejects_unverified_and_unlinked_cultivation_sources
+    calculator.calculate_for_application(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/credit/modules/loan_limit_calculator.py", line 168, in calculate_for_application
+    raise CreditModuleInvalidStateError(transition.reason)
+sfpcl_credit.domain_errors.DomainInvalidStateError: Loan-limit calculation requires eligibility overall_result eligible.
+
+======================================================================
+ERROR: test_module_rejects_unverified_and_unlinked_cultivation_sources (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_module_rejects_unverified_and_unlinked_cultivation_sources) (source='CropPlan', value=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 686, in test_module_rejects_unverified_and_unlinked_cultivation_sources
+    calculator.calculate_for_application(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/credit/modules/loan_limit_calculator.py", line 168, in calculate_for_application
+    raise CreditModuleInvalidStateError(transition.reason)
+sfpcl_credit.domain_errors.DomainInvalidStateError: Loan-limit calculation requires eligibility overall_result eligible.
+
+======================================================================
+ERROR: test_module_rejects_unverified_and_unlinked_cultivation_sources (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_module_rejects_unverified_and_unlinked_cultivation_sources) (source='CropPlan', value=UUID('06132021-14df-4b83-8231-733f1c05657a'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 686, in test_module_rejects_unverified_and_unlinked_cultivation_sources
+    calculator.calculate_for_application(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/credit/modules/loan_limit_calculator.py", line 168, in calculate_for_application
+    raise CreditModuleInvalidStateError(transition.reason)
+sfpcl_credit.domain_errors.DomainInvalidStateError: Loan-limit calculation requires eligibility overall_result eligible.
+
+======================================================================
+FAIL: test_eligible_assessment_runs_through_source_named_module_interface (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_eligible_assessment_runs_through_source_named_module_interface)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 161, in test_eligible_assessment_runs_through_source_named_module_interface
+    self.assertEqual(result.snapshot["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+======================================================================
+FAIL: test_eligibility_assessment_marks_application_eligible_when_all_source_checks_pass (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_eligibility_assessment_marks_application_eligible_when_all_source_checks_pass)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 714, in test_eligibility_assessment_marks_application_eligible_when_all_source_checks_pass
+    self.assertEqual(body["data"]["member_active_check"], "pass")
+AssertionError: 'manual_evidence_required' != 'pass'
+- manual_evidence_required
++ pass
+
+
+======================================================================
+FAIL: test_eligibility_assessment_uses_existing_verified_active_member_facts_when_available (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_eligibility_assessment_uses_existing_verified_active_member_facts_when_available)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 671, in test_eligibility_assessment_uses_existing_verified_active_member_facts_when_available
+    self.assertEqual(body["data"]["member_active_check"], "pass")
+AssertionError: 'manual_evidence_required' != 'pass'
+- manual_evidence_required
++ pass
+
+
+======================================================================
+FAIL: test_epic_006_cross_role_happy_path_reaches_one_pending_sanction_case (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_epic_006_cross_role_happy_path_reaches_one_pending_sanction_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 4093, in test_epic_006_cross_role_happy_path_reaches_one_pending_sanction_case
+    self.assertEqual(eligibility["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+======================================================================
+FAIL: test_loan_limit_accepts_decimal_equivalent_cultivated_acreage_sources (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_accepts_decimal_equivalent_cultivated_acreage_sources)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 1047, in test_loan_limit_accepts_decimal_equivalent_cultivated_acreage_sources
+    application_id = self._eligible_application(required_loan_amount="400000.00")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 4339, in _eligible_application
+    self.assertEqual(response.json()["data"]["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+======================================================================
+FAIL: test_loan_limit_blocks_pending_ineligible_and_missing_policy_without_success_evidence (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_blocks_pending_ineligible_and_missing_policy_without_success_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 1741, in test_loan_limit_blocks_pending_ineligible_and_missing_policy_without_success_evidence
+    self.assertEqual(eligible.json()["data"]["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+======================================================================
+FAIL: test_loan_limit_blocks_unresolved_cultivated_acreage_without_success_evidence (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_blocks_unresolved_cultivated_acreage_without_success_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 983, in test_loan_limit_blocks_unresolved_cultivated_acreage_without_success_evidence
+    application_id = self._eligible_application(required_loan_amount="400000.00")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 4339, in _eligible_application
+    self.assertEqual(response.json()["data"]["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+======================================================================
+FAIL: test_loan_limit_calculation_stores_source_backed_lower_of_two_result (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_calculation_stores_source_backed_lower_of_two_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 902, in test_loan_limit_calculation_stores_source_backed_lower_of_two_result
+    application_id = self._eligible_application(required_loan_amount="400000.00")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 4339, in _eligible_application
+    self.assertEqual(response.json()["data"]["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+======================================================================
+FAIL: test_loan_limit_equal_and_below_boundaries_update_one_assessment (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_equal_and_below_boundaries_update_one_assessment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 1589, in test_loan_limit_equal_and_below_boundaries_update_one_assessment
+    application_id = self._eligible_application(required_loan_amount="20000.00")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 4339, in _eligible_application
+    self.assertEqual(response.json()["data"]["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+======================================================================
+FAIL: test_loan_limit_failed_cultivated_acreage_rerun_preserves_existing_snapshot (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_failed_cultivated_acreage_rerun_preserves_existing_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 1137, in test_loan_limit_failed_cultivated_acreage_rerun_preserves_existing_snapshot
+    application_id = self._eligible_application(required_loan_amount="400000.00")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 4339, in _eligible_application
+    self.assertEqual(response.json()["data"]["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+======================================================================
+FAIL: test_loan_limit_per_share_cap_policy_uses_land_limit_when_lower (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_per_share_cap_policy_uses_land_limit_when_lower)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 1906, in test_loan_limit_per_share_cap_policy_uses_land_limit_when_lower
+    application_id = self._eligible_application(required_loan_amount="100000.00")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 4339, in _eligible_application
+    self.assertEqual(response.json()["data"]["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+======================================================================
+FAIL: test_loan_limit_permission_and_object_scope_denials_create_no_success_evidence (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_permission_and_object_scope_denials_create_no_success_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 1862, in test_loan_limit_permission_and_object_scope_denials_create_no_success_evidence
+    application_id = self._eligible_application(required_loan_amount="400000.00")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 4339, in _eligible_application
+    self.assertEqual(response.json()["data"]["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+======================================================================
+FAIL: test_loan_limit_read_enforces_read_permission_scope_and_missing_snapshot (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_read_enforces_read_permission_scope_and_missing_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 1547, in test_loan_limit_read_enforces_read_permission_scope_and_missing_snapshot
+    application_id = self._eligible_application(required_loan_amount="400000.00")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 4339, in _eligible_application
+    self.assertEqual(response.json()["data"]["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+======================================================================
+FAIL: test_loan_limit_read_returns_immutable_stored_snapshot_without_evidence (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_read_returns_immutable_stored_snapshot_without_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 1312, in test_loan_limit_read_returns_immutable_stored_snapshot_without_evidence
+    application_id = self._eligible_application(required_loan_amount="400000.00")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 4339, in _eligible_application
+    self.assertEqual(response.json()["data"]["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+======================================================================
+FAIL: test_loan_limit_rejects_missing_and_cross_member_source_facts_without_evidence (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_rejects_missing_and_cross_member_source_facts_without_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 1775, in test_loan_limit_rejects_missing_and_cross_member_source_facts_without_evidence
+    application_id = self._eligible_application(required_loan_amount="400000.00")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 4339, in _eligible_application
+    self.assertEqual(response.json()["data"]["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+======================================================================
+FAIL: test_loan_limit_rejects_unverified_or_unlinked_cultivation_facts_without_evidence (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_rejects_unverified_or_unlinked_cultivation_facts_without_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 1200, in test_loan_limit_rejects_unverified_or_unlinked_cultivation_facts_without_evidence
+    application_id = self._eligible_application(required_loan_amount="400000.00")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 4339, in _eligible_application
+    self.assertEqual(response.json()["data"]["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+======================================================================
+FAIL: test_loan_limit_uses_selected_land_and_crop_plan_when_profile_acreage_is_null (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_uses_selected_land_and_crop_plan_when_profile_acreage_is_null)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 1095, in test_loan_limit_uses_selected_land_and_crop_plan_when_profile_acreage_is_null
+    application_id = self._eligible_application(required_loan_amount="400000.00")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 4339, in _eligible_application
+    self.assertEqual(response.json()["data"]["overall_result"], "eligible")
+AssertionError: 'pending_manual_evidence' != 'eligible'
+- pending_manual_evidence
++ eligible
+
+
+----------------------------------------------------------------------
+Ran 75 tests in 7.223s
+
+FAILED (failures=17, errors=11, skipped=2)
+Destroying test database for alias 'default'...

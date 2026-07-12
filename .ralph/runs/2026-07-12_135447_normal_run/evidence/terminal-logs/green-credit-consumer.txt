@@ -1,0 +1,42 @@
+Creating test database for alias 'default'...
+Found 75 test(s).
+System check identified no issues (0 silenced).
+................F.....................F........F.........................ss
+======================================================================
+FAIL: test_pending_assessment_preserves_manual_evidence_result (sfpcl_credit.tests.test_credit_modules.CreditEligibilityModuleTests.test_pending_assessment_preserves_manual_evidence_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_credit_modules.py", line 233, in test_pending_assessment_preserves_manual_evidence_result
+    self.assertEqual(result.snapshot["overall_result"], "pending_manual_evidence")
+AssertionError: 'eligible' != 'pending_manual_evidence'
+- eligible
++ pending_manual_evidence
+
+
+======================================================================
+FAIL: test_eligibility_assessment_run_and_read_persists_manual_evidence_active_member_result (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_eligibility_assessment_run_and_read_persists_manual_evidence_active_member_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 623, in test_eligibility_assessment_run_and_read_persists_manual_evidence_active_member_result
+    self.assertEqual(assessment["member_active_check"], "manual_evidence_required")
+AssertionError: 'pass' != 'manual_evidence_required'
+- pass
++ manual_evidence_required
+
+
+======================================================================
+FAIL: test_loan_limit_blocks_pending_ineligible_and_missing_policy_without_success_evidence (sfpcl_credit.tests.test_loan_applications_api.LoanApplicationDraftApiTests.test_loan_limit_blocks_pending_ineligible_and_missing_policy_without_success_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_loan_applications_api.py", line 1682, in test_loan_limit_blocks_pending_ineligible_and_missing_policy_without_success_evidence
+    self.assertEqual(pending.json()["data"]["overall_result"], "pending_manual_evidence")
+AssertionError: 'eligible' != 'pending_manual_evidence'
+- eligible
++ pending_manual_evidence
+
+
+----------------------------------------------------------------------
+Ran 75 tests in 8.645s
+
+FAILED (failures=3, skipped=2)
+Destroying test database for alias 'default'...

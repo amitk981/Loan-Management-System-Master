@@ -1,7 +1,7 @@
 # Slice 006Z3: Active-Member Supply Evidence Boundary Hardening
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review

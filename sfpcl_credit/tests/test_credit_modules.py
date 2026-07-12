@@ -61,10 +61,15 @@ class CreditEligibilityModuleTests(TestCase):
             active_member_status="active",
             active_member_verified_at=timezone.now(),
         )
+        IndividualMemberProfile.objects.create(
+            member=self.member, first_name="Ramesh", last_name="Patil",
+            services_availed_flag=True,
+        )
         for year in ("2022-23", "2023-24", "2024-25", "2025-26"):
             ProduceSupplyRecord.objects.create(
                 member=self.member, financial_year=year,
                 supplied_to_entity_type="sfpcl", supply_route="direct",
+                evidence_reference=f"ERP-CREDIT-{year}",
                 captured_by_user=self.actor, verified_flag=True,
                 verified_by_user=self.actor, verified_at=timezone.now(),
             )
@@ -219,6 +224,8 @@ class CreditEligibilityModuleTests(TestCase):
         self.member.active_member_status = "pending"
         self.member.active_member_verified_at = None
         self.member.save(update_fields=["active_member_status", "active_member_verified_at"])
+        self.member.individual_profile.services_availed_flag = False
+        self.member.individual_profile.save(update_fields=["services_availed_flag"])
 
         result = EligibilityAssessmentModule().run(
             actor=self.actor,
@@ -511,11 +518,9 @@ class AppraisalWorkflow:
         )
 
         calculator, shareholding, policy = self._calculator_fixture()
-        IndividualMemberProfile.objects.create(
+        IndividualMemberProfile.objects.update_or_create(
             member=self.member,
-            first_name="Ramesh",
-            last_name="Patil",
-            land_area_under_cultivation_acres="5.0",
+            defaults={"first_name": "Ramesh", "last_name": "Patil", "land_area_under_cultivation_acres": "5.0", "services_availed_flag": True},
         )
         locked_models = (
             LoanApplication, EligibilityAssessment, LoanLimitAssessment, Shareholding,

@@ -784,3 +784,19 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - 006Z3 owns canonical financial-year, entity/route, reference, decimal, member-version, optimistic
   capture, and shared portal/eligibility continuity validation. 006Z2 must wait for 006Z3 so portal
   limits cannot project from invalid eligibility evidence.
+
+## 006Z3 Active-Member Supply Evidence Boundary
+
+- `members.modules.active_member_status.ActiveMemberStatusModule.calculate` is the public immutable
+  BR-004/BR-007 projection. Credit and portal consumers share it; credit no longer imports supply
+  persistence or owns/tests a private continuity helper.
+- Normal pass requires persisted profile service usage plus four continuous verified rows with
+  canonical `YYYY-YY`, SFPCL/subsidiary/step-down entity, consistent direct/eligible active Producer
+  Institution route, and evidence reference. A legacy active flag/timestamp is never service proof;
+  recorded relaxation remains manual evidence.
+- Capture is object/known-field strict and locks the current member version. Entity/member UUID
+  relationships, non-negative bounded-precision decimals, and evidence reference are validated;
+  stale/competing capture yields one record/history/audit winner. Verification retains its separate
+  record-version maker-checker lock.
+- Portal totals/status/continuity derive only from qualifying rows while every row remains visible.
+  006Z2 must consume this public result and treat non-qualifying continuity as unavailable, not zero.

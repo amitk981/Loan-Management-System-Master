@@ -1697,14 +1697,29 @@ Rules:
   holdings, crop plans, KYC profile, bank accounts, and cancelled cheques. Portal profile responses
   force PAN/Aadhaar `can_view_full = false` and expose no full bank account values.
 - Produce supply returns portal-account-scoped persisted records with no member identifier or
-  staff actions. `source_status` is `persisted_verified_records` when verified history exists and
-  `persisted_no_verified_records` otherwise; summary totals and continuous verified years derive
-  from those rows.
+  staff actions. `source_status` is `persisted_qualifying_verified_records` when source-eligible
+  verified history exists and `persisted_no_qualifying_verified_records` otherwise. Summary totals
+  and continuity derive only from canonical-year, eligible-entity/route, evidence-referenced,
+  verified rows; pending and malformed legacy rows remain visible but do not contribute.
   because `data-model.md` defines `produce_supply_records` but no backend model exists yet.
 
 Frontend wiring:
 - MP03, MP04, and prototype `MP22_ProduceSupply.tsx` call these endpoints through
   `sfpcl-lms/src/services/portalApi.ts` with the stored portal bearer session.
+
+### Staff produce-supply capture and verification (006Z/006Z3)
+
+- `POST /api/v1/members/{member_id}/produce-supply-records/` requires
+  `members.active_status.calculate` and an object body containing the current integer member
+  `version`, canonical `financial_year` (`YYYY-YY`), eligible `supplied_to_entity_type`, consistent
+  `supply_route`, and non-blank `evidence_reference`. Unknown fields, invalid UUID relationships,
+  and negative/over-precision quantity or value facts return `400 VALIDATION_ERROR`; stale member
+  versions return `409 STALE_WRITE` without record, history, or audit evidence.
+- Direct supply forbids `producer_institution_member_id`; the Producer Institution route requires
+  an active, non-self FPC/Producer Institution member UUID. Subsidiary and step-down subsidiary
+  destinations require `supplied_to_entity_id`.
+- `POST /api/v1/produce-supply-records/{record_id}/verify/` retains maker-checker separation and
+  the current supply-record `version`; stale verification returns `409 STALE_WRITE`.
 
 ## Member portal application APIs (005G)
 

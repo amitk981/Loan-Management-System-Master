@@ -3902,3 +3902,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-12_135447_normal_run
+
+- Completed 006Z3: member-owned active-status projection now requires persisted service usage and
+  qualifying four-year verified supply evidence; flag-only legacy facts cannot pass.
+- Strict optimistic capture rejects malformed years, entities/routes/UUIDs, decimals, missing
+  evidence, unknown fields, and stale member versions without duplicate audit/history evidence.
+- Frontend build/typecheck/lint and 175 tests passed. Backend check/migration sync and 437 tests
+  passed (5 skipped) at 94% coverage.
+- Next action: architecture review is due, then 006Z2.
+
+## 2026-07-12 14:11:23 - 2026-07-12_135447_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z3-active-member-supply-evidence-boundary-hardening
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/.ralph/runs/2026-07-12_135447_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/.ralph/runs/2026-07-12_135447_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
