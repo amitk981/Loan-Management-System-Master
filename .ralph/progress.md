@@ -4252,3 +4252,26 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-12_214611_normal_run
+
+- Completed 006Z4 with one member-owned dated calculate/verify module for uninterrupted continuity,
+  completed-year classification, individual/institution four-year paths, BR-006 service, and recorded
+  one-year relaxation.
+- Eligibility persists the complete immutable active-member result/row snapshot; portal supply uses
+  the same classifications and totals without member identifiers or staff actions.
+- Verification centralizes permission, maker-checker, reason, optimistic version/result checks,
+  repeated decisions, and atomic audit/history. Its PostgreSQL race and the five credit races passed
+  twice with zero skips.
+- Frontend build/typecheck/lint and 199 tests pass. Backend check/migration sync and 460 tests pass
+  (8 expected SQLite skips) at 93% coverage. Architecture review is due; then run 006Z2.
+
+## 2026-07-12 22:07:19 - 2026-07-12_214611_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z4-active-member-rule-and-snapshot-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_214611_normal_run/.ralph/runs/2026-07-12_214611_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_214611_normal_run/.ralph/runs/2026-07-12_214611_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

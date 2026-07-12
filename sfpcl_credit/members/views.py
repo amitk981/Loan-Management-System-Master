@@ -1,5 +1,6 @@
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.views.decorators.http import require_GET, require_http_methods
+from django.utils.dateparse import parse_date
 
 from sfpcl_credit.api import (
     error_response,
@@ -12,6 +13,10 @@ from sfpcl_credit.api import (
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.members import services
 from sfpcl_credit.members.modules import MemberRegistry
+from sfpcl_credit.members.modules.active_member_status import (
+    ActiveMemberStatusConflict,
+    ActiveMemberStatusModule,
+)
 
 
 def _serialize_member(member, user):
@@ -416,6 +421,38 @@ def produce_supply_record_verify(request, record_id):
     if record is None:
         return error_response(request, 404, "NOT_FOUND", "Produce supply record was not found.")
     return success_response(services.serialize_produce_supply_record(record, user), request)
+
+
+@require_http_methods(["POST"])
+def active_member_status_verify(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    body = parse_json_body(request)
+    if not isinstance(body, dict):
+        return error_response(request, 400, "VALIDATION_ERROR", "Active-member verification payload failed validation.", {"non_field_errors": "This field must be an object."})
+    as_of_date = parse_date(body.get("as_of_date", "")) if body.get("as_of_date") else None
+    if body.get("as_of_date") and as_of_date is None:
+        return error_response(request, 400, "VALIDATION_ERROR", "Active-member verification payload failed validation.", {"as_of_date": "Enter a valid ISO date."})
+    try:
+        result = ActiveMemberStatusModule().verify(
+            actor=user,
+            member_id=member_id,
+            result_id=body.get("result_id"),
+            decision=body.get("decision"),
+            reason=body.get("reason"),
+            version=body.get("version"),
+            as_of_date=as_of_date,
+        )
+    except PermissionError as exc:
+        return error_response(request, 403, "FORBIDDEN", str(exc))
+    except ValueError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Active-member verification payload failed validation.", {"non_field_errors": str(exc)})
+    except ActiveMemberStatusConflict as exc:
+        return error_response(request, 409, exc.code, exc.message)
+    except services.Member.DoesNotExist:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+    return success_response(result, request)
 
 
 @require_http_methods(["GET", "POST"])

@@ -93,6 +93,7 @@ class EligibilityAssessmentModule:
             raise CreditModuleInvalidStateError(transition.reason)
 
         member_result = ActiveMemberStatusModule().calculate(member_id=application.member_id)
+        active_member_snapshot = member_result.to_snapshot()
         active_result = {
             "member_active_check": member_result.member_active_check,
             "overall_result": member_result.overall_result,
@@ -121,6 +122,7 @@ class EligibilityAssessmentModule:
             source_checks,
             assessment.overall_result,
         )
+        assessment.active_member_snapshot = active_member_snapshot
         assessment.assessed_by_user = actor
         assessment.assessed_at = timezone.now()
         assessment.save()
@@ -211,6 +213,7 @@ def eligibility_assessment_snapshot(assessment):
         "nominee_check": assessment.nominee_check,
         "overall_result": assessment.overall_result,
         "assessment_notes": assessment.assessment_notes,
+        "active_member_snapshot": assessment.active_member_snapshot,
         "assessed_by_user_id": str(assessment.assessed_by_user_id),
         "assessed_at": timezone.localtime(assessment.assessed_at).isoformat(),
     }

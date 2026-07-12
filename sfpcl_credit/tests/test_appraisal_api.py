@@ -132,6 +132,7 @@ class AppraisalApiTests(TestCase):
                 "nominee_check": "valid",
                 "overall_result": "eligible",
                 "assessment_notes": "All mandatory eligibility criteria passed.",
+                "active_member_snapshot": {},
                 "assessed_by_user_id": str(self.actor.pk),
                 "assessed_at": timezone.localtime(self.eligibility.assessed_at).isoformat(),
             },

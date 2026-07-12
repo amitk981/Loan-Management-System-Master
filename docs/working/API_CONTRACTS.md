@@ -1697,7 +1697,9 @@ Rules:
   holdings, crop plans, KYC profile, bank accounts, and cancelled cheques. Portal profile responses
   force PAN/Aadhaar `can_view_full = false` and expose no full bank account values.
 - Produce supply returns portal-account-scoped persisted records with no member identifier or
-  staff actions. `source_status` is `persisted_qualifying_verified_records` when source-eligible
+  staff actions. Every record includes the member module's `qualifying` boolean and stable nullable
+  `non_qualifying_reason`; summary includes the immutable `result_id` and
+  `calculated_as_of_date`. `source_status` is `persisted_qualifying_verified_records` when source-eligible
   verified history exists and `persisted_no_qualifying_verified_records` otherwise. Summary totals
   and continuity derive only from canonical-year, eligible-entity/route, evidence-referenced,
   verified rows; pending and malformed legacy rows remain visible but do not contribute.
@@ -1720,6 +1722,12 @@ Frontend wiring:
   destinations require `supplied_to_entity_id`.
 - `POST /api/v1/produce-supply-records/{record_id}/verify/` retains maker-checker separation and
   the current supply-record `version`; stale verification returns `409 STALE_WRITE`.
+- `POST /api/v1/members/{member_id}/active-status/verify/` requires
+  `members.active_status.verify` plus `result_id`, current member `version`, ISO `as_of_date`,
+  `decision` (`active`, `inactive`, or `needs_review`), and a non-blank `reason`. Verification
+  rejects evidence makers, stale/changed results, stale versions, unsupported active decisions,
+  and repeated decisions without audit/history evidence. A winner returns the exact complete dated
+  result snapshot and records that same projection atomically in member history and audit.
 
 ## Member portal application APIs (005G)
 
@@ -1811,14 +1819,17 @@ Rules:
 - Run is allowed only after formal reference generation: `application_reference_number` starts
   with `LO`, `application_status = reference_generated`, `completeness_status = complete`, and
   `current_stage = credit_assessment`. Other states return `409 INVALID_STATE_TRANSITION`.
-- `member_active_check` is:
-  - `pass` only when existing member facts include `active_member_status = active` and an
-    `active_member_verified_at` timestamp.
-  - `relaxation` when existing member facts include `active_member_status = relaxation` and an
-    `active_member_verified_at` timestamp.
+- `member_active_check` is calculated through `members.modules.active_member_status`:
+  - `pass` when an active individual/FPC/Producer Institution has recorded service usage and four
+    uninterrupted, completed financial years of qualifying verified produce-supply evidence.
+  - `relaxation` for an individual with three recorded continuous employment/service years, or for
+    a recorded relaxation backed by at least one completed qualifying supply year.
   - `fail` when the member's `membership_status` is not `active`.
   - `manual_evidence_required` when BR-004 through BR-007 require produce/service history but the
     current persistence has no source-backed history rows to calculate it.
+- Responses persist and expose `active_member_snapshot`, including `result_id`,
+  `calculated_as_of_date`, member/rule route facts, continuity, and every classified supply row.
+  Later member/supply changes never rewrite an application's stored eligibility snapshot.
 - 006B computes these additional source-backed checks:
   - `default_check = no_default` only when `Member.default_status = no_default`; other existing
     default-like values return `default_found`.

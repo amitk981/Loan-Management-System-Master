@@ -84,15 +84,29 @@ def produce_supply(member):
         ProduceSupplyRecord.objects.filter(member=member).order_by("-financial_year", "produce_supply_record_id")
     )
     status = ActiveMemberStatusModule().calculate(member_id=member.member_id)
+    classified_rows = {
+        row.produce_supply_record_id: row for row in status.supply_rows
+    }
     qualifying_ids = {row.produce_supply_record_id for row in status.supply_rows if row.qualifying}
     qualifying_records = [row for row in records if str(row.produce_supply_record_id) in qualifying_ids]
     totals = ProduceSupplyRecord.objects.filter(
         produce_supply_record_id__in=[row.produce_supply_record_id for row in qualifying_records]
     ).aggregate(total_quantity=Sum("quantity"), total_value=Sum("value_amount"))
     return {
-        "records": [member_services.serialize_produce_supply_record(row, portal=True) for row in records],
+        "records": [
+            {
+                **member_services.serialize_produce_supply_record(row, portal=True),
+                "qualifying": classified_rows[str(row.produce_supply_record_id)].qualifying,
+                "non_qualifying_reason": classified_rows[
+                    str(row.produce_supply_record_id)
+                ].non_qualifying_reason,
+            }
+            for row in records
+        ],
         "summary": {
             "continuous_supply_years": str(status.continuous_supply_years),
+            "calculated_as_of_date": status.calculated_as_of_date,
+            "result_id": status.result_id,
             "total_quantity": f"{totals['total_quantity']:.3f}" if totals["total_quantity"] is not None else None,
             "total_value": f"{totals['total_value']:.2f}" if totals["total_value"] is not None else None,
         },

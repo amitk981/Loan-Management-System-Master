@@ -133,3 +133,14 @@ Medium
   cards; 400/403/409 responses preserve exact server facts with no retry, local merge, or fallback.
 - Trusted-browser data must be collision-safe across both independent executions and assertions must
   prove the response contains no member identifier, evidence reference, or staff action before capture.
+
+## Run-Ahead Sharpening Review (006Z4, 2026-07-12)
+
+- Consume the immutable `active_member_snapshot` persisted on the application's eligibility
+  assessment, or a member result whose `result_id` exactly matches the member's verified active-status
+  result. Require `calculated_as_of_date`, `member_active_check`, `qualification_route`, and the
+  verified result identifier; never treat an unverified calculation or `manual_evidence_required`
+  result as limit authority.
+- The borrower projection may expose the result identifier/date and limit/advisory facts only. It
+  must strip `member_id`, `verified_by_user_id`, evidence references, classified row IDs, and staff
+  actions already retained in the internal snapshot.

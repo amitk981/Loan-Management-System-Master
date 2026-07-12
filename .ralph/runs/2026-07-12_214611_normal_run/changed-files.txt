@@ -1,0 +1,19 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006Z2-portal-application-limit-display-authority.md
+ M docs/slices/006Z4-active-member-rule-and-snapshot-closure.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/credit/models.py
+ M sfpcl_credit/credit/modules/eligibility_assessment.py
+ M sfpcl_credit/members/modules/active_member_status.py
+ M sfpcl_credit/members/portal_services.py
+ M sfpcl_credit/members/views.py
+ M sfpcl_credit/tests/test_appraisal_api.py
+ M sfpcl_credit/tests/test_loan_applications_api.py
+ M sfpcl_credit/tests/test_produce_supply_api.py
+?? .ralph/runs/2026-07-12_214611_normal_run/
+?? sfpcl_credit/credit/migrations/0007_eligibility_active_member_snapshot.py
+?? sfpcl_credit/tests/test_active_member_status_module.py

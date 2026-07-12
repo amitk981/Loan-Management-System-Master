@@ -33,6 +33,7 @@ class EligibilityAssessment(models.Model):
     nominee_check = models.CharField(max_length=60, default=CHECK_PENDING)
     overall_result = models.CharField(max_length=60, db_index=True)
     assessment_notes = models.TextField(blank=True)
+    active_member_snapshot = models.JSONField(default=dict)
     assessed_by_user = models.ForeignKey(
         "identity.User",
         on_delete=models.PROTECT,

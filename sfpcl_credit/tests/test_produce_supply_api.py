@@ -220,6 +220,45 @@ class ProduceSupplyApiTests(TestCase):
         self.assertEqual(MemberChangeHistory.objects.filter(change_type="produce_supply_captured").count(), 1)
         self.assertEqual(AuditLog.objects.filter(action="members.produce_supply.created").count(), 1)
 
+    def test_staff_verifies_the_dated_active_member_result_through_public_route(self):
+        verify_permission = Permission.objects.create(
+            permission_code="members.active_status.verify",
+            permission_name="Verify active member status",
+            module_name="members",
+            risk_level="high",
+        )
+        checker = self._user("status.checker@sfpcl.example", verify_permission)
+        for financial_year in ("2022-23", "2023-24", "2024-25", "2025-26"):
+            ProduceSupplyRecord.objects.create(
+                member=self.member,
+                financial_year=financial_year,
+                supplied_to_entity_type="sfpcl",
+                supply_route="direct",
+                evidence_reference=f"ERP-STATUS-{financial_year}",
+                captured_by_user=self.actor,
+                verified_flag=True,
+            )
+        result = ActiveMemberStatusModule().calculate(member_id=self.member.member_id)
+
+        response = self.client.post(
+            f"/api/v1/members/{self.member.member_id}/active-status/verify/",
+            data={
+                "result_id": result.result_id,
+                "as_of_date": result.calculated_as_of_date,
+                "decision": "active",
+                "reason": "Dated source evidence reviewed.",
+                "version": self.member.version,
+            },
+            content_type="application/json",
+            headers=self._headers(checker.email),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        data = response.json()["data"]
+        self.assertEqual(data["result"], result.to_snapshot())
+        self.assertEqual(data["decision"], "active")
+        self.assertEqual(data["reason"], "Dated source evidence reviewed.")
+
     def test_portal_supply_is_read_only_and_scoped_from_portal_account(self):
         portal_role = Role.objects.create(
             role_code="borrower_portal_user", role_name="Borrower Portal User", status="active"
@@ -266,5 +305,10 @@ class ProduceSupplyApiTests(TestCase):
         self.assertEqual([row["financial_year"] for row in data["records"]], ["2025-26"])
         self.assertNotIn("member_id", data)
         self.assertNotIn("available_actions", data["records"][0])
+        self.assertTrue(data["records"][0]["qualifying"])
+        self.assertIsNone(data["records"][0]["non_qualifying_reason"])
         self.assertEqual(data["summary"]["total_quantity"], "10.000")
+        self.assertEqual(data["summary"]["continuous_supply_years"], "1")
+        self.assertIsNotNone(data["summary"]["calculated_as_of_date"])
+        self.assertIsNotNone(data["summary"]["result_id"])
         self.assertEqual(data["source_status"], "persisted_qualifying_verified_records")

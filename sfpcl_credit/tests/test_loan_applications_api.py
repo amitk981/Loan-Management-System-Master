@@ -682,10 +682,26 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(body["data"]["purpose_check"], "agriculture_aligned")
         self.assertEqual(body["data"]["nominee_check"], "pending")
         self.assertEqual(body["data"]["overall_result"], "pending_manual_evidence")
+        active_snapshot = body["data"]["active_member_snapshot"]
+        self.assertEqual(active_snapshot["member_type"], "individual_farmer")
+        self.assertEqual(active_snapshot["member_active_check"], "pass")
+        self.assertEqual(active_snapshot["continuous_supply_years"], 4)
+        self.assertEqual(len(active_snapshot["supply_rows"]), 4)
+        self.assertTrue(all(row["qualifying"] for row in active_snapshot["supply_rows"]))
+        self.assertIsNotNone(active_snapshot["result_id"])
+        self.assertIsNotNone(active_snapshot["calculated_as_of_date"])
         self.assertIn(
             "Application-specific nominee selection is pending",
             body["data"]["assessment_notes"],
         )
+
+        ProduceSupplyRecord.objects.all().delete()
+        read_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(read_response.status_code, 200)
+        self.assertEqual(read_response.json()["data"]["active_member_snapshot"], active_snapshot)
 
     def test_eligibility_assessment_marks_application_eligible_when_all_source_checks_pass(self):
         self.member.active_member_status = "active"

@@ -1,5 +1,20 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006Z4 Active-Member Rule and Snapshot Closure
+
+- `members.modules.active_member_status` now returns a deterministic dated result identifier and a
+  complete immutable row/result projection. Continuity stops at gaps; financial years not completed
+  by `as_of_date` stay visible with `financial_year_not_complete_as_of_date` and never qualify.
+- The public rule covers service-backed four-year individual/FPC/Producer Institution routes,
+  individual three-year employment/service, Producer Institution supply routing, and recorded
+  one-year relaxation without inventing an approver. Pending, malformed, wrong-route/entity, and
+  evidence-free rows retain stable explanations.
+- Public verification owns permission, maker-checker, reason, decision, member version, current
+  result, repeated-decision, atomic member/history/audit, and PostgreSQL winner/loser behavior.
+- Eligibility persists the exact complete active-member snapshot used for the application. Portal
+  supply consumes the same classification and exposes dated result metadata without member IDs or
+  staff actions.
+
 ## 006X7 Credit Object-Scope Action Parity Closure
 
 - A shared public projection overlay evaluates application object access before resource
