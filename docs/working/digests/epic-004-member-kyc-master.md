@@ -1,5 +1,20 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## Architecture Review 2026-07-12 - Member Governance Correctives
+
+- Codebase design §10.1 requires member writes behind `members.modules.member_registry`, including
+  duplicate PAN rejection. 006Y placed them in generic services, did not check duplicate PAN/Aadhaar,
+  and left malformed nested-profile/integrity edges outside complete standard-envelope tests.
+- M02-FR-012 says verified identity changes require an approved change request. A-065's reason-only
+  reverification intentionally lacks that approval fact, so 006Y3 adds a persisted request and
+  separate permission-based checker approval without hard-coding an approver role.
+- 006Y change history omits nested create values and records `null` for address old values. 006Y3
+  owns complete masked field diffs, duplicate races, deep-module authority, full §13.2 forms, and
+  routed/browser mutation proof.
+- 006Y2 requires witness edit but delivered GET/POST only under A-066. 006Y4 owns versioned audited
+  correction, immutable 004E2 evidence, resource actions, canonical refetch, and mounted/browser
+  `400`/`403`/`409` proof.
+
 ## 006Y Member Identity Governance
 
 - §13.2 member create persists individual or institution profiles and protects PAN/Aadhaar and

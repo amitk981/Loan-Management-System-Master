@@ -1,5 +1,17 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-12 - 006X2/006X3 Closure Audit
+
+- 006X3 is substantively closed: Playwright collects the visual and real-server tests, the two-role
+  Django path reaches exactly one pending sanction case, two trusted runs pass, and all twenty
+  declared screenshots exist.
+- 006X2's mounted frontend matrix is substantive, but its named backend action/write matrix is not:
+  one new eligibility denial test does not pair every eligibility/limit/appraisal/review/sanction
+  action across role, permission, object, maker-checker, provenance, history, rejection, and race
+  cases. 006X4 owns the enumerated public-interface matrix and PostgreSQL concurrency proof.
+- M04-FR-004 through M04-FR-011 retain substantive behavior/browser confidence pending that
+  regression closure. M04-FR-001/002 remain under A-053; M04-FR-003 remains under A-054.
+
 ## 006X3 Credit Visual and Real-Browser Closure
 
 - One focused Playwright file collects exactly two tests: the eighteen-state Appraisal Workbench

@@ -14,7 +14,7 @@ Persist source-backed produce/service supply history and make the active-member 
 Eligibility decisions rest on recorded supply evidence instead of assumptions; borrowers and staff see the same supply history the calculation uses.
 
 ## Depends On
-- 006Y2
+- 006Y4
 
 ## Source References
 - docs/source/data-model.md produce/supply records table

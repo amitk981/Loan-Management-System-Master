@@ -1,26 +1,27 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-12_083250_repair
+2026-07-12_092009_architecture_review
 
 ## Current Status
 
-006Y2 makes the 006Y member contract reachable from the staff directory/profile and replaces the
-Application Detail witness placeholder with 004E2 capture/read wiring. Member create supports
-individual and institution variants; profile update/reverification sends the current version and
-canonically refetches detail. Witness capture canonically refetches immutable folio/shareholding
-evidence. Profile mutation controls use resource actions; witness controls use exact canonical
-permissions because the delivered witness response has no resource-action projection.
+Architecture review of 006X2, 006X3, 006Y, and 006Y2 is complete. 006X3's visual/real-browser
+closure is verified. 006X2 still lacks its promised exhaustive backend action/write matrix. Member
+governance bypasses the documented Member Registry seam, duplicate identity detection, complete
+masked change history, and M02-FR-012's approved change request. 006Y2's browser opens member forms
+without submitting them, omits full §13.2 fields and witness edit, and witness controls still derive
+from global permissions because the delivered witness API has no resource actions.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-12_083250_repair/`. Frontend lint/typecheck/build and 171
-tests passed. Backend check/migration sync and 411 tests passed with five expected PostgreSQL skips
-at 94% coverage. The browser spec collects one real-session test; local Chromium launch was denied
-by macOS services, so the trusted two-run gate owns the five screenshots and encoded baselines.
+Evidence is under `.ralph/runs/2026-07-12_092009_architecture_review/`. The review is docs-only and
+left production code unchanged. Documentation/queue lint, JSON validation, focused frontend/backend
+tests, full configured gates, protected-path checks, and diff checks are recorded there. CONTEXT
+remains truthful and no Blocked slice is stale.
 
 ## Next Run
 
-Run the due architecture review, then High-risk 006Z and 006Z2. Both have fresh mounted-container
-and trusted-browser notes. Witness edit remains deliberately deferred: 004E/004E2 expose no PATCH
-contract, editable-field list, optimistic version, update action, or audit rule; A-066 records it.
+Run High-risk 006X4 first for the public credit action/write matrix and PostgreSQL race proof. Then
+run High-risk 006Y3 for the Member Registry, duplicates/history, approved identity-change request,
+complete member forms, and real browser mutations; run 006Y4 for governed witness correction and
+resource actions. 006Z now depends on 006Y4, then 006Z2 follows.

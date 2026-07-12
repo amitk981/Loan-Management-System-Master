@@ -2,6 +2,114 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-12 09:25 - Architecture Review 2026-07-12_092009_architecture_review
+
+Reviewed completed product work since architecture-review commit `1f047f5`:
+- `006X2-credit-action-predicate-and-container-closure` (`0d2168c`)
+- `006X3-credit-visual-and-real-browser-closure` (`559b31f`)
+- `006Y-member-create-update-and-identity-governance` (`d64b262`)
+- `006Y2-member-form-and-witness-capture-ui-wiring` (`09b6b53`, repaired by `6c6a4da`)
+
+The review checked `git diff 1f047f5...HEAD`, all four slice contracts/run packets, implementation
+and tests, trusted-browser evidence, Epic 004/006 digests, cited source sections, assumptions, and
+functional IDs. The script/runbook portion of `6c6a4da` is protected Ralph-orchestrator work and was
+excluded from product findings. Standards and spec fidelity were reviewed independently. Production
+code was not changed; `CONTEXT.md` remains truthful, and `.ralph/state.json` has no Blocked slices.
+
+### Standards
+
+#### Finding 1 - High - Member governance bypasses the documented deep module and duplicate invariant
+
+006Y adds create/update/reverification to the already broad `members/services.py`; callable writes
+accept an actor but depend on views for permission enforcement. This contradicts codebase-design
+§6.3 and §10.1's `members.modules.member_registry.MemberRegistry`, which must hide permission-safe
+profile creation, identity protection, duplicate detection, masking, and audit. The named
+“Duplicate PAN rejected” test/invariant is absent: hashes are stored but never checked or uniquely
+constrained. Nested profile dictionaries also reach model creation without a complete API-shape
+validator, leaving malformed/duplicate integrity failures capable of escaping the standard error
+contract. High-risk `006Y3` owns the deep seam, exact validation, concurrency-safe duplicate
+rejection, and permission/object enforcement through the public interface.
+
+#### Finding 2 - High - Member/witness UI proof and authority remain shallower than the production path
+
+The 006Y2 form tests mock API wrapper functions and the browser merely opens the create and
+reverification forms; its only mutation is witness capture. No routed test proves member POST,
+PATCH, identity correction, canonical refetch, or one-call `400`/`403`/`409`, contrary to
+codebase-design §26.3. Witness visibility and member-create visibility are derived from cached
+`/auth/me` permissions because the witness API exposes no resource actions, contrary to API §44
+and codebase-design §§23.3-23.4. `006Y3` owns the routed member matrix; `006Y4` adds witness resource
+actions and mounted/real-browser capture/correction proof.
+
+#### Finding 3 - Medium - Member forms alter the approved page composition instead of using an action surface
+
+`MemberDirectory` inserts the registration card above the directory and `MemberProfile` permanently
+prepends the edit card whenever update is enabled. A-067 justifies a shared component boundary, but
+not a standing layout change. This is a judgment call under the binding Frontend Design Rules: the
+source-required form should use an existing modal/action composition and preserve the established
+directory/profile layout. `006Y3` restores that composition while completing the source fields.
+
+### Spec
+
+#### Finding 1 - High - M02-FR-012 has a reason, not an approved change request
+
+Functional M02-FR-012 permits verified identity changes only when a change request is approved.
+006Y's endpoint accepts a proposed identity value, free-text reason, and version, then immediately
+applies it and resets KYC. A-065 explicitly acknowledges that no approval fact or authority exists.
+The conservative deferral avoided inventing an approver, but the requirement is not complete.
+`006Y3` adds a persisted request, separate permission-based checker approval, optimistic locking,
+masked evidence, and no hard-coded approver role.
+
+#### Finding 2 - High - 006Y's change history and create validation are incomplete
+
+006Y requires field-level old/new values for every create/update. Create history lists individual or
+institution profile objects as changed but omits their values; address updates read a nonexistent
+aggregate model attribute and record `null` instead of the real old address. Tests check actor and
+absence of plaintext but not substantive diffs. The cited M02 acceptance criterion also requires
+duplicate PAN/Aadhaar detection, which is absent. `006Y3` owns complete masked nested/address history,
+duplicate races, malformed variants, standard errors, and zero-write denial assertions.
+
+#### Finding 3 - High - 006Y2 is complete without its named edit and end-to-end member paths
+
+006Y2 explicitly requires witness capture/read/edit and an edit round trip, but only GET/POST exists;
+A-066 sensibly defers PATCH rather than inventing governance. It also requires a member to be created
+and corrected end to end, while trusted Chromium only screenshots unopened forms. High-risk `006Y4`
+defines versioned audited witness correction with immutable 004E2 evidence; `006Y3` submits the real
+member create/update/approved-identity path through two browser actors.
+
+#### Finding 4 - Medium - Registration exposes truncated §13.2 variants
+
+The individual form omits gender, date of birth, occupation, cultivated area, crop, services, and
+employment/service years. The institution form omits registration number, signatory PAN/Aadhaar,
+board-resolution flag, services, and produce-supply years. The backend accepts those source fields,
+but staff cannot submit them through the delivered UI. `006Y3` completes both variants using the
+existing form/modal patterns.
+
+#### Finding 5 - High - 006X2 did not deliver its named backend parity matrix
+
+006X2 required every eligibility, limit, appraisal, review, and sanction action/write pair across
+state, role, permission, object, maker-checker, provenance, immutable-history, rejection, and
+concurrent-change cases. It adds one new eligibility denial test; existing tests cover many writes
+individually but do not form the promised enumerated action/write matrix or prove matching denial
+reasons and zero success evidence for every pair. High-risk `006X4` supplies that public-interface
+matrix and the authoritative PostgreSQL race check without changing business rules unless a failing
+test exposes divergence.
+
+### Verified Closures, Functional IDs, Context, and Queue
+
+006X3 genuinely replaces the zero-test/mocked browser evidence: collection finds two tests, the real
+Django/two-role path reaches one pending sanction case, both trusted runs pass, and all twenty
+screenshots exist. M04-FR-004 through M04-FR-011 therefore retain substantive API/module/browser
+confidence, subject to 006X4's missing exhaustive regression matrix. M04-FR-001/002 remain deferred
+to 012EA under A-053 and M04-FR-003 retains A-054. M02-FR-009 storage/shareholder validation remains
+substantive through 004E/004E2, but witness correction reachability is partial. M02-FR-012 remains
+open until 006Y3. No ADR was added because the Member Registry seam, approved-change requirement,
+API §44, and frontend test/layout rules already settle the durable direction.
+
+Summary: Standards found 2 High and 1 Medium issue; worst are the bypassed Member Registry/duplicate
+invariant and shallow member/witness authority tests. Spec found 4 High and 1 Medium issue; worst are
+the missing approved identity-change workflow, incomplete history/duplicate safety, missing witness
+edit/member E2E path, and absent 006X2 parity matrix.
+
 ## 2026-07-11 23:02 - Architecture Review 2026-07-11_230238_architecture_review
 
 Reviewed completed product work since architecture-review commit `1ff6cb8`:
