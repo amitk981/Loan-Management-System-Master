@@ -2,6 +2,113 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-12 22:14 - Architecture Review 2026-07-12_220748_architecture_review
+
+Reviewed completed product work since architecture-review commit `e9c7217`:
+- `006X7-credit-object-scope-action-parity-closure` (`a58515b`)
+- `006Y10-witness-correction-matrix-and-module-boundary-closure` (`2664e8b`)
+- `006Y11-member-form-container-and-error-matrix-closure` (`93870ed`, including repair evidence)
+- `006Z4-active-member-rule-and-snapshot-closure` (`fe8b464`)
+
+The review checked `git diff e9c7217...HEAD`, production/test changes, all four slice/run packets,
+trusted browser and PostgreSQL evidence, Epic 004/006 digests, cited source sections, assumptions,
+and M02/M04 functional IDs. Standards and spec fidelity were reviewed independently. Production code
+was not changed. `CONTEXT.md` remains truthful, and `.ralph/state.json` has no Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - Credit completeness still trusts static metadata
+
+`test_credit_action_parity_matrix.py` replaces `EXECUTED_CASES` with
+`@object_scope_cases(...)`, but the inventory still scans metadata rather than results emitted after
+projection, write, category, and evidence assertions execute. A test can keep its decorator while
+deleting its body and remain advertised, contrary to codebase-design §26.1 and 006X7's stated
+closure. High-risk `006X8` replaces metadata discovery with an executed-row ledger whose entries
+exist only after all required phases pass.
+
+#### Finding 2 - High - Witness authority was de-cycled by copying it
+
+`applications.modules.witness_corrections` duplicates the creator/receiver/Credit Manager object-
+access algorithm in `applications.services`. The source-text regression proves only that one import
+string disappeared; it cannot prevent the two policy copies drifting. This violates codebase-design
+§§26.2/36.1-36.2 and the slice's single-owner requirement. `006Y12` extracts/reuses one lower-level
+application authority seam and verifies behavioral consumption from projection and write callers.
+
+#### Finding 3 - High - Witness PATCH leaks resource existence before authority
+
+`applications/views.py` skips permission/object checks for PATCH until after application and witness
+lookup. An unauthorised caller can distinguish an existing out-of-scope witness (`403`) from a random
+ID (`404`), conflicting with auth §§19/24 and backend review §42.2. `006Y12` moves non-disclosing
+authority ahead of witness lookup and adds indistinguishable existing/missing object-denial tests.
+
+#### Finding 4 - High - Active-member verification drifted from the source persistence model
+
+006Z4 writes current fields on `Member` plus generic change/audit JSON; it creates no effective-dated
+`active_member_statuses` record containing status, route/evidence, verifier, and effective dates as
+required by data-model §11.5 and M02-FR-006. `006Z5` adds the source-shaped verification record and
+keeps the Member projection as a referenced compatibility view, not a substitute for evidence.
+
+Judgment calls: `members/views.py` owns dense validation/error translation that belongs behind a thin
+adapter, and the new stale/result/decision codes are not reconciled with source API §7. The 006Z4
+test named for version/current-result never executes distinct stale-version or stale-result rows.
+Frontend changes otherwise reuse the approved components/classes and backend-authored actions/errors;
+no styling or client-owned business-rule drift was found. `006Z5` owns the validation/error matrix.
+
+### Spec
+
+#### Finding 1 - High - 006Z4 verification has no object scope
+
+The slice explicitly requires authority/object scope and a verify matrix containing object denial,
+but `ActiveMemberStatusModule.verify()` accepts any `member_id` once the caller has the permission.
+`006Z5` reuses the public member/Registry object evaluator and proves non-disclosure before result
+verification.
+
+#### Finding 2 - High - 006Z4's stored “complete” evidence omits classification inputs
+
+`SupplyRowProjection` stores only row ID, financial year, verified/qualifying, and reason. Entity,
+route, producer-institution, evidence-reference, and verifier facts are omitted even though those
+facts decide qualification. The immutability test therefore freezes a reduced projection while the
+review packet claims completeness. `006Z5` stores the full internal row/result evidence and tests
+deliberate portal redaction separately.
+
+#### Finding 3 - High - BR-006 passes from an unsupported scalar
+
+BR-006 requires three continuous service years to SFPCL/subsidiary/step-down entities, while 006Z4
+accepts `employment_or_service_years >= 3` without dates, recipient, or evidence and even tests the
+route with `services_availed_flag = false`. `006Z5` returns manual-evidence-required until persisted
+facts prove the documented route; it must not invent continuity from the scalar.
+
+#### Finding 4 - High - 006Y10 did not execute its backend correction matrix
+
+The commit adds a dependency substring test and changes one maker-checker code. Missing-permission
+and object-denied correction writes are not executed; stale/malformed/immutable cases are not tested
+for both contact and identity; exact parity/zero-evidence assertions are absent. `006Y12` owns the
+complete backend, mounted, non-disclosure, and trusted-browser matrix.
+
+#### Finding 5 - High - 006X7's false-completeness acceptance remains open
+
+The decorator inventory can advertise combined action codes even when the test body never executes
+one of them. This does not meet the requirement that deleting a projection/write assertion removes
+the row. `006X8` owns result-derived completeness without production behavior changes.
+
+#### Finding 6 - Medium - 006Y11 success proof covers creation only
+
+Mounted tests prove successful create/readback and failures for create/update/request/approval, but
+not successful ordinary update, identity request, or approval with one canonical GET. Browser exact
+request assertions likewise cover creates, not all named mutations. `006Y13` mounts the routed
+Directory/Profile path and completes exact success bodies/counts/readbacks in both test layers.
+
+No material scope creep was found. M02-FR-001's three create variants remain substantive, and
+M02-FR-012's requester/checker behavior exists, but full interaction confidence remains partial until
+`006Y13`. M02-FR-004..006 and BR-003..007 remain partial until `006Z5`; M04-FR-004..011 production
+behavior is unchanged, while the advertised exhaustive matrix remains partial until `006X8`. No ADR
+was added because the source documents and existing deep-module direction already settle the target.
+
+Summary: Standards found 4 High issues plus validation/test-quality judgments; worst are duplicated
+witness authority/resource enumeration and missing source-shaped active-status persistence. Spec
+found 5 High and 1 Medium issue; worst are unscoped, incomplete, source-inaccurate active-member
+verification and the still-metadata-driven credit/witness acceptance claims.
+
 ## 2026-07-12 20:43 - Architecture Review 2026-07-12_203645_architecture_review
 
 Reviewed completed product work since architecture-review commit `c87586d`:

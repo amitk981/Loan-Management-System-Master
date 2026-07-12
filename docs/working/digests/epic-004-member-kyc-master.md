@@ -1,5 +1,16 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## Architecture Review 2026-07-12 - Witness Authority and Member Success Residuals
+
+- 006Y10 removes its runtime cycle but copies application object-access policy into the witness
+  module, checks PATCH authority after resource lookup, and does not deliver its required two-kind
+  backend denial matrix. `006Y12` owns one shared authority seam, non-disclosure before lookup, and
+  complete backend/mounted/browser parity.
+- 006Y11 substantively proves three complete member creates and all named mounted failure classes.
+  Successful ordinary update, identity request, and approval are not mounted with exact mutation +
+  canonical-read assertions, and browser request instrumentation covers creates only. `006Y13` owns
+  the routed-container and real-session success ledger without changing approved UI composition.
+
 ## 006Y11 Member Form Container and Error Matrix Closure
 
 - Complete individual, FPC, and Producer Institution bodies now cross the real member HTTP client and

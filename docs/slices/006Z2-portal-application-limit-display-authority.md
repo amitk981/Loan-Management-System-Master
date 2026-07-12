@@ -16,7 +16,7 @@ Remove the client-side loan-limit calculation from the wired portal New Applicat
 Borrowers see the same limit the backend will actually apply — served by the Epic 006 calculator/snapshot — instead of an incorrectly computed client-side figure that could invite or block applications wrongly.
 
 ## Depends On
-- 006Z4
+- 006Z5
 
 ## Source References
 - Final SOP - Loan Disbursement V10 (1).pdf p.10 §2.2-§2.3 (limit = lower of shares × 30% of valuation and per-acre scale of finance × cultivated land; ₹20,000/acre cap; ₹200/share current)
@@ -144,3 +144,12 @@ Medium
 - The borrower projection may expose the result identifier/date and limit/advisory facts only. It
   must strip `member_id`, `verified_by_user_id`, evidence references, classified row IDs, and staff
   actions already retained in the internal snapshot.
+
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-12_220748, 2026-07-12)
+
+- Depend on 006Z5 because 006Z4's stored row projection omits the entity/route/evidence inputs and
+  its result may be verified without member object scope. Accept limit authority only from the
+  effective persisted verification record and its exact complete internal result snapshot.
+- Treat `needs_review`, scalar-only three-year service, missing relaxation evidence, stale/future
+  dates, and results without an effective verification record as unavailable. The portal response
+  remains deliberately redacted even though the internal credit snapshot is complete.

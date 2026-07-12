@@ -1,5 +1,18 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-12 - Executed Credit Rows and Active-Member Governance
+
+- 006X7 projects and writes all eight object-denied credit actions with substantive assertions, but
+  its completeness check still trusts `@object_scope_cases` metadata. `006X8` owns an executed-row
+  ledger that records coverage only after projection/write/category/evidence assertions pass.
+- 006Z4 fixes continuity/as-of behavior and provides real calculation, snapshot, portal, and
+  PostgreSQL winner evidence. Its verify seam has no member object scope; its row snapshot omits the
+  entity/route/evidence/verifier inputs; and it persists no source §11.5 effective status record.
+- 006Z4 also grants BR-006 from a numeric service-years scalar without dated recipient/evidence facts.
+  `006Z5` owns object-scoped verification, full internal evidence, effective-dated persistence, and
+  manual-evidence fallback until the documented three-year route is actually provable. 006Z2 now
+  depends on 006Z5 and may expose only the deliberately redacted verified projection.
+
 ## 006Z4 Active-Member Rule and Snapshot Closure
 
 - `members.modules.active_member_status` now returns a deterministic dated result identifier and a

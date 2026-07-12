@@ -1,25 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-12_214611_normal_run
+2026-07-12_220748_architecture_review
 
 ## Current Status
 
-006Z4 is complete. The public active-member module now calculates one deterministic dated projection,
-stops financial-year continuity at gaps, excludes not-yet-complete years without hiding them, covers
-individual/institution/service/recorded-relaxation routes, and owns governed result verification.
-Credit stores the exact complete row/result snapshot used by eligibility; portal supply exposes the
-same row classification and dated summary without member IDs or staff actions.
+Architecture review of 006X7, 006Y10, 006Y11, and 006Z4 is complete. Their core success paths are
+substantive, but the review found metadata-driven credit completeness, duplicated and enumerating
+witness authority, omitted member success interactions, and active-member verification without
+object scope, complete evidence inputs, or the source §11.5 effective record. Corrective slices
+006X8, 006Y12, 006Y13, and 006Z5 are queued; 006Z2 now depends on 006Z5.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-12_214611_normal_run/`. Frontend build/typecheck/lint and 199
-tests pass. Backend check/migration sync and 460 tests pass (8 expected SQLite skips) at 93% coverage;
-the added verification-route test also passes. The new PostgreSQL active-status race and the existing
-five-credit-race suite each pass twice with zero skips and exact winner/loser evidence assertions.
+Evidence is under `.ralph/runs/2026-07-12_220748_architecture_review/`. Production code was not
+changed. The review packet records the independent Standards/Spec axes, source/requirement checks,
+queue reconciliation, focused evidence, and configured gates. `CONTEXT.md` remains truthful and no
+Blocked slice was stale.
 
 ## Next Run
 
-An architecture review is due after four completed slices. After that review, run sharpened 006Z2;
-its portal limit projection must consume 006Z4's verified dated result/snapshot and strip internal
-row/evidence/authority facts.
+Run 006X8, then 006Y12 and 006Y13. Run 006Z5 before dependent 006Z2 so the portal limit consumes only
+an object-scoped, effective, complete internal active-member verification and strips its evidence.
