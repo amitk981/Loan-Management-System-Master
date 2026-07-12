@@ -57,6 +57,7 @@ for wt in .ralph/worktrees/*/; do
 done
 
 git worktree prune >/dev/null 2>&1 || true
+rm -f .ralph/repair-context.json
 
 if (( recovered > 0 )); then
   echo "Recovered $recovered interrupted run(s). Their slices are still queued and will rerun automatically."

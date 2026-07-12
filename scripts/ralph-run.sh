@@ -6,6 +6,7 @@ cd "$repo_root"
 source "$repo_root/scripts/lib/ralph-exit-protocol.sh"
 source "$repo_root/scripts/lib/ralph-postgresql-acceptance.sh"
 source "$repo_root/scripts/lib/ralph-slice-selection.sh"
+source "$repo_root/scripts/lib/ralph-repair-context.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -20,6 +21,8 @@ selected_slice=""
 no_commit=0
 no_worktree=0
 continue_failed=0
+resume_worktree=""
+failed_run_id=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -30,9 +33,18 @@ while [[ $# -gt 0 ]]; do
     --no-commit) no_commit=1; shift ;;
     --no-worktree) no_worktree=1; shift ;;
     --continue-failed) continue_failed=1; shift ;;
+    --resume-worktree) resume_worktree="${2:?--resume-worktree requires a value}"; shift 2 ;;
+    --failed-run-id) failed_run_id="${2:?--failed-run-id requires a value}"; shift 2 ;;
     *) echo "Unknown run argument: $1" >&2; exit 2 ;;
   esac
 done
+
+if [[ -n "$resume_worktree" || -n "$failed_run_id" ]]; then
+  if [[ "$mode" != "repair" || -z "$resume_worktree" || -z "$failed_run_id" || "$no_worktree" == 1 || "$no_commit" == 1 ]]; then
+    echo "Same-worktree resume requires repair mode, commit/validation enabled, --resume-worktree, and --failed-run-id." >&2
+    exit 2
+  fi
+fi
 
 integration_branch="$(awk -F': *' '/^[[:space:]]*integration_branch:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
 integration_branch="${integration_branch:-staging}"
@@ -136,9 +148,42 @@ trap on_exit EXIT
 
 worktree_dir="$repo_root"
 if (( no_worktree == 0 )); then
-  branch_name="ralph/${run_id}_${slice_id}"
-  worktree_dir="$repo_root/.ralph/worktrees/$run_id"
-  git worktree add -b "$branch_name" "$worktree_dir" HEAD
+  if [[ -n "$resume_worktree" ]]; then
+    expected_worktree_root="$(cd "$repo_root/.ralph/worktrees" && pwd -P)"
+    worktree_dir="$(cd "$resume_worktree" 2>/dev/null && pwd -P)" || {
+      echo "Refusing repair: failed worktree does not exist: $resume_worktree" >&2
+      exit 1
+    }
+    if [[ "$worktree_dir" != "$expected_worktree_root/"* ]] \
+        || ! git -C "$repo_root" worktree list --porcelain | awk '$1 == "worktree" {print substr($0, 10)}' | grep -Fxq "$worktree_dir"; then
+      echo "Refusing repair: resume path is not a registered Ralph worktree: $worktree_dir" >&2
+      exit 1
+    fi
+    branch_name="$(git -C "$worktree_dir" symbolic-ref --short HEAD 2>/dev/null || true)"
+    if [[ "$branch_name" != ralph/* ]]; then
+      echo "Refusing repair: resume worktree is not on a Ralph branch: $branch_name" >&2
+      exit 1
+    fi
+    repair_context="$repo_root/.ralph/repair-context.json"
+    if ! ralph_repair_context_is_resumable "$repo_root" "$repair_context" \
+        || [[ "$(ralph_repair_context_value "$repair_context" worktree)" != "$worktree_dir" ]] \
+        || [[ "$(ralph_repair_context_value "$repair_context" run_id)" != "$failed_run_id" ]] \
+        || [[ "$(ralph_repair_context_value "$repair_context" slice_id)" != "$slice_id" ]] \
+        || [[ "$(ralph_repair_context_value "$repair_context" branch)" != "$branch_name" ]]; then
+      echo "Refusing repair: resume arguments do not match the trusted repair context." >&2
+      exit 1
+    fi
+    previous_failure_summary="$worktree_dir/.ralph/runs/$failed_run_id/failure-summary.md"
+    if [[ ! -s "$previous_failure_summary" ]]; then
+      echo "Refusing repair: previous failure summary is missing: $previous_failure_summary" >&2
+      exit 1
+    fi
+    echo "Resuming quarantined worktree $worktree_dir from failed run $failed_run_id."
+  else
+    branch_name="ralph/${run_id}_${slice_id}"
+    worktree_dir="$repo_root/.ralph/worktrees/$run_id"
+    git worktree add -b "$branch_name" "$worktree_dir" HEAD
+  fi
   run_dir="$worktree_dir/.ralph/runs/$run_id"
   mkdir -p "$run_dir"
   if [[ -d "$main_run_dir" ]]; then
@@ -246,6 +291,12 @@ ensure_frontend_env() {
 ensure_backend_env
 ensure_frontend_env
 
+if [[ -n "$resume_worktree" ]]; then
+  repair_instruction="- In repair mode: work in this existing quarantined worktree. Diagnose $previous_failure_summary first, preserve the slice's current uncommitted implementation, fix only the demonstrated failure, and rely on full independent revalidation before any commit."
+else
+  repair_instruction="- In repair mode: first diagnose the most recent failure — read failure-summary.md in the newest failed .ralph/runs/*/ folder (failed checks, last log lines, changed files); open the full gate logs only if that summary is insufficient, and inspect any leftover .ralph/worktrees/ from the failed attempt before starting fresh."
+fi
+
 cat > "$run_dir/prompt.md" <<EOF
 You are running Ralph AFK mode.
 
@@ -291,7 +342,7 @@ Core requirements:
 - Before finishing, sharpen the next 1-2 'Not Started' slice files with concrete requirements (fields, endpoints, validation rules, role rules) from the source documents you already opened.
 - Prefer docs/working/digests/ over re-reading large docs/source files; if you extract requirements from a large source file, save the distilled version into the matching digest.
 - Stop only for the never-do list in DECISION_POLICY.md, forbidden/protected file edits, repeated gate failure, or diff limit violations.
-- In repair mode: first diagnose the most recent failure — read failure-summary.md in the newest failed .ralph/runs/*/ folder (failed checks, last log lines, changed files); open the full gate logs only if that summary is insufficient, and inspect any leftover .ralph/worktrees/ from the failed attempt before starting fresh.
+$repair_instruction
 - In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md and create or sharpen corrective slices for significant issues.
 - If you are Claude Code, use skills at the stages defined in docs/working/SKILL_REGISTRY.md (tdd during implementation, diagnosing-bugs in repair, code-review with the slice file as spec during architecture review). If a skill is unavailable, follow the baked-in rules; never stall on a missing skill.
 - If the selected slice is a change request (CR-*): write impact-analysis.md in the run folder BEFORE editing any code — affected backend/frontend pieces, blast radius across modules, and the regression tests to add in each affected module. Validation fails the run without it. Then add those regression tests as part of the fix.
@@ -427,6 +478,12 @@ The independent validation runner exited with status $validation_rc before it
 could write a detailed failure summary. Inspect the run's gate result files.
 EOF
   fi
+  if [[ "$mode" != "architecture_review" ]]; then
+    ralph_write_repair_context \
+      "$repo_root/.ralph/repair-context.json" \
+      "$run_id" "$worktree_dir" "$slice_id" "$branch_name" \
+      "$run_dir/failure-summary.md"
+  fi
   exit "$validation_rc"
 fi
 
@@ -522,7 +579,7 @@ EOF
 
 committed=0
 if (( no_commit == 0 )); then
-  (
+  if (
     cd "$worktree_dir"
     git add .
     if git diff --cached --quiet; then
@@ -531,7 +588,31 @@ if (( no_commit == 0 )); then
     else
       git commit -m "chore(${slice_id}): complete Ralph AFK run"
     fi
-  ) && committed=1 || true
+  ); then
+    committed=1
+  else
+    commit_rc=$?
+    cat > "$run_dir/commit-results.md" <<EOF
+# Commit Results
+
+FAIL: validated work could not be committed (exit $commit_rc).
+The work remains isolated in $worktree_dir and must not be merged or pushed.
+EOF
+    cat > "$run_dir/failure-summary.md" <<EOF
+# Commit Failure Summary
+
+commit-results.md:- FAIL: validated work could not be committed.
+Inspect the staged diff and commit hooks in $worktree_dir.
+EOF
+    if [[ "$mode" != "architecture_review" && "$no_worktree" == 0 ]]; then
+      ralph_write_repair_context \
+        "$repo_root/.ralph/repair-context.json" \
+        "$run_id" "$worktree_dir" "$slice_id" "$branch_name" \
+        "$run_dir/failure-summary.md"
+    fi
+    echo "COMMIT_FAILED: validated work for $slice_id remains quarantined in $worktree_dir." >&2
+    exit "$commit_rc"
+  fi
 fi
 
 merged=0
@@ -566,6 +647,10 @@ if (( merged == 1 )); then
       echo "WARN: push to $push_remote failed (non-fatal); push manually later." >&2
     fi
   fi
+fi
+
+if [[ -n "$resume_worktree" && "$committed" == 1 ]]; then
+  ralph_clear_repair_context "$repo_root/.ralph/repair-context.json"
 fi
 
 rm -f "$lock_file"

@@ -49,6 +49,103 @@ EOF
   || fail "configured repair-attempt budget was not honored"
 [[ "$(ralph_max_repair_attempts "$fixture_dir/invalid-retries.yaml")" == "1" ]] \
   || fail "invalid repair-attempt budget did not fail safely to one"
+
+[[ -f scripts/lib/ralph-repair-context.sh ]] || fail "missing same-worktree repair context helper"
+# shellcheck source=../lib/ralph-repair-context.sh
+source scripts/lib/ralph-repair-context.sh
+repair_repo="$fixture_dir/repair-repo"
+repair_worktree="$repair_repo/.ralph/worktrees/failed-run"
+repair_run_dir="$repair_worktree/.ralph/runs/failed-run"
+repair_context="$repair_repo/.ralph/repair-context.json"
+mkdir -p "$repair_run_dir/evidence/terminal-logs" "$repair_repo/.git"
+repair_worktree="$(cd "$repair_worktree" && pwd -P)"
+repair_run_dir="$repair_worktree/.ralph/runs/failed-run"
+cat > "$repair_run_dir/failure-summary.md" <<'EOF'
+# Failure Summary
+
+- Run: failed-run
+- Slice: 999X-browser-fixture
+- Failed checks: 1
+
+e2e-results.md:- FAIL: trusted browser run did not pass.
+EOF
+cat > "$repair_run_dir/evidence/terminal-logs/trusted-browser-acceptance-1.log" <<EOF
+Error: locator.click: Test timeout of 30000ms exceeded.
+- waiting for getByRole('button', { name: 'Profile' })
+at $repair_worktree/e2e/example.e2e.spec.ts:19:52
+Exit code: 1
+EOF
+ralph_write_repair_context \
+  "$repair_context" failed-run "$repair_worktree" \
+  999X-browser-fixture ralph/failed-run_999X-browser-fixture \
+  "$repair_run_dir/failure-summary.md"
+[[ "$(ralph_repair_context_value "$repair_context" run_id)" == "failed-run" ]] \
+  || fail "repair context lost the failed run id"
+[[ "$(ralph_repair_context_value "$repair_context" worktree)" == "$repair_worktree" ]] \
+  || fail "repair context lost the quarantined worktree"
+[[ "$(ralph_repair_context_value "$repair_context" slice_id)" == "999X-browser-fixture" ]] \
+  || fail "repair context lost the selected slice"
+first_failure_signature="$(ralph_repair_context_value "$repair_context" failure_signature)"
+[[ -n "$first_failure_signature" ]] || fail "repair context omitted the normalized failure signature"
+
+second_worktree="$repair_repo/.ralph/worktrees/repair-run"
+second_run_dir="$second_worktree/.ralph/runs/repair-run"
+mkdir -p "$second_run_dir/evidence/terminal-logs"
+sed 's/failed-run/repair-run/g' "$repair_run_dir/failure-summary.md" > "$second_run_dir/failure-summary.md"
+sed "s#${repair_worktree//\#/\\#}#${second_worktree//\#/\\#}#g" \
+  "$repair_run_dir/evidence/terminal-logs/trusted-browser-acceptance-1.log" \
+  > "$second_run_dir/evidence/terminal-logs/trusted-browser-acceptance-1.log"
+second_failure_signature="$(ralph_failure_signature "$second_run_dir/failure-summary.md")"
+[[ "$first_failure_signature" == "$second_failure_signature" ]] \
+  || fail "same browser failure received a different normalized signature"
+printf '%s\n' 'Error: locator.click: strict mode violation.' \
+  > "$second_run_dir/evidence/terminal-logs/trusted-browser-acceptance-1.log"
+[[ "$first_failure_signature" != "$(ralph_failure_signature "$second_run_dir/failure-summary.md")" ]] \
+  || fail "different browser failures received the same normalized signature"
+
+registered_repo="$fixture_dir/registered-repair-repo"
+registered_worktree="$registered_repo/.ralph/worktrees/registered-failure"
+git init -q "$registered_repo"
+git -C "$registered_repo" config user.name "Ralph Regression"
+git -C "$registered_repo" config user.email "ralph-regression@example.invalid"
+printf '%s\n' seed > "$registered_repo/seed.txt"
+git -C "$registered_repo" add seed.txt
+git -C "$registered_repo" commit -qm seed
+mkdir -p "$registered_repo/.ralph/worktrees"
+git -C "$registered_repo" worktree add -q -b ralph/registered-failure_fixture "$registered_worktree" HEAD
+registered_run_dir="$registered_worktree/.ralph/runs/registered-failure"
+mkdir -p "$registered_run_dir/evidence/terminal-logs"
+cp "$repair_run_dir/failure-summary.md" "$registered_run_dir/failure-summary.md"
+cp "$repair_run_dir/evidence/terminal-logs/trusted-browser-acceptance-1.log" \
+  "$registered_run_dir/evidence/terminal-logs/trusted-browser-acceptance-1.log"
+registered_context="$registered_repo/.ralph/repair-context.json"
+ralph_write_repair_context \
+  "$registered_context" registered-failure "$registered_worktree" \
+  999X-browser-fixture ralph/registered-failure_fixture \
+  "$registered_run_dir/failure-summary.md"
+ralph_repair_context_is_resumable "$registered_repo" "$registered_context" \
+  || fail "registered quarantined Ralph worktree was rejected for repair"
+
+ralph_write_repair_context \
+  "$registered_context" registered-failure "$registered_worktree" \
+  999X-browser-fixture ralph/registered-failure_fixture \
+  "$repair_run_dir/failure-summary.md"
+if ralph_repair_context_is_resumable "$registered_repo" "$registered_context"; then
+  fail "failure summary outside the quarantined worktree was accepted for repair"
+fi
+
+outside_worktree="$fixture_dir/outside-worktree"
+git -C "$registered_repo" worktree add -q -b ralph/outside_fixture "$outside_worktree" HEAD
+outside_run_dir="$outside_worktree/.ralph/runs/outside-failure"
+mkdir -p "$outside_run_dir"
+cp "$repair_run_dir/failure-summary.md" "$outside_run_dir/failure-summary.md"
+ralph_write_repair_context \
+  "$registered_context" outside-failure "$outside_worktree" \
+  999X-browser-fixture ralph/outside_fixture "$outside_run_dir/failure-summary.md"
+if ralph_repair_context_is_resumable "$registered_repo" "$registered_context"; then
+  fail "registered worktree outside .ralph/worktrees was accepted for repair"
+fi
+
 cat > "$fixture_dir/pass.log" <<'EOF'
 Found 5 test(s).
 Ran 5 tests in 1.234s
@@ -209,7 +306,28 @@ fi
 rg -q 'ralph_max_repair_attempts' scripts/ralph-loop.sh \
   || fail "Ralph loop ignores run.max_retries"
 rg -q 'repair_attempt <= max_repair_attempts' scripts/ralph-loop.sh \
-  || fail "Ralph loop does not iterate through the bounded repair budget"
+  || fail "Ralph loop does not iterate through the configured bounded repair budget"
+rg -q -- '--resume-failed' scripts/ralph-loop.sh \
+  || fail "Ralph loop does not reuse the failed worktree during bounded repairs"
+rg -q 'ralph_repair_context_value' scripts/afk-dev.sh \
+  || fail "AFK repair entrypoint does not load structured repair context"
+rg -q -- '--resume-worktree' scripts/ralph-run.sh \
+  || fail "Ralph run interface cannot resume a quarantined failed worktree"
+rg -q 'ralph_write_repair_context' scripts/ralph-run.sh \
+  || fail "failed validation does not publish structured same-worktree repair context"
+rg -q 'COMMIT_FAILED: validated work' scripts/ralph-run.sh \
+  || fail "post-validation commit failure is not fatal and repair-readable"
+python3 - <<'PY'
+from pathlib import Path
+source = Path("scripts/ralph-run.sh").read_text()
+commit = source.index('git commit -m "chore(${slice_id})')
+clear = source.rindex('ralph_clear_repair_context')
+if clear < commit:
+    raise SystemExit("FAIL: repair context is cleared before validated work is committed")
+PY
+if rg -q 'total_failures' scripts/ralph-loop.sh; then
+  fail "Ralph loop still accumulates repaired failures across unrelated slices"
+fi
 if rg -q 'Attempting one repair run|Repair run also failed' scripts/ralph-loop.sh; then
   fail "Ralph loop still hard-stops after one repair attempt"
 fi
