@@ -1,7 +1,7 @@
 # Slice 006Z9: Active-Member Authority and Decision Contract Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review

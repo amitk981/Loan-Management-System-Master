@@ -1740,6 +1740,15 @@ Validation evidence added:
 - Risk level: See risk assessment.
 - Next action: Review packet.
 
+# Run 2026-07-13_031605_normal_run
+
+- Completed 006Z9: member-global scope is explicit by action permission and identical for system or
+  custom roles; unowned records and role provenance no longer create authority.
+- Active verification now enforces exact qualification-route/decision parity and rejects qualifying
+  supply/service/relaxation evidence makers with zero status/history/audit/workflow evidence.
+- Frontend build/typecheck/lint and 205 tests pass. Backend check/migration sync and 498 tests pass
+  with 12 expected PostgreSQL-only skips and 93% coverage. Next: 006Z10.
+
 ## 2026-07-12 - 006Z5 Active-Member Evidence and Verification Governance
 
 - Added effective-dated active-member verification and dated service-evidence persistence with one
@@ -4725,6 +4734,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_030658_normal_run/.ralph/runs/2026-07-13_030658_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_030658_normal_run/.ralph/runs/2026-07-13_030658_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 03:32:11 - 2026-07-13_031605_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z9-active-member-authority-and-decision-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/.ralph/runs/2026-07-13_031605_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/.ralph/runs/2026-07-13_031605_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

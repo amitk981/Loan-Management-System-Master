@@ -32,7 +32,9 @@ submit lifecycle, so rendering-only fixtures can no longer claim submit/refetch/
 1. Add public credit-projection cases for future/closed/manual/stale/mismatched authority, changed
    supply/service provenance, duplicate shareholdings, missing/contradictory land/profile facts,
    no effective policy, and invalid requested amount. Each returns the stable redacted envelope or
-   validation error without leaking identifiers/evidence or writing state.
+   validation error without leaking identifiers/evidence or writing state. Compare the complete
+   before/after member, assessment, application, audit, workflow, and configuration evidence set for
+   every denied row; do not treat a redacted response assertion alone as zero-write proof.
 2. Mount the routed MP05 container and submit through the actual draft/create-or-update and submit
    adapters. Assert exact request method/URL/body, exactly one successful submit, and exactly one
    canonical post-submit projection GET using the returned authoritative amount.

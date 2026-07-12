@@ -12,6 +12,7 @@ from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermiss
 from sfpcl_credit.members import services
 from sfpcl_credit.members.models import Member, MemberIdentityChangeRequest
 from sfpcl_credit.members.modules import MemberRegistry
+from sfpcl_credit.members.modules.member_authority import evaluate_member_authority
 from sfpcl_credit.members.protected_identity import identity_hash
 from sfpcl_credit.identity.modules.object_permissions import ObjectAccessResult
 from sfpcl_credit.tests.api_contracts import assert_success_envelope
@@ -173,18 +174,38 @@ class MemberGovernanceApiTests(TestCase):
         )
 
         self.assertEqual(MemberRegistry.get(member.member_id, owner), member)
-        with self.assertRaisesRegex(PermissionDenied, "cannot access"):
-            MemberRegistry.get(member.member_id, manager)
+        self.assertEqual(MemberRegistry.get(member.member_id, manager), member)
         unowned = Member.objects.create(
             member_type="individual_farmer", legal_name="Global Policy Member",
             display_name="Global Policy Member", folio_number="POLICY-2",
             membership_status="active", kyc_status="pending", default_status="no_default",
         )
         self.assertEqual(MemberRegistry.get(unowned.member_id, manager), unowned)
-        with self.assertRaisesRegex(PermissionDenied, "cannot access"):
-            MemberRegistry.get(member.member_id, outsider)
+        self.assertEqual(MemberRegistry.get(member.member_id, outsider), member)
         with self.assertRaisesRegex(PermissionDenied, "Missing required permission"):
             MemberRegistry.get(member.member_id, missing_permission)
+
+    def test_role_provenance_does_not_change_explicit_global_verification_scope(self):
+        permission = "members.active_status.verify"
+        system_checker = self._user("system-checker@sfpcl.example", permission)
+        custom_checker = self._user("custom-checker@sfpcl.example", permission)
+        custom_checker.primary_role.is_system_role = False
+        custom_checker.primary_role.save(update_fields=["is_system_role"])
+        member = Member.objects.create(
+            member_type="individual_farmer", legal_name="Authority Target",
+            display_name="Authority Target", folio_number="AUTHORITY-1",
+            membership_status="active", kyc_status="verified", default_status="no_default",
+            created_by_user=self.creator,
+        )
+
+        results = [
+            evaluate_member_authority(actor_user=user, member=member, permission=permission)
+            for user in (system_checker, custom_checker)
+        ]
+
+        self.assertEqual([(result.allowed, result.reason) for result in results], [
+            (True, "allowed_global"), (True, "allowed_global"),
+        ])
 
     def test_duplicate_pan_and_aadhaar_are_field_errors_with_zero_writes(self):
         payload = {
@@ -207,6 +228,7 @@ class MemberGovernanceApiTests(TestCase):
         member = Member.objects.create(
             member_type="individual_farmer", legal_name="Change Target", display_name="Change Target", folio_number="CHANGE-1",
             membership_status="active", pan_encrypted="enc:old", pan_hash="old-change-pan", kyc_status="verified", default_status="no_default",
+            created_by_user=requester,
         )
         Member.objects.create(
             member_type="fpc", legal_name="Existing Identity", display_name="Existing Identity", folio_number="CHANGE-2",

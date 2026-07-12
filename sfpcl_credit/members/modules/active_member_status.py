@@ -4,7 +4,7 @@ import hashlib
 import json
 import uuid
 
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 
 from sfpcl_credit.identity.models import AuditLog
@@ -257,11 +257,28 @@ class ActiveMemberStatusModule:
         qualifying_ids = [row.produce_supply_record_id for row in current.supply_rows if row.qualifying]
         if ProduceSupplyRecord.objects.filter(
             produce_supply_record_id__in=qualifying_ids,
-            captured_by_user=actor,
+        ).filter(
+            models.Q(captured_by_user=actor) | models.Q(verified_by_user=actor)
         ).exists():
             raise PermissionError("The evidence maker cannot verify this active-member result.")
-        if decision == "active" and current.member_active_check not in {"pass", "relaxation"}:
-            raise ActiveMemberStatusConflict("INVALID_DECISION", "The dated evidence result does not support an active decision.")
+        qualifying_service_ids = [
+            row.member_service_evidence_id for row in current.service_evidence_rows
+        ]
+        if MemberServiceEvidence.objects.filter(
+            member_service_evidence_id__in=qualifying_service_ids,
+            verified_by_user=actor,
+        ).exists():
+            raise PermissionError("The evidence maker cannot verify this active-member result.")
+        expected_decision = {
+            "pass": "active",
+            "relaxation": "relaxation",
+            "fail": "inactive",
+            "manual_evidence_required": "inactive",
+        }.get(current.member_active_check)
+        if decision != expected_decision:
+            raise ActiveMemberStatusConflict(
+                "INVALID_DECISION", "The decision must match the dated evidence qualification route."
+            )
         if decision == "relaxation" and current.continuous_supply_years < 1:
             raise ActiveMemberStatusConflict(
                 "INVALID_DECISION", "A relaxation requires at least one complete qualifying supply year."

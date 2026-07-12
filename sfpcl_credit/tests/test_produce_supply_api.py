@@ -1,10 +1,13 @@
+from datetime import date
+
 from django.test import Client, TestCase
 
 from django.utils import timezone
 
 from sfpcl_credit.identity.models import AuditLog, Permission, PortalAccount, Role, RolePermission, User
 from sfpcl_credit.members.modules.active_member_status import ActiveMemberStatusModule
-from sfpcl_credit.members.models import ActiveMemberStatus, IndividualMemberProfile, Member, MemberChangeHistory, ProduceSupplyRecord
+from sfpcl_credit.members.models import ActiveMemberStatus, IndividualMemberProfile, Member, MemberChangeHistory, MemberServiceEvidence, ProduceSupplyRecord
+from sfpcl_credit.workflows.models import WorkflowEvent
 
 
 class ProduceSupplyApiTests(TestCase):
@@ -228,6 +231,8 @@ class ProduceSupplyApiTests(TestCase):
             risk_level="high",
         )
         checker = self._user("status.checker@sfpcl.example", verify_permission)
+        self.member.created_by_user = checker
+        self.member.save(update_fields=["created_by_user"])
         for financial_year in ("2022-23", "2023-24", "2024-25", "2025-26"):
             ProduceSupplyRecord.objects.create(
                 member=self.member,
@@ -277,7 +282,7 @@ class ProduceSupplyApiTests(TestCase):
             self.assertEqual(response.status_code, 400, response.content)
             self.assertIn(field, response.json()["error"]["field_errors"])
 
-    def test_active_status_verify_non_discloses_existing_and_missing_out_of_scope_members(self):
+    def test_active_status_verify_permission_has_explicit_global_scope_but_missing_member_is_non_disclosed(self):
         verify_permission = Permission.objects.create(
             permission_code="members.active_status.verify", permission_name="Verify active member status",
             module_name="members", risk_level="high",
@@ -289,15 +294,59 @@ class ProduceSupplyApiTests(TestCase):
             "result_id": "00000000-0000-0000-0000-000000000000", "as_of_date": "2026-03-31",
             "decision": "inactive", "reason": "Scoped review.", "version": self.member.version,
         }
-        facts = []
-        for member_id in (self.member.member_id, "00000000-0000-0000-0000-000000000001"):
-            response = self.client.post(
-                f"/api/v1/members/{member_id}/active-status/verify/", data=payload,
-                content_type="application/json", headers=self._headers(checker.email),
+        existing = self.client.post(
+            f"/api/v1/members/{self.member.member_id}/active-status/verify/", data=payload,
+            content_type="application/json", headers=self._headers(checker.email),
+        )
+        missing = self.client.post(
+            "/api/v1/members/00000000-0000-0000-0000-000000000001/active-status/verify/",
+            data=payload, content_type="application/json", headers=self._headers(checker.email),
+        )
+        self.assertEqual((existing.status_code, existing.json()["error"]["code"]), (409, "STALE_RESULT"))
+        self.assertEqual((missing.status_code, missing.json()["error"]["code"]), (403, "OBJECT_ACCESS_DENIED"))
+        self.assertEqual(ActiveMemberStatus.objects.count(), 0)
+
+    def test_active_status_http_rejects_decision_mismatch_and_evidence_maker_with_zero_writes(self):
+        verify_permission = Permission.objects.create(
+            permission_code="members.active_status.verify", permission_name="Verify active member status",
+            module_name="members", risk_level="high",
+        )
+        checker = self._user("matrix.checker@sfpcl.example", verify_permission)
+        for financial_year in ("2022-23", "2023-24", "2024-25", "2025-26"):
+            ProduceSupplyRecord.objects.create(
+                member=self.member, financial_year=financial_year, supplied_to_entity_type="sfpcl",
+                supply_route="direct", evidence_reference=f"ERP-MATRIX-{financial_year}",
+                captured_by_user=self.actor, verified_flag=True,
             )
-            facts.append((response.status_code, response.json()["error"]["code"], response.json()["error"]["message"]))
-        self.assertEqual(facts[0], facts[1])
-        self.assertEqual(facts[0][:2], (403, "OBJECT_ACCESS_DENIED"))
+        result = ActiveMemberStatusModule().calculate(member_id=self.member.member_id, as_of_date=date(2026, 3, 31))
+        url = f"/api/v1/members/{self.member.member_id}/active-status/verify/"
+        baseline = (
+            self.member.version, ActiveMemberStatus.objects.count(), MemberChangeHistory.objects.count(),
+            AuditLog.objects.filter(action="members.active_status.verified").count(), WorkflowEvent.objects.count(),
+        )
+        mismatch = self.client.post(
+            url, data={"result_id": result.result_id, "as_of_date": result.calculated_as_of_date,
+                       "decision": "relaxation", "reason": "Wrong route.", "version": self.member.version},
+            content_type="application/json", headers=self._headers(checker.email),
+        )
+        self.assertEqual((mismatch.status_code, mismatch.json()["error"]["code"]), (409, "INVALID_DECISION"))
+        self.member.refresh_from_db()
+        self.assertEqual((self.member.version, ActiveMemberStatus.objects.count(), MemberChangeHistory.objects.count(),
+                          AuditLog.objects.filter(action="members.active_status.verified").count(), WorkflowEvent.objects.count()), baseline)
+
+        ProduceSupplyRecord.objects.filter(member=self.member).exclude(financial_year="2025-26").delete()
+        MemberServiceEvidence.objects.create(
+            member=self.member, service_type="relaxation", recipient_entity_type="sfpcl",
+            service_from="2025-04-01", service_to="2026-03-31", evidence_reference="RELAX-HTTP-001",
+            verified_by_user=checker, verified_at=timezone.now(),
+        )
+        result = ActiveMemberStatusModule().calculate(member_id=self.member.member_id, as_of_date=date(2026, 3, 31))
+        maker_denied = self.client.post(
+            url, data={"result_id": result.result_id, "as_of_date": result.calculated_as_of_date,
+                       "decision": "relaxation", "reason": "Self review.", "version": self.member.version},
+            content_type="application/json", headers=self._headers(checker.email),
+        )
+        self.assertEqual((maker_denied.status_code, maker_denied.json()["error"]["code"]), (403, "FORBIDDEN"))
         self.assertEqual(ActiveMemberStatus.objects.count(), 0)
 
     def test_portal_supply_is_read_only_and_scoped_from_portal_account(self):

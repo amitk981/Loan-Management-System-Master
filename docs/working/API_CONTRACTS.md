@@ -1725,10 +1725,12 @@ Frontend wiring:
 - `POST /api/v1/members/{member_id}/active-status/verify/` requires
   `members.active_status.verify` plus `result_id`, current member `version`, ISO `as_of_date`,
   `decision` (`active`, `inactive`, or `relaxation`), and a non-blank `reason`; missing/future dates
-  and unknown fields return `400 VALIDATION_ERROR`. Verification performs member object access
-  before effective-record lookup, so existing and missing out-of-scope IDs both return the same
-  `403 OBJECT_ACCESS_DENIED` facts. It
-  rejects evidence makers, stale/changed results, stale versions, unsupported active decisions,
+  and unknown fields return `400 VALIDATION_ERROR`. The dedicated high-risk verification permission
+  is the explicit row-independent member scope; role provenance and unowned records never create
+  scope. A missing member remains `403 OBJECT_ACCESS_DENIED`. The calculated route and decision must
+  agree exactly (`pass`/`active`, `relaxation`/`relaxation`, otherwise `inactive`); mismatches return
+  `409 INVALID_DECISION`. It rejects actors who captured or verified any qualifying supply/service/
+  relaxation evidence, stale/changed results, stale versions, unsupported decisions,
   and repeated decisions without audit/history evidence. A winner returns the exact complete dated
   result snapshot and atomically creates an effective-dated `active_member_statuses` record, closes
   the prior current record, points the Member projection at the new record primary key, and records

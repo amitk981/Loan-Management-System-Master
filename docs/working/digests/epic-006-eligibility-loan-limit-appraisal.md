@@ -1,5 +1,16 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006Z9 Active-Member Authority and Decision Contract Closure
+
+- Member scope is projected from explicit action permissions or persisted ownership; system-role
+  provenance and an unowned row never create authority. Member read, active verification, and
+  identity-change approval are explicit global action scopes; member update remains owner-scoped.
+- Qualification routes and stored decisions agree exactly: pass/active, relaxation/relaxation, and
+  non-qualifying/inactive. Mismatches return `INVALID_DECISION` before any effective status, member
+  pointer/version, history, audit, or workflow write.
+- Active-status checkers cannot have captured or verified any qualifying supply row or verified any
+  qualifying service/relaxation evidence used by the result.
+
 ## Architecture Review 2026-07-13 - Active Decision and Portal Lifecycle Residual
 
 - Member global authority is currently inferred from `Role.is_system_role` for two permissions and

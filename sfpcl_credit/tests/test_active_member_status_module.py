@@ -131,6 +131,8 @@ class ActiveMemberStatusModuleTests(TestCase):
             status="active",
             primary_role=checker_role,
         )
+        self.member.created_by_user = checker
+        self.member.save(update_fields=["created_by_user"])
 
         with self.assertRaisesRegex(PermissionError, "permission"):
             ActiveMemberStatusModule().verify(
@@ -449,6 +451,7 @@ class ActiveMemberGovernanceTests(TestCase):
             member_type="individual_farmer", legal_name="Governance Member", display_name="Governance Member",
             folio_number="FOL-GOV", membership_status="active", pan_encrypted="ABCDE4321F",
             pan_hash="governance-pan", kyc_status="verified", default_status="no_default",
+            created_by_user=self.checkers[0],
         )
         IndividualMemberProfile.objects.create(member=self.member, first_name="Governance", last_name="Member", services_availed_flag=True)
         for financial_year in ("2022-23", "2023-24", "2024-25", "2025-26"):
@@ -534,11 +537,11 @@ class ActiveMemberGovernanceTests(TestCase):
                 decision="relaxation", reason="Committee reason only.", version=self.member.version,
                 as_of_date=date(2026, 3, 31),
             )
-        self.assertEqual(denied.exception.code, "MISSING_RELAXATION_EVIDENCE")
+        self.assertEqual(denied.exception.code, "INVALID_DECISION")
         MemberServiceEvidence.objects.create(
             member=self.member, service_type="relaxation", recipient_entity_type="sfpcl",
             service_from=date(2025, 4, 1), service_to=date(2026, 3, 31),
-            evidence_reference="RELAX-001", verified_by_user=self.checkers[0],
+            evidence_reference="RELAX-001", verified_by_user=self.maker,
             verified_at=timezone.now(),
         )
         supported = ActiveMemberStatusModule().calculate(
@@ -551,6 +554,81 @@ class ActiveMemberGovernanceTests(TestCase):
         )
         self.assertEqual(verified["result"]["relaxation_evidence"]["evidence_reference"], "RELAX-001")
         self.assertEqual(ActiveMemberStatus.objects.get().evidence_snapshot, verified["result"])
+
+    def test_decision_must_match_calculated_route_with_zero_persisted_evidence(self):
+        def persisted_facts():
+            self.member.refresh_from_db()
+            return (
+                self.member.active_member_status_id, self.member.active_member_status,
+                self.member.version, ActiveMemberStatus.objects.count(),
+                MemberChangeHistory.objects.filter(change_type="active_status_verified").count(),
+                AuditLog.objects.filter(action="members.active_status.verified").count(),
+                WorkflowEvent.objects.count(),
+            )
+
+        passing = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=date(2026, 3, 31)
+        )
+        before = persisted_facts()
+        with self.assertRaises(ActiveMemberStatusConflict) as wrong_relaxation:
+            ActiveMemberStatusModule().verify(
+                actor=self.checkers[0], member_id=self.member.member_id,
+                result_id=passing.result_id, decision="relaxation", reason="Wrong route.",
+                version=self.member.version, as_of_date=date(2026, 3, 31),
+            )
+        self.assertEqual(wrong_relaxation.exception.code, "INVALID_DECISION")
+        self.assertEqual(persisted_facts(), before)
+
+        ProduceSupplyRecord.objects.filter(member=self.member).exclude(financial_year="2025-26").delete()
+        MemberServiceEvidence.objects.create(
+            member=self.member, service_type="relaxation", recipient_entity_type="sfpcl",
+            service_from=date(2025, 4, 1), service_to=date(2026, 3, 31),
+            evidence_reference="RELAX-MISMATCH-001", verified_by_user=self.maker,
+            verified_at=timezone.now(),
+        )
+        relaxation = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=date(2026, 3, 31)
+        )
+        before = persisted_facts()
+        with self.assertRaises(ActiveMemberStatusConflict) as wrong_active:
+            ActiveMemberStatusModule().verify(
+                actor=self.checkers[0], member_id=self.member.member_id,
+                result_id=relaxation.result_id, decision="active", reason="Wrong route.",
+                version=self.member.version, as_of_date=date(2026, 3, 31),
+            )
+        self.assertEqual(wrong_active.exception.code, "INVALID_DECISION")
+        self.assertEqual(persisted_facts(), before)
+
+    def test_service_or_relaxation_evidence_maker_cannot_verify_derived_result(self):
+        ProduceSupplyRecord.objects.filter(member=self.member).exclude(financial_year="2025-26").delete()
+        MemberServiceEvidence.objects.create(
+            member=self.member, service_type="relaxation", recipient_entity_type="sfpcl",
+            service_from=date(2025, 4, 1), service_to=date(2026, 3, 31),
+            evidence_reference="RELAX-MAKER-001", verified_by_user=self.checkers[0],
+            verified_at=timezone.now(),
+        )
+        result = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=date(2026, 3, 31)
+        )
+        before = (
+            self.member.version, ActiveMemberStatus.objects.count(),
+            MemberChangeHistory.objects.filter(change_type="active_status_verified").count(),
+            AuditLog.objects.filter(action="members.active_status.verified").count(),
+        )
+
+        with self.assertRaisesRegex(PermissionError, "evidence maker"):
+            ActiveMemberStatusModule().verify(
+                actor=self.checkers[0], member_id=self.member.member_id,
+                result_id=result.result_id, decision="relaxation", reason="Self review.",
+                version=self.member.version, as_of_date=date(2026, 3, 31),
+            )
+
+        self.member.refresh_from_db()
+        self.assertEqual((
+            self.member.version, ActiveMemberStatus.objects.count(),
+            MemberChangeHistory.objects.filter(change_type="active_status_verified").count(),
+            AuditLog.objects.filter(action="members.active_status.verified").count(),
+        ), before)
 
     def test_recent_inactive_member_qualifies_with_one_year_and_distinct_relaxation_evidence(self):
         ProduceSupplyRecord.objects.filter(member=self.member).exclude(financial_year="2025-26").delete()
@@ -618,7 +696,7 @@ class ActiveMemberGovernanceTests(TestCase):
             with self.assertRaises(ActiveMemberStatusConflict) as denied:
                 ActiveMemberStatusModule().verify(
                     actor=self.checkers[0], member_id=self.member.member_id, result_id=result.result_id,
-                    decision="inactive", reason="Chronology test.", version=self.member.version,
+                    decision="active", reason="Chronology test.", version=self.member.version,
                     as_of_date=attempted_date,
                 )
             self.assertEqual(denied.exception.code, "INVALID_EFFECTIVE_DATE")
@@ -629,7 +707,7 @@ class ActiveMemberGovernanceTests(TestCase):
         later = ActiveMemberStatusModule().calculate(member_id=self.member.member_id, as_of_date=later_date)
         ActiveMemberStatusModule().verify(
             actor=self.checkers[0], member_id=self.member.member_id, result_id=later.result_id,
-            decision="inactive", reason="Later review.", version=self.member.version,
+            decision="active", reason="Later review.", version=self.member.version,
             as_of_date=later_date,
         )
         original.refresh_from_db()

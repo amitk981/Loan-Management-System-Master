@@ -1,0 +1,65 @@
+Creating test database for alias 'default'...
+Found 43 test(s).
+System check identified no issues (0 silenced).
+E...F..............E........F.......sssssss
+======================================================================
+ERROR: test_backdated_and_same_date_decisions_leave_history_unchanged (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_backdated_and_same_date_decisions_leave_history_unchanged)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 705, in test_backdated_and_same_date_decisions_leave_history_unchanged
+    ActiveMemberStatusModule().verify(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/members/modules/active_member_status.py", line 279, in verify
+    raise ActiveMemberStatusConflict(
+sfpcl_credit.members.modules.active_member_status.ActiveMemberStatusConflict: The decision must match the dated evidence qualification route.
+
+======================================================================
+ERROR: test_identity_change_request_rejects_duplicate_identity_without_evidence (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_identity_change_request_rejects_duplicate_identity_without_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 241, in test_identity_change_request_rejects_duplicate_identity_without_evidence
+    MemberRegistry.request_identity_change(member.member_id, {"version": 1, "pan": "PQRST6789U", "reason": "Correction"}, requester)
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/members/modules/member_registry.py", line 72, in request_identity_change
+    cls._require_member_access(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/members/modules/member_registry.py", line 29, in _require_member_access
+    raise PermissionDenied("You cannot access this member.")
+django.core.exceptions.PermissionDenied: You cannot access this member.
+
+======================================================================
+FAIL: test_relaxation_requires_distinct_persisted_evidence_and_preserves_it (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_relaxation_requires_distinct_persisted_evidence_and_preserves_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 537, in test_relaxation_requires_distinct_persisted_evidence_and_preserves_it
+    self.assertEqual(denied.exception.code, "MISSING_RELAXATION_EVIDENCE")
+AssertionError: 'INVALID_DECISION' != 'MISSING_RELAXATION_EVIDENCE'
+- INVALID_DECISION
++ MISSING_RELAXATION_EVIDENCE
+
+
+======================================================================
+FAIL: test_active_status_verify_non_discloses_existing_and_missing_out_of_scope_members (sfpcl_credit.tests.test_produce_supply_api.ProduceSupplyApiTests.test_active_status_verify_non_discloses_existing_and_missing_out_of_scope_members)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_produce_supply_api.py", line 299, in test_active_status_verify_non_discloses_existing_and_missing_out_of_scope_members
+    self.assertEqual(facts[0], facts[1])
+AssertionError: Tuples differ: (409, 'STALE_RESULT', 'Active-member result [39 chars]ng.') != (403, 'OBJECT_ACCESS_DENIED', 'You cannot ac[14 chars]er.')
+
+First differing element 0:
+409
+403
+
++ (403, 'OBJECT_ACCESS_DENIED', 'You cannot access this member.')
+- (409,
+-  'STALE_RESULT',
+-  'Active-member result has changed; recalculate before verifying.')
+
+----------------------------------------------------------------------
+Ran 43 tests in 0.365s
+
+FAILED (failures=2, errors=2, skipped=7)
+Destroying test database for alias 'default'...
