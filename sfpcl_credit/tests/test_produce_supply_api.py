@@ -4,7 +4,7 @@ from django.utils import timezone
 
 from sfpcl_credit.identity.models import AuditLog, Permission, PortalAccount, Role, RolePermission, User
 from sfpcl_credit.members.modules.active_member_status import ActiveMemberStatusModule
-from sfpcl_credit.members.models import IndividualMemberProfile, Member, MemberChangeHistory, ProduceSupplyRecord
+from sfpcl_credit.members.models import ActiveMemberStatus, IndividualMemberProfile, Member, MemberChangeHistory, ProduceSupplyRecord
 
 
 class ProduceSupplyApiTests(TestCase):
@@ -259,6 +259,47 @@ class ProduceSupplyApiTests(TestCase):
         self.assertEqual(data["decision"], "active")
         self.assertEqual(data["reason"], "Dated source evidence reviewed.")
 
+    def test_active_status_verify_requires_explicit_non_future_date_and_rejects_unknown_fields(self):
+        verify_permission = Permission.objects.create(
+            permission_code="members.active_status.verify", permission_name="Verify active member status",
+            module_name="members", risk_level="high",
+        )
+        checker = self._user("validation.checker@sfpcl.example", verify_permission)
+        url = f"/api/v1/members/{self.member.member_id}/active-status/verify/"
+        base = {"result_id": "00000000-0000-0000-0000-000000000000", "decision": "inactive", "reason": "Review.", "version": self.member.version}
+        cases = [
+            (base, "as_of_date"),
+            ({**base, "as_of_date": "2999-01-01"}, "non_field_errors"),
+            ({**base, "as_of_date": "2026-03-31", "extra": True}, "extra"),
+        ]
+        for payload, field in cases:
+            response = self.client.post(url, data=payload, content_type="application/json", headers=self._headers(checker.email))
+            self.assertEqual(response.status_code, 400, response.content)
+            self.assertIn(field, response.json()["error"]["field_errors"])
+
+    def test_active_status_verify_non_discloses_existing_and_missing_out_of_scope_members(self):
+        verify_permission = Permission.objects.create(
+            permission_code="members.active_status.verify", permission_name="Verify active member status",
+            module_name="members", risk_level="high",
+        )
+        checker = self._user("scope.checker@sfpcl.example", verify_permission)
+        self.member.created_by_user = self.actor
+        self.member.save(update_fields=["created_by_user"])
+        payload = {
+            "result_id": "00000000-0000-0000-0000-000000000000", "as_of_date": "2026-03-31",
+            "decision": "inactive", "reason": "Scoped review.", "version": self.member.version,
+        }
+        facts = []
+        for member_id in (self.member.member_id, "00000000-0000-0000-0000-000000000001"):
+            response = self.client.post(
+                f"/api/v1/members/{member_id}/active-status/verify/", data=payload,
+                content_type="application/json", headers=self._headers(checker.email),
+            )
+            facts.append((response.status_code, response.json()["error"]["code"], response.json()["error"]["message"]))
+        self.assertEqual(facts[0], facts[1])
+        self.assertEqual(facts[0][:2], (403, "OBJECT_ACCESS_DENIED"))
+        self.assertEqual(ActiveMemberStatus.objects.count(), 0)
+
     def test_portal_supply_is_read_only_and_scoped_from_portal_account(self):
         portal_role = Role.objects.create(
             role_code="borrower_portal_user", role_name="Borrower Portal User", status="active"
@@ -305,6 +346,11 @@ class ProduceSupplyApiTests(TestCase):
         self.assertEqual([row["financial_year"] for row in data["records"]], ["2025-26"])
         self.assertNotIn("member_id", data)
         self.assertNotIn("available_actions", data["records"][0])
+        for internal_field in (
+            "produce_supply_record_id", "member_id", "producer_institution_member_id",
+            "evidence_reference", "verified_by_user_id", "verified_at",
+        ):
+            self.assertNotIn(internal_field, data["records"][0])
         self.assertTrue(data["records"][0]["qualifying"])
         self.assertIsNone(data["records"][0]["non_qualifying_reason"])
         self.assertEqual(data["summary"]["total_quantity"], "10.000")

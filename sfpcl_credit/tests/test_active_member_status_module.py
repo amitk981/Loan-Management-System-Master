@@ -1,6 +1,7 @@
 from datetime import date
 from concurrent.futures import ThreadPoolExecutor
 from unittest import skipUnless
+import uuid
 
 from django.db import close_old_connections, connection
 from django.test import TestCase, TransactionTestCase
@@ -8,9 +9,11 @@ from django.utils import timezone
 
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import (
+    ActiveMemberStatus,
     IndividualMemberProfile,
     Member,
     MemberChangeHistory,
+    MemberServiceEvidence,
     ProducerInstitutionProfile,
     ProduceSupplyRecord,
 )
@@ -172,7 +175,8 @@ class ActiveMemberStatusModuleTests(TestCase):
         self.assertEqual(verified["result"], result.to_snapshot())
         self.assertEqual(verified["decision"], "active")
         self.member.refresh_from_db()
-        self.assertEqual(str(self.member.active_member_status_id), result.result_id)
+        self.assertNotEqual(str(self.member.active_member_status_id), result.result_id)
+        self.assertTrue(ActiveMemberStatus.objects.filter(active_member_status_id=self.member.active_member_status_id).exists())
         self.assertEqual(AuditLog.objects.filter(action="members.active_status.verified").count(), 1)
         self.assertEqual(MemberChangeHistory.objects.filter(change_type="active_status_verified").count(), 1)
 
@@ -195,8 +199,7 @@ class ActiveMemberStatusModuleTests(TestCase):
         profile.save(update_fields=["services_availed_flag", "employment_or_service_years"])
 
         service_result = ActiveMemberStatusModule().calculate(member_id=self.member.member_id)
-        self.assertEqual(service_result.member_active_check, "relaxation")
-        self.assertEqual(service_result.qualification_route, "three_year_service")
+        self.assertEqual(service_result.member_active_check, "manual_evidence_required")
 
         profile.employment_or_service_years = "2.99"
         profile.save(update_fields=["employment_or_service_years"])
@@ -206,8 +209,7 @@ class ActiveMemberStatusModuleTests(TestCase):
         self.member.save(update_fields=["active_member_status", "active_member_verified_at"])
 
         relaxation = ActiveMemberStatusModule().calculate(member_id=self.member.member_id)
-        self.assertEqual(relaxation.member_active_check, "relaxation")
-        self.assertEqual(relaxation.qualification_route, "recorded_one_year_relaxation")
+        self.assertEqual(relaxation.member_active_check, "manual_evidence_required")
 
     def test_institution_requires_services_and_four_continuous_eligible_rows(self):
         institution = Member.objects.create(
@@ -325,3 +327,82 @@ class ActiveMemberStatusVerificationConcurrencyTests(TransactionTestCase):
         history = MemberChangeHistory.objects.get(change_type="active_status_verified")
         self.assertEqual(audit.new_value_json, winner)
         self.assertEqual(history.new_value_json, winner)
+
+
+class ActiveMemberGovernanceTests(TestCase):
+    def setUp(self):
+        permission = Permission.objects.create(
+            permission_code="members.active_status.verify", permission_name="Verify active status",
+            module_name="members", risk_level="high",
+        )
+        maker_role = Role.objects.create(role_code="gov_maker", role_name="Governance Maker", status="active")
+        checker_role = Role.objects.create(role_code="gov_checker", role_name="Governance Checker", status="active")
+        RolePermission.objects.create(role=checker_role, permission=permission)
+        self.maker = User.objects.create(full_name="Governance Maker", email="gov-maker@sfpcl.example", status="active", primary_role=maker_role)
+        self.checkers = [User.objects.create(full_name="Governance Checker", email="gov-checker@sfpcl.example", status="active", primary_role=checker_role)]
+        self.member = Member.objects.create(
+            member_type="individual_farmer", legal_name="Governance Member", display_name="Governance Member",
+            folio_number="FOL-GOV", membership_status="active", pan_encrypted="ABCDE4321F",
+            pan_hash="governance-pan", kyc_status="verified", default_status="no_default",
+        )
+        IndividualMemberProfile.objects.create(member=self.member, first_name="Governance", last_name="Member", services_availed_flag=True)
+        for financial_year in ("2022-23", "2023-24", "2024-25", "2025-26"):
+            ProduceSupplyRecord.objects.create(
+                member=self.member, financial_year=financial_year, supplied_to_entity_type="sfpcl",
+                supply_route="direct", evidence_reference=f"GOV-{financial_year}",
+                captured_by_user=self.maker, verified_flag=True,
+            )
+    def test_supply_snapshot_contains_every_review_input(self):
+        record = ProduceSupplyRecord.objects.create(
+            member=self.member, financial_year="2025-26",
+            supplied_to_entity_type="subsidiary", supplied_to_entity_id=uuid.uuid4(),
+            supply_route="direct", evidence_reference="ERP-COMPLETE",
+            captured_by_user=self.maker, verified_flag=True,
+            verified_by_user=self.checkers[0], verified_at=timezone.now(),
+        )
+        rows = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=date(2026, 3, 31)
+        ).to_snapshot()["supply_rows"]
+        row = next(item for item in rows if item["produce_supply_record_id"] == str(record.produce_supply_record_id))
+        self.assertEqual(row["produce_supply_record_id"], str(record.produce_supply_record_id))
+        self.assertEqual(row["supplied_to_entity_type"], "subsidiary")
+        self.assertEqual(row["supplied_to_entity_id"], str(record.supplied_to_entity_id))
+        self.assertEqual(row["supply_route"], "direct")
+        self.assertEqual(row["evidence_reference"], "ERP-COMPLETE")
+        self.assertEqual(row["verified_by_user_id"], str(self.checkers[0].user_id))
+        self.assertIsNotNone(row["verified_at"])
+
+    def test_service_scalar_cannot_grant_br006_without_dated_evidence(self):
+        profile = self.member.individual_profile
+        profile.employment_or_service_years = "3.00"
+        profile.services_availed_flag = False
+        profile.save(update_fields=["employment_or_service_years", "services_availed_flag"])
+        unsupported = ActiveMemberStatusModule().calculate(member_id=self.member.member_id)
+        self.assertEqual(unsupported.member_active_check, "manual_evidence_required")
+        MemberServiceEvidence.objects.create(
+            member=self.member, service_type="employment", recipient_entity_type="sfpcl",
+            service_from=date(2023, 3, 31), service_to=date(2026, 3, 31),
+            evidence_reference="HR-SYNTHETIC-001", verified_by_user=self.checkers[0],
+            verified_at=timezone.now(),
+        )
+        supported = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=date(2026, 3, 31)
+        )
+        self.assertEqual(supported.member_active_check, "relaxation")
+        self.assertEqual(supported.qualification_route, "three_year_service")
+
+    def test_verify_persists_effective_record_and_member_points_to_its_primary_key(self):
+        result = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=date(2026, 3, 31)
+        )
+        verified = ActiveMemberStatusModule().verify(
+            actor=self.checkers[0], member_id=self.member.member_id, result_id=result.result_id,
+            decision="active", reason="Complete source evidence reviewed.",
+            version=self.member.version, as_of_date=date(2026, 3, 31),
+        )
+        effective = ActiveMemberStatus.objects.get()
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.active_member_status_id, effective.active_member_status_id)
+        self.assertNotEqual(str(effective.active_member_status_id), result.result_id)
+        self.assertEqual(effective.evidence_snapshot, result.to_snapshot())
+        self.assertEqual(verified["active_member_status_id"], str(effective.active_member_status_id))

@@ -1,0 +1,42 @@
+Creating test database for alias 'default'...
+Found 9 test(s).
+System check identified no issues (0 silenced).
+FF.....Fs
+======================================================================
+FAIL: test_service_scalar_cannot_grant_br006_without_dated_evidence (tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_service_scalar_cannot_grant_br006_without_dated_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_232553_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 389, in test_service_scalar_cannot_grant_br006_without_dated_evidence
+    self.assertEqual(supported.member_active_check, "relaxation")
+AssertionError: 'manual_evidence_required' != 'relaxation'
+- manual_evidence_required
++ relaxation
+
+
+======================================================================
+FAIL: test_supply_snapshot_contains_every_review_input (tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_supply_snapshot_contains_every_review_input)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_232553_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 365, in test_supply_snapshot_contains_every_review_input
+    self.assertEqual(row["produce_supply_record_id"], str(record.produce_supply_record_id))
+AssertionError: '341d5d82-1f5b-4755-8b9c-d6d4c200a23e' != '6be9b0fc-05db-4170-8e02-e61e973c39ba'
+- 341d5d82-1f5b-4755-8b9c-d6d4c200a23e
++ 6be9b0fc-05db-4170-8e02-e61e973c39ba
+
+
+======================================================================
+FAIL: test_verify_enforces_permission_maker_checker_reason_version_and_current_result (tests.test_active_member_status_module.ActiveMemberStatusModuleTests.test_verify_enforces_permission_maker_checker_reason_version_and_current_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_232553_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 178, in test_verify_enforces_permission_maker_checker_reason_version_and_current_result
+    self.assertEqual(str(self.member.active_member_status_id), result.result_id)
+AssertionError: '377756f2-237f-4b1f-8d76-a0fcc71c2444' != '17b499c4-fff5-58f7-b4f8-7736b7eb234b'
+- 377756f2-237f-4b1f-8d76-a0fcc71c2444
++ 17b499c4-fff5-58f7-b4f8-7736b7eb234b
+
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.053s
+
+FAILED (failures=3, skipped=1)
+Destroying test database for alias 'default'...

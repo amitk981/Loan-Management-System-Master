@@ -1699,6 +1699,16 @@ Validation evidence added:
 - Risk level: See risk assessment.
 - Next action: Review packet.
 
+## 2026-07-12 - 006Z5 Active-Member Evidence and Verification Governance
+
+- Added effective-dated active-member verification and dated service-evidence persistence with one
+  migration; Member pointers now reference persisted status records rather than result hashes.
+- Expanded immutable supply snapshots, made BR-006 evidence-backed, added one-year relaxation
+  evidence gating, object-scope non-disclosure, strict dated payload validation, and portal redaction.
+- TDD red/green evidence, 467 backend tests at 93% coverage, all frontend gates, and two independent
+  PostgreSQL runs of the active-member plus five credit races pass.
+- Result: Success. Next: architecture review, then 006Z2.
+
 # Run 2026-07-12_211007_normal_run
 
 - Completed 006Y10 with one acyclic witness-correction authority seam.
@@ -4389,6 +4399,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/.ralph/runs/2026-07-12_231540_repair/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/.ralph/runs/2026-07-12_231540_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-12 23:42:08 - 2026-07-12_232553_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z5-active-member-evidence-and-verification-governance-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_232553_normal_run/.ralph/runs/2026-07-12_232553_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_232553_normal_run/.ralph/runs/2026-07-12_232553_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

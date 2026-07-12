@@ -895,6 +895,12 @@ def serialize_produce_supply_record(record, user=None, portal=False):
     }
     if not portal:
         data["available_actions"] = [action]
+    else:
+        for internal_field in (
+            "produce_supply_record_id", "member_id", "producer_institution_member_id",
+            "evidence_reference", "verified_by_user_id", "verified_at",
+        ):
+            data.pop(internal_field, None)
     return data
 
 

@@ -1,5 +1,20 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006Z5 Active-Member Evidence and Verification Governance
+
+- Active verification now creates a real source §11.5 effective-dated record and points the Member
+  compatibility projection at that record UUID; later decisions close, but never rewrite, the prior
+  record. Member projection, record, history, and audit remain one atomic write.
+- Supply snapshots retain entity, route, Producer Institution, evidence, verifier, date, and stable
+  qualification facts for credit evidence. Portal rows strip row/member/institution IDs, evidence
+  references, verifier facts, and staff actions.
+- BR-006 no longer trusts `employment_or_service_years`. A verified dated service-evidence row must
+  prove three continuous years, an eligible recipient, and an evidence reference; otherwise the
+  result is `manual_evidence_required`. Persisted relaxation status/reason/evidence plus one complete
+  qualifying supply year is required for the one-year route.
+- Verification requires an explicit non-future date, rejects unknown fields, and applies a member
+  object-scope check before effective-record lookup with equivalent missing/existing denials.
+
 ## 006X8 Executed Credit Object-Scope Ledger
 
 - The static `@object_scope_cases` metadata inventory is removed. Each of the eight public credit

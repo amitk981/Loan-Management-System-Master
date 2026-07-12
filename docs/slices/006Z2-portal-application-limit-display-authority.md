@@ -159,3 +159,13 @@ Medium
 - Seed conflicting projection/submission-response amounts and assert the routed portal renders only
   the single canonical projection GET after submit. The browser request ledger must prove exact URL,
   method, advisory body, one submit mutation, and one canonical read with no local response merge.
+
+## Run-Ahead Sharpening Review (006Z5, 2026-07-12)
+
+- Resolve limit authority by `Member.active_member_status_id` to the one current
+  `ActiveMemberStatus` primary key; `result_id` is calculation provenance and must never be treated
+  as the effective-record identifier. Require `effective_from <= today`, null `effective_to`, and an
+  exact match between the record's stored evidence snapshot and the result provenance consumed.
+- Redact both identifiers from the borrower response unless the public contract explicitly needs a
+  stable opaque verification reference. In every case strip the stored evidence snapshot, service
+  evidence, supply row IDs, entity IDs, Producer Institution member ID, verifier, and evidence refs.

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 import hashlib
 import json
 import uuid
@@ -9,7 +9,14 @@ from django.utils import timezone
 
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.members.models import Member, MemberChangeHistory, ProduceSupplyRecord
+from sfpcl_credit.identity.modules.object_permissions import evaluate_object_access
+from sfpcl_credit.members.models import (
+    ActiveMemberStatus,
+    Member,
+    MemberChangeHistory,
+    MemberServiceEvidence,
+    ProduceSupplyRecord,
+)
 
 
 QUALIFYING_ENTITY_TYPES = frozenset({"sfpcl", "subsidiary", "step_down_subsidiary"})
@@ -24,10 +31,21 @@ class ActiveMemberStatusConflict(Exception):
         self.message = message
 
 
+class ActiveMemberObjectAccessDenied(Exception):
+    pass
+
+
 @dataclass(frozen=True)
 class SupplyRowProjection:
     produce_supply_record_id: str
     financial_year: str
+    supplied_to_entity_type: str
+    supplied_to_entity_id: str | None
+    supply_route: str
+    producer_institution_member_id: str | None
+    evidence_reference: str
+    verified_by_user_id: str | None
+    verified_at: str | None
     verified: bool
     qualifying: bool
     non_qualifying_reason: str | None
@@ -95,15 +113,18 @@ class ActiveMemberStatusModule:
                 services_availed, continuity, "four_year_supply", rows,
             )
         employment_years = self._employment_or_service_years(member)
-        if member.member_type == "individual_farmer" and employment_years is not None and employment_years >= 3:
+        service_evidence = self._qualifying_service_evidence(member, calculated_as_of_date)
+        if member.member_type == "individual_farmer" and service_evidence is not None:
             return self._result(
                 member, calculated_as_of_date, "relaxation", "pending",
                 "BR-006 active-member status is supported by three continuous years of recorded employment or service.",
                 services_availed, continuity, "three_year_service", rows,
             )
         if (
-            member.active_member_status == "relaxation"
-            and member.active_member_verified_at
+            ActiveMemberStatus.objects.filter(
+                member=member, status="relaxation", effective_from__lte=calculated_as_of_date,
+                effective_to__isnull=True,
+            ).exclude(relaxation_reason="").exclude(evidence_summary="").exists()
             and continuity >= 1
         ):
             return self._result(
@@ -119,23 +140,38 @@ class ActiveMemberStatusModule:
 
     @transaction.atomic
     def verify(self, *, actor, member_id, result_id, decision, reason, version, as_of_date=None):
+        if as_of_date is None:
+            raise ValueError("as_of_date is required.")
+        if as_of_date > timezone.localdate():
+            raise ValueError("as_of_date cannot be in the future.")
         if VERIFY_PERMISSION not in auth_service.effective_permission_codes(actor):
             raise PermissionError("You do not have permission to verify active-member status.")
-        if decision not in {"active", "inactive", "needs_review"}:
-            raise ValueError("decision must be active, inactive, or needs_review.")
+        if decision not in {"active", "inactive", "relaxation"}:
+            raise ValueError("decision must be active, inactive, or relaxation.")
         if not isinstance(reason, str) or not reason.strip():
             raise ValueError("A verification reason is required.")
         member = Member.objects.select_for_update().filter(
             member_id=member_id, is_deleted=False
         ).first()
         if member is None:
-            raise Member.DoesNotExist("Member was not found.")
+            raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+        role_code = getattr(getattr(actor, "primary_role", None), "role_code", "")
+        access = evaluate_object_access(
+            actor_user_id=actor.user_id, actor_team_codes=actor.team_codes(),
+            actor_permission_codes=auth_service.effective_permission_codes(actor),
+            required_permission=VERIFY_PERMISSION, object_owner_user_id=member.created_by_user_id,
+            allow_global=(member.created_by_user_id is None or role_code in {"system_admin", "credit_manager"}),
+        )
+        if not access.allowed:
+            raise ActiveMemberObjectAccessDenied("You cannot access this member.")
         if version != member.version:
             raise ActiveMemberStatusConflict("STALE_WRITE", "Member has changed; refresh and retry.")
         current = self.calculate(member_id=member.member_id, as_of_date=as_of_date)
         if str(result_id) != current.result_id:
             raise ActiveMemberStatusConflict("STALE_RESULT", "Active-member result has changed; recalculate before verifying.")
-        if member.active_member_status_id == uuid.UUID(current.result_id):
+        if ActiveMemberStatus.objects.filter(
+            member=member, effective_to__isnull=True, result_id=current.result_id
+        ).exists():
             raise ActiveMemberStatusConflict("INVALID_STATE_TRANSITION", "This active-member result is already verified.")
         qualifying_ids = [row.produce_supply_record_id for row in current.supply_rows if row.qualifying]
         if ProduceSupplyRecord.objects.filter(
@@ -145,6 +181,10 @@ class ActiveMemberStatusModule:
             raise PermissionError("The evidence maker cannot verify this active-member result.")
         if decision == "active" and current.member_active_check not in {"pass", "relaxation"}:
             raise ActiveMemberStatusConflict("INVALID_DECISION", "The dated evidence result does not support an active decision.")
+        if decision == "relaxation" and current.continuous_supply_years < 1:
+            raise ActiveMemberStatusConflict(
+                "INVALID_DECISION", "A relaxation requires at least one complete qualifying supply year."
+            )
 
         old_projection = {
             "active_member_status_id": str(member.active_member_status_id) if member.active_member_status_id else None,
@@ -152,7 +192,29 @@ class ActiveMemberStatusModule:
             "version": member.version,
         }
         instant = timezone.now()
-        member.active_member_status_id = uuid.UUID(current.result_id)
+        ActiveMemberStatus.objects.filter(member=member, effective_to__isnull=True).update(
+            effective_to=as_of_date - timedelta(days=1)
+        )
+        snapshot = current.to_snapshot()
+        entity_types = {
+            row.supplied_to_entity_type for row in current.supply_rows if row.qualifying
+        }
+        effective = ActiveMemberStatus.objects.create(
+            member=member, result_id=current.result_id, status=decision,
+            member_type=current.member_type, services_availed_flag=current.services_availed,
+            continuous_supply_years=current.continuous_supply_years,
+            supplied_to_company_flag="sfpcl" in entity_types,
+            supplied_to_subsidiary_flag="subsidiary" in entity_types,
+            supplied_to_stepdown_flag="step_down_subsidiary" in entity_types,
+            supplied_through_producer_institution_flag=any(
+                row.qualifying and row.supply_route == "producer_institution" for row in current.supply_rows
+            ),
+            employment_service_years=current.employment_or_service_years,
+            relaxation_reason=reason.strip() if decision == "relaxation" else "",
+            evidence_summary=reason.strip(), evidence_snapshot=snapshot,
+            verified_by_user=actor, verified_at=instant, effective_from=as_of_date,
+        )
+        member.active_member_status_id = effective.active_member_status_id
         member.active_member_status = decision
         member.active_member_verified_at = instant
         member.updated_at = instant
@@ -163,6 +225,7 @@ class ActiveMemberStatusModule:
             "updated_at", "updated_by_user", "version",
         ])
         verification = {
+            "active_member_status_id": str(effective.active_member_status_id),
             "member_id": str(member.member_id),
             "decision": decision,
             "reason": reason.strip(),
@@ -229,6 +292,18 @@ class ActiveMemberStatusModule:
         return profile.employment_or_service_years if profile else None
 
     @staticmethod
+    def _qualifying_service_evidence(member, as_of_date):
+        try:
+            threshold = as_of_date.replace(year=as_of_date.year - 3)
+        except ValueError:
+            threshold = as_of_date.replace(year=as_of_date.year - 3, day=28)
+        return MemberServiceEvidence.objects.filter(
+            member=member, recipient_entity_type__in=QUALIFYING_ENTITY_TYPES,
+            service_from__lte=threshold, service_to__gte=as_of_date,
+            verified_at__isnull=False,
+        ).exclude(evidence_reference="").order_by("service_from").first()
+
+    @staticmethod
     def _project_row(record, as_of_date):
         reason = None
         if not record.verified_flag:
@@ -248,8 +323,18 @@ class ActiveMemberStatusModule:
         elif not record.evidence_reference.strip():
             reason = "missing_evidence_reference"
         return SupplyRowProjection(
-            str(record.produce_supply_record_id), record.financial_year,
-            record.verified_flag, reason is None, reason,
+            produce_supply_record_id=str(record.produce_supply_record_id),
+            financial_year=record.financial_year,
+            supplied_to_entity_type=record.supplied_to_entity_type,
+            supplied_to_entity_id=str(record.supplied_to_entity_id) if record.supplied_to_entity_id else None,
+            supply_route=record.supply_route,
+            producer_institution_member_id=(
+                str(record.producer_institution_member_id) if record.producer_institution_member_id else None
+            ),
+            evidence_reference=record.evidence_reference,
+            verified_by_user_id=str(record.verified_by_user_id) if record.verified_by_user_id else None,
+            verified_at=record.verified_at.isoformat() if record.verified_at else None,
+            verified=record.verified_flag, qualifying=reason is None, non_qualifying_reason=reason,
         )
 
 

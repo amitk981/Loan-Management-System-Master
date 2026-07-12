@@ -1,0 +1,10 @@
+sfpcl_credit/credit/modules/eligibility_assessment.py:22:from sfpcl_credit.members.modules.active_member_status import ActiveMemberStatusModule
+sfpcl_credit/members/views.py:16:from sfpcl_credit.members.modules.active_member_status import (
+sfpcl_credit/credit/modules/loan_limit_calculator.py:28:from sfpcl_credit.members.models import (
+sfpcl_credit/applications/services.py:26:from sfpcl_credit.members.models import (
+sfpcl_credit/members/modules/member_registry.py:9:from sfpcl_credit.members.models import Member, MemberChangeHistory, MemberIdentityChangeRequest
+sfpcl_credit/members/modules/active_member_status.py:13:from sfpcl_credit.members.models import (
+sfpcl_credit/members/portal_services.py:7:from sfpcl_credit.members.models import BankAccount, KycProfile, ProduceSupplyRecord
+sfpcl_credit/members/portal_services.py:8:from sfpcl_credit.members.modules.active_member_status import ActiveMemberStatusModule
+sfpcl_credit/members/services.py:20:from sfpcl_credit.members.models import (
+sfpcl_credit/members/services.py:40:from sfpcl_credit.members.modules.active_member_status import (

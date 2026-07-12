@@ -1,7 +1,7 @@
 # Slice 006Z5: Active-Member Evidence and Verification Governance Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review

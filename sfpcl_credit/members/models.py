@@ -238,6 +238,64 @@ class ProduceSupplyRecord(models.Model):
         ]
 
 
+class MemberServiceEvidence(models.Model):
+    member_service_evidence_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="service_evidence")
+    service_type = models.CharField(max_length=60)
+    recipient_entity_type = models.CharField(max_length=60)
+    recipient_entity_id = models.UUIDField(blank=True, null=True)
+    service_from = models.DateField()
+    service_to = models.DateField()
+    evidence_reference = models.CharField(max_length=255)
+    verified_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="verified_member_service_evidence"
+    )
+    verified_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "member_service_evidence"
+        indexes = [
+            models.Index(fields=["member", "service_from", "service_to"], name="idx_service_evidence_dates"),
+        ]
+
+
+class ActiveMemberStatus(models.Model):
+    active_member_status_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="active_status_records")
+    result_id = models.UUIDField(db_index=True)
+    status = models.CharField(max_length=60, db_index=True)
+    member_type = models.CharField(max_length=60)
+    services_availed_flag = models.BooleanField()
+    continuous_supply_years = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    supplied_to_company_flag = models.BooleanField(default=False)
+    supplied_to_subsidiary_flag = models.BooleanField(default=False)
+    supplied_to_stepdown_flag = models.BooleanField(default=False)
+    supplied_through_producer_institution_flag = models.BooleanField(default=False)
+    employment_service_years = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    relaxation_reason = models.TextField(blank=True)
+    evidence_summary = models.TextField(blank=True)
+    evidence_snapshot = models.JSONField(default=dict)
+    verified_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="verified_active_member_statuses"
+    )
+    verified_at = models.DateTimeField()
+    effective_from = models.DateField()
+    effective_to = models.DateField(blank=True, null=True)
+
+    class Meta:
+        db_table = "active_member_statuses"
+        indexes = [
+            models.Index(fields=["member", "status"], name="idx_active_member_status"),
+            models.Index(fields=["member", "effective_from", "effective_to"], name="idx_active_status_effective"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["member"], condition=models.Q(effective_to__isnull=True),
+                name="uniq_current_active_member_status",
+            ),
+        ]
+
+
 class Nominee(models.Model):
     nominee_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="nominees")

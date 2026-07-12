@@ -14,6 +14,7 @@ from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.members import services
 from sfpcl_credit.members.modules import MemberRegistry
 from sfpcl_credit.members.modules.active_member_status import (
+    ActiveMemberObjectAccessDenied,
     ActiveMemberStatusConflict,
     ActiveMemberStatusModule,
 )
@@ -431,6 +432,20 @@ def active_member_status_verify(request, member_id):
     body = parse_json_body(request)
     if not isinstance(body, dict):
         return error_response(request, 400, "VALIDATION_ERROR", "Active-member verification payload failed validation.", {"non_field_errors": "This field must be an object."})
+    allowed_fields = {"result_id", "as_of_date", "decision", "reason", "version"}
+    unknown_fields = sorted(set(body) - allowed_fields)
+    if unknown_fields:
+        return error_response(
+            request, 400, "VALIDATION_ERROR",
+            "Active-member verification payload failed validation.",
+            {field: "Unknown field." for field in unknown_fields},
+        )
+    if not body.get("as_of_date"):
+        return error_response(
+            request, 400, "VALIDATION_ERROR",
+            "Active-member verification payload failed validation.",
+            {"as_of_date": "This field is required."},
+        )
     as_of_date = parse_date(body.get("as_of_date", "")) if body.get("as_of_date") else None
     if body.get("as_of_date") and as_of_date is None:
         return error_response(request, 400, "VALIDATION_ERROR", "Active-member verification payload failed validation.", {"as_of_date": "Enter a valid ISO date."})
@@ -446,6 +461,8 @@ def active_member_status_verify(request, member_id):
         )
     except PermissionError as exc:
         return error_response(request, 403, "FORBIDDEN", str(exc))
+    except ActiveMemberObjectAccessDenied as exc:
+        return error_response(request, 403, "OBJECT_ACCESS_DENIED", str(exc))
     except ValueError as exc:
         return error_response(request, 400, "VALIDATION_ERROR", "Active-member verification payload failed validation.", {"non_field_errors": str(exc)})
     except ActiveMemberStatusConflict as exc:

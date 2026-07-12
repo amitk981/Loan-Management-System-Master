@@ -1724,10 +1724,16 @@ Frontend wiring:
   the current supply-record `version`; stale verification returns `409 STALE_WRITE`.
 - `POST /api/v1/members/{member_id}/active-status/verify/` requires
   `members.active_status.verify` plus `result_id`, current member `version`, ISO `as_of_date`,
-  `decision` (`active`, `inactive`, or `needs_review`), and a non-blank `reason`. Verification
+  `decision` (`active`, `inactive`, or `relaxation`), and a non-blank `reason`; missing/future dates
+  and unknown fields return `400 VALIDATION_ERROR`. Verification performs member object access
+  before effective-record lookup, so existing and missing out-of-scope IDs both return the same
+  `403 OBJECT_ACCESS_DENIED` facts. It
   rejects evidence makers, stale/changed results, stale versions, unsupported active decisions,
   and repeated decisions without audit/history evidence. A winner returns the exact complete dated
-  result snapshot and records that same projection atomically in member history and audit.
+  result snapshot and atomically creates an effective-dated `active_member_statuses` record, closes
+  the prior current record, points the Member projection at the new record primary key, and records
+  the same projection in member history and audit. Internal snapshots retain row/evidence/verifier
+  facts; borrower portal supply rows deliberately omit those internal fields.
 
 ## Member portal application APIs (005G)
 
