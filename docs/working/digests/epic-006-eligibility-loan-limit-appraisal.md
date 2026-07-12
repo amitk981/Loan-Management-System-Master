@@ -1,5 +1,20 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-12 - Evidence Atomicity and Isolated Credit Proof
+
+- 006X8 executes substantive object-scope rows, but its aggregate ledger is a module-global list
+  populated only when other tests run first in the same worker. `006X9` replaces order/process
+  coupling with eight independently selectable parameter rows whose projection, public write,
+  denial-category, and complete evidence assertions execute together.
+- 006Z5 persists the §11.5 record and complete supply-row facts, but BR-006 service evidence remains
+  outside the deterministic result/snapshot and one-year relaxation can be created from free-text
+  reason without a distinct evidence fact. `006Z6` makes service/relaxation evidence reviewable and
+  part of result provenance.
+- Active verification locks only Member while reading unversioned supply/service evidence, and its
+  effective-history update accepts a backdated date that can close a prior record before it began.
+  `006Z6` adds evidence-vs-verifier PostgreSQL races, valid interval rules, later-decision history,
+  and one shared Member Registry/active-status authority seam.
+
 ## 006Z5 Active-Member Evidence and Verification Governance
 
 - Active verification now creates a real source §11.5 effective-dated record and points the Member

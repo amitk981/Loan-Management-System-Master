@@ -16,7 +16,7 @@ Remove the client-side loan-limit calculation from the wired portal New Applicat
 Borrowers see the same limit the backend will actually apply — served by the Epic 006 calculator/snapshot — instead of an incorrectly computed client-side figure that could invite or block applications wrongly.
 
 ## Depends On
-- 006Z5
+- 006Z6
 
 ## Source References
 - Final SOP - Loan Disbursement V10 (1).pdf p.10 §2.2-§2.3 (limit = lower of shares × 30% of valuation and per-acre scale of finance × cultivated land; ₹20,000/acre cap; ₹200/share current)

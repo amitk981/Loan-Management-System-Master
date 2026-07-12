@@ -1,0 +1,11 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006Z2-portal-application-limit-display-authority.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-004-member-kyc-master.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+?? .ralph/runs/2026-07-12_234227_architecture_review/
+?? docs/slices/006X9-credit-object-scope-isolated-execution-matrix.md
+?? docs/slices/006Y14-witness-parent-nondisclosure-and-matrix-closure.md
+?? docs/slices/006Z6-active-member-evidence-atomicity-and-history-closure.md

@@ -2,6 +2,105 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-12 23:42 - Architecture Review 2026-07-12_234227_architecture_review
+
+Reviewed completed product work since architecture-review commit `099e2a6`:
+- `006X8-credit-executed-object-scope-regression-closure` (`b9f5d9b`)
+- `006Y12-witness-authority-matrix-and-nondisclosure-closure` (`c6ae9bf`)
+- `006Y13-member-mutation-success-interaction-closure` (`7daaa61`, including repair evidence)
+- `006Z5-active-member-evidence-and-verification-governance-closure` (`b76936f`)
+
+The review checked `git diff 099e2a6...HEAD`, production/test changes, slice/run packets, trusted
+browser and PostgreSQL evidence, Epic 004/006 digests, cited source sections, assumptions, and
+M02-FR-001/004/005/006/012 plus BR-003..007. Standards and spec fidelity were reviewed
+independently. Production code was not changed. `CONTEXT.md` remains truthful, and state has no
+Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - Active verification can commit evidence that changed concurrently
+
+`ActiveMemberStatusModule.verify()` locks the Member, then recalculates from unlocked supply and
+service-evidence rows. Those evidence writes do not advance the Member version, so a concurrent
+evidence mutation can land between calculation and commit while the verifier still makes the stale
+snapshot current. The PostgreSQL test races only two verifiers, not verification against evidence
+mutation. This conflicts with codebase-design §§22.1/42.2 transactional evidence rules. `006Z6`
+locks or versions the exact evidence set and adds the missing race.
+
+#### Finding 2 - High - Witness PATCH still reveals parent application existence
+
+`applications/views.py` returns `404` for a missing parent application before object authority, but
+returns `403 OBJECT_ACCESS_DENIED` for an existing out-of-scope parent. 006Y12 varies only child
+witness IDs beneath one existing application, so it closes witness enumeration but leaves the parent
+oracle open. This violates auth §§3-3.1 and codebase-design §27.1. `006Y14` makes missing/existing
+out-of-scope parent IDs indistinguishable before child lookup.
+
+#### Finding 3 - Medium - Member object authority was copied with a different role policy
+
+Active-status verification calls the low-level evaluator directly and hard-codes global access for
+`system_admin`/`credit_manager`, while `MemberRegistry` already owns a different member-access rule.
+This contradicts 006Z5's explicit reuse requirement and codebase-design §§27.1/42.1 single-policy
+direction. `006Z6` extracts one public member-authority result consumed by both callers.
+
+#### Finding 4 - Medium - Credit completeness depends on global state and test order
+
+006X8 appends results to `EXECUTED_OBJECT_SCOPE_RESULTS`; a later `Z...` test assumes every row test
+already ran in the same worker. The aggregate fails when selected alone and can break under sharding,
+random order, or retries, contrary to codebase-design §§26.1-26.2. `006X9` replaces it with eight
+self-contained parameter rows that each execute all four phases independently.
+
+Judgment call: the application-authority compatibility wrapper adds little leverage and the new seam
+test asserts internal mock call counts. `006Y14` may remove or deepen the wrapper while retaining
+behavioral parity. No frontend visual-system drift was found.
+
+### Spec
+
+#### Finding 1 - High - BR-005/006 evidence is used but omitted from the immutable result
+
+The BR-006 calculator uses `MemberServiceEvidence` only as an existence predicate. Its dates,
+recipient, evidence reference, verifier, and ID do not enter the result/hash or effective record's
+snapshot, so qualifying evidence can change without staling the result and the decision is not
+reviewable from stored facts. One-year relaxation can likewise be created from one supply year plus
+free-text reason copied into `evidence_summary`, rather than persisted relaxation evidence. This is
+partial against BR-005/006 and M02-FR-004/006. `006Z6` snapshots the full service/relaxation evidence
+and makes all review facts part of result provenance.
+
+#### Finding 2 - High - Effective history accepts invalid backdated intervals
+
+Every later verification closes the current record at `as_of_date - 1` without requiring the new
+date to follow the current record's `effective_from`. A backdated or same-date result can therefore
+write `effective_to < effective_from`; tests cover only the first record despite the slice claiming
+immutable later decisions. `006Z6` defines and tests chronological, non-overlapping history.
+
+#### Finding 3 - High - 006Z5's verification matrix remains incomplete
+
+The tests do not execute separate stale-member, stale-result/evidence, unsupported-decision,
+inactive, relaxation, and later-decision rows with complete zero-evidence assertions; the PostgreSQL
+test also omits current-record/pointer cardinality. `006Z6` owns the complete module/API matrix and
+coherent current-record race evidence.
+
+#### Finding 4 - Medium - 006Y12 did not deliver its two-kind backend matrix
+
+Contact and identity corrections remain isolated examples: parent/child non-disclosure exercises a
+contact payload, while malformed/immutable/stale and maker-checker paths are not executed as the
+promised cross-product with exact six-field projection/write/evidence parity. `006Y14` adds the
+parameterized contact/identity matrix while retaining mounted and browser acceptance.
+
+#### Finding 5 - Medium - 006X8's false-completeness proof is not isolated
+
+The aggregate proof requires prior tests in the same process, and its mutation test marks phase flags
+directly instead of executing the production assertion phases. `006X9` makes omission fail inside the
+row that owns the public projection/write.
+
+No material scope creep was found. M02-FR-001 and M02-FR-012 are substantively covered by routed and
+real-session create/update/request/approval behavior; M02-FR-005 and BR-003/004/007 remain
+substantive. M02-FR-004/006 and BR-005/006 remain partial until `006Z6`. No ADR was added because the
+source documents already establish the authority, evidence, and effective-dating direction.
+
+Summary: Standards found 2 High and 2 Medium issues; worst are the evidence race and parent-resource
+enumeration. Spec found 3 High and 2 Medium issues; worst are incomplete immutable relaxation/service
+evidence and corruptible effective history.
+
 ## 2026-07-12 22:14 - Architecture Review 2026-07-12_220748_architecture_review
 
 Reviewed completed product work since architecture-review commit `e9c7217`:

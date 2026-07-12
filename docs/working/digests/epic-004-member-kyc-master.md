@@ -1,5 +1,17 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## Architecture Review 2026-07-12 - Witness Parent Non-Disclosure Residual
+
+- 006Y12 correctly makes existing/random witness IDs indistinguishable under one out-of-scope
+  application, but PATCH still returns `404` for a missing parent before authority and `403` for an
+  existing out-of-scope parent. `006Y14` moves parent non-disclosure ahead of child lookup.
+- The promised backend contact/identity cross-product remains example-based: object denial uses a
+  contact payload, while maker-checker, stale, malformed, immutable, and success paths are not all
+  executed for both kinds with exact action/write/zero-evidence parity. `006Y14` adds the complete
+  public matrix and removes reliance on internal seam call counts.
+- 006Y13's routed and real-session create/update/request/approval behavior is substantive; no
+  corrective finding was opened for M02-FR-001 or M02-FR-012.
+
 ## 006Y13 Member Mutation Success Interaction Closure
 
 - The mounted real `App` route now proves Directory registration transitions into the production
