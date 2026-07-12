@@ -14,6 +14,19 @@ from sfpcl_credit.members import services
 from sfpcl_credit.members.modules import MemberRegistry
 
 
+def _serialize_member(member, user):
+    pending_change = (
+        member.identity_change_requests.filter(status="pending")
+        .order_by("created_at")
+        .first()
+    )
+    return services.serialize_member_profile(
+        member,
+        user,
+        MemberRegistry.identity_approval_action(member, pending_change, user),
+    )
+
+
 @require_http_methods(["GET", "POST"])
 def member_collection(request):
     user, response = http_auth.authenticated_user(request)
@@ -28,7 +41,7 @@ def member_collection(request):
             return error_response(request, 403, "FORBIDDEN", str(exc))
         except ValidationError as exc:
             return error_response(request, 400, "VALIDATION_ERROR", "Member payload failed validation.", services.validation_field_errors(exc))
-        return success_response(services.serialize_member_profile(member, user), request)
+        return success_response(_serialize_member(member, user), request)
     if not services.user_can_read_members(user):
         return error_response(
             request,
@@ -63,7 +76,7 @@ def member_detail(request, member_id):
         return error_response(request, 403, code, str(exc))
     if member is None:
         return error_response(request, 404, "NOT_FOUND", "Member was not found.")
-    return success_response(services.serialize_member_profile(member, user), request)
+    return success_response(_serialize_member(member, user), request)
 
 
 @require_http_methods(["POST"])
@@ -98,13 +111,14 @@ def approve_member_identity_change(request, request_id):
         parse_json_body(request)
         member = MemberRegistry.approve_identity_change(request_id, user)
     except PermissionDenied as exc:
-        return error_response(request, 403, "FORBIDDEN", str(exc))
+        code = "OBJECT_ACCESS_DENIED" if str(exc) == "You cannot access this member." else "FORBIDDEN"
+        return error_response(request, 403, code, str(exc))
     except services.MemberWriteConflict as exc:
         return error_response(request, 409, exc.code, exc.message, exc.field_errors)
     except ValidationError as exc:
         return error_response(request, 400, "VALIDATION_ERROR", "Approval payload failed validation.", services.validation_field_errors(exc))
     if member is None: return error_response(request, 404, "NOT_FOUND", "Identity change request was not found.")
-    return success_response(services.serialize_member_profile(member, user), request)
+    return success_response(_serialize_member(member, user), request)
 
 
 def _member_update_response(request, member_id, user, reverification):
@@ -122,7 +136,7 @@ def _member_update_response(request, member_id, user, reverification):
         return error_response(request, 400, "VALIDATION_ERROR", "Member payload failed validation.", services.validation_field_errors(exc))
     if member is None:
         return error_response(request, 404, "NOT_FOUND", "Member was not found.")
-    return success_response(services.serialize_member_profile(member, user), request)
+    return success_response(_serialize_member(member, user), request)
 
 
 @require_http_methods(["POST"])

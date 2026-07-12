@@ -1,10 +1,15 @@
 import json
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from unittest.mock import patch
 
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.test import Client, TestCase
+from django.db import close_old_connections, connection, connections
+from django.test import Client, TestCase, TransactionTestCase
+from unittest import skipUnless
 
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
+from sfpcl_credit.members import services
 from sfpcl_credit.members.models import Member, MemberIdentityChangeRequest
 from sfpcl_credit.members.modules import MemberRegistry
 from sfpcl_credit.members.protected_identity import identity_hash
@@ -315,3 +320,223 @@ class MemberGovernanceApiTests(TestCase):
         self.assertIsNone(member.rekyc_due_date)
         self.assertEqual(member.version, 2)
         self.assertNotEqual(member.pan_hash, "old-pan")
+
+    def test_registry_identity_approval_projection_matches_object_denied_write(self):
+        requester = self._user("scope-requester@sfpcl.example", "members.member.update")
+        checker = self._user(
+            "scope-checker@sfpcl.example",
+            "members.member.identity_change.approve",
+            "members.member.read",
+        )
+        member = Member.objects.create(
+            member_type="individual_farmer",
+            legal_name="Scoped Member",
+            display_name="Scoped Member",
+            folio_number="SCOPE-1",
+            membership_status="active",
+            pan_encrypted="enc:old",
+            pan_hash="scope-old-pan",
+            kyc_status="verified",
+            default_status="no_default",
+            created_by_user=self.creator,
+        )
+        change = MemberIdentityChangeRequest.objects.create(
+            member=member,
+            requester_user=requester,
+            proposed_pan_encrypted="enc:new",
+            proposed_pan_hash=identity_hash("PQRST6789U"),
+            reason="Correct source identity",
+            member_version=member.version,
+        )
+        denied = ObjectAccessResult(
+            False,
+            "owner_mismatch",
+            "OBJECT_ACCESS_DENIED",
+            MemberRegistry.APPROVE_PERMISSION,
+        )
+        evidence_before = (
+            member.change_history.count(),
+            AuditLog.objects.count(),
+            MemberIdentityChangeRequest.objects.count(),
+        )
+
+        with patch(
+            "sfpcl_credit.members.modules.member_registry.evaluate_object_access",
+            return_value=denied,
+        ):
+            action = MemberRegistry.identity_approval_action(member, change, checker)
+            self.assertEqual(
+                action,
+                {
+                    "action_code": MemberRegistry.APPROVE_PERMISSION,
+                    "label": "Approve identity change",
+                    "enabled": False,
+                    "disabled_reason": "You cannot access this member.",
+                    "required_permission": MemberRegistry.APPROVE_PERMISSION,
+                    "required_role": None,
+                },
+            )
+            with self.assertRaises(PermissionDenied) as rejected:
+                MemberRegistry.approve_identity_change(
+                    change.identity_change_request_id, checker
+                )
+
+        self.assertEqual(str(rejected.exception), action["disabled_reason"])
+        self.assertEqual(
+            (
+                member.change_history.count(),
+                AuditLog.objects.count(),
+                MemberIdentityChangeRequest.objects.count(),
+            ),
+            evidence_before,
+        )
+
+    def test_every_public_registry_operation_enforces_its_own_exact_authority(self):
+        plain = self._user("registry-plain@sfpcl.example")
+        requester = self._user("registry-requester@sfpcl.example", "members.member.update")
+        member = Member.objects.create(
+            member_type="individual_farmer", legal_name="Registry Boundary",
+            display_name="Registry Boundary", folio_number="REG-BOUNDARY",
+            membership_status="active", pan_encrypted="enc:old", pan_hash="registry-old",
+            kyc_status="verified", default_status="no_default", created_by_user=self.creator,
+        )
+        change = MemberIdentityChangeRequest.objects.create(
+            member=member, requester_user=requester, proposed_pan_encrypted="enc:new",
+            proposed_pan_hash=identity_hash("PQRST6789U"), reason="Boundary proof",
+            member_version=member.version,
+        )
+        before = (Member.objects.count(), MemberIdentityChangeRequest.objects.count(), AuditLog.objects.count())
+
+        with self.assertRaises(PermissionDenied):
+            MemberRegistry.create({}, plain)
+        with self.assertRaises(PermissionDenied):
+            MemberRegistry.get(member.pk, plain)
+        with self.assertRaises(PermissionDenied):
+            MemberRegistry.update(member.pk, {"version": member.version}, plain)
+        with self.assertRaises(PermissionDenied):
+            MemberRegistry.request_identity_change(member.pk, {}, plain)
+        projected = MemberRegistry.identity_approval_action(member, change, plain)
+        self.assertFalse(projected["enabled"])
+        self.assertEqual(projected["required_permission"], MemberRegistry.APPROVE_PERMISSION)
+        with self.assertRaises(PermissionDenied) as rejected:
+            MemberRegistry.approve_identity_change(change.pk, plain)
+        self.assertEqual(str(rejected.exception), projected["disabled_reason"])
+        self.assertEqual(
+            (Member.objects.count(), MemberIdentityChangeRequest.objects.count(), AuditLog.objects.count()),
+            before,
+        )
+
+
+@skipUnless(
+    connection.vendor == "postgresql",
+    "Authoritative member registry races require PostgreSQL integration settings.",
+)
+class MemberRegistryConcurrencyTests(TransactionTestCase):
+    reset_sequences = True
+
+    def _user(self, email, *codes):
+        role = Role.objects.create(
+            role_code=email.split("@")[0], role_name=email, is_system_role=True, status="active"
+        )
+        for code in codes:
+            permission, _ = Permission.objects.get_or_create(
+                permission_code=code,
+                defaults={"permission_name": code, "module_name": "members", "risk_level": "high"},
+            )
+            RolePermission.objects.create(role=role, permission=permission)
+        return User.objects.create(full_name=email, email=email, status="active", primary_role=role)
+
+    def test_competing_duplicate_member_creates_return_one_field_validation_loser(self):
+        actor = self._user("race-create@sfpcl.example", "members.member.create")
+        barrier = Barrier(2)
+
+        def create(suffix):
+            close_old_connections()
+            try:
+                thread_actor = User.objects.get(pk=actor.pk)
+                barrier.wait(timeout=10)
+                try:
+                    member = MemberRegistry.create(
+                        {
+                            "member_type": "individual_farmer",
+                            "legal_name": f"Race Member {suffix}",
+                            "display_name": f"Race Member {suffix}",
+                            "folio_number": f"RACE-{suffix}",
+                            "pan": "ABCDE1234F",
+                            "aadhaar": "111122223333" if suffix == "A" else "444455556666",
+                            "registered_address": {},
+                            "individual_profile": {"first_name": "Race", "last_name": f"Member {suffix}"},
+                        },
+                        thread_actor,
+                    )
+                    return ("success", str(member.member_id))
+                except ValidationError as exc:
+                    return ("validation", services.validation_field_errors(exc))
+            finally:
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = [future.result(timeout=15) for future in (
+                executor.submit(create, "A"), executor.submit(create, "B")
+            )]
+
+        self.assertEqual(
+            sorted(result[0] for result in results), ["success", "validation"], results
+        )
+        loser = next(result[1] for result in results if result[0] == "validation")
+        self.assertEqual(set(loser), {"pan"})
+        self.assertEqual(Member.objects.count(), 1)
+        self.assertEqual(Member.objects.get().change_history.count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="members.member.created").count(), 1)
+
+    def test_competing_identity_approvals_return_one_field_validation_loser(self):
+        requester = self._user("race-requester@sfpcl.example", "members.member.update")
+        checker = self._user(
+            "race-checker@sfpcl.example", "members.member.identity_change.approve"
+        )
+        members = [
+            Member.objects.create(
+                member_type="individual_farmer", legal_name=f"Approval Race {suffix}",
+                display_name=f"Approval Race {suffix}", folio_number=f"APR-{suffix}",
+                membership_status="active", pan_encrypted=f"enc:{suffix}",
+                pan_hash=f"old-{suffix}", kyc_status="verified", default_status="no_default",
+            )
+            for suffix in ("A", "B")
+        ]
+        requests = [
+            MemberIdentityChangeRequest.objects.create(
+                member=member, requester_user=requester,
+                proposed_pan_encrypted="enc:shared", proposed_pan_hash=identity_hash("PQRST6789U"),
+                reason="Shared corrected identity", member_version=member.version,
+            )
+            for member in members
+        ]
+        barrier = Barrier(2)
+
+        def approve(request_id):
+            close_old_connections()
+            try:
+                thread_checker = User.objects.get(pk=checker.pk)
+                barrier.wait(timeout=10)
+                try:
+                    member = MemberRegistry.approve_identity_change(request_id, thread_checker)
+                    return ("success", str(member.member_id))
+                except ValidationError as exc:
+                    return ("validation", services.validation_field_errors(exc))
+            finally:
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = [future.result(timeout=15) for future in (
+                executor.submit(approve, requests[0].pk), executor.submit(approve, requests[1].pk)
+            )]
+
+        self.assertEqual(sorted(result[0] for result in results), ["success", "validation"])
+        loser = next(result[1] for result in results if result[0] == "validation")
+        self.assertEqual(set(loser), {"pan"})
+        self.assertEqual(MemberIdentityChangeRequest.objects.filter(status="approved").count(), 1)
+        self.assertEqual(MemberIdentityChangeRequest.objects.filter(status="pending").count(), 1)
+        self.assertEqual(Member.objects.filter(pan_hash=identity_hash("PQRST6789U")).count(), 1)
+        self.assertEqual(Member.objects.filter(kyc_status="pending").count(), 1)
+        self.assertEqual(Member.objects.filter(change_history__change_type="identity_change_approved").count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="members.member.identity_change_approved").count(), 1)

@@ -33,7 +33,8 @@ routed correction proof required but not executed by 006Y6.
   verifier may change.
 - Projection and write must share exact permission, application-object, maker-checker, version, and
   immutable-evidence evaluations. The original verifier cannot see an enabled identity-correction
-  action that its write rejects.
+  action that its write rejects. Each projected action must contain exactly §44's six fields and
+  preserve the backend denial reason verbatim in the routed control.
 - Extend the backend matrix across verifier identity correction, allowed contact-only correction,
   missing permission, object denial, stale version, malformed/unknown payloads, and immutable
   verification evidence, with exact reasons/categories and zero evidence on denial.

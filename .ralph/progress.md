@@ -1769,6 +1769,18 @@ Validation evidence added:
 - Risk level: See risk assessment.
 - Next action: Review packet.
 
+# Run 2026-07-12_145438_normal_run
+
+- Completed 006Y7: Member Registry identity-approval projection/write parity now includes member
+  object scope and preserves exact six-field action facts and denial reasons.
+- Removed the generic-service-to-Registry action-evaluation cycle; the HTTP adapter supplies the
+  Registry-owned projection to serialization.
+- PostgreSQL duplicate-create and competing-approval races passed twice with one success, one
+  field-validation loser, and exact evidence cardinalities per run.
+- Frontend build/typecheck/lint and 175 tests passed; backend check/migration sync and 450 tests
+  passed (7 expected SQLite skips) at 93% coverage.
+- Next action: run 006Y8-witness-maker-checker-and-browser-closure.
+
 ## 2026-07-03 08:15:09 - 2026-07-03_081509_architecture_review
 - Agent tool used: codex
 - Slice attempted: architecture-review
@@ -3971,6 +3983,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_142843_normal_run/.ralph/runs/2026-07-12_142843_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_142843_normal_run/.ralph/runs/2026-07-12_142843_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-12 15:08:48 - 2026-07-12_145438_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Y7-member-registry-race-and-action-scope-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_145438_normal_run/.ralph/runs/2026-07-12_145438_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_145438_normal_run/.ralph/runs/2026-07-12_145438_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

@@ -1,7 +1,7 @@
 # Slice 006Y7: Member Registry Race and Action-Scope Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master

@@ -2,6 +2,12 @@
 
 ## Architecture Review 2026-07-12 - Registry/Witness Residual Closures
 
+- 006Y7 makes identity-approval projection/write consume the Registry's one complete permission,
+  object-scope, requester-checker, request/member-version, pending-state, and KYC evaluation. The
+  serializer only translates the Registry's exact six-field action; it no longer imports back into
+  the Registry. PostgreSQL duplicate-create and competing-approval races pass twice with one winner,
+  one field-validation loser, and exact member/request/history/audit cardinality.
+
 - 006Y5 completed the §13.2 fields and public Registry facade but did not execute its required
   PostgreSQL duplicate-create/identity-approval races. Identity approval projection also omits the
   member object-scope check performed by the write. 006Y7 owns one full evaluation plus concurrent

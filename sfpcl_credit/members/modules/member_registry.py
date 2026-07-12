@@ -14,14 +14,20 @@ class MemberRegistry:
     APPROVE_PERMISSION = "members.member.identity_change.approve"
 
     @staticmethod
-    def _require_member_access(*, actor_user, member, permission):
-        access = evaluate_object_access(
+    def _member_access(*, actor_user, member, permission):
+        return evaluate_object_access(
             actor_user_id=actor_user.user_id,
             actor_team_codes=actor_user.team_codes(),
             actor_permission_codes=auth_service.effective_permission_codes(actor_user),
             required_permission=permission,
             object_owner_user_id=member.created_by_user_id,
             allow_global=True,
+        )
+
+    @staticmethod
+    def _require_member_access(*, actor_user, member, permission):
+        access = MemberRegistry._member_access(
+            actor_user=actor_user, member=member, permission=permission
         )
         if not access.allowed:
             if access.reason == "missing_permission":
@@ -45,10 +51,13 @@ class MemberRegistry:
         try:
             return services._create_member(payload, actor_user, request_ip_value, request_user_agent_value)
         except IntegrityError:
-            raise ValidationError({
-                "pan": "PAN or Aadhaar already belongs to a member.",
-                "aadhaar": "PAN or Aadhaar already belongs to a member.",
-            })
+            errors = {}
+            pan, aadhaar = payload.get("pan"), payload.get("aadhaar")
+            if pan and Member.objects.filter(pan_hash=identity_hash(pan), is_deleted=False).exists():
+                errors["pan"] = "A member with this PAN already exists."
+            if aadhaar and Member.objects.filter(aadhaar_hash=identity_hash(aadhaar), is_deleted=False).exists():
+                errors["aadhaar"] = "A member with this Aadhaar already exists."
+            raise ValidationError(errors or {"identity": "PAN or Aadhaar already belongs to a member."})
 
     @staticmethod
     def update(member_id, payload, actor_user, request_ip_value="", request_user_agent_value=""):
@@ -96,7 +105,6 @@ class MemberRegistry:
         change = MemberIdentityChangeRequest.objects.select_for_update().select_related("member").filter(identity_change_request_id=request_id).first()
         if change is None: return None
         member = Member.objects.select_for_update().get(member_id=change.member_id)
-        cls._require_member_access(actor_user=actor_user, member=member, permission=cls.APPROVE_PERMISSION)
         approval = cls.evaluate_identity_approval(member, change, actor_user)
         if not approval["enabled"]:
             if approval["status"] == 403: raise PermissionDenied(approval["disabled_reason"])
@@ -125,9 +133,17 @@ class MemberRegistry:
 
     @classmethod
     def evaluate_identity_approval(cls, member, change, actor_user):
-        permissions = auth_service.effective_permission_codes(actor_user)
-        if cls.APPROVE_PERMISSION not in permissions:
-            return {"enabled": False, "disabled_reason": "Missing identity change approval permission.", "status": 403, "code": "FORBIDDEN"}
+        access = cls._member_access(
+            actor_user=actor_user, member=member, permission=cls.APPROVE_PERMISSION
+        )
+        if not access.allowed:
+            reason = (
+                "Missing identity change approval permission."
+                if access.reason == "missing_permission"
+                else "You cannot access this member."
+            )
+            code = "FORBIDDEN" if access.reason == "missing_permission" else "OBJECT_ACCESS_DENIED"
+            return {"enabled": False, "disabled_reason": reason, "status": 403, "code": code}
         if change is None or change.status != "pending":
             return {"enabled": False, "disabled_reason": "Identity change request is not pending.", "status": 409, "code": "IDENTITY_CHANGE_NOT_PENDING"}
         if change.requester_user_id == actor_user.user_id:
@@ -135,3 +151,15 @@ class MemberRegistry:
         if member.version != change.member_version or member.kyc_status != "verified":
             return {"enabled": False, "disabled_reason": "Member has changed; refresh and retry.", "status": 409, "code": "STALE_WRITE"}
         return {"enabled": True, "disabled_reason": None, "status": 200, "code": None}
+
+    @classmethod
+    def identity_approval_action(cls, member, change, actor_user):
+        approval = cls.evaluate_identity_approval(member, change, actor_user)
+        return {
+            "action_code": cls.APPROVE_PERMISSION,
+            "label": "Approve identity change",
+            "enabled": approval["enabled"],
+            "disabled_reason": approval["disabled_reason"],
+            "required_permission": cls.APPROVE_PERMISSION,
+            "required_role": None,
+        }

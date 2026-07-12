@@ -34,7 +34,8 @@ routed staff/auth/API boundary that 006Y5 required but replaced with mocked wrap
 - Assert exact request bodies, one canonical refetch, masked protected identities after refetch, and
   one-call `400`/`403`/`409` behavior without local merge/retry.
 - Run real staff sessions through create, ordinary correction, identity-change request, separate-
-  checker approval, and canonical reload while preserving the approved modal/action composition.
+  checker approval, and canonical reload while preserving the approved modal/action composition;
+  assert the checker consumes the Registry-projected six-field approval action before POST.
 - Keep synthetic identities out of screenshots/logs except visibly masked values; do not change the
   visual system or add client-side business authority.
 

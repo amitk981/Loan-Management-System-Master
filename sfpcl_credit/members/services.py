@@ -553,7 +553,7 @@ def reveal_member_sensitive_field(
     }
 
 
-def serialize_member_profile(member, user):
+def serialize_member_profile(member, user, identity_approval_action=None):
     pending_change = member.identity_change_requests.filter(status="pending").order_by("created_at").first()
     return {
         **serialize_member(member),
@@ -584,7 +584,7 @@ def serialize_member_profile(member, user):
             serialize_produce_supply_record(row, user)
             for row in member.produce_supply_records.all()
         ],
-        "available_actions": _available_actions(member, user),
+        "available_actions": _available_actions(member, user, identity_approval_action),
         "pending_identity_change": ({"identity_change_request_id": str(pending_change.identity_change_request_id), "status": pending_change.status} if pending_change else None),
         "version": member.version,
     }
@@ -2165,13 +2165,19 @@ def _producer_profile(member):
     }
 
 
-def _available_actions(member, user):
+def _available_actions(member, user, identity_approval_action=None):
     can_update = user_can_update_members(user)
     locked = member.kyc_status == "verified"
     request_pending = member.identity_change_requests.filter(status="pending").exists()
     pending_change = member.identity_change_requests.filter(status="pending").first()
-    from sfpcl_credit.members.modules.member_registry import MemberRegistry
-    approval = MemberRegistry.evaluate_identity_approval(member, pending_change, user)
+    approval = identity_approval_action or {
+        "action_code": "members.member.identity_change.approve",
+        "label": "Approve identity change",
+        "enabled": False,
+        "disabled_reason": "Approval authority was not evaluated.",
+        "required_permission": "members.member.identity_change.approve",
+        "required_role": None,
+    }
     return [
         {
             "action_code": "members.member.update", "label": "Update member",
@@ -2184,12 +2190,7 @@ def _available_actions(member, user):
             "disabled_reason": None if can_update and locked and not request_pending else ("An identity change request is already pending." if request_pending else ("Identity is not verified." if can_update else "Missing member update permission.")),
             "required_permission": MEMBER_UPDATE_PERMISSION, "required_role": None,
         },
-        {
-            "action_code": "members.member.identity_change.approve", "label": "Approve identity change",
-            "enabled": approval["enabled"],
-            "disabled_reason": approval["disabled_reason"],
-            "required_permission": "members.member.identity_change.approve", "required_role": None,
-        },
+        approval,
     ]
 
 
