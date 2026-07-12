@@ -153,7 +153,7 @@ class WitnessApiTests(TestCase):
         self.assertEqual(witness["version"], 1)
         self.assertEqual(
             [action["action_code"] for action in witness["actions"]],
-            ["read", "update"],
+            ["read", "correct_contact", "correct_identity"],
         )
 
         reader = self._user("projection.reader@sfpcl.example", "ReaderPass123!", Permission.objects.get(permission_code=WITNESS_READ_PERMISSION))
@@ -162,9 +162,60 @@ class WitnessApiTests(TestCase):
         denied = self.client.get(self._url(), headers=self._headers_for(reader.email, "ReaderPass123!")).json()
         self.assertEqual([action["action_code"] for action in denied["actions"]], ["read", "create"])
         self.assertEqual([action["enabled"] for action in denied["actions"]], [True, False])
-        self.assertEqual([action["action_code"] for action in denied["data"][0]["actions"]], ["read", "update"])
-        self.assertEqual([action["enabled"] for action in denied["data"][0]["actions"]], [True, False])
+        self.assertEqual([action["action_code"] for action in denied["data"][0]["actions"]], ["read", "correct_contact", "correct_identity"])
+        self.assertEqual([action["enabled"] for action in denied["data"][0]["actions"]], [True, False, False])
         self.assertEqual(denied["data"][0]["actions"][1]["disabled_reason"], "Missing witness update permission.")
+
+    def test_witness_correction_actions_distinguish_verifier_from_checker_authority(self):
+        created = self._post().json()["data"]
+
+        verifier = self.client.get(self._url(), headers=self._headers()).json()["data"][0]
+        verifier_actions = {action["action_code"]: action for action in verifier["actions"]}
+        self.assertEqual(
+            list(verifier_actions),
+            ["read", "correct_contact", "correct_identity"],
+        )
+        self.assertTrue(verifier_actions["correct_contact"]["enabled"])
+        self.assertFalse(verifier_actions["correct_identity"]["enabled"])
+        self.assertEqual(
+            verifier_actions["correct_identity"]["disabled_reason"],
+            "A different authorised user must correct verified witness identity.",
+        )
+        for action in verifier_actions.values():
+            self.assertEqual(
+                set(action),
+                {"action_code", "label", "enabled", "disabled_reason", "required_permission", "required_role"},
+            )
+        verifier_headers = self._headers()
+        baseline_audits = AuditLog.objects.count()
+        denied_write = self.client.patch(
+            self._detail_url(created["witness_id"]),
+            data={"version": 1, "pan": "KLMNO9876P"},
+            content_type="application/json",
+            headers=verifier_headers,
+        )
+        self.assertEqual(denied_write.status_code, 403)
+        assert_error_envelope(self, denied_write.json(), "MAKER_CHECKER_REQUIRED")
+        self.assertEqual(denied_write.json()["error"]["message"], verifier_actions["correct_identity"]["disabled_reason"])
+        self.assertEqual(WitnessChangeHistory.objects.count(), 0)
+        self.assertEqual(AuditLog.objects.count(), baseline_audits)
+
+        checker = self._user(
+            "witness.action.checker@sfpcl.example",
+            "CheckerPass123!",
+            *Permission.objects.filter(
+                permission_code__in=[WITNESS_READ_PERMISSION, WITNESS_UPDATE_PERMISSION]
+            ),
+        )
+        self.application.created_by_user = checker
+        self.application.save(update_fields=["created_by_user"])
+        checker_witness = self.client.get(
+            self._url(), headers=self._headers_for(checker.email, "CheckerPass123!")
+        ).json()["data"][0]
+        checker_actions = {action["action_code"]: action for action in checker_witness["actions"]}
+        self.assertTrue(checker_actions["correct_contact"]["enabled"])
+        self.assertTrue(checker_actions["correct_identity"]["enabled"])
+        self.assertEqual(checker_witness["witness_id"], created["witness_id"])
 
     def test_witness_contact_fields_round_trip_and_contact_only_correction_records_history(self):
         created = self._post(address="Village Road, Pune", mobile="9876543210")
@@ -221,6 +272,16 @@ class WitnessApiTests(TestCase):
         self.assertIn("member_id", immutable.json()["error"]["field_errors"])
         stale = self.client.patch(self._detail_url(witness_id), data={"version": 2, "witness_name": "Changed"}, content_type="application/json", headers=headers)
         self.assertEqual(stale.status_code, 409)
+        for body in ('{"version":', "[]", '"witness"'):
+            with self.subTest(body=body):
+                malformed = self.client.patch(
+                    self._detail_url(witness_id),
+                    data=body,
+                    content_type="application/json",
+                    headers=headers,
+                )
+                self.assertEqual(malformed.status_code, 400)
+                assert_error_envelope(self, malformed.json(), "VALIDATION_ERROR")
         self.assertEqual(Witness.objects.get().version, 1)
         self.assertEqual(WitnessChangeHistory.objects.count(), 0)
         self.assertEqual(AuditLog.objects.count(), baseline_audits)

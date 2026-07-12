@@ -112,21 +112,21 @@ test('witness capture and correction refetch canonical resources and surface sta
   await expect(page.getByText('******234F')).toBeVisible();
   await capture(page, 'witness-capture-refetched.png');
 
-  await page.getByRole('button', { name: 'Correct Witness' }).click();
-  await page.getByLabel('Correction Witness Name').fill('Epic 006 Witness Corrected');
+  await page.getByRole('button', { name: 'Correct Witness Contact' }).click();
+  await page.getByLabel('Correction Address').fill('Epic 006 Witness Corrected Road');
   const corrected = waitForMutation(page, 'PATCH', /\/witnesses\/[0-9a-f-]+\/$/);
   const correctedRefetch = waitForMutation(page, 'GET', new RegExp(`/api/v1/loan-applications/${CREDIT_APPLICATION_ID}/witnesses/$`));
-  await page.getByRole('button', { name: 'Save Witness Correction' }).click();
+  await page.getByRole('button', { name: 'Save Contact Correction' }).click();
   expect((await corrected).status()).toBe(200);
   expect((await correctedRefetch).status()).toBe(200);
-  await expect(page.getByText('Epic 006 Witness Corrected')).toBeVisible();
+  await expect(page.getByText('Epic 006 Witness Corrected Road')).toBeVisible();
   await capture(page, 'witness-correction-refetched.png');
 
-  await page.getByRole('button', { name: 'Correct Witness' }).click();
+  await page.getByRole('button', { name: 'Correct Witness Contact' }).click();
   const witnessId = (await browserGet(page, `/api/v1/loan-applications/${CREDIT_APPLICATION_ID}/witnesses/`)).body.data[0].witness_id;
-  await browserPatch(page, `/api/v1/loan-applications/${CREDIT_APPLICATION_ID}/witnesses/${witnessId}/`, { version: 2, witness_name: 'Concurrent Witness Correction' });
-  await page.getByLabel('Correction Witness Name').fill('Stale Witness Correction');
-  await page.getByRole('button', { name: 'Save Witness Correction' }).click();
+  await browserPatch(page, `/api/v1/loan-applications/${CREDIT_APPLICATION_ID}/witnesses/${witnessId}/`, { version: 2, address: 'Concurrent Witness Road' });
+  await page.getByLabel('Correction Address').fill('Stale Witness Road');
+  await page.getByRole('button', { name: 'Save Contact Correction' }).click();
   await expect(page.getByText(/changed by another user/i)).toBeVisible();
   await capture(page, 'witness-correction-stale.png');
 

@@ -1,7 +1,7 @@
 # Slice 006Y8: Witness Maker-Checker and Browser Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master
@@ -44,16 +44,18 @@ routed correction proof required but not executed by 006Y6.
 
 ## Trusted Browser Acceptance
 
-- Spec: `sfpcl-lms/e2e/witness-correction-authority.e2e.spec.ts`
+- Spec: `e2e/witness-correction-authority.e2e.spec.ts`
+- Screenshot: `witness-contact-correction-reloaded.png`
+- Screenshot: `witness-verifier-identity-denied.png`
+- Screenshot: `witness-checker-identity-corrected.png`
+
+## Trusted Browser Scenario
+
 - Start from the real staff login boundary and routed Application Detail; no API route interception,
   direct local-storage token injection, or mocked witness response is allowed.
 - Correct address/mobile as an authorised actor, reload, and prove canonical persisted values.
 - As the original verifier, show the backend-projected identity-correction denial and prove no PATCH;
   then use a separate authorised checker to correct masked identity and reload it.
-- Required screenshots:
-  - `evidence/screenshots/witness-contact-correction-reloaded.png`
-  - `evidence/screenshots/witness-verifier-identity-denied.png`
-  - `evidence/screenshots/witness-checker-identity-corrected.png`
 
 ## Test Cases
 

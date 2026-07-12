@@ -1,0 +1,7 @@
+PASS: strict trusted-browser contract is valid
+Specs:
+e2e/witness-correction-authority.e2e.spec.ts
+Screenshots:
+witness-contact-correction-reloaded.png
+witness-verifier-identity-denied.png
+witness-checker-identity-corrected.png

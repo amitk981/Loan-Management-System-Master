@@ -200,15 +200,24 @@ def witness_collection_actions(application, actor, permissions=None):
 
 
 def witness_resource_actions(witness, actor, permissions=None):
+    from sfpcl_credit.applications.modules.witness_corrections import evaluate_witness_correction
+
     permissions = permissions or auth_service.effective_permission_codes(actor)
     actions = []
-    for code, label, required in (
-        ("read", "View Witness", WITNESS_READ_PERMISSION),
-        ("update", "Correct Witness", WITNESS_UPDATE_PERMISSION),
+    for code, label, required, correction_kind in (
+        ("read", "View Witness", WITNESS_READ_PERMISSION, None),
+        ("correct_contact", "Correct Witness Contact", WITNESS_UPDATE_PERMISSION, "contact"),
+        ("correct_identity", "Correct Witness Identity", WITNESS_UPDATE_PERMISSION, "identity"),
     ):
         access = evaluate_application_object_access(witness.loan_application, actor, required, permissions)
-        enabled = required in permissions and access.allowed
-        reason = None if enabled else (f"Missing witness {code} permission." if required not in permissions else "Witness is outside your application access scope.")
+        if correction_kind:
+            evaluation = evaluate_witness_correction(
+                witness=witness, actor_user=actor, correction_kind=correction_kind
+            )
+            enabled, reason = evaluation.allowed, evaluation.reason
+        else:
+            enabled = required in permissions and access.allowed
+            reason = None if enabled else ("Missing witness read permission." if required not in permissions else "Witness is outside your application access scope.")
         actions.append({"action_code": code, "label": label, "enabled": enabled, "disabled_reason": reason, "required_permission": required, "required_role": None})
     return actions
 

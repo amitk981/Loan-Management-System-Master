@@ -2,6 +2,12 @@
 
 ## Architecture Review 2026-07-12 - Registry/Witness Residual Closures
 
+- 006Y8 replaces the generic witness `update` action with exact `correct_contact` and
+  `correct_identity` six-field actions. Projection and PATCH share permission, application scope,
+  maker-checker, and version evaluation; the original verifier retains contact correction but sees
+  the identity action disabled with the write's verbatim reason. The routed browser contract uses
+  real finance/checker sessions and owns three canonical-reload screenshots.
+
 - 006Y7 makes identity-approval projection/write consume the Registry's one complete permission,
   object-scope, requester-checker, request/member-version, pending-state, and KYC evaluation. The
   serializer only translates the Registry's exact six-field action; it no longer imports back into

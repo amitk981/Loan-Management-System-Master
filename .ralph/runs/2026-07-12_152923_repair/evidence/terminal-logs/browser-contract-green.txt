@@ -1,0 +1,13 @@
+Command:
+source scripts/lib/ralph-browser-acceptance.sh
+ralph_validate_trusted_browser_acceptance docs/slices/006Y8-witness-maker-checker-and-browser-closure.md sfpcl-lms
+
+Exit code: 0
+
+Declared spec:
+e2e/witness-correction-authority.e2e.spec.ts
+
+Declared screenshots:
+witness-contact-correction-reloaded.png
+witness-verifier-identity-denied.png
+witness-checker-identity-corrected.png

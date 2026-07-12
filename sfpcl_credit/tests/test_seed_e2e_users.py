@@ -147,6 +147,8 @@ class SeedE2eUsersTests(TestCase):
             {
                 "members.member.read",
                 "members.member.identity_change.approve",
+                "members.witness.read",
+                "members.witness.update",
             }.issubset(manager_permissions)
         )
 

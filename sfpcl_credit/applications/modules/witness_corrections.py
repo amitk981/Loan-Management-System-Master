@@ -1,12 +1,14 @@
 """Application-owned public seam for governed witness corrections."""
 
 import re
+from dataclasses import dataclass
 
 from django.db import transaction
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import Witness, WitnessChangeHistory
 from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.members.protected_identity import identity_hash, mask_protected_identity, protected_identity_token
 
 
@@ -16,6 +18,44 @@ class WitnessCorrectionError(Exception):
         self.message = message
         self.field_errors = field_errors or {}
         super().__init__(message)
+
+
+WITNESS_UPDATE_PERMISSION = "members.witness.update"
+MAKER_CHECKER_REASON = "A different authorised user must correct verified witness identity."
+
+
+@dataclass(frozen=True)
+class WitnessCorrectionEvaluation:
+    allowed: bool
+    reason: str | None = None
+    code: str | None = None
+
+
+def evaluate_witness_correction(*, witness, actor_user, correction_kind, expected_version=None):
+    """Evaluate the complete correction authority used by projection and write."""
+    permissions = auth_service.effective_permission_codes(actor_user)
+    if WITNESS_UPDATE_PERMISSION not in permissions:
+        return WitnessCorrectionEvaluation(False, "Missing witness update permission.", "FORBIDDEN")
+    # Local import keeps this module as the correction seam without making generic
+    # application serialization depend on HTTP adapters.
+    from sfpcl_credit.applications.services import evaluate_application_object_access
+
+    access = evaluate_application_object_access(
+        witness.loan_application, actor_user, WITNESS_UPDATE_PERMISSION, permissions
+    )
+    if not access.allowed:
+        return WitnessCorrectionEvaluation(
+            False, "Witness is outside your application access scope.", "OBJECT_ACCESS_DENIED"
+        )
+    if expected_version is not None and witness.version != expected_version:
+        return WitnessCorrectionEvaluation(
+            False,
+            "Witness was changed by another user. Refresh and try again.",
+            "VERSION_CONFLICT",
+        )
+    if correction_kind == "identity" and witness.verified_by_user_id == actor_user.user_id:
+        return WitnessCorrectionEvaluation(False, MAKER_CHECKER_REASON, "MAKER_CHECKER_REQUIRED")
+    return WitnessCorrectionEvaluation(True)
 
 
 @transaction.atomic
@@ -28,8 +68,15 @@ def correct_witness(*, witness, payload, actor_user, request_ip="", request_user
     if not isinstance(version, int) or isinstance(version, bool) or version < 1:
         raise WitnessCorrectionError("VALIDATION_ERROR", "Witness payload failed validation.", {"version": "A current positive integer version is required."})
     locked = Witness.objects.select_for_update().get(witness_id=witness.witness_id)
-    if locked.version != version:
-        raise WitnessCorrectionError("VERSION_CONFLICT", "Witness was changed by another user. Refresh and try again.")
+    correction_kind = "identity" if {"witness_name", "pan", "aadhaar"} & set(payload) else "contact"
+    evaluation = evaluate_witness_correction(
+        witness=locked,
+        actor_user=actor_user,
+        correction_kind=correction_kind,
+        expected_version=version,
+    )
+    if not evaluation.allowed:
+        raise WitnessCorrectionError(evaluation.code, evaluation.reason)
     changed = []
     old_values = {}
     new_values = {}
@@ -80,8 +127,6 @@ def correct_witness(*, witness, payload, actor_user, request_ip="", request_user
             new_values[field] = mask_protected_identity(protected_identity_token(value, length), length)
             setattr(locked, encrypted_field, protected_identity_token(value, length))
             setattr(locked, f"{field}_hash", proposed_hash)
-    if identity_changed and locked.verified_by_user_id == actor_user.user_id:
-        raise WitnessCorrectionError("MAKER_CHECKER_REQUIRED", "A different authorised user must correct verified witness identity.")
     if not changed:
         raise WitnessCorrectionError("VALIDATION_ERROR", "Witness payload failed validation.", {"non_field_errors": "Provide at least one changed field."})
     locked.version += 1

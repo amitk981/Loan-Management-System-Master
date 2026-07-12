@@ -36,6 +36,9 @@ routed staff/auth/API boundary that 006Y5 required but replaced with mocked wrap
 - Run real staff sessions through create, ordinary correction, identity-change request, separate-
   checker approval, and canonical reload while preserving the approved modal/action composition;
   assert the checker consumes the Registry-projected six-field approval action before POST.
+- Use unique synthetic folio/PAN/Aadhaar values per registration variant and assert exactly one
+  POST plus one canonical detail GET per success so the two independent trusted runs cannot pass
+  through a pre-existing row or client retry.
 - Keep synthetic identities out of screenshots/logs except visibly masked values; do not change the
   visual system or add client-side business authority.
 

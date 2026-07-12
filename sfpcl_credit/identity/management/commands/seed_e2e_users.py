@@ -51,7 +51,7 @@ EPIC_006_FINANCE_PERMISSIONS = (
 EPIC_006_MANAGER_PERMISSIONS = (
     "applications.loan_application.read", "members.member.read",
     "members.member.identity_change.approve", "credit.appraisal.review",
-    "credit.appraisal.submit_sanction",
+    "credit.appraisal.submit_sanction", "members.witness.read", "members.witness.update",
 )
 EPIC_006_DOCUMENT_TYPES = (
     "loan_application_form", "borrower_pan", "borrower_aadhaar_ovd",

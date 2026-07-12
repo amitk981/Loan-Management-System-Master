@@ -3996,3 +3996,52 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-12_150856_normal_run
+
+- Completed 006Y8: split witness correction projection into exact contact and protected-identity
+  actions backed by the write's permission, application-scope, maker-checker, and version evaluator.
+- Mounted tests prove exact bodies, one canonical refetch, verbatim disabled reasons, and zero
+  mutation from disabled identity controls. The real-session Playwright contract collects and owns
+  the three required trusted screenshots without route interception or token injection.
+- Frontend build/typecheck/lint and 176 tests pass. Backend check/migration sync and 451 tests pass
+  (7 expected SQLite skips) at 93% coverage.
+- Next action: run 006Y9-member-form-real-session-closure.
+
+# Repair 2026-07-12_152102_repair
+
+- Repaired only 006Y8's strict trusted-browser declaration: the spec is project-relative, all three
+  screenshots are explicit basenames, and scenario prose is outside the parser-owned section.
+- Repository contract validation and one-test Playwright collection pass. Full local frontend and
+  backend gates remain green; independent execution still decides trusted-browser acceptance.
+
+# Repair 2026-07-12_152923_repair
+
+- Diagnosed both trusted-browser failures: contact PATCH and canonical refetch succeeded, but the
+  app restores an authenticated reload to its in-memory `dashboard` page and made no witness read.
+- Kept the full reload, then re-entered Application Detail through the real Applications route
+  before contact and identity persistence assertions. No production behavior or authority changed.
+- Frontend build/typecheck/lint and 176 tests pass. Backend check/migration sync and 451 tests pass
+  (7 expected SQLite skips) at 93% coverage. Playwright collects one declared scenario; outside-
+  sandbox execution remains authoritative for its two runs and three screenshots.
+
+# Repair 2026-07-12_153826_repair
+
+- Diagnosed both trusted runs reaching canonical witness readback before timing out at sign-out: the
+  helper searched for the finance email even though Header renders that email only inside the
+  unopened profile menu.
+- Changed only the Playwright helper to open the profile menu through the visible seeded finance
+  user name, then use the real Sign out action. No production or witness-authority code changed.
+- Frontend build/typecheck/lint and 176 tests pass. Backend check/migration sync and 451 tests pass
+  (7 expected SQLite skips) at 93% coverage. Playwright collects one declared scenario; outside-
+  sandbox execution remains authoritative for its two runs and three screenshots.
+
+## 2026-07-12 15:48:01 - 2026-07-12_153826_repair
+- Agent tool used: codex
+- Slice attempted: 006Y8-witness-maker-checker-and-browser-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_150856_normal_run/.ralph/runs/2026-07-12_153826_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_150856_normal_run/.ralph/runs/2026-07-12_153826_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

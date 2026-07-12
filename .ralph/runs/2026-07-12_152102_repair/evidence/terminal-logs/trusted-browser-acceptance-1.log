@@ -1,0 +1,100 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_150856_normal_run/.ralph/runs/2026-07-12_152102_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/witness-correction-authority.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/witness-correction-authority.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 09:58:05] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "OPTIONS /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "OPTIONS /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "GET /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "OPTIONS /api/v1/loan-applications/?search=LOE2E00601&ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "GET /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "GET /api/v1/loan-applications/?search=LOE2E00601&ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "OPTIONS /api/v1/loan-request-register/?search=LOE2E00601&ordering=-reference_generated_date&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:08] "GET /api/v1/loan-request-register/?search=LOE2E00601&ordering=-reference_generated_date&page_size=20 HTTP/1.1" 200 246
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 2030
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 2305
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 1443
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 2030
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 404 231
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 404 224
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 1443
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 2305
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 1143
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 1143
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 404 224
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 404 231
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 592
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 592
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "POST /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 1493
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 1962
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/4247c2a9-6bae-4ef9-99ef-26e5a86f5d82/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "PATCH /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/4247c2a9-6bae-4ef9-99ef-26e5a86f5d82/ HTTP/1.1" 200 1520
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 1989
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 09:58:09] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+  ✘  1 [chromium] › witness-correction-authority.e2e.spec.ts:15:5 › contact and maker-checker identity corrections persist through routed real sessions (8.2s)
+
+
+  1) [chromium] › witness-correction-authority.e2e.spec.ts:15:5 › contact and maker-checker identity corrections persist through routed real sessions 
+
+    Error: [31mTimed out 5000ms waiting for [39m[2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m
+
+    Locator: getByText('Canonical Contact Road')
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByText('Canonical Contact Road')[22m
+
+
+      32 |   await expect(page.getByText('Canonical Contact Road')).toBeVisible();
+      33 |   await page.reload();
+    > 34 |   await expect(page.getByText('Canonical Contact Road')).toBeVisible();
+         |                                                          ^
+      35 |   await capture(page, 'witness-contact-correction-reloaded.png');
+      36 |
+      37 |   await expect(page.getByText('A different authorised user must correct verified witness identity.')).toBeVisible();
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_150856_normal_run/sfpcl-lms/e2e/witness-correction-authority.e2e.spec.ts:34:58
+
+  1 failed
+    [chromium] › witness-correction-authority.e2e.spec.ts:15:5 › contact and maker-checker identity corrections persist through routed real sessions 
+
+Exit code: 1

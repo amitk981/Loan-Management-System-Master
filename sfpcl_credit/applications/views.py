@@ -260,7 +260,7 @@ def loan_application_witness_detail(request, loan_application_id, witness_id):
     try:
         corrected = correct_witness(witness=witness, payload=parse_json_body(request), actor_user=user, request_ip=request_ip(request), request_user_agent=request_user_agent(request))
     except WitnessCorrectionError as exc:
-        status = 409 if exc.code == "VERSION_CONFLICT" else (403 if exc.code == "MAKER_CHECKER_REQUIRED" else 400)
+        status = 409 if exc.code == "VERSION_CONFLICT" else (403 if exc.code in {"MAKER_CHECKER_REQUIRED", "FORBIDDEN", "OBJECT_ACCESS_DENIED"} else 400)
         return error_response(request, status, exc.code, exc.message, exc.field_errors)
     except ValidationError:
         return error_response(request, 400, "VALIDATION_ERROR", "Witness payload failed validation.")

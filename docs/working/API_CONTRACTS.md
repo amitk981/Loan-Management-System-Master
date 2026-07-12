@@ -2154,11 +2154,12 @@ tokens, and keyed hashes are never returned or audited. Creation writes one meta
 Later shareholding folio/status/count changes or newly created holdings do not change witness read
 evidence. Legacy rows whose creation audit folio does not resolve to exactly one member
 shareholding expose both evidence fields as `null` rather than selecting current facts.
-### Witness correction and resource actions (006Y4, closed by 006Y6)
+### Witness correction and resource actions (006Y4, closed by 006Y8)
 
 - The collection GET additionally returns top-level six-field `actions` for `read` and `create`;
-  each witness returns `version` plus six-field `actions` for `read` and `update`. The same
-  permission/object-access evaluations guard the writes.
+  each witness returns `version` plus six-field `actions` for `read`, `correct_contact`, and
+  `correct_identity`. Contact and identity entries separately project the authority for the exact
+  fields they govern; clients do not infer correction authority from field names.
 - `GET/PATCH /api/v1/loan-applications/{loan_application_id}/witnesses/{witness_id}/` requires
   `members.witness.read/update` respectively and exact application object access.
 - PATCH requires current positive-integer `version` and accepts only `witness_name`, `address`,
@@ -2168,9 +2169,9 @@ shareholding expose both evidence fields as `null` rather than selecting current
 - Verified identity correction requires a different authorised actor from the verification actor.
   Success increments version, stores protected identity, returns masked values, writes masked
   history, and emits metadata-only `applications.witness.corrected` audit evidence.
-- Collection/resource action arrays always contain their read/create or read/update entries in the
-  standard six-field shape. Denied actions remain present with the permission/object-access reason;
-  the public write applies the same permission and application-object checks.
+- Collection/resource action arrays always contain their entries in the standard six-field shape.
+  Denied actions remain present with the exact permission, application-object, or maker-checker
+  reason; projection and PATCH consume the same correction evaluation, including current version.
 
 # Epic 006 authoritative workbench actions (006H4)
 
