@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ClipboardList, Save, CheckCircle2, AlertTriangle, ChevronLeft, ChevronRight, UserRound, Shield, IndianRupee, Signature, Upload, FileCheck } from 'lucide-react';
 import { useRole } from '../../../../contexts/RoleContext';
 import { AuthSessionError } from '../../../../services/authSession';
@@ -19,6 +19,8 @@ interface MP05_NewApplicationProps {
   onNavigateToApplication: (id: string) => void;
 }
 
+const formatCurrency = (value: number) => `₹${value.toLocaleString('en-IN')}`;
+
 const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToApplication }) => {
   const { currentUser } = useRole();
   const [applicationStep, setApplicationStep] = useState<ApplicationStep>('applicant');
@@ -34,6 +36,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
   const [limitProjection, setLimitProjection] = useState<PortalApplicationLimitProjection | null>(null);
   const [limitLoading, setLimitLoading] = useState(true);
   const [limitError, setLimitError] = useState<string | null>(null);
+  const [loanAmountError, setLoanAmountError] = useState<string | null>(null);
   
   const [borrowerApplication, setBorrowerApplication] = useState({
     applicantType: 'individual_farmer',
@@ -67,6 +70,8 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
       sanctionTerms: false,
     },
   });
+  const initialRequestedAmount = useRef(borrowerApplication.requestedAmount);
+  const initialProjectionRequested = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,7 +108,9 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
   };
 
   useEffect(() => {
-    void loadLimitProjection(500000);
+    if (initialProjectionRequested.current) return;
+    initialProjectionRequested.current = true;
+    void loadLimitProjection(initialRequestedAmount.current);
   }, []);
 
   const requiredApplicationDocuments = [
@@ -137,12 +144,12 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
   const allDeclarationsAccepted = Object.values(borrowerApplication.declarations).every(Boolean);
 
   const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
-  const formatCurrency = (value: number) => `₹${value.toLocaleString('en-IN')}`;
   const selectedNominee = nomineeOptions.find(item => item.nominee_id === selectedNomineeId);
 
   const updateApplication = (field: string, value: string | number | boolean) => {
     setApplicationDraftSaved(false);
     setApiMessage(null);
+    if (field === 'requestedAmount') setLoanAmountError(null);
     setBorrowerApplication(prev => ({ ...prev, [field]: value }));
   };
 
@@ -239,8 +246,9 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
       setSavedApplication(draft);
       setApplicationDraftSaved(true);
     } catch (error) {
+      setLoanAmountError(error instanceof AuthSessionError ? error.fieldErrors?.required_loan_amount ?? null : null);
       setApiMessage(error instanceof AuthSessionError
-        ? error.fieldErrors?.nominee_id ?? error.message
+        ? error.fieldErrors?.required_loan_amount ?? error.fieldErrors?.nominee_id ?? error.message
         : 'Draft could not be saved.');
     } finally {
       setSaving(false);
@@ -259,8 +267,9 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
       setSavedApplication(submitted);
       setApplicationSubmitted(true);
     } catch (error) {
+      setLoanAmountError(error instanceof AuthSessionError ? error.fieldErrors?.required_loan_amount ?? null : null);
       setApiMessage(error instanceof AuthSessionError
-        ? error.fieldErrors?.nominee_id ?? error.message
+        ? error.fieldErrors?.required_loan_amount ?? error.fieldErrors?.nominee_id ?? error.message
         : 'Application could not be submitted.');
     } finally {
       setSaving(false);
@@ -436,6 +445,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Required Loan Amount</label>
                   <input type="number" min={1} value={borrowerApplication.requestedAmount} onChange={e => updateApplication('requestedAmount', Number(e.target.value))} onBlur={() => void loadLimitProjection(borrowerApplication.requestedAmount)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+                  {loanAmountError && <p className="text-xs text-red-600 mt-1">{loanAmountError}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Loan Purpose</label>
@@ -575,7 +585,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
                       ['Applicant', borrowerApplication.borrowerName],
                       ['Folio / Shares', `${borrowerApplication.folioNumber} / ${borrowerApplication.sharesHeld}`],
                       ['Requested Amount', formatCurrency(borrowerApplication.requestedAmount)],
-                      ['Maximum Limit', limitProjection?.final_eligible_loan_amount ? formatMoney(limitProjection.final_eligible_loan_amount) : 'Not yet available'],
+                      ['Maximum Limit', limitProjection?.final_eligible_loan_amount ? formatCurrency(Number(limitProjection.final_eligible_loan_amount)) : 'Not yet available'],
                       ['Purpose', borrowerApplication.loanPurpose.replace(/_/g, ' ')],
                       ['Nominee', selectedNominee ? `${selectedNominee.nominee_name}, age ${selectedNominee.age_at_application ?? 'not recorded'}` : 'Not selected'],
                     ].map(([label, value]) => (
@@ -650,13 +660,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
   );
 };
 
-const formatMoney = (value: string) => new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-  maximumFractionDigits: 0,
-}).format(Number(value));
-
-export const PortalApplicationLimitView: React.FC<{
+const PortalApplicationLimitView: React.FC<{
   projection: PortalApplicationLimitProjection | null;
   loading: boolean;
   error: string | null;
@@ -686,7 +690,7 @@ export const PortalApplicationLimitView: React.FC<{
         {cards.map(([label, amount]) => (
           <div key={label} className="rounded-lg border border-green-200 bg-green-50 p-3">
             <div className="text-xs font-medium text-green-700">{label}</div>
-            <div className="mt-1 font-semibold text-green-900">{amount ? formatMoney(amount) : 'Not available'}</div>
+            <div className="mt-1 font-semibold text-green-900">{amount ? formatCurrency(Number(amount)) : 'Not available'}</div>
           </div>
         ))}
       </div>

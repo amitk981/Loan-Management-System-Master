@@ -468,6 +468,7 @@ class PortalMemberApiTests(TestCase):
 
     def test_portal_limit_projection_uses_current_verified_facts_and_redacts_internal_authority(self):
         today = timezone.localdate()
+        calculation_date = today - timedelta(days=1)
         IndividualMemberProfile.objects.create(
             member=self.member,
             first_name="Ganesh",
@@ -479,15 +480,15 @@ class PortalMemberApiTests(TestCase):
             service_type="employment",
             recipient_entity_type="subsidiary",
             recipient_entity_id=uuid4(),
-            service_from=today - timedelta(days=1096),
-            service_to=today,
+            service_from=calculation_date - timedelta(days=1096),
+            service_to=calculation_date,
             evidence_reference="PRIVATE-EVIDENCE-REF",
             verified_by_user=self.staff_user,
             verified_at=timezone.now(),
         )
         result = ActiveMemberStatusModule().calculate(
             member_id=self.member.member_id,
-            as_of_date=today,
+            as_of_date=calculation_date,
         )
         authority = ActiveMemberStatus.objects.create(
             member=self.member,
@@ -500,7 +501,7 @@ class PortalMemberApiTests(TestCase):
             evidence_snapshot=result.to_snapshot(),
             verified_by_user=self.staff_user,
             verified_at=timezone.now(),
-            effective_from=today,
+            effective_from=calculation_date,
         )
         self.member.active_member_status_id = authority.active_member_status_id
         self.member.save(update_fields=["active_member_status_id"])
@@ -510,7 +511,7 @@ class PortalMemberApiTests(TestCase):
             number_of_shares=5,
             holding_mode="physical",
             valuation_per_share="100000.00",
-            valuation_effective_date=today,
+            valuation_effective_date=calculation_date,
             pledged_share_count=0,
             available_share_count=5,
             status="active",
@@ -528,7 +529,7 @@ class PortalMemberApiTests(TestCase):
         LoanPolicyConfig.objects.create(
             policy_name="Board policy",
             policy_version="portal-limit-v1",
-            effective_from=today,
+            effective_from=calculation_date,
             short_term_duration_months=12,
             approval_threshold_amount="500000.00",
             default_scale_of_finance_per_acre_amount="20000.00",
@@ -544,6 +545,13 @@ class PortalMemberApiTests(TestCase):
         )
         token = self._portal_token()
 
+        unchanged = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id,
+            as_of_date=calculation_date,
+        )
+        self.assertEqual(unchanged.result_id, result.result_id)
+        self.assertEqual(unchanged.to_snapshot(), authority.evidence_snapshot)
+
         response = self.client.get(
             "/api/v1/portal/application-limit-projection/?requested_amount=95000.00",
             headers={"Authorization": f"Bearer {token}"},
@@ -557,7 +565,7 @@ class PortalMemberApiTests(TestCase):
         self.assertEqual(data["final_eligible_loan_amount"], "90000.00")
         self.assertEqual(data["amount_within_limit_flag"], False)
         self.assertEqual(data["exception_required_flag"], True)
-        self.assertEqual(data["calculated_as_of_date"], today.isoformat())
+        self.assertEqual(data["calculated_as_of_date"], calculation_date.isoformat())
         self.assertEqual(data["calculation_rule_version"], "portal-limit-v1")
         serialized = json.dumps(data)
         for secret in (

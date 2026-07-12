@@ -1,5 +1,18 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006Z8 Portal Limit Provenance, Module, and Interaction Closure
+
+- Borrower-limit authority is revalidated from its stored calculation date, result id, and complete
+  evidence snapshot. Mere date passage no longer expires unchanged authority; future, closed, stale,
+  and evidence-mismatched records remain unavailable.
+- Credit now owns authority validation, current share/verified-land selection, effective policy,
+  lower-limit arithmetic, and advisory derivation behind one redacted projection. The members portal
+  adapter delegates without member-domain evaluation, configuration resolution, or money decisions.
+- MP05 uses its single existing formatter and controlled requested amount, binds authoritative
+  `required_loan_amount` errors to the visible field, and performs a canonical projection GET only
+  after successful submission. The four-state browser contract enters through the real member-login
+  interaction and is declared for Ralph's two trusted external runs.
+
 ## 006Z7 Active-Member Relaxation, Authority, and Evidence-Race Closure
 
 - BR-003/BR-005 recent-member relaxation is evaluated before ordinary inactive rejection: one

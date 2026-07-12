@@ -1,0 +1,21 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_portal_limit_projection_uses_current_verified_facts_and_redacts_internal_authority (sfpcl_credit.tests.test_portal_member_api.PortalMemberApiTests.test_portal_limit_projection_uses_current_verified_facts_and_redacts_internal_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_014006_normal_run/sfpcl_credit/tests/test_portal_member_api.py", line 555, in test_portal_limit_projection_uses_current_verified_facts_and_redacts_internal_authority
+    self.assertEqual(data["status"], "available")
+AssertionError: 'unavailable' != 'available'
+- unavailable
+? --
++ available
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.022s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

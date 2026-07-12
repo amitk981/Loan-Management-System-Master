@@ -1,7 +1,7 @@
 # Slice 006Z8: Portal Limit Provenance, Module, and Interaction Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
@@ -54,7 +54,6 @@ credit module boundary, and close the real submit/refetch/error/browser contract
 - Screenshot: `portal-limit-unavailable.png`
 - Screenshot: `portal-limit-over-limit-advisory.png`
 - Screenshot: `portal-limit-review-maximum.png`
-- Two independent real-login runs must pass with collision-safe data and identical response redaction.
 
 ## Test Cases
 

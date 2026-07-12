@@ -1,0 +1,13 @@
+Commands:
+source scripts/lib/ralph-browser-acceptance.sh
+ralph_validate_trusted_browser_acceptance docs/slices/006Z8-portal-limit-provenance-module-and-interaction-closure.md sfpcl-lms
+RALPH_EVIDENCE_DIR=<repair-evidence>/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/portal-application-limit-authority.e2e.spec.ts --list
+
+Contract validation exit code: 0
+Listing tests:
+- available projection renders only the three server amounts
+- unavailable projection has no invented zero or internal reason
+- over-limit advisory is derived only from the server flag
+- review repeats the canonical server maximum without recalculation
+Total: 4 tests in 1 file
+Exit code: 0

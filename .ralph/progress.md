@@ -4606,3 +4606,82 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-13_014006_normal_run
+
+- Completed 006Z8: credit validates active-member authority from the stored calculation date and
+  complete persisted snapshot, so unchanged evidence survives date passage without accepting future,
+  closed, stale, or mismatched authority.
+- Moved all borrower-limit decisions into one credit projection; the portal adapter delegates and
+  MP05 renders only server amounts/advisory with visible amount validation and canonical refetch.
+- Frontend gates pass with 204 tests; backend gates pass with 494 tests, 12 expected PostgreSQL-only
+  skips, and 93% coverage. Playwright collects all four trusted screenshot cases.
+- Next: architecture review, then 007A approval matrix configuration.
+
+# Run 2026-07-13_015523_repair
+
+- Repaired 006Z8's trusted-browser contract metadata: a redundant prose bullet inside the strict
+  acceptance section was parsed as an unknown entry, so independent validation never launched the
+  declared spec. The two-run requirement remains in the slice's evidence requirements.
+- The validator now accepts the exact spec and four screenshot basenames; Playwright collects all
+  four cases. Local Chromium remains sandbox-denied before test execution, so Ralph owns both
+  trusted external runs and screenshot generation.
+- Frontend build/typecheck/lint and 204 tests pass. Backend check/migration sync and 494 tests pass
+  with 12 expected PostgreSQL-only skips at 93% coverage. No production code changed in repair.
+- Next: independent validation, then the due architecture review before 007A.
+
+# Run 2026-07-13_020824_repair
+
+- Diagnosed the exact trusted-browser failure: every case timed out before reaching MP05 because the
+  fixture's storage shortcut did not mount the authenticated borrower portal in the trusted run.
+- Replaced only that shortcut with the established real member-login interaction and exact sidebar
+  action; all four limit assertions, screenshot names, response redaction, and production code remain
+  unchanged.
+- Playwright collects four cases. Local Chromium is sandbox-denied before test execution. Frontend
+  build/typecheck/lint and 204 tests pass; backend check/migration sync and 494 tests pass with 12
+  expected PostgreSQL-only skips at 93% coverage.
+- Next: independent trusted browser validation, then the due architecture review before 007A.
+
+# Run 2026-07-13_022253_repair
+
+- Repaired only 006Z8's demonstrated trusted-browser navigation race: the real login still mounts
+  the real portal, while the visible exact sidebar control now invokes its native click without a
+  pointer-stability window in which portal-shell remounting can detach it.
+- The browser contract and four-case collection pass. Local Chromium remains sandbox-denied before
+  test bodies; independent validation owns both trusted runs and the four screenshots.
+- Frontend build/typecheck/lint and 204 tests pass. Backend check/migration sync and 494 tests pass
+  with 12 expected skips and 93% coverage. No production code changed in this repair.
+- Next: independent validation, then the due architecture review before sharpened 007A.
+
+# Run 2026-07-13_023437_repair
+
+- Diagnosed the repeated trusted-browser failure as an incomplete dashboard fixture: its successful
+  response omitted required member fields, so MP03 threw during render and React detached or removed
+  the portal navigation control before MP05 mounted.
+- Repaired only the browser contract and its regression: the fixture now satisfies the typed portal
+  dashboard shape and uses the rendered dashboard's exact `New Loan Application` action.
+- Playwright collects four cases. Local Chromium is sandbox-denied before test bodies. Frontend
+  build/typecheck/lint and 205 tests pass; backend check/migration sync and 494 tests pass with 12
+  expected skips and 93% coverage.
+- Next: independent trusted browser validation, then the due architecture review before sharpened 007A.
+
+# Run 2026-07-13_024405_repair
+
+- Diagnosed the trusted-browser request-cardinality failure: React development StrictMode replayed
+  MP05's initial projection effect, producing two identical borrower-limit GETs in both trusted runs.
+- Added a StrictMode-mounted regression that failed with two projection calls, then guarded the
+  initial projection as a one-shot request; the focused test now proves exactly one GET.
+- Frontend build/typecheck/lint and all 205 tests pass. Backend check/migration sync and all 494
+  tests pass with 12 expected PostgreSQL-only skips and 93% coverage. Playwright collects all four
+  cases; local Chromium remains sandbox-denied before test execution.
+- Next: independent trusted browser validation, then the due architecture review before sharpened 007A.
+
+## 2026-07-13 02:53:43 - 2026-07-13_024405_repair
+- Agent tool used: codex
+- Slice attempted: 006Z8-portal-limit-provenance-module-and-interaction-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_014006_normal_run/.ralph/runs/2026-07-13_024405_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_014006_normal_run/.ralph/runs/2026-07-13_024405_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

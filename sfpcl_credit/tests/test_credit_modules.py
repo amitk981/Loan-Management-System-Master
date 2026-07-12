@@ -348,6 +348,7 @@ class CreditEligibilityModuleTests(TestCase):
             )
         )
         self.assertTrue(appraisal_path.is_file())
+
         appraisal_source = appraisal_path.read_text()
         appraisal_tree = ast.parse(appraisal_source)
         for source in (services_source, views_source, appraisal_source):
@@ -409,6 +410,19 @@ class CreditEligibilityModuleTests(TestCase):
                 if isinstance(node, ast.ClassDef)
             },
         )
+
+    def test_portal_limit_adapter_delegates_every_credit_decision(self):
+        package_root = Path(__file__).resolve().parents[1]
+        portal_source = (package_root / "members" / "portal_services.py").read_text()
+        projection_body = portal_source.split("def application_limit_projection", 1)[1].split("\ndef ", 1)[0]
+
+        self.assertIn("project_borrower_limit", projection_body)
+        for forbidden in (
+            "ActiveMemberStatus", "ActiveMemberStatusModule", "Shareholding.objects",
+            "LandHolding.objects", "resolve_effective_loan_policy", "calculate_limit_amounts",
+            "amount_within_limit_flag", "exception_required_flag",
+        ):
+            self.assertNotIn(forbidden, projection_body)
 
     def test_boundary_import_inspection_resolves_package_alias_imports(self):
         tree = ast.parse(

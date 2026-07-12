@@ -1,0 +1,9 @@
+Command:
+RALPH_EVIDENCE_DIR=<repair-evidence>/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/portal-application-limit-authority.e2e.spec.ts
+
+Result: Chromium launch denied before every test body.
+Exact platform failure:
+FATAL: mach_port_rendezvous.cc(399)] Check failed: kr == KERN_SUCCESS. bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer: Permission denied (1100)
+
+No screenshots were created or fabricated. Independent Ralph validation owns the two trusted runs.
+Exit code: 1

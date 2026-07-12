@@ -83,6 +83,15 @@ Medium
 - Resolver authority must come from its documented manage/read permissions and effective data; do
   not add a caller-authored global-authority Boolean or hard-coded role-name switch.
 
+## Run-Ahead Sharpening Review (006Z8, 2026-07-13)
+
+- Keep approval resolution wholly approval-owned, mirroring the completed credit borrower-limit
+  boundary: callers provide the typed source facts and render/transport the immutable resolver
+  projection without duplicating amount-range, condition, director-count, or register decisions.
+- Preserve the exact effective decision date in the resolved snapshot; later wall-clock passage must
+  not rewrite a historical case's rule provenance, while superseded/current routing still resolves
+  strictly from the requested decision date and versioned configuration.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated
