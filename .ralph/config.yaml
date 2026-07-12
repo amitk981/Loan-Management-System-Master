@@ -74,7 +74,11 @@ agent:
 run:
   default_iterations: 1
   max_iterations: 3
+  # A repeated unchanged failure receives at most this many repair attempts.
   max_retries: 2
+  # When validation progresses to a different failure signature, keep repairing
+  # the same quarantined worktree up to this overall safety ceiling.
+  max_progressive_repairs: 5
   require_clean_git: true
   use_worktree: true
   allow_no_worktree_override: false

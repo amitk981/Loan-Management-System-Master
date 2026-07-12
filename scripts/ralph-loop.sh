@@ -3,9 +3,9 @@
 # Usage: ./scripts/ralph-loop.sh [max_iterations]   (default 25)
 #
 # Per iteration: one normal Ralph run (preflight -> agent -> gates -> commit -> merge -> push).
-# On a failed run: the bounded repair budget from run.max_retries is attempted.
-# The loop stops when: the queue is empty, a slice still fails after that budget,
-# the same failure repeats unchanged, or a slice is vetoed by the owner.
+# On a failed run: the same quarantined worktree is repaired until validation is
+# green, an unchanged failure exhausts run.max_retries, or the progressive repair
+# safety ceiling is reached. The queue never advances from a red slice.
 set -uo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
@@ -25,6 +25,7 @@ loop_log=".ralph/logs/loop-$(date '+%Y-%m-%d_%H%M%S').log"
 last_out=".ralph/logs/last-run-output.log"
 review_failures_this_loop=0
 max_repair_attempts="$(ralph_max_repair_attempts .ralph/config.yaml)"
+max_progressive_repair_attempts="$(ralph_max_progressive_repair_attempts .ralph/config.yaml)"
 
 # Loop mutex: a second concurrent loop makes every run fail preflight on the
 # other loop's live run lock, burning this loop's failure budget on collisions.
@@ -111,18 +112,25 @@ switch_agent_or_stop() {
 
 run_bounded_repair() {
   local repair_status="${1:-1}"
-  local previous_failure_signature="" current_failure_signature=""
-  local repair_attempt
+  local current_failure_signature="" next_failure_signature=""
+  local repairs_for_signature=0 total_repair_attempts=0
   local repair_args=()
 
   if ralph_repair_context_is_resumable "$repo_root" "$repo_root/.ralph/repair-context.json"; then
-    previous_failure_signature="$(ralph_repair_context_value "$repo_root/.ralph/repair-context.json" failure_signature)"
+    current_failure_signature="$(ralph_repair_context_value "$repo_root/.ralph/repair-context.json" failure_signature)"
     echo "Repair will reuse the quarantined failed worktree." | tee -a "$loop_log"
   fi
-  echo "Run failed. Up to $max_repair_attempts bounded repair attempt(s) are available." | tee -a "$loop_log"
+  echo "Run failed. Repairing the same slice until green: up to $max_repair_attempts attempt(s) per unchanged failure and $max_progressive_repair_attempts progressive attempt(s) overall." | tee -a "$loop_log"
 
-  for ((repair_attempt = 1; repair_attempt <= max_repair_attempts; repair_attempt++)); do
-    echo "Repair attempt $repair_attempt/$max_repair_attempts." | tee -a "$loop_log"
+  while (( total_repair_attempts < max_progressive_repair_attempts )); do
+    if (( repairs_for_signature >= max_repair_attempts )); then
+      echo "Repair reproduced the same failure signature after $repairs_for_signature attempt(s). Stopping this slice without advancing the queue." | tee -a "$loop_log"
+      return "$repair_status"
+    fi
+
+    total_repair_attempts=$((total_repair_attempts + 1))
+    repairs_for_signature=$((repairs_for_signature + 1))
+    echo "Repair attempt $total_repair_attempts/$max_progressive_repair_attempts (failure-signature attempt $repairs_for_signature/$max_repair_attempts)." | tee -a "$loop_log"
     repair_args=(1 --mode repair)
     if ralph_repair_context_is_resumable "$repo_root" "$repo_root/.ralph/repair-context.json"; then
       repair_args+=(--resume-failed)
@@ -131,7 +139,7 @@ run_bounded_repair() {
     repair_status=$?
     if (( repair_status == RALPH_EXIT_AGENT_LIMIT )); then
       switch_agent_or_stop
-      echo "Retrying repair attempt $repair_attempt/$max_repair_attempts with $active_tool." | tee -a "$loop_log"
+      echo "Retrying repair attempt $total_repair_attempts/$max_progressive_repair_attempts with $active_tool." | tee -a "$loop_log"
       run_streamed env AGENT_TOOL="$active_tool" CODEX_REASONING_EFFORT=high ./scripts/afk-dev.sh "${repair_args[@]}"
       repair_status=$?
     fi
@@ -140,19 +148,23 @@ run_bounded_repair() {
     if (( repair_status == 0 )); then
       return 0
     fi
-    if (( repair_attempt < max_repair_attempts )); then
-      current_failure_signature=""
-      if [[ -f "$repo_root/.ralph/repair-context.json" ]]; then
-        current_failure_signature="$(ralph_repair_context_value "$repo_root/.ralph/repair-context.json" failure_signature 2>/dev/null || true)"
-      fi
-      if [[ -n "$previous_failure_signature" && "$current_failure_signature" == "$previous_failure_signature" ]]; then
-        echo "Repair reproduced the same failure signature unchanged. Stopping this slice early instead of burning another identical attempt." | tee -a "$loop_log"
-        return "$repair_status"
-      fi
-      previous_failure_signature="$current_failure_signature"
-      echo "Repair attempt $repair_attempt failed; the next repair will diagnose its newly generated failure-summary.md." | tee -a "$loop_log"
+
+    next_failure_signature=""
+    if [[ -f "$repo_root/.ralph/repair-context.json" ]]; then
+      next_failure_signature="$(ralph_repair_context_value "$repo_root/.ralph/repair-context.json" failure_signature 2>/dev/null || true)"
     fi
+    if [[ -n "$next_failure_signature" && "$next_failure_signature" != "$current_failure_signature" ]]; then
+      current_failure_signature="$next_failure_signature"
+      repairs_for_signature=0
+      echo "Independent validation progressed to a different failure signature; continuing repair in the same worktree." | tee -a "$loop_log"
+    else
+      echo "Independent validation reproduced the current failure signature; its bounded counter remains in force." | tee -a "$loop_log"
+    fi
+
+    echo "Repair attempt $total_repair_attempts failed; the next repair will diagnose its newly generated failure-summary.md." | tee -a "$loop_log"
   done
+
+  echo "Progressive repair safety ceiling reached after $total_repair_attempts attempt(s). Stopping this slice without advancing the queue." | tee -a "$loop_log"
   return "$repair_status"
 }
 

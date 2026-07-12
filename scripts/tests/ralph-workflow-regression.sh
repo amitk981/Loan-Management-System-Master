@@ -40,6 +40,7 @@ trap 'rm -rf "$fixture_dir"' EXIT
 cat > "$fixture_dir/retries.yaml" <<'EOF'
 run:
   max_retries: 2
+  max_progressive_repairs: 5
 EOF
 cat > "$fixture_dir/invalid-retries.yaml" <<'EOF'
 run:
@@ -49,6 +50,10 @@ EOF
   || fail "configured repair-attempt budget was not honored"
 [[ "$(ralph_max_repair_attempts "$fixture_dir/invalid-retries.yaml")" == "1" ]] \
   || fail "invalid repair-attempt budget did not fail safely to one"
+[[ "$(ralph_max_progressive_repair_attempts "$fixture_dir/retries.yaml")" == "5" ]] \
+  || fail "configured progressive repair ceiling was not honored"
+[[ "$(ralph_max_progressive_repair_attempts "$fixture_dir/invalid-retries.yaml")" == "3" ]] \
+  || fail "missing progressive repair ceiling did not fail safely to three"
 
 [[ -f scripts/lib/ralph-repair-context.sh ]] || fail "missing same-worktree repair context helper"
 # shellcheck source=../lib/ralph-repair-context.sh
@@ -305,8 +310,14 @@ if rg -n 'grep -q .*No eligible slice found|grep -q .*has been vetoed by the own
 fi
 rg -q 'ralph_max_repair_attempts' scripts/ralph-loop.sh \
   || fail "Ralph loop ignores run.max_retries"
-rg -q 'repair_attempt <= max_repair_attempts' scripts/ralph-loop.sh \
-  || fail "Ralph loop does not iterate through the configured bounded repair budget"
+rg -q 'ralph_max_progressive_repair_attempts' scripts/ralph-loop.sh \
+  || fail "Ralph loop ignores the overall progressive repair ceiling"
+rg -q 'repairs_for_signature=0' scripts/ralph-loop.sh \
+  || fail "Ralph loop does not reset the per-signature budget after validation progresses"
+rg -q 'repairs_for_signature >= max_repair_attempts' scripts/ralph-loop.sh \
+  || fail "Ralph loop does not stop an unchanged failure at its bounded budget"
+rg -q 'total_repair_attempts < max_progressive_repair_attempts' scripts/ralph-loop.sh \
+  || fail "Ralph loop does not continue through distinct failures up to the safety ceiling"
 rg -q -- '--resume-failed' scripts/ralph-loop.sh \
   || fail "Ralph loop does not reuse the failed worktree during bounded repairs"
 rg -q 'ralph_repair_context_value' scripts/afk-dev.sh \
