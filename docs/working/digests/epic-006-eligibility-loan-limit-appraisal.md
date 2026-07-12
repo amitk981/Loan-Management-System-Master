@@ -1,5 +1,13 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006Z6 Active-Member Evidence Atomicity And History Closure
+
+- Results include complete qualifying dated service and distinct relaxation evidence; every review
+  fact participates in result provenance and the persisted snapshot. Reason alone cannot relax.
+- Verification locks member and evidence rows and enforces forward-only immutable history.
+- Member Registry and active verification consume one member-owned authority evaluator; portal
+  projections remain redacted.
+
 ## 006X9 Isolated Credit Object-Scope Matrix
 
 - The eight public credit action codes now have one explicit table of unique, independently

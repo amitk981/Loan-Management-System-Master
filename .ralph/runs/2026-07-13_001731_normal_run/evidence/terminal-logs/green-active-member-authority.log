@@ -1,0 +1,35 @@
+Creating test database for alias 'default'...
+Found 25 test(s).
+System check identified no issues (0 silenced).
+..................EE..sss
+======================================================================
+ERROR: test_public_registry_enforces_read_permission_and_member_ownership (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_public_registry_enforces_read_permission_and_member_ownership)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_001731_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 158, in test_public_registry_enforces_read_permission_and_member_ownership
+    with patch("sfpcl_credit.members.modules.member_registry.evaluate_object_access", return_value=denied_result), self.assertRaises(PermissionDenied) as denied:
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1437, in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1410, in get_original
+    raise AttributeError(
+AttributeError: <module 'sfpcl_credit.members.modules.member_registry' from '/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_001731_normal_run/sfpcl_credit/members/modules/member_registry.py'> does not have the attribute 'evaluate_object_access'
+
+======================================================================
+ERROR: test_registry_identity_approval_projection_matches_object_denied_write (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_registry_identity_approval_projection_matches_object_denied_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_001731_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 363, in test_registry_identity_approval_projection_matches_object_denied_write
+    with patch(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1437, in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/mock.py", line 1410, in get_original
+    raise AttributeError(
+AttributeError: <module 'sfpcl_credit.members.modules.member_registry' from '/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_001731_normal_run/sfpcl_credit/members/modules/member_registry.py'> does not have the attribute 'evaluate_object_access'
+
+----------------------------------------------------------------------
+Ran 25 tests in 0.197s
+
+FAILED (errors=2, skipped=3)
+Destroying test database for alias 'default'...

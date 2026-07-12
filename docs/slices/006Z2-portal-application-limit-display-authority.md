@@ -113,7 +113,14 @@ Medium
   retained after a canonical refetch and that no member identifier, row-level evidence reference, or
   staff verification action leaks into the borrower response.
 
+## Run-Ahead Sharpening Review (006Z6, 2026-07-13)
+
+- Accept authority only from the current effective record whose complete supply/service/relaxation
+  snapshot matches its result provenance; stale, closed, manual, or reason-only facts are unavailable.
+- Redact all row/recipient IDs, references, verifier facts, decision reason, and effective-record ID.
+
 ## Done Checklist
+
 - [ ] Execution plan written
 - [ ] Tests written or updated
 - [ ] Code implemented

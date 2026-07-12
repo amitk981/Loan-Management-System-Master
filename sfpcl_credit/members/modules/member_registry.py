@@ -3,10 +3,9 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from sfpcl_credit.identity.models import AuditLog
-from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.identity.modules.object_permissions import evaluate_object_access
 from sfpcl_credit.members import services
 from sfpcl_credit.members.models import Member, MemberChangeHistory, MemberIdentityChangeRequest
+from sfpcl_credit.members.modules.member_authority import evaluate_member_authority
 from sfpcl_credit.members.protected_identity import identity_hash, mask_protected_identity, protected_identity_token
 
 
@@ -15,13 +14,9 @@ class MemberRegistry:
 
     @staticmethod
     def _member_access(*, actor_user, member, permission):
-        return evaluate_object_access(
-            actor_user_id=actor_user.user_id,
-            actor_team_codes=actor_user.team_codes(),
-            actor_permission_codes=auth_service.effective_permission_codes(actor_user),
-            required_permission=permission,
-            object_owner_user_id=member.created_by_user_id,
-            allow_global=True,
+        return evaluate_member_authority(
+            actor_user=actor_user, member=member, permission=permission,
+            globally_authorized=True,
         )
 
     @staticmethod

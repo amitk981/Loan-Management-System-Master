@@ -391,6 +391,97 @@ class ActiveMemberGovernanceTests(TestCase):
         self.assertEqual(supported.member_active_check, "relaxation")
         self.assertEqual(supported.qualification_route, "three_year_service")
 
+    def test_complete_service_evidence_is_snapshotted_and_changes_result_provenance(self):
+        evidence = MemberServiceEvidence.objects.create(
+            member=self.member, service_type="employment", recipient_entity_type="subsidiary",
+            recipient_entity_id=uuid.uuid4(), service_from=date(2023, 3, 31),
+            service_to=date(2026, 3, 31), evidence_reference="HR-REVIEW-001",
+            verified_by_user=self.checkers[0], verified_at=timezone.now(),
+        )
+        before = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=date(2026, 3, 31)
+        )
+        row = before.to_snapshot()["service_evidence_rows"][0]
+        self.assertEqual(row["member_service_evidence_id"], str(evidence.pk))
+        self.assertEqual(row["service_type"], "employment")
+        self.assertEqual(row["recipient_entity_type"], "subsidiary")
+        self.assertEqual(row["recipient_entity_id"], str(evidence.recipient_entity_id))
+        self.assertEqual(row["service_from"], "2023-03-31")
+        self.assertEqual(row["service_to"], "2026-03-31")
+        self.assertEqual(row["evidence_reference"], "HR-REVIEW-001")
+        self.assertEqual(row["verified_by_user_id"], str(self.checkers[0].user_id))
+        self.assertIsNotNone(row["verified_at"])
+        evidence.evidence_reference = "HR-REVIEW-002"
+        evidence.save(update_fields=["evidence_reference"])
+        after = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=date(2026, 3, 31)
+        )
+        self.assertNotEqual(before.result_id, after.result_id)
+
+    def test_relaxation_requires_distinct_persisted_evidence_and_preserves_it(self):
+        ProduceSupplyRecord.objects.filter(member=self.member).exclude(financial_year="2025-26").delete()
+        result = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=date(2026, 3, 31)
+        )
+        with self.assertRaises(ActiveMemberStatusConflict) as denied:
+            ActiveMemberStatusModule().verify(
+                actor=self.checkers[0], member_id=self.member.member_id, result_id=result.result_id,
+                decision="relaxation", reason="Committee reason only.", version=self.member.version,
+                as_of_date=date(2026, 3, 31),
+            )
+        self.assertEqual(denied.exception.code, "MISSING_RELAXATION_EVIDENCE")
+        MemberServiceEvidence.objects.create(
+            member=self.member, service_type="relaxation", recipient_entity_type="sfpcl",
+            service_from=date(2025, 4, 1), service_to=date(2026, 3, 31),
+            evidence_reference="RELAX-001", verified_by_user=self.checkers[0],
+            verified_at=timezone.now(),
+        )
+        supported = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=date(2026, 3, 31)
+        )
+        verified = ActiveMemberStatusModule().verify(
+            actor=self.checkers[0], member_id=self.member.member_id, result_id=supported.result_id,
+            decision="relaxation", reason="Committee decision.", version=self.member.version,
+            as_of_date=date(2026, 3, 31),
+        )
+        self.assertEqual(verified["result"]["relaxation_evidence"]["evidence_reference"], "RELAX-001")
+        self.assertEqual(ActiveMemberStatus.objects.get().evidence_snapshot, verified["result"])
+
+    def test_backdated_and_same_date_decisions_leave_history_unchanged(self):
+        first = ActiveMemberStatusModule().calculate(member_id=self.member.member_id, as_of_date=date(2026, 3, 31))
+        ActiveMemberStatusModule().verify(
+            actor=self.checkers[0], member_id=self.member.member_id, result_id=first.result_id,
+            decision="active", reason="First review.", version=self.member.version,
+            as_of_date=date(2026, 3, 31),
+        )
+        original = ActiveMemberStatus.objects.get()
+        original_snapshot = (original.effective_from, original.effective_to, original.evidence_snapshot)
+        self.member.refresh_from_db()
+        for attempted_date in (date(2026, 3, 30), date(2026, 3, 31)):
+            result = ActiveMemberStatusModule().calculate(member_id=self.member.member_id, as_of_date=attempted_date)
+            with self.assertRaises(ActiveMemberStatusConflict) as denied:
+                ActiveMemberStatusModule().verify(
+                    actor=self.checkers[0], member_id=self.member.member_id, result_id=result.result_id,
+                    decision="inactive", reason="Chronology test.", version=self.member.version,
+                    as_of_date=attempted_date,
+                )
+            self.assertEqual(denied.exception.code, "INVALID_EFFECTIVE_DATE")
+        original.refresh_from_db()
+        self.assertEqual((original.effective_from, original.effective_to, original.evidence_snapshot), original_snapshot)
+        self.assertEqual(ActiveMemberStatus.objects.count(), 1)
+        later_date = date(2026, 4, 1)
+        later = ActiveMemberStatusModule().calculate(member_id=self.member.member_id, as_of_date=later_date)
+        ActiveMemberStatusModule().verify(
+            actor=self.checkers[0], member_id=self.member.member_id, result_id=later.result_id,
+            decision="inactive", reason="Later review.", version=self.member.version,
+            as_of_date=later_date,
+        )
+        original.refresh_from_db()
+        self.assertEqual(original.effective_from, date(2026, 3, 31))
+        self.assertEqual(original.effective_to, date(2026, 3, 31))
+        self.assertEqual(original.evidence_snapshot, original_snapshot[2])
+        self.assertEqual(ActiveMemberStatus.objects.filter(effective_to__isnull=True).count(), 1)
+
     def test_verify_persists_effective_record_and_member_points_to_its_primary_key(self):
         result = ActiveMemberStatusModule().calculate(
             member_id=self.member.member_id, as_of_date=date(2026, 3, 31)

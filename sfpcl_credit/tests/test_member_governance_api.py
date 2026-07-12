@@ -155,7 +155,7 @@ class MemberGovernanceApiTests(TestCase):
 
         self.assertEqual(MemberRegistry.get(member.member_id, owner).member_id, member.member_id)
         denied_result = ObjectAccessResult(False, "owner_mismatch", "OBJECT_ACCESS_DENIED", "members.member.read")
-        with patch("sfpcl_credit.members.modules.member_registry.evaluate_object_access", return_value=denied_result), self.assertRaises(PermissionDenied) as denied:
+        with patch("sfpcl_credit.members.modules.member_registry.evaluate_member_authority", return_value=denied_result), self.assertRaises(PermissionDenied) as denied:
             MemberRegistry.get(member.member_id, owner)
         self.assertEqual(str(denied.exception), "You cannot access this member.")
         with self.assertRaises(PermissionDenied):
@@ -361,7 +361,7 @@ class MemberGovernanceApiTests(TestCase):
         )
 
         with patch(
-            "sfpcl_credit.members.modules.member_registry.evaluate_object_access",
+            "sfpcl_credit.members.modules.member_registry.evaluate_member_authority",
             return_value=denied,
         ):
             action = MemberRegistry.identity_approval_action(member, change, checker)

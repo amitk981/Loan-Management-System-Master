@@ -1,7 +1,7 @@
 # Slice 006Z6: Active-Member Evidence Atomicity and History Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review

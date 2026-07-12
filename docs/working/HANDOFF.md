@@ -1,24 +1,22 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_000653_normal_run
+2026-07-13_001731_normal_run
 
 ## Current Status
 
-006Y14 is complete. Witness PATCH resolves application authority before child lookup, so existing
-out-of-scope and unknown parents are indistinguishable `403 OBJECT_ACCESS_DENIED` facts. Contact and
-identity correction matrices independently execute permission, scope, payload, version,
-maker-checker, and success behavior with complete loser-evidence comparisons.
+006Z6 is complete. Active-member results snapshot complete dated service and distinct relaxation
+evidence into deterministic provenance; reason-only relaxation is rejected. Verification locks the
+exact evidence rows and enforces forward-only effective history. Member Registry and active-status
+verification share the member authority evaluator.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-13_000653_normal_run/`. Frontend build/typecheck/lint and 202
-tests pass; backend check/migration sync and 473 tests pass with 93% coverage. The declared browser
-spec collects; the orchestrator owns both trusted real-session screenshot runs. No schema,
-dependency, frontend, source, or protected-file change was made.
+Evidence is under `.ralph/runs/2026-07-13_001731_normal_run/`. Frontend build/typecheck/lint and 202
+tests pass; backend check/migration sync and 476 tests pass at 94% coverage. Active-member plus five
+credit PostgreSQL races pass twice. No schema, dependency, frontend, source, or protected-file change.
 
 ## Next Run
 
-Run 006Z6 next. Its slice is already concretely sharpened from the latest architecture-review
-findings. Run dependent 006Z2 only after 006Z6, so borrower limit authority cannot consume a
-non-atomic or incomplete active-member evidence record.
+Run sharpened 006Z2 next. It must consume only the current provenance-matching effective record and
+redact all internal supply/service/relaxation evidence from the borrower projection.

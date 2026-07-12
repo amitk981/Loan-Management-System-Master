@@ -1,0 +1,34 @@
+Creating test database for alias 'default'...
+Found 3 test(s).
+System check identified no issues (0 silenced).
+EFF
+======================================================================
+ERROR: test_complete_service_evidence_is_snapshotted_and_changes_result_provenance (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_complete_service_evidence_is_snapshotted_and_changes_result_provenance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_001731_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 404, in test_complete_service_evidence_is_snapshotted_and_changes_result_provenance
+    row = before.to_snapshot()["service_evidence_rows"][0]
+          ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'service_evidence_rows'
+
+======================================================================
+FAIL: test_relaxation_requires_distinct_persisted_evidence_and_preserves_it (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_relaxation_requires_distinct_persisted_evidence_and_preserves_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_001731_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 426, in test_relaxation_requires_distinct_persisted_evidence_and_preserves_it
+    with self.assertRaises(ActiveMemberStatusConflict) as denied:
+AssertionError: ActiveMemberStatusConflict not raised
+
+======================================================================
+FAIL: test_backdated_and_same_date_decisions_leave_history_unchanged (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_backdated_and_same_date_decisions_leave_history_unchanged)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_001731_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 462, in test_backdated_and_same_date_decisions_leave_history_unchanged
+    with self.assertRaises(ActiveMemberStatusConflict) as denied:
+AssertionError: ActiveMemberStatusConflict not raised
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.030s
+
+FAILED (failures=2, errors=1)
+Destroying test database for alias 'default'...

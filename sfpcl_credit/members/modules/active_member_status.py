@@ -9,7 +9,6 @@ from django.utils import timezone
 
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.identity.modules.object_permissions import evaluate_object_access
 from sfpcl_credit.members.models import (
     ActiveMemberStatus,
     Member,
@@ -17,6 +16,7 @@ from sfpcl_credit.members.models import (
     MemberServiceEvidence,
     ProduceSupplyRecord,
 )
+from sfpcl_credit.members.modules.member_authority import evaluate_member_authority
 
 
 QUALIFYING_ENTITY_TYPES = frozenset({"sfpcl", "subsidiary", "step_down_subsidiary"})
@@ -52,6 +52,19 @@ class SupplyRowProjection:
 
 
 @dataclass(frozen=True)
+class ServiceEvidenceProjection:
+    member_service_evidence_id: str
+    service_type: str
+    service_from: str
+    service_to: str
+    recipient_entity_type: str
+    recipient_entity_id: str | None
+    evidence_reference: str
+    verified_by_user_id: str
+    verified_at: str
+
+
+@dataclass(frozen=True)
 class ActiveMemberStatusResult:
     result_id: str
     calculated_as_of_date: str
@@ -64,6 +77,8 @@ class ActiveMemberStatusResult:
     continuous_supply_years: int
     qualification_route: str | None
     supply_rows: tuple[SupplyRowProjection, ...]
+    service_evidence_rows: tuple[ServiceEvidenceProjection, ...]
+    relaxation_evidence: dict | None
 
     def to_snapshot(self):
         return {
@@ -78,13 +93,15 @@ class ActiveMemberStatusResult:
             "continuous_supply_years": self.continuous_supply_years,
             "qualification_route": self.qualification_route,
             "supply_rows": [row.__dict__ for row in self.supply_rows],
+            "service_evidence_rows": [row.__dict__ for row in self.service_evidence_rows],
+            "relaxation_evidence": self.relaxation_evidence,
         }
 
 
 class ActiveMemberStatusModule:
     """Public member-owned projection for BR-004/BR-007 evidence."""
 
-    def calculate(self, *, member_id, as_of_date=None):
+    def calculate(self, *, member_id, as_of_date=None, lock_evidence=False):
         calculated_as_of_date = as_of_date or timezone.localdate()
         member = (
             Member.objects.select_related("individual_profile", "producer_institution_profile")
@@ -94,9 +111,21 @@ class ActiveMemberStatusModule:
         if member is None:
             raise Member.DoesNotExist("Member was not found.")
         services_availed = self._services_availed(member)
+        supply_query = member.produce_supply_records.select_related("producer_institution_member")
+        service_query = member.service_evidence.order_by("service_from", "member_service_evidence_id")
+        if lock_evidence:
+            supply_query = supply_query.select_for_update(of=("self",))
+            service_query = service_query.select_for_update()
         rows = tuple(
             self._project_row(row, calculated_as_of_date)
-            for row in member.produce_supply_records.select_related("producer_institution_member").all()
+            for row in supply_query.all()
+        )
+        service_rows = tuple(self._project_service_evidence(row) for row in service_query.all())
+        qualifying_service_rows = tuple(
+            row for row in service_rows if self._service_evidence_qualifies(row, calculated_as_of_date)
+        )
+        relaxation_evidence = next(
+            (row.__dict__ for row in qualifying_service_rows if row.service_type == "relaxation"), None
         )
         qualifying_years = [row.financial_year for row in rows if row.qualifying]
         continuity = longest_continuous_financial_years(qualifying_years)
@@ -104,38 +133,35 @@ class ActiveMemberStatusModule:
             return self._result(
                 member, calculated_as_of_date, "fail", "ineligible",
                 f"BR-003 requires active member status or relaxation evidence; member status is {member.membership_status}.",
-                services_availed, continuity, None, rows,
+                services_availed, continuity, None, rows, qualifying_service_rows, relaxation_evidence,
             )
         if services_availed and continuity >= 4:
             return self._result(
                 member, calculated_as_of_date, "pass", "pending",
                 "Active-member status is supported by services availed and four continuous verified financial years of qualifying produce supply. Default, document, terms, purpose, and nominee checks are pending.",
-                services_availed, continuity, "four_year_supply", rows,
+                services_availed, continuity, "four_year_supply", rows, qualifying_service_rows, relaxation_evidence,
             )
         employment_years = self._employment_or_service_years(member)
-        service_evidence = self._qualifying_service_evidence(member, calculated_as_of_date)
+        service_evidence = next((row for row in qualifying_service_rows if row.service_type != "relaxation"), None)
         if member.member_type == "individual_farmer" and service_evidence is not None:
             return self._result(
                 member, calculated_as_of_date, "relaxation", "pending",
                 "BR-006 active-member status is supported by three continuous years of recorded employment or service.",
-                services_availed, continuity, "three_year_service", rows,
+                services_availed, continuity, "three_year_service", rows, qualifying_service_rows, relaxation_evidence,
             )
         if (
-            ActiveMemberStatus.objects.filter(
-                member=member, status="relaxation", effective_from__lte=calculated_as_of_date,
-                effective_to__isnull=True,
-            ).exclude(relaxation_reason="").exclude(evidence_summary="").exists()
+            relaxation_evidence is not None
             and continuity >= 1
         ):
             return self._result(
                 member, calculated_as_of_date, "relaxation", "pending",
                 "Recorded one-year active-member relaxation is supported by qualifying verified produce supply evidence.",
-                services_availed, continuity, "recorded_one_year_relaxation", rows,
+                services_availed, continuity, "recorded_one_year_relaxation", rows, qualifying_service_rows, relaxation_evidence,
             )
         return self._result(
             member, calculated_as_of_date, "manual_evidence_required", "pending_manual_evidence",
             "BR-004 through BR-007 require persisted service usage and continuous qualifying verified supply history or relaxation evidence; manual evidence is required.",
-            services_availed, continuity, None, rows,
+            services_availed, continuity, None, rows, qualifying_service_rows, relaxation_evidence,
         )
 
     @transaction.atomic
@@ -155,20 +181,23 @@ class ActiveMemberStatusModule:
         ).first()
         if member is None:
             raise ActiveMemberObjectAccessDenied("You cannot access this member.")
-        role_code = getattr(getattr(actor, "primary_role", None), "role_code", "")
-        access = evaluate_object_access(
-            actor_user_id=actor.user_id, actor_team_codes=actor.team_codes(),
-            actor_permission_codes=auth_service.effective_permission_codes(actor),
-            required_permission=VERIFY_PERMISSION, object_owner_user_id=member.created_by_user_id,
-            allow_global=(member.created_by_user_id is None or role_code in {"system_admin", "credit_manager"}),
+        access = evaluate_member_authority(
+            actor_user=actor, member=member, permission=VERIFY_PERMISSION
         )
         if not access.allowed:
             raise ActiveMemberObjectAccessDenied("You cannot access this member.")
         if version != member.version:
             raise ActiveMemberStatusConflict("STALE_WRITE", "Member has changed; refresh and retry.")
-        current = self.calculate(member_id=member.member_id, as_of_date=as_of_date)
+        current = self.calculate(member_id=member.member_id, as_of_date=as_of_date, lock_evidence=True)
         if str(result_id) != current.result_id:
             raise ActiveMemberStatusConflict("STALE_RESULT", "Active-member result has changed; recalculate before verifying.")
+        prior = ActiveMemberStatus.objects.select_for_update().filter(
+            member=member, effective_to__isnull=True
+        ).first()
+        if prior is not None and as_of_date <= prior.effective_from:
+            raise ActiveMemberStatusConflict(
+                "INVALID_EFFECTIVE_DATE", "A new active-member decision must start after the current decision."
+            )
         if ActiveMemberStatus.objects.filter(
             member=member, effective_to__isnull=True, result_id=current.result_id
         ).exists():
@@ -185,6 +214,10 @@ class ActiveMemberStatusModule:
             raise ActiveMemberStatusConflict(
                 "INVALID_DECISION", "A relaxation requires at least one complete qualifying supply year."
             )
+        if decision == "relaxation" and current.relaxation_evidence is None:
+            raise ActiveMemberStatusConflict(
+                "MISSING_RELAXATION_EVIDENCE", "A relaxation requires distinct persisted source evidence."
+            )
 
         old_projection = {
             "active_member_status_id": str(member.active_member_status_id) if member.active_member_status_id else None,
@@ -192,9 +225,9 @@ class ActiveMemberStatusModule:
             "version": member.version,
         }
         instant = timezone.now()
-        ActiveMemberStatus.objects.filter(member=member, effective_to__isnull=True).update(
-            effective_to=as_of_date - timedelta(days=1)
-        )
+        if prior is not None:
+            prior.effective_to = as_of_date - timedelta(days=1)
+            prior.save(update_fields=["effective_to"])
         snapshot = current.to_snapshot()
         entity_types = {
             row.supplied_to_entity_type for row in current.supply_rows if row.qualifying
@@ -254,7 +287,7 @@ class ActiveMemberStatusModule:
         return verification
 
     @staticmethod
-    def _result(member, as_of_date, active_check, overall_result, notes, services, continuity, route, rows):
+    def _result(member, as_of_date, active_check, overall_result, notes, services, continuity, route, rows, service_rows, relaxation_evidence):
         employment_years = ActiveMemberStatusModule._employment_or_service_years(member)
         projection = {
             "calculated_as_of_date": as_of_date.isoformat(),
@@ -267,14 +300,42 @@ class ActiveMemberStatusModule:
             "continuous_supply_years": continuity,
             "qualification_route": route,
             "supply_rows": [row.__dict__ for row in rows],
+            "service_evidence_rows": [row.__dict__ for row in service_rows],
+            "relaxation_evidence": relaxation_evidence,
         }
         digest = hashlib.sha256(
             json.dumps(projection, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest()
         result_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"sfpcl-active-member:{digest}"))
-        return ActiveMemberStatusResult(result_id=result_id, supply_rows=rows, **{
-            key: value for key, value in projection.items() if key != "supply_rows"
+        return ActiveMemberStatusResult(result_id=result_id, supply_rows=rows, service_evidence_rows=service_rows, **{
+            key: value for key, value in projection.items() if key not in {"supply_rows", "service_evidence_rows"}
         })
+
+    @staticmethod
+    def _project_service_evidence(record):
+        return ServiceEvidenceProjection(
+            member_service_evidence_id=str(record.member_service_evidence_id),
+            service_type=record.service_type, service_from=record.service_from.isoformat(),
+            service_to=record.service_to.isoformat(), recipient_entity_type=record.recipient_entity_type,
+            recipient_entity_id=str(record.recipient_entity_id) if record.recipient_entity_id else None,
+            evidence_reference=record.evidence_reference,
+            verified_by_user_id=str(record.verified_by_user_id), verified_at=record.verified_at.isoformat(),
+        )
+
+    @staticmethod
+    def _service_evidence_qualifies(row, as_of_date):
+        try:
+            threshold = as_of_date.replace(year=as_of_date.year - 3)
+        except ValueError:
+            threshold = as_of_date.replace(year=as_of_date.year - 3, day=28)
+        if row.service_type == "relaxation":
+            threshold = as_of_date
+        return (
+            row.recipient_entity_type in QUALIFYING_ENTITY_TYPES
+            and date.fromisoformat(row.service_from) <= threshold
+            and date.fromisoformat(row.service_to) >= as_of_date
+            and bool(row.evidence_reference.strip())
+        )
 
     @staticmethod
     def _services_availed(member):
