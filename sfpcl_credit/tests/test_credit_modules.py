@@ -1045,6 +1045,7 @@ class LoanLimitConcurrencyTests(TransactionTestCase):
         self.assertEqual(audit_projection.pop("request_id"), "concurrency-second")
         final_projection = dict(final)
         final_projection.pop("warnings")
+        final_projection.pop("available_actions")
         self.assertEqual(audit_projection, final_projection)
         self.assertEqual(
             ordering,

@@ -3672,3 +3672,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-12_093545_normal_run
+
+- Completed 006X4: enumerated the public credit action/write trace and aligned appraisal projected
+  permission denials with their authoritative write reasons.
+- Added a failing-first six-field action matrix with denial-side state/audit/workflow proof and
+  corrected the PostgreSQL audit-projection race assertion for resource-only actions.
+- Frontend build/typecheck/lint and 171 tests passed; backend check/migration sync and 412 tests
+  passed at 94% coverage. All five PostgreSQL races and the ADR-0005 dependency scan passed.
+- Next action: run 006Y3-member-registry-and-identity-change-approval-closure.
+
+## 2026-07-12 09:44:23 - 2026-07-12_093545_normal_run
+- Agent tool used: codex
+- Slice attempted: 006X4-credit-action-parity-regression-matrix
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_093545_normal_run/.ralph/runs/2026-07-12_093545_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_093545_normal_run/.ralph/runs/2026-07-12_093545_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

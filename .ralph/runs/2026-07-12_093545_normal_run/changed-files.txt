@@ -1,0 +1,9 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006X4-credit-action-parity-regression-matrix.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M sfpcl_credit/credit/modules/appraisal_workflow.py
+ M sfpcl_credit/tests/test_credit_modules.py
+?? .ralph/runs/2026-07-12_093545_normal_run/
+?? sfpcl_credit/tests/test_credit_action_parity_matrix.py

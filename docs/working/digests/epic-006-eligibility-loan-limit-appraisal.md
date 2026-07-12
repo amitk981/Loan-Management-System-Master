@@ -1,5 +1,17 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006X4 Public Action / Write Matrix Closure
+
+- The public action/write trace now enumerates eligibility, loan limit, appraisal create/update/
+  revalidate/submit, all three review decisions, and approval-owned sanction submission against
+  their authoritative tests and lock boundaries.
+- Failing-first coverage exposed appraisal permission denials whose projected generic reason did
+  not match the public writes. Resource projections now return each write's stable action-specific
+  denial while preserving the existing role, state, provenance, history, and maker-checker rules.
+- The five PostgreSQL races pass: two loan-limit races, duplicate terminal review, rejected-review
+  versus stale patch, and duplicate sanction submission. The race harness excludes resource-only
+  `available_actions` from persisted audit projection comparison.
+
 ## Architecture Review 2026-07-12 - 006X2/006X3 Closure Audit
 
 - 006X3 is substantively closed: Playwright collects the visual and real-server tests, the two-role
