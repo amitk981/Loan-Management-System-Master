@@ -1,5 +1,21 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-13 - Residual Matrix, Evidence, and Portal Authority Closure
+
+- 006X9 removed process-global state, but four advertised IDs execute paired sibling rows and its
+  explicit table validates strings rather than executable cases. `006X10` owns one independently
+  selected substantive row per public action and completeness that resolves/runs the cases.
+- 006Z6 snapshots service/relaxation facts and fixes date intervals, but BR-003/005 recent-member
+  relaxation is rejected before evidence evaluation; Registry/active authority policies diverge;
+  and the required verifier-vs-evidence PostgreSQL races were not added. `006Z7` owns these closures.
+- 006Z2 keeps money arithmetic on the server, but recalculating the dated result with today's date
+  expires unchanged authority, and the members portal adapter duplicates credit orchestration.
+  `006Z8` moves the projection behind credit, validates stored-date provenance, and owns mounted/
+  trusted-browser submit, error, canonical-refetch, redaction, and screenshot proof.
+- M04-FR-001/002 remain under A-053; M04-FR-003 remains under A-054. M04-FR-004..011 retain
+  substantive behavior subject to 006X10/006Z8 regression closure. M02-FR-004..006 and BR-003..007
+  remain partial until 006Z7.
+
 ## 006Z2 Portal Application Limit Display Authority
 
 - A read-only PortalAccount-scoped endpoint exposes only redacted available/unavailable limit facts.

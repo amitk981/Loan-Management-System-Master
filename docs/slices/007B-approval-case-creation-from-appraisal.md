@@ -57,6 +57,15 @@ Medium
   Snapshot the assessment/policy provenance with the matrix projection so later portal/configuration
   changes cannot reroute or reinterpret the existing case.
 
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_004501, 2026-07-13)
+
+- Reject enrichment when the stored loan-limit assessment is absent, stale against the reviewed
+  appraisal/application, or lacks its effective policy provenance. Leave the existing 006G case
+  shell unrouted and byte-for-byte unchanged; do not fall back to portal/current-policy calculation.
+- Exercise the public enrichment seam with exact before/after case, rule, audit, and workflow
+  snapshots for no-rule, stale-assessment, already-enriched, and decided-case paths. A repeat with
+  the identical assessment/rule is idempotent; any conflicting snapshot is a stable `409`.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

@@ -1,5 +1,12 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## Architecture Review 2026-07-13 - Witness Behavioral Matrix Residual
+
+- 006Y14 closes out-of-scope parent enumeration and adds substantive contact/identity corrections,
+  but it omits unknown-field rows, does not project the exact action for scope cases, and does not
+  prove the promised normal `404` for an authorised in-scope missing parent. `006Y15` owns a fully
+  observable, independently selectable two-kind matrix without internal authority mocks.
+
 ## 006Y14 Witness Parent Non-Disclosure and Matrix Closure
 
 - Witness resource PATCH now resolves parent authority through the application-owned module before

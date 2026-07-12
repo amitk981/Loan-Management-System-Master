@@ -2,6 +2,105 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-13 00:49 - Architecture Review 2026-07-13_004501_architecture_review
+
+Reviewed completed product work since architecture-review commit `540eef4`:
+- `006X9-credit-object-scope-isolated-execution-matrix` (`8bb60b6`)
+- `006Y14-witness-parent-nondisclosure-and-matrix-closure` (`47c2cc4`)
+- `006Z6-active-member-evidence-atomicity-and-history-closure` (`0f13c65`)
+- `006Z2-portal-application-limit-display-authority` (`63136ff`)
+
+The review checked `git diff 540eef4...HEAD`, production/test hunks, retained run packets, trusted
+browser/PostgreSQL evidence, Epic 004/006 digests, cited source sections, assumptions, and
+M02-FR-004..006, M04-FR-001..011, and BR-003..007. Standards and spec fidelity were reviewed
+independently. Production code was not changed. `CONTEXT.md` remains truthful, and state/files contain
+no Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - Portal adapter duplicates the credit limit workflow
+
+`members/portal_services.py` selects active authority, shareholding, land, and effective policy,
+then calculates both limits and exception authority. That is a second orchestration path outside the
+credit loan-limit module, contrary to codebase-design §§22.1/42.1-42.3 locality and deep-module
+rules. `006Z8` moves one borrower projection behind the credit boundary; the portal adapter keeps
+only PortalAccount scoping/redaction/transport.
+
+#### Finding 2 - High - Member authority remains caller-controlled and behaviorally divergent
+
+`member_authority.evaluate_member_authority()` exposes `globally_authorized` and embeds concrete
+roles. `MemberRegistry` always passes the bypass while active verification does not, so equivalent
+permissioned non-owners receive different results. Registry tests patch the internal evaluator and
+cannot detect the divergence. This conflicts with codebase-design §§27.1/42.1 and 006Z6's one-policy
+requirement. `006Z7` owns a behavioral public matrix and one hidden policy.
+
+#### Finding 3 - Medium - New UI/module residue violates reuse and dead-code rules
+
+006Z2 added an exported `PortalApplicationLimitView` even though the existing inline card/alert/empty
+compositions express the screen, recorded no required assumption, and duplicated the page's currency
+formatter. 006Z6 also left `_qualifying_service_evidence()` unreachable. These conflict with
+FRONTEND_DESIGN_RULES reuse and DECISION_POLICY's no-dead-code rule. `006Z7` removes the backend
+residue; `006Z8` restores inline/existing frontend composition and one formatter.
+
+#### Finding 4 - Medium - Credit completeness still trusts static names and sibling execution
+
+`OBJECT_SCOPE_CASES` proves only eight unique action/test-name strings and never resolves or executes
+them. The create and update identifiers both run one helper containing both rows; revalidate and
+submit-review do the same. A stale mapping can pass, and a selected row is not independent as
+required by codebase-design §26. `006X10` owns eight executable, one-row selections.
+
+### Spec
+
+#### Finding 1 - High - Recent-member relaxation is rejected before its evidence is evaluated
+
+BR-003 permits active status or recent-member relaxation, and BR-005 permits one-year relaxation with
+evidence. `ActiveMemberStatusModule.calculate()` returns ineligible immediately when
+`membership_status != active`, before reading qualifying supply/relaxation evidence. No inactive or
+recent-member success test exists. M02-FR-006 and BR-003/005 therefore remain partial. `006Z7` makes
+the source-backed route reachable without accepting reason text alone.
+
+#### Finding 2 - High - Required evidence-mutation races were not implemented
+
+006Z6 promised verifier-vs-supply/service create/update/verify PostgreSQL races and coherent current
+record/pointer cardinality. Its only PostgreSQL case remains the earlier two-verifier race; the six
+reported tests are that case plus the five credit races. Select-for-update calls alone do not prove
+the mutation boundary or zero loser evidence. `006Z7` adds the real evidence races and aligns all
+mutation lock/version paths.
+
+#### Finding 3 - High - Portal authority expires because the calendar date changes
+
+The stored active result includes `calculated_as_of_date` in `result_id`. The portal recalculates
+with today's date and compares the entire hash/snapshot, so yesterday's unchanged, still-effective
+verification becomes unavailable today. The only availability test creates and consumes authority
+on the same date. `006Z8` validates the effective record from its stored date plus current evidence
+provenance, retaining future/stale/closed rejection.
+
+#### Finding 4 - Medium - Portal submit, error, canonical-refetch, and browser proof is partial
+
+The routed screen maps only `nominee_id` from submit field errors, so an authoritative
+`required_loan_amount` error is discarded. Tests cover an initial unavailable GET and a detached
+card render, not conflicting submit/projection values, 400/403/409 no-retry behavior, one canonical
+refetch, reload provenance, or the required real screenshots; the slice declared no browser runtime
+and retained only sandbox-blocked capture plus HTML/jsdom evidence. `006Z8` owns the mounted and
+trusted-browser contract.
+
+#### Finding 5 - Medium - Witness and credit matrices remain incomplete
+
+006Y14 omits unknown-field rows, does not project exact actions for scope cases, and does not test
+the promised normal `404` for an authorised in-scope missing parent; its scope cases assert only
+PATCH/category/evidence. 006X9's paired helpers violate its independently selectable row requirement.
+`006Y15` and `006X10` own the two behavioral matrices.
+
+No material scope creep was accepted. M04-FR-001/002 remain explicitly deferred to 012EA under
+A-053 and M04-FR-003 retains A-054's receipt-time proxy; M04-FR-004..011 retain substantive behavior
+subject to `006X10`/`006Z8` proof. M02-FR-004..006 and BR-003..007 remain partial until `006Z7`.
+No ADR was added because existing source and codebase-design documents already decide module
+locality, authority policy, evidence atomicity, and effective-dating direction.
+
+Summary: Standards found 2 High and 2 Medium issues; worst are duplicated credit orchestration and
+divergent caller-controlled member authority. Spec found 3 High and 2 Medium issues; worst are the
+unreachable documented relaxation, absent evidence races, and next-day authority expiry.
+
 ## 2026-07-12 23:42 - Architecture Review 2026-07-12_234227_architecture_review
 
 Reviewed completed product work since architecture-review commit `099e2a6`:

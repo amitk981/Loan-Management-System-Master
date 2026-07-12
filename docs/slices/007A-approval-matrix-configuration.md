@@ -66,6 +66,15 @@ Medium
   server assessment; neither the matrix API nor future React consumers may derive it by comparing
   displayed money. The resolved projection must retain the effective policy/rule version used.
 
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_004501, 2026-07-13)
+
+- Make the resolver accept a typed decision date, amount, decision type, and canonical condition;
+  return one immutable projection or a stable no-effective-rule/ambiguous-rule domain error. It must
+  not accept a portal display projection or caller-computed Boolean in place of the condition code.
+- For every failed create/supersede and both PostgreSQL race losers, compare the complete rule,
+  committee, configuration-history, and audit snapshots before/after. API overlap tests alone do not
+  substitute for the public resolver boundary and committed one-winner evidence.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated
