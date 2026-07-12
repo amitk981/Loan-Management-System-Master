@@ -1,0 +1,11 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/working/HANDOFF.md
+ M docs/working/IMPLEMENTATION_SLICE_INDEX.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-004-member-kyc-master.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+?? .ralph/runs/2026-07-12_203645_architecture_review/
+?? docs/slices/006X7-credit-object-scope-action-parity-closure.md
+?? docs/slices/006Y10-witness-correction-matrix-and-module-boundary-closure.md
+?? docs/slices/006Y11-member-form-container-and-error-matrix-closure.md

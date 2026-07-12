@@ -2,6 +2,92 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-12 20:43 - Architecture Review 2026-07-12_203645_architecture_review
+
+Reviewed completed product work since architecture-review commit `c87586d`:
+- `006X6-credit-authority-state-parity-matrix-closure` (`7294500`)
+- `006Y7-member-registry-race-and-action-scope-closure` (`3843194`)
+- `006Y8-witness-maker-checker-and-browser-closure` (`0f97eb5`, repaired through `55f7651`)
+- `006Y9-member-form-real-session-closure` (`6411bd1`, including its repair chain)
+
+The review checked `git diff c87586d...HEAD`, the four slice/run packets, production/test changes,
+authoritative PostgreSQL/browser evidence, Epic 004/006 digests, cited source sections, assumptions,
+and M02/M04 functional IDs. Protected orchestrator-only commit `2af4399` was excluded from product
+findings. Standards and spec fidelity were reviewed independently. Production code was not changed;
+`CONTEXT.md` remains truthful, and `.ralph/state.json` contains no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - Witness correction authority remains cyclic and its negative matrix is absent
+
+`applications.services.witness_resource_actions` imports `witness_corrections`, calculates object
+access that correction actions discard, and calls an evaluator that imports generic services back to
+calculate the same access. This leaves two coupled owners and a runtime dependency cycle, contrary to
+codebase-design §§36.1-36.2/42.2. The mounted suite covers success and an already-disabled control,
+but never drives the required `400`/`403`/`409` failures or one-call/no-refetch assertions required by
+§§26.3/42.3. High-risk `006Y10` owns one acyclic authority seam plus the complete backend/mounted/
+browser request matrix.
+
+#### Finding 2 - High - Member container tests do not cross the production interaction boundary
+
+`MemberProfile.container.test.tsx` adds only a StrictMode single-GET assertion. Full-field tests still
+mock `createMember`/`updateMember`, while the browser proves successes but no validation, object
+denial, or stale conflict. This falls short of codebase-design §§26.3/42.3 and 006Y9's explicit real-
+container `400`/`403`/`409` contract. High-risk `006Y11` owns transport-boundary mounted tests and the
+complete real-session variant matrix.
+
+#### Finding 3 - Medium - Trusted-browser logs are not self-contained
+
+The final 006Y8 and 006Y9 trusted logs record `RALPH_EVIDENCE_DIR` under absolute, deleted-run
+`.ralph/worktrees/...` paths. The screenshots are archived and the scenarios passed twice, but the
+command provenance violates AFK_RUNBOOK's rule that evidence must not reference deleted worktrees.
+Historical packets remain immutable; this review's evidence uses run-relative descriptions, and
+future packets must record stable run-folder-relative paths.
+
+Judgment call: 006Y7's Registry action/write object evaluation and both real PostgreSQL races are
+substantive closures. Its HTTP/masking evidence says object denial is `FORBIDDEN` although production
+now returns `OBJECT_ACCESS_DENIED`; the executable tests/code are authoritative, but packet prose
+should not diverge from them in future runs.
+
+### Spec
+
+#### Finding 1 - High - 006X6's object-scope rows are labelled rather than proven
+
+006X6 requires each case to project a real six-field action and invoke the exact write on the same
+resource with reason/category parity. Eligibility, loan-limit, appraisal, review, and sanction tests
+instead capture an enabled action, mutate ownership, and assert only that the write raises. Static
+`EXECUTED_CASES` labels still mark every object-scope variant complete. High-risk `006X7` replaces
+the labels with derived executable cases and real disabled evaluation/write parity without leaking
+object-denied resources through HTTP.
+
+#### Finding 2 - High - 006Y9 omits the declared mounted and error-path acceptance
+
+The slice requires mounted production containers to submit every §13.2 field and prove one-call
+`400`/`403`/`409` behavior. Its only new mounted test loads detail once; Playwright covers individual/
+FPC success and requester/checker approval but none of the three error classes. It also does not
+execute the separately named Producer Institution member category in M02-FR-001. `006Y11` owns the
+full transport-boundary matrix, Producer Institution flow, collision-proof identities, and masked
+canonical readback.
+
+#### Finding 3 - High - 006Y8 omits named backend and mounted denial cases
+
+006Y8 requires missing-permission/object-denied PATCH parity and mounted `400`/`403`/`409` one-call
+behavior. Backend tests assert missing-permission projection but never its correction write, and the
+only object-denial write test targets witness create. Mounted tests simulate no rejected mutation;
+the browser checks the verifier button is absent but does not assert zero PATCH requests. `006Y10`
+owns all omitted cases and exact browser request counts.
+
+No material scope creep was found. M04-FR-004..011 retain substantive production behavior, but
+006X6's advertised exhaustive action matrix remains partial until `006X7`. M02-FR-012's persisted
+requester/checker flow is substantive; M02-FR-001 and the member/witness interaction confidence stay
+partial until `006Y11`/`006Y10`. No ADR was added because API §44 and codebase-design §§26/36/42
+already settle the durable direction.
+
+Summary: Standards found 2 High and 1 Medium issue plus one packet judgment; worst are the cyclic,
+under-tested witness seam and missing member container error matrix. Spec found 3 High issues; worst
+are the falsely complete credit object-scope matrix and the repeated omitted witness/member denial
+acceptance.
+
 ## 2026-07-12 14:17 - Architecture Review 2026-07-12_141135_architecture_review
 
 Reviewed completed product work since architecture-review commit `b6d86cd`:

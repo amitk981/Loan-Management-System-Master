@@ -1,5 +1,17 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-12 - Credit Object-Scope Matrix Residual
+
+- 006X6 materially expands the public action/write matrix and closes role/reason defects, but its
+  object-scope rows capture an enabled action before ownership changes and assert only the later
+  write exception. Static `EXECUTED_CASES` labels can therefore claim object-scope coverage without
+  a disabled six-field evaluation or reason/category comparison.
+- `006X7` owns executable-case-derived completeness plus same-resource object-scope evaluation/write
+  parity for every credit action while preserving HTTP resource non-disclosure. M04-FR-004..011
+  behavior remains substantive, but the advertised exhaustive matrix stays partial until it lands.
+- 006Z4 and dependent 006Z2 remain concretely sharpened and unchanged; they follow the new corrective
+  slices in filename order without depending on unrelated credit/member UI regression work.
+
 ## 006X6 Credit Authority and State Matrix Closure
 
 - The executable public matrix now covers the eight real §44 action codes without synthetic

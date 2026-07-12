@@ -1,24 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-12_180154_repair
+2026-07-12_203645_architecture_review
 
 ## Current Status
 
-006Y9 remains complete pending independent trusted-browser acceptance. This repair fixes the exact
-checker-session assertion that failed both prior trusted runs: shared member navigation now waits
-for the canonical profile heading, while the requester path alone asserts the authorized edit
-form's `Verified identity locked` banner. Production behavior and authority are unchanged.
+Architecture review of 006X6, 006Y7, 006Y8, and 006Y9 is complete. 006Y7's Registry races/object
+approval are substantive. The review found that 006X6 labels object-scope rows without projecting
+disabled actions, 006Y8 omits correction-write/mounted denial cases and retains a cyclic authority
+seam, and 006Y9 omits its mounted `400`/`403`/`409` matrix and Producer Institution real-session
+proof. Corrective slices 006X7, 006Y10, and 006Y11 are queued.
 
 ## Validation
 
-Repair evidence is under `.ralph/runs/2026-07-12_180154_repair/`. Playwright collects exactly one
-scenario. Frontend build/typecheck/lint and 177 tests pass. Backend check/migration sync and 451
-tests pass (7 expected SQLite skips) at 93% coverage. Local Chromium is blocked before page creation
-by the documented macOS sandbox restriction; the orchestrator must run the scenario twice and
-produce four screenshots.
+Evidence is under `.ralph/runs/2026-07-12_203645_architecture_review/`. Production code was not
+changed. Frontend build/typecheck/lint and 177 tests pass. Backend check/migration sync and 451 tests
+pass (7 expected SQLite skips) at 93% coverage. Queue/protected/state/diff checks are recorded in the
+review packet. CONTEXT remains truthful and there are no stale Blocked slices.
 
 ## Next Run
 
-Architecture review is due after this fourth completed slice. After review, run the already sharpened
-006Z4 active-member rule/snapshot closure; 006Z2 remains dependent on 006Z4.
+Run 006X7, then 006Y10 and 006Y11 in filename order; afterward run the already sharpened 006Z4
+active-member rule/snapshot closure. 006Z2 remains dependent on 006Z4.

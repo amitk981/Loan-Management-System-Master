@@ -1,5 +1,18 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## Architecture Review 2026-07-12 - Witness/Member Interaction Acceptance
+
+- 006Y7 substantively closes Registry object-aware identity approval and both PostgreSQL duplicate
+  races. The action/write evaluation is shared and the public Registry methods enforce authority.
+- 006Y8's browser successes are real, but its backend matrix omits correction-write permission/
+  object denials, mounted tests omit all `400`/`403`/`409` responses, and its authority evaluator
+  imports generic services back while serialization imports the evaluator. `006Y10` owns one acyclic
+  seam, exact negative parity, one-call mounted failures, and explicit browser PATCH/GET counts.
+- 006Y9 proves real individual/FPC creates and requester/checker approval, but its new mounted test
+  only deduplicates a GET. It does not execute full-field production containers, `400`/`403`/`409`,
+  or the separately named Producer Institution category. `006Y11` owns those closures. M02-FR-012
+  remains substantively implemented; M02-FR-001 interaction confidence remains partial.
+
 ## Architecture Review 2026-07-12 - Registry/Witness Residual Closures
 
 - 006Y8 replaces the generic witness `update` action with exact `correct_contact` and

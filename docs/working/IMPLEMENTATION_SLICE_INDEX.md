@@ -83,15 +83,23 @@ Selection rule: Ralph picks the lowest filename-sorted `Not Started` slice. Slic
 | 51b | `006X3` Credit Visual and Real-Browser Closure | Epic 006 | 006X2, | High | Yes | Yes | No | Yes |
 | 51c | `006X4` Credit Action Parity Regression Matrix | Epic 006 | 006X3, | High | No | Yes | No | Yes |
 | 51c1 | `006X5` Credit Public Action/Write Matrix Closure | Epic 006 | 006X4, | High | No | Yes | Yes | Yes |
+| 51c2 | `006X6` Credit Authority and State Parity Matrix Closure | Epic 006 | 006X5, | High | No | Yes | Yes | Yes |
+| 51c3 | `006X7` Credit Object-Scope Action Parity Closure | Epic 006 | 006X6, | High | No | Yes | No | Yes |
 | 51d | `006Y` Member Create/Update and Identity Governance | Epic 004 | 006X3, | High | No | Yes | Yes | Yes |
 | 51e | `006Y2` Member Form and Witness Capture UI Wiring | Epic 004 | 006Y, | Medium | Yes | Yes | No | Yes |
 | 51f | `006Y3` Member Registry and Identity Change Approval Closure | Epic 004 | 006X4, | High | Yes | Yes | Yes | Yes |
 | 51g | `006Y4` Witness Correction and Resource Action Closure | Epic 004 | 006Y3, | High | Yes | Yes | Yes | Yes |
 | 51g1 | `006Y5` Member Registry Governance and Form Contract Closure | Epic 004 | 006Y3, | High | Yes | Yes | Yes | Yes |
 | 51g2 | `006Y6` Witness Contact and Action Parity Closure | Epic 004 | 006Y4, | High | Yes | Yes | Yes | Yes |
+| 51g3 | `006Y7` Member Registry Race and Action-Scope Closure | Epic 004 | 006Y5, | High | No | Yes | Yes | Yes |
+| 51g4 | `006Y8` Witness Maker-Checker and Browser Closure | Epic 004 | 006Y6, | High | Yes | Yes | No | Yes |
+| 51g5 | `006Y9` Member Form Real-Session Closure | Epic 004 | 006Y7, | High | Yes | Yes | No | Yes |
+| 51g6 | `006Y10` Witness Correction Matrix and Module Boundary Closure | Epic 004 | 006Y8, | High | Yes | Yes | No | Yes |
+| 51g7 | `006Y11` Member Form Container and Error Matrix Closure | Epic 004 | 006Y9, | High | Yes | Yes | No | Yes |
 | 51h | `006Z` Produce Supply History Persistence | Epic 006 | 006Y4, | High | Yes | Yes | Yes | Yes |
 | 51h1 | `006Z3` Active-Member Supply Evidence Boundary Hardening | Epic 006 | 006Z, | High | No | Yes | Yes | Yes |
-| 51i | `006Z2` Portal Application Limit Display Authority | Epic 006 | 006Z3, | Medium | Yes | Yes | No | Yes |
+| 51h2 | `006Z4` Active-Member Rule and Snapshot Closure | Epic 006 | 006Z3, | High | No | Yes | Yes | Yes |
+| 51i | `006Z2` Portal Application Limit Display Authority | Epic 006 | 006Z4, | Medium | Yes | Yes | No | Yes |
 | 52 | `007A` Approval Matrix Configuration | Epic 007 | 006X, | Medium | No | Yes | Yes | Yes |
 | 53 | `007B` Approval Case Creation from Appraisal | Epic 007 | 007A, | Medium | No | Yes | Yes | Yes |
 | 54 | `007C` CFO and Director Threshold Routing | Epic 007 | 007B, | Medium | No | Yes | Yes | Yes |

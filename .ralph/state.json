@@ -132,10 +132,10 @@
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "6c6a4da",
-  "last_run_id": "2026-07-12_180154_repair",
+  "last_run_id": "2026-07-12_203645_architecture_review",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 4,
-  "architecture_review_due": true,
+  "slices_completed_since_architecture_review": 0,
+  "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null

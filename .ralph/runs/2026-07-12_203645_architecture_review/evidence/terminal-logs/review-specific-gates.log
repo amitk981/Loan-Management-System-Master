@@ -1,0 +1,13 @@
+Queue lint:
+DEFERRED: the helper uses a Bash-local `status` variable and was rerun under Bash; see
+`slice-queue-lint.log` for the canonical PASS result.
+JSON:
+PASS: state and permissions JSON parse
+Protected paths:
+PASS: no protected path modified
+Production paths:
+PASS: no production or product-test path modified
+Diff whitespace:
+PASS: diff whitespace check
+State:
+PASS: architecture-review state reset
