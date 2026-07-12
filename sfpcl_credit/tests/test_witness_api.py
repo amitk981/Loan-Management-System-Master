@@ -1,5 +1,4 @@
 import json
-from unittest import mock
 from uuid import uuid4
 
 from django.test import Client, TestCase
@@ -475,33 +474,181 @@ class WitnessApiTests(TestCase):
         self.assertEqual(AuditLog.objects.count(), baseline["audit"])
         self.assertEqual(WorkflowEvent.objects.count(), baseline["workflow"])
 
-    def test_projection_and_patch_execute_the_shared_application_authority(self):
-        from sfpcl_credit.applications.modules import application_authority
-
+    def test_out_of_scope_patch_does_not_disclose_parent_application_existence(self):
         witness_id = self._post().json()["data"]["witness_id"]
-        evaluator = application_authority.evaluate_application_object_access
-        with mock.patch.object(
-            application_authority,
-            "evaluate_application_object_access",
-            wraps=evaluator,
-        ) as shared_authority:
-            projected = self.client.get(self._url(), headers=self._headers())
-            corrected = self.client.patch(
-                self._detail_url(witness_id),
-                data={"version": 1, "address": "Shared Authority Road"},
-                content_type="application/json",
-                headers=self._headers(),
-            )
+        outsider = self._user(
+            "witness.parent.outsider@sfpcl.example",
+            "OutsiderPass123!",
+            Permission.objects.get(permission_code=WITNESS_UPDATE_PERMISSION),
+        )
+        headers = self._headers_for(outsider.email, "OutsiderPass123!")
+        baseline = {
+            "witness": list(Witness.objects.values()),
+            "history": list(WitnessChangeHistory.objects.values()),
+            "audit": list(AuditLog.objects.values()),
+            "workflow": list(WorkflowEvent.objects.values()),
+        }
 
-        self.assertEqual(projected.status_code, 200)
-        self.assertEqual(corrected.status_code, 200)
-        update_calls = [
-            call
-            for call in shared_authority.call_args_list
-            if call.kwargs["required_permission"] == WITNESS_UPDATE_PERMISSION
+        existing_parent = self.client.patch(
+            self._detail_url(witness_id),
+            data={"version": 1, "address": "Forbidden Road"},
+            content_type="application/json",
+            headers=headers,
+        )
+        missing_parent = self.client.patch(
+            f"/api/v1/loan-applications/{uuid4()}/witnesses/{witness_id}/",
+            data={"version": 1, "address": "Forbidden Road"},
+            content_type="application/json",
+            headers=headers,
+        )
+
+        self.assertEqual(existing_parent.status_code, 403)
+        self.assertEqual(missing_parent.status_code, 403)
+        self.assertEqual(existing_parent.json()["error"], missing_parent.json()["error"])
+        assert_error_envelope(self, missing_parent.json(), "OBJECT_ACCESS_DENIED")
+        self.assertEqual(list(Witness.objects.values()), baseline["witness"])
+        self.assertEqual(list(WitnessChangeHistory.objects.values()), baseline["history"])
+        self.assertEqual(list(AuditLog.objects.values()), baseline["audit"])
+        self.assertEqual(list(WorkflowEvent.objects.values()), baseline["workflow"])
+
+    def test_contact_correction_matrix_missing_permission_projection_matches_write(self):
+        self._assert_missing_update_permission_parity("contact")
+
+    def test_identity_correction_matrix_missing_permission_projection_matches_write(self):
+        self._assert_missing_update_permission_parity("identity")
+
+    def _assert_missing_update_permission_parity(self, kind):
+        created = self._post().json()["data"]
+        reader = self._user(
+            f"witness.matrix.{kind}.reader@sfpcl.example",
+            "ReaderPass123!",
+            Permission.objects.get(permission_code=WITNESS_READ_PERMISSION),
+        )
+        self.application.created_by_user = reader
+        self.application.save(update_fields=["created_by_user"])
+        headers = self._headers_for(reader.email, "ReaderPass123!")
+        projected = self.client.get(self._url(), headers=headers).json()["data"][0]
+        action_code = f"correct_{kind}"
+        action = next(row for row in projected["actions"] if row["action_code"] == action_code)
+        self.assertEqual(
+            action,
+            {
+                "action_code": action_code,
+                "label": f"Correct Witness {kind.title()}",
+                "enabled": False,
+                "disabled_reason": "Missing witness update permission.",
+                "required_permission": WITNESS_UPDATE_PERMISSION,
+                "required_role": None,
+            },
+        )
+        baseline = self._witness_evidence()
+
+        denied = self.client.patch(
+            self._detail_url(created["witness_id"]),
+            data=(
+                {"version": 1, "address": "Matrix Road"}
+                if kind == "contact"
+                else {"version": 1, "pan": "KLMNO9876P"}
+            ),
+            content_type="application/json",
+            headers=headers,
+        )
+
+        self.assertEqual(denied.status_code, 403)
+        assert_error_envelope(self, denied.json(), "FORBIDDEN")
+        self.assertEqual(denied.json()["error"]["message"], action["disabled_reason"])
+        self.assertEqual(self._witness_evidence(), baseline)
+
+    def test_contact_correction_matrix_payload_version_scope_and_success(self):
+        self._assert_payload_version_scope_and_success("contact")
+
+    def test_identity_correction_matrix_payload_version_scope_and_success(self):
+        self._assert_payload_version_scope_and_success("identity")
+
+    def _assert_payload_version_scope_and_success(self, kind):
+        created = self._post().json()["data"]
+        witness_id = created["witness_id"]
+        actor = self.user
+        password = "CreatorPass123!"
+        if kind == "identity":
+            verifier_headers = self._headers()
+            verifier_projection = self.client.get(self._url(), headers=verifier_headers).json()["data"][0]
+            verifier_action = next(row for row in verifier_projection["actions"] if row["action_code"] == "correct_identity")
+            baseline = self._witness_evidence()
+            maker_denied = self.client.patch(
+                self._detail_url(witness_id),
+                data={"version": 1, "pan": "KLMNO9876P"},
+                content_type="application/json",
+                headers=verifier_headers,
+            )
+            self.assertFalse(verifier_action["enabled"])
+            self.assertEqual(maker_denied.status_code, 403)
+            self.assertEqual(maker_denied.json()["error"]["message"], verifier_action["disabled_reason"])
+            self.assertEqual(self._witness_evidence(), baseline)
+            actor = self._user(
+                "witness.matrix.identity.checker@sfpcl.example",
+                "CheckerPass123!",
+                *Permission.objects.filter(
+                    permission_code__in=[WITNESS_READ_PERMISSION, WITNESS_UPDATE_PERMISSION]
+                ),
+            )
+            password = "CheckerPass123!"
+            self.application.created_by_user = actor
+            self.application.save(update_fields=["created_by_user"])
+        headers = self._headers_for(actor.email, password)
+        action_code = f"correct_{kind}"
+        projected = self.client.get(self._url(), headers=headers).json()["data"][0]
+        action = next(row for row in projected["actions"] if row["action_code"] == action_code)
+        self.assertEqual(set(action), {"action_code", "label", "enabled", "disabled_reason", "required_permission", "required_role"})
+        self.assertTrue(action["enabled"])
+        payload = {"version": 1, "address": "Matrix Success Road"} if kind == "contact" else {"version": 1, "pan": "KLMNO9876P"}
+
+        cases = [
+            ("stale", {**payload, "version": 2}, "application/json", 409, "VERSION_CONFLICT"),
+            ("malformed", '{"version":', "application/json", 400, "VALIDATION_ERROR"),
+            ("non_object", "[]", "application/json", 400, "VALIDATION_ERROR"),
+            ("immutable", {**payload, "member_id": str(uuid4())}, "application/json", 400, "VALIDATION_ERROR"),
         ]
-        # Both projected correction actions and both the pre-lookup/write gates execute this seam.
-        self.assertGreaterEqual(len(update_calls), 4)
+        for label, body, content_type, status, code in cases:
+            with self.subTest(kind=kind, denial=label):
+                baseline = self._witness_evidence()
+                response = self.client.patch(
+                    self._detail_url(witness_id), data=body, content_type=content_type, headers=headers
+                )
+                self.assertEqual(response.status_code, status)
+                assert_error_envelope(self, response.json(), code)
+                self.assertEqual(self._witness_evidence(), baseline)
+
+        outsider = self._user(
+            f"witness.matrix.{kind}.outsider@sfpcl.example",
+            "OutsiderPass123!",
+            Permission.objects.get(permission_code=WITNESS_UPDATE_PERMISSION),
+        )
+        outsider_headers = self._headers_for(outsider.email, "OutsiderPass123!")
+        for application_id, child_id in (
+            (self.application.loan_application_id, uuid4()),
+            (uuid4(), witness_id),
+        ):
+            with self.subTest(kind=kind, denial="scope"):
+                baseline = self._witness_evidence()
+                response = self.client.patch(
+                    f"/api/v1/loan-applications/{application_id}/witnesses/{child_id}/",
+                    data=payload,
+                    content_type="application/json",
+                    headers=outsider_headers,
+                )
+                self.assertEqual(response.status_code, 403)
+                assert_error_envelope(self, response.json(), "OBJECT_ACCESS_DENIED")
+                self.assertEqual(self._witness_evidence(), baseline)
+
+        success = self.client.patch(
+            self._detail_url(witness_id), data=payload, content_type="application/json", headers=headers
+        )
+        self.assertEqual(success.status_code, 200)
+        self.assertEqual(success.json()["data"]["version"], 2)
+        self.assertEqual(WitnessChangeHistory.objects.count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="applications.witness.corrected").count(), 1)
+        self.assertEqual(WorkflowEvent.objects.count(), 0)
 
     def test_witness_identity_is_protected_and_create_audit_is_metadata_only(self):
         response = self._post(pan="KLMNO9876P", aadhaar="987698769876")
@@ -568,6 +715,14 @@ class WitnessApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         return {"Authorization": f"Bearer {response.json()['data']['access_token']}"}
+
+    def _witness_evidence(self):
+        return {
+            "witness": list(Witness.objects.values()),
+            "history": list(WitnessChangeHistory.objects.values()),
+            "audit": list(AuditLog.objects.values()),
+            "workflow": list(WorkflowEvent.objects.values()),
+        }
 
     def _user(self, email, password, *permissions):
         role = Role.objects.create(

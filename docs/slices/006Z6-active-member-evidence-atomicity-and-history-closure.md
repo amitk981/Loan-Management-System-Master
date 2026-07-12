@@ -76,3 +76,13 @@ High
   reason text alone cannot create relaxation evidence.
 - Verification is object-consistent, evidence-atomic, chronologically valid, and concurrency-safe,
   while portal/borrower projections remain deliberately redacted.
+
+## Run-Ahead Sharpening Review (006Y14, 2026-07-13)
+
+- The shared member-authority seam must resolve an identifier without exposing whether a denied
+  parent exists: existing and random out-of-scope member IDs return the same standard category,
+  reason, and zero record/history/audit evidence. Test this through Registry and active-status public
+  methods; do not assert internal evaluator call counts.
+- Keep every authority-matrix row independently selectable and snapshot the complete member,
+  active-status result/record, history, and audit evidence before each losing write. This mirrors the
+  now-closed witness boundary and prevents order-dependent completeness claims.

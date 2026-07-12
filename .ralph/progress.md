@@ -4458,3 +4458,26 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-13_000653_normal_run
+
+- Completed 006Y14 by resolving witness parent authority before child lookup; existing out-of-scope
+  and unknown parent identifiers now return identical `403 OBJECT_ACCESS_DENIED` envelopes with no
+  witness/history/audit/workflow evidence.
+- Added independently selectable contact and identity correction matrices covering missing
+  permission, parent/child scope, stale version, malformed/non-object JSON, immutable fields,
+  maker-checker, and successful audited correction with exact six-field actions.
+- Removed the internal mock-call-count authority test. Frontend build/typecheck/lint and 202 tests
+  pass; backend check/migration sync and 473 tests pass (8 expected skips) at 93% coverage. Browser
+  collection passes; trusted screenshot runs remain with the orchestrator.
+- Next: 006Z6.
+
+## 2026-07-13 00:17:11 - 2026-07-13_000653_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Y14-witness-parent-nondisclosure-and-matrix-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_000653_normal_run/.ralph/runs/2026-07-13_000653_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_000653_normal_run/.ralph/runs/2026-07-13_000653_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

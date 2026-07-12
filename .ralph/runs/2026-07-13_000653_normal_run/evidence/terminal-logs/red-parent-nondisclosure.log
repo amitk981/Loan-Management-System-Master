@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_out_of_scope_patch_does_not_disclose_parent_application_existence (sfpcl_credit.tests.test_witness_api.WitnessApiTests.test_out_of_scope_patch_does_not_disclose_parent_application_existence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_000653_normal_run/sfpcl_credit/tests/test_witness_api.py", line 507, in test_out_of_scope_patch_does_not_disclose_parent_application_existence
+    self.assertEqual(missing_parent.status_code, 403)
+AssertionError: 404 != 403
+
+----------------------------------------------------------------------
+Ran 1 test in 0.032s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

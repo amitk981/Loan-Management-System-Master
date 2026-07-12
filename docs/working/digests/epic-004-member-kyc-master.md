@@ -1,5 +1,17 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## 006Y14 Witness Parent Non-Disclosure and Matrix Closure
+
+- Witness resource PATCH now resolves parent authority through the application-owned module before
+  child lookup. Existing out-of-scope and unknown parent identifiers return the same standard `403
+  OBJECT_ACCESS_DENIED` fact and write no witness/history/audit/workflow evidence.
+- Contact and identity correction rows independently execute missing-permission projection/write
+  parity, parent/child scope denial, stale version, malformed/non-object JSON, immutable fields, and
+  success; identity also executes original-verifier maker-checker parity. Every projected action
+  retains the exact six-field API shape.
+- The internal mock-call-count seam test was removed. HTTP behavior plus complete evidence snapshots
+  now prove the application-authority and witness-correction boundaries.
+
 ## Architecture Review 2026-07-12 - Witness Parent Non-Disclosure Residual
 
 - 006Y12 correctly makes existing/random witness IDs indistinguishable under one out-of-scope

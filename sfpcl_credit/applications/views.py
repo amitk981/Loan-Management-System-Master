@@ -11,6 +11,7 @@ from sfpcl_credit.api import (
 )
 from sfpcl_credit.approvals.modules.sanction_handoff import SanctionHandoffModule
 from sfpcl_credit.applications import services
+from sfpcl_credit.applications.modules import application_authority
 from sfpcl_credit.applications.modules.witness_corrections import WitnessCorrectionError, correct_witness
 from sfpcl_credit.credit.modules.common import (
     CreditModuleInvalidStateError,
@@ -245,11 +246,18 @@ def loan_application_witness_detail(request, loan_application_id, witness_id):
         return response
     required = services.WITNESS_READ_PERMISSION if request.method == "GET" else services.WITNESS_UPDATE_PERMISSION
     if required not in permissions:
-        return error_response(request, 403, "FORBIDDEN", "You do not have permission to access witnesses.")
-    application = services.get_application(loan_application_id)
-    if application is None:
-        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
-    access = services.evaluate_application_object_access(application, user, required, permissions)
+        message = (
+            "You do not have permission to access witnesses."
+            if request.method == "GET"
+            else "Missing witness update permission."
+        )
+        return error_response(request, 403, "FORBIDDEN", message)
+    application, access = application_authority.resolve_application_access(
+        application_id=loan_application_id,
+        actor=user,
+        required_permission=required,
+        actor_permissions=permissions,
+    )
     if not access.allowed:
         return _object_access_denied_response(request, access)
     witness = application.witnesses.filter(witness_id=witness_id).first()

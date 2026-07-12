@@ -1,22 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-12_235655_normal_run
+2026-07-13_000653_normal_run
 
 ## Current Status
 
-006X9 is complete. The credit object-scope matrix has eight unique, independently selectable rows;
-the process-global ledger and order dependency are gone. Each row executes the real projection,
-public write denial, exact category, and complete evidence comparison. Production behavior did not
-change.
+006Y14 is complete. Witness PATCH resolves application authority before child lookup, so existing
+out-of-scope and unknown parents are indistinguishable `403 OBJECT_ACCESS_DENIED` facts. Contact and
+identity correction matrices independently execute permission, scope, payload, version,
+maker-checker, and success behavior with complete loser-evidence comparisons.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-12_235655_normal_run/`. Normal/reversed isolated rows,
-focused HTTP denials, frontend gates, and 469 backend tests pass; coverage is 93%. No production,
-schema, API, frontend, dependency, source, or protected-file change was made.
+Evidence is under `.ralph/runs/2026-07-13_000653_normal_run/`. Frontend build/typecheck/lint and 202
+tests pass; backend check/migration sync and 473 tests pass with 93% coverage. The declared browser
+spec collects; the orchestrator owns both trusted real-session screenshot runs. No schema,
+dependency, frontend, source, or protected-file change was made.
 
 ## Next Run
 
-Run 006Y14, then 006Z6. Run dependent 006Z2 only after 006Z6, so borrower limit authority cannot
-consume a non-atomic or incomplete active-member evidence record.
+Run 006Z6 next. Its slice is already concretely sharpened from the latest architecture-review
+findings. Run dependent 006Z2 only after 006Z6, so borrower limit authority cannot consume a
+non-atomic or incomplete active-member evidence record.

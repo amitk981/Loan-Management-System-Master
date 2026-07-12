@@ -1,0 +1,10 @@
+sfpcl_credit/applications/views.py:13:from sfpcl_credit.applications import services
+sfpcl_credit/applications/views.py:14:from sfpcl_credit.applications.modules import application_authority
+sfpcl_credit/applications/views.py:15:from sfpcl_credit.applications.modules.witness_corrections import WitnessCorrectionError, correct_witness
+sfpcl_credit/applications/views.py:255:    application, access = application_authority.resolve_application_access(
+sfpcl_credit/applications/services.py:11:from sfpcl_credit.applications.modules import application_authority
+sfpcl_credit/applications/services.py:12:from sfpcl_credit.applications.modules.witness_corrections import witness_correction_actions
+sfpcl_credit/applications/services.py:361:    return application_authority.evaluate_application_object_access(
+sfpcl_credit/applications/modules/rejection_notes.py:5:from sfpcl_credit.applications import services
+sfpcl_credit/applications/modules/witness_corrections.py:10:from sfpcl_credit.applications.modules import application_authority
+sfpcl_credit/applications/modules/witness_corrections.py:40:    access = application_authority.evaluate_application_object_access(
