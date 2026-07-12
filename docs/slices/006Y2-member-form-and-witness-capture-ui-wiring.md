@@ -87,6 +87,15 @@ Medium
 - Reopen the routed screen after every browser reload; assert resource actions before mutation and
   canonical GET refreshes after success, with no client merge/retry on 400/403/409.
 
+## Run-Ahead Sharpening Review (006Y, 2026-07-12)
+
+- Member mutations must send the detail response's current `version`. Render
+  `VERIFIED_IDENTITY_LOCKED` as the existing locked-field state and call the dedicated
+  `/reverification/` action only with a non-empty reason; after success refetch canonical detail.
+- Consume only the six-field `members.member.update` and `members.member.reverify_identity`
+  resource actions. Preserve the backend's 400/403/409 response without client retries or local
+  state merging, and never place plaintext identity values in browser fixtures or screenshots.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

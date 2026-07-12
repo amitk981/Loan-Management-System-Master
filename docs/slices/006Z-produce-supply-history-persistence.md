@@ -52,6 +52,14 @@ High
 - Active-member eligibility is evidence-backed end to end; portal and staff read the same persisted truth.
 - All gates pass; API examples and portal/staff screenshots saved.
 
+## Run-Ahead Sharpening Review (006Y, 2026-07-12)
+
+- Capture and verification must use optimistic resource versions and six-field resource actions;
+  the record maker must receive a backend denial from verify even if global permissions allow it.
+- Change/audit projections must contain member UUID, season/year, verification status, and actor
+  IDs only. Portal responses derive member scope from PortalAccount and expose no staff mutation
+  action or protected member identity value.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

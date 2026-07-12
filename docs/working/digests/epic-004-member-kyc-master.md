@@ -1,5 +1,18 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## 006Y Member Identity Governance
+
+- §13.2 member create persists individual or institution profiles and protects PAN/Aadhaar and
+  institutional signatory identifiers with the existing token/hash boundary. Every create writes
+  masked change history and metadata-only audit evidence.
+- Ordinary member PATCH is optimistic (`version` required). Verified PAN/Aadhaar is locked; a
+  reasoned reverification action is the only correction route and atomically resets KYC to pending.
+- Member detail projects six-field update/reverification actions from the same permission and KYC
+  predicates used by writes. Stale/denied writes preserve member/history/KYC/audit counts, except
+  the required metadata-only locked-identity rejection audit.
+- Member creators/editors cannot verify that member's KYC documents; verifier separation is
+  enforced at the backend verification action.
+
 ## Architecture Review 2026-07-11 - 004E Witness Hardening
 
 - 004E's successful shareholder/KYC/name/masking/audit behavior is substantive, but malformed or

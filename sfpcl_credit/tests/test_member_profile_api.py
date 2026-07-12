@@ -200,7 +200,11 @@ class MemberProfileApiTests(TestCase):
         )
         self.assertIsNone(data["producer_institution_profile"])
         assert_available_actions_shape(self, data["available_actions"])
-        self.assertEqual(data["available_actions"], [])
+        self.assertEqual(
+            {action["action_code"] for action in data["available_actions"]},
+            {"members.member.update", "members.member.reverify_identity"},
+        )
+        self.assertTrue(all(not action["enabled"] for action in data["available_actions"]))
         serialized = str(data).lower()
         for forbidden in ("pan_encrypted", "aadhaar_encrypted", "pan_hash", "aadhaar_hash", "abcde1234f", "123456789012"):
             self.assertNotIn(forbidden, serialized)
@@ -241,7 +245,9 @@ class MemberProfileApiTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 data = response.json()["data"]
                 assert_available_actions_shape(self, data["available_actions"])
-                self.assertEqual(data["available_actions"], [])
+                self.assertFalse(
+                    any(action["action_code"] == "create_loan_application" for action in data["available_actions"])
+                )
 
     def test_member_profile_returns_not_found_for_unknown_or_deleted_member(self):
         for member_id in (uuid.uuid4(), self.deleted.member_id):

@@ -23,9 +23,12 @@ from sfpcl_credit.members.models import (
     CropPlan,
     KycDocument,
     KycProfile,
+    IndividualMemberProfile,
     LandHolding,
     Member,
+    MemberChangeHistory,
     Nominee,
+    ProducerInstitutionProfile,
     Shareholding,
 )
 from sfpcl_credit.members.protected_identity import (
@@ -36,6 +39,8 @@ from sfpcl_credit.members.protected_identity import (
 
 
 MEMBER_READ_PERMISSION = "members.member.read"
+MEMBER_CREATE_PERMISSION = "members.member.create"
+MEMBER_UPDATE_PERMISSION = "members.member.update"
 NOMINEE_READ_PERMISSION = "members.nominee.read"
 NOMINEE_CREATE_PERMISSION = "members.nominee.create"
 SHAREHOLDING_READ_PERMISSION = "members.shareholding.read"
@@ -72,6 +77,227 @@ _ALLOWED_PARAMS = {
 
 def user_can_read_members(user):
     return MEMBER_READ_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_create_members(user):
+    return MEMBER_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_update_members(user):
+    return MEMBER_UPDATE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def _required(payload, field, errors):
+    value = payload.get(field)
+    if value is None or value == "":
+        errors[field] = "This field is required."
+    return value
+
+
+def _masked_change(field, value):
+    if field in {"pan", "aadhaar", "authorised_signatory_pan", "authorised_signatory_aadhaar"}:
+        return mask_protected_identity(protected_identity_token(value, len(value)), len(value))
+    return value
+
+
+@transaction.atomic
+def create_member(payload, actor_user, request_ip_value="", request_user_agent_value=""):
+    allowed = {
+        "member_type", "legal_name", "display_name", "folio_number",
+        "membership_start_date", "pan", "aadhaar", "registered_address",
+        "mobile_number", "email", "individual_profile", "producer_institution_profile",
+    }
+    errors = {key: "Unknown field." for key in payload if key not in allowed}
+    member_type = _required(payload, "member_type", errors)
+    legal_name = _required(payload, "legal_name", errors)
+    display_name = _required(payload, "display_name", errors)
+    folio = _required(payload, "folio_number", errors)
+    pan = _required(payload, "pan", errors)
+    aadhaar = payload.get("aadhaar", "")
+    address = payload.get("registered_address")
+    if not isinstance(address, dict):
+        errors["registered_address"] = "This field must be an object."
+        address = {}
+    if member_type not in Member.MEMBER_TYPES:
+        errors["member_type"] = "Unsupported member type."
+    if pan and not _PAN_RE.fullmatch(pan):
+        errors["pan"] = "Invalid PAN format."
+    if member_type == "individual_farmer" and not aadhaar:
+        errors["aadhaar"] = "This field is required for an individual farmer."
+    if aadhaar and not _AADHAAR_RE.fullmatch(aadhaar):
+        errors["aadhaar"] = "Invalid Aadhaar format."
+    profile_payload = (
+        payload.get("individual_profile") if member_type == "individual_farmer"
+        else payload.get("producer_institution_profile")
+    )
+    if not isinstance(profile_payload, dict):
+        errors[
+            "individual_profile" if member_type == "individual_farmer"
+            else "producer_institution_profile"
+        ] = "This field must be an object."
+        profile_payload = {}
+    if errors:
+        raise ValidationError(errors)
+    member = Member.objects.create(
+        member_type=member_type, legal_name=legal_name, display_name=display_name,
+        folio_number=folio,
+        membership_start_date=(
+            parse_date(payload["membership_start_date"])
+            if payload.get("membership_start_date") else None
+        ),
+        membership_status="pending_verification",
+        pan_encrypted=protected_identity_token(pan, 10), pan_hash=identity_hash(pan),
+        aadhaar_encrypted=protected_identity_token(aadhaar, 12) if aadhaar else "",
+        aadhaar_hash=identity_hash(aadhaar) if aadhaar else "",
+        registered_address_line1=address.get("line1", ""),
+        registered_address_line2=address.get("line2", ""),
+        registered_village_city=address.get("village_city", ""),
+        registered_district=address.get("district", ""),
+        registered_state=address.get("state", ""),
+        registered_pincode=address.get("pincode", ""),
+        mobile_number=payload.get("mobile_number", ""), email=payload.get("email", ""),
+        kyc_status="pending", default_status="no_default", created_by_user=actor_user,
+    )
+    if member_type == "individual_farmer":
+        IndividualMemberProfile.objects.create(member=member, **profile_payload)
+    else:
+        signatory_pan = profile_payload.get("authorised_signatory_pan", "")
+        signatory_aadhaar = profile_payload.get("authorised_signatory_aadhaar", "")
+        clean_profile = {k: v for k, v in profile_payload.items() if k not in {
+            "authorised_signatory_pan", "authorised_signatory_aadhaar"
+        }}
+        clean_profile.update({
+            "authorised_signatory_pan_encrypted": protected_identity_token(signatory_pan, 10) if signatory_pan else "",
+            "authorised_signatory_pan_hash": identity_hash(signatory_pan) if signatory_pan else "",
+            "authorised_signatory_aadhaar_encrypted": protected_identity_token(signatory_aadhaar, 12) if signatory_aadhaar else "",
+            "authorised_signatory_aadhaar_hash": identity_hash(signatory_aadhaar) if signatory_aadhaar else "",
+        })
+        ProducerInstitutionProfile.objects.create(member=member, **clean_profile)
+    changed = sorted(payload.keys())
+    safe_new = {key: _masked_change(key, value) for key, value in payload.items() if key not in {
+        "individual_profile", "producer_institution_profile"
+    }}
+    safe_new["pan"] = _masked_change("pan", pan)
+    if aadhaar:
+        safe_new["aadhaar"] = _masked_change("aadhaar", aadhaar)
+    MemberChangeHistory.objects.create(
+        member=member, actor_user=actor_user, change_type="create",
+        changed_fields=changed, new_value_json=safe_new,
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user, action="members.member.created", entity_type="member",
+        entity_id=member.member_id,
+        new_value_json={"member_id": str(member.member_id), "changed_fields": changed},
+        ip_address=request_ip_value, user_agent=request_user_agent_value,
+    )
+    return member
+
+
+class MemberWriteConflict(Exception):
+    def __init__(self, code, message, field_errors=None, audit_rejection=False):
+        self.code = code
+        self.message = message
+        self.field_errors = field_errors or {}
+        self.audit_rejection = audit_rejection
+
+
+_PATCH_FIELDS = {"legal_name", "display_name", "membership_start_date", "registered_address", "mobile_number", "email", "version"}
+_IDENTITY_FIELDS = {"pan", "aadhaar"}
+
+
+def _safe_member_values(member, fields):
+    result = {}
+    for field in fields:
+        if field in _IDENTITY_FIELDS:
+            result[field] = mask_protected_identity(getattr(member, f"{field}_encrypted"), 10 if field == "pan" else 12)
+        else:
+            result[field] = getattr(member, field, None)
+    return result
+
+
+@transaction.atomic
+def update_member(member_id, payload, actor_user, *, reverification=False, request_ip_value="", request_user_agent_value=""):
+    member = Member.objects.select_for_update().filter(member_id=member_id, is_deleted=False).first()
+    if member is None:
+        return None
+    version = payload.get("version")
+    if not isinstance(version, int):
+        raise ValidationError({"version": "Current integer version is required."})
+    if version != member.version:
+        raise MemberWriteConflict("STALE_WRITE", "Member has changed; refresh and retry.", {"version": "Version is stale."})
+    allowed = (_PATCH_FIELDS | _IDENTITY_FIELDS | {"reason"}) if reverification else (_PATCH_FIELDS | _IDENTITY_FIELDS)
+    errors = {key: "Unknown field." for key in payload if key not in allowed}
+    identity_changes = sorted(field for field in _IDENTITY_FIELDS if field in payload)
+    if identity_changes and member.kyc_status == "verified" and not reverification:
+        raise MemberWriteConflict(
+            "VERIFIED_IDENTITY_LOCKED", "Verified identity fields require reverification.",
+            {field: "Verified identity field is locked." for field in identity_changes}, True,
+        )
+    reason = payload.get("reason", "")
+    if reverification and (not identity_changes or not isinstance(reason, str) or not reason.strip()):
+        errors["reason" if identity_changes else "pan"] = "A reason and at least one identity field are required."
+    for field in identity_changes:
+        value = payload[field]
+        regex = _PAN_RE if field == "pan" else _AADHAAR_RE
+        if not isinstance(value, str) or not regex.fullmatch(value):
+            errors[field] = f"Invalid {field.upper()} format."
+    if errors:
+        raise ValidationError(errors)
+    changed = sorted(key for key in payload if key not in {"version", "reason"})
+    old_values = _safe_member_values(member, changed)
+    address = payload.get("registered_address")
+    if address is not None:
+        if not isinstance(address, dict):
+            raise ValidationError({"registered_address": "This field must be an object."})
+        for key, model_field in {
+            "line1": "registered_address_line1", "line2": "registered_address_line2",
+            "village_city": "registered_village_city", "district": "registered_district",
+            "state": "registered_state", "pincode": "registered_pincode",
+        }.items():
+            if key in address:
+                setattr(member, model_field, address[key])
+    for field in changed:
+        if field == "registered_address":
+            continue
+        if field in _IDENTITY_FIELDS:
+            setattr(member, f"{field}_encrypted", protected_identity_token(payload[field], 10 if field == "pan" else 12))
+            setattr(member, f"{field}_hash", identity_hash(payload[field]))
+        elif field == "membership_start_date":
+            member.membership_start_date = parse_date(payload[field]) if payload[field] else None
+        else:
+            setattr(member, field, payload[field])
+    if reverification:
+        member.kyc_status = "pending"
+        member.rekyc_due_date = None
+    member.version += 1
+    member.updated_by_user = actor_user
+    member.updated_at = timezone.now()
+    member.save()
+    new_values = _safe_member_values(member, changed)
+    change_type = "reverification" if reverification else "update"
+    MemberChangeHistory.objects.create(
+        member=member, actor_user=actor_user, change_type=change_type,
+        changed_fields=changed, old_value_json=old_values, new_value_json=new_values,
+        reason=reason.strip() if reverification else "",
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user,
+        action="members.member.reverification_triggered" if reverification else "members.member.updated",
+        entity_type="member", entity_id=member.member_id,
+        old_value_json={"changed_fields": changed},
+        new_value_json={"member_id": str(member.member_id), "changed_fields": changed, "kyc_status": member.kyc_status},
+        ip_address=request_ip_value, user_agent=request_user_agent_value,
+    )
+    return member
+
+
+def audit_identity_change_rejected(actor_user, member_id, fields, request_ip_value="", request_user_agent_value=""):
+    AuditLog.objects.create(
+        actor_user=actor_user, action="members.member.identity_change_rejected",
+        entity_type="member", entity_id=member_id,
+        new_value_json={"member_id": str(member_id), "fields": fields, "reason": "verified_identity_locked"},
+        ip_address=request_ip_value, user_agent=request_user_agent_value,
+    )
 
 
 def user_can_read_nominees(user):
@@ -321,6 +547,7 @@ def serialize_member_profile(member, user):
         "individual_profile": _individual_profile(member),
         "producer_institution_profile": _producer_profile(member),
         "available_actions": _available_actions(member, user),
+        "version": member.version,
     }
 
 
@@ -1000,6 +1227,25 @@ def verify_kyc_document(document_id, payload, actor_user, request_ip="", request
     ).first()
     if kyc_document is None:
         return None
+    profile = kyc_document.kyc_profile
+    if profile.party_type == "member":
+        member = Member.objects.filter(member_id=profile.party_id).first()
+        if member and actor_user.pk in {member.created_by_user_id, member.updated_by_user_id}:
+            AuditLog.objects.create(
+                actor_user=actor_user,
+                action="kyc.document.verification_denied",
+                entity_type="kyc_document",
+                entity_id=kyc_document.kyc_document_id,
+                new_value_json={
+                    "member_id": str(member.member_id),
+                    "reason": "maker_checker_separation",
+                },
+                ip_address=request_ip,
+                user_agent=request_user_agent,
+            )
+            raise ValidationError(
+                {"verification_status": "Member maker cannot verify this member's KYC."}
+            )
     status = str(payload.get("verification_status") or "").strip()
     if status not in {"verified", "rejected"}:
         raise ValidationError(
@@ -1687,7 +1933,21 @@ def _producer_profile(member):
 
 
 def _available_actions(member, user):
-    return []
+    can_update = user_can_update_members(user)
+    locked = member.kyc_status == "verified"
+    return [
+        {
+            "action_code": "members.member.update", "label": "Update member",
+            "enabled": can_update, "disabled_reason": None if can_update else "Missing member update permission.",
+            "required_permission": MEMBER_UPDATE_PERMISSION, "required_role": None,
+        },
+        {
+            "action_code": "members.member.reverify_identity", "label": "Reverify identity",
+            "enabled": can_update and locked,
+            "disabled_reason": None if can_update and locked else ("Identity is not verified." if can_update else "Missing member update permission."),
+            "required_permission": MEMBER_UPDATE_PERMISSION, "required_role": None,
+        },
+    ]
 
 
 __all__ = [

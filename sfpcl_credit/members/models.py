@@ -57,6 +57,7 @@ class Member(models.Model):
         on_delete=models.PROTECT,
         related_name="updated_members",
     )
+    version = models.PositiveIntegerField(default=1, db_default=1)
     is_deleted = models.BooleanField(default=False)
 
     class Meta:
@@ -73,6 +74,26 @@ class Member(models.Model):
 
     def __str__(self):
         return self.member_number or str(self.member_id)
+
+
+class MemberChangeHistory(models.Model):
+    member_change_history_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="change_history")
+    actor_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="member_changes"
+    )
+    change_type = models.CharField(max_length=40)
+    changed_fields = models.JSONField(default=list)
+    old_value_json = models.JSONField(default=dict)
+    new_value_json = models.JSONField(default=dict)
+    reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "member_change_history"
+        ordering = ["created_at", "member_change_history_id"]
 
 
 class IndividualMemberProfile(models.Model):
@@ -124,6 +145,10 @@ class ProducerInstitutionProfile(models.Model):
     institution_type = models.CharField(max_length=80)
     registration_number = models.CharField(max_length=120, blank=True, db_index=True)
     authorised_signatory_name = models.CharField(max_length=200)
+    authorised_signatory_pan_encrypted = models.TextField(blank=True)
+    authorised_signatory_pan_hash = models.CharField(max_length=128, blank=True, db_index=True)
+    authorised_signatory_aadhaar_encrypted = models.TextField(blank=True)
+    authorised_signatory_aadhaar_hash = models.CharField(max_length=128, blank=True, db_index=True)
     board_resolution_required_flag = models.BooleanField(default=False)
     services_availed_flag = models.BooleanField(default=False)
     produce_supply_years = models.DecimalField(

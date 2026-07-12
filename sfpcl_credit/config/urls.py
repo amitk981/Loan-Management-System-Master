@@ -292,6 +292,11 @@ urlpatterns = [
     ),
     path("api/v1/members/", member_views.member_collection, name="member-list"),
     path(
+        "api/v1/members/<uuid:member_id>/reverification/",
+        member_views.member_reverification,
+        name="member-reverification",
+    ),
+    path(
         "api/v1/members/<uuid:member_id>/reveal-sensitive-field/",
         member_views.reveal_sensitive_field,
         name="member-reveal-sensitive-field",

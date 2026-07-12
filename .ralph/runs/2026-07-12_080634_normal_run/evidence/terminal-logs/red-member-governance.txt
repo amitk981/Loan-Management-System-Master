@@ -1,0 +1,26 @@
+Creating test database for alias 'default'...
+Found 4 test(s).
+System check identified no issues (0 silenced).
+E..F
+======================================================================
+ERROR: test_create_fpc_protects_signatory_identity (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_create_fpc_protects_signatory_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_080634_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 123, in test_create_fpc_protects_signatory_identity
+    self.assertNotEqual(profile.authorised_signatory_pan_encrypted, "KLMNO1234P")
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'ProducerInstitutionProfile' object has no attribute 'authorised_signatory_pan_encrypted'
+
+======================================================================
+FAIL: test_verified_identity_requires_reverification_and_stale_writes_are_atomic (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_verified_identity_requires_reverification_and_stale_writes_are_atomic)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_080634_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 153, in test_verified_identity_requires_reverification_and_stale_writes_are_atomic
+    self.assertEqual(locked.status_code, 409)
+AssertionError: 405 != 409
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.026s
+
+FAILED (failures=1, errors=1)
+Destroying test database for alias 'default'...

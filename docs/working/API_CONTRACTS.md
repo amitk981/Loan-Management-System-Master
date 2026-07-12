@@ -2143,3 +2143,19 @@ object-, state-, permission-, and role-aware. Appraisal actions are `credit.appr
 `revalidate_appraisal_prerequisites`, `credit.appraisal.submit_review`, `credit.appraisal.review`,
 and `credit.appraisal.submit_sanction`; disabled actions remain present with a reason. Clients must
 not supplement this resource projection from `/auth/me.available_actions`.
+# Member create/update and identity governance (006Y)
+
+- `POST /api/v1/members/` requires `members.member.create` and accepts the §13.2 individual-farmer
+  or FPC/producer-institution payload. New members start with `membership_status =
+  pending_verification`, `kyc_status = pending`, `default_status = no_default`, and `version = 1`.
+- `PATCH /api/v1/members/{member_id}/` requires `members.member.update`, accepts the §13.4 contact,
+  address, and name fields plus mandatory current `version`, and returns `409 STALE_WRITE` without
+  writes when the version is stale.
+- Verified `pan`/`aadhaar` changes through PATCH return `409 VERIFIED_IDENTITY_LOCKED`; the rejected
+  attempt changes no member/history state and writes a metadata-only rejection audit.
+- `POST /api/v1/members/{member_id}/reverification/` requires the same update permission, current
+  `version`, at least one valid `pan`/`aadhaar`, and `reason`. Success masks history values, resets
+  member KYC to `pending`, clears `rekyc_due_date`, increments `version`, and records audit/history.
+- Member detail now returns `version` and exact six-field resource actions for
+  `members.member.update` and `members.member.reverify_identity`. Resource actions, not `/auth/me`
+  permissions alone, are authoritative for mutation UI.

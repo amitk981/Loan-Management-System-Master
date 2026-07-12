@@ -1,23 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-12_001128_repair
+2026-07-12_080634_normal_run
 
 ## Current Status
 
-006X3 passed independent trusted-browser validation. One declared two-test contract replaces
-the zero-collection visual wrapper and fully mocked tracer. It owns the eighteen-state matrix and a
-real-Django, real-login, two-role path through eligibility, limit, appraisal, review, and one pending
-sanction case. Guarded synthetic setup and the required submit remarks control are regression-tested.
+006Y implements governed member create/update and verified-identity correction. Individual and FPC
+create payloads persist protected identifiers, masked field history, and audit evidence. PATCH uses
+optimistic versions; verified PAN/Aadhaar changes require the reasoned reverification transition,
+which resets KYC atomically. Member detail exposes authoritative six-field update/reverification
+actions, and the member maker cannot verify that member's KYC document.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-12_001128_repair/`. Playwright collection finds exactly two
-tests. Frontend lint/typecheck/build and 166 tests passed. Backend check/migration sync and 407 tests
-passed with five expected PostgreSQL skips at 94% coverage. Both trusted browser runs passed, each
-emitting all twenty screenshots; all eighteen encoded visual baselines compared successfully.
+Evidence is under `.ralph/runs/2026-07-12_080634_normal_run/`. Frontend lint/typecheck/build and 166
+tests passed. Backend check/migration sync and 411 tests passed with five expected PostgreSQL skips
+at 94% coverage. Focused red/green logs cover create and identity governance; no browser contract is
+declared for this backend-only slice.
 
 ## Next Run
 
-Run High-risk 006Y next, then 006Y2. Both have fresh run-ahead requirements for resource-action
-parity, guarded synthetic identities, mounted HTTP proof, and trusted-browser evidence.
+Run 006Y2 next, then High-risk 006Z. Both have fresh requirements for optimistic resource actions,
+canonical refetches, guarded synthetic identities, maker-checker proof, and trusted-browser evidence.

@@ -13,11 +13,21 @@ from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.members import services
 
 
-@require_GET
+@require_http_methods(["GET", "POST"])
 def member_collection(request):
     user, response = http_auth.authenticated_user(request)
     if response is not None:
         return response
+    if request.method == "POST":
+        if not services.user_can_create_members(user):
+            return error_response(request, 403, "FORBIDDEN", "You do not have permission to create members.")
+        try:
+            member = services.create_member(
+                parse_json_body(request), user, request_ip(request), request_user_agent(request)
+            )
+        except ValidationError as exc:
+            return error_response(request, 400, "VALIDATION_ERROR", "Member payload failed validation.", services.validation_field_errors(exc))
+        return success_response(services.serialize_member_profile(member, user), request)
     if not services.user_can_read_members(user):
         return error_response(
             request,
@@ -38,11 +48,15 @@ def member_collection(request):
     return list_response(data, pagination, request)
 
 
-@require_GET
+@require_http_methods(["GET", "PATCH"])
 def member_detail(request, member_id):
     user, response = http_auth.authenticated_user(request)
     if response is not None:
         return response
+    if request.method == "PATCH":
+        if not services.user_can_update_members(user):
+            return error_response(request, 403, "FORBIDDEN", "You do not have permission to update members.")
+        return _member_update_response(request, member_id, user, reverification=False)
     if not services.user_can_read_members(user):
         return error_response(
             request,
@@ -51,6 +65,35 @@ def member_detail(request, member_id):
             "You do not have permission to read members.",
         )
     member = services.get_member_profile(member_id)
+    if member is None:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+    return success_response(services.serialize_member_profile(member, user), request)
+
+
+@require_http_methods(["POST"])
+def member_reverification(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if not services.user_can_update_members(user):
+        return error_response(request, 403, "FORBIDDEN", "You do not have permission to update members.")
+    return _member_update_response(request, member_id, user, reverification=True)
+
+
+def _member_update_response(request, member_id, user, reverification):
+    try:
+        member = services.update_member(
+            member_id, parse_json_body(request), user, reverification=reverification,
+            request_ip_value=request_ip(request), request_user_agent_value=request_user_agent(request),
+        )
+    except services.MemberWriteConflict as exc:
+        if exc.audit_rejection:
+            services.audit_identity_change_rejected(
+                user, member_id, sorted(exc.field_errors), request_ip(request), request_user_agent(request)
+            )
+        return error_response(request, 409, exc.code, exc.message, exc.field_errors)
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Member payload failed validation.", services.validation_field_errors(exc))
     if member is None:
         return error_response(request, 404, "NOT_FOUND", "Member was not found.")
     return success_response(services.serialize_member_profile(member, user), request)
