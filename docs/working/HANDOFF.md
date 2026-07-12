@@ -1,25 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-12_153826_repair
+2026-07-12_154807_repair
 
 ## Current Status
 
-006Y8 remains complete. The second repair fixes the demonstrated session-switch timeout: the
-trusted scenario opens the Header profile menu through the visible seeded finance-user name, then
-uses the real Sign out button. The prior email locator was impossible because Header renders the
-email only inside the menu after it opens. Production behavior remains unchanged.
+006Y8 remains complete. This repair revalidated the demonstrated session-switch fix already present
+in the quarantined worktree: the trusted scenario opens the Header profile menu through the visible
+seeded finance-user name, then uses the real Sign out button. No product or test code changed.
 
 ## Validation
 
-Repair evidence is under `.ralph/runs/2026-07-12_153826_repair/`. Frontend build/typecheck/lint and
-176 tests pass. Backend check/migration sync and 451 tests pass (7 expected SQLite skips) at 93%
-coverage. Playwright collects the one declared scenario. Chromium launch is denied by the coding
-sandbox's macOS services, so the three screenshots and two-run browser verdict remain the
-responsibility of the orchestrator's outside-sandbox executions.
+Repair evidence is under `.ralph/runs/2026-07-12_154807_repair/`. Frontend build/typecheck/lint and
+176 tests pass. Backend check/migration sync and 451 tests pass (7 expected SQLite skips) at 94%
+coverage. Playwright collects the one declared scenario. Local Chromium launch is denied by the
+coding sandbox's macOS services. The same current scenario passed twice outside the sandbox in run
+`2026-07-12_153826_repair`, with all three screenshots; this run still relies on fresh independent
+browser revalidation before any commit.
 
 ## Next Run
 
-Run 006Y9 for real-session member form and identity approval proof. Its exact mutation/refetch
-cardinality was sharpened. 006Z4 retains active-member rule/snapshot follow-up; 006Z2 remains
-dependent on 006Z4.
+Run 006Y9 for real-session member form and identity approval proof. 006Y9 and the next grabbable
+006Z4 are already concretely sharpened; 006Z2 remains dependent on 006Z4.

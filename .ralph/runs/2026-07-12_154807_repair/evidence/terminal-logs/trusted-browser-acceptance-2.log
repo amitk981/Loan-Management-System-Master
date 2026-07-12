@@ -1,0 +1,155 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_150856_normal_run/.ralph/runs/2026-07-12_154807_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/witness-correction-authority.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/witness-correction-authority.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 10:25:27] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-applications/?search=LOE2E00601&ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/?search=LOE2E00601&ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-request-register/?search=LOE2E00601&ordering=-reference_generated_date&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-request-register/?search=LOE2E00601&ordering=-reference_generated_date&page_size=20 HTTP/1.1" 200 246
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 2030
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 2305
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 2030
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 1443
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 0
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 404 231
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 2305
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 404 224
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 1143
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 1443
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 404 231
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 404 224
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 1143
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 592
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 592
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "POST /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 1493
+[2m[WebServer] [22m[12/Jul/2026 10:25:30] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 1962
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/19d09314-cc0e-455c-9f0c-37529354ef32/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "PATCH /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/19d09314-cc0e-455c-9f0c-37529354ef32/ HTTP/1.1" 200 1520
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 1989
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/?search=LOE2E00601&ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-request-register/?search=LOE2E00601&ordering=-reference_generated_date&page_size=20 HTTP/1.1" 200 246
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 2030
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 2305
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 1443
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 2030
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 404 224
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 2305
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 404 231
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 1143
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 1443
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 404 224
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 404 231
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 1143
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 1989
+[2m[WebServer] [22m[12/Jul/2026 10:25:31] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 1989
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "OPTIONS /api/v1/auth/logout/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "POST /api/v1/auth/logout/ HTTP/1.1" 200 142
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "POST /api/v1/auth/login/ HTTP/1.1" 200 1288
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/auth/me/ HTTP/1.1" 200 2300
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/?search=LOE2E00601&ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-request-register/?search=LOE2E00601&ordering=-reference_generated_date&page_size=20 HTTP/1.1" 200 246
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 2030
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 2305
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 1477
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 2030
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 404 224
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 2305
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 404 231
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 1143
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 1477
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 404 224
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 404 231
+[2m[WebServer] [22m[12/Jul/2026 10:25:32] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 1143
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 1956
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 1956
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "PATCH /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/19d09314-cc0e-455c-9f0c-37529354ef32/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 1956
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/auth/me/ HTTP/1.1" 200 2300
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/auth/me/ HTTP/1.1" 200 2300
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/?search=LOE2E00601&ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-request-register/?search=LOE2E00601&ordering=-reference_generated_date&page_size=20 HTTP/1.1" 200 246
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 2030
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 2305
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 1477
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 2030
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 2305
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 404 224
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 404 231
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 1477
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 1143
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 404 231
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 404 224
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 1143
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 1956
+[2m[WebServer] [22m[12/Jul/2026 10:25:33] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 1956
+  ✓  1 [chromium] › witness-correction-authority.e2e.spec.ts:16:5 › contact and maker-checker identity corrections persist through routed real sessions (5.4s)
+
+  1 passed (10.4s)
+
+Exit code: 0

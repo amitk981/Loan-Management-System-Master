@@ -1,0 +1,12 @@
+Command: RALPH_EVIDENCE_DIR=../.ralph/runs/2026-07-12_154807_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/witness-correction-authority.e2e.spec.ts
+Exit code: 1
+
+Playwright collected one test, then Chromium failed before the scenario started:
+
+Error: browserType.launch: Target page, context or browser has been closed
+FATAL: mach_port_rendezvous.cc(399) bootstrap_check_in ... Permission denied (1100)
+
+This is the coding sandbox's documented macOS-services denial. It did not reproduce the recorded
+locator timeout and is not treated as a slice failure. The immediately preceding independent run
+`2026-07-12_153826_repair` executed the same current scenario twice outside the sandbox; both runs
+passed and produced all three declared screenshots.

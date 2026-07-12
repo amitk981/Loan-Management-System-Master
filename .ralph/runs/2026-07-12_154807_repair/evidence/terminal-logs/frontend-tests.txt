@@ -1,0 +1,4 @@
+Command: npm test -- --run
+Exit code: 0
+Vitest: 27 files passed, 176 tests passed, duration 6.21s.
+Focused mounted witness resource actions: 4 tests passed.

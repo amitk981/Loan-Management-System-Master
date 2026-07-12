@@ -4045,3 +4045,25 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Repair 2026-07-12_154807_repair
+
+- Revalidated the exact 006Y8 session-switch failure against the current quarantined worktree. The
+  email-locator timeout is already repaired by opening Header through the visible seeded name and
+  using the real Sign out action; no product or test code changed.
+- Playwright collects the one declared scenario. Local Chromium is denied before the test body by
+  macOS Mach-port sandbox policy; the same current scenario passed twice outside the sandbox in the
+  preceding independent run with all three screenshots.
+- Frontend build/typecheck/lint and 176 tests pass. Backend check/migration sync and 451 tests pass
+  (7 expected SQLite skips) at 94% coverage.
+- Next action: independently revalidate, then run 006Y9-member-form-real-session-closure.
+
+## 2026-07-12 15:56:32 - 2026-07-12_154807_repair
+- Agent tool used: codex
+- Slice attempted: 006Y8-witness-maker-checker-and-browser-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_150856_normal_run/.ralph/runs/2026-07-12_154807_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_150856_normal_run/.ralph/runs/2026-07-12_154807_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
