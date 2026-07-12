@@ -14,7 +14,7 @@ Persist the approval matrix and sanction committee as effective-dated backend co
 Admins manage who must approve what amount as versioned configuration; every later approval decision can name the exact rule version it applied.
 
 ## Depends On
-- 006X
+- 006Z10
 
 ## Source References
 - docs/working/digests/epic-007-sanction-approval-workflow.md (007A section)
@@ -91,6 +91,14 @@ Medium
 - Preserve the exact effective decision date in the resolved snapshot; later wall-clock passage must
   not rewrite a historical case's rule provenance, while superseded/current routing still resolves
   strictly from the requested decision date and versioned configuration.
+
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_025409, 2026-07-13)
+
+- Make every management/global matrix scope an explicit permission-and-assignment result; never use
+  `Role.is_system_role`, role provenance, or an unowned configuration row as a global-authority proxy.
+- For the overlap resolver and both PostgreSQL losers, exercise discriminating boundary fixtures:
+  same amount with different effective dates and same date with adjacent inclusive amounts, proving
+  the selected rule comes from stored facts rather than a caller-computed threshold Boolean.
 
 ## Done Checklist
 - [ ] Execution plan written

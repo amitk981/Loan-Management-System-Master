@@ -2,6 +2,102 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-13 03:00 - Architecture Review 2026-07-13_025409_architecture_review
+
+Reviewed completed product work since architecture-review commit `c31ac79`:
+- `006X10-credit-object-scope-executable-row-closure` (`40cea5e`)
+- `006Y15-witness-authority-matrix-behavioral-closure` (`81884ed`)
+- `006Z7-active-member-relaxation-authority-and-evidence-race-closure` (`a2c857c`)
+- `006Z8-portal-limit-provenance-module-and-interaction-closure` (`53420e7`, including repairs)
+
+The review checked `git diff c31ac79...HEAD`, production/test hunks, retained red/green,
+PostgreSQL, and two-run trusted-browser evidence, Epic 004/006 digests, cited source sections, and
+BR-003..007, M02-FR-004..006, and M04-FR-005..007. Standards and spec fidelity were reviewed
+independently. Production code was not changed. `CONTEXT.md` remains truthful, and state/files
+contain no Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - Member global authority is inferred from role metadata
+
+`members/modules/member_authority.py` treats `Role.is_system_role` plus either verify/identity-
+approval permission as global authority over every owned member, while member read/update has no
+explicit management-global path and unowned rows silently become global. System-role provenance is
+not an object-scope assignment and does not implement auth §§3/19's explicit global/team/assigned/
+created-by vocabulary. The new test calls an unowned-row fallback “global” while expecting a
+permissioned manager to be denied an owned row. `006Z9` owns one source-reviewable member scope
+projection and behavioral parity across Registry and active verification.
+
+#### Finding 2 - High - Portal financial boundary lacks blocked-path tests
+
+The credit-owned borrower-limit projection has a happy next-day endpoint case and unavailable-no-
+authority case, but no direct observable matrix for future/closed/manual/stale/mismatched authority,
+changed evidence, multiple shareholdings, contradictory land/profile facts, missing policy, or
+invalid amounts. This falls below codebase-design §§26/42's success-and-blocked testing rule for a
+financial deep module. `006Z10` owns the redacted public boundary matrix.
+
+#### Finding 3 - High - Portal submit and error code is unverified
+
+`MP05_NewApplication.tsx` contains new submit-time amount-error and canonical-refetch behavior, but
+the mounted tests execute only initial GET/rendering. Neither mounted nor trusted-browser coverage
+executes submit, exact draft/submit calls, `required_loan_amount`, 400/403/409 no-retry behavior, or
+one post-submit refetch. `006Z10` replaces rendering-only closure with observable lifecycle tests.
+
+#### Finding 4 - Medium - Browser advisory fixture is not discriminating
+
+The over-limit fixture sets both an above-limit amount and `exception_required_flag = true`; no test
+uses contradictory amount/flag facts. Client-side amount recomputation could therefore return while
+the claimed “server flag only” test remains green. `006Z10` adds inverse fixtures plus submit/reload.
+
+#### Finding 5 - Medium - Witness absence behavior changed without a durable contract
+
+006Y15 introduced a new absent-parent `404` branch but did not update `API_CONTRACTS.md` as
+DECISION_POLICY §2 requires. More importantly, the absent branch grants every Credit Manager global
+scope without the existing application's §19.2 stage fact, so an existing pre-credit parent can be
+`403` while a random parent is `404`. `006Y16` removes that cross-stage oracle and documents the
+final authority-first `403`/`404` contract.
+
+Judgment call: several new raw-source substring assertions test private names and fixture text.
+006Z8 explicitly requested a narrow static regression, but the browser-fixture inspection adds no
+behavioral confidence. `006Z10` retains only checks that cannot be expressed through the public UI.
+
+### Spec
+
+#### Finding 1 - High - Relaxation results can be persisted as ordinary active decisions
+
+BR-003/BR-005 require a recent member to qualify under relaxation. `verify()` accepts
+`decision = active` when `member_active_check = relaxation`, then stores status `active`; the
+promised unsupported/mismatched decision matrix does not cover this. `006Z9` enforces exact route-
+to-decision agreement and complete zero evidence for both mismatch directions.
+
+#### Finding 2 - High - 006Z7's public verification matrix remains partial
+
+The source slice requires complete module/API rows for active, inactive, relaxation, stale,
+maker-checker, unsupported decision, chronology, and malformed inputs. The HTTP suite proves one
+active success, date/unknown validation, and object non-disclosure; inactive/relaxation successes,
+stale result/member/evidence, mismatched decision, chronology, and evidence-maker denial remain only
+module-level or absent. It also allows the same actor to create/update verified relaxation evidence
+and verify the resulting status. `006Z9` owns paired module/HTTP behavior and evidence ownership.
+
+#### Finding 3 - High - 006Z8 did not deliver its interaction acceptance matrix
+
+Requirement 5 calls for the routed container to prove exact request body, successful submit/refetch,
+400/403/409, conflicting server values, reload provenance, and loading/error/redaction. The four
+trusted cases mock projection reads and never submit, error, or reload; retained two-run logs only
+repeat those four renders. `006Z10` owns the missing mounted and trusted-browser acceptance.
+
+No material scope creep was found. 006X10's eight executable object-scope rows and 006Y15's two-kind
+payload behavior are substantive subject to `006Y16`'s parent-policy correction. BR-004/006/007 and
+M02-FR-004/006 pass; BR-003/005 and M02-FR-005 remain partial until `006Z9`. M04-FR-005/006/007
+backend behavior passes, but portal acceptance remains partial until `006Z10`.
+
+No ADR was added because the existing auth, functional, and codebase-design sources already decide
+explicit scope, route fidelity, maker-checker separation, and interface-level testing.
+
+Summary: Standards found 3 High and 2 Medium issues; worst are inferred member-global authority and
+the untested financial submit/boundary paths. Spec found 3 High issues; worst are relaxation status
+mislabelling, incomplete verification parity, and absent portal lifecycle proof.
+
 ## 2026-07-13 00:49 - Architecture Review 2026-07-13_004501_architecture_review
 
 Reviewed completed product work since architecture-review commit `540eef4`:

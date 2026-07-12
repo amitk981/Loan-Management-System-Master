@@ -66,6 +66,14 @@ Medium
   snapshots for no-rule, stale-assessment, already-enriched, and decided-case paths. A repeat with
   the identical assessment/rule is idempotent; any conflicting snapshot is a stable `409`.
 
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_025409, 2026-07-13)
+
+- Add a mismatched-condition proof: identical amount and decision date with opposite canonical
+  exception conditions must select different stored rule projections, so amount comparison cannot
+  silently replace the condition supplied by the authoritative credit assessment.
+- The enrichment adapter must surface 400/403/409 without retrying or re-resolving current policy;
+  each loser leaves the existing case shell, rule snapshot, audit, and workflow evidence unchanged.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

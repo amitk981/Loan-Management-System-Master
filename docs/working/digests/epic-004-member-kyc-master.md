@@ -1,5 +1,14 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## Architecture Review 2026-07-13 - Witness Parent Scope Contract
+
+- 006Y15's absent-parent resolver grants a Credit Manager global scope without the application row
+  whose Credit Assessment stage normally establishes §19.2 authority. An existing pre-credit parent
+  can therefore return `403` while a random parent returns `404`, recreating an existence oracle.
+- `006Y16` owns one authority predicate for present/absent parents, preserves `404` only for a
+  documented row-independent global scope, retains the two-kind behavioral matrix, and records the
+  final `403`/`404` ordering in `API_CONTRACTS.md`.
+
 ## 006Y15 Witness Authority Matrix Behavioral Closure
 
 - Globally authorised credit managers with witness-update permission receive the normal `404

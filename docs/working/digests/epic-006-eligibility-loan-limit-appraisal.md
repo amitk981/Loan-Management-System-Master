@@ -1,5 +1,20 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-13 - Active Decision and Portal Lifecycle Residual
+
+- Member global authority is currently inferred from `Role.is_system_role` for two permissions and
+  from absence of an owner for other permissions. `006Z9` replaces those proxies with an explicit
+  source-backed scope result shared by Registry and active verification.
+- A relaxation calculation currently accepts/stores `decision = active`, and the same actor may
+  maintain qualifying service/relaxation evidence and verify the result. `006Z9` owns exact
+  route/decision matching, maker-checker evidence ownership, and paired module/HTTP matrices.
+- 006Z8 correctly centralizes limit math and retains stored-date authority, but its tests prove
+  initial GET/rendering rather than successful submit/refetch, 400/403/409, reload, or blocked deep-
+  module cases. `006Z10` owns the full public projection and real portal lifecycle proof.
+- BR-004/006/007 and M02-FR-004/006 remain substantive. BR-003/005 and M02-FR-005 remain partial
+  until 006Z9; M04-FR-005/006/007 calculations pass while portal acceptance remains partial until
+  006Z10.
+
 ## 006Z8 Portal Limit Provenance, Module, and Interaction Closure
 
 - Borrower-limit authority is revalidated from its stored calculation date, result id, and complete
