@@ -1,5 +1,18 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006X8 Executed Credit Object-Scope Ledger
+
+- The static `@object_scope_cases` metadata inventory is removed. Each of the eight public credit
+  action codes now enters one runtime ledger only after a shared row assertion has executed the
+  exact disabled six-field projection, observed the matching public write object denial, asserted
+  `OBJECT_ACCESS_DENIED`, and compared the full persisted before/after evidence snapshot.
+- Deliberately incomplete rows omit projection, write, category, and evidence phases in turn; each
+  fails with the missing phase and cannot emit a result. The aggregate test requires exactly eight
+  unique executed results, preventing labels, constants, or empty test bodies from claiming closure.
+- Existing eligibility, loan-limit, appraisal, review, and sanction HTTP object-scope regressions
+  remain standard `403` non-disclosure paths. Production credit code and business behavior did not
+  change.
+
 ## Architecture Review 2026-07-12 - Executed Credit Rows and Active-Member Governance
 
 - 006X7 projects and writes all eight object-denied credit actions with substantive assertions, but

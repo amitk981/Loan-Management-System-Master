@@ -1,0 +1,78 @@
+
+> sfpcl-lms@1.0.0 build
+> vite build
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+vite v5.4.21 building for production...
+transforming...
+✓ 1871 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.75 kB │ gzip:   0.43 kB
+dist/assets/index-BAE8F0XK.css     51.80 kB │ gzip:   8.98 kB
+dist/assets/index-fjL-boMT.js   1,146.85 kB │ gzip: 245.97 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.29s
+
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+
+> sfpcl-lms@1.0.0 lint
+> eslint src
+
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_222508_normal_run/sfpcl-lms
+
+ ✓ src/services/authSession.test.ts (15 tests) 17ms
+ ✓ src/services/creditAssessmentApi.test.ts (5 tests) 8ms
+ ✓ src/services/applicationIntakeApi.test.ts (5 tests) 9ms
+ ✓ src/services/portalApi.test.ts (4 tests) 6ms
+ ✓ src/pages/members/Borrower360.test.tsx (4 tests) 90ms
+ ✓ src/pages/applications/ApplicationDetail.test.tsx (9 tests) 87ms
+ ✓ src/services/navigationPermissions.test.ts (7 tests) 14ms
+ ✓ src/pages/applications/CompletenessWorkbench.test.tsx (5 tests) 78ms
+ ✓ src/pages/members/MemberProfile.test.tsx (26 tests) 195ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.test.tsx (22 tests) 222ms
+ ✓ src/services/tracerApi.test.ts (2 tests) 4ms
+ ✓ src/pages/notifications/NotificationsCenter.test.tsx (6 tests) 34ms
+ ✓ src/pages/Dashboard.test.tsx (13 tests) 48ms
+ ✓ src/pages/members/MemberDirectory.test.tsx (5 tests) 37ms
+ ✓ src/pages/borrower/portal/PortalMemberViews.test.tsx (4 tests) 43ms
+ ✓ src/pages/applications/ApplicationList.test.tsx (2 tests) 39ms
+ ✓ src/utils/applicationDisplay.test.ts (5 tests) 2ms
+ ✓ src/contexts/RoleContext.test.tsx (2 tests) 11ms
+ ✓ src/pages/applications/NomineeSelectionViews.test.tsx (3 tests) 8ms
+ ✓ src/pages/profile/MyProfile.test.tsx (1 test) 12ms
+ ✓ src/pages/borrower/portal/auth/MP00_Login.test.tsx (2 tests) 15ms
+ ✓ src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx (2 tests) 2ms
+ ✓ src/pages/sanction/SanctionWorkbench.test.tsx (2 tests) 15ms
+ ✓ src/pages/members/MemberProfile.container.test.tsx (4 tests) 294ms
+ ✓ src/services/demoAuthFlag.test.tsx (3 tests) 2102ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > fails closed when the flag is unset  1588ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > fails closed when the flag is explicit false  329ms
+ ✓ src/pages/applications/WitnessPanel.container.test.tsx (10 tests) 1026ms
+   ✓ mounted witness resource actions > captures with the exact body and refetches the canonical collection once  341ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.container.test.tsx (14 tests) 1322ms
+ ✓ src/pages/members/MemberGovernanceForm.test.tsx (4 tests) 1656ms
+   ✓ MemberGovernanceForm > submits the institution create variant without individual identity/profile fields  986ms
+   ✓ MemberGovernanceForm > submits every individual registration profile field  569ms
+ ✓ src/pages/members/MemberGovernanceForm.container.test.tsx (13 tests) 3701ms
+   ✓ MemberGovernanceForm production container > submits the complete individual_farmer body through the shared HTTP transport  1603ms
+   ✓ MemberGovernanceForm production container > submits the complete fpc body through the shared HTTP transport  792ms
+   ✓ MemberGovernanceForm production container > submits the complete producer_institution body through the shared HTTP transport  806ms
+
+ Test Files  29 passed (29)
+      Tests  199 passed (199)
+   Start at  22:31:02
+   Duration  6.47s (transform 3.03s, setup 0ms, collect 6.46s, tests 11.10s, environment 1.80s, prepare 2.10s)
+

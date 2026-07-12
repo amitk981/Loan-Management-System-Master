@@ -1,0 +1,86 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 22 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, approvals, communications, configurations, contenttypes, credit, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying documents.0001_initial... OK
+  Applying members.0007_kycprofile_kycdocument_and_more... OK
+  Applying members.0008_cancelledcheque_bankaccount_and_more... OK
+  Applying identity.0003_portal_member_auth... OK
+  Applying applications.0001_initial... OK
+  Applying applications.0002_loanapplication_submitted_by_user... OK
+  Applying applications.0003_systemsequence_loanrequestregisterentry... OK
+  Applying applications.0004_applicationdocument_and_more... OK
+  Applying applications.0005_application_deficiency... OK
+  Applying applications.0006_rejection_note... OK
+  Applying applications.0007_eligibilityassessment... OK
+  Applying applications.0008_loanlimitassessment... OK
+  Applying applications.0009_loan_limit_policy_snapshot... OK
+  Applying applications.0010_loanapplication_nominee... OK
+  Applying applications.0011_witness... OK
+  Applying applications.0012_witness_verification_evidence... OK
+  Applying applications.0013_witness_correction... OK
+  Applying applications.0014_witness_contact_fields... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying credit.0001_credit_assessment_model_ownership... OK
+  Applying credit.0002_riskassessment_loanappraisalnote... OK
+  Applying credit.0003_appraisal_prerequisite_snapshots... OK
+  Applying credit.0004_appraisal_review_facts... OK
+  Applying credit.0005_appraisalreviewdecision... OK
+  Applying approvals.0001_initial... OK
+  Applying approvals.0002_approvalcase_workflow_event... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying credit.0006_legacy_appraisal_history_remediation... OK
+  Applying credit.0007_eligibility_active_member_snapshot... OK
+  Applying members.0009_member_identity_governance... OK
+  Applying members.0010_member_identity_change_request... OK
+  Applying members.0011_producesupplyrecord... OK
+  Applying scheduler.0001_initial... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_create_update_revalidate_and_submit_execute_state_provenance_and_scope_denials (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_create_update_revalidate_and_submit_execute_state_provenance_and_scope_denials) ... ok
+test_create_update_revalidate_and_submit_pair_enabled_success_with_disabled_denial (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_create_update_revalidate_and_submit_pair_enabled_success_with_disabled_denial) ... ok
+test_each_appraisal_permission_denial_matches_projection_and_writes_no_evidence (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_each_appraisal_permission_denial_matches_projection_and_writes_no_evidence) ... ok
+test_rejected_action_write_pair_and_exact_note_cardinality (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_rejected_action_write_pair_and_exact_note_cardinality) ... ok
+test_returned_action_write_pair (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_returned_action_write_pair) ... ok
+test_revalidate_and_submit_object_scope_denials_preserve_the_draft (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_revalidate_and_submit_object_scope_denials_preserve_the_draft) ... ok
+test_review_denial_matches_projection_for_all_payloads_with_no_history_note_or_evidence (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_review_denial_matches_projection_for_all_payloads_with_no_history_note_or_evidence) ... ok
+test_review_maker_state_provenance_and_rejection_payload_use_the_real_review_action (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_review_maker_state_provenance_and_rejection_payload_use_the_real_review_action) ... ok
+test_review_object_scope_denial_follows_an_enabled_projection_without_evidence (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_review_object_scope_denial_follows_an_enabled_projection_without_evidence) ... ok
+test_review_role_denial_matches_the_projected_reason_and_preserves_evidence (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_review_role_denial_matches_the_projected_reason_and_preserves_evidence) ... ok
+test_reviewed_action_write_pair (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_reviewed_action_write_pair) ... ok
+test_enabled_run_succeeds_and_disabled_run_has_exact_reason_and_no_evidence (sfpcl_credit.tests.test_credit_action_parity_matrix.EligibilityActionWriteMatrixTests.test_enabled_run_succeeds_and_disabled_run_has_exact_reason_and_no_evidence) ... ok
+test_object_scope_projects_disabled_action_before_matching_public_run_denial (sfpcl_credit.tests.test_credit_action_parity_matrix.EligibilityActionWriteMatrixTests.test_object_scope_projects_disabled_action_before_matching_public_run_denial) ... ok
+test_state_and_stale_scope_variants_execute_the_same_public_run (sfpcl_credit.tests.test_credit_action_parity_matrix.EligibilityActionWriteMatrixTests.test_state_and_stale_scope_variants_execute_the_same_public_run) ... ok
+test_enabled_calculation_succeeds_and_disabled_calculation_has_exact_reason_and_no_evidence (sfpcl_credit.tests.test_credit_action_parity_matrix.LoanLimitActionWriteMatrixTests.test_enabled_calculation_succeeds_and_disabled_calculation_has_exact_reason_and_no_evidence) ... ok
+test_state_stale_state_and_object_scope_execute_calculation_without_loser_evidence (sfpcl_credit.tests.test_credit_action_parity_matrix.LoanLimitActionWriteMatrixTests.test_state_stale_state_and_object_scope_execute_calculation_without_loser_evidence) ... ok
+test_disabled_sanction_reason_matches_write_and_has_zero_case_or_evidence (sfpcl_credit.tests.test_credit_action_parity_matrix.SanctionActionWriteMatrixTests.test_disabled_sanction_reason_matches_write_and_has_zero_case_or_evidence) ... ok
+test_enabled_sanction_write_creates_exact_case_and_denied_state_creates_none (sfpcl_credit.tests.test_credit_action_parity_matrix.SanctionActionWriteMatrixTests.test_enabled_sanction_write_creates_exact_case_and_denied_state_creates_none) ... ok
+test_permission_object_scope_and_stale_state_invoke_the_public_sanction_write (sfpcl_credit.tests.test_credit_action_parity_matrix.SanctionActionWriteMatrixTests.test_permission_object_scope_and_stale_state_invoke_the_public_sanction_write) ... ok
+test_role_permission_provenance_and_immutable_history_denials_match_the_write (sfpcl_credit.tests.test_credit_action_parity_matrix.SanctionActionWriteMatrixTests.test_role_permission_provenance_and_immutable_history_denials_match_the_write) ... ok
+test_incomplete_row_reports_each_missing_executed_phase (sfpcl_credit.tests.test_credit_action_parity_matrix.ZExecutedObjectScopeLedgerTests.test_incomplete_row_reports_each_missing_executed_phase) ... ok
+test_zz_executed_ledger_equals_all_eight_public_actions (sfpcl_credit.tests.test_credit_action_parity_matrix.ZExecutedObjectScopeLedgerTests.test_zz_executed_ledger_equals_all_eight_public_actions) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.726s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

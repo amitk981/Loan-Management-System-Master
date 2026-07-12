@@ -1,5 +1,15 @@
 # Ralph Progress Log
 
+# Run 2026-07-12_222508_normal_run
+
+- Completed 006X8 by replacing decorator metadata discovery with an eight-row executed ledger.
+- Every row now earns its result through the exact six-field disabled projection, matching public
+  write denial, `OBJECT_ACCESS_DENIED`, and unchanged complete persisted evidence.
+- Mutation coverage omits each required phase in turn and fails the row with a focused message.
+- Focused HTTP non-disclosure and dependency guards pass. Backend check/migration sync and 461 tests
+  pass with 8 expected SQLite skips at 93% coverage; frontend build/typecheck/lint and 199 tests pass.
+- Evidence: `.ralph/runs/2026-07-12_222508_normal_run/`. Next: 006Y12, then 006Y13.
+
 # Run 2026-07-12_213609_repair
 
 - Repaired 006Y11's deterministic trusted-browser failure: the E2E assertion expected the general
@@ -4296,6 +4306,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_220748_architecture_review/.ralph/runs/2026-07-12_220748_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_220748_architecture_review/.ralph/runs/2026-07-12_220748_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-12 22:35:16 - 2026-07-12_222508_normal_run
+- Agent tool used: codex
+- Slice attempted: 006X8-credit-executed-object-scope-regression-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_222508_normal_run/.ralph/runs/2026-07-12_222508_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_222508_normal_run/.ralph/runs/2026-07-12_222508_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
