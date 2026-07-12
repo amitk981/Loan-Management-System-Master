@@ -1,0 +1,9 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006X10-credit-object-scope-executable-row-closure.md
+ M docs/slices/006Y15-witness-authority-matrix-behavioral-closure.md
+ M docs/slices/006Z7-active-member-relaxation-authority-and-evidence-race-closure.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M sfpcl_credit/tests/test_credit_action_parity_matrix.py
+?? .ralph/runs/2026-07-13_010017_normal_run/

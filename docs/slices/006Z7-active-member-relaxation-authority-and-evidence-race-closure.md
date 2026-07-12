@@ -67,3 +67,11 @@ High
 - BR-003..007 and M02-FR-004..006 resolve from one reviewable, source-backed, atomic authority.
 - Concurrent evidence changes cannot make a stale snapshot current or leave partial evidence.
 
+## Execution Notes
+
+- Preserve `POST /api/v1/members/{member_id}/active-status/verify/` as the verification boundary;
+  its strict payload includes decision, reason, effective date, member version, and result/evidence
+  provenance rather than caller-authored authority bypass flags.
+- Race snapshots must include Member current pointer/version, ActiveMemberStatus intervals, supply
+  and service evidence versions, status history, AuditLog, and WorkflowEvent cardinalities so a
+  stale loser cannot pass through a partial comparison.

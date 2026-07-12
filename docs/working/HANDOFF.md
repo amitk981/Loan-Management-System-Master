@@ -1,25 +1,23 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_004501_architecture_review
+2026-07-13_010017_normal_run
 
 ## Current Status
 
-Architecture review of 006X9, 006Y14, 006Z6, and 006Z2 is complete. Production code was not changed.
-The review found residual false closure in independently selectable credit/witness matrices,
-recent-member relaxation and evidence-race proof, shared member authority, and borrower-limit
-provenance/module/UI interaction behavior. Corrective slices 006X10, 006Y15, 006Z7, and 006Z8 own
-the executable fixes.
+006X10 is complete. The credit object-scope registry now contains eight direct callable test cases;
+every selected ID executes one persisted arrangement and one matching write. Paired appraisal rows,
+mixed loan-limit/sanction rows, static names, and synthetic omission exceptions no longer satisfy
+closure. Production credit behavior was not changed.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-13_004501_architecture_review/`. The review pinned
-`540eef4...63136ff`, inspected production/tests and retained browser/PostgreSQL packets, and ran
-queue plus configured quality gates. No production, schema, dependency, source, protected, or
-approved-design file changed.
+Evidence is under `.ralph/runs/2026-07-13_010017_normal_run/`. All eight cases pass alone in normal
+and reverse separate processes; real phase omissions fail locally; focused HTTP denials pass.
+Frontend gates pass with 204 tests; backend gates pass with 483 tests and 93% coverage.
 
 ## Next Run
 
-Run `006X10-credit-object-scope-executable-row-closure`, then `006Y15`, `006Z7`, and `006Z8` in
-dependency/filename order before beginning Epic 007. 007A/007B were sharpened for resolver and
-immutable case-enrichment boundaries.
+Run `006Y15-witness-authority-matrix-behavioral-closure`, then `006Z7` and `006Z8` in dependency/
+filename order before beginning Epic 007. Those corrective slices are already concrete and
+execution-ready; 007A/007B remain sharpened for resolver and immutable case-enrichment boundaries.

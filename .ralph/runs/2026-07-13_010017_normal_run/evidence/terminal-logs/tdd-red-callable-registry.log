@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_explicit_case_table_names_all_eight_public_actions_once (sfpcl_credit.tests.test_credit_action_parity_matrix.ExecutedObjectScopeContractTests.test_explicit_case_table_names_all_eight_public_actions_once)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_010017_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 174, in test_explicit_case_table_names_all_eight_public_actions_once
+    self.assertTrue(all(callable(test_case) for test_case in test_cases))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

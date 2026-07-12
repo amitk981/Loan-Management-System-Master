@@ -1,5 +1,15 @@
 # Ralph Progress Log
 
+# Run 2026-07-13_010017_normal_run
+
+- Completed 006X10 by replacing static test-name completeness with eight direct executable method
+  references and independently isolated persisted object-scope rows.
+- Real omission tests now remove projection, write, category, or evidence from a substantive
+  eligibility row and fail locally; all eight selections pass alone forward/reverse in separate
+  processes, and focused HTTP non-disclosure remains green.
+- Frontend build/typecheck/lint and 204 tests pass; backend check/migration sync and 483 tests pass
+  with 8 expected SQLite skips at 93% coverage. Evidence is in the matching run folder. Next: 006Y15.
+
 # Run 2026-07-13_001731_normal_run
 
 - Completed 006Z6 with complete service/relaxation provenance, locked evidence verification,
@@ -4542,6 +4552,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_004501_architecture_review/.ralph/runs/2026-07-13_004501_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_004501_architecture_review/.ralph/runs/2026-07-13_004501_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 01:12:25 - 2026-07-13_010017_normal_run
+- Agent tool used: codex
+- Slice attempted: 006X10-credit-object-scope-executable-row-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_010017_normal_run/.ralph/runs/2026-07-13_010017_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_010017_normal_run/.ralph/runs/2026-07-13_010017_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

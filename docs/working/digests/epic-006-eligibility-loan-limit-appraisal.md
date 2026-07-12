@@ -1,5 +1,18 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006X10 Executable Credit Object-Scope Rows
+
+- The eight public credit object-scope cases are registered as direct callable test-method
+  references. Missing or renamed methods fail module resolution; missing/duplicate action rows and
+  duplicate/non-test callables fail the completeness contract.
+- Create, update, revalidate, submit-review, loan-limit, and sanction selections now execute only
+  their own persisted arrangement, exact disabled six-field projection, matching public write,
+  `OBJECT_ACCESS_DENIED`, and full before/after evidence comparison. Review and eligibility retain
+  the same isolated contract.
+- Projection/write/category/evidence omission proofs execute the real eligibility arrangement and
+  public write rather than synthetic exceptions. All eight rows pass alone in forward and reverse
+  separate processes; production behavior and PostgreSQL contracts are unchanged.
+
 ## Architecture Review 2026-07-13 - Residual Matrix, Evidence, and Portal Authority Closure
 
 - 006X9 removed process-global state, but four advertised IDs execute paired sibling rows and its

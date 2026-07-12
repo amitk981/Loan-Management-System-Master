@@ -63,3 +63,10 @@ High
 - Parent/child non-disclosure and normal in-scope absence semantics are both preserved.
 - The two correction kinds have complete observable authority/payload matrices with zero loser evidence.
 
+## Execution Notes
+
+- Exercise `PATCH /api/v1/loan-applications/{loan_application_id}/witnesses/{witness_id}/` for
+  both `contact` and `identity` correction payload families; do not add a parallel endpoint.
+- Treat `expected_version`, parent application UUID, witness UUID, correction kind, and changed
+  fields as the row identity. Snapshot Witness, correction history, AuditLog, and WorkflowEvent
+  before every denied write.
