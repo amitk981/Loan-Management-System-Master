@@ -35,13 +35,14 @@ EPIC_006_IDS = {
     for name, number in {
         "application": 601, "member": 602, "nominee": 603, "shareholding": 604,
         "land": 605, "crop": 606, "eligibility": 607, "policy": 608,
+        "witness_member": 611, "witness_shareholding": 612,
     }.items()
 }
 EPIC_006_REFERENCE = "LOE2E00601"
 EPIC_006_FINANCE_PERMISSIONS = (
     "applications.loan_application.read", "members.member.read",
     "members.member.create", "members.member.update",
-    "members.witness.read", "members.witness.create", "credit.eligibility.run",
+    "members.witness.read", "members.witness.create", "members.witness.update", "credit.eligibility.run",
     "credit.loan_limit.calculate", "credit.appraisal.create",
     "credit.appraisal.update", "credit.appraisal.submit_review",
     "credit.appraisal.submit_sanction", "credit.risk_assessment.manage",
@@ -217,6 +218,26 @@ class Command(BaseCommand):
                 "active_member_verified_at": instant, "created_by_user": finance_user,
             },
         )
+        witness_member, _created = Member.objects.update_or_create(
+            member_id=EPIC_006_IDS["witness_member"],
+            defaults={
+                "member_number": "MEM-E2E-006-W",
+                "member_type": "individual_farmer",
+                "legal_name": "Epic 006 Browser Witness",
+                "display_name": "Epic 006 Browser Witness",
+                "folio_number": "FOL-E2E-006-W",
+                "membership_status": "active",
+                "pan_encrypted": "synthetic-e2e-witness-pan",
+                "pan_hash": "synthetic-e2e-witness-pan-hash",
+                "aadhaar_encrypted": "synthetic-e2e-witness-aadhaar",
+                "aadhaar_hash": "synthetic-e2e-witness-aadhaar-hash",
+                "kyc_status": "verified",
+                "default_status": "no_default",
+                "active_member_status": "active",
+                "active_member_verified_at": instant,
+                "created_by_user": finance_user,
+            },
+        )
         nominee, _created = Nominee.objects.update_or_create(
             nominee_id=EPIC_006_IDS["nominee"],
             defaults={
@@ -277,6 +298,20 @@ class Command(BaseCommand):
                 "number_of_shares": 100, "holding_mode": "physical",
                 "valuation_per_share": "2000.00", "valuation_effective_date": instant.date(),
                 "pledged_share_count": 0, "available_share_count": 100, "status": "active",
+            },
+        )
+        Shareholding.objects.update_or_create(
+            shareholding_id=EPIC_006_IDS["witness_shareholding"],
+            defaults={
+                "member": witness_member,
+                "folio_number": witness_member.folio_number,
+                "number_of_shares": 25,
+                "holding_mode": "physical",
+                "valuation_per_share": "2000.00",
+                "valuation_effective_date": instant.date(),
+                "pledged_share_count": 0,
+                "available_share_count": 25,
+                "status": "active",
             },
         )
         LoanPolicyConfig.objects.update_or_create(

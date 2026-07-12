@@ -16,6 +16,7 @@ from sfpcl_credit.applications.models import (
     RejectionNote,
     SystemSequence,
     Witness,
+    WitnessChangeHistory,
 )
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import AuditLog
@@ -54,6 +55,7 @@ APPLICATION_DOCUMENT_UPLOAD_PERMISSION = "applications.document.upload"
 APPLICATION_DOCUMENT_VERIFY_PERMISSION = "applications.document.verify"
 WITNESS_READ_PERMISSION = "members.witness.read"
 WITNESS_CREATE_PERMISSION = "members.witness.create"
+WITNESS_UPDATE_PERMISSION = "members.witness.update"
 LOAN_APPLICATION_REFERENCE_SEQUENCE_CODE = "loan_application_reference"
 APPLICATION_DOCUMENT_ATTACH_AUDIT_ACTION = "applications.application_document.attached"
 APPLICATION_DOCUMENT_VERIFY_AUDIT_ACTION = "applications.application_document.verified"
@@ -179,6 +181,34 @@ def user_can_create_witnesses(user):
     return WITNESS_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
 
 
+def user_can_update_witnesses(user):
+    return WITNESS_UPDATE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def witness_collection_actions(application, actor, permissions=None):
+    permissions = permissions or auth_service.effective_permission_codes(actor)
+    actions = []
+    for code, label, required in (
+        ("read", "View Witnesses", WITNESS_READ_PERMISSION),
+        ("create", "Capture Witness", WITNESS_CREATE_PERMISSION),
+    ):
+        if required in permissions and evaluate_application_object_access(application, actor, required, permissions).allowed:
+            actions.append({"action_code": code, "label": label, "enabled": True, "disabled_reason": None, "required_permission": required, "required_role": None})
+    return actions
+
+
+def witness_resource_actions(witness, actor, permissions=None):
+    permissions = permissions or auth_service.effective_permission_codes(actor)
+    actions = []
+    for code, label, required in (
+        ("read", "View Witness", WITNESS_READ_PERMISSION),
+        ("update", "Correct Witness", WITNESS_UPDATE_PERMISSION),
+    ):
+        if required in permissions and evaluate_application_object_access(witness.loan_application, actor, required, permissions).allowed:
+            actions.append({"action_code": code, "label": label, "enabled": True, "disabled_reason": None, "required_permission": required, "required_role": None})
+    return actions
+
+
 @transaction.atomic
 def create_witness(application, payload, actor_user, request_ip="", request_user_agent=""):
     allowed_fields = {"member_id", "witness_name", "pan", "aadhaar"}
@@ -277,7 +307,7 @@ def create_witness(application, payload, actor_user, request_ip="", request_user
     return witness
 
 
-def serialize_witness(witness):
+def serialize_witness(witness, actor=None, permissions=None):
     return {
         "witness_id": str(witness.witness_id),
         "loan_application_id": str(witness.loan_application_id),
@@ -296,14 +326,17 @@ def serialize_witness(witness):
         "verified_by_user_id": str(witness.verified_by_user_id) if witness.verified_by_user_id else None,
         "verified_at": witness.verified_at.isoformat().replace("+00:00", "Z") if witness.verified_at else None,
         "created_at": witness.created_at.isoformat().replace("+00:00", "Z"),
+        "updated_at": witness.updated_at.isoformat().replace("+00:00", "Z") if witness.updated_at else None,
+        "version": witness.version,
+        "actions": witness_resource_actions(witness, actor, permissions) if actor else [],
     }
 
 
-def list_witnesses(application):
+def list_witnesses(application, actor=None, permissions=None):
     rows = application.witnesses.select_related(
         "member", "verified_by_user", "verification_shareholding"
     ).order_by("created_at", "witness_id")
-    return [serialize_witness(row) for row in rows]
+    return [serialize_witness(row, actor, permissions) for row in rows]
 
 
 def user_can_upload_application_documents(user):

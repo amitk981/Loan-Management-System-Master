@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from django.test import Client, TestCase
 
-from sfpcl_credit.applications.models import LoanApplication, Witness
+from sfpcl_credit.applications.models import LoanApplication, Witness, WitnessChangeHistory
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import Member, Shareholding
 from sfpcl_credit.tests.api_contracts import assert_success_envelope
@@ -14,6 +14,7 @@ from sfpcl_credit.workflows.models import WorkflowEvent
 
 WITNESS_CREATE_PERMISSION = "members.witness.create"
 WITNESS_READ_PERMISSION = "members.witness.read"
+WITNESS_UPDATE_PERMISSION = "members.witness.update"
 
 
 class WitnessApiTests(TestCase):
@@ -39,6 +40,13 @@ class WitnessApiTests(TestCase):
         )
         RolePermission.objects.create(role=role, permission=permission)
         RolePermission.objects.create(role=role, permission=read_permission)
+        update_permission = Permission.objects.create(
+            permission_code=WITNESS_UPDATE_PERMISSION,
+            permission_name="Update witnesses",
+            module_name="members",
+            risk_level="high",
+        )
+        RolePermission.objects.create(role=role, permission=update_permission)
         self.user = User.objects.create(
             full_name="Compliance Witness Creator",
             email="witness.creator@sfpcl.example",
@@ -127,6 +135,66 @@ class WitnessApiTests(TestCase):
         assert_pagination_shape(self, body)
         self.assertEqual(body["pagination"]["total_count"], 1)
         self.assertEqual(body["data"][0]["witness_id"], first.json()["data"]["witness_id"])
+
+    def test_witness_resources_project_versioned_read_create_and_update_actions(self):
+        created = self._post()
+        self.assertEqual(created.status_code, 200)
+
+        response = self.client.get(self._url(), headers=self._headers())
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(
+            [action["action_code"] for action in body["actions"]],
+            ["read", "create"],
+        )
+        witness = body["data"][0]
+        self.assertEqual(witness["version"], 1)
+        self.assertEqual(
+            [action["action_code"] for action in witness["actions"]],
+            ["read", "update"],
+        )
+
+    def test_witness_correction_is_versioned_masked_audited_and_preserves_evidence(self):
+        created = self._post().json()["data"]
+        witness = Witness.objects.get()
+        original_evidence = (witness.member_id, witness.verification_shareholding_id, witness.verification_folio_number, witness.verified_by_user_id, witness.verified_at)
+        checker = self._user("witness.checker@sfpcl.example", "CheckerPass123!", *Permission.objects.filter(permission_code__in=[WITNESS_READ_PERMISSION, WITNESS_UPDATE_PERMISSION]))
+        self.application.created_by_user = checker
+        self.application.save(update_fields=["created_by_user"])
+
+        response = self.client.patch(
+            self._detail_url(created["witness_id"]),
+            data={"version": 1, "witness_name": "Sita Patil corrected", "pan": "KLMNO9876P", "aadhaar": "987698769876"},
+            content_type="application/json",
+            headers=self._headers_for(checker.email, "CheckerPass123!"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        corrected = response.json()["data"]
+        self.assertEqual(corrected["version"], 2)
+        self.assertEqual(corrected["pan"]["masked"], "******876P")
+        self.assertEqual(corrected["aadhaar"]["masked"], "********9876")
+        witness.refresh_from_db()
+        self.assertEqual((witness.member_id, witness.verification_shareholding_id, witness.verification_folio_number, witness.verified_by_user_id, witness.verified_at), original_evidence)
+        history = WitnessChangeHistory.objects.get()
+        self.assertEqual(history.changed_fields, ["witness_name", "pan", "aadhaar"])
+        serialized = json.dumps({"old": history.old_value_json, "new": history.new_value_json, "audit": AuditLog.objects.get(action="applications.witness.corrected").new_value_json})
+        self.assertNotIn("KLMNO9876P", serialized)
+        self.assertNotIn("987698769876", serialized)
+
+    def test_witness_correction_rejects_immutable_and_stale_payloads_without_writes(self):
+        witness_id = self._post().json()["data"]["witness_id"]
+        headers = self._headers()
+        baseline_audits = AuditLog.objects.count()
+        immutable = self.client.patch(self._detail_url(witness_id), data={"version": 1, "member_id": str(uuid4())}, content_type="application/json", headers=headers)
+        self.assertEqual(immutable.status_code, 400)
+        self.assertIn("member_id", immutable.json()["error"]["field_errors"])
+        stale = self.client.patch(self._detail_url(witness_id), data={"version": 2, "witness_name": "Changed"}, content_type="application/json", headers=headers)
+        self.assertEqual(stale.status_code, 409)
+        self.assertEqual(Witness.objects.get().version, 1)
+        self.assertEqual(WitnessChangeHistory.objects.count(), 0)
+        self.assertEqual(AuditLog.objects.count(), baseline_audits)
 
     def test_witness_read_retains_verification_time_shareholding_and_folio(self):
         created = self._post()
@@ -374,3 +442,6 @@ class WitnessApiTests(TestCase):
     def _url(self, application=None):
         application = application or self.application
         return f"/api/v1/loan-applications/{application.loan_application_id}/witnesses/"
+
+    def _detail_url(self, witness_id):
+        return f"{self._url()}{witness_id}/"

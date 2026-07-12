@@ -11,6 +11,7 @@ from sfpcl_credit.api import (
 )
 from sfpcl_credit.approvals.modules.sanction_handoff import SanctionHandoffModule
 from sfpcl_credit.applications import services
+from sfpcl_credit.applications.modules.witness_corrections import WitnessCorrectionError, correct_witness
 from sfpcl_credit.credit.modules.common import (
     CreditModuleInvalidStateError,
     CreditModuleNotFound,
@@ -202,7 +203,7 @@ def loan_application_witnesses(request, loan_application_id):
     if not object_access.allowed:
         return _object_access_denied_response(request, object_access)
     if request.method == "GET":
-        items = services.list_witnesses(application)
+        items = services.list_witnesses(application, user, permissions)
         return list_response(
             items,
             {
@@ -214,6 +215,7 @@ def loan_application_witnesses(request, loan_application_id):
                 "has_previous": False,
             },
             request,
+            actions=services.witness_collection_actions(application, user, permissions),
         )
     try:
         witness = services.create_witness(
@@ -233,7 +235,36 @@ def loan_application_witnesses(request, loan_application_id):
             "VALIDATION_ERROR",
             "Witness payload failed validation.",
         )
-    return success_response(services.serialize_witness(witness), request)
+    return success_response(services.serialize_witness(witness, user, permissions), request)
+
+
+@require_http_methods(["GET", "PATCH"])
+def loan_application_witness_detail(request, loan_application_id, witness_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    required = services.WITNESS_READ_PERMISSION if request.method == "GET" else services.WITNESS_UPDATE_PERMISSION
+    if required not in permissions:
+        return error_response(request, 403, "FORBIDDEN", "You do not have permission to access witnesses.")
+    application = services.get_application(loan_application_id)
+    if application is None:
+        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+    access = services.evaluate_application_object_access(application, user, required, permissions)
+    if not access.allowed:
+        return _object_access_denied_response(request, access)
+    witness = application.witnesses.filter(witness_id=witness_id).first()
+    if witness is None:
+        return error_response(request, 404, "NOT_FOUND", "Witness was not found.")
+    if request.method == "GET":
+        return success_response(services.serialize_witness(witness, user, permissions), request)
+    try:
+        corrected = correct_witness(witness=witness, payload=parse_json_body(request), actor_user=user, request_ip=request_ip(request), request_user_agent=request_user_agent(request))
+    except WitnessCorrectionError as exc:
+        status = 409 if exc.code == "VERSION_CONFLICT" else (403 if exc.code == "MAKER_CHECKER_REQUIRED" else 400)
+        return error_response(request, status, exc.code, exc.message, exc.field_errors)
+    except ValidationError:
+        return error_response(request, 400, "VALIDATION_ERROR", "Witness payload failed validation.")
+    return success_response(services.serialize_witness(corrected, user, permissions), request)
 
 
 @require_http_methods(["POST"])

@@ -11,6 +11,8 @@ const API_ORIGIN = 'http://127.0.0.1:8000';
 const FINANCE_EMAIL = 'e2e.credit.finance@sfpcl.example';
 const MANAGER_EMAIL = 'e2e.credit.manager@sfpcl.example';
 const VERIFIED_MEMBER_ID = '00000000-0000-4000-8000-000000000602';
+const WITNESS_MEMBER_ID = '00000000-0000-4000-8000-000000000611';
+const CREDIT_APPLICATION_ID = '00000000-0000-4000-8000-000000000601';
 
 test('member creation, canonical update, approved identity correction, and denial use real sessions', async ({ page }) => {
   await staffLogin(page, FINANCE_EMAIL, E2E_PASSWORD);
@@ -92,6 +94,49 @@ test('member creation, canonical update, approved identity correction, and denia
   await capture(page, 'member-governance-denied.png');
 });
 
+test('witness capture and correction refetch canonical resources and surface stale and denied states', async ({ page }) => {
+  await staffLogin(page, FINANCE_EMAIL, E2E_PASSWORD);
+  await page.getByRole('button', { name: 'Applications' }).click();
+  await page.getByPlaceholder('Search by number or member…').fill('LOE2E00601');
+  await page.getByRole('row').filter({ hasText: 'LOE2E00601' }).click();
+  await page.getByRole('button', { name: 'Witness' }).click();
+  await page.getByLabel('Member ID').fill(WITNESS_MEMBER_ID);
+  await page.getByLabel('Witness Name').fill('Epic 006 Browser Witness');
+  await page.getByLabel('PAN').fill('ABCDE1234F');
+  await page.getByLabel('Aadhaar').fill('123412341234');
+  const captured = waitForMutation(page, 'POST', new RegExp(`/api/v1/loan-applications/${CREDIT_APPLICATION_ID}/witnesses/$`));
+  const refetched = waitForMutation(page, 'GET', new RegExp(`/api/v1/loan-applications/${CREDIT_APPLICATION_ID}/witnesses/$`));
+  await page.getByRole('button', { name: 'Capture Witness' }).click();
+  expect((await captured).status()).toBe(200);
+  expect((await refetched).status()).toBe(200);
+  await expect(page.getByText('******234F')).toBeVisible();
+  await capture(page, 'witness-capture-refetched.png');
+
+  await page.getByRole('button', { name: 'Correct Witness' }).click();
+  await page.getByLabel('Correction Witness Name').fill('Epic 006 Witness Corrected');
+  const corrected = waitForMutation(page, 'PATCH', /\/witnesses\/[0-9a-f-]+\/$/);
+  const correctedRefetch = waitForMutation(page, 'GET', new RegExp(`/api/v1/loan-applications/${CREDIT_APPLICATION_ID}/witnesses/$`));
+  await page.getByRole('button', { name: 'Save Witness Correction' }).click();
+  expect((await corrected).status()).toBe(200);
+  expect((await correctedRefetch).status()).toBe(200);
+  await expect(page.getByText('Epic 006 Witness Corrected')).toBeVisible();
+  await capture(page, 'witness-correction-refetched.png');
+
+  await page.getByRole('button', { name: 'Correct Witness' }).click();
+  const witnessId = (await browserGet(page, `/api/v1/loan-applications/${CREDIT_APPLICATION_ID}/witnesses/`)).body.data[0].witness_id;
+  await browserPatch(page, `/api/v1/loan-applications/${CREDIT_APPLICATION_ID}/witnesses/${witnessId}/`, { version: 2, witness_name: 'Concurrent Witness Correction' });
+  await page.getByLabel('Correction Witness Name').fill('Stale Witness Correction');
+  await page.getByRole('button', { name: 'Save Witness Correction' }).click();
+  await expect(page.getByText(/changed by another user/i)).toBeVisible();
+  await capture(page, 'witness-correction-stale.png');
+
+  await switchStaffUser(page, ZERO_EMAIL);
+  const denied = await browserPatch(page, `/api/v1/loan-applications/${CREDIT_APPLICATION_ID}/witnesses/${witnessId}/`, { version: 3, witness_name: 'Denied Witness Correction' });
+  expect(denied.status).toBe(403);
+  expect(denied.body).toMatchObject({ success: false, error: { code: 'FORBIDDEN' } });
+  await capture(page, 'witness-resource-denied.png');
+});
+
 async function openMembers(page: Page) {
   await page.getByRole('button', { name: 'Members & Borrowers' }).click();
   await expect(page.getByRole('heading', { name: 'Member Directory' })).toBeVisible();
@@ -125,6 +170,27 @@ async function browserPost(page: Page, pathname: string, body: Record<string, un
     });
     return { status: response.status, body: await response.json() };
   }, { origin: API_ORIGIN, target: pathname, payload: body });
+}
+
+async function browserGet(page: Page, pathname: string) {
+  return browserRequest(page, 'GET', pathname);
+}
+
+async function browserPatch(page: Page, pathname: string, body: Record<string, unknown>) {
+  return browserRequest(page, 'PATCH', pathname, body);
+}
+
+async function browserRequest(page: Page, method: string, pathname: string, body?: Record<string, unknown>) {
+  return page.evaluate(async ({ origin, target, requestMethod, payload }) => {
+    const raw = localStorage.getItem('sfpcl_staff_auth_session');
+    const accessToken = raw ? JSON.parse(raw).accessToken : '';
+    const response = await fetch(`${origin}${target}`, {
+      method: requestMethod,
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: payload ? JSON.stringify(payload) : undefined,
+    });
+    return { status: response.status, body: await response.json() };
+  }, { origin: API_ORIGIN, target: pathname, requestMethod: method, payload: body });
 }
 
 const capture = (page: Page, name: string) => page.screenshot({

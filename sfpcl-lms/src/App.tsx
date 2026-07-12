@@ -249,8 +249,6 @@ const AppInner: React.FC = () => {
             onBack={() => navigate('applications')}
             onNavigateMember={id => navigate('members/profile', id)}
             onNavigateAppraisal={id => navigate('appraisal', id)}
-            canReadWitnesses={currentUser.permissions.includes('members.witness.read')}
-            canCreateWitnesses={currentUser.permissions.includes('members.witness.create')}
           />
         );
       case 'completeness':

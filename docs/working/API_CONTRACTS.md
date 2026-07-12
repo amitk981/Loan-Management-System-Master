@@ -2134,6 +2134,20 @@ tokens, and keyed hashes are never returned or audited. Creation writes one meta
 Later shareholding folio/status/count changes or newly created holdings do not change witness read
 evidence. Legacy rows whose creation audit folio does not resolve to exactly one member
 shareholding expose both evidence fields as `null` rather than selecting current facts.
+### Witness correction and resource actions (006Y4)
+
+- The collection GET additionally returns top-level six-field `actions` for `read` and `create`;
+  each witness returns `version` plus six-field `actions` for `read` and `update`. The same
+  permission/object-access evaluations guard the writes.
+- `GET/PATCH /api/v1/loan-applications/{loan_application_id}/witnesses/{witness_id}/` requires
+  `members.witness.read/update` respectively and exact application object access.
+- PATCH requires current positive-integer `version` and accepts only `witness_name`, `pan`, and
+  `aadhaar`. Verification evidence/provenance fields are immutable. Invalid fields return 400;
+  stale version returns `409 VERSION_CONFLICT`, both with zero domain/evidence writes.
+- Verified identity correction requires a different authorised actor from the verification actor.
+  Success increments version, stores protected identity, returns masked values, writes masked
+  history, and emits metadata-only `applications.witness.corrected` audit evidence.
+
 # Epic 006 authoritative workbench actions (006H4)
 
 Eligibility, loan-limit, appraisal-note, appraisal transition, and sanction submit/read success
@@ -2168,10 +2182,7 @@ not supplement this resource projection from `/auth/me.available_actions`.
 - Application Detail calls the 004E2 witness GET/POST endpoint and performs a canonical witness
   GET after successful capture. Immutable verification-time shareholding/folio evidence is rendered
   from that read response; identity values remain masked after capture.
-- Contract mismatch: no source or delivered 004E/004E2 endpoint exists for witness update/PATCH,
-  although 006Y2 asks for an edit surface. The UI does not invent an edit request. Correction stays
-  deferred until a backend contract names editable fields, optimistic version semantics, a resource
-  action/permission, immutable-evidence behavior, and audit rules.
+- The former witness-correction mismatch is closed by 006Y4's versioned resource contract.
 
 ## Member Registry and approved identity change (006Y3)
 

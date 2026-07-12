@@ -52,6 +52,7 @@ PERMISSIONS = [
     # canonical catalogue omits the atomic codes.
     ("members.witness.read", "View witnesses", "medium"),
     ("members.witness.create", "Create witnesses", "high"),
+    ("members.witness.update", "Update witnesses", "high"),
     ("members.shareholding.read", "View shareholding", "medium"),
     ("members.shareholding.create", "Create shareholding", "high"),
     ("members.shareholding.update", "Update shareholding", "high"),
@@ -361,6 +362,7 @@ ROLE_PERMISSIONS = {
     "compliance_team_member": [
         "members.witness.read",
         "members.witness.create",
+        "members.witness.update",
         "documents.loan_document.generate",
         "documents.loan_document.read",
         "documents.loan_document.verify",
@@ -380,6 +382,7 @@ ROLE_PERMISSIONS = {
     "company_secretary": [
         "members.witness.read",
         "members.witness.create",
+        "members.witness.update",
         "documents.checklist.approve_cs",
         "documents.loan_document.verify",
         "documents.signature.resolve_mismatch",

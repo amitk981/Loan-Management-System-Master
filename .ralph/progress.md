@@ -1678,6 +1678,14 @@ Validation evidence added:
 - Risk level: See risk assessment.
 - Next action: Review packet.
 
+# Run 2026-07-12_105158_normal_run
+
+- Completed 006Y4 witness correction and resource-action closure.
+- Added protected versioned correction, immutable evidence, masked history/audit, exact authority,
+  canonical UI refetch, mounted interaction tests, and the trusted-browser spec.
+- Frontend: 173 tests plus typecheck/lint/build. Backend: 418 tests, 94% coverage, check/migrations.
+- Next: independent trusted-browser execution, then 006Z produce-supply persistence.
+
 # Run 2026-07-11_133237_normal_run
 
 - Completed 006H4: backend credit responses now carry object/state/permission/role-aware §44
@@ -3756,6 +3764,28 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/.ralph/runs/2026-07-12_103847_repair/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/.ralph/runs/2026-07-12_103847_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+# Repair 2026-07-12_110649_repair
+
+- Repaired 006Y4's deterministic trusted-browser `400`: the member-governance test moved the
+  shared borrower into KYC pending before the witness test tried to use that borrower as a witness.
+- Seeded a separate verified shareholder/shareholding for witness acceptance and added real-API
+  regression coverage proving borrower reverification does not invalidate witness capture.
+- Frontend build/typecheck/lint and 173 tests passed; backend check/migration sync and 419 tests
+  passed at 94% coverage. Playwright collection passed; local Chromium hit the documented macOS
+  Mach service sandbox denial before test execution.
+- Next action: independent validation runs the trusted browser contract twice and requires all four
+  witness screenshots, then run 006Z.
+
+## 2026-07-12 11:17:18 - 2026-07-12_110649_repair
+- Agent tool used: codex
+- Slice attempted: 006Y4-witness-correction-and-resource-action-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_105158_normal_run/.ralph/runs/2026-07-12_110649_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_105158_normal_run/.ralph/runs/2026-07-12_110649_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

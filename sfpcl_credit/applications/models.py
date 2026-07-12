@@ -206,6 +206,12 @@ class Witness(models.Model):
     )
     verified_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(blank=True, null=True)
+    updated_by_user = models.ForeignKey(
+        "identity.User", blank=True, null=True, on_delete=models.PROTECT,
+        related_name="updated_witnesses",
+    )
+    version = models.PositiveIntegerField(default=1, db_default=1)
 
     class Meta:
         db_table = "witnesses"
@@ -235,6 +241,21 @@ class Witness(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
+
+
+class WitnessChangeHistory(models.Model):
+    witness_change_history_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    witness = models.ForeignKey(Witness, on_delete=models.PROTECT, related_name="change_history")
+    actor_user = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="witness_changes")
+    witness_version = models.PositiveIntegerField()
+    changed_fields = models.JSONField(default=list)
+    old_value_json = models.JSONField(default=dict)
+    new_value_json = models.JSONField(default=dict)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "witness_change_history"
+        ordering = ["created_at", "witness_change_history_id"]
 
 
 class SystemSequence(models.Model):

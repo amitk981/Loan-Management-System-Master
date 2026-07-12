@@ -14,6 +14,7 @@ interface ApiEnvelope<T> {
     field_errors?: Record<string, string>;
   };
   pagination?: Pagination;
+  actions?: ApplicationAvailableAction[];
 }
 
 export interface Pagination {
@@ -72,6 +73,13 @@ export interface ApplicationWitness {
   shareholder_verified_flag: boolean;
   verification_status: string;
   verified_at: string | null;
+  version: number;
+  actions: ApplicationAvailableAction[];
+}
+
+export interface ApplicationWitnessCollection {
+  items: ApplicationWitness[];
+  actions: ApplicationAvailableAction[];
 }
 
 export interface CreateApplicationWitnessPayload {
@@ -304,9 +312,9 @@ export const fetchApplicationDetail = async (applicationId: string): Promise<Sta
   return envelope.data as StaffApplication;
 };
 
-export const fetchApplicationWitnesses = async (applicationId: string): Promise<ApplicationWitness[]> => {
+export const fetchApplicationWitnesses = async (applicationId: string): Promise<ApplicationWitnessCollection> => {
   const envelope = await request<ApplicationWitness[]>(`/api/v1/loan-applications/${applicationId}/witnesses/`);
-  return envelope.data ?? [];
+  return { items: envelope.data ?? [], actions: (envelope as ApiEnvelope<ApplicationWitness[]> & { actions?: ApplicationAvailableAction[] }).actions ?? [] };
 };
 
 export const createApplicationWitness = async (
@@ -314,6 +322,15 @@ export const createApplicationWitness = async (
   payload: CreateApplicationWitnessPayload,
 ): Promise<ApplicationWitness> => {
   const envelope = await request<ApplicationWitness>(`/api/v1/loan-applications/${applicationId}/witnesses/`, 'POST', payload);
+  return envelope.data as ApplicationWitness;
+};
+
+export const updateApplicationWitness = async (
+  applicationId: string,
+  witnessId: string,
+  payload: { version: number; witness_name?: string; pan?: string; aadhaar?: string },
+): Promise<ApplicationWitness> => {
+  const envelope = await request<ApplicationWitness>(`/api/v1/loan-applications/${applicationId}/witnesses/${witnessId}/`, 'PATCH', payload);
   return envelope.data as ApplicationWitness;
 };
 

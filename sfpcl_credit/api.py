@@ -38,13 +38,14 @@ def success_response(data, request):
     return JsonResponse({"success": True, "data": data, "meta": response_meta(request)})
 
 
-def list_response(data, pagination, request):
+def list_response(data, pagination, request, **resource_metadata):
     return JsonResponse(
         {
             "success": True,
             "data": data,
             "pagination": pagination,
             "meta": response_meta(request),
+            **resource_metadata,
         }
     )
 

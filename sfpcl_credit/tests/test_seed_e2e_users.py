@@ -172,10 +172,49 @@ class SeedE2eUsersTests(TestCase):
             "pending",
         )
         self.assertEqual(Member.objects.filter(member_number="MEM-E2E-006").count(), 1)
+        witness_member = Member.objects.get(member_number="MEM-E2E-006-W")
+        self.assertNotEqual(witness_member, application.member)
+        self.assertEqual(witness_member.kyc_status, "verified")
+        self.assertEqual(witness_member.legal_name, "Epic 006 Browser Witness")
+        self.assertEqual(
+            Shareholding.objects.filter(
+                member=witness_member,
+                status="active",
+                number_of_shares__gt=0,
+            ).count(),
+            1,
+        )
         self.assertEqual(Shareholding.objects.filter(member=application.member).count(), 1)
         self.assertEqual(LandHolding.objects.filter(member=application.member).count(), 1)
         self.assertEqual(CropPlan.objects.filter(member=application.member).count(), 1)
         self.assertEqual(LoanPolicyConfig.objects.filter(status="active").count(), 1)
+
+    def test_seeded_witness_capture_is_independent_of_borrower_reverification(self):
+        call_command("seed_role_catalogue")
+        self._seed_e2e_users()
+        application = LoanApplication.objects.get(
+            application_reference_number=EPIC_006_REFERENCE
+        )
+        application.member.kyc_status = "pending"
+        application.member.save(update_fields=["kyc_status"])
+        witness_member = Member.objects.get(member_number="MEM-E2E-006-W")
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{application.pk}/witnesses/",
+            data={
+                "member_id": str(witness_member.pk),
+                "witness_name": witness_member.legal_name,
+                "pan": "ABCDE1234F",
+                "aadhaar": "123412341234",
+            },
+            content_type="application/json",
+            headers=self._auth_headers(EPIC_006_FINANCE_EMAIL),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(
+            response.json()["data"]["member_id"], str(witness_member.pk)
+        )
 
     def test_seeded_fixture_completes_real_two_role_http_path(self):
         call_command("seed_role_catalogue")

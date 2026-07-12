@@ -1,7 +1,7 @@
 # Slice 006Y4: Witness Correction and Resource Action Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master
@@ -83,4 +83,3 @@ High
   verification-time shareholder evidence remains immutable.
 - No witness mutation control derives authority from `/auth/me`, and every success/error path is
   proven through the mounted container and real browser.
-

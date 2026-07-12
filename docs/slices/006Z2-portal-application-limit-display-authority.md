@@ -73,6 +73,11 @@ Medium
 - Trusted-browser screenshots must use the real portal login boundary and reopen the routed screen
   after reload; no plaintext member identity data may appear in fixtures, logs, or baselines.
 
+## Run-Ahead Sharpening Review (006Y4, 2026-07-12)
+
+- Keep the projection endpoint read-only and portal-account scoped; it returns no staff resource
+  actions. Mounted tests must prove one projection GET and no retry/local synthesis after errors.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

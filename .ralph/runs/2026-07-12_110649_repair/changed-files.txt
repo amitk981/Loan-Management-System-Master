@@ -1,0 +1,28 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006Y4-witness-correction-and-resource-action-closure.md
+ M docs/slices/006Z-produce-supply-history-persistence.md
+ M docs/slices/006Z2-portal-application-limit-display-authority.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M sfpcl-lms/e2e/member-governance-closure.e2e.spec.ts
+ M sfpcl-lms/src/App.tsx
+ M sfpcl-lms/src/pages/applications/ApplicationDetail.test.tsx
+ M sfpcl-lms/src/pages/applications/ApplicationDetail.tsx
+ M sfpcl-lms/src/services/applicationIntakeApi.test.ts
+ M sfpcl-lms/src/services/applicationIntakeApi.ts
+ M sfpcl_credit/api.py
+ M sfpcl_credit/applications/models.py
+ M sfpcl_credit/applications/services.py
+ M sfpcl_credit/applications/views.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/identity/catalogue.py
+ M sfpcl_credit/identity/management/commands/seed_e2e_users.py
+ M sfpcl_credit/tests/test_seed_e2e_users.py
+ M sfpcl_credit/tests/test_witness_api.py
+?? .ralph/runs/2026-07-12_105158_normal_run/
+?? .ralph/runs/2026-07-12_110649_repair/
+?? sfpcl-lms/src/pages/applications/WitnessPanel.container.test.tsx
+?? sfpcl_credit/applications/migrations/0013_witness_correction.py
+?? sfpcl_credit/applications/modules/witness_corrections.py

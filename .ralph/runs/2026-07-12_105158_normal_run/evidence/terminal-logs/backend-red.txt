@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_witness_resources_project_versioned_read_create_and_update_actions (sfpcl_credit.tests.test_witness_api.WitnessApiTests.test_witness_resources_project_versioned_read_create_and_update_actions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_105158_normal_run/sfpcl_credit/tests/test_witness_api.py", line 148, in test_witness_resources_project_versioned_read_create_and_update_actions
+    [action["action_code"] for action in body["actions"]],
+                                         ~~~~^^^^^^^^^^^
+KeyError: 'actions'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.026s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

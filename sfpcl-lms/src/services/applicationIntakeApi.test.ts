@@ -43,7 +43,7 @@ describe('application intake API client', () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(ok([witness])).mockResolvedValueOnce(ok(witness));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(fetchApplicationWitnesses('app-1')).resolves.toEqual([witness]);
+    await expect(fetchApplicationWitnesses('app-1')).resolves.toEqual({ items: [witness], actions: [] });
     await expect(createApplicationWitness('app-1', payload)).resolves.toEqual(witness);
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:8000/api/v1/loan-applications/app-1/witnesses/', request());

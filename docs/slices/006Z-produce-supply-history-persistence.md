@@ -67,6 +67,13 @@ High
 - Keep S06 supply facts read-only without resource actions and prove direct 403 plus one-call
   400/409 behavior. Browser fixtures must be synthetic and contain no protected identity values.
 
+## Run-Ahead Sharpening Review (006Y4, 2026-07-12)
+
+- Use the delivered collection/resource six-field action shape and optimistic version vocabulary;
+  staff UI authority must come from supply resources, never `/auth/me` permission inference.
+- Persist verification evidence separately from mutable display facts, and make rejected/stale
+  writes preserve record/history/audit counts. Reuse the mounted canonical-refetch proof pattern.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

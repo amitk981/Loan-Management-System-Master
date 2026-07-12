@@ -210,15 +210,14 @@ describe('ApplicationDetail API-backed rendering', () => {
     expect(html).not.toContain('Borrower does not meet active member criteria.');
   });
 
-  it('renders neutral nominee and permission-bound witness states through the HTTP rendering seam', async () => {
+  it('renders neutral nominee and resource-loading witness states through the HTTP rendering seam', async () => {
     mockApplicationDetailServices(application, [], []);
     const data = await loadApplicationDetail(application.loan_application_id);
     const nomineeHtml = renderView({ status: 'success', data, message: '', activeTab: 3 });
     const witnessHtml = renderView({ status: 'success', data, message: '', activeTab: 4 });
 
     expect(nomineeHtml).toContain('No API-backed nominee details are available');
-    expect(witnessHtml).toContain('Witness access unavailable');
-    expect(witnessHtml).toContain('You do not have permission to access witnesses.');
+    expect(witnessHtml).toContain('Loading witness details from the application API.');
     expect(`${nomineeHtml}${witnessHtml}`).not.toContain('Sudha Patil');
     expect(`${nomineeHtml}${witnessHtml}`).not.toContain('Rajan Marathe');
     expect(`${nomineeHtml}${witnessHtml}`).not.toContain('Sunanda Patil');
