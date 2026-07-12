@@ -25,6 +25,10 @@ source scripts/lib/ralph-browser-acceptance.sh
 # shellcheck source=../lib/ralph-retry-policy.sh
 source scripts/lib/ralph-retry-policy.sh
 
+[[ -f scripts/lib/ralph-merge-guard.sh ]] || fail "missing safe Ralph merge collision guard"
+# shellcheck source=../lib/ralph-merge-guard.sh
+source scripts/lib/ralph-merge-guard.sh
+
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_SUCCESS")" == "success" ]] || fail "success status misclassified"
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_QUEUE_EMPTY")" == "queue_empty" ]] || fail "queue-empty status misclassified"
 [[ "$(ralph_outcome_for_status "$RALPH_EXIT_OWNER_VETO")" == "owner_veto" ]] || fail "owner-veto status misclassified"
@@ -54,6 +58,36 @@ EOF
   || fail "configured progressive repair ceiling was not honored"
 [[ "$(ralph_max_progressive_repair_attempts "$fixture_dir/invalid-retries.yaml")" == "3" ]] \
   || fail "missing progressive repair ceiling did not fail safely to three"
+
+merge_repo="$fixture_dir/merge-repo"
+git init -q -b integration "$merge_repo"
+git -C "$merge_repo" config user.name "Ralph Regression"
+git -C "$merge_repo" config user.email "ralph-regression@example.invalid"
+printf 'base\n' > "$merge_repo/base.txt"
+git -C "$merge_repo" add base.txt
+git -C "$merge_repo" commit -qm base
+git -C "$merge_repo" switch -qc completed-slice
+mkdir -p "$merge_repo/.ralph/runs/failed-run"
+printf 'identical evidence\n' > "$merge_repo/.ralph/runs/failed-run/evidence.md"
+printf 'branch version\n' > "$merge_repo/conflict.txt"
+git -C "$merge_repo" add .ralph/runs/failed-run/evidence.md conflict.txt
+git -C "$merge_repo" commit -qm completed
+git -C "$merge_repo" switch -q integration
+mkdir -p "$merge_repo/.ralph/runs/failed-run"
+printf 'identical evidence\n' > "$merge_repo/.ralph/runs/failed-run/evidence.md"
+printf 'owner version\n' > "$merge_repo/conflict.txt"
+if ralph_remove_identical_untracked_merge_collisions "$merge_repo" completed-slice >/dev/null 2>&1; then
+  fail "merge guard accepted a differing untracked collision"
+fi
+[[ -e "$merge_repo/.ralph/runs/failed-run/evidence.md" ]] \
+  || fail "merge guard partially cleaned files after finding a differing collision"
+[[ "$(cat "$merge_repo/conflict.txt")" == "owner version" ]] \
+  || fail "merge guard changed a differing untracked file"
+rm "$merge_repo/conflict.txt"
+ralph_remove_identical_untracked_merge_collisions "$merge_repo" completed-slice \
+  || fail "merge guard rejected a clean branch after identical collisions were removed"
+git -C "$merge_repo" merge --ff-only -q completed-slice \
+  || fail "merge still failed after safe collision cleanup"
 
 [[ -f scripts/lib/ralph-repair-context.sh ]] || fail "missing same-worktree repair context helper"
 # shellcheck source=../lib/ralph-repair-context.sh
@@ -328,6 +362,10 @@ rg -q 'ralph_write_repair_context' scripts/ralph-run.sh \
   || fail "failed validation does not publish structured same-worktree repair context"
 rg -q 'COMMIT_FAILED: validated work' scripts/ralph-run.sh \
   || fail "post-validation commit failure is not fatal and repair-readable"
+rg -q 'ralph_remove_identical_untracked_merge_collisions' scripts/ralph-run.sh \
+  || fail "Ralph does not clear safe generated-artifact collisions before merging"
+rg -q "declaring 'localhost-e2e-server'.*'## Trusted Browser Acceptance'" scripts/ralph-run.sh \
+  || fail "trusted browser prompt text is vulnerable to heredoc command substitution"
 python3 - <<'PY'
 from pathlib import Path
 source = Path("scripts/ralph-run.sh").read_text()

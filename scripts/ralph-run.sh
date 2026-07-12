@@ -7,6 +7,7 @@ source "$repo_root/scripts/lib/ralph-exit-protocol.sh"
 source "$repo_root/scripts/lib/ralph-postgresql-acceptance.sh"
 source "$repo_root/scripts/lib/ralph-slice-selection.sh"
 source "$repo_root/scripts/lib/ralph-repair-context.sh"
+source "$repo_root/scripts/lib/ralph-merge-guard.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -329,7 +330,7 @@ Core requirements:
 - Your sandbox has no network access: never run pip install. If a dependency you just pinned in requirements is not importable yet, still write the code, tests, and pin; note the missing module in final-summary.md and finish — the orchestrator installs pinned requirements before independent validation. That situation is expected, not a failure.
 - Frontend changes must follow docs/working/FRONTEND_DESIGN_RULES.md exactly: reuse existing components and patterns; never introduce new styling, colours, typography, layouts, or components. If the documents require a screen the prototype lacks, building it from existing patterns and wiring it to the backend is part of the slice.
 - Run required quality gates.
-- For a slice declaring `localhost-e2e-server`, implement the exact specs and screenshot outputs in its `## Trusted Browser Acceptance` section. Your coding sandbox may deny Chromium's macOS services: use Playwright collection or non-browser tests for your local feedback, do not fabricate screenshots, and do not declare the run failed solely because Chromium cannot launch. The orchestrator runs the declared browser contract twice outside your sandbox after you finish; that independent gate decides browser acceptance.
+- For a slice declaring 'localhost-e2e-server', implement the exact specs and screenshot outputs in its '## Trusted Browser Acceptance' section. Your coding sandbox may deny Chromium's macOS services: use Playwright collection or non-browser tests for your local feedback, do not fabricate screenshots, and do not declare the run failed solely because Chromium cannot launch. The orchestrator runs the declared browser contract twice outside your sandbox after you finish; that independent gate decides browser acceptance.
 - Save evidence.
 - Save changed-files.txt.
 - Save risk-assessment.md.
@@ -619,7 +620,8 @@ merged=0
 if (( committed == 1 )) && (( no_worktree == 0 )); then
   auto_merge="$(awk -F': *' '/^[[:space:]]*auto_merge:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
   if [[ "$auto_merge" == "true" ]]; then
-    if git -C "$repo_root" merge --ff-only "$branch_name"; then
+    if ralph_remove_identical_untracked_merge_collisions "$repo_root" "$branch_name" \
+        && git -C "$repo_root" merge --ff-only "$branch_name"; then
       git -C "$repo_root" worktree remove --force "$worktree_dir"
       git -C "$repo_root" branch -d "$branch_name"
       run_dir="$repo_root/.ralph/runs/$run_id"
