@@ -403,9 +403,13 @@ def validate_sensitive_reveal_payload(payload):
     return field_name, reason.strip()
 
 
-def paginated_members(query_params):
+def paginated_members(query_params, actor_user):
+    from sfpcl_credit.members.modules.member_authority import member_scope_predicate
+
     filters = _validate_query(query_params)
-    queryset = Member.objects.filter(is_deleted=False).order_by("display_name", "member_id")
+    queryset = Member.objects.filter(is_deleted=False).filter(
+        member_scope_predicate(actor_user=actor_user, permission=MEMBER_READ_PERMISSION)
+    ).order_by("display_name", "member_id")
     if filters["search"]:
         search = filters["search"]
         queryset = queryset.filter(
@@ -804,8 +808,14 @@ def _validated_supply_payload(payload):
 
 @transaction.atomic
 def create_produce_supply_record(member, payload, actor_user, request_ip="", request_user_agent=""):
+    from sfpcl_credit.members.modules.member_authority import evaluate_member_authority
+
     payload = _validated_supply_payload(payload)
     member = Member.objects.select_for_update().get(member_id=member.member_id)
+    if not evaluate_member_authority(
+        actor_user=actor_user, member=member, permission=PRODUCE_SUPPLY_CAPTURE_PERMISSION
+    ).allowed:
+        raise PermissionError("You cannot access this member.")
     if payload["version"] != member.version:
         raise ProduceSupplyConflict("STALE_WRITE", "Member has changed; refresh and retry.", {"version": "Version is stale."})
     routed_member = None
@@ -906,6 +916,8 @@ def serialize_produce_supply_record(record, user=None, portal=False):
 
 @transaction.atomic
 def verify_produce_supply_record(record_id, version, actor_user, request_ip="", request_user_agent="", member_version=None):
+    from sfpcl_credit.members.modules.member_authority import evaluate_member_authority
+
     boundary = ProduceSupplyRecord.objects.filter(
         produce_supply_record_id=record_id
     ).values_list("member_id", flat=True).first()
@@ -913,12 +925,14 @@ def verify_produce_supply_record(record_id, version, actor_user, request_ip="", 
         return None
     member = Member.objects.select_for_update().get(member_id=boundary)
     record = ProduceSupplyRecord.objects.select_for_update().get(produce_supply_record_id=record_id)
+    if not evaluate_member_authority(
+        actor_user=actor_user, member=member, permission=PRODUCE_SUPPLY_VERIFY_PERMISSION
+    ).allowed:
+        raise PermissionError("You cannot access this member.")
     if member_version is not None and member_version != member.version:
         raise ProduceSupplyConflict("STALE_WRITE", "Member has changed; refresh and retry.", {"member_version": "Version is stale."})
     if record.captured_by_user_id == actor_user.user_id:
         raise PermissionError("The record maker cannot verify this supply record.")
-    if not user_can_verify_produce_supply(actor_user):
-        raise PermissionError("You do not have permission to verify produce supply records.")
     try:
         supplied_version = int(version)
     except (TypeError, ValueError):

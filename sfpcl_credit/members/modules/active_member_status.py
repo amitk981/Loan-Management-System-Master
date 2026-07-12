@@ -181,6 +181,7 @@ class ActiveMemberStatusModule:
         evidence = MemberServiceEvidence.objects.create(
             member=member, verified_by_user=actor, verified_at=timezone.now(), **values
         )
+        evidence.maker_users.add(actor)
         self._advance_evidence_provenance(member, actor)
         self._record_service_evidence_change(member, evidence, actor, "created")
         return evidence
@@ -212,6 +213,7 @@ class ActiveMemberStatusModule:
         evidence.verified_by_user = actor
         evidence.verified_at = timezone.now()
         evidence.save(update_fields=[*values, "verified_by_user", "verified_at"])
+        evidence.maker_users.add(actor)
         self._advance_evidence_provenance(member, actor)
         self._record_service_evidence_change(member, evidence, actor, "updated")
         return evidence
@@ -266,8 +268,7 @@ class ActiveMemberStatusModule:
         ]
         if MemberServiceEvidence.objects.filter(
             member_service_evidence_id__in=qualifying_service_ids,
-            verified_by_user=actor,
-        ).exists():
+        ).filter(models.Q(maker_users=actor) | models.Q(verified_by_user=actor)).exists():
             raise PermissionError("The evidence maker cannot verify this active-member result.")
         expected_decision = {
             "pass": "active",

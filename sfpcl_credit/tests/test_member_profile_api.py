@@ -7,6 +7,7 @@ from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermiss
 from sfpcl_credit.members.models import (
     IndividualMemberProfile,
     Member,
+    MemberScopeAssignment,
     ProducerInstitutionProfile,
 )
 from sfpcl_credit.tests.api_contracts import (
@@ -64,6 +65,10 @@ class MemberProfileApiTests(TestCase):
             self.reveal_aadhaar,
         )
         self.plain = self._user("plain@sfpcl.example", "PlainPass123!")
+        for user in (self.reader, self.pan_revealer, self.aadhaar_revealer):
+            MemberScopeAssignment.objects.create(
+                user=user, permission_code=MEMBER_READ_PERMISSION, scope_type="global"
+            )
         self.member = Member.objects.create(
             member_number="MEM-00125",
             member_type="individual_farmer",

@@ -1,7 +1,7 @@
 # Slice 006Z11: Member Scope Assignment and List Nondisclosure Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
@@ -71,4 +71,3 @@ High
 
 - Action permission and member object scope are separate, reviewable facts.
 - Member lists and detail/actions enforce one source-backed scope without disclosing unrelated rows.
-

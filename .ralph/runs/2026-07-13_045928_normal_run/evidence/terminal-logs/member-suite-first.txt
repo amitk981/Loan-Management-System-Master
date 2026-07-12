@@ -1,0 +1,66 @@
+Creating test database for alias 'default'...
+Found 40 test(s).
+System check identified no issues (0 silenced).
+..........F..E.F........F.......Esssssss
+======================================================================
+ERROR: test_registry_authority_uses_owner_global_permission_and_object_policy_without_mocks (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_registry_authority_uses_owner_global_permission_and_object_policy_without_mocks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 177, in test_registry_authority_uses_owner_global_permission_and_object_policy_without_mocks
+    self.assertEqual(MemberRegistry.get(member.member_id, manager), member)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/members/modules/member_registry.py", line 36, in get
+    cls._require_member_access(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/members/modules/member_registry.py", line 29, in _require_member_access
+    raise PermissionDenied("You cannot access this member.")
+django.core.exceptions.PermissionDenied: You cannot access this member.
+
+======================================================================
+ERROR: test_verify_enforces_permission_maker_checker_reason_version_and_current_result (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberStatusModuleTests.test_verify_enforces_permission_maker_checker_reason_version_and_current_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 159, in test_verify_enforces_permission_maker_checker_reason_version_and_current_result
+    ActiveMemberStatusModule().verify(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/members/modules/active_member_status.py", line 242, in verify
+    raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+sfpcl_credit.members.modules.active_member_status.ActiveMemberObjectAccessDenied: You cannot access this member.
+
+======================================================================
+FAIL: test_identity_change_requires_a_different_permissioned_approver (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_identity_change_requires_a_different_permissioned_approver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 363, in test_identity_change_requires_a_different_permissioned_approver
+    self.assertEqual(approved.status_code, 200)
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_role_provenance_does_not_change_explicit_global_verification_scope (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_role_provenance_does_not_change_explicit_global_verification_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 206, in test_role_provenance_does_not_change_explicit_global_verification_scope
+    self.assertEqual([(result.allowed, result.reason) for result in results], [
+AssertionError: Lists differ: [(False, 'object_scope_denied'), (False, 'object_scope_denied')] != [(True, 'allowed_global'), (True, 'allowed_global')]
+
+First differing element 0:
+(False, 'object_scope_denied')
+(True, 'allowed_global')
+
+- [(False, 'object_scope_denied'), (False, 'object_scope_denied')]
++ [(True, 'allowed_global'), (True, 'allowed_global')]
+
+======================================================================
+FAIL: test_service_or_relaxation_evidence_maker_cannot_verify_derived_result (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_service_or_relaxation_evidence_maker_cannot_verify_derived_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 619, in test_service_or_relaxation_evidence_maker_cannot_verify_derived_result
+    with self.assertRaisesRegex(PermissionError, "evidence maker"):
+AssertionError: PermissionError not raised
+
+----------------------------------------------------------------------
+Ran 40 tests in 0.295s
+
+FAILED (failures=3, errors=2, skipped=7)
+Destroying test database for alias 'default'...

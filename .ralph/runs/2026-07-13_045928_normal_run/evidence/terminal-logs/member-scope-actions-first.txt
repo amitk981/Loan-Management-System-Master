@@ -1,0 +1,121 @@
+Creating test database for alias 'default'...
+Found 30 test(s).
+System check identified no issues (0 silenced).
+E.EE.EEE..E....E.........sssss
+======================================================================
+ERROR: test_backdated_and_same_date_decisions_leave_history_unchanged (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_backdated_and_same_date_decisions_leave_history_unchanged)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 737, in test_backdated_and_same_date_decisions_leave_history_unchanged
+    ActiveMemberStatusModule().verify(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/members/modules/active_member_status.py", line 242, in verify
+    raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+sfpcl_credit.members.modules.active_member_status.ActiveMemberObjectAccessDenied: You cannot access this member.
+
+======================================================================
+ERROR: test_decision_must_match_calculated_route_with_zero_persisted_evidence (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_decision_must_match_calculated_route_with_zero_persisted_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 579, in test_decision_must_match_calculated_route_with_zero_persisted_evidence
+    ActiveMemberStatusModule().verify(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/members/modules/active_member_status.py", line 242, in verify
+    raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+sfpcl_credit.members.modules.active_member_status.ActiveMemberObjectAccessDenied: You cannot access this member.
+
+======================================================================
+ERROR: test_every_service_evidence_maker_remains_ineligible_after_later_update (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_every_service_evidence_maker_remains_ineligible_after_later_update)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 698, in test_every_service_evidence_maker_remains_ineligible_after_later_update
+    evidence = ActiveMemberStatusModule().create_service_evidence(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/members/modules/active_member_status.py", line 173, in create_service_evidence
+    self._require_evidence_authority(actor, member)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/members/modules/active_member_status.py", line 402, in _require_evidence_authority
+    raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+sfpcl_credit.members.modules.active_member_status.ActiveMemberObjectAccessDenied: You cannot access this member.
+
+======================================================================
+ERROR: test_relaxation_requires_distinct_persisted_evidence_and_preserves_it (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_relaxation_requires_distinct_persisted_evidence_and_preserves_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 540, in test_relaxation_requires_distinct_persisted_evidence_and_preserves_it
+    ActiveMemberStatusModule().verify(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/members/modules/active_member_status.py", line 242, in verify
+    raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+sfpcl_credit.members.modules.active_member_status.ActiveMemberObjectAccessDenied: You cannot access this member.
+
+======================================================================
+ERROR: test_service_evidence_mutations_advance_member_provenance_and_reject_stale_writes (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_service_evidence_mutations_advance_member_provenance_and_reject_stale_writes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 661, in test_service_evidence_mutations_advance_member_provenance_and_reject_stale_writes
+    evidence = ActiveMemberStatusModule().create_service_evidence(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/members/modules/active_member_status.py", line 173, in create_service_evidence
+    self._require_evidence_authority(actor, member)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/members/modules/active_member_status.py", line 402, in _require_evidence_authority
+    raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+sfpcl_credit.members.modules.active_member_status.ActiveMemberObjectAccessDenied: You cannot access this member.
+
+======================================================================
+ERROR: test_service_or_relaxation_evidence_maker_cannot_verify_derived_result (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_service_or_relaxation_evidence_maker_cannot_verify_derived_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 625, in test_service_or_relaxation_evidence_maker_cannot_verify_derived_result
+    ActiveMemberStatusModule().verify(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/members/modules/active_member_status.py", line 242, in verify
+    raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+sfpcl_credit.members.modules.active_member_status.ActiveMemberObjectAccessDenied: You cannot access this member.
+
+======================================================================
+ERROR: test_verify_persists_effective_record_and_member_points_to_its_primary_key (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_verify_persists_effective_record_and_member_points_to_its_primary_key)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 774, in test_verify_persists_effective_record_and_member_points_to_its_primary_key
+    verified = ActiveMemberStatusModule().verify(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/members/modules/active_member_status.py", line 242, in verify
+    raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+sfpcl_credit.members.modules.active_member_status.ActiveMemberObjectAccessDenied: You cannot access this member.
+
+======================================================================
+ERROR: test_verify_enforces_permission_maker_checker_reason_version_and_current_result (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberStatusModuleTests.test_verify_enforces_permission_maker_checker_reason_version_and_current_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 176, in test_verify_enforces_permission_maker_checker_reason_version_and_current_result
+    verified = ActiveMemberStatusModule().verify(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/sfpcl_credit/members/modules/active_member_status.py", line 242, in verify
+    raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+sfpcl_credit.members.modules.active_member_status.ActiveMemberObjectAccessDenied: You cannot access this member.
+
+----------------------------------------------------------------------
+Ran 30 tests in 0.226s
+
+FAILED (errors=8, skipped=5)
+Destroying test database for alias 'default'...

@@ -1,0 +1,20 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006Z11-member-scope-assignment-and-list-nondisclosure-closure.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M sfpcl_credit/members/models.py
+ M sfpcl_credit/members/modules/active_member_status.py
+ M sfpcl_credit/members/modules/member_authority.py
+ M sfpcl_credit/members/services.py
+ M sfpcl_credit/members/views.py
+ M sfpcl_credit/tests/test_active_member_status_module.py
+ M sfpcl_credit/tests/test_member_directory_api.py
+ M sfpcl_credit/tests/test_member_governance_api.py
+ M sfpcl_credit/tests/test_member_profile_api.py
+ M sfpcl_credit/tests/test_produce_supply_api.py
+?? .ralph/runs/2026-07-13_045928_normal_run/
+?? sfpcl_credit/members/migrations/0013_memberserviceevidence_maker_users_and_more.py
+?? sfpcl_credit/tests/test_member_scope_assignment_api.py

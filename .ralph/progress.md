@@ -1758,6 +1758,18 @@ Validation evidence added:
 - Risk level: See risk assessment.
 - Next action: Review packet.
 
+# Run 2026-07-13_045928_normal_run
+
+- Completed 006Z11 with persisted action-specific member scope assignments shared by list, detail,
+  registry actions, evidence maintenance, and active verification.
+- Member directory scope is applied before filtering/count/pagination; excluded members are absent
+  and detail/actions return object-access denial.
+- Service evidence now preserves all makers across updates and migration backfill; prior makers
+  cannot verify derived status and denial leaves status/history/audit/workflow unchanged.
+- Frontend build/typecheck/lint and 207 tests pass. Backend check/migration sync and 514 tests pass
+  with 14 expected PostgreSQL-only skips and 93% coverage.
+- Next action: 006Z12 portal-limit denial matrix evidence closure.
+
 # Run 2026-07-13_031605_normal_run
 
 - Completed 006Z9: member-global scope is explicit by action permission and identical for system or
@@ -4858,6 +4870,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_044409_architecture_review/.ralph/runs/2026-07-13_044409_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_044409_architecture_review/.ralph/runs/2026-07-13_044409_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 05:17:06 - 2026-07-13_045928_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z11-member-scope-assignment-and-list-nondisclosure-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/.ralph/runs/2026-07-13_045928_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_045928_normal_run/.ralph/runs/2026-07-13_045928_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

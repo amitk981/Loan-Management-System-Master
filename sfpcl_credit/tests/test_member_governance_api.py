@@ -10,7 +10,7 @@ from unittest import skipUnless
 
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members import services
-from sfpcl_credit.members.models import Member, MemberIdentityChangeRequest
+from sfpcl_credit.members.models import Member, MemberIdentityChangeRequest, MemberScopeAssignment
 from sfpcl_credit.members.modules import MemberRegistry
 from sfpcl_credit.members.modules.member_authority import evaluate_member_authority
 from sfpcl_credit.members.protected_identity import identity_hash
@@ -172,6 +172,10 @@ class MemberGovernanceApiTests(TestCase):
             folio_number="POLICY-1", membership_status="active", kyc_status="pending",
             default_status="no_default", created_by_user=owner,
         )
+        for user in (manager, outsider):
+            MemberScopeAssignment.objects.create(
+                user=user, permission_code="members.member.read", scope_type="global"
+            )
 
         self.assertEqual(MemberRegistry.get(member.member_id, owner), member)
         self.assertEqual(MemberRegistry.get(member.member_id, manager), member)
@@ -197,6 +201,10 @@ class MemberGovernanceApiTests(TestCase):
             membership_status="active", kyc_status="verified", default_status="no_default",
             created_by_user=self.creator,
         )
+        for user in (system_checker, custom_checker):
+            MemberScopeAssignment.objects.create(
+                user=user, permission_code=permission, scope_type="global"
+            )
 
         results = [
             evaluate_member_authority(actor_user=user, member=member, permission=permission)
@@ -204,7 +212,7 @@ class MemberGovernanceApiTests(TestCase):
         ]
 
         self.assertEqual([(result.allowed, result.reason) for result in results], [
-            (True, "allowed_global"), (True, "allowed_global"),
+            (True, "member_scope_assignment"), (True, "member_scope_assignment"),
         ])
 
     def test_duplicate_pan_and_aadhaar_are_field_errors_with_zero_writes(self):
@@ -332,6 +340,14 @@ class MemberGovernanceApiTests(TestCase):
             pan_hash="old-pan", aadhaar_encrypted="enc:v1:12:test:1234", aadhaar_hash="old-aadhaar",
             kyc_status="verified", rekyc_due_date="2027-01-01", default_status="no_default",
             created_by_user=requester,
+        )
+        MemberScopeAssignment.objects.create(
+            user=approver, permission_code="members.member.identity_change.approve",
+            scope_type="assigned", member=member,
+        )
+        MemberScopeAssignment.objects.create(
+            user=requester, permission_code="members.member.identity_change.approve",
+            scope_type="assigned", member=member,
         )
         requested = self.client.post(
             f"/api/v1/members/{member.member_id}/identity-change-requests/",

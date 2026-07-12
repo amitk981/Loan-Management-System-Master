@@ -1725,9 +1725,12 @@ Frontend wiring:
 - `POST /api/v1/members/{member_id}/active-status/verify/` requires
   `members.active_status.verify` plus `result_id`, current member `version`, ISO `as_of_date`,
   `decision` (`active`, `inactive`, or `relaxation`), and a non-blank `reason`; missing/future dates
-  and unknown fields return `400 VALIDATION_ERROR`. The dedicated high-risk verification permission
-  is the explicit row-independent member scope; role provenance and unowned records never create
-  scope. A missing member remains `403 OBJECT_ACCESS_DENIED`. The calculated route and decision must
+  and unknown fields return `400 VALIDATION_ERROR`. The permission authorizes only the named action;
+  object access additionally requires the same persisted, action-specific member-scope assignment
+  used by member list/detail (`global`, actor-team/member, actor/member assignment, or created-by).
+  Role provenance, action permission alone, caller flags, and unowned records never create scope.
+  A missing or existing out-of-scope member returns the same `403 OBJECT_ACCESS_DENIED`. The
+  calculated route and decision must
   agree exactly (`pass`/`active`, `relaxation`/`relaxation`, otherwise `inactive`); mismatches return
   `409 INVALID_DECISION`. It rejects actors who captured or verified any qualifying supply/service/
   relaxation evidence, stale/changed results, stale versions, unsupported decisions,
@@ -1736,6 +1739,20 @@ Frontend wiring:
   the prior current record, points the Member projection at the new record primary key, and records
   the same projection in member history and audit. Internal snapshots retain row/evidence/verifier
   facts; borrower portal supply rows deliberately omit those internal fields.
+
+### Staff member list/detail scope and nondisclosure (006Z11)
+
+- `GET /api/v1/members/` first requires `members.member.read`, then applies the authenticated
+  actor's persisted action-specific member scope before search, filtering, count, and pagination.
+  `pagination.total_count`, pages, and rows therefore contain no fact about excluded members.
+- `GET /api/v1/members/{member_id}/` applies the identical predicate. An existing excluded member
+  returns `403 OBJECT_ACCESS_DENIED`; an in-scope unknown identifier returns `404 NOT_FOUND`.
+- Scope and action are independent. A global assignment for read does not authorize verify,
+  identity approval, update, calculation, or evidence maintenance; each write requires its own
+  action permission and assignment/creator fact. No default global assignment is seeded.
+- Service/relaxation evidence retains every creator and material updater as immutable maker
+  provenance. Any maker is denied verification of a derived active-member result with zero status,
+  history, audit, or workflow writes, even after another actor updates the evidence.
 
 ## Member portal application APIs (005G)
 

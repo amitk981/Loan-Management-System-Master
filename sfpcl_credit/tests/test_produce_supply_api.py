@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from sfpcl_credit.identity.models import AuditLog, Permission, PortalAccount, Role, RolePermission, User
 from sfpcl_credit.members.modules.active_member_status import ActiveMemberStatusModule
-from sfpcl_credit.members.models import ActiveMemberStatus, IndividualMemberProfile, Member, MemberChangeHistory, MemberServiceEvidence, ProduceSupplyRecord
+from sfpcl_credit.members.models import ActiveMemberStatus, IndividualMemberProfile, Member, MemberChangeHistory, MemberScopeAssignment, MemberServiceEvidence, ProduceSupplyRecord
 from sfpcl_credit.workflows.models import WorkflowEvent
 
 
@@ -37,6 +37,10 @@ class ProduceSupplyApiTests(TestCase):
             last_name="Farmer",
             services_availed_flag=True,
         )
+        MemberScopeAssignment.objects.create(
+            user=self.actor, permission_code="members.active_status.calculate",
+            scope_type="assigned", member=self.member,
+        )
 
     def _user(self, email, *permissions):
         role = Role.objects.create(
@@ -49,6 +53,15 @@ class ProduceSupplyApiTests(TestCase):
         )
         user.set_password("SupplyPass123!")
         user.save()
+        if hasattr(self, "member"):
+            for permission in permissions:
+                if permission.permission_code in {
+                    "members.active_status.calculate", "members.active_status.verify"
+                }:
+                    MemberScopeAssignment.objects.create(
+                        user=user, permission_code=permission.permission_code,
+                        scope_type="assigned", member=self.member,
+                    )
         return user
 
     def _headers(self, email="capture@sfpcl.example"):
@@ -282,12 +295,15 @@ class ProduceSupplyApiTests(TestCase):
             self.assertEqual(response.status_code, 400, response.content)
             self.assertIn(field, response.json()["error"]["field_errors"])
 
-    def test_active_status_verify_permission_has_explicit_global_scope_but_missing_member_is_non_disclosed(self):
+    def test_active_status_verify_requires_explicit_global_scope_and_missing_member_is_non_disclosed(self):
         verify_permission = Permission.objects.create(
             permission_code="members.active_status.verify", permission_name="Verify active member status",
             module_name="members", risk_level="high",
         )
         checker = self._user("scope.checker@sfpcl.example", verify_permission)
+        MemberScopeAssignment.objects.create(
+            user=checker, permission_code="members.active_status.verify", scope_type="global"
+        )
         self.member.created_by_user = self.actor
         self.member.save(update_fields=["created_by_user"])
         payload = {

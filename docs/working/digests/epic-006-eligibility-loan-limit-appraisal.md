@@ -1,5 +1,18 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006Z11 Member Scope Assignment and List Nondisclosure Closure
+
+- Member action permission and object scope are separate persisted facts. Action-specific global,
+  team/member, assigned/member, and created-by grants live in `MemberScopeAssignment`; no role,
+  permission, unowned-row, or caller-Boolean shortcut creates management scope.
+- Directory scope is applied before search, count, and pagination, and detail/actions consume the
+  same authority seam. Creator ownership remains only the Field Officer-style read/update baseline;
+  high-risk verification and identity approval require explicit action-specific assignment.
+- Produce-supply and service/relaxation evidence maintenance now enforce member scope. Service
+  evidence retains every creator/material updater in immutable maker provenance, including a
+  migration backfill from legacy verifier facts, and any prior maker remains unable to verify the
+  derived active status.
+
 ## Architecture Review 2026-07-13 04:49 - Scope, Maker Provenance, and Denial Proof
 
 - 006Z9 corrected route/decision agreement, but it made the action permission itself a global member

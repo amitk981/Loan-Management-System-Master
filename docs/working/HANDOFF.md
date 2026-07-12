@@ -1,30 +1,26 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_044409_architecture_review
+2026-07-13_045928_normal_run
 
 ## Current Status
 
-Architecture review of 006Y16, 006Z9, 006Z10, and 007A is complete; production code was not changed.
-006Y16's witness nondisclosure, 006Z9's route/decision agreement, 006Z10's real portal lifecycle,
-and 007A's sequential exact/above/exception facts are substantive. The review found that action
-permissions are still treated as global member scope, prior service-evidence makers can be erased,
-the portal denial ledger is partial, and approval configuration can activate unilaterally with
-unvalidated committee authority and ambiguous historical backfills.
+006Z11 is complete. Member action permissions no longer imply global scope: one persisted,
+action-specific member assignment projection governs directory/detail, registry writes, identity
+approval, produce/service evidence maintenance, and active verification. Directory counts are
+computed after scope filtering. Service evidence retains every creator/material updater so later
+updates cannot erase maker-checker provenance. No new management authority is seeded.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-13_044409_architecture_review/`. The review pinned
-`190eb5c...a614f05`, inspected production/tests and retained browser/PostgreSQL packets, and ran
-queue plus configured quality gates. Frontend build/typecheck/lint and 207 tests pass; backend
-check/migration sync and 512 tests pass with 14 expected PostgreSQL-only skips and 93% coverage.
-The retained 007A PostgreSQL gate ran five older tests, not its two new approval races; this is
-recorded as a High finding and protected-validator owner follow-up. `CONTEXT.md` remains truthful,
-and no Blocked slice is stale.
+Evidence is under `.ralph/runs/2026-07-13_045928_normal_run/`. Frontend build/typecheck/lint and
+207 tests pass. Backend check/migration sync and 514 tests pass with 14 expected PostgreSQL-only
+skips and 93% coverage. Focused public scope/action/maker matrices pass. Dependency scans find no
+permission-as-global, role-provenance, or caller-Boolean bypass in the member module.
 
 ## Next Run
 
-Run `006Z11-member-scope-assignment-and-list-nondisclosure-closure`, then `006Z12-portal-limit-
-denial-matrix-evidence-closure`, `007A2-approval-configuration-history-and-committee-authority-
-closure`, and `007A3-approval-matrix-maker-checker-governance`. 007B depends on 007A3 and is
-sharpened to consume unique historical rule/committee projections exactly once.
+Run `006Z12-portal-limit-denial-matrix-evidence-closure`, then
+`007A2-approval-configuration-history-and-committee-authority-closure` and
+`007A3-approval-matrix-maker-checker-governance`. The next two slices were inspected and are already
+concrete, executable, and source/review-sharpened; no speculative edits were needed.

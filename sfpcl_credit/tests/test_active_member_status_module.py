@@ -15,6 +15,7 @@ from sfpcl_credit.members.models import (
     IndividualMemberProfile,
     Member,
     MemberChangeHistory,
+    MemberScopeAssignment,
     MemberServiceEvidence,
     ProducerInstitutionProfile,
     ProduceSupplyRecord,
@@ -133,6 +134,10 @@ class ActiveMemberStatusModuleTests(TestCase):
         )
         self.member.created_by_user = checker
         self.member.save(update_fields=["created_by_user"])
+        MemberScopeAssignment.objects.create(
+            user=checker, permission_code="members.active_status.verify",
+            scope_type="assigned", member=self.member,
+        )
 
         with self.assertRaisesRegex(PermissionError, "permission"):
             ActiveMemberStatusModule().verify(
@@ -156,6 +161,10 @@ class ActiveMemberStatusModuleTests(TestCase):
             )
         with self.assertRaisesRegex(PermissionError, "maker"):
             RolePermission.objects.create(role=self.actor.primary_role, permission=permission)
+            MemberScopeAssignment.objects.create(
+                user=self.actor, permission_code="members.active_status.verify",
+                scope_type="assigned", member=self.member,
+            )
             ActiveMemberStatusModule().verify(
                 actor=self.actor,
                 member_id=self.member.member_id,
@@ -453,6 +462,10 @@ class ActiveMemberGovernanceTests(TestCase):
             pan_hash="governance-pan", kyc_status="verified", default_status="no_default",
             created_by_user=self.checkers[0],
         )
+        MemberScopeAssignment.objects.create(
+            user=self.checkers[0], permission_code="members.active_status.verify",
+            scope_type="assigned", member=self.member,
+        )
         IndividualMemberProfile.objects.create(member=self.member, first_name="Governance", last_name="Member", services_availed_flag=True)
         for financial_year in ("2022-23", "2023-24", "2024-25", "2025-26"):
             ProduceSupplyRecord.objects.create(
@@ -680,6 +693,52 @@ class ActiveMemberGovernanceTests(TestCase):
         self.assertEqual(stale.exception.code, "STALE_WRITE")
         self.assertEqual(MemberChangeHistory.objects.filter(change_type__startswith="service_evidence_").count(), 2)
         self.assertEqual(AuditLog.objects.filter(action__startswith="members.service_evidence.").count(), 2)
+
+    def test_every_service_evidence_maker_remains_ineligible_after_later_update(self):
+        updater = User.objects.create(
+            full_name="Later Evidence Updater", email="later-updater@example.test",
+            status="active", primary_role=self.checkers[0].primary_role,
+        )
+        MemberScopeAssignment.objects.create(
+            user=updater, permission_code="members.active_status.verify",
+            scope_type="assigned", member=self.member,
+        )
+        evidence = ActiveMemberStatusModule().create_service_evidence(
+            actor=self.checkers[0], member_id=self.member.member_id, version=self.member.version,
+            service_type="relaxation", recipient_entity_type="sfpcl",
+            service_from=date(2025, 4, 1), service_to=date(2026, 3, 31),
+            evidence_reference="RELAX-MAKER-HISTORY-1",
+        )
+        self.member.refresh_from_db()
+        ActiveMemberStatusModule().update_service_evidence(
+            actor=updater, evidence_id=evidence.pk, version=self.member.version,
+            evidence_reference="RELAX-MAKER-HISTORY-2",
+        )
+        self.member.refresh_from_db()
+        result = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=date(2026, 3, 31)
+        )
+        before = (
+            self.member.version, ActiveMemberStatus.objects.count(),
+            MemberChangeHistory.objects.filter(change_type="active_status_verified").count(),
+            AuditLog.objects.filter(action="members.active_status.verified").count(),
+            WorkflowEvent.objects.count(),
+        )
+
+        with self.assertRaisesRegex(PermissionError, "evidence maker"):
+            ActiveMemberStatusModule().verify(
+                actor=self.checkers[0], member_id=self.member.member_id,
+                result_id=result.result_id, decision="relaxation", reason="Forbidden self review.",
+                version=self.member.version, as_of_date=date(2026, 3, 31),
+            )
+
+        self.member.refresh_from_db()
+        self.assertEqual(before, (
+            self.member.version, ActiveMemberStatus.objects.count(),
+            MemberChangeHistory.objects.filter(change_type="active_status_verified").count(),
+            AuditLog.objects.filter(action="members.active_status.verified").count(),
+            WorkflowEvent.objects.count(),
+        ))
 
     def test_backdated_and_same_date_decisions_leave_history_unchanged(self):
         first = ActiveMemberStatusModule().calculate(member_id=self.member.member_id, as_of_date=date(2026, 3, 31))

@@ -56,7 +56,7 @@ def member_collection(request):
             "You do not have permission to read members.",
         )
     try:
-        data, pagination = services.paginated_members(request.GET)
+        data, pagination = services.paginated_members(request.GET, user)
     except ValidationError as exc:
         return error_response(
             request,

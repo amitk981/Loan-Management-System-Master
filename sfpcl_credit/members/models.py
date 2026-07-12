@@ -80,6 +80,56 @@ class Member(models.Model):
         return self.member_number or str(self.member_id)
 
 
+class MemberScopeAssignment(models.Model):
+    SCOPE_TYPES = {"global", "team", "assigned", "created_by"}
+
+    member_scope_assignment_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    user = models.ForeignKey(
+        "identity.User", on_delete=models.CASCADE, related_name="member_scope_assignments"
+    )
+    permission_code = models.CharField(max_length=120, db_index=True)
+    scope_type = models.CharField(max_length=20, db_index=True)
+    member = models.ForeignKey(
+        Member, blank=True, null=True, on_delete=models.CASCADE, related_name="scope_assignments"
+    )
+    team = models.ForeignKey(
+        "identity.Team", blank=True, null=True, on_delete=models.PROTECT,
+        related_name="member_scope_assignments",
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "member_scope_assignments"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "permission_code", "scope_type", "member", "team"],
+                name="uniq_member_scope_assignment",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["user", "permission_code"], name="idx_member_scope_user_perm"),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.scope_type not in self.SCOPE_TYPES:
+            raise ValidationError({"scope_type": "Unsupported member scope type."})
+        if self.scope_type == "global" and (self.member_id or self.team_id):
+            raise ValidationError({"scope_type": "Global scope cannot name a member or team."})
+        if self.scope_type in {"assigned", "team"} and not self.member_id:
+            raise ValidationError({"member": "This scope requires a member."})
+        if self.scope_type == "team" and not self.team_id:
+            raise ValidationError({"team": "Team scope requires a team."})
+        if self.scope_type == "created_by" and (self.member_id or self.team_id):
+            raise ValidationError({"scope_type": "Created-by scope cannot name a member or team."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
 class MemberChangeHistory(models.Model):
     member_change_history_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -251,6 +301,9 @@ class MemberServiceEvidence(models.Model):
         "identity.User", on_delete=models.PROTECT, related_name="verified_member_service_evidence"
     )
     verified_at = models.DateTimeField()
+    maker_users = models.ManyToManyField(
+        "identity.User", related_name="made_member_service_evidence"
+    )
 
     class Meta:
         db_table = "member_service_evidence"
