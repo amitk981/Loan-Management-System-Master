@@ -1,5 +1,21 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-13 04:49 - Scope, Maker Provenance, and Denial Proof
+
+- 006Z9 corrected route/decision agreement, but it made the action permission itself a global member
+  scope. Auth §25.1 says member reads are scope-limited unless management; `006Z11` separates
+  permission from persisted/configured global/team/assigned/created-by scope across list/detail and
+  every member action.
+- Service-evidence update replaces the current verifier and loses earlier maker provenance.
+  `006Z11` retains creator/material-updater identities so actor A cannot create, actor B update, and
+  actor A later verify the derived status.
+- 006Z10's calculation, mounted submit/refetch/errors, and trusted browser lifecycle pass. Its public
+  backend matrix still omits stale authority, changed supply, missing profile/land, and assessment
+  state in the zero-write ledger; `006Z12` closes those proof gaps.
+- BR-003..007 and M02-FR-004..006 business facts remain substantive but authority/maker acceptance is
+  partial until 006Z11. M04-FR-005..007 calculations and UI lifecycle pass; denial proof is partial
+  until 006Z12.
+
 ## 006Z10 Portal Limit Interaction and Boundary Proof
 
 - Portal limit policy resolution now uses the verified authority's stored calculation date, so a

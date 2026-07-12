@@ -7,6 +7,23 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - `docs/source/data-model.md` §15.1-§15.4 and §30/§34
 - `docs/source/auth-permissions.md` §12.6, §15.8-§15.9, §20.1, §34.5
 
+## Architecture Review 2026-07-13 04:49 - Historical and Governance Corrections
+
+- Auth §§31.1-31.2 makes the Approval Matrix Critical configuration: every change needs a reason and
+  Admin plus CFO/Company Secretary approval. 007A activates immediately with one actor recorded as
+  both author and approver; `007A3` adds pending proposal, distinct business approval/rejection, and
+  coherent activation/version/audit evidence.
+- Committee create currently validates only three distinct users, not active persisted CFO/two-
+  Director authority. `007A2` enforces authority and exposes one effective-date committee resolver.
+- Rule/committee overlap checks currently ignore superseded historical rows while the matrix resolver
+  intentionally resolves them by date. `007A2` makes all resolvable history non-overlapping and adds
+  lifecycle/database constraints, pagination, and historical-case immutability proof.
+- 007A's two PostgreSQL concurrency tests were skipped by SQLite and omitted from both retained
+  “five-race” commands. `007A2` must run the approval class directly twice; the protected validator's
+  fixed discovery command remains an owner/orchestrator follow-up.
+- M05-FR-004..006 seeded exact/above/exception facts pass sequentially. M05-FR-003..006 remain
+  partial until historical concurrency and governed activation pass in 007A2/007A3.
+
 ## 007A Approval-Matrix Boundary
 
 - Rules are effective-dated and describe decision type, inclusive amount bounds, optional

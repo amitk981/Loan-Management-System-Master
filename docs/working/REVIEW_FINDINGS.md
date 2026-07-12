@@ -2,6 +2,118 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-13 04:49 - Architecture Review 2026-07-13_044409_architecture_review
+
+Reviewed completed product work since architecture-review commit `190eb5c`:
+- `006Y16-witness-parent-scope-and-contract-closure` (`c1cc2e6`)
+- `006Z9-active-member-authority-and-decision-contract-closure` (`fa89d4f`)
+- `006Z10-portal-limit-interaction-and-boundary-proof` (`a6dd3cd`, including repairs)
+- `007A-approval-matrix-configuration` (`a614f05`)
+
+The review checked `git diff 190eb5c...HEAD`, production/test hunks, retained red/green,
+PostgreSQL, and two-run trusted-browser evidence, Epic 004/006/007 digests, cited source sections,
+and BR-003..007, M02-FR-004..006, M04-FR-005..007, and M05-FR-003..006. Standards and spec
+fidelity were reviewed independently. Production code was not changed. `CONTEXT.md` remains
+truthful, and `.ralph/state.json` contains no Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - Critical approval configuration activates without business approval or reason
+
+`approval_matrix_configuration.py` immediately activates rule/committee creates and supersessions,
+stores the initiating user as both VersionHistory author and approver, and accepts no change reason.
+This violates auth §§31.1-31.2: Approval Matrix requires Admin + CFO/CS approval, CFG-001 requires a
+reason, and CFG-005 requires activation audit. The tests positively encode unilateral activation.
+`007A3` adds a pending proposal plus distinct CFO/CS approve/reject boundary and coherent reason,
+version, audit, and open-case snapshot evidence.
+
+#### Finding 2 - High - Committee fields accept users without CFO/Director authority
+
+`_validate_committee` checks only that three user ids exist and differ. It accepts inactive ordinary
+users in the CFO/two-Director positions; its test succeeds with arbitrary `cfo_test` and
+`director_test` roles. This violates auth §16.2's backend authority rule. `007A2` validates active,
+persisted CFO/Director authority and adds a dated committee resolver.
+
+#### Finding 3 - High - The declared PostgreSQL gate never executed 007A's races
+
+007A added two `ApprovalMatrixConcurrencyTests`, skipped them under SQLite, and declared
+`postgresql-five-race-acceptance`. Both retained PostgreSQL logs ran only the five older credit,
+appraisal, and sanction tests, while `postgresql-acceptance-results.md` reported PASS. The required
+overlap/supersede one-winner proof therefore has no PostgreSQL execution evidence. `007A2` requires
+two direct PostgreSQL executions with exact test names. The independent validator's fixed command
+lives in protected `scripts/ralph-validate.sh`; this review records that owner/orchestrator follow-up
+is still required because an architecture run may not edit protected scripts.
+
+#### Finding 4 - Medium - Configuration collections are unbounded and unpaginated
+
+Both list functions materialize the complete table and return a plain success envelope. API
+contracts §§6.2/8 require the standard paginated list envelope, and codebase-design §§7.2/25 require
+bounded selectors and consistent HTTP interfaces. `007A2` adds deterministic pagination,
+unknown-parameter rejection, and public boundary tests.
+
+No material standards violation was found in 006Y16, 006Z9's route/decision logic, or 006Z10's
+mounted/browser implementation beyond the spec-completeness issues below.
+
+### Spec
+
+#### Finding 1 - High - 007A's mandatory PostgreSQL acceptance is missing
+
+007A explicitly requires competing create/supersede one-winner proof and discriminating date/amount
+fixtures. The new tests are skipped in the ordinary suite, and the retained PostgreSQL command does
+not select them. Sequential seeded resolution passes, but authoritative configuration concurrency
+remains unproved. `007A2` owns direct two-run PostgreSQL evidence and the complete historical race
+matrix. M05-FR-003..006 remain partial until it passes.
+
+#### Finding 2 - High - 006Z9 turns action permissions into global member scope
+
+006Z9 required a documented/configurable scope and forbade permission/role provenance as a global
+substitute. `member_authority.py` instead makes `members.member.read`, active-status verify, and
+identity approval globally valid for every permission holder. Its test now gives an arbitrary
+outsider all-member detail access, contradicting auth §25.1's “scope-limited unless management
+role” rule. `006Z11` separates action permission from persisted/configured global/team/assigned/
+created-by scope and makes list/detail/actions share it. BR-003..007 and M02-FR-004..006 remain
+partial on authority until closure.
+
+#### Finding 3 - Medium - Service-evidence maker history can be erased
+
+006Z9 says an evidence creator or material updater cannot verify the derived decision. Service
+evidence update overwrites `verified_by_user`, and verification checks only that current field.
+Actor A can create, actor B can update, then A is no longer detected as a maker. `006Z11` preserves
+immutable creator/updater provenance and adds the public three-actor zero-write test.
+
+#### Finding 4 - Medium - 006Z10's denial matrix and zero-write ledger remain partial
+
+The retained backend matrix covers future/closed/manual/mismatched authority, changed service
+evidence, duplicate shares, contradictory acreage, no policy, and invalid amounts. It omits the
+slice's stale-authority, changed-supply, missing-profile, and missing-land rows, and its evidence
+snapshot omits LoanLimitAssessment. `006Z12` completes independently selected public cases and the
+full member/assessment/application/audit/workflow/configuration before/after ledger. M04-FR-005..007
+calculations and the real submit/browser lifecycle pass; blocked-boundary proof remains partial.
+
+#### Finding 5 - Medium - 007A lifecycle/history fidelity is incomplete
+
+The source calls for active/inactive effective-dated rules and protection of already-referenced
+history. The resolver currently queries every status, while create overlap checks only active rows;
+a later backfill can overlap a superseded historical row and make a previously unique decision date
+ambiguous. Tests construct no referenced case and cover only selected create losers. `007A2`
+defines lifecycle resolution, full-history non-overlap, committee parity, and referenced-snapshot
+proof; `007A3` covers governed activation.
+
+No material scope creep was found. 006Y16 satisfies its authority-first witness 403/404 contract.
+006Z9's decision-route agreement and core active-member business facts pass subject to 006Z11's
+authority/maker closure. 006Z10's lower-of-two calculations and routed submit/refetch/reload proof
+pass subject to 006Z12's denial ledger. 007A's seeded exact/above/exception facts pass sequentially,
+but M05-FR-003..006 remain partial until 007A2/007A3.
+
+No ADR was added because the cited auth, API, data-model, functional, and codebase-design sources
+already decide permission/scope separation, maker-checker governance, effective history,
+pagination, and interface-level concurrency proof.
+
+Summary: Standards found 3 High and 1 Medium issues; worst are unilateral Critical configuration
+activation, unvalidated committee authority, and falsely incomplete PostgreSQL acceptance. Spec
+found 2 High and 3 Medium issues; worst are the missing PostgreSQL proof and permission-implied
+global member scope.
+
 ## 2026-07-13 03:00 - Architecture Review 2026-07-13_025409_architecture_review
 
 Reviewed completed product work since architecture-review commit `c31ac79`:

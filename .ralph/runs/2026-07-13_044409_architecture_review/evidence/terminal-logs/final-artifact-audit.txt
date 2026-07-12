@@ -1,0 +1,7 @@
+PASS: git diff --check
+PASS: .ralph/state.json and .ralph/permissions.json parse as JSON
+PASS: every pending slice parses and the dependency graph drains
+PASS: no protected or docs/source path changed
+PASS: 11 non-run files changed (limit 30)
+PASS: 508 non-run lines changed (limit 2000)
+PASS: no production code, migration, dependency, or frontend design file changed
