@@ -7,9 +7,9 @@ from django.db import transaction
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import Witness, WitnessChangeHistory
+from sfpcl_credit.applications.modules import application_authority
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.identity.modules.object_permissions import evaluate_object_access
 from sfpcl_credit.members.protected_identity import identity_hash, mask_protected_identity, protected_identity_token
 
 
@@ -37,28 +37,12 @@ def evaluate_witness_correction(*, witness, actor_user, correction_kind, expecte
     permissions = auth_service.effective_permission_codes(actor_user)
     if WITNESS_UPDATE_PERMISSION not in permissions:
         return WitnessCorrectionEvaluation(False, "Missing witness update permission.", "FORBIDDEN")
-    application = witness.loan_application
-    allow_global = (
-        "credit_manager" in actor_user.role_codes()
-        and application.current_stage == application.STAGE_CREDIT_ASSESSMENT
-    )
-    access = evaluate_object_access(
-        actor_user_id=actor_user.user_id,
-        actor_team_codes=actor_user.team_codes(),
-        actor_permission_codes=permissions,
+    access = application_authority.evaluate_application_object_access(
+        application=witness.loan_application,
+        actor=actor_user,
         required_permission=WITNESS_UPDATE_PERMISSION,
-        object_owner_user_id=application.created_by_user_id,
-        allow_global=allow_global,
+        actor_permissions=permissions,
     )
-    if not access.allowed and application.received_by_user_id != application.created_by_user_id:
-        access = evaluate_object_access(
-            actor_user_id=actor_user.user_id,
-            actor_team_codes=actor_user.team_codes(),
-            actor_permission_codes=permissions,
-            required_permission=WITNESS_UPDATE_PERMISSION,
-            object_owner_user_id=application.received_by_user_id,
-            allow_global=allow_global,
-        )
     if not access.allowed:
         return WitnessCorrectionEvaluation(
             False, "Witness is outside your application access scope.", "OBJECT_ACCESS_DENIED"

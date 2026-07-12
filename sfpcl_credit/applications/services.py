@@ -8,6 +8,7 @@ from django.db.models import Max, Q
 from django.utils import timezone
 
 from sfpcl_credit.applications.modules.nominee_validation import evaluate_nominee_selection
+from sfpcl_credit.applications.modules import application_authority
 from sfpcl_credit.applications.modules.witness_corrections import witness_correction_actions
 from sfpcl_credit.applications.models import (
     ApplicationDeficiency,
@@ -22,7 +23,6 @@ from sfpcl_credit.applications.models import (
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.identity.modules.object_permissions import evaluate_object_access
 from sfpcl_credit.members.models import (
     BankAccount,
     CancelledCheque,
@@ -358,31 +358,12 @@ def user_can_verify_application_documents(user):
 
 
 def evaluate_application_object_access(application, actor, required_permission, actor_permissions=None):
-    permissions = actor_permissions or auth_service.effective_permission_codes(actor)
-    allow_global = _has_credit_manager_domain_access(application, actor)
-    result = evaluate_object_access(
-        actor_user_id=actor.user_id,
-        actor_team_codes=actor.team_codes(),
-        actor_permission_codes=permissions,
+    return application_authority.evaluate_application_object_access(
+        application=application,
+        actor=actor,
         required_permission=required_permission,
-        object_owner_user_id=application.created_by_user_id,
-        allow_global=allow_global,
+        actor_permissions=actor_permissions,
     )
-    if result.allowed or result.error_code != "OBJECT_ACCESS_DENIED":
-        return result
-    if (
-        application.received_by_user_id
-        and application.received_by_user_id != application.created_by_user_id
-    ):
-        return evaluate_object_access(
-            actor_user_id=actor.user_id,
-            actor_team_codes=actor.team_codes(),
-            actor_permission_codes=permissions,
-            required_permission=required_permission,
-            object_owner_user_id=application.received_by_user_id,
-            allow_global=allow_global,
-        )
-    return result
 
 
 def get_application(application_id):

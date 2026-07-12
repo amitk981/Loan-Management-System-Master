@@ -1,5 +1,16 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## 006Y12 Witness Authority and Non-Disclosure Closure
+
+- Generic application access and witness correction projection/write execute one lower-level
+  `application_authority` evaluator while the services compatibility function preserves existing
+  callers without a runtime cycle.
+- Witness PATCH checks update permission and application object scope before witness lookup.
+  Existing and random witness IDs outside scope return indistinguishable `403
+  OBJECT_ACCESS_DENIED` errors and create no witness/history/audit/workflow evidence.
+- The boundary regression proves behavioral seam execution through HTTP projection and PATCH. The
+  mounted two-kind error matrix and trusted-browser three-screenshot contract remain unchanged.
+
 ## Architecture Review 2026-07-12 - Witness Authority and Member Success Residuals
 
 - 006Y10 removes its runtime cycle but copies application object-access policy into the witness

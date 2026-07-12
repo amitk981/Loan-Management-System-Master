@@ -132,14 +132,15 @@
     "006Y10-witness-correction-matrix-and-module-boundary-closure",
     "006Y11-member-form-container-and-error-matrix-closure",
     "006Z4-active-member-rule-and-snapshot-closure",
-    "006X8-credit-executed-object-scope-regression-closure"
+    "006X8-credit-executed-object-scope-regression-closure",
+    "006Y12-witness-authority-matrix-and-nondisclosure-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "6c6a4da",
-  "last_run_id": "2026-07-12_222508_normal_run",
+  "last_run_id": "2026-07-12_223530_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
+  "slices_completed_since_architecture_review": 2,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

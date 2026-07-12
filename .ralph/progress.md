@@ -4319,3 +4319,24 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-12_223530_normal_run
+
+- Completed 006Y12 with one application-owned object-authority evaluator shared by generic
+  application callers and witness projection/write enforcement.
+- PATCH now checks update permission and application scope before witness lookup; existing and
+  random out-of-scope IDs return indistinguishable `403 OBJECT_ACCESS_DENIED` errors with zero loser
+  evidence.
+- Behavioral seam, focused backend, 10 mounted witness tests, and browser collection pass. Full
+  gates pass: 462 backend tests at 93% coverage and frontend build/typecheck/lint plus 199 tests.
+- Trusted browser execution and screenshots remain the orchestrator's independent gate. Next: 006Y13.
+
+## 2026-07-12 22:45:39 - 2026-07-12_223530_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Y12-witness-authority-matrix-and-nondisclosure-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_223530_normal_run/.ralph/runs/2026-07-12_223530_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_223530_normal_run/.ralph/runs/2026-07-12_223530_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

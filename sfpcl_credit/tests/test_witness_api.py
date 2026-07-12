@@ -1,5 +1,5 @@
 import json
-from pathlib import Path
+from unittest import mock
 from uuid import uuid4
 
 from django.test import Client, TestCase
@@ -16,12 +16,6 @@ from sfpcl_credit.workflows.models import WorkflowEvent
 WITNESS_CREATE_PERMISSION = "members.witness.create"
 WITNESS_READ_PERMISSION = "members.witness.read"
 WITNESS_UPDATE_PERMISSION = "members.witness.update"
-
-
-class WitnessCorrectionBoundaryTests(TestCase):
-    def test_correction_module_does_not_import_generic_application_services(self):
-        source = Path(__file__).parents[1] / "applications/modules/witness_corrections.py"
-        self.assertNotIn("applications.services", source.read_text())
 
 
 class WitnessApiTests(TestCase):
@@ -443,6 +437,71 @@ class WitnessApiTests(TestCase):
         )
         self.assertEqual(denied.status_code, 403)
         assert_error_envelope(self, denied.json(), "OBJECT_ACCESS_DENIED")
+
+    def test_out_of_scope_patch_does_not_disclose_witness_existence(self):
+        witness_id = self._post().json()["data"]["witness_id"]
+        outsider = self._user(
+            "witness.patch.outsider@sfpcl.example",
+            "OutsiderPass123!",
+            Permission.objects.get(permission_code=WITNESS_UPDATE_PERMISSION),
+        )
+        headers = self._headers_for(outsider.email, "OutsiderPass123!")
+        baseline = {
+            "witness": list(Witness.objects.values()),
+            "history": WitnessChangeHistory.objects.count(),
+            "audit": AuditLog.objects.count(),
+            "workflow": WorkflowEvent.objects.count(),
+        }
+
+        existing = self.client.patch(
+            self._detail_url(witness_id),
+            data={"version": 1, "address": "Forbidden Road"},
+            content_type="application/json",
+            headers=headers,
+        )
+        missing = self.client.patch(
+            self._detail_url(uuid4()),
+            data={"version": 1, "address": "Forbidden Road"},
+            content_type="application/json",
+            headers=headers,
+        )
+
+        self.assertEqual(existing.status_code, 403)
+        self.assertEqual(missing.status_code, 403)
+        self.assertEqual(existing.json()["error"], missing.json()["error"])
+        assert_error_envelope(self, existing.json(), "OBJECT_ACCESS_DENIED")
+        self.assertEqual(list(Witness.objects.values()), baseline["witness"])
+        self.assertEqual(WitnessChangeHistory.objects.count(), baseline["history"])
+        self.assertEqual(AuditLog.objects.count(), baseline["audit"])
+        self.assertEqual(WorkflowEvent.objects.count(), baseline["workflow"])
+
+    def test_projection_and_patch_execute_the_shared_application_authority(self):
+        from sfpcl_credit.applications.modules import application_authority
+
+        witness_id = self._post().json()["data"]["witness_id"]
+        evaluator = application_authority.evaluate_application_object_access
+        with mock.patch.object(
+            application_authority,
+            "evaluate_application_object_access",
+            wraps=evaluator,
+        ) as shared_authority:
+            projected = self.client.get(self._url(), headers=self._headers())
+            corrected = self.client.patch(
+                self._detail_url(witness_id),
+                data={"version": 1, "address": "Shared Authority Road"},
+                content_type="application/json",
+                headers=self._headers(),
+            )
+
+        self.assertEqual(projected.status_code, 200)
+        self.assertEqual(corrected.status_code, 200)
+        update_calls = [
+            call
+            for call in shared_authority.call_args_list
+            if call.kwargs["required_permission"] == WITNESS_UPDATE_PERMISSION
+        ]
+        # Both projected correction actions and both the pre-lookup/write gates execute this seam.
+        self.assertGreaterEqual(len(update_calls), 4)
 
     def test_witness_identity_is_protected_and_create_audit_is_metadata_only(self):
         response = self._post(pan="KLMNO9876P", aadhaar="987698769876")

@@ -56,6 +56,8 @@ proof through the production containers and real browser request stream.
   member types.
 - Ordinary update, identity request, and approval each make one exact mutation plus one canonical
   GET, render masked server state, and never merge the mutation response locally.
+- Seed conflicting display values in the mutation and canonical GET responses and assert only the
+  subsequent masked detail response renders, so a hidden local merge cannot satisfy the test.
 - Browser request ledger contains the exact create/update/request/approve sequence in both trusted
   runs with no duplicate writes or missing canonical reads.
 
@@ -71,4 +73,3 @@ High
 
 - Every member mutation named by 006Y11 is proven through the production interaction boundary on
   success and failure, with canonical masked readback and backend authority.
-

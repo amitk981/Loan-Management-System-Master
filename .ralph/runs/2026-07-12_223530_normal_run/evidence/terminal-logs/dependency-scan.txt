@@ -1,0 +1,28 @@
+sfpcl_credit/applications/views.py:130:        object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/views.py:169:    object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/views.py:200:    object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/views.py:252:    access = services.evaluate_application_object_access(application, user, required, permissions)
+sfpcl_credit/applications/views.py:285:    object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/views.py:331:    object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/views.py:390:    object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/views.py:445:    object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/views.py:489:    object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/views.py:526:    object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/views.py:552:    object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/views.py:934:    object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/views.py:988:    object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/views.py:1025:    object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/views.py:1069:    object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/views.py:1115:    object_access = services.evaluate_application_object_access(
+sfpcl_credit/applications/services.py:11:from sfpcl_credit.applications.modules import application_authority
+sfpcl_credit/applications/services.py:196:        access = evaluate_application_object_access(application, actor, required, permissions)
+sfpcl_credit/applications/services.py:205:    access = evaluate_application_object_access(witness.loan_application, actor, WITNESS_READ_PERMISSION, permissions)
+sfpcl_credit/applications/services.py:360:def evaluate_application_object_access(application, actor, required_permission, actor_permissions=None):
+sfpcl_credit/applications/services.py:361:    return application_authority.evaluate_application_object_access(
+sfpcl_credit/applications/services.py:476:        if evaluate_application_object_access(
+sfpcl_credit/applications/services.py:524:        if evaluate_application_object_access(
+sfpcl_credit/applications/services.py:1005:    object_access = evaluate_application_object_access(
+sfpcl_credit/applications/services.py:1418:    object_access = evaluate_application_object_access(
+sfpcl_credit/applications/modules/application_authority.py:8:def evaluate_application_object_access(
+sfpcl_credit/applications/modules/witness_corrections.py:10:from sfpcl_credit.applications.modules import application_authority
+sfpcl_credit/applications/modules/witness_corrections.py:40:    access = application_authority.evaluate_application_object_access(

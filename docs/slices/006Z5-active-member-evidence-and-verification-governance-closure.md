@@ -62,6 +62,8 @@ effective-dated, and unable to grant BR-006 from an unsupported scalar alone.
 - Verify projection/write matrix covers permission, object scope/non-disclosure, maker-checker,
   reason/date/payload validation, stale version/result, repeat, inactive/relaxation decisions, and
   exact zero-evidence failures.
+- Existing and random out-of-scope member IDs must assert equivalent `403` error facts before
+  verification-record lookup, matching the application-subresource non-disclosure pattern.
 - Credit snapshot remains byte-for-byte stable after member/supply/status changes; portal responses
   expose classification summaries without internal IDs/evidence/verifier fields.
 - PostgreSQL competing verifiers produce exactly one effective record/current pointer/history/audit
@@ -82,4 +84,3 @@ High
   summary scalars or generic history JSON.
 - Verification is permission- and object-scoped, non-disclosing, atomic, and concurrency-safe; credit
   and portal consume one complete internal result with deliberate external redaction.
-

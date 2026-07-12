@@ -244,13 +244,13 @@ def loan_application_witness_detail(request, loan_application_id, witness_id):
     if response is not None:
         return response
     required = services.WITNESS_READ_PERMISSION if request.method == "GET" else services.WITNESS_UPDATE_PERMISSION
-    if request.method == "GET" and required not in permissions:
+    if required not in permissions:
         return error_response(request, 403, "FORBIDDEN", "You do not have permission to access witnesses.")
     application = services.get_application(loan_application_id)
     if application is None:
         return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
     access = services.evaluate_application_object_access(application, user, required, permissions)
-    if request.method == "GET" and not access.allowed:
+    if not access.allowed:
         return _object_access_denied_response(request, access)
     witness = application.witnesses.filter(witness_id=witness_id).first()
     if witness is None:
