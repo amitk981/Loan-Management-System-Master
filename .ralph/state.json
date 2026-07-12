@@ -118,15 +118,16 @@
     "006Y2-member-form-and-witness-capture-ui-wiring",
     "006X4-credit-action-parity-regression-matrix",
     "006Y3-member-registry-and-identity-change-approval-closure",
-    "006Y4-witness-correction-and-resource-action-closure"
+    "006Y4-witness-correction-and-resource-action-closure",
+    "006Z-produce-supply-history-persistence"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "6c6a4da",
-  "last_run_id": "2026-07-12_110649_repair",
+  "last_run_id": "2026-07-12_111736_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 3,
-  "architecture_review_due": false,
+  "slices_completed_since_architecture_review": 4,
+  "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null

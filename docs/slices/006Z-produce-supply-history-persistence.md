@@ -1,7 +1,7 @@
 # Slice 006Z: Produce Supply History Persistence and Eligibility Integration
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
@@ -75,16 +75,16 @@ High
   writes preserve record/history/audit counts. Reuse the mounted canonical-refetch proof pattern.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated
-- [ ] Database rules followed
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Visual evidence saved
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated
+- [x] Database rules followed
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Visual evidence saved through deterministic component render assertions; no trusted-browser contract declared
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

@@ -67,6 +67,7 @@ export interface MemberProfileDetail {
     services_availed_flag: boolean;
     produce_supply_years: string | null;
   } | null;
+  produce_supply_records?: ProduceSupplyRecordDetail[];
   available_actions: {
     action_code: string;
     label: string;
@@ -75,6 +76,23 @@ export interface MemberProfileDetail {
     required_permission: string;
   }[];
   pending_identity_change?: { identity_change_request_id: string; status: string } | null;
+}
+
+export interface ProduceSupplyRecordDetail {
+  produce_supply_record_id: string;
+  member_id: string;
+  financial_year: string;
+  supplied_to_entity_type: string;
+  supply_route: string;
+  crop_type: string | null;
+  quantity: string | null;
+  value_amount: string | null;
+  evidence_reference: string | null;
+  verified_flag: boolean;
+  verified_by_user_id: string | null;
+  verified_at: string | null;
+  version: number;
+  available_actions: MemberProfileDetail['available_actions'];
 }
 
 export type MemberMutationPayload = Record<string, unknown>;

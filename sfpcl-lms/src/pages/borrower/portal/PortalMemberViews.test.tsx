@@ -28,12 +28,12 @@ describe('member portal backend-backed views', () => {
     expect(html).not.toContain('123456789012');
   });
 
-  it('renders MP22 produce supply empty shell when the backend model is not implemented', () => {
+  it('renders MP22 persisted produce supply empty state', () => {
     const html = renderToStaticMarkup(<MP22ProduceSupplyView supply={produceSupply} />);
 
     expect(html).toContain('Produce Supply History');
     expect(html).toContain('No produce supply records are available yet.');
-    expect(html).toContain('model not implemented');
+    expect(html).toContain('persisted no verified records');
   });
 
   it('renders MP09 loading, empty, error, and returned-incomplete application states', () => {
@@ -97,10 +97,9 @@ const profile: PortalProfile = {
 };
 
 const produceSupply: PortalProduceSupply = {
-  member_id: 'member-1',
   records: [],
   summary: {},
-  source_status: 'model_not_implemented',
+  source_status: 'persisted_no_verified_records',
 };
 
 const returnedApplication: PortalApplication = {

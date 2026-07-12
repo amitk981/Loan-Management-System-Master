@@ -1696,7 +1696,10 @@ Rules:
 - Profile returns the existing masked member profile plus own nominees, shareholdings, land
   holdings, crop plans, KYC profile, bank accounts, and cancelled cheques. Portal profile responses
   force PAN/Aadhaar `can_view_full = false` and expose no full bank account values.
-- Produce supply returns an empty read-only shell with `source_status = model_not_implemented`
+- Produce supply returns portal-account-scoped persisted records with no member identifier or
+  staff actions. `source_status` is `persisted_verified_records` when verified history exists and
+  `persisted_no_verified_records` otherwise; summary totals and continuous verified years derive
+  from those rows.
   because `data-model.md` defines `produce_supply_records` but no backend model exists yet.
 
 Frontend wiring:

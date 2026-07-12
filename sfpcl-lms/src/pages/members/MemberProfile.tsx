@@ -674,7 +674,7 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
           createSubmitting={shareholdingCreateSubmitting}
           onCreateShareholding={onCreateShareholding}
         />
-        <DeferredTab title="Produce Supply History" message="No produce supply records are available from the backend yet." />
+        <SupplyHistory records={profile.produce_supply_records ?? []} />
         <ServicesTab profile={profile} />
         <LandTab
           status={landCropStatus}
@@ -1679,6 +1679,20 @@ const Field: React.FC<{ label: string; error?: string; children: React.ReactNode
     {children}
     {error && <span className="text-xs text-red-600 mt-1 block">{error}</span>}
   </label>
+);
+
+const SupplyHistory: React.FC<{ records: NonNullable<MemberProfileDetail['produce_supply_records']> }> = ({ records }) => (
+  <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+    <div className="px-5 py-4 border-b border-slate-100"><h3 className="font-semibold text-slate-900">Produce Supply History</h3></div>
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-slate-500"><tr><th className="px-5 py-3 text-left">Financial Year</th><th className="px-5 py-3 text-left">Crop</th><th className="px-5 py-3 text-right">Quantity</th><th className="px-5 py-3 text-right">Value</th><th className="px-5 py-3 text-center">Status</th></tr></thead>
+        <tbody className="divide-y divide-slate-50">
+          {records.length ? records.map(record => <tr key={record.produce_supply_record_id}><td className="px-5 py-3 font-medium">{record.financial_year}</td><td className="px-5 py-3">{record.crop_type || 'Not recorded'}</td><td className="px-5 py-3 text-right">{record.quantity || 'Not recorded'}</td><td className="px-5 py-3 text-right">{record.value_amount || 'Not recorded'}</td><td className="px-5 py-3 text-center"><StatusBadge label={record.verified_flag ? 'verified' : 'pending'} size="sm" /></td></tr>) : <tr><td colSpan={5} className="px-5 py-6 text-slate-500">No produce supply records are available.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  </div>
 );
 
 const DeferredTab: React.FC<{ title: string; message: string }> = ({ title, message }) => (

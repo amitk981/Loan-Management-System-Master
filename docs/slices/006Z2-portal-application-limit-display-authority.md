@@ -78,6 +78,15 @@ Medium
 - Keep the projection endpoint read-only and portal-account scoped; it returns no staff resource
   actions. Mounted tests must prove one projection GET and no retry/local synthesis after errors.
 
+## Run-Ahead Sharpening Review (006Z, 2026-07-12)
+
+- Reuse 006Z's PortalAccount-only service boundary and portal projection rule: no `member_id`,
+  protected identity, or staff `available_actions` may appear in the limit response.
+- A limit projection may consume only verified persisted member facts and effective 006C policy;
+  unavailable or stale facts return an explicit server state, never a zero or client fallback.
+- Keep requested-amount comparison server-owned and return the advisory as a projected fact so the
+  mounted portal test can prove no arithmetic or inferred authority remains in React.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

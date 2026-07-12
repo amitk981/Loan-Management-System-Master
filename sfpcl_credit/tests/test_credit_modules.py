@@ -26,6 +26,7 @@ from sfpcl_credit.members.models import (
     LandHolding,
     Member,
     Nominee,
+    ProduceSupplyRecord,
     Shareholding,
 )
 from sfpcl_credit.workflows.models import WorkflowEvent
@@ -60,6 +61,13 @@ class CreditEligibilityModuleTests(TestCase):
             active_member_status="active",
             active_member_verified_at=timezone.now(),
         )
+        for year in ("2022-23", "2023-24", "2024-25", "2025-26"):
+            ProduceSupplyRecord.objects.create(
+                member=self.member, financial_year=year,
+                supplied_to_entity_type="sfpcl", supply_route="direct",
+                captured_by_user=self.actor, verified_flag=True,
+                verified_by_user=self.actor, verified_at=timezone.now(),
+            )
         self.land = LandHolding.objects.create(
             member=self.member,
             document_type="7_12_extract",

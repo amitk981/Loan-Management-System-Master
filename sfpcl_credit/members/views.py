@@ -362,6 +362,53 @@ def member_shareholdings(request, member_id):
 
 
 @require_http_methods(["GET", "POST"])
+def member_produce_supply_records(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if request.method == "GET" and not services.user_can_read_members(user):
+        return error_response(request, 403, "FORBIDDEN", "You do not have permission to read produce supply records.")
+    if request.method == "POST" and not services.user_can_capture_produce_supply(user):
+        return error_response(request, 403, "FORBIDDEN", "You do not have permission to capture produce supply records.")
+    member = services.get_accessible_member(member_id)
+    if member is None:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+    if request.method == "GET":
+        return success_response(
+            [services.serialize_produce_supply_record(row, user) for row in member.produce_supply_records.all()],
+            request,
+        )
+    try:
+        record = services.create_produce_supply_record(
+            member, parse_json_body(request), user, request_ip(request), request_user_agent(request)
+        )
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Produce supply payload failed validation.", services.validation_field_errors(exc))
+    return success_response(services.serialize_produce_supply_record(record, user), request)
+
+
+@require_http_methods(["POST"])
+def produce_supply_record_verify(request, record_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        body = parse_json_body(request)
+        record = services.verify_produce_supply_record(
+            record_id, body.get("version"), user, request_ip(request), request_user_agent(request)
+        )
+    except PermissionError as exc:
+        return error_response(request, 403, "FORBIDDEN", str(exc))
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Supply verification payload failed validation.", services.validation_field_errors(exc))
+    except services.ProduceSupplyConflict as exc:
+        return error_response(request, 409, exc.code, exc.message, exc.field_errors)
+    if record is None:
+        return error_response(request, 404, "NOT_FOUND", "Produce supply record was not found.")
+    return success_response(services.serialize_produce_supply_record(record, user), request)
+
+
+@require_http_methods(["GET", "POST"])
 def member_land_holdings(request, member_id):
     user, response = http_auth.authenticated_user(request)
     if response is not None:

@@ -18,6 +18,7 @@ from sfpcl_credit.credit.modules.common import (
     require_permission,
 )
 from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.members.models import ProduceSupplyRecord
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
@@ -215,12 +216,26 @@ def _active_member_check(member):
                 f"member status is {member.membership_status}."
             ),
         }
-    if member.active_member_status == "active" and member.active_member_verified_at:
+    services_availed = False
+    if member.member_type == "individual_farmer":
+        profile = getattr(member, "individual_profile", None)
+        services_availed = bool(
+            (profile and profile.services_availed_flag)
+            or (member.active_member_status == "active" and member.active_member_verified_at)
+        )
+    else:
+        profile = getattr(member, "producer_institution_profile", None)
+        services_availed = bool(profile and profile.services_availed_flag)
+    verified_years = list(
+        ProduceSupplyRecord.objects.filter(member=member, verified_flag=True)
+        .values_list("financial_year", flat=True).distinct()
+    )
+    if services_availed and _has_continuous_financial_years(verified_years, 4):
         return {
             "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_PASS,
             "overall_result": EligibilityAssessment.OVERALL_PENDING,
             "assessment_notes": (
-                "Active-member status was verified from existing member facts. "
+                "Active-member status is supported by services availed and four continuous verified financial years of produce supply. "
                 "Default, document, terms, purpose, and nominee checks are pending."
             ),
         }
@@ -238,10 +253,24 @@ def _active_member_check(member):
         "overall_result": EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE,
         "assessment_notes": (
             "BR-004 through BR-007 require continuous produce/service history or "
-            "relaxation evidence. Current persistence has no source history rows "
-            "for this application, so manual evidence is required."
+            "relaxation evidence. Persisted verified supply history does not meet "
+            "the source-backed rule, so manual evidence is required."
         ),
     }
+
+
+def _has_continuous_financial_years(financial_years, required):
+    starts = set()
+    for value in financial_years:
+        try:
+            start, end = value.split("-", 1)
+            start_year = int(start)
+            expected_end = str((start_year + 1) % 100).zfill(2)
+            if end == expected_end:
+                starts.add(start_year)
+        except (AttributeError, TypeError, ValueError):
+            continue
+    return any(all(year + offset in starts for offset in range(required)) for year in starts)
 
 
 def _source_backed_eligibility_checks(application):

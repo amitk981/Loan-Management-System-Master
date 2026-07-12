@@ -192,6 +192,7 @@ export const Borrower360View: React.FC<Borrower360ViewProps> = ({
     { id: 'kyc', label: 'KYC & Documents', badge: kycProfile?.documents.length || undefined },
     { id: 'security', label: 'Bank & Security', badge: bankAccounts.length || undefined },
     { id: 'nominee', label: 'Nominee', badge: nominees.length || undefined },
+    { id: 'supply', label: 'Produce Supply', badge: profile.produce_supply_records?.length || undefined },
     { id: 'applications', label: 'Applications' },
     { id: 'loans', label: 'Loan Accounts' },
     { id: 'repayments', label: 'Repayment History' },
@@ -260,6 +261,7 @@ export const Borrower360View: React.FC<Borrower360ViewProps> = ({
         <KycPanel profile={profile} kycProfile={kycProfile} />
         <BankSecurityTab bankAccounts={bankAccounts} cancelledCheques={cancelledCheques} shareholdings={shareholdings} />
         <NomineePanel nominees={nominees} />
+        <BorrowerSupplyPanel records={profile.produce_supply_records ?? []} />
         <DeferredTab title="Applications" message="No loan application records are available from the backend yet." />
         <DeferredTab title="Loan Accounts" message="No loan records are available from the backend yet." />
         <DeferredTab title="Repayment History" message="No repayment records are available from the backend yet." />
@@ -333,6 +335,13 @@ const SummaryTab: React.FC<{
         ]}
       />
     </div>
+  </div>
+);
+
+const BorrowerSupplyPanel: React.FC<{ records: NonNullable<MemberProfileDetail['produce_supply_records']> }> = ({ records }) => (
+  <div className="bg-white rounded-xl border border-slate-100 p-5">
+    <h3 className="font-semibold text-slate-900 mb-3">Produce Supply History</h3>
+    {records.length ? <div className="space-y-2">{records.map(record => <div key={record.produce_supply_record_id} className="flex items-center justify-between border-b border-slate-50 pb-2"><span className="text-sm font-medium">{record.financial_year} · {record.crop_type || 'Crop not recorded'}</span><StatusBadge label={record.verified_flag ? 'verified' : 'pending'} size="sm" /></div>)}</div> : <p className="text-sm text-slate-500">No produce supply records are available.</p>}
   </div>
 );
 

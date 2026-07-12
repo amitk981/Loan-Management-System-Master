@@ -3789,3 +3789,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-12_111736_normal_run
+
+- Completed 006Z: persisted source-backed produce supply with staff capture, independent
+  optimistic verification, audit/history evidence, and PortalAccount-only read scope.
+- Active-member eligibility now uses services evidence plus four continuous verified fiscal years;
+  portal, Member Profile, and Borrower 360 project the same records.
+- Frontend build/typecheck/lint and 173 tests passed; backend check/migration sync and 423 tests
+  passed (5 skipped) at 94% coverage.
+- Next action: architecture review is due, then run 006Z2.
+
+## 2026-07-12 11:34:05 - 2026-07-12_111736_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z-produce-supply-history-persistence
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_111736_normal_run/.ralph/runs/2026-07-12_111736_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_111736_normal_run/.ralph/runs/2026-07-12_111736_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

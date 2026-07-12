@@ -1,0 +1,24 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_portal_supply_is_read_only_and_scoped_from_portal_account (sfpcl_credit.tests.test_produce_supply_api.ProduceSupplyApiTests.test_portal_supply_is_read_only_and_scoped_from_portal_account)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_111736_normal_run/sfpcl_credit/tests/test_produce_supply_api.py", line 202, in test_portal_supply_is_read_only_and_scoped_from_portal_account
+    self.assertEqual([row["financial_year"] for row in data["records"]], ["2025-26"])
+AssertionError: Lists differ: [] != ['2025-26']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'2025-26'
+
+- []
++ ['2025-26']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.014s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

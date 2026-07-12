@@ -16,6 +16,7 @@ from sfpcl_credit.members.models import (
     LandHolding,
     Member,
     Nominee,
+    ProduceSupplyRecord,
     Shareholding,
 )
 from sfpcl_credit.tests.api_contracts import (
@@ -130,6 +131,13 @@ class LoanApplicationDraftApiTests(TestCase):
         self.plain = self._user("applications.plain@sfpcl.example", "PlainPass123!")
         self.member = self._member("005A", "Ramesh Patil")
         self.other_member = self._member("005A-OTHER", "Sita Farms")
+        for year in ("2022-23", "2023-24", "2024-25", "2025-26"):
+            ProduceSupplyRecord.objects.create(
+                member=self.member, financial_year=year,
+                supplied_to_entity_type="sfpcl", supply_route="direct",
+                captured_by_user=self.creator, verified_flag=True,
+                verified_by_user=self.creator, verified_at=timezone.now(),
+            )
         self.nominee = self._create_nominee(None)
         self.land = LandHolding.objects.create(
             member=self.member,

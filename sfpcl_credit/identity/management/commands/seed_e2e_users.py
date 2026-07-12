@@ -11,7 +11,7 @@ from sfpcl_credit.configurations.models import LoanPolicyConfig
 from sfpcl_credit.credit.models import EligibilityAssessment
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import Permission, Role, RolePermission, User
-from sfpcl_credit.members.models import CropPlan, LandHolding, Member, Nominee, Shareholding
+from sfpcl_credit.members.models import CropPlan, LandHolding, Member, Nominee, ProduceSupplyRecord, Shareholding
 
 # Non-secret credentials for the local Playwright suite only. The suite logs in
 # through the production auth path (POST /auth/login/ + GET /auth/me/), so a real
@@ -36,6 +36,7 @@ EPIC_006_IDS = {
         "application": 601, "member": 602, "nominee": 603, "shareholding": 604,
         "land": 605, "crop": 606, "eligibility": 607, "policy": 608,
         "witness_member": 611, "witness_shareholding": 612,
+        "supply_2022": 621, "supply_2023": 622, "supply_2024": 623, "supply_2025": 624,
     }.items()
 }
 EPIC_006_REFERENCE = "LOE2E00601"
@@ -218,6 +219,20 @@ class Command(BaseCommand):
                 "active_member_verified_at": instant, "created_by_user": finance_user,
             },
         )
+        for key, financial_year in (
+            ("supply_2022", "2022-23"), ("supply_2023", "2023-24"),
+            ("supply_2024", "2024-25"), ("supply_2025", "2025-26"),
+        ):
+            ProduceSupplyRecord.objects.update_or_create(
+                produce_supply_record_id=EPIC_006_IDS[key],
+                defaults={
+                    "member": member, "financial_year": financial_year,
+                    "supplied_to_entity_type": "sfpcl", "supply_route": "direct",
+                    "crop_type": "synthetic_crop", "evidence_reference": f"E2E-{financial_year}",
+                    "captured_by_user": finance_user, "verified_flag": True,
+                    "verified_by_user": finance_user, "verified_at": instant,
+                },
+            )
         witness_member, _created = Member.objects.update_or_create(
             member_id=EPIC_006_IDS["witness_member"],
             defaults={

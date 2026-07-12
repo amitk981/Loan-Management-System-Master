@@ -329,6 +329,16 @@ urlpatterns = [
         name="member-shareholdings",
     ),
     path(
+        "api/v1/members/<uuid:member_id>/produce-supply-records/",
+        member_views.member_produce_supply_records,
+        name="member-produce-supply-records",
+    ),
+    path(
+        "api/v1/produce-supply-records/<uuid:record_id>/verify/",
+        member_views.produce_supply_record_verify,
+        name="produce-supply-record-verify",
+    ),
+    path(
         "api/v1/members/<uuid:member_id>/land-holdings/",
         member_views.member_land_holdings,
         name="member-land-holdings",

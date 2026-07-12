@@ -332,6 +332,19 @@ Sources distilled during slice `005I-application-intake-frontend-wiring` while s
 - Active-member run must preserve 005C2 application object access and require formal `LO...`
   reference/completeness before appraisal eligibility starts.
 
+## 006Z Produce Supply Persistence
+- `produce_supply_records` follows data-model §11.6 and stores financial year, destination/route,
+  optional crop/quantity/value/evidence facts, capture actor, immutable verification actor/time,
+  and optimistic version.
+- Capture uses `members.active_status.calculate`; verification uses
+  `members.active_status.verify` with maker-checker separation. Rejected and stale verification
+  attempts preserve record, history, and audit counts.
+- BR-004 pass now requires services-availed evidence plus four continuous verified financial-year
+  rows. Unverified, discontinuous, or absent rows require manual evidence; recorded relaxation
+  remains independently reviewable.
+- Portal supply is read-only and scoped only from active PortalAccount. Staff Member Profile and
+  Borrower 360 project the same records; portal projections omit staff actions and member IDs.
+
 ## 006B Default, Document, Purpose, And Terms Checks
 - Extend the 006A eligibility assessment to include:
   - BR-008: borrower must not be in default for any FPC loan of SFPCL, subsidiary, or associate.

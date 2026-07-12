@@ -1,26 +1,25 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-12_110649_repair
+2026-07-12_111736_normal_run
 
 ## Current Status
 
-006Y4 is complete. Witness list/detail now project resource-owned read/create/update actions;
-correction is optimistic, protected, masked, audited, history-backed, application-object scoped,
-and preserves immutable shareholder-verification evidence. Application Detail no longer derives
-witness controls from `/auth/me`; capture/correction refetch canonical resources. Repair 110649
-removed the trusted-browser flow's cross-test KYC coupling by giving witness capture a distinct,
-verified seeded shareholder rather than the borrower whose approved identity change sets KYC pending.
+006Z is complete. Produce supply is persisted with source fields, optimistic version, capture actor,
+and immutable independent verification evidence. Active-member eligibility now requires services
+evidence plus four continuous verified financial-year rows; absent, unverified, or discontinuous
+history remains manual-evidence-required. Portal scope derives only from PortalAccount and omits
+member identity/actions; Member Profile and Borrower 360 show the same canonical rows.
 
 ## Validation
 
-Repair evidence is under `.ralph/runs/2026-07-12_110649_repair/`. Frontend build/typecheck/lint and
-173 tests pass. Backend check/migration sync and 419 tests pass at 94% coverage. The focused real
-API regression proves witness capture remains valid while the borrower is in reverification. The
-two-test Playwright contract collects; Ralph's independent trusted-browser runs own the four
-screenshots because local Chromium is denied macOS Mach services in the agent sandbox.
+Evidence is under `.ralph/runs/2026-07-12_111736_normal_run/`. Frontend build/typecheck/lint and
+173 tests pass. Backend check/migration sync and 423 tests pass (5 skipped) at 94% coverage.
+Focused red/green logs cover capture, maker-checker verification, stale writes, evidence-backed
+eligibility, and portal cross-member scope. This slice declares no trusted-browser capability.
 
 ## Next Run
 
-Run High-risk 006Z for persisted produce-supply evidence and eligibility integration. 006Z and
-006Z2 were rechecked and sharpened with resource-action/refetch constraints.
+An architecture review is due after the fourth completed slice. After that, run 006Z2 for the
+PortalAccount-scoped server loan-limit projection and approved three-card portal display. 006Z2 was
+rechecked with 006Z's portal projection and verified-fact constraints.

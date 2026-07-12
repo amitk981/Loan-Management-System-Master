@@ -203,6 +203,41 @@ class ProducerInstitutionProfile(models.Model):
         return super().save(*args, **kwargs)
 
 
+class ProduceSupplyRecord(models.Model):
+    produce_supply_record_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="produce_supply_records")
+    financial_year = models.CharField(max_length=20, db_index=True)
+    supplied_to_entity_type = models.CharField(max_length=60)
+    supplied_to_entity_id = models.UUIDField(blank=True, null=True)
+    supply_route = models.CharField(max_length=60)
+    producer_institution_member = models.ForeignKey(
+        Member, blank=True, null=True, on_delete=models.PROTECT, related_name="routed_produce_supply_records"
+    )
+    crop_type = models.CharField(max_length=100, blank=True, db_index=True)
+    quantity = models.DecimalField(max_digits=18, decimal_places=3, blank=True, null=True)
+    value_amount = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
+    evidence_reference = models.CharField(max_length=255, blank=True)
+    verified_flag = models.BooleanField(default=False, db_index=True)
+    captured_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="captured_produce_supply_records"
+    )
+    verified_by_user = models.ForeignKey(
+        "identity.User", blank=True, null=True, on_delete=models.PROTECT,
+        related_name="verified_produce_supply_records",
+    )
+    verified_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    version = models.PositiveIntegerField(default=1, db_default=1)
+
+    class Meta:
+        db_table = "produce_supply_records"
+        ordering = ["-financial_year", "produce_supply_record_id"]
+        indexes = [
+            models.Index(fields=["member", "financial_year"], name="idx_supply_member_year"),
+            models.Index(fields=["member", "verified_flag"], name="idx_supply_member_verified"),
+        ]
+
+
 class Nominee(models.Model):
     nominee_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="nominees")

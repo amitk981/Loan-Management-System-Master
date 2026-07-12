@@ -72,7 +72,6 @@ export interface PortalNominee {
 }
 
 export interface PortalProduceSupply {
-  member_id: string;
   records: { financial_year: string; crop_type: string | null; quantity: string | null; value_amount: string | null; verified_flag: boolean }[];
   summary: { continuous_supply_years?: string | null; total_quantity?: string | null; total_value?: string | null };
   source_status: string;

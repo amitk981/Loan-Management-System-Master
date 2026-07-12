@@ -29,6 +29,7 @@ from sfpcl_credit.members.models import (
     MemberChangeHistory,
     Nominee,
     ProducerInstitutionProfile,
+    ProduceSupplyRecord,
     Shareholding,
 )
 from sfpcl_credit.members.protected_identity import (
@@ -54,6 +55,8 @@ KYC_PROFILE_CREATE_PERMISSION = "kyc.profile.create"
 KYC_PROFILE_UPDATE_PERMISSION = "kyc.profile.update"
 KYC_DOCUMENT_UPLOAD_PERMISSION = "kyc.document.upload"
 KYC_DOCUMENT_VERIFY_PERMISSION = "kyc.document.verify"
+PRODUCE_SUPPLY_CAPTURE_PERMISSION = "members.active_status.calculate"
+PRODUCE_SUPPLY_VERIFY_PERMISSION = "members.active_status.verify"
 REVEAL_FIELD_PERMISSIONS = {
     "pan": "members.sensitive.reveal_pan",
     "aadhaar": "members.sensitive.reveal_aadhaar",
@@ -77,6 +80,14 @@ _ALLOWED_PARAMS = {
 
 def user_can_read_members(user):
     return MEMBER_READ_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_capture_produce_supply(user):
+    return PRODUCE_SUPPLY_CAPTURE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_verify_produce_supply(user):
+    return PRODUCE_SUPPLY_VERIFY_PERMISSION in auth_service.effective_permission_codes(user)
 
 
 def user_can_create_members(user):
@@ -564,6 +575,10 @@ def serialize_member_profile(member, user):
         },
         "individual_profile": _individual_profile(member),
         "producer_institution_profile": _producer_profile(member),
+        "produce_supply_records": [
+            serialize_produce_supply_record(row, user)
+            for row in member.produce_supply_records.all()
+        ],
         "available_actions": _available_actions(member, user),
         "pending_identity_change": ({"identity_change_request_id": str(pending_change.identity_change_request_id), "status": pending_change.status} if pending_change else None),
         "version": member.version,
@@ -577,6 +592,14 @@ def validation_field_errors(exc):
 
 
 class NomineeValidationError(Exception):
+    def __init__(self, code, message, field_errors=None):
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.field_errors = field_errors or {}
+
+
+class ProduceSupplyConflict(Exception):
     def __init__(self, code, message, field_errors=None):
         super().__init__(message)
         self.code = code
@@ -725,6 +748,126 @@ def create_shareholding(member, payload, actor_user, request_ip="", request_user
         user_agent=request_user_agent,
     )
     return shareholding
+
+
+def create_produce_supply_record(member, payload, actor_user, request_ip="", request_user_agent=""):
+    required = ("financial_year", "supplied_to_entity_type", "supply_route")
+    errors = {field: "This field is required." for field in required if not payload.get(field)}
+    if errors:
+        raise ValidationError(errors)
+    record = ProduceSupplyRecord.objects.create(
+        member=member,
+        financial_year=payload["financial_year"],
+        supplied_to_entity_type=payload["supplied_to_entity_type"],
+        supplied_to_entity_id=payload.get("supplied_to_entity_id") or None,
+        supply_route=payload["supply_route"],
+        producer_institution_member_id=payload.get("producer_institution_member_id") or None,
+        crop_type=payload.get("crop_type", ""),
+        quantity=payload.get("quantity") or None,
+        value_amount=payload.get("value_amount") or None,
+        evidence_reference=payload.get("evidence_reference", ""),
+        captured_by_user=actor_user,
+    )
+    record.refresh_from_db()
+    projection = {
+        "member_id": str(member.member_id),
+        "financial_year": record.financial_year,
+        "verification_status": "pending",
+        "captured_by_user_id": str(actor_user.user_id),
+        "verified_by_user_id": None,
+    }
+    MemberChangeHistory.objects.create(
+        member=member, actor_user=actor_user, change_type="produce_supply_captured",
+        changed_fields=["produce_supply"], new_value_json=projection,
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user, action="members.produce_supply.created",
+        entity_type="produce_supply_record", entity_id=record.produce_supply_record_id,
+        new_value_json=projection, ip_address=request_ip, user_agent=request_user_agent,
+    )
+    return record
+
+
+def serialize_produce_supply_record(record, user=None, portal=False):
+    can_verify = bool(user and user_can_verify_produce_supply(user))
+    maker = bool(user and record.captured_by_user_id == user.user_id)
+    action = {
+        "action_code": PRODUCE_SUPPLY_VERIFY_PERMISSION,
+        "label": "Verify supply record",
+        "enabled": can_verify and not maker and not record.verified_flag,
+        "disabled_reason": None,
+        "required_permission": PRODUCE_SUPPLY_VERIFY_PERMISSION,
+        "required_role": None,
+    }
+    if maker:
+        action["disabled_reason"] = "The record maker cannot verify this supply record."
+    elif record.verified_flag:
+        action["disabled_reason"] = "This supply record is already verified."
+    elif not can_verify:
+        action["disabled_reason"] = "Missing supply verification permission."
+    data = {
+        "produce_supply_record_id": str(record.produce_supply_record_id),
+        "member_id": str(record.member_id),
+        "financial_year": record.financial_year,
+        "supplied_to_entity_type": record.supplied_to_entity_type,
+        "supplied_to_entity_id": str(record.supplied_to_entity_id) if record.supplied_to_entity_id else None,
+        "supply_route": record.supply_route,
+        "producer_institution_member_id": str(record.producer_institution_member_id) if record.producer_institution_member_id else None,
+        "crop_type": record.crop_type or None,
+        "quantity": f"{record.quantity:.3f}" if record.quantity is not None else None,
+        "value_amount": f"{record.value_amount:.2f}" if record.value_amount is not None else None,
+        "evidence_reference": record.evidence_reference or None,
+        "verified_flag": record.verified_flag,
+        "verified_by_user_id": str(record.verified_by_user_id) if record.verified_by_user_id else None,
+        "verified_at": record.verified_at.isoformat().replace("+00:00", "Z") if record.verified_at else None,
+        "version": record.version,
+    }
+    if not portal:
+        data["available_actions"] = [action]
+    return data
+
+
+@transaction.atomic
+def verify_produce_supply_record(record_id, version, actor_user, request_ip="", request_user_agent=""):
+    record = ProduceSupplyRecord.objects.select_for_update().filter(
+        produce_supply_record_id=record_id
+    ).first()
+    if record is None:
+        return None
+    if record.captured_by_user_id == actor_user.user_id:
+        raise PermissionError("The record maker cannot verify this supply record.")
+    if not user_can_verify_produce_supply(actor_user):
+        raise PermissionError("You do not have permission to verify produce supply records.")
+    try:
+        supplied_version = int(version)
+    except (TypeError, ValueError):
+        raise ValidationError({"version": "A valid version is required."})
+    if supplied_version != record.version:
+        raise ProduceSupplyConflict("STALE_WRITE", "Supply record has changed; refresh and retry.", {"version": "Version is stale."})
+    if record.verified_flag:
+        raise ProduceSupplyConflict("INVALID_STATE_TRANSITION", "Supply record is already verified.")
+    instant = timezone.now()
+    record.verified_flag = True
+    record.verified_by_user = actor_user
+    record.verified_at = instant
+    record.version += 1
+    record.save(update_fields=["verified_flag", "verified_by_user", "verified_at", "version"])
+    projection = {
+        "member_id": str(record.member_id), "financial_year": record.financial_year,
+        "verification_status": "verified",
+        "captured_by_user_id": str(record.captured_by_user_id),
+        "verified_by_user_id": str(actor_user.user_id),
+    }
+    MemberChangeHistory.objects.create(
+        member=record.member, actor_user=actor_user, change_type="produce_supply_verified",
+        changed_fields=["produce_supply_verification"], new_value_json=projection,
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user, action="members.produce_supply.verified",
+        entity_type="produce_supply_record", entity_id=record.produce_supply_record_id,
+        new_value_json=projection, ip_address=request_ip, user_agent=request_user_agent,
+    )
+    return record
 
 
 def serialize_shareholding(shareholding):
