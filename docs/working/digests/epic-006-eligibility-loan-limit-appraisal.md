@@ -1,5 +1,16 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006Z12 Portal Limit Denial Matrix Evidence Closure
+
+- Five independently selectable authenticated public API rows now prove stale authority snapshot,
+  changed supply provenance, missing profile, missing verified landholding, and contradictory
+  profile/land acreage all return the same exact redacted unavailable contract without writes.
+- The denial ledger captures Member, active authority, supply, service evidence, shareholding,
+  landholding/profile, loan-limit assessment, application, policy/version, audit, and workflow
+  state. Authentication occurs before each row's baseline, so login audit is never hidden.
+- Existing future/closed/manual/mismatched authority, changed service evidence, duplicate share,
+  no-policy, and invalid-amount rows retain the public boundary. Production calculation is unchanged.
+
 ## 006Z11 Member Scope Assignment and List Nondisclosure Closure
 
 - Member action permission and object scope are separate persisted facts. Action-specific global,

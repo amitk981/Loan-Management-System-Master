@@ -4883,3 +4883,22 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-13_051716_normal_run
+
+- Completed the public portal borrower-limit denial matrix with independently selectable stale
+  authority, changed supply, missing profile, missing landholding, and contradictory acreage rows.
+- Expanded zero-write evidence to every required member, authority, supply/service, share/land/
+  profile, loan-limit assessment, application, policy, audit, and workflow category.
+- Frontend build/typecheck/lint and 207 tests pass. Backend check/migration sync and 520 tests pass
+  with 14 expected PostgreSQL-only skips and 93% coverage; focused projection coverage is 96%.
+
+## 2026-07-13 05:25:49 - 2026-07-13_051716_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z12-portal-limit-denial-matrix-evidence-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_051716_normal_run/.ralph/runs/2026-07-13_051716_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_051716_normal_run/.ralph/runs/2026-07-13_051716_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

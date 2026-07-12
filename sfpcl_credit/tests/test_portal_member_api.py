@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from sfpcl_credit.applications.models import ApplicationDeficiency, LoanApplication
 from sfpcl_credit.configurations.models import LoanPolicyConfig
+from sfpcl_credit.credit.models import LoanLimitAssessment
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.models import Permission, PortalAccount, Role, RolePermission, User
 from sfpcl_credit.members.models import (
@@ -19,6 +20,7 @@ from sfpcl_credit.members.models import (
     Member,
     MemberServiceEvidence,
     Nominee,
+    ProduceSupplyRecord,
     Shareholding,
     ActiveMemberStatus,
 )
@@ -737,15 +739,167 @@ class PortalMemberApiTests(TestCase):
                 self.assertNotIn(str(self.member.member_id), json.dumps(response.json()))
                 self.assertEqual(self._portal_limit_evidence(), before)
 
+    def _arrange_complete_portal_limit_projection(self):
+        token = self._portal_token()
+        calculation_date = timezone.localdate() - timedelta(days=1)
+        profile = IndividualMemberProfile.objects.create(
+            member=self.member, first_name="Ganesh", last_name="Thorat",
+            land_area_under_cultivation_acres="4.50",
+        )
+        service = MemberServiceEvidence.objects.create(
+            member=self.member, service_type="employment", recipient_entity_type="subsidiary",
+            recipient_entity_id=uuid4(), service_from=calculation_date - timedelta(days=1096),
+            service_to=calculation_date, evidence_reference="MATRIX-SERVICE-EVIDENCE",
+            verified_by_user=self.staff_user, verified_at=timezone.now(),
+        )
+        supply = ProduceSupplyRecord.objects.create(
+            member=self.member, financial_year="2025-26", supplied_to_entity_type="other",
+            supplied_to_entity_id=uuid4(), supply_route="direct", crop_type="grapes",
+            quantity="1.000", value_amount="100.00", evidence_reference="MATRIX-SUPPLY-EVIDENCE",
+            verified_flag=True, captured_by_user=self.staff_user,
+            verified_by_user=self.staff_user, verified_at=timezone.now(),
+        )
+        result = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=calculation_date,
+        )
+        authority = ActiveMemberStatus.objects.create(
+            member=self.member, result_id=result.result_id, status="active",
+            member_type=self.member.member_type, services_availed_flag=result.services_availed,
+            continuous_supply_years=result.continuous_supply_years,
+            evidence_summary="MATRIX PRIVATE AUTHORITY", evidence_snapshot=result.to_snapshot(),
+            verified_by_user=self.staff_user, verified_at=timezone.now(),
+            effective_from=calculation_date,
+        )
+        self.member.active_member_status_id = authority.active_member_status_id
+        self.member.save(update_fields=["active_member_status_id"])
+        shareholding = Shareholding.objects.create(
+            member=self.member, folio_number=self.member.folio_number, number_of_shares=5,
+            holding_mode="physical", valuation_per_share="100000.00",
+            valuation_effective_date=calculation_date, pledged_share_count=0,
+            available_share_count=5, status="active",
+        )
+        landholding = LandHolding.objects.create(
+            member=self.member, document_type="7_12_extract", area_acres="4.50",
+            document_id=uuid4(), verification_status="verified",
+            verified_by_user=self.staff_user, verified_at=timezone.now(),
+        )
+        policy = LoanPolicyConfig.objects.create(
+            policy_name="Matrix policy", policy_version="matrix-v1",
+            effective_from=calculation_date, short_term_duration_months=12,
+            approval_threshold_amount="500000.00",
+            default_scale_of_finance_per_acre_amount="20000.00",
+            share_limit_percentage="30.0000", per_share_cap_amount=None,
+            interest_rate_type="fixed", rekyc_frequency_months=24,
+            record_retention_years=8, grace_period_months=1,
+            non_intentional_extension_months=3,
+            board_approval_reference="MATRIX-BOARD-PRIVATE", status=LoanPolicyConfig.STATUS_ACTIVE,
+        )
+        return token, authority, supply, service, profile, landholding, shareholding, policy
+
+    def _assert_portal_limit_unavailable_without_write(self, token):
+        before = self._portal_limit_evidence()
+        response = self.client.get(
+            "/api/v1/portal/application-limit-projection/?requested_amount=95000.00",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(response.status_code, 200)
+        assert_success_envelope(self, response.json())
+        self.assertEqual(response.json()["data"], {
+            "status": "unavailable",
+            "unavailable_reason": "verified_active_member_authority_not_available",
+            "shareholding_based_limit_amount": None,
+            "land_based_limit_amount": None,
+            "final_eligible_loan_amount": None,
+            "requested_amount": "95000.00",
+            "amount_within_limit_flag": None,
+            "exception_required_flag": None,
+            "calculated_as_of_date": None,
+            "calculation_rule_version": None,
+        })
+        serialized = json.dumps(response.json())
+        for private_value in self._portal_limit_private_values():
+            self.assertNotIn(private_value, serialized)
+        self.assertEqual(self._portal_limit_evidence(), before)
+
+    def _portal_limit_private_values(self):
+        values = [str(self.member.member_id), str(self.staff_user.user_id), "available_actions"]
+        values.extend(str(value) for value in ActiveMemberStatus.objects.values_list(
+            "active_member_status_id", "result_id"
+        ).first() or ())
+        values.extend(ProduceSupplyRecord.objects.values_list("evidence_reference", flat=True))
+        values.extend(MemberServiceEvidence.objects.values_list("evidence_reference", flat=True))
+        values.extend(str(value) for value in LoanPolicyConfig.objects.values_list(
+            "loan_policy_config_id", flat=True
+        ))
+        values.extend(LoanPolicyConfig.objects.values_list("board_approval_reference", flat=True))
+        return [value for value in values if value]
+
+    def test_portal_limit_denies_stale_authority_snapshot_without_write(self):
+        token, authority, *_ = self._arrange_complete_portal_limit_projection()
+        authority.evidence_snapshot = {**authority.evidence_snapshot, "continuous_supply_years": 99}
+        authority.save(update_fields=["evidence_snapshot"])
+        self._assert_portal_limit_unavailable_without_write(token)
+
+    def test_portal_limit_denies_changed_supply_provenance_without_write(self):
+        token, _, supply, *_ = self._arrange_complete_portal_limit_projection()
+        supply.evidence_reference = "CHANGED-SUPPLY-PRIVATE"
+        supply.save(update_fields=["evidence_reference"])
+        self._assert_portal_limit_unavailable_without_write(token)
+
+    def test_portal_limit_denies_missing_profile_without_write(self):
+        token, _, _, _, profile, *_ = self._arrange_complete_portal_limit_projection()
+        profile.delete()
+        self._assert_portal_limit_unavailable_without_write(token)
+
+    def test_portal_limit_denies_missing_landholding_without_write(self):
+        token, _, _, _, _, landholding, *_ = self._arrange_complete_portal_limit_projection()
+        landholding.delete()
+        self._assert_portal_limit_unavailable_without_write(token)
+
+    def test_portal_limit_denies_contradictory_profile_land_facts_without_write(self):
+        token, _, _, _, profile, *_ = self._arrange_complete_portal_limit_projection()
+        profile.land_area_under_cultivation_acres = "4.00"
+        profile.save(update_fields=["land_area_under_cultivation_acres"])
+        self._assert_portal_limit_unavailable_without_write(token)
+
     def _portal_limit_evidence(self):
         return {
             "member": list(Member.objects.filter(pk=self.member.pk).values()),
             "authority": list(ActiveMemberStatus.objects.filter(member=self.member).values()),
+            "supply": list(ProduceSupplyRecord.objects.filter(member=self.member).values()),
+            "service_evidence": list(
+                MemberServiceEvidence.objects.filter(member=self.member).values()
+            ),
+            "shareholdings": list(Shareholding.objects.filter(member=self.member).values()),
+            "landholdings": list(LandHolding.objects.filter(member=self.member).values()),
+            "individual_profile": list(
+                IndividualMemberProfile.objects.filter(member=self.member).values()
+            ),
+            "assessments": list(LoanLimitAssessment.objects.filter(member=self.member).values()),
             "applications": list(LoanApplication.objects.filter(member=self.member).values()),
             "audits": list(AuditLog.objects.all().values()),
             "workflows": list(WorkflowEvent.objects.all().values()),
             "policies": list(LoanPolicyConfig.objects.all().values()),
         }
+
+    def test_portal_limit_zero_write_ledger_covers_every_required_state_category(self):
+        self.assertEqual(
+            set(self._portal_limit_evidence()),
+            {
+                "member",
+                "authority",
+                "supply",
+                "service_evidence",
+                "shareholdings",
+                "landholdings",
+                "individual_profile",
+                "assessments",
+                "applications",
+                "policies",
+                "audits",
+                "workflows",
+            },
+        )
 
     def test_invalid_portal_nominee_create_and_patch_preserve_application_and_evidence(self):
         cross_member = Nominee.objects.create(
