@@ -579,6 +579,174 @@ class PortalMemberApiTests(TestCase):
         ):
             self.assertNotIn(secret, serialized)
 
+    def test_portal_limit_projection_keeps_stored_date_policy_authority_after_reload(self):
+        calculation_date = timezone.localdate() - timedelta(days=1)
+        IndividualMemberProfile.objects.create(
+            member=self.member, first_name="Ganesh", last_name="Thorat",
+            land_area_under_cultivation_acres="4.50",
+        )
+        MemberServiceEvidence.objects.create(
+            member=self.member, service_type="employment", recipient_entity_type="subsidiary",
+            recipient_entity_id=uuid4(), service_from=calculation_date - timedelta(days=1096),
+            service_to=calculation_date, evidence_reference="RELOAD-EVIDENCE",
+            verified_by_user=self.staff_user, verified_at=timezone.now(),
+        )
+        result = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=calculation_date,
+        )
+        authority = ActiveMemberStatus.objects.create(
+            member=self.member, result_id=result.result_id, status="active",
+            member_type=self.member.member_type, services_availed_flag=result.services_availed,
+            continuous_supply_years=result.continuous_supply_years,
+            evidence_summary="Reload decision",
+            evidence_snapshot=result.to_snapshot(), verified_by_user=self.staff_user,
+            verified_at=timezone.now(), effective_from=calculation_date,
+        )
+        self.member.active_member_status_id = authority.active_member_status_id
+        self.member.save(update_fields=["active_member_status_id"])
+        Shareholding.objects.create(
+            member=self.member, folio_number=self.member.folio_number, number_of_shares=5,
+            holding_mode="physical", valuation_per_share="100000.00",
+            valuation_effective_date=calculation_date, pledged_share_count=0,
+            available_share_count=5, status="active",
+        )
+        LandHolding.objects.create(
+            member=self.member, document_type="7_12_extract", area_acres="4.50",
+            document_id=uuid4(), verification_status="verified",
+            verified_by_user=self.staff_user, verified_at=timezone.now(),
+        )
+        for version, effective_from, scale in (
+            ("stored-v1", calculation_date, "20000.00"),
+            ("later-v2", calculation_date + timedelta(days=1), "30000.00"),
+        ):
+            LoanPolicyConfig.objects.create(
+                policy_name=version, policy_version=version, effective_from=effective_from,
+                short_term_duration_months=12, approval_threshold_amount="500000.00",
+                default_scale_of_finance_per_acre_amount=scale,
+                share_limit_percentage="30.0000", per_share_cap_amount=None,
+                interest_rate_type="fixed",
+                rekyc_frequency_months=24, record_retention_years=8, grace_period_months=1,
+                non_intentional_extension_months=3, board_approval_reference=version,
+                status=LoanPolicyConfig.STATUS_ACTIVE,
+            )
+        token = self._portal_token()
+        reloaded_result = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=calculation_date,
+        )
+        self.assertEqual(reloaded_result.result_id, result.result_id)
+        self.assertEqual(reloaded_result.to_snapshot(), authority.evidence_snapshot)
+        from sfpcl_credit.configurations.modules.configuration_resolver import resolve_effective_loan_policy
+        self.assertEqual(resolve_effective_loan_policy(calculation_date=calculation_date).policy_version, "stored-v1")
+        before = self._portal_limit_evidence()
+
+        first = self.client.get(
+            "/api/v1/portal/application-limit-projection/?requested_amount=95000.00",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        second = self.client.get(
+            "/api/v1/portal/application-limit-projection/?requested_amount=95000.00",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.json()["data"], first.json()["data"])
+        self.assertEqual(first.json()["data"]["calculation_rule_version"], "stored-v1")
+        self.assertEqual(first.json()["data"]["land_based_limit_amount"], "90000.00")
+        self.assertEqual(self._portal_limit_evidence(), before)
+
+        def assert_unavailable_without_write(case):
+            denied_before = self._portal_limit_evidence()
+            denied = self.client.get(
+                "/api/v1/portal/application-limit-projection/?requested_amount=95000.00",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            self.assertEqual(denied.status_code, 200, case)
+            self.assertEqual(denied.json()["data"]["status"], "unavailable", case)
+            self.assertNotIn(str(self.member.member_id), json.dumps(denied.json()), case)
+            self.assertEqual(self._portal_limit_evidence(), denied_before, case)
+
+        with self.subTest(case="future authority"):
+            authority.effective_from = timezone.localdate() + timedelta(days=1)
+            authority.save(update_fields=["effective_from"])
+            assert_unavailable_without_write("future authority")
+            authority.effective_from = calculation_date
+            authority.save(update_fields=["effective_from"])
+        with self.subTest(case="closed authority"):
+            authority.effective_to = calculation_date
+            authority.save(update_fields=["effective_to"])
+            assert_unavailable_without_write("closed authority")
+            authority.effective_to = None
+            authority.save(update_fields=["effective_to"])
+        with self.subTest(case="manual authority"):
+            authority.status = "manual"
+            authority.save(update_fields=["status"])
+            assert_unavailable_without_write("manual authority")
+            authority.status = "active"
+            authority.save(update_fields=["status"])
+        with self.subTest(case="mismatched authority"):
+            original_result_id = authority.result_id
+            authority.result_id = uuid4()
+            authority.save(update_fields=["result_id"])
+            assert_unavailable_without_write("mismatched authority")
+            authority.result_id = original_result_id
+            authority.save(update_fields=["result_id"])
+        with self.subTest(case="changed service provenance"):
+            evidence = MemberServiceEvidence.objects.get(member=self.member)
+            evidence.evidence_reference = "CHANGED-EVIDENCE"
+            evidence.save(update_fields=["evidence_reference"])
+            assert_unavailable_without_write("changed service provenance")
+            evidence.evidence_reference = "RELOAD-EVIDENCE"
+            evidence.save(update_fields=["evidence_reference"])
+        with self.subTest(case="duplicate shareholding"):
+            duplicate = Shareholding.objects.create(
+                member=self.member, folio_number="DUPLICATE", number_of_shares=1,
+                holding_mode="physical", valuation_per_share="1.00",
+                valuation_effective_date=calculation_date, pledged_share_count=0,
+                available_share_count=1, status="active",
+            )
+            assert_unavailable_without_write("duplicate shareholding")
+            duplicate.delete()
+        with self.subTest(case="contradictory profile land"):
+            profile = IndividualMemberProfile.objects.get(member=self.member)
+            profile.land_area_under_cultivation_acres = "4.00"
+            profile.save(update_fields=["land_area_under_cultivation_acres"])
+            assert_unavailable_without_write("contradictory profile land")
+            profile.land_area_under_cultivation_acres = "4.50"
+            profile.save(update_fields=["land_area_under_cultivation_acres"])
+        with self.subTest(case="no effective policy"):
+            stored_policy = LoanPolicyConfig.objects.get(policy_version="stored-v1")
+            stored_policy.status = LoanPolicyConfig.STATUS_RETIRED
+            stored_policy.save(update_fields=["status"])
+            assert_unavailable_without_write("no effective policy")
+            stored_policy.status = LoanPolicyConfig.STATUS_ACTIVE
+            stored_policy.save(update_fields=["status"])
+
+    def test_portal_limit_denials_are_redacted_and_zero_write(self):
+        token = self._portal_token()
+        invalid_amounts = ("0", "-1", "not-money", "NaN", "Infinity")
+        for requested in invalid_amounts:
+            with self.subTest(requested=requested):
+                before = self._portal_limit_evidence()
+                response = self.client.get(
+                    f"/api/v1/portal/application-limit-projection/?requested_amount={requested}",
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                self.assertEqual(response.status_code, 400)
+                assert_error_envelope(self, response.json(), "VALIDATION_ERROR")
+                self.assertEqual(set(response.json()["error"]["field_errors"]), {"requested_amount"})
+                self.assertNotIn(str(self.member.member_id), json.dumps(response.json()))
+                self.assertEqual(self._portal_limit_evidence(), before)
+
+    def _portal_limit_evidence(self):
+        return {
+            "member": list(Member.objects.filter(pk=self.member.pk).values()),
+            "authority": list(ActiveMemberStatus.objects.filter(member=self.member).values()),
+            "applications": list(LoanApplication.objects.filter(member=self.member).values()),
+            "audits": list(AuditLog.objects.all().values()),
+            "workflows": list(WorkflowEvent.objects.all().values()),
+            "policies": list(LoanPolicyConfig.objects.all().values()),
+        }
+
     def test_invalid_portal_nominee_create_and_patch_preserve_application_and_evidence(self):
         cross_member = Nominee.objects.create(
             member=self.other_member,

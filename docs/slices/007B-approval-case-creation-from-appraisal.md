@@ -74,7 +74,15 @@ Medium
 - The enrichment adapter must surface 400/403/409 without retrying or re-resolving current policy;
   each loser leaves the existing case shell, rule snapshot, audit, and workflow evidence unchanged.
 
+## Run-Ahead Sharpening Review (006Z10, 2026-07-13)
+
+- After enrichment, repeat the public read across a later matrix activation and prove the stored
+  decision date, rule id/version, required approvers, and exception flag remain byte-for-byte stable.
+- Add an exact adapter interaction trace: one enrichment write and one canonical case read; 400/403/
+  409 must preserve the case shell and perform no retry, current-rule re-resolution, or local merge.
+
 ## Done Checklist
+
 - [ ] Execution plan written
 - [ ] Tests written or updated
 - [ ] Code implemented

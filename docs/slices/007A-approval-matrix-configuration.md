@@ -100,7 +100,16 @@ Medium
   same amount with different effective dates and same date with adjacent inclusive amounts, proving
   the selected rule comes from stored facts rather than a caller-computed threshold Boolean.
 
+## Run-Ahead Sharpening Review (006Z10, 2026-07-13)
+
+- Resolve effective approval policy using the case's authoritative decision date, never wall-clock
+  today; the completed portal boundary demonstrated that later active configuration must not make a
+  retained historical projection unavailable or silently replace its rule version.
+- Include invalid/non-finite amount inputs in the resolver/API zero-write matrix and compare complete
+  rule, committee, version-history, and audit evidence before/after each denial.
+
 ## Done Checklist
+
 - [ ] Execution plan written
 - [ ] Tests written or updated
 - [ ] Code implemented

@@ -1,0 +1,7 @@
+Backend commands used only `/Users/amitkallapa/LMS/.ralph/venv/bin/python`.
+
+- `manage.py check`: PASS; no issues.
+- `manage.py makemigrations --check --dry-run`: PASS; no changes detected.
+- `-m coverage run --source=sfpcl_credit sfpcl_credit/manage.py test sfpcl_credit.tests`: PASS;
+  500 tests, 12 expected PostgreSQL-only skips.
+- `-m coverage report --fail-under=85`: PASS; total coverage 93%.

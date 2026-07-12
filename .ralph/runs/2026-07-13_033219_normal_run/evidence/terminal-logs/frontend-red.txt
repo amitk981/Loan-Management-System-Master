@@ -1,0 +1,572 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_033219_normal_run/sfpcl-lms
+
+ ❯ src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx (6 tests | 1 failed) 218ms
+   ✓ MP05 loan-limit display authority (006Z2 interim regression) > keeps the trusted browser portal-entry fixture renderable before using the dashboard action 1ms
+   ✓ MP05 loan-limit display authority (006Z2 interim regression) > computes no loan limit client-side 0ms
+   ✓ MP05 loan-limit display authority (006Z2 interim regression) > explains that the limit is server-determined during credit assessment 0ms
+   ✓ MP05 loan-limit display authority (006Z2 interim regression) > renders the approved three-card composition and server advisory only from the mounted projection 110ms
+   ✓ MP05 loan-limit display authority (006Z2 interim regression) > mounts the real container with one borrower-scoped projection GET and no client fallback 31ms
+   × MP05 loan-limit display authority (006Z2 interim regression) > creates, submits exactly once, and canonically refetches the returned amount 74ms
+     → Unable to find an accessible element with the role "button" and name "Mark Uploaded"
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "New Loan Application":
+  [36m<h3[39m
+    [33mclass[39m=[32m"font-semibold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  Name "Nominee Details":
+  [36m<h3[39m
+    [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm font-medium text-slate-900"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm font-medium text-slate-900"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Save Draft":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"[39m
+  [36m/>[39m
+
+  Name "Applicant":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-green-50 text-green-700"[39m
+  [36m/>[39m
+
+  Name "Shares":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-green-50 text-green-700"[39m
+  [36m/>[39m
+
+  Name "Loan":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-green-50 text-green-700"[39m
+  [36m/>[39m
+
+  Name "Nominee":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-green-600 text-white"[39m
+  [36m/>[39m
+
+  Name "Documents":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-slate-50 text-slate-500 hover:bg-slate-100"[39m
+  [36m/>[39m
+
+  Name "Declarations":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-slate-50 text-slate-500 hover:bg-slate-100"[39m
+  [36m/>[39m
+
+  Name "Review":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-slate-50 text-slate-500 hover:bg-slate-100"[39m
+  [36m/>[39m
+
+  Name "Back":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center justify-center gap-2 rounded-lg bg-white border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"[39m
+  [36m/>[39m
+
+  Name "Continue":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-green-700 transition-colors shadow-sm"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "":
+  [36m<select[39m
+    [33mclass[39m=[32m"w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  option:
+
+  Name "Select nominee":
+  [36m<option[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Adult Nominee · spouse":
+  [36m<option[39m
+    [33mvalue[39m=[32m"nominee-1"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 p-5"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"font-semibold text-slate-900 flex items-center gap-2"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-clipboard-list text-green-600"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<rect[39m
+                  [33mheight[39m=[32m"4"[39m
+                  [33mrx[39m=[32m"1"[39m
+                  [33mry[39m=[32m"1"[39m
+                  [33mwidth[39m=[32m"8"[39m
+                  [33mx[39m=[32m"8"[39m
+                  [33my[39m=[32m"2"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 11h4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 16h4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M8 11h.01"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M8 16h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mNew Loan Application[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+            [36m>[39m
+              [0mComplete each section, upload mandatory documents, sign declarations, then submit for completeness check.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-save"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"15"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"15"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M7 3v4a1 1 0 0 0 1 1h7"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mSave Draft[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"mt-5 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex min-w-max gap-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-green-50 text-green-700"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"15"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"15"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m9 12 2 2 4-4"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mApplicant[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-green-50 text-green-700"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"15"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"15"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m9 12 2 2 4-4"[39m
+                [36m/>[39m
+              [36m</svg...
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx > MP05 loan-limit display authority (006Z2 interim regression) > creates, submits exactly once, and canonically refetches the returned amount
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "Mark Uploaded"
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "New Loan Application":
+  [36m<h3[39m
+    [33mclass[39m=[32m"font-semibold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  Name "Nominee Details":
+  [36m<h3[39m
+    [33mclass[39m=[32m"font-semibold text-slate-900"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm font-medium text-slate-900"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm font-medium text-slate-900"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Save Draft":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"[39m
+  [36m/>[39m
+
+  Name "Applicant":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-green-50 text-green-700"[39m
+  [36m/>[39m
+
+  Name "Shares":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-green-50 text-green-700"[39m
+  [36m/>[39m
+
+  Name "Loan":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-green-50 text-green-700"[39m
+  [36m/>[39m
+
+  Name "Nominee":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-green-600 text-white"[39m
+  [36m/>[39m
+
+  Name "Documents":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-slate-50 text-slate-500 hover:bg-slate-100"[39m
+  [36m/>[39m
+
+  Name "Declarations":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-slate-50 text-slate-500 hover:bg-slate-100"[39m
+  [36m/>[39m
+
+  Name "Review":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-slate-50 text-slate-500 hover:bg-slate-100"[39m
+  [36m/>[39m
+
+  Name "Back":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center justify-center gap-2 rounded-lg bg-white border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"[39m
+  [36m/>[39m
+
+  Name "Continue":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-green-700 transition-colors shadow-sm"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "":
+  [36m<select[39m
+    [33mclass[39m=[32m"w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  option:
+
+  Name "Select nominee":
+  [36m<option[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Adult Nominee · spouse":
+  [36m<option[39m
+    [33mvalue[39m=[32m"nominee-1"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-white rounded-xl border border-slate-100 p-5"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"font-semibold text-slate-900 flex items-center gap-2"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-clipboard-list text-green-600"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"16"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"16"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<rect[39m
+                  [33mheight[39m=[32m"4"[39m
+                  [33mrx[39m=[32m"1"[39m
+                  [33mry[39m=[32m"1"[39m
+                  [33mwidth[39m=[32m"8"[39m
+                  [33mx[39m=[32m"8"[39m
+                  [33my[39m=[32m"2"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 11h4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 16h4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M8 11h.01"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M8 16h.01"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mNew Loan Application[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mt-1"[39m
+            [36m>[39m
+              [0mComplete each section, upload mandatory documents, sign declarations, then submit for completeness check.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-save"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"15"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"15"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M7 3v4a1 1 0 0 0 1 1h7"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mSave Draft[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"mt-5 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex min-w-max gap-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-green-50 text-green-700"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"15"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"15"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m9 12 2 2 4-4"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mApplicant[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-green-50 text-green-700"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle-check"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"15"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"15"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m9 12 2 2 4-4"[39m
+                [36m/>[39m
+              [36m</svg...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:109:15
+ ❯ src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx:129:12
+    127|     fireEvent.change(await screen.findByRole('combobox'), { target: { …
+    128|     screen.getByRole('button', { name: 'Documents' }).click();
+    129|     screen.getAllByRole('button', { name: 'Mark Uploaded' }).forEach(b…
+       |            ^
+    130|     screen.getAllByRole('button', { name: 'Self-attested?' }).forEach(…
+    131|     screen.getByRole('button', { name: 'Declarations' }).click();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  03:38:53
+   Duration  1.19s (transform 130ms, setup 0ms, collect 269ms, tests 218ms, environment 301ms, prepare 40ms)
+

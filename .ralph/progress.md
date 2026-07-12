@@ -4747,3 +4747,67 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-13_033219_normal_run
+
+- Completed 006Z10: retained portal-limit projections resolve policy from the verified authority's
+  stored calculation date rather than wall-clock today.
+- Added public invalid-amount redaction/zero-write evidence and a mounted exact create, submit, and
+  canonical returned-amount refetch interaction trace.
+- Trusted browser collection contains all four declared screenshot scenarios, contradictory
+  server-flag fixtures, and submit/refetch/reload coverage. Independent validation owns browser runs.
+- Frontend build/typecheck/lint and 207 tests pass. Backend check/migration sync and 500 tests pass
+  at 93% coverage. Next: 007A approval matrix configuration.
+
+# Run 2026-07-13_034816_repair
+
+- Reproduced the exact trusted-browser failure from both independent logs: the review scenario's
+  `Documents` button locator also matched the shell's `My Documents` action.
+- Repaired only the E2E contract by requiring the exact accessible name. The preserved portal-limit
+  backend, mounted interaction tests, and production code are unchanged.
+- Playwright collects all four declared scenarios. Local Chromium remains sandbox-denied before page
+  creation; independent validation owns both trusted runs and screenshots.
+- Frontend build/typecheck/lint and 207 tests pass. Backend check/migration sync and 500 tests pass at
+  93% coverage. Next: independent browser validation, then 007A approval matrix configuration.
+
+# Run 2026-07-13_035655_repair
+
+- Diagnosed the repeated trusted-browser timeout after the first three scenarios passed: the review
+  helper pre-collected live indexed document-action locators, whose matches shifted after each click
+  changed an accessible name.
+- Repaired only the E2E helper to resolve the first remaining upload/self-attestation action after
+  each UI update. Production code and the preserved 006Z10 implementation are unchanged.
+- Frontend build/typecheck/lint and 207 tests pass. Backend check/migration sync and 500 tests pass at
+  93% coverage. Playwright collects all four scenarios; independent validation owns the two browser
+  runs and screenshots because local Chromium is sandbox-denied before page creation.
+
+# Run 2026-07-13_040511_repair
+
+- Diagnosed the next trusted-browser timeout after the first three scenarios passed: the review
+  helper's page-wide checkbox collection included seven visible declarations plus unrelated hidden
+  shell switches, and timed out on the first intercepted switch input.
+- Repaired only the E2E helper to resolve the seven declaration controls by exact accessible label.
+  Production code and the preserved 006Z10 backend/mounted interaction implementation are unchanged.
+- Frontend build/typecheck/lint and 207 tests pass. Backend check/migration sync and 500 tests pass at
+  93% coverage. Playwright collects all four scenarios; independent validation owns the two browser
+  runs and screenshots because local Chromium is sandbox-denied before page creation.
+
+# Run 2026-07-13_041602_repair
+
+- Reproduced the prior trusted-run failure: after successful submit/refetch/reload, the routed limit
+  view did not expose the retained server calculation date and rule version.
+- Added a failing mounted provenance assertion, then rendered only those existing server-authored
+  fields beneath the existing three-card composition with the existing text style.
+- Frontend build/typecheck/lint and 207 tests pass. Backend check/migration sync and 500 tests pass at
+  93% coverage. Playwright collects all four scenarios; independent validation owns the two browser
+  runs and screenshots because local Chromium is sandbox-denied before page creation.
+
+## 2026-07-13 04:23:51 - 2026-07-13_041602_repair
+- Agent tool used: codex
+- Slice attempted: 006Z10-portal-limit-interaction-and-boundary-proof
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_033219_normal_run/.ralph/runs/2026-07-13_041602_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_033219_normal_run/.ralph/runs/2026-07-13_041602_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

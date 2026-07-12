@@ -694,6 +694,11 @@ const PortalApplicationLimitView: React.FC<{
           </div>
         ))}
       </div>
+      {projection.calculated_as_of_date && projection.calculation_rule_version && (
+        <div className="text-xs text-slate-500">
+          As of {projection.calculated_as_of_date} · Rule {projection.calculation_rule_version}
+        </div>
+      )}
       {projection.exception_required_flag && (
         <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
           <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />

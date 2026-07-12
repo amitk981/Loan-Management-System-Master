@@ -1,0 +1,17 @@
+Repair diagnosis: 006Z10 trusted browser contract
+
+Red-capable trusted command (run twice by the independent validator):
+RALPH_EVIDENCE_DIR=<run>/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/portal-application-limit-authority.e2e.spec.ts
+
+Both runs: 3 passed, 1 failed. Exact symptom:
+strict mode violation: getByRole('button', { name: 'Documents' }) resolved to 2 elements:
+- My Documents
+- Documents (exact)
+
+Minimal repair:
+getByRole('button', { name: 'Documents', exact: true })
+
+Local focused execution was attempted after diagnosis but Chromium was denied at
+MachPortRendezvousServer registration before page creation. Per the slice contract, the independent
+validator owns executable browser acceptance. Playwright collection after the repair lists exactly
+four tests in the declared file.

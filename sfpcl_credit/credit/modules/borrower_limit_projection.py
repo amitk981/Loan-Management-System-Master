@@ -61,7 +61,7 @@ def project_borrower_limit(*, member, requested_amount=None):
     if profile.land_area_under_cultivation_acres is None or profile.land_area_under_cultivation_acres != land_area:
         return unavailable
     try:
-        policy = resolve_effective_loan_policy(calculation_date=today)
+        policy = resolve_effective_loan_policy(calculation_date=calculation_date)
     except ConfigurationResolutionError:
         return unavailable
     share_limit, land_limit, final_limit = calculate_limit_amounts(

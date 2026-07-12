@@ -1,22 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_031605_normal_run
+2026-07-13_041602_repair
 
 ## Current Status
 
-006Z9 is complete. Member scope is projected from explicit action permissions or ownership, never
-from system-role provenance or an unowned row. Active-member decisions must exactly match their
-calculated qualification route, and actors who captured or verified qualifying supply, service, or
-relaxation evidence cannot verify the derived status.
+006Z10's quarantined implementation has a fourth narrow repair. Both independent trusted runs
+passed the first three scenarios and completed submit/refetch/reload, then exposed that the routed
+limit view never rendered the server's retained calculation date and rule version. The existing
+three-card view now shows those two server-authored provenance fields with its existing text pattern.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-13_031605_normal_run/`. Frontend build/typecheck/lint and
-205 tests pass. Backend check/migration sync and 498 tests pass with 12 expected skips and 93%
-coverage. No schema, dependency, frontend, source, protected, or approved-design file changed.
+Repair evidence is under `.ralph/runs/2026-07-13_041602_repair/`. Frontend build/typecheck/lint and
+207 tests pass. Backend check/migration sync and 500 tests pass with 93% coverage. Playwright
+collects the four declared trusted scenarios; local Chromium is sandbox-denied before page creation,
+so independent validation owns both browser runs and the four screenshots. No backend, schema,
+dependency, source, protected, or approved-design file changed by this repair.
 
 ## Next Run
 
-Run `006Z10-portal-limit-interaction-and-boundary-proof`. It is already sharpened with exact backend
-boundary, mounted interaction, error, reload, and trusted-browser requirements. Epic 007 waits on it.
+Run `007A-approval-matrix-configuration`. It is sharpened with effective-date, permission, immutable
+projection, concurrency, complete zero-write evidence, and historical decision-date requirements.

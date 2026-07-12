@@ -1,0 +1,12 @@
+Command:
+npm test -- --run src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx -t "renders the approved three-card composition"
+
+Result: FAIL (exit 1)
+
+Focused failure:
+TestingLibraryElementError: Unable to find an element with the text:
+As of 2026-07-13 · Rule portal-limit-v1.
+
+Test Files  1 failed (1)
+Tests       1 failed | 6 skipped (7)
+

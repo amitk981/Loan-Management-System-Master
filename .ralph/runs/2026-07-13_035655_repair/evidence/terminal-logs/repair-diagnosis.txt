@@ -1,0 +1,30 @@
+Repair diagnosis: 006Z10 trusted browser acceptance
+
+Original deterministic external signal (both trusted runs):
+- First three scenarios passed.
+- Fourth scenario timed out after 30 seconds.
+- Exact locator: getByRole('button', { name: 'Mark Uploaded' }).nth(4)
+- Fourth screenshot was never reached.
+
+Ranked hypotheses:
+1. Pre-collected live indexed locators re-index as each click changes the button name.
+2. A document row is conditionally removed after an earlier upload.
+3. A state update remounts the list and invalidates later locators.
+4. The scenario exceeds the timeout without a locator defect.
+
+Confirmed cause:
+The component keeps all eight rows but changes each clicked button's accessible name from
+`Mark Uploaded` to `Uploaded` (and `Self-attested?` to `Self-attested`). Playwright locators from
+`.all()` retain nth-index queries against the current match set, so that set shrinks and the later
+indices no longer exist. This exactly predicts the repeated nth(4) timeout.
+
+Repair:
+Resolve and click the current first matching action after each state update until no matches remain.
+
+Local feedback:
+- Focused Playwright command is agent-runnable, but Chromium launch is denied by the sandbox before
+  page creation (`MachPortRendezvousServer ... Permission denied`). This is saved in repair-red.txt.
+- Playwright collection resolves all four declared cases.
+- Frontend gates and 207 tests pass.
+- Backend gates and 500 tests pass at 93% coverage.
+- The orchestrator's two trusted external runs remain authoritative for browser green and screenshots.

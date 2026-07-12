@@ -1,7 +1,7 @@
 # Slice 006Z10: Portal Limit Interaction and Boundary Proof
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review

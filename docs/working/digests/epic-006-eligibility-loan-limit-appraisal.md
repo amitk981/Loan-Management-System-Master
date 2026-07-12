@@ -1,5 +1,15 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006Z10 Portal Limit Interaction and Boundary Proof
+
+- Portal limit policy resolution now uses the verified authority's stored calculation date, so a
+  later active policy cannot invalidate or rewrite a retained projection on reload.
+- Public invalid-amount cases prove a stable validation envelope, redaction, and unchanged member,
+  authority, application, audit, workflow, and policy evidence.
+- Mounted MP05 drives the full create, submit, and one canonical returned-amount refetch trace. The
+  trusted four-screenshot contract uses contradictory amount/flag fixtures and includes submit,
+  refetch, and reload while retaining the backend date/rule provenance.
+
 ## 006Z9 Active-Member Authority and Decision Contract Closure
 
 - Member scope is projected from explicit action permissions or persisted ownership; system-role

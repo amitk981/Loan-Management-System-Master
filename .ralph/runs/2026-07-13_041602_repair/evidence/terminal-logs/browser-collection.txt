@@ -1,0 +1,11 @@
+Command:
+RALPH_EVIDENCE_DIR=<run>/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npx playwright test e2e/portal-application-limit-authority.e2e.spec.ts --list
+
+Result: PASS
+
+Collected 4 tests in 1 file:
+- available projection renders only the three server amounts
+- unavailable projection has no invented zero or internal reason
+- over-limit advisory is derived only from the server flag
+- review repeats the canonical server maximum without recalculation
+
