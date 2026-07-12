@@ -2159,3 +2159,16 @@ not supplement this resource projection from `/auth/me.available_actions`.
 - Member detail now returns `version` and exact six-field resource actions for
   `members.member.update` and `members.member.reverify_identity`. Resource actions, not `/auth/me`
   permissions alone, are authoritative for mutation UI.
+
+## Member governance and witness UI closure (006Y2)
+
+- Staff UI calls the 006Y member POST/PATCH/reverification endpoints and performs a canonical
+  member-detail GET after successful update/reverification. It preserves backend 400/403/409
+  errors and uses only the resource's update/reverification actions for profile mutation controls.
+- Application Detail calls the 004E2 witness GET/POST endpoint and performs a canonical witness
+  GET after successful capture. Immutable verification-time shareholding/folio evidence is rendered
+  from that read response; identity values remain masked after capture.
+- Contract mismatch: no source or delivered 004E/004E2 endpoint exists for witness update/PATCH,
+  although 006Y2 asks for an edit surface. The UI does not invent an edit request. Correction stays
+  deferred until a backend contract names editable fields, optimistic version semantics, a resource
+  action/permission, immutable-evidence behavior, and audit rules.

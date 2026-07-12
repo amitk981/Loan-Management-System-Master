@@ -131,6 +131,7 @@ export const CANONICAL_TO_PROTOTYPE_PERMISSIONS: Record<string, Permission> = {
   'applications.loan_application.update': 'edit_application',
   'applications.loan_application.complete_check': 'do_completeness_check',
   'members.member.read': 'view_members',
+  'members.member.create': 'edit_members',
   'members.member.update': 'edit_members',
   'credit.appraisal.create': 'do_appraisal',
   'credit.appraisal.update': 'do_appraisal',

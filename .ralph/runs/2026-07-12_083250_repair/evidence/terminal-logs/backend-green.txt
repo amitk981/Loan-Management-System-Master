@@ -1,0 +1,6 @@
+Backend full gate: PASS
+- Interpreter: /Users/amitkallapa/LMS/.ralph/venv/bin/python
+- manage.py check: PASS
+- makemigrations --check --dry-run: no changes detected
+- coverage run manage.py test: 411 passed, 5 expected PostgreSQL skips
+- coverage report --fail-under=85: 94%

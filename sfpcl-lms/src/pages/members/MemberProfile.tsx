@@ -50,6 +50,7 @@ import {
   type MemberProfileDetail,
   type MemberShareholdingDetail,
 } from '../../services/memberProfileApi';
+import MemberGovernanceForm from './MemberGovernanceForm';
 
 type ProfileStatus = 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
 type NomineeStatus = 'idle' | 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
@@ -424,7 +425,16 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
     }
   };
 
-  return (
+  const updateAction = profile?.available_actions.find(action => action.action_code === 'members.member.update');
+  const reverifyAction = profile?.available_actions.find(action => action.action_code === 'members.member.reverify_identity');
+  const refreshProfile = async () => {
+    const canonical = await fetchMemberProfile(memberId);
+    setProfile(canonical);
+    setStatus('success');
+  };
+
+  return <>
+    {profile && updateAction?.enabled && <div className="p-6 pb-0"><MemberGovernanceForm profile={profile} canReverify={Boolean(reverifyAction?.enabled)} onSaved={refreshProfile} /></div>}
     <MemberProfileView
       status={status}
       message={message}
@@ -475,7 +485,7 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
       onUploadKycDocument={handleUploadKycDocument}
       onVerifyKycDocument={handleVerifyKycDocument}
     />
-  );
+  </>;
 };
 
 interface MemberProfileViewProps {

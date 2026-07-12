@@ -130,6 +130,15 @@ class SeedE2eUsersTests(TestCase):
             .values_list("permission_code", flat=True)
         )
         self.assertIn("credit.appraisal.submit_sanction", finance_permissions)
+        self.assertTrue(
+            {
+                "members.member.read",
+                "members.member.create",
+                "members.member.update",
+                "members.witness.read",
+                "members.witness.create",
+            }.issubset(finance_permissions)
+        )
 
         application = LoanApplication.objects.select_related("member", "nominee").get(
             application_reference_number=EPIC_006_REFERENCE

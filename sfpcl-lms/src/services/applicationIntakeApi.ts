@@ -60,6 +60,27 @@ export interface StaffApplication {
   nominee?: ApplicationNomineeSummary | null;
 }
 
+export interface ApplicationWitness {
+  witness_id: string;
+  loan_application_id: string;
+  member_id: string;
+  verification_shareholding_id: string | null;
+  folio_number: string | null;
+  witness_name: string;
+  pan: { masked: string | null; can_view_full: boolean };
+  aadhaar: { masked: string | null; can_view_full: boolean };
+  shareholder_verified_flag: boolean;
+  verification_status: string;
+  verified_at: string | null;
+}
+
+export interface CreateApplicationWitnessPayload {
+  member_id: string;
+  witness_name: string;
+  pan: string;
+  aadhaar: string;
+}
+
 export interface ApplicationAvailableAction {
   action_code: string;
   label: string;
@@ -281,6 +302,19 @@ export const fetchLoanRequestRegister = async (
 export const fetchApplicationDetail = async (applicationId: string): Promise<StaffApplication> => {
   const envelope = await request<StaffApplication>(`/api/v1/loan-applications/${applicationId}/`);
   return envelope.data as StaffApplication;
+};
+
+export const fetchApplicationWitnesses = async (applicationId: string): Promise<ApplicationWitness[]> => {
+  const envelope = await request<ApplicationWitness[]>(`/api/v1/loan-applications/${applicationId}/witnesses/`);
+  return envelope.data ?? [];
+};
+
+export const createApplicationWitness = async (
+  applicationId: string,
+  payload: CreateApplicationWitnessPayload,
+): Promise<ApplicationWitness> => {
+  const envelope = await request<ApplicationWitness>(`/api/v1/loan-applications/${applicationId}/witnesses/`, 'POST', payload);
+  return envelope.data as ApplicationWitness;
 };
 
 export const fetchApplicationDocumentChecklist = async (

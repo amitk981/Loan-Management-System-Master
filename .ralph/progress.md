@@ -3624,3 +3624,24 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-12_083250_repair
+
+- Completed 006Y2: added staff member registration, optimistic profile update, reasoned identity
+  reverification, and application witness capture/read UI wiring with canonical refetches.
+- Added exact member/witness request tests, mounted locked/error form proof, resource-action and
+  permission gating, immutable witness evidence display, and a collectable browser contract.
+- Frontend lint/typecheck/build and 171 tests passed; backend check/migration sync and 411 tests
+  passed with five expected PostgreSQL skips at 94% coverage. Local Chromium was blocked by macOS
+  services; trusted browser validation owns the five declared screenshots.
+- Next action: run the due architecture review, then 006Z-produce-supply-history-persistence.
+
+## 2026-07-12 08:56:45 - 2026-07-12_083250_repair
+- Agent tool used: codex
+- Slice attempted: 006Y2-member-form-and-witness-capture-ui-wiring
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_083250_repair/.ralph/runs/2026-07-12_083250_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_083250_repair/.ralph/runs/2026-07-12_083250_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

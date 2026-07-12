@@ -13,6 +13,18 @@
 - Member creators/editors cannot verify that member's KYC documents; verifier separation is
   enforced at the backend verification action.
 
+## 006Y2 Member and Witness UI Closure
+
+- Staff member registration supports individual and institution variants through the 006Y create
+  endpoint. Profile update and reasoned identity reverification send the current member version and
+  refetch canonical detail instead of locally merging mutation responses.
+- Verified identity values render masked and read-only. Only the resource's
+  `members.member.update` and `members.member.reverify_identity` actions expose profile controls;
+  backend validation, permission, identity-lock, and stale-write results remain authoritative.
+- Application Detail reads/captures witnesses through the 004E2 application-scoped GET/POST seam,
+  then refetches immutable verification-time shareholding and folio evidence. The delivered contract
+  has no update endpoint; A-066 records why edit is not invented client-side.
+
 ## Architecture Review 2026-07-11 - 004E Witness Hardening
 
 - 004E's successful shareholder/KYC/name/masking/audit behavior is substantive, but malformed or

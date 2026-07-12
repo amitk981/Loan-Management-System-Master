@@ -7,11 +7,13 @@ import Tabs from '../../components/ui/Tabs';
 import EligibilityChecklist from '../../components/loan/EligibilityChecklist';
 import LoanLimitCalculator from '../../components/loan/LoanLimitCalculator';
 import type {
+  ApplicationWitness,
   ApplicationDeficiency,
   ApplicationDocumentChecklistItem,
   StaffApplication,
 } from '../../services/applicationIntakeApi';
-import { submitStaffApplication } from '../../services/applicationIntakeApi';
+import { createApplicationWitness, fetchApplicationWitnesses, submitStaffApplication } from '../../services/applicationIntakeApi';
+import { AuthSessionError } from '../../services/authSession';
 import { isActionEnabled } from '../../shared/lib/availableActions';
 import { loadApplicationDetail, type ApplicationDetailData } from './applicationDetailLoader';
 
@@ -26,6 +28,8 @@ interface ApplicationDetailProps {
   onBack: () => void;
   onNavigateMember: (memberId: string) => void;
   onNavigateAppraisal?: (applicationId: string) => void;
+  canReadWitnesses?: boolean;
+  canCreateWitnesses?: boolean;
 }
 
 interface ApplicationDetailViewProps extends ApplicationDetailProps {
@@ -142,6 +146,47 @@ const NomineePanel: React.FC<{ application: StaffApplication }> = ({ application
   );
 };
 
+const WitnessPanel: React.FC<{ applicationId: string; canRead: boolean; canCreate: boolean }> = ({ applicationId, canRead, canCreate }) => {
+  const [items, setItems] = useState<ApplicationWitness[]>([]);
+  const [status, setStatus] = useState<'loading' | 'success' | 'forbidden' | 'error'>(canRead ? 'loading' : 'forbidden');
+  const [message, setMessage] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [values, setValues] = useState({ member_id: '', witness_name: '', pan: '', aadhaar: '' });
+  const refresh = async () => { const canonical = await fetchApplicationWitnesses(applicationId); setItems(canonical); setStatus('success'); };
+  useEffect(() => {
+    if (!canRead) return;
+    let cancelled = false;
+    fetchApplicationWitnesses(applicationId).then(canonical => { if (!cancelled) { setItems(canonical); setStatus('success'); } }).catch(error => {
+      if (cancelled) return;
+      setMessage(error instanceof Error ? error.message : 'Unable to load witnesses.');
+      setStatus(error instanceof AuthSessionError && error.status === 403 ? 'forbidden' : 'error');
+    });
+    return () => { cancelled = true; };
+  }, [applicationId, canRead]);
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault(); setErrors({}); setMessage('');
+    try {
+      await createApplicationWitness(applicationId, values);
+      await refresh();
+      setValues({ member_id: '', witness_name: '', pan: '', aadhaar: '' });
+    } catch (error) {
+      if (error instanceof AuthSessionError) { setErrors(error.fieldErrors ?? {}); setMessage(error.message); }
+      else setMessage('Witness could not be saved.');
+    }
+  };
+  if (status === 'loading') return unavailablePanel('Witness Details', 'Loading witness details from the application API.');
+  if (status === 'forbidden') return <div className="card"><AlertBanner type="warning" title="Witness access unavailable" message={message || 'You do not have permission to access witnesses.'} /></div>;
+  return <div className="card space-y-4">
+    <h3 className="font-semibold text-slate-800 flex items-center gap-2"><Users size={16} className="text-blue-600" /> Witness Details</h3>
+    {message && <AlertBanner type="warning" title={status === 'error' ? 'Witnesses unavailable' : 'Witness could not be saved'} message={message} />}
+    {items.length === 0 ? <p className="text-sm text-slate-500">No witnesses have been captured for this application.</p> : items.map(item => <div key={item.witness_id} className="bg-slate-50 rounded-lg p-3">{factGrid([{ label: 'Witness name', value: item.witness_name }, { label: 'Folio', value: item.folio_number ?? 'Unavailable' }, { label: 'PAN', value: item.pan.masked ?? 'Unavailable' }, { label: 'Aadhaar', value: item.aadhaar.masked ?? 'Unavailable' }, { label: 'Shareholder', value: item.shareholder_verified_flag ? 'Verified' : 'Pending' }, { label: 'Verification', value: item.verification_status }])}</div>)}
+    {canCreate && <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {(['member_id', 'witness_name', 'pan', 'aadhaar'] as const).map(name => <label key={name} className="space-y-1 text-sm"><span className="text-slate-600 capitalize">{documentLabel(name)}</span><input aria-label={documentLabel(name)} className="field-input" value={values[name]} onChange={event => setValues(current => ({ ...current, [name]: event.target.value }))} />{errors[name] && <span className="text-xs text-red-600">{errors[name]}</span>}</label>)}
+      <button className="btn-primary text-sm md:col-span-2">Capture Witness</button>
+    </form>}
+  </div>;
+};
+
 const MemberPanel: React.FC<{
   application: StaffApplication;
   onNavigateMember: (memberId: string) => void;
@@ -195,6 +240,8 @@ export const ApplicationDetailView: React.FC<ApplicationDetailViewProps> = ({
   activeTab,
   onTabChange,
   onAction,
+  canReadWitnesses = false,
+  canCreateWitnesses = false,
 }) => {
   if (status === 'loading') {
     return (
@@ -315,12 +362,7 @@ export const ApplicationDetailView: React.FC<ApplicationDetailViewProps> = ({
         </div>
         <MemberPanel application={application} onNavigateMember={onNavigateMember} />
         <NomineePanel application={application} />
-        <div className="card space-y-4">
-          <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-            <Users size={16} className="text-blue-600" /> Witness Details
-          </h3>
-          <p className="text-sm text-slate-500">No API-backed witness details are available for this application yet.</p>
-        </div>
+        <WitnessPanel applicationId={application.loan_application_id} canRead={canReadWitnesses} canCreate={canCreateWitnesses} />
         <div className="space-y-4">
           {data.eligibility ? <div className="card"><EligibilityChecklist assessment={data.eligibility} /></div> : unavailablePanel('Eligibility Assessment', 'No stored eligibility assessment is available.')}
           {data.loanLimit ? <div className="card"><LoanLimitCalculator assessment={data.loanLimit} /></div> : unavailablePanel('Loan Limit', 'No stored loan-limit assessment is available.')}

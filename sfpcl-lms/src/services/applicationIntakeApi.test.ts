@@ -1,12 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearStoredAuthSession, storedAuthSession } from './authSession';
 import {
+  createApplicationWitness,
   createApplicationRejectionNote,
   createStaffApplicationDraft,
   fetchApplicationDeficiencies,
   fetchApplicationCompleteness,
   fetchApplicationDetail,
   fetchApplicationDocumentChecklist,
+  fetchApplicationWitnesses,
   fetchLoanRequestRegister,
   fetchStaffApplications,
   passApplicationCompleteness,
@@ -35,6 +37,18 @@ afterEach(() => {
 });
 
 describe('application intake API client', () => {
+  it('reads and creates witnesses through the application-scoped contract', async () => {
+    const witness = { witness_id: 'witness-1', witness_name: 'Test Witness' };
+    const payload = { member_id: 'member-1', witness_name: 'Test Witness', pan: 'ABCDE1234F', aadhaar: '123412341234' };
+    const fetchMock = vi.fn().mockResolvedValueOnce(ok([witness])).mockResolvedValueOnce(ok(witness));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchApplicationWitnesses('app-1')).resolves.toEqual([witness]);
+    await expect(createApplicationWitness('app-1', payload)).resolves.toEqual(witness);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:8000/api/v1/loan-applications/app-1/witnesses/', request());
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://127.0.0.1:8000/api/v1/loan-applications/app-1/witnesses/', request('POST', payload));
+  });
   it('loads staff applications and register rows from staff endpoints with pagination', async () => {
     const fetchMock = vi
       .fn()

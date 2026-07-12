@@ -1,0 +1,4 @@
+Command: npm test -- --run src/pages/members/MemberProfile.test.tsx src/services/applicationIntakeApi.test.ts
+Exit: 1
+Red signal: createMember and fetchApplicationWitnesses were not functions; the new exact-contract tests failed before implementation.
+Result: 2 failed, 29 passed.

@@ -65,6 +65,14 @@ Medium
 - The portal shows only server-computed limits; the wrong-formula display and hard-coded land limit are gone with regressions.
 - All gates pass; screenshots of the limit panel states saved.
 
+## Run-Ahead Sharpening Review (006Y2, 2026-07-12)
+
+- Mount the real portal application container in interaction tests. Assert one borrower-scoped
+  projection GET, exact server amounts in all three existing cards, and no client recalculation or
+  retry when the projection or submit endpoint returns 400/403/409.
+- Trusted-browser screenshots must use the real portal login boundary and reopen the routed screen
+  after reload; no plaintext member identity data may appear in fixtures, logs, or baselines.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

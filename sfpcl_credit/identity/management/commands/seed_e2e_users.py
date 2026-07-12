@@ -39,7 +39,9 @@ EPIC_006_IDS = {
 }
 EPIC_006_REFERENCE = "LOE2E00601"
 EPIC_006_FINANCE_PERMISSIONS = (
-    "applications.loan_application.read", "credit.eligibility.run",
+    "applications.loan_application.read", "members.member.read",
+    "members.member.create", "members.member.update",
+    "members.witness.read", "members.witness.create", "credit.eligibility.run",
     "credit.loan_limit.calculate", "credit.appraisal.create",
     "credit.appraisal.update", "credit.appraisal.submit_review",
     "credit.appraisal.submit_sanction", "credit.risk_assessment.manage",

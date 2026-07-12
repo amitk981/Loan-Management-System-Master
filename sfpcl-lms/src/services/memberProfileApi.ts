@@ -17,6 +17,7 @@ interface Pagination {
 }
 
 export interface MemberProfileDetail {
+  version?: number;
   member_id: string;
   member_number: string | null;
   member_type: string;
@@ -74,6 +75,26 @@ export interface MemberProfileDetail {
     required_permission: string;
   }[];
 }
+
+export type MemberMutationPayload = Record<string, unknown>;
+
+export const createMember = async (payload: MemberMutationPayload): Promise<MemberProfileDetail> => {
+  const envelope = await request<MemberProfileDetail>('/api/v1/members/', 'POST', payload);
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalize(envelope.data);
+};
+
+export const updateMember = async (memberId: string, payload: MemberMutationPayload): Promise<MemberProfileDetail> => {
+  const envelope = await request<MemberProfileDetail>(`/api/v1/members/${memberId}/`, 'PATCH', payload);
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalize(envelope.data);
+};
+
+export const reverifyMemberIdentity = async (memberId: string, payload: MemberMutationPayload): Promise<MemberProfileDetail> => {
+  const envelope = await request<MemberProfileDetail>(`/api/v1/members/${memberId}/reverification/`, 'POST', payload);
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalize(envelope.data);
+};
 
 export interface MemberNomineeDetail {
   nominee_id: string;
@@ -518,6 +539,7 @@ const request = async <T>(
 
 const normalize = (profile: MemberProfileDetail): MemberProfileDetail => ({
   ...profile,
+  version: Number(profile.version ?? 0),
   member_id: String(profile.member_id ?? ''),
   member_number: textOrNull(profile.member_number),
   display_name: String(profile.display_name || profile.legal_name || ''),

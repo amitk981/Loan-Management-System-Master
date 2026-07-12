@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearStoredAuthSession, storedAuthSession } from '../../services/authSession';
 import {
+  createMember,
   createMemberCropPlan,
   createMemberLandHolding,
   createMemberShareholding,
@@ -12,7 +13,9 @@ import {
   fetchMemberNominees,
   fetchMemberProfile,
   fetchMemberShareholdings,
+  reverifyMemberIdentity,
   revealMemberSensitiveField,
+  updateMember,
   type KycDocumentDetail,
   type KycProfileDetail,
   type MemberCropPlanDetail,
@@ -42,6 +45,21 @@ afterEach(() => {
 });
 
 describe('member profile API client', () => {
+  it('uses the governed member mutation endpoints and preserves optimistic payloads', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(ok({ ...member, version: 1 }))
+      .mockResolvedValueOnce(ok({ ...member, version: 2 }))
+      .mockResolvedValueOnce(ok({ ...member, version: 3, kyc_status: 'pending' }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await createMember({ member_type: 'individual_farmer', legal_name: 'Test Member' });
+    await updateMember('member-1', { version: 1, email: 'member@example.test' });
+    await reverifyMemberIdentity('member-1', { version: 2, pan: 'ABCDE1234F', reason: 'Source correction' });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:8000/api/v1/members/', expect.objectContaining({ method: 'POST', body: JSON.stringify({ member_type: 'individual_farmer', legal_name: 'Test Member' }) }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://127.0.0.1:8000/api/v1/members/member-1/', expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ version: 1, email: 'member@example.test' }) }));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://127.0.0.1:8000/api/v1/members/member-1/reverification/', expect.objectContaining({ method: 'POST', body: JSON.stringify({ version: 2, pan: 'ABCDE1234F', reason: 'Source correction' }) }));
+  });
   it('loads a member profile detail from the backend with the stored bearer token', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(ok(member));
     vi.stubGlobal('fetch', fetchMock);

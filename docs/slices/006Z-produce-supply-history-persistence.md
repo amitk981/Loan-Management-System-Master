@@ -60,6 +60,13 @@ High
   IDs only. Portal responses derive member scope from PortalAccount and expose no staff mutation
   action or protected member identity value.
 
+## Run-Ahead Sharpening Review (006Y2, 2026-07-12)
+
+- Reuse the canonical Member Profile refetch boundary after staff supply capture/verification;
+  never merge mutation responses into profile tabs or infer resource authority from `/auth/me`.
+- Keep S06 supply facts read-only without resource actions and prove direct 403 plus one-call
+  400/409 behavior. Browser fixtures must be synthetic and contain no protected identity values.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

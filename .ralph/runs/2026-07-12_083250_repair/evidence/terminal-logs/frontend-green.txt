@@ -1,0 +1,5 @@
+Frontend full gate: PASS
+- vite build: PASS (1871 modules)
+- tsc --noEmit: PASS
+- eslint src: PASS
+- vitest: 26 files, 171 tests passed
