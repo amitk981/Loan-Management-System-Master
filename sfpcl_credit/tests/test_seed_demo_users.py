@@ -5,6 +5,7 @@ from django.core.management.base import CommandError
 from django.test import TestCase
 
 from sfpcl_credit.identity.catalogue import seed_catalogue
+from sfpcl_credit.approvals.models import SanctionCommittee
 from sfpcl_credit.identity.models import (
     AuditLog,
     Permission,
@@ -60,6 +61,7 @@ class SeedDemoUsersTests(TestCase):
             clear=False,
         ):
             call_command("seed_demo_users")
+            call_command("seed_approval_configuration")
 
     def _login_access_token(self, email):
         response = self.client.post(
@@ -127,6 +129,13 @@ class SeedDemoUsersTests(TestCase):
         )
         self.assertEqual(users[TRACER_EMAIL].team_codes(), ["sales"])
         self.assertEqual(users[ZERO_EMAIL].team_codes(), [])
+        committee = SanctionCommittee.objects.get(
+            committee_name="Demo Sanction Committee FY 2026"
+        )
+        self.assertEqual(committee.cfo_user.email, "demo.cfo@sfpcl.example")
+        self.assertEqual(committee.director_1_user.email, "demo.director1@sfpcl.example")
+        self.assertEqual(committee.director_2_user.email, "demo.director2@sfpcl.example")
+        self.assertEqual(committee.status, "active")
 
     def test_seed_is_idempotent_and_does_not_touch_e2e_users(self):
         self._seed_demo_users()

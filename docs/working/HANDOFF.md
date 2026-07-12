@@ -1,24 +1,25 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_041602_repair
+2026-07-13_042414_normal_run
 
 ## Current Status
 
-006Z10's quarantined implementation has a fourth narrow repair. Both independent trusted runs
-passed the first three scenarios and completed submit/refetch/reload, then exposed that the routed
-limit view never rendered the server's retained calculation date and rule version. The existing
-three-card view now shows those two server-authored provenance fields with its existing text pattern.
+007A is complete. Approval-owned effective-dated matrix rules and sanction committees now have
+permissioned read/manage endpoints, immutable supersession, audit/version evidence, seeded source
+rules, and an idempotent committee seed command using demo CFO/director users. The public resolver
+returns immutable rule/version/date/authority projections and resolves historical superseded rules
+strictly by the requested decision date.
 
 ## Validation
 
-Repair evidence is under `.ralph/runs/2026-07-13_041602_repair/`. Frontend build/typecheck/lint and
-207 tests pass. Backend check/migration sync and 500 tests pass with 93% coverage. Playwright
-collects the four declared trusted scenarios; local Chromium is sandbox-denied before page creation,
-so independent validation owns both browser runs and the four screenshots. No backend, schema,
-dependency, source, protected, or approved-design file changed by this repair.
+Evidence is under `.ralph/runs/2026-07-13_042414_normal_run/`. Frontend build/typecheck/lint and
+207 tests pass. Backend check/migration sync and 512 tests pass with 93% coverage; two new
+PostgreSQL-only race tests are skipped by SQLite and declared under the slice capability for the
+orchestrator's authoritative five-race validation. One non-destructive approvals migration was added.
 
 ## Next Run
 
-Run `007A-approval-matrix-configuration`. It is sharpened with effective-date, permission, immutable
-projection, concurrency, complete zero-write evidence, and historical decision-date requirements.
+Architecture review is due after this fourth completed slice. After review, run
+`007B-approval-case-creation-from-appraisal`; it is sharpened to consume the 007A resolver and
+committee projection exactly once and preserve historical provenance.

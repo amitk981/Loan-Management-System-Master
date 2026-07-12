@@ -1,6 +1,7 @@
 from django.urls import path
 
 from sfpcl_credit.applications import views as application_views
+from sfpcl_credit.approvals import views as approval_views
 from sfpcl_credit.communications import views as communication_views
 from sfpcl_credit.configurations import views as configuration_views
 from sfpcl_credit.dashboard import views as dashboard_views
@@ -25,6 +26,10 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path("api/v1/approval-matrix-rules/", approval_views.rule_collection, name="approval-matrix-rule-list-create"),
+    path("api/v1/approval-matrix-rules/<uuid:approval_matrix_rule_id>/", approval_views.rule_detail, name="approval-matrix-rule-supersede"),
+    path("api/v1/sanction-committees/", approval_views.committee_collection, name="sanction-committee-list-create"),
+    path("api/v1/sanction-committees/<uuid:sanction_committee_id>/", approval_views.committee_detail, name="sanction-committee-supersede"),
     path("api/v1/auth/login/", login, name="auth-login"),
     path("api/v1/auth/refresh/", refresh, name="auth-refresh"),
     path("api/v1/auth/logout/", logout, name="auth-logout"),

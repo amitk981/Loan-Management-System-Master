@@ -81,6 +81,16 @@ Medium
 - Add an exact adapter interaction trace: one enrichment write and one canonical case read; 400/403/
   409 must preserve the case shell and perform no retry, current-rule re-resolution, or local merge.
 
+## Run-Ahead Sharpening Review (007A, 2026-07-13)
+
+- Call the public `resolve_approval_matrix` interface exactly once with the authoritative appraisal
+  decision date, recommended amount, `loan_sanction`, and canonical assessment condition. Persist
+  its returned rule id/version, decision date, roles/director count, joint flag, and register fact
+  without querying `ApprovalMatrixRule` or repeating its inclusive-range logic.
+- Resolve committee users from the committee effective on that same decision date and snapshot the
+  committee id/version alongside them. Matrix/committee absence or ambiguity is one atomic loser:
+  the pre-existing case shell, version history, workflow, and audit snapshots remain unchanged.
+
 ## Done Checklist
 
 - [ ] Execution plan written

@@ -4811,3 +4811,25 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-13_042414_normal_run
+
+- Completed 007A approval-matrix configuration with effective-dated rule/committee persistence,
+  permissioned APIs, immutable supersession, audit/version history, and an approval-owned resolver.
+- Seeded the three source sanction routes and added a guarded committee seed from deterministic demo
+  CFO/director users. Exact ₹5,00,000 is retained in the lower inclusive rule.
+- TDD evidence includes resolver/API red-green cycles, historical supersession, permission and
+  complete zero-write validation, plus PostgreSQL-only competing create/supersede acceptance tests.
+- Frontend build/typecheck/lint and 207 tests pass. Backend check/migration sync and 512 tests pass
+  with 93% coverage under SQLite; authoritative PostgreSQL five-race validation is orchestrator-owned.
+- Next action: architecture review, then 007B approval-case enrichment.
+
+## 2026-07-13 04:43:59 - 2026-07-13_042414_normal_run
+- Agent tool used: codex
+- Slice attempted: 007A-approval-matrix-configuration
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_042414_normal_run/.ralph/runs/2026-07-13_042414_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_042414_normal_run/.ralph/runs/2026-07-13_042414_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

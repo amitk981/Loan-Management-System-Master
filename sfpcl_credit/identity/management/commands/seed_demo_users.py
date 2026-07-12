@@ -20,6 +20,27 @@ DEMO_TRACER_ROLE_CODE = "local_demo_tracer_user"
 
 DEMO_USERS = [
     {
+        "email": "demo.cfo@sfpcl.example",
+        "full_name": "Demo CFO",
+        "role_code": "cfo",
+        "team_codes": ["sanction_committee"],
+        "approval_authority_type": "cfo",
+    },
+    {
+        "email": "demo.director1@sfpcl.example",
+        "full_name": "Demo Director One",
+        "role_code": "director",
+        "team_codes": ["sanction_committee"],
+        "approval_authority_type": "director",
+    },
+    {
+        "email": "demo.director2@sfpcl.example",
+        "full_name": "Demo Director Two",
+        "role_code": "director",
+        "team_codes": ["sanction_committee"],
+        "approval_authority_type": "director",
+    },
+    {
         "email": "demo.system_admin@sfpcl.example",
         "full_name": "Demo System Administrator",
         "role_code": "system_admin",
@@ -88,6 +109,7 @@ class Command(BaseCommand):
             user = self._ensure_user(spec, role)
             self._sync_memberships(user, teams)
             seeded.append(user.email)
+
 
         self.stdout.write(
             "Demo users seeded: "
@@ -188,9 +210,11 @@ class Command(BaseCommand):
         user.full_name = spec["full_name"]
         user.primary_role = role
         user.status = User.ACTIVE_STATUS
+        user.approval_authority_type = spec.get("approval_authority_type", "")
         user.set_password(DEMO_PASSWORD)
         user.save()
         return user
+
 
     @staticmethod
     def _sync_memberships(user, teams):

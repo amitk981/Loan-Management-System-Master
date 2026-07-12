@@ -1,7 +1,7 @@
 # Slice 007A: Approval Matrix Configuration
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -44,6 +44,10 @@ Case creation/enrichment (007B), routing/assignment (007C), settings UI (007J), 
 
 ## Risk Level
 Medium
+
+## Runtime Capabilities
+
+- postgresql-five-race-acceptance
 
 ## Acceptance Criteria
 - Matrix facts live only in versioned configuration; no threshold constant in the case engine.
@@ -110,15 +114,15 @@ Medium
 
 ## Done Checklist
 
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated
-- [ ] Database rules followed
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated
+- [x] Database rules followed
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

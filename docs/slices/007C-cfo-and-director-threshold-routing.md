@@ -49,6 +49,15 @@ Medium
 - Approver queues derive purely from immutable snapshots with object-level enforcement.
 - All gates pass; list/detail API examples saved.
 
+## Run-Ahead Sharpening Review (007A, 2026-07-13)
+
+- Treat 007B's stored matrix and committee projections as the only routing authority. Queue/detail
+  code must not import matrix models, call the resolver again, compare against ₹5,00,000, derive
+  director count, or consult the currently active committee.
+- Include the stored rule id/version, committee id/version, and decision date in detail provenance;
+  activate later matrix/committee versions in a regression test and prove queue membership and
+  actions for the historical case remain byte-for-byte unchanged.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

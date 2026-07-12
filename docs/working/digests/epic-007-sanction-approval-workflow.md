@@ -34,3 +34,14 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
   adapter must return/enrich the existing row idempotently or reject incompatible state.
 - Approver selection, conflict exclusion, actions, sanction decisions, and register entries remain
   their later dedicated slices. Required approver facts are immutable snapshots once assigned.
+
+## 007A Delivered Configuration Contract
+
+- Exact ₹5,00,000 is included in the lower persisted rule; the upper rule begins at ₹5,00,000.01.
+  The explicit `exceeds_permissible_limit` route is resolved only from a caller-supplied canonical
+  condition code, never from client/display money comparison.
+- All matrix and committee mutations serialize through a persistent approval-configuration lock,
+  then validate inclusive amount/effective ranges inside the same atomic transaction. A loser writes
+  no rule, committee, version history, or business audit evidence.
+- Downstream 007B/007C must call `resolve_approval_matrix` with the case decision date and store its
+  immutable projection unchanged; they must not query rule rows or repeat range/director/register logic.

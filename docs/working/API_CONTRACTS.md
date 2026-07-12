@@ -2328,3 +2328,24 @@ not supplement this resource projection from `/auth/me.available_actions`.
 - Member detail includes nullable `pending_identity_change` metadata and six-field request/approval
   actions. Duplicate PAN/Aadhaar create attempts return `400 VALIDATION_ERROR` field errors and the
   database also enforces nonblank hash uniqueness.
+
+# Approval matrix and sanction committee configuration (007A)
+
+- `GET/POST /api/v1/approval-matrix-rules/` and
+  `PATCH /api/v1/approval-matrix-rules/{approval_matrix_rule_id}/` implement source §25.1.
+  Reads require `approvals.matrix.read`; POST/PATCH require the Critical
+  `approvals.matrix.manage` permission. PATCH is a supersede operation: it closes the prior row
+  the day before the replacement's `effective_from` and returns a new rule id/version.
+- Rule responses expose `approval_matrix_rule_id`, decision/condition, nullable inclusive amount
+  bounds, `required_approver_roles`, `required_director_count`, joint-approval and register facts,
+  effective range, status, and `version_number`. Overlapping amount plus effective ranges for the
+  same decision/condition return `409 CONFIGURATION_CONFLICT` with no configuration, version, or
+  audit writes. Invalid/non-finite amounts return `400 VALIDATION_ERROR`.
+- `GET/POST /api/v1/sanction-committees/` and
+  `PATCH /api/v1/sanction-committees/{sanction_committee_id}/` are the exact committee management
+  paths selected for data-model §15.1. They use the same permissions and immutable supersession
+  convention and return CFO/director user ids, Board meeting reference, effective range, status,
+  and version.
+- The approval-owned resolver interface accepts typed `decision_type`, canonical nullable
+  `condition_code`, finite non-negative amount, and authoritative `decision_date`; it returns one
+  immutable rule-id/version projection or stable no-effective/ambiguous/invalid-facts domain errors.

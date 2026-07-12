@@ -146,15 +146,16 @@
     "006Z8-portal-limit-provenance-module-and-interaction-closure",
     "006Y16-witness-parent-scope-and-contract-closure",
     "006Z9-active-member-authority-and-decision-contract-closure",
-    "006Z10-portal-limit-interaction-and-boundary-proof"
+    "006Z10-portal-limit-interaction-and-boundary-proof",
+    "007A-approval-matrix-configuration"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "6c6a4da",
-  "last_run_id": "2026-07-13_041602_repair",
+  "last_run_id": "2026-07-13_042414_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 3,
-  "architecture_review_due": false,
+  "slices_completed_since_architecture_review": 4,
+  "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null
