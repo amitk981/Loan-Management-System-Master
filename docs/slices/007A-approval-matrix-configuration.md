@@ -75,6 +75,14 @@ Medium
   committee, configuration-history, and audit snapshots before/after. API overlap tests alone do not
   substitute for the public resolver boundary and committed one-winner evidence.
 
+## Run-Ahead Sharpening Review (006Z7, 2026-07-13)
+
+- Follow the same lock-order/provenance discipline proven for member evidence: lock the effective
+  configuration boundary before candidate rows, version every successful mutation, and ensure a
+  losing overlap/supersede transaction writes no configuration history or audit evidence.
+- Resolver authority must come from its documented manage/read permissions and effective data; do
+  not add a caller-authored global-authority Boolean or hard-coded role-name switch.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

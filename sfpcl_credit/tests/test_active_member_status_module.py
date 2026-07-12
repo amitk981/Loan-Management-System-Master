@@ -1,5 +1,6 @@
 from datetime import date
 from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from unittest import skipUnless
 import uuid
 
@@ -8,6 +9,7 @@ from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
+from sfpcl_credit.members import services
 from sfpcl_credit.members.models import (
     ActiveMemberStatus,
     IndividualMemberProfile,
@@ -21,6 +23,7 @@ from sfpcl_credit.members.modules.active_member_status import (
     ActiveMemberStatusConflict,
     ActiveMemberStatusModule,
 )
+from sfpcl_credit.workflows.models import WorkflowEvent
 
 
 class ActiveMemberStatusModuleTests(TestCase):
@@ -328,6 +331,108 @@ class ActiveMemberStatusVerificationConcurrencyTests(TransactionTestCase):
         self.assertEqual(audit.new_value_json, winner)
         self.assertEqual(history.new_value_json, winner)
 
+    def _race_verifier_against(self, mutation):
+        as_of = date(2026, 3, 31)
+        result = ActiveMemberStatusModule().calculate(member_id=self.member.member_id, as_of_date=as_of)
+        version = self.member.version
+        gate = Barrier(2)
+
+        def verify():
+            close_old_connections()
+            gate.wait()
+            try:
+                actor = User.objects.get(user_id=self.checkers[0].user_id)
+                ActiveMemberStatusModule().verify(
+                    actor=actor, member_id=self.member.member_id, result_id=result.result_id,
+                    decision="active", reason="Concurrent evidence review.", version=version,
+                    as_of_date=as_of,
+                )
+                return "verify_won"
+            except ActiveMemberStatusConflict as exc:
+                return exc.code
+            finally:
+                close_old_connections()
+
+        def mutate():
+            close_old_connections()
+            gate.wait()
+            try:
+                mutation(version)
+                return "mutation_won"
+            except (ActiveMemberStatusConflict, services.ProduceSupplyConflict) as exc:
+                return exc.code
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            outcomes = [pool.submit(verify), pool.submit(mutate)]
+            outcomes = [future.result() for future in outcomes]
+
+        self.assertEqual(sum(value.endswith("_won") for value in outcomes), 1, outcomes)
+        self.member.refresh_from_db()
+        statuses = ActiveMemberStatus.objects.filter(member=self.member)
+        self.assertLessEqual(statuses.filter(effective_to__isnull=True).count(), 1)
+        self.assertEqual(statuses.exists(), "verify_won" in outcomes)
+        if statuses.exists():
+            self.assertEqual(self.member.active_member_status_id, statuses.get().pk)
+        else:
+            self.assertIsNone(self.member.active_member_status_id)
+        self.assertEqual(
+            AuditLog.objects.filter(action="members.active_status.verified").count(),
+            int("verify_won" in outcomes),
+        )
+        self.assertEqual(
+            MemberChangeHistory.objects.filter(change_type="active_status_verified").count(),
+            int("verify_won" in outcomes),
+        )
+        self.assertEqual(WorkflowEvent.objects.count(), 0)
+
+    def test_verifier_vs_supply_create_has_one_coherent_winner(self):
+        def mutation(version):
+            services.create_produce_supply_record(
+                Member.objects.get(pk=self.member.pk),
+                {"financial_year": "2021-22", "supplied_to_entity_type": "sfpcl",
+                 "supply_route": "direct", "evidence_reference": "RACE-CREATE", "version": version},
+                User.objects.get(pk=self.maker.pk),
+            )
+        self._race_verifier_against(mutation)
+
+    def test_verifier_vs_supply_verify_has_one_coherent_winner(self):
+        pending = ProduceSupplyRecord.objects.create(
+            member=self.member, financial_year="2021-22", supplied_to_entity_type="sfpcl",
+            supply_route="direct", evidence_reference="RACE-VERIFY", captured_by_user=self.maker,
+        )
+        def mutation(version):
+            services.verify_produce_supply_record(
+                pending.pk, pending.version, User.objects.get(pk=self.checkers[1].pk),
+                member_version=version,
+            )
+        self._race_verifier_against(mutation)
+
+    def test_verifier_vs_service_create_has_one_coherent_winner(self):
+        def mutation(version):
+            ActiveMemberStatusModule().create_service_evidence(
+                actor=User.objects.get(pk=self.checkers[1].pk), member_id=self.member.pk,
+                version=version, service_type="relaxation", recipient_entity_type="sfpcl",
+                service_from=date(2025, 4, 1), service_to=date(2026, 3, 31),
+                evidence_reference="RACE-SERVICE-CREATE",
+            )
+        self._race_verifier_against(mutation)
+
+    def test_verifier_vs_service_update_has_one_coherent_winner(self):
+        evidence = MemberServiceEvidence.objects.create(
+            member=self.member, service_type="employment", recipient_entity_type="sfpcl",
+            service_from=date(2023, 3, 31), service_to=date(2026, 3, 31),
+            evidence_reference="RACE-SERVICE-OLD", verified_by_user=self.checkers[1],
+            verified_at=timezone.now(),
+        )
+        def mutation(version):
+            ActiveMemberStatusModule().update_service_evidence(
+                actor=User.objects.get(pk=self.checkers[1].pk), evidence_id=evidence.pk,
+                version=version, evidence_reference="RACE-SERVICE-NEW",
+            )
+        self._race_verifier_against(mutation)
+
 
 class ActiveMemberGovernanceTests(TestCase):
     def setUp(self):
@@ -446,6 +551,57 @@ class ActiveMemberGovernanceTests(TestCase):
         )
         self.assertEqual(verified["result"]["relaxation_evidence"]["evidence_reference"], "RELAX-001")
         self.assertEqual(ActiveMemberStatus.objects.get().evidence_snapshot, verified["result"])
+
+    def test_recent_inactive_member_qualifies_with_one_year_and_distinct_relaxation_evidence(self):
+        ProduceSupplyRecord.objects.filter(member=self.member).exclude(financial_year="2025-26").delete()
+        self.member.membership_status = "inactive"
+        self.member.save(update_fields=["membership_status"])
+        MemberServiceEvidence.objects.create(
+            member=self.member, service_type="relaxation", recipient_entity_type="sfpcl",
+            service_from=date(2025, 4, 1), service_to=date(2026, 3, 31),
+            evidence_reference="RELAX-INACTIVE-001", verified_by_user=self.checkers[0],
+            verified_at=timezone.now(),
+        )
+
+        result = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=date(2026, 3, 31)
+        )
+
+        self.assertEqual(result.member_active_check, "relaxation")
+        self.assertEqual(result.qualification_route, "recorded_one_year_relaxation")
+        self.assertEqual(result.relaxation_evidence["evidence_reference"], "RELAX-INACTIVE-001")
+
+    def test_service_evidence_mutations_advance_member_provenance_and_reject_stale_writes(self):
+        before = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id, as_of_date=date(2026, 3, 31)
+        )
+        evidence = ActiveMemberStatusModule().create_service_evidence(
+            actor=self.checkers[0], member_id=self.member.member_id, version=self.member.version,
+            service_type="relaxation", recipient_entity_type="sfpcl",
+            service_from=date(2025, 4, 1), service_to=date(2026, 3, 31),
+            evidence_reference="RELAX-PROVENANCE-001",
+        )
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.version, 2)
+        self.assertNotEqual(
+            before.result_id,
+            ActiveMemberStatusModule().calculate(
+                member_id=self.member.member_id, as_of_date=date(2026, 3, 31)
+            ).result_id,
+        )
+        updated = ActiveMemberStatusModule().update_service_evidence(
+            actor=self.checkers[0], evidence_id=evidence.pk, version=self.member.version,
+            evidence_reference="RELAX-PROVENANCE-002",
+        )
+        self.assertEqual(updated.evidence_reference, "RELAX-PROVENANCE-002")
+        with self.assertRaises(ActiveMemberStatusConflict) as stale:
+            ActiveMemberStatusModule().update_service_evidence(
+                actor=self.checkers[0], evidence_id=evidence.pk, version=self.member.version,
+                evidence_reference="RELAX-STALE",
+            )
+        self.assertEqual(stale.exception.code, "STALE_WRITE")
+        self.assertEqual(MemberChangeHistory.objects.filter(change_type__startswith="service_evidence_").count(), 2)
+        self.assertEqual(AuditLog.objects.filter(action__startswith="members.service_evidence.").count(), 2)
 
     def test_backdated_and_same_date_decisions_leave_history_unchanged(self):
         first = ActiveMemberStatusModule().calculate(member_id=self.member.member_id, as_of_date=date(2026, 3, 31))

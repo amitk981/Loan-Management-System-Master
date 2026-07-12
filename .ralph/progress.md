@@ -4585,3 +4585,24 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-13_012200_normal_run
+
+- Completed 006Z7: source-backed recent-member relaxation now precedes inactive rejection and
+  requires one complete supply year plus distinct verified persisted relaxation evidence.
+- Unified Registry/active authority behind one member policy; removed caller global flags,
+  role-code switches, compatibility plumbing, and unreachable evidence code.
+- Member-first supply/service mutation boundaries advance provenance; five active-member and five
+  credit PostgreSQL races pass twice with coherent winners and zero loser evidence.
+- Frontend gates pass with 204 tests. Backend gates pass with 493 tests and 93% coverage; Django
+  check and migration sync are clean. Next: 006Z8 portal limit provenance/module/browser closure.
+
+## 2026-07-13 01:39:58 - 2026-07-13_012200_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z7-active-member-relaxation-authority-and-evidence-race-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_012200_normal_run/.ralph/runs/2026-07-13_012200_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_012200_normal_run/.ralph/runs/2026-07-13_012200_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

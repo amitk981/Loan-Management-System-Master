@@ -1,7 +1,7 @@
 # Slice 006Z7: Active-Member Relaxation, Authority, and Evidence-Race Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review

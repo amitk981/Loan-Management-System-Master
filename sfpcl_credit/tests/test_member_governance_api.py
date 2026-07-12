@@ -22,9 +22,9 @@ class MemberGovernanceApiTests(TestCase):
         self.client = Client()
         self.creator = self._user("creator@sfpcl.example", "members.member.create")
 
-    def _user(self, email, *codes):
+    def _user(self, email, *codes, role_code=None):
         role = Role.objects.create(
-            role_code=email.split("@")[0], role_name=email, is_system_role=True, status="active"
+            role_code=role_code or email.split("@")[0], role_name=email, is_system_role=True, status="active"
         )
         for code in codes:
             permission, _ = Permission.objects.get_or_create(
@@ -161,6 +161,31 @@ class MemberGovernanceApiTests(TestCase):
         with self.assertRaises(PermissionDenied):
             MemberRegistry.get(member.member_id, self.creator)
 
+    def test_registry_authority_uses_owner_global_permission_and_object_policy_without_mocks(self):
+        owner = self._user("policy-owner@sfpcl.example", "members.member.read")
+        outsider = self._user("policy-outsider@sfpcl.example", "members.member.read")
+        manager = self._user("policy-manager@sfpcl.example", "members.member.read")
+        missing_permission = self._user("policy-missing@sfpcl.example")
+        member = Member.objects.create(
+            member_type="individual_farmer", legal_name="Policy Member", display_name="Policy Member",
+            folio_number="POLICY-1", membership_status="active", kyc_status="pending",
+            default_status="no_default", created_by_user=owner,
+        )
+
+        self.assertEqual(MemberRegistry.get(member.member_id, owner), member)
+        with self.assertRaisesRegex(PermissionDenied, "cannot access"):
+            MemberRegistry.get(member.member_id, manager)
+        unowned = Member.objects.create(
+            member_type="individual_farmer", legal_name="Global Policy Member",
+            display_name="Global Policy Member", folio_number="POLICY-2",
+            membership_status="active", kyc_status="pending", default_status="no_default",
+        )
+        self.assertEqual(MemberRegistry.get(unowned.member_id, manager), unowned)
+        with self.assertRaisesRegex(PermissionDenied, "cannot access"):
+            MemberRegistry.get(member.member_id, outsider)
+        with self.assertRaisesRegex(PermissionDenied, "Missing required permission"):
+            MemberRegistry.get(member.member_id, missing_permission)
+
     def test_duplicate_pan_and_aadhaar_are_field_errors_with_zero_writes(self):
         payload = {
             "member_type": "individual_farmer", "legal_name": "First", "display_name": "First",
@@ -204,7 +229,7 @@ class MemberGovernanceApiTests(TestCase):
             membership_status="active",
             kyc_status="pending",
             default_status="no_default",
-            created_by_user=self.creator,
+            created_by_user=updater,
         )
 
         response = self.client.patch(
@@ -233,7 +258,7 @@ class MemberGovernanceApiTests(TestCase):
             membership_status="active", pan_encrypted="enc:v1:10:synthetic:1234",
             pan_hash="synthetic-pan-hash", aadhaar_encrypted="enc:v1:12:synthetic:1234",
             aadhaar_hash="synthetic-aadhaar-hash", kyc_status="verified",
-            default_status="no_default", created_by_user=self.creator,
+            default_status="no_default", created_by_user=updater,
         )
         headers = self._headers(updater)
         before_audits = AuditLog.objects.count()
@@ -284,7 +309,7 @@ class MemberGovernanceApiTests(TestCase):
             folio_number="GOV-1", membership_status="active", pan_encrypted="enc:v1:10:test:1234",
             pan_hash="old-pan", aadhaar_encrypted="enc:v1:12:test:1234", aadhaar_hash="old-aadhaar",
             kyc_status="verified", rekyc_due_date="2027-01-01", default_status="no_default",
-            created_by_user=self.creator,
+            created_by_user=requester,
         )
         requested = self.client.post(
             f"/api/v1/members/{member.member_id}/identity-change-requests/",

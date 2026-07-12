@@ -16,7 +16,6 @@ class MemberRegistry:
     def _member_access(*, actor_user, member, permission):
         return evaluate_member_authority(
             actor_user=actor_user, member=member, permission=permission,
-            globally_authorized=True,
         )
 
     @staticmethod

@@ -1,23 +1,23 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_011233_normal_run
+2026-07-13_012200_normal_run
 
 ## Current Status
 
-006Y15 is complete. Witness PATCH now returns normal `404 NOT_FOUND` for a genuinely absent parent
-when a globally authorised credit manager has update permission, while existing and random
-out-of-scope parents remain identical `403 OBJECT_ACCESS_DENIED` facts. Contact and identity
-unknown-field cases execute independently with exact actions and zero evidence.
+006Z7 is complete. Recent inactive members can reach the source-defined one-year relaxation only
+with one complete qualifying supply year and distinct verified persisted relaxation evidence.
+Registry and active-status authority now share one member policy without caller bypass flags or
+role-code switches. Supply/service evidence mutations lock Member first and advance provenance.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-13_011233_normal_run/`. Focused witness tests pass (22),
-frontend gates pass with 204 tests, and backend gates pass with 486 tests, 8 expected PostgreSQL-only
-skips, and 93% coverage. Django check and migration sync are clean.
+Evidence is under `.ralph/runs/2026-07-13_012200_normal_run/`. The five active-member PostgreSQL
+races and retained five credit races pass twice. Frontend gates pass with 204 tests; backend gates
+pass with 493 tests, 12 expected PostgreSQL-only skips, and 93% coverage. Check/migrations are clean.
 
 ## Next Run
 
-Run `006Z7-active-member-relaxation-authority-and-evidence-race-closure`, then `006Z8` before
-beginning Epic 007. Both corrective slices were re-reviewed as concrete and execution-ready;
-007A/007B remain sharpened for resolver and immutable case-enrichment boundaries.
+Run `006Z8-portal-limit-provenance-module-and-interaction-closure` before Epic 007. It is sharpened
+to consume 006Z7's Member provenance token while validating stored-date authority. 007A remains
+sharpened for permission/data-owned resolution and PostgreSQL one-winner configuration evidence.

@@ -1,0 +1,33 @@
+Creating test database for alias 'default'...
+Found 34 test(s).
+System check identified no issues (0 silenced).
+.........................F...FFsss
+======================================================================
+FAIL: test_identity_change_requires_a_different_permissioned_approver (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_identity_change_requires_a_different_permissioned_approver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_012200_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 294, in test_identity_change_requires_a_different_permissioned_approver
+    self.assertEqual(requested.status_code, 200)
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_update_with_membership_date_persists_json_safe_history (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_update_with_membership_date_persists_json_safe_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_012200_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 221, in test_update_with_membership_date_persists_json_safe_history
+    self.assertEqual(response.status_code, 200)
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_verified_identity_requires_reverification_and_stale_writes_are_atomic (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_verified_identity_requires_reverification_and_stale_writes_are_atomic)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_012200_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 244, in test_verified_identity_requires_reverification_and_stale_writes_are_atomic
+    self.assertEqual(locked.status_code, 409)
+AssertionError: 403 != 409
+
+----------------------------------------------------------------------
+Ran 34 tests in 0.267s
+
+FAILED (failures=3, skipped=3)
+Destroying test database for alias 'default'...

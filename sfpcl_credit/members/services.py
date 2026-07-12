@@ -905,12 +905,16 @@ def serialize_produce_supply_record(record, user=None, portal=False):
 
 
 @transaction.atomic
-def verify_produce_supply_record(record_id, version, actor_user, request_ip="", request_user_agent=""):
-    record = ProduceSupplyRecord.objects.select_for_update().filter(
+def verify_produce_supply_record(record_id, version, actor_user, request_ip="", request_user_agent="", member_version=None):
+    boundary = ProduceSupplyRecord.objects.filter(
         produce_supply_record_id=record_id
-    ).first()
-    if record is None:
+    ).values_list("member_id", flat=True).first()
+    if boundary is None:
         return None
+    member = Member.objects.select_for_update().get(member_id=boundary)
+    record = ProduceSupplyRecord.objects.select_for_update().get(produce_supply_record_id=record_id)
+    if member_version is not None and member_version != member.version:
+        raise ProduceSupplyConflict("STALE_WRITE", "Member has changed; refresh and retry.", {"member_version": "Version is stale."})
     if record.captured_by_user_id == actor_user.user_id:
         raise PermissionError("The record maker cannot verify this supply record.")
     if not user_can_verify_produce_supply(actor_user):
@@ -929,6 +933,10 @@ def verify_produce_supply_record(record_id, version, actor_user, request_ip="", 
     record.verified_at = instant
     record.version += 1
     record.save(update_fields=["verified_flag", "verified_by_user", "verified_at", "version"])
+    member.version += 1
+    member.updated_at = instant
+    member.updated_by_user = actor_user
+    member.save(update_fields=["version", "updated_at", "updated_by_user"])
     projection = {
         "member_id": str(record.member_id), "financial_year": record.financial_year,
         "verification_status": "verified",

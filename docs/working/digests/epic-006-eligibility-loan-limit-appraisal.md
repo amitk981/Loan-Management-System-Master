@@ -1,5 +1,20 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006Z7 Active-Member Relaxation, Authority, and Evidence-Race Closure
+
+- BR-003/BR-005 recent-member relaxation is evaluated before ordinary inactive rejection: one
+  complete qualifying supply year plus distinct verified relaxation evidence is required, and the
+  complete dated evidence remains in result provenance.
+- Member authority has one member-owned evaluator. Ownership/unowned scope and explicitly global
+  high-authority permissions are evaluated without caller bypass flags or role-code switches;
+  Registry and active verification consume the same policy.
+- Supply capture/verification and service-evidence create/update lock Member before the exact
+  evidence row and advance Member provenance. Service mutations write matching history/audit facts.
+- The authoritative PostgreSQL suite now proves verifier versus supply create, supply verify,
+  service create, and service update alongside the two-verifier race. Every race has one coherent
+  winner/current pointer and no loser status/history/audit/workflow evidence; the five credit races
+  remain green twice.
+
 ## 006X10 Executable Credit Object-Scope Rows
 
 - The eight public credit object-scope cases are registered as direct callable test-method

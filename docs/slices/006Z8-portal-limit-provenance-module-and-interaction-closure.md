@@ -85,3 +85,11 @@ High
   interaction contract.
 - Preserve the declared existing compositions and trusted-browser outputs; no new visual pattern or
   caller-owned authority switch is permitted.
+
+## Run-Ahead Sharpening Review (006Z7, 2026-07-13)
+
+- Treat the 006Z7 Member version as the canonical supply/service provenance token: any successful
+  supply or service evidence mutation makes the stored authority stale, while mere date passage does
+  not. Recompute using the record's stored calculation date and compare the full persisted snapshot.
+- The portal adapter must not call the member authority evaluator or accept a global-scope flag; it
+  resolves PortalAccount scope and transports only the credit-owned redacted projection.

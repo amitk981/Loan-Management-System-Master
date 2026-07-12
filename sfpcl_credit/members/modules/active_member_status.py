@@ -129,6 +129,12 @@ class ActiveMemberStatusModule:
         )
         qualifying_years = [row.financial_year for row in rows if row.qualifying]
         continuity = longest_continuous_financial_years(qualifying_years)
+        if relaxation_evidence is not None and continuity >= 1:
+            return self._result(
+                member, calculated_as_of_date, "relaxation", "pending",
+                "Recorded one-year active-member relaxation is supported by qualifying verified produce supply evidence.",
+                services_availed, continuity, "recorded_one_year_relaxation", rows, qualifying_service_rows, relaxation_evidence,
+            )
         if member.membership_status != "active":
             return self._result(
                 member, calculated_as_of_date, "fail", "ineligible",
@@ -149,20 +155,66 @@ class ActiveMemberStatusModule:
                 "BR-006 active-member status is supported by three continuous years of recorded employment or service.",
                 services_availed, continuity, "three_year_service", rows, qualifying_service_rows, relaxation_evidence,
             )
-        if (
-            relaxation_evidence is not None
-            and continuity >= 1
-        ):
-            return self._result(
-                member, calculated_as_of_date, "relaxation", "pending",
-                "Recorded one-year active-member relaxation is supported by qualifying verified produce supply evidence.",
-                services_availed, continuity, "recorded_one_year_relaxation", rows, qualifying_service_rows, relaxation_evidence,
-            )
         return self._result(
             member, calculated_as_of_date, "manual_evidence_required", "pending_manual_evidence",
             "BR-004 through BR-007 require persisted service usage and continuous qualifying verified supply history or relaxation evidence; manual evidence is required.",
             services_availed, continuity, None, rows, qualifying_service_rows, relaxation_evidence,
         )
+
+    @transaction.atomic
+    def create_service_evidence(self, *, actor, member_id, version, service_type,
+                                recipient_entity_type, service_from, service_to,
+                                evidence_reference, recipient_entity_id=None):
+        member = Member.objects.select_for_update().filter(
+            member_id=member_id, is_deleted=False
+        ).first()
+        if member is None:
+            raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+        self._require_evidence_authority(actor, member)
+        if version != member.version:
+            raise ActiveMemberStatusConflict("STALE_WRITE", "Member has changed; refresh and retry.")
+        values = self._validated_service_evidence(
+            service_type=service_type, recipient_entity_type=recipient_entity_type,
+            service_from=service_from, service_to=service_to,
+            evidence_reference=evidence_reference, recipient_entity_id=recipient_entity_id,
+        )
+        evidence = MemberServiceEvidence.objects.create(
+            member=member, verified_by_user=actor, verified_at=timezone.now(), **values
+        )
+        self._advance_evidence_provenance(member, actor)
+        self._record_service_evidence_change(member, evidence, actor, "created")
+        return evidence
+
+    @transaction.atomic
+    def update_service_evidence(self, *, actor, evidence_id, version, **changes):
+        boundary = MemberServiceEvidence.objects.filter(
+            member_service_evidence_id=evidence_id
+        ).values_list("member_id", flat=True).first()
+        if boundary is None:
+            raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+        member = Member.objects.select_for_update().get(member_id=boundary, is_deleted=False)
+        evidence = MemberServiceEvidence.objects.select_for_update().get(
+            member_service_evidence_id=evidence_id
+        )
+        self._require_evidence_authority(actor, member)
+        if version != member.version:
+            raise ActiveMemberStatusConflict("STALE_WRITE", "Member has changed; refresh and retry.")
+        values = self._validated_service_evidence(
+            service_type=changes.get("service_type", evidence.service_type),
+            recipient_entity_type=changes.get("recipient_entity_type", evidence.recipient_entity_type),
+            service_from=changes.get("service_from", evidence.service_from),
+            service_to=changes.get("service_to", evidence.service_to),
+            evidence_reference=changes.get("evidence_reference", evidence.evidence_reference),
+            recipient_entity_id=changes.get("recipient_entity_id", evidence.recipient_entity_id),
+        )
+        for field, value in values.items():
+            setattr(evidence, field, value)
+        evidence.verified_by_user = actor
+        evidence.verified_at = timezone.now()
+        evidence.save(update_fields=[*values, "verified_by_user", "verified_at"])
+        self._advance_evidence_provenance(member, actor)
+        self._record_service_evidence_change(member, evidence, actor, "updated")
+        return evidence
 
     @transaction.atomic
     def verify(self, *, actor, member_id, result_id, decision, reason, version, as_of_date=None):
@@ -323,6 +375,56 @@ class ActiveMemberStatusModule:
         )
 
     @staticmethod
+    def _require_evidence_authority(actor, member):
+        if VERIFY_PERMISSION not in auth_service.effective_permission_codes(actor):
+            raise PermissionError("You do not have permission to maintain active-member evidence.")
+        if not evaluate_member_authority(
+            actor_user=actor, member=member, permission=VERIFY_PERMISSION
+        ).allowed:
+            raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+
+    @staticmethod
+    def _validated_service_evidence(**values):
+        if values["service_type"] not in {"employment", "service", "relaxation"}:
+            raise ValueError("service_type must be employment, service, or relaxation.")
+        if values["recipient_entity_type"] not in QUALIFYING_ENTITY_TYPES:
+            raise ValueError("recipient_entity_type is not eligible evidence.")
+        if not isinstance(values["service_from"], date) or not isinstance(values["service_to"], date):
+            raise ValueError("service_from and service_to must be dates.")
+        if values["service_from"] > values["service_to"]:
+            raise ValueError("service_from cannot be after service_to.")
+        if not isinstance(values["evidence_reference"], str) or not values["evidence_reference"].strip():
+            raise ValueError("evidence_reference is required.")
+        values["evidence_reference"] = values["evidence_reference"].strip()
+        return values
+
+    @staticmethod
+    def _advance_evidence_provenance(member, actor):
+        member.version += 1
+        member.updated_at = timezone.now()
+        member.updated_by_user = actor
+        member.save(update_fields=["version", "updated_at", "updated_by_user"])
+
+    @staticmethod
+    def _record_service_evidence_change(member, evidence, actor, verb):
+        projection = {
+            "member_id": str(member.member_id),
+            "member_service_evidence_id": str(evidence.member_service_evidence_id),
+            "service_type": evidence.service_type,
+            "evidence_reference": evidence.evidence_reference,
+            "version": member.version,
+        }
+        MemberChangeHistory.objects.create(
+            member=member, actor_user=actor, change_type=f"service_evidence_{verb}",
+            changed_fields=["service_evidence"], new_value_json=projection,
+        )
+        AuditLog.objects.create(
+            actor_user=actor, action=f"members.service_evidence.{verb}",
+            entity_type="member_service_evidence",
+            entity_id=evidence.member_service_evidence_id, new_value_json=projection,
+        )
+
+    @staticmethod
     def _service_evidence_qualifies(row, as_of_date):
         try:
             threshold = as_of_date.replace(year=as_of_date.year - 3)
@@ -351,18 +453,6 @@ class ActiveMemberStatusModule:
             return None
         profile = getattr(member, "individual_profile", None)
         return profile.employment_or_service_years if profile else None
-
-    @staticmethod
-    def _qualifying_service_evidence(member, as_of_date):
-        try:
-            threshold = as_of_date.replace(year=as_of_date.year - 3)
-        except ValueError:
-            threshold = as_of_date.replace(year=as_of_date.year - 3, day=28)
-        return MemberServiceEvidence.objects.filter(
-            member=member, recipient_entity_type__in=QUALIFYING_ENTITY_TYPES,
-            service_from__lte=threshold, service_to__gte=as_of_date,
-            verified_at__isnull=False,
-        ).exclude(evidence_reference="").order_by("service_from").first()
 
     @staticmethod
     def _project_row(record, as_of_date):
