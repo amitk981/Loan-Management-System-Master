@@ -35,6 +35,9 @@ authority, projection, and write enforcement.
 - Execute projection/write parity for contact and identity corrections under missing permission,
   object denial, original-verifier maker-checker denial, stale version, malformed/non-object JSON,
   unknown/immutable fields, and success. Assert exact reason/category and zero loser evidence.
+  Both correction actions require `members.witness.update`; object denial returns
+  `OBJECT_ACCESS_DENIED`, permission/maker-checker denial returns `FORBIDDEN`, payload failures return
+  `VALIDATION_ERROR`, and stale `version` returns `VERSION_CONFLICT`.
 - Extend the mounted `WitnessPanel` suite to drive API-wrapper `400`, `403`, and `409` failures for
   both correction kinds. Each submit makes exactly one PATCH, no retry/refetch/local merge on error,
   retains server field/reason facts, and refetches the canonical collection exactly once on success.

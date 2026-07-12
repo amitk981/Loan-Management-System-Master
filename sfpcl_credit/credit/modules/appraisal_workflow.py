@@ -25,6 +25,7 @@ from sfpcl_credit.credit.modules.common import (
     CreditModulePermissionDenied,
     CreditModuleValidationError,
     normalize_request_meta,
+    project_application_object_access,
     require_application_access,
     require_permission,
 )
@@ -150,12 +151,22 @@ def appraisal_available_actions(note, actor, permissions):
         APPRAISAL_REVIEW_PERMISSION: evaluate_appraisal_review(note, actor),
         APPRAISAL_SANCTION_SUBMIT_PERMISSION: evaluate_sanction_submission(note),
     }
-    return [
+    actions = [
         action(APPRAISAL_UPDATE_PERMISSION, "Update Appraisal Draft", APPRAISAL_UPDATE_PERMISSION, evaluations[APPRAISAL_UPDATE_PERMISSION].allowed, reason=evaluations[APPRAISAL_UPDATE_PERMISSION].reason, permission_reason="You do not have permission to update appraisal notes."),
         action("revalidate_appraisal_prerequisites", "Revalidate Prerequisites", APPRAISAL_UPDATE_PERMISSION, evaluations["revalidate_appraisal_prerequisites"].allowed, reason=evaluations["revalidate_appraisal_prerequisites"].reason, permission_reason="You do not have permission to revalidate appraisal prerequisites."),
         action(APPRAISAL_SUBMIT_PERMISSION, "Submit for Credit Review", APPRAISAL_SUBMIT_PERMISSION, evaluations[APPRAISAL_SUBMIT_PERMISSION].allowed, reason=evaluations[APPRAISAL_SUBMIT_PERMISSION].reason, permission_reason="You do not have permission to submit appraisal notes for review."),
         action(APPRAISAL_REVIEW_PERMISSION, "Record Credit Review", APPRAISAL_REVIEW_PERMISSION, evaluations[APPRAISAL_REVIEW_PERMISSION].allowed, role="credit_manager", reason=evaluations[APPRAISAL_REVIEW_PERMISSION].reason, permission_reason="You do not have permission to review appraisal notes.", role_reason="Only an active Credit Manager may review appraisal notes."),
         action(APPRAISAL_SANCTION_SUBMIT_PERMISSION, "Submit to Sanction Committee", APPRAISAL_SANCTION_SUBMIT_PERMISSION, evaluations[APPRAISAL_SANCTION_SUBMIT_PERMISSION].allowed, role="credit_manager", reason=evaluations[APPRAISAL_SANCTION_SUBMIT_PERMISSION].reason, permission_reason="You do not have permission to submit appraisals for sanction.", role_reason="Only an active Credit Manager may submit appraisals for sanction."),
+    ]
+    return [
+        project_application_object_access(
+            projected,
+            application=note.loan_application,
+            actor=actor,
+            permission_code=projected["required_permission"],
+            actor_permissions=permissions,
+        )
+        for projected in actions
     ]
 
 

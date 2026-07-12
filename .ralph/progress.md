@@ -4174,12 +4174,33 @@ Validation evidence added:
 - Evidence: `.ralph/runs/2026-07-12_203645_architecture_review/`. Risk: Low docs-only review; all
   three corrective product slices are High risk. Next: 006X7.
 
+# Run 2026-07-12_205405_normal_run
+
+- Completed 006X7 with an object-aware public action projection shared across all eight Epic 006
+  credit actions while preserving standard HTTP 403 resource non-disclosure.
+- Removed static `EXECUTED_CASES` claims. Completeness is derived from executable object-scope test
+  methods and a deliberately removed case produced the saved failing-first proof.
+- Every object denial matches exact reason/category and preserves the full application, assessment,
+  appraisal, risk, history, rejection, approval, audit, and workflow snapshot.
+- Frontend build/typecheck/lint and 177 tests pass. Backend check/migration sync and 452 tests pass
+  (7 expected SQLite skips) at 94% coverage. Next: 006Y10, then 006Y11.
+
 ## 2026-07-12 20:53:51 - 2026-07-12_203645_architecture_review
 - Agent tool used: codex
 - Slice attempted: architecture-review
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_203645_architecture_review/.ralph/runs/2026-07-12_203645_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_203645_architecture_review/.ralph/runs/2026-07-12_203645_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-12 21:09:51 - 2026-07-12_205405_normal_run
+- Agent tool used: codex
+- Slice attempted: 006X7-credit-object-scope-action-parity-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_205405_normal_run/.ralph/runs/2026-07-12_205405_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_205405_normal_run/.ralph/runs/2026-07-12_205405_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

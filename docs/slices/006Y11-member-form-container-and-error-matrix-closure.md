@@ -31,6 +31,8 @@ and governed identity changes.
 - Mount the production Member Directory -> registration -> Member Profile containers with mocked
   HTTP responses at the shared transport boundary, not mocked `createMember`/`updateMember` wrappers.
   Submit and assert every §13.2 common, address, individual, FPC, and Producer Institution field.
+  Creation requires `members.member.create`; ordinary update and governed identity-change actions
+  require `members.member.update`; detail/readback requires `members.member.read`.
 - For create, ordinary PATCH, identity-change request, and approval, cover `400` field validation,
   `403` permission/object/maker-checker denial, and `409` stale/non-pending conflicts. Each action
   makes one mutation call, performs no retry/local merge/refetch on error, and preserves exact server

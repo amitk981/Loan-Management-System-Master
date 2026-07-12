@@ -1,5 +1,17 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006X7 Credit Object-Scope Action Parity Closure
+
+- A shared public projection overlay evaluates application object access before resource
+  serialization. Eligibility, loan-limit/appraisal-create, appraisal update/revalidate/submit/review,
+  and sanction projections all consume it without changing HTTP non-disclosure.
+- All eight real credit actions execute a disabled six-field projection against the same persisted
+  out-of-scope resource used by the matching public write. The exact reason is `You do not have
+  access to this loan application.`, the write category is `OBJECT_ACCESS_DENIED`, and the complete
+  resource/evidence snapshot is unchanged.
+- Static `EXECUTED_CASES` inventories are removed. Object-scope completeness derives from decorated
+  executable test methods; removing the eligibility case produces a focused completeness failure.
+
 ## Architecture Review 2026-07-12 - Credit Object-Scope Matrix Residual
 
 - 006X6 materially expands the public action/write matrix and closes role/reason defects, but its

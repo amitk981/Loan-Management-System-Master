@@ -1,7 +1,7 @@
 # Slice 006X7: Credit Object-Scope Action Parity Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review

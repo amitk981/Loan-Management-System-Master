@@ -19,6 +19,7 @@ from sfpcl_credit.credit.modules.common import (
     CreditModuleValidationError,
     get_application_or_raise,
     normalize_request_meta,
+    project_application_object_access,
     require_application_access,
     require_permission,
 )
@@ -263,14 +264,14 @@ class LoanLimitCalculator:
             trigger_reason="Source-backed loan limit calculated.",
             action_code=LOAN_LIMIT_CALCULATED_AUDIT_ACTION,
         )
-        return LoanLimitAssessmentResult(projection=projection, available_actions=tuple(_loan_limit_actions(application, actor, permissions)))
+        return LoanLimitAssessmentResult(projection=projection, available_actions=tuple(loan_limit_available_actions(application, actor, permissions)))
 
 
 def _result(assessment, actor, permissions):
-    return LoanLimitAssessmentResult(projection=_projection(assessment), available_actions=tuple(_loan_limit_actions(assessment.loan_application, actor, permissions)))
+    return LoanLimitAssessmentResult(projection=_projection(assessment), available_actions=tuple(loan_limit_available_actions(assessment.loan_application, actor, permissions)))
 
 
-def _loan_limit_actions(application, actor, permissions):
+def loan_limit_available_actions(application, actor, permissions):
     permissions = set(permissions)
     transition = evaluate_loan_limit_calculation(application)
     calculate_enabled = transition.allowed and LOAN_LIMIT_CALCULATE_PERMISSION in permissions
@@ -291,17 +292,23 @@ def _loan_limit_actions(application, actor, permissions):
     else:
         create_reason = reason
     return [
-        loan_limit_calculate_action(application, permissions),
-        item("credit.appraisal.create", "Create Appraisal Draft", "credit.appraisal.create", create_enabled, create_reason),
+        loan_limit_calculate_action(application, permissions, actor),
+        project_application_object_access(
+            item("credit.appraisal.create", "Create Appraisal Draft", "credit.appraisal.create", create_enabled, create_reason),
+            application=application,
+            actor=actor,
+            permission_code="credit.appraisal.create",
+            actor_permissions=permissions,
+        ),
     ]
 
 
-def loan_limit_calculate_action(application, permissions):
+def loan_limit_calculate_action(application, permissions, actor):
     """Public six-field projection shared by every container that can start calculation."""
     permissions = set(permissions)
     transition = evaluate_loan_limit_calculation(application)
     enabled = transition.allowed and LOAN_LIMIT_CALCULATE_PERMISSION in permissions
-    return {
+    projected = {
         "action_code": LOAN_LIMIT_CALCULATE_PERMISSION,
         "label": "Calculate Loan Limit",
         "enabled": enabled,
@@ -309,6 +316,13 @@ def loan_limit_calculate_action(application, permissions):
         "required_permission": LOAN_LIMIT_CALCULATE_PERMISSION,
         "required_role": None,
     }
+    return project_application_object_access(
+        projected,
+        application=application,
+        actor=actor,
+        permission_code=LOAN_LIMIT_CALCULATE_PERMISSION,
+        actor_permissions=permissions,
+    )
 
 
 def _projection(assessment):

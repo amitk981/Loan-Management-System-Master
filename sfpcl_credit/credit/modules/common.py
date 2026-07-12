@@ -61,6 +61,32 @@ def require_application_access(application, actor, permission_code, actor_permis
         raise CreditModuleObjectAccessDenied(object_access)
 
 
+def project_application_object_access(
+    action,
+    *,
+    application,
+    actor,
+    permission_code,
+    actor_permissions=None,
+):
+    """Overlay object authority on a six-field action without serializing the resource."""
+    from sfpcl_credit.applications.services import evaluate_application_object_access
+
+    object_access = evaluate_application_object_access(
+        application,
+        actor,
+        permission_code,
+        actor_permissions,
+    )
+    if object_access.allowed or object_access.error_code != "OBJECT_ACCESS_DENIED":
+        return action
+    return {
+        **action,
+        "enabled": False,
+        "disabled_reason": "You do not have access to this loan application.",
+    }
+
+
 def get_application_or_raise(application_id):
     application = (
         LoanApplication.objects.select_related(

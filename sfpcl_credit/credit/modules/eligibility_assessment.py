@@ -18,6 +18,7 @@ from sfpcl_credit.credit.modules.common import (
     require_permission,
 )
 from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.members.modules.active_member_status import ActiveMemberStatusModule
 from sfpcl_credit.workflows.events import record_workflow_event
 
@@ -166,17 +167,36 @@ def _snapshot_with_actions(assessment, application, actor, permissions):
     from sfpcl_credit.credit.modules.loan_limit_calculator import loan_limit_calculate_action
 
     snapshot = eligibility_assessment_snapshot(assessment)
+    snapshot["available_actions"] = [eligibility_run_action(
+        application,
+        actor,
+        permissions,
+    ), loan_limit_calculate_action(application, permissions, actor)]
+    return snapshot
+
+
+def eligibility_run_action(application, actor, permissions=None):
+    from sfpcl_credit.credit.modules.common import project_application_object_access
+
+    if permissions is None:
+        permissions = auth_service.effective_permission_codes(actor)
     transition = evaluate_eligibility_run(application)
     enabled = transition.allowed and ELIGIBILITY_RUN_PERMISSION in permissions
-    snapshot["available_actions"] = [{
+    projected = {
         "action_code": ELIGIBILITY_RUN_PERMISSION,
         "label": "Run Eligibility Assessment",
         "enabled": enabled,
         "disabled_reason": None if enabled else transition.reason or "You do not have permission to run eligibility assessments.",
         "required_permission": ELIGIBILITY_RUN_PERMISSION,
         "required_role": None,
-    }, loan_limit_calculate_action(application, permissions)]
-    return snapshot
+    }
+    return project_application_object_access(
+        projected,
+        application=application,
+        actor=actor,
+        permission_code=ELIGIBILITY_RUN_PERMISSION,
+        actor_permissions=permissions,
+    )
 
 
 def eligibility_assessment_snapshot(assessment):

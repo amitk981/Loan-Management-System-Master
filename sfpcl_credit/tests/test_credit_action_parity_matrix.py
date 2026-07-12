@@ -5,16 +5,26 @@ from django.test import TestCase
 
 from sfpcl_credit.approvals.modules.sanction_handoff import SanctionHandoffModule
 from sfpcl_credit.credit.models import LoanAppraisalNote
-from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow
+from sfpcl_credit.credit.modules.appraisal_workflow import (
+    AppraisalWorkflow,
+    appraisal_available_actions,
+)
 from sfpcl_credit.credit.modules.common import (
     CreditModuleInvalidStateError,
     CreditModuleObjectAccessDenied,
     CreditModulePermissionDenied,
     CreditModuleValidationError,
 )
-from sfpcl_credit.credit.modules.eligibility_assessment import EligibilityAssessmentModule
-from sfpcl_credit.credit.modules.loan_limit_calculator import LoanLimitCalculator
+from sfpcl_credit.credit.modules.eligibility_assessment import (
+    EligibilityAssessmentModule,
+    eligibility_run_action,
+)
+from sfpcl_credit.credit.modules.loan_limit_calculator import (
+    LoanLimitCalculator,
+    loan_limit_available_actions,
+)
 from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.tests import test_appraisal_api as appraisal_fixtures
 from sfpcl_credit.tests import test_credit_modules as credit_fixtures
 from sfpcl_credit.tests import test_sanction_submission_api as sanction_fixtures
@@ -40,16 +50,12 @@ PUBLIC_ACTIONS = {
     "credit.appraisal.submit_sanction",
 }
 
-REQUIRED_VARIANTS = {
-    "credit.eligibility.run": {"enabled", "permission", "object_scope", "state", "stale_state"},
-    "credit.loan_limit.calculate": {"enabled", "permission", "object_scope", "state", "stale_state"},
-    "credit.appraisal.create": {"enabled", "permission", "object_scope", "state"},
-    "credit.appraisal.update": {"enabled", "permission", "object_scope", "state"},
-    "revalidate_appraisal_prerequisites": {"enabled", "permission", "object_scope", "state", "frozen_provenance"},
-    "credit.appraisal.submit_review": {"enabled", "permission", "object_scope", "state", "frozen_provenance"},
-    "credit.appraisal.review": {"enabled", "permission", "role", "object_scope", "maker_checker", "state", "frozen_provenance", "rejection_payload"},
-    "credit.appraisal.submit_sanction": {"enabled", "permission", "role", "object_scope", "state", "frozen_provenance", "immutable_review", "stale_state"},
-}
+def object_scope_cases(*action_codes):
+    def decorate(test_method):
+        test_method.object_scope_action_codes = frozenset(action_codes)
+        return test_method
+
+    return decorate
 
 
 def action(snapshot, code):
@@ -58,30 +64,51 @@ def action(snapshot, code):
     return projected
 
 
+def full_credit_evidence():
+    """Canonical persisted resource/evidence snapshot for every object denial row."""
+    model_names = (
+        ("applications", "LoanApplication"),
+        ("credit", "EligibilityAssessment"),
+        ("credit", "LoanLimitAssessment"),
+        ("credit", "LoanAppraisalNote"),
+        ("credit", "RiskAssessment"),
+        ("credit", "AppraisalReviewDecision"),
+        ("applications", "RejectionNote"),
+        ("approvals", "ApprovalCase"),
+        ("identity", "AuditLog"),
+        ("workflows", "WorkflowEvent"),
+    )
+    return tuple(
+        (
+            f"{app_label}.{model_name}",
+            tuple(
+                model.objects.order_by(model._meta.pk.name).values_list()
+            ),
+        )
+        for app_label, model_name in model_names
+        for model in (apps.get_model(app_label, model_name),)
+    )
+
+
 class MatrixInventoryTests(TestCase):
-    def test_executable_case_catalogue_is_complete_and_uses_only_real_action_codes(self):
-        executable = {}
+    def test_object_scope_coverage_is_derived_only_from_executable_test_methods(self):
+        executable = set()
         for case_class in (
             EligibilityActionWriteMatrixTests,
             LoanLimitActionWriteMatrixTests,
             AppraisalActionWriteMatrixTests,
             SanctionActionWriteMatrixTests,
         ):
-            for action_code, variant in case_class.EXECUTED_CASES:
-                executable.setdefault(action_code, set()).add(variant)
-        self.assertEqual(set(executable), PUBLIC_ACTIONS)
-        self.assertEqual(executable, REQUIRED_VARIANTS)
-        self.assertNotIn("credit.appraisal.review:reviewed", executable)
+            for name in dir(case_class):
+                if not name.startswith("test_"):
+                    continue
+                executable.update(
+                    getattr(getattr(case_class, name), "object_scope_action_codes", ())
+                )
+        self.assertEqual(executable, PUBLIC_ACTIONS)
 
 
 class EligibilityActionWriteMatrixTests(TestCase):
-    EXECUTED_CASES = (
-        ("credit.eligibility.run", "enabled"),
-        ("credit.eligibility.run", "permission"),
-        ("credit.eligibility.run", "object_scope"),
-        ("credit.eligibility.run", "state"),
-        ("credit.eligibility.run", "stale_state"),
-    )
     setUp = credit_fixtures.CreditEligibilityModuleTests.setUp
     _permission = staticmethod(credit_fixtures.CreditEligibilityModuleTests._permission)
     _user = staticmethod(credit_fixtures.CreditEligibilityModuleTests._user)
@@ -146,10 +173,10 @@ class EligibilityActionWriteMatrixTests(TestCase):
         type(self.application).objects.filter(pk=self.application.pk).update(
             application_status="draft"
         )
-        before = self._eligibility_evidence()
+        before = full_credit_evidence()
         with self.assertRaises(CreditModuleInvalidStateError):
             module.run(actor=self.actor, application_id=self.application.pk)
-        self.assertEqual(self._eligibility_evidence(), before)
+        self.assertEqual(full_credit_evidence(), before)
         type(self.application).objects.filter(pk=self.application.pk).update(
             application_status=original["application_status"]
         )
@@ -170,6 +197,37 @@ class EligibilityActionWriteMatrixTests(TestCase):
         self.assertEqual(self._eligibility_evidence(), before)
         self.assertEqual(baseline.snapshot["eligibility_assessment_id"], before[2])
 
+    @object_scope_cases("credit.eligibility.run")
+    def test_object_scope_projects_disabled_action_before_matching_public_run_denial(self):
+        module = EligibilityAssessmentModule()
+        module.run(actor=self.actor, application_id=self.application.pk)
+        outsider = self._user(
+            "eligibility.projection.outsider@sfpcl.example",
+            apps.get_model("identity", "Permission").objects.get(
+                permission_code="applications.loan_application.read"
+            ),
+        )
+        type(self.application).objects.filter(pk=self.application.pk).update(
+            created_by_user=outsider,
+            received_by_user=outsider,
+            current_stage="initial_loan_request",
+        )
+        self.application.refresh_from_db()
+
+        projected = eligibility_run_action(self.application, self.actor)
+        before = full_credit_evidence()
+        with self.assertRaises(CreditModuleObjectAccessDenied) as raised:
+            module.run(actor=self.actor, application_id=self.application.pk)
+
+        self.assertEqual(set(projected), ACTION_FIELDS)
+        self.assertFalse(projected["enabled"])
+        self.assertEqual(
+            projected["disabled_reason"],
+            "You do not have access to this loan application.",
+        )
+        self.assertEqual(raised.exception.object_access.error_code, "OBJECT_ACCESS_DENIED")
+        self.assertEqual(full_credit_evidence(), before)
+
     @staticmethod
     def _eligibility_evidence():
         assessment = apps.get_model("credit", "EligibilityAssessment").objects.get()
@@ -189,13 +247,6 @@ class EligibilityActionWriteMatrixTests(TestCase):
 
 
 class LoanLimitActionWriteMatrixTests(TestCase):
-    EXECUTED_CASES = (
-        ("credit.loan_limit.calculate", "enabled"),
-        ("credit.loan_limit.calculate", "permission"),
-        ("credit.loan_limit.calculate", "object_scope"),
-        ("credit.loan_limit.calculate", "state"),
-        ("credit.loan_limit.calculate", "stale_state"),
-    )
     setUp = credit_fixtures.CreditEligibilityModuleTests.setUp
     _permission = staticmethod(credit_fixtures.CreditEligibilityModuleTests._permission)
     _user = staticmethod(credit_fixtures.CreditEligibilityModuleTests._user)
@@ -225,6 +276,7 @@ class LoanLimitActionWriteMatrixTests(TestCase):
         self.assertEqual((AuditLog.objects.count(), WorkflowEvent.objects.count()), before[:2])
         self.assertEqual(module.get_assessment(actor=self.actor, application_id=self.application.pk).snapshot["loan_limit_assessment_id"], before[2]["loan_limit_assessment_id"])
 
+    @object_scope_cases("credit.loan_limit.calculate")
     def test_state_stale_state_and_object_scope_execute_calculation_without_loser_evidence(self):
         EligibilityAssessmentModule().run(actor=self.actor, application_id=self.application.pk)
         shareholding = self._shareholding()
@@ -279,10 +331,22 @@ class LoanLimitActionWriteMatrixTests(TestCase):
             received_by_user=outsider,
             current_stage="initial_loan_request",
         )
-        before = self._limit_evidence()
-        with self.assertRaises(CreditModuleObjectAccessDenied):
+        self.application.refresh_from_db()
+        denied = action(
+            {"available_actions": loan_limit_available_actions(
+                self.application,
+                self.actor,
+                auth_service.effective_permission_codes(self.actor),
+            )},
+            "credit.loan_limit.calculate",
+        )
+        before = full_credit_evidence()
+        with self.assertRaises(CreditModuleObjectAccessDenied) as raised:
             module.calculate_for_application(actor=self.actor, application_id=self.application.pk, payload=payload)
-        self.assertEqual(self._limit_evidence(), before)
+        self.assertFalse(denied["enabled"])
+        self.assertEqual(denied["disabled_reason"], "You do not have access to this loan application.")
+        self.assertEqual(raised.exception.object_access.error_code, "OBJECT_ACCESS_DENIED")
+        self.assertEqual(full_credit_evidence(), before)
 
     @staticmethod
     def _limit_evidence():
@@ -303,17 +367,6 @@ class LoanLimitActionWriteMatrixTests(TestCase):
 
 
 class AppraisalActionWriteMatrixTests(TestCase):
-    EXECUTED_CASES = tuple(
-        (code, variant)
-        for code, variants in {
-            "credit.appraisal.create": ("enabled", "permission", "object_scope", "state"),
-            "credit.appraisal.update": ("enabled", "permission", "object_scope", "state"),
-            "revalidate_appraisal_prerequisites": ("enabled", "permission", "object_scope", "state", "frozen_provenance"),
-            "credit.appraisal.submit_review": ("enabled", "permission", "object_scope", "state", "frozen_provenance"),
-            "credit.appraisal.review": ("enabled", "permission", "role", "object_scope", "maker_checker", "state", "frozen_provenance", "rejection_payload"),
-        }.items()
-        for variant in variants
-    )
     setUp = appraisal_fixtures.AppraisalApiTests.setUp
     _payload = appraisal_fixtures.AppraisalApiTests._payload
     _permission = staticmethod(appraisal_fixtures.AppraisalApiTests._permission)
@@ -388,6 +441,7 @@ class AppraisalActionWriteMatrixTests(TestCase):
         self.assertEqual(note.appraisal_status, "draft")
         self.assertEqual(note.prerequisite_provenance, "legacy_unverified")
 
+    @object_scope_cases("credit.appraisal.create", "credit.appraisal.update")
     def test_create_update_revalidate_and_submit_execute_state_provenance_and_scope_denials(self):
         workflow = AppraisalWorkflow()
         eligibility = self.eligibility
@@ -424,14 +478,26 @@ class AppraisalActionWriteMatrixTests(TestCase):
             created_by_user=create_outsider,
             received_by_user=create_outsider,
         )
-        before = self._appraisal_evidence()
-        with self.assertRaises(CreditModuleObjectAccessDenied):
+        self.application.refresh_from_db()
+        create_denied = action(
+            {"available_actions": loan_limit_available_actions(
+                self.application,
+                self.actor,
+                auth_service.effective_permission_codes(self.actor),
+            )},
+            "credit.appraisal.create",
+        )
+        before = full_credit_evidence()
+        with self.assertRaises(CreditModuleObjectAccessDenied) as raised:
             workflow.create_or_update(
                 actor=self.actor,
                 application_id=self.application.pk,
                 payload=self._payload(),
             )
-        self.assertEqual(self._appraisal_evidence(), before)
+        self.assertFalse(create_denied["enabled"])
+        self.assertEqual(create_denied["disabled_reason"], "You do not have access to this loan application.")
+        self.assertEqual(raised.exception.object_access.error_code, "OBJECT_ACCESS_DENIED")
+        self.assertEqual(full_credit_evidence(), before)
         type(self.application).objects.filter(pk=self.application.pk).update(
             created_by_user=self.actor,
             received_by_user=self.actor,
@@ -450,15 +516,28 @@ class AppraisalActionWriteMatrixTests(TestCase):
             created_by_user=outsider,
             received_by_user=outsider,
         )
-        before = self._appraisal_evidence()
-        with self.assertRaises(CreditModuleObjectAccessDenied):
+        self.application.refresh_from_db()
+        note = LoanAppraisalNote.objects.get(pk=note_id)
+        update_denied = action(
+            {"available_actions": appraisal_available_actions(
+                note,
+                self.actor,
+                auth_service.effective_permission_codes(self.actor),
+            )},
+            "credit.appraisal.update",
+        )
+        before = full_credit_evidence()
+        with self.assertRaises(CreditModuleObjectAccessDenied) as raised:
             workflow.create_or_update(
                 actor=self.actor,
                 application_id=self.application.pk,
                 payload={"recommendation": "conditions"},
                 partial=True,
             )
-        self.assertEqual(self._appraisal_evidence(), before)
+        self.assertFalse(update_denied["enabled"])
+        self.assertEqual(update_denied["disabled_reason"], "You do not have access to this loan application.")
+        self.assertEqual(raised.exception.object_access.error_code, "OBJECT_ACCESS_DENIED")
+        self.assertEqual(full_credit_evidence(), before)
         type(self.application).objects.filter(pk=self.application.pk).update(
             created_by_user=self.actor,
             received_by_user=self.actor,
@@ -533,6 +612,10 @@ class AppraisalActionWriteMatrixTests(TestCase):
     def test_reviewed_action_write_pair(self):
         self._assert_review_pair("reviewed")
 
+    @object_scope_cases(
+        "revalidate_appraisal_prerequisites",
+        "credit.appraisal.submit_review",
+    )
     def test_revalidate_and_submit_object_scope_denials_preserve_the_draft(self):
         created = self._create()
         note_id = created["loan_appraisal_note_id"]
@@ -552,10 +635,22 @@ class AppraisalActionWriteMatrixTests(TestCase):
             created_by_user=outsider,
             received_by_user=outsider,
         )
-        before = self._appraisal_evidence()
-        with self.assertRaises(CreditModuleObjectAccessDenied):
+        note = LoanAppraisalNote.objects.get(pk=note_id)
+        revalidate_denied = action(
+            {"available_actions": appraisal_available_actions(
+                note,
+                self.actor,
+                auth_service.effective_permission_codes(self.actor),
+            )},
+            "revalidate_appraisal_prerequisites",
+        )
+        before = full_credit_evidence()
+        with self.assertRaises(CreditModuleObjectAccessDenied) as raised:
             workflow.revalidate_prerequisites(actor=self.actor, appraisal_id=note_id, payload={})
-        self.assertEqual(self._appraisal_evidence(), before)
+        self.assertFalse(revalidate_denied["enabled"])
+        self.assertEqual(revalidate_denied["disabled_reason"], "You do not have access to this loan application.")
+        self.assertEqual(raised.exception.object_access.error_code, "OBJECT_ACCESS_DENIED")
+        self.assertEqual(full_credit_evidence(), before)
         type(self.application).objects.filter(pk=self.application.pk).update(
             created_by_user=self.actor,
             received_by_user=self.actor,
@@ -567,14 +662,26 @@ class AppraisalActionWriteMatrixTests(TestCase):
             created_by_user=outsider,
             received_by_user=outsider,
         )
-        before = self._appraisal_evidence()
-        with self.assertRaises(CreditModuleObjectAccessDenied):
+        note.refresh_from_db()
+        submit_denied = action(
+            {"available_actions": appraisal_available_actions(
+                note,
+                self.actor,
+                auth_service.effective_permission_codes(self.actor),
+            )},
+            "credit.appraisal.submit_review",
+        )
+        before = full_credit_evidence()
+        with self.assertRaises(CreditModuleObjectAccessDenied) as raised:
             workflow.submit_for_review(
                 actor=self.actor,
                 appraisal_id=note_id,
                 payload={"remarks": "Scope denial."},
             )
-        self.assertEqual(self._appraisal_evidence(), before)
+        self.assertFalse(submit_denied["enabled"])
+        self.assertEqual(submit_denied["disabled_reason"], "You do not have access to this loan application.")
+        self.assertEqual(raised.exception.object_access.error_code, "OBJECT_ACCESS_DENIED")
+        self.assertEqual(full_credit_evidence(), before)
 
     def test_returned_action_write_pair(self):
         self._assert_review_pair("returned")
@@ -632,6 +739,7 @@ class AppraisalActionWriteMatrixTests(TestCase):
         self.assertEqual((AuditLog.objects.count(), WorkflowEvent.objects.count()), before)
         self.assertEqual(apps.get_model("credit", "AppraisalReviewDecision").objects.count(), 0)
 
+    @object_scope_cases("credit.appraisal.review")
     def test_review_object_scope_denial_follows_an_enabled_projection_without_evidence(self):
         created, reviewer = self._review_ready()
         workflow = AppraisalWorkflow()
@@ -643,8 +751,19 @@ class AppraisalActionWriteMatrixTests(TestCase):
             received_by_user=outsider,
             current_stage="initial_loan_request",
         )
-        before = self._review_evidence()
-        with self.assertRaises(CreditModuleObjectAccessDenied):
+        note = LoanAppraisalNote.objects.get(
+            pk=created["loan_appraisal_note_id"]
+        )
+        denied = action(
+            {"available_actions": appraisal_available_actions(
+                note,
+                reviewer,
+                auth_service.effective_permission_codes(reviewer),
+            )},
+            "credit.appraisal.review",
+        )
+        before = full_credit_evidence()
+        with self.assertRaises(CreditModuleObjectAccessDenied) as raised:
             workflow.review(
                 actor=reviewer,
                 appraisal_id=created["loan_appraisal_note_id"],
@@ -652,7 +771,10 @@ class AppraisalActionWriteMatrixTests(TestCase):
                 comments="Scope denial.",
                 payload_fields={"decision": "reviewed", "review_comments": "Scope denial."},
             )
-        self.assertEqual(self._review_evidence(), before)
+        self.assertFalse(denied["enabled"])
+        self.assertEqual(denied["disabled_reason"], "You do not have access to this loan application.")
+        self.assertEqual(raised.exception.object_access.error_code, "OBJECT_ACCESS_DENIED")
+        self.assertEqual(full_credit_evidence(), before)
 
     def test_review_maker_state_provenance_and_rejection_payload_use_the_real_review_action(self):
         created, reviewer = self._review_ready()
@@ -739,10 +861,6 @@ class AppraisalActionWriteMatrixTests(TestCase):
 
 
 class SanctionActionWriteMatrixTests(TestCase):
-    EXECUTED_CASES = tuple(
-        ("credit.appraisal.submit_sanction", variant)
-        for variant in ("enabled", "permission", "role", "object_scope", "state", "frozen_provenance", "immutable_review", "stale_state")
-    )
     setUp = sanction_fixtures.SanctionSubmissionApiTests.setUp
     _permission = staticmethod(sanction_fixtures.SanctionSubmissionApiTests._permission)
     _user = staticmethod(sanction_fixtures.SanctionSubmissionApiTests._user)
@@ -836,6 +954,7 @@ class SanctionActionWriteMatrixTests(TestCase):
                         review_comments=original_comments
                     )
 
+    @object_scope_cases("credit.appraisal.submit_sanction")
     def test_permission_object_scope_and_stale_state_invoke_the_public_sanction_write(self):
         workflow = AppraisalWorkflow()
         module = SanctionHandoffModule()
@@ -871,14 +990,26 @@ class SanctionActionWriteMatrixTests(TestCase):
             received_by_user=outsider,
             current_stage="initial_loan_request",
         )
-        before = self._matrix_evidence()
-        with self.assertRaises(CreditModuleObjectAccessDenied):
+        self.note.refresh_from_db()
+        object_denied = action(
+            {"available_actions": appraisal_available_actions(
+                self.note,
+                self.reviewer,
+                auth_service.effective_permission_codes(self.reviewer),
+            )},
+            "credit.appraisal.submit_sanction",
+        )
+        before = full_credit_evidence()
+        with self.assertRaises(CreditModuleObjectAccessDenied) as raised:
             module.submit_reviewed_appraisal(
                 actor=self.reviewer,
                 application_id=self.application.pk,
                 payload={"remarks": "Scope denial."},
             )
-        self.assertEqual(self._matrix_evidence(), before)
+        self.assertFalse(object_denied["enabled"])
+        self.assertEqual(object_denied["disabled_reason"], "You do not have access to this loan application.")
+        self.assertEqual(raised.exception.object_access.error_code, "OBJECT_ACCESS_DENIED")
+        self.assertEqual(full_credit_evidence(), before)
         type(self.application).objects.filter(pk=self.application.pk).update(
             created_by_user=self.reviewer,
             received_by_user=self.reviewer,
