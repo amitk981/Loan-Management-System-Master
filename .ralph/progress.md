@@ -3864,3 +3864,21 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-12_133148_normal_run
+
+- Completed 006Y5: Member Registry is the governed public member seam, duplicate proposed identity
+  is rejected at request and approval, and approval action/write maker-checker evaluation is shared.
+- Completed both exact API §13.2 registration variants in the existing staff modal without visual
+  redesign. Frontend ran 174 tests and build/typecheck/lint passed; backend full coverage gate passed.
+- Next action: run 006Y6 witness contact and action parity closure.
+
+## 2026-07-12 13:43:06 - 2026-07-12_133148_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Y5-member-registry-governance-and-form-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_133148_normal_run/.ralph/runs/2026-07-12_133148_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_133148_normal_run/.ralph/runs/2026-07-12_133148_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

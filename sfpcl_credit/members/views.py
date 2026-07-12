@@ -1,5 +1,4 @@
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import IntegrityError
 from django.views.decorators.http import require_GET, require_http_methods
 
 from sfpcl_credit.api import (
@@ -29,8 +28,6 @@ def member_collection(request):
             return error_response(request, 403, "FORBIDDEN", str(exc))
         except ValidationError as exc:
             return error_response(request, 400, "VALIDATION_ERROR", "Member payload failed validation.", services.validation_field_errors(exc))
-        except IntegrityError:
-            return error_response(request, 400, "VALIDATION_ERROR", "Member identity already exists.", {"pan": "PAN or Aadhaar already belongs to a member.", "aadhaar": "PAN or Aadhaar already belongs to a member."})
         return success_response(services.serialize_member_profile(member, user), request)
     if not services.user_can_read_members(user):
         return error_response(
@@ -59,14 +56,11 @@ def member_detail(request, member_id):
         return response
     if request.method == "PATCH":
         return _member_update_response(request, member_id, user, reverification=False)
-    if not services.user_can_read_members(user):
-        return error_response(
-            request,
-            403,
-            "FORBIDDEN",
-            "You do not have permission to read members.",
-        )
-    member = services.get_member_profile(member_id)
+    try:
+        member = MemberRegistry.get(member_id, user)
+    except PermissionDenied as exc:
+        code = "FORBIDDEN" if str(exc).startswith("Missing required permission:") else "OBJECT_ACCESS_DENIED"
+        return error_response(request, 403, code, str(exc))
     if member is None:
         return error_response(request, 404, "NOT_FOUND", "Member was not found.")
     return success_response(services.serialize_member_profile(member, user), request)

@@ -11,6 +11,21 @@
 - 006Y change history omits nested create values and records `null` for address old values. 006Y3
   owns complete masked field diffs, duplicate races, deep-module authority, full §13.2 forms, and
   routed/browser mutation proof.
+
+## 006Y5 Member Registry Closure
+
+- `MemberRegistry` is the public create/update/detail/request/approve seam. It evaluates exact
+  permissions and the existing global member-object fallback internally; HTTP views only translate
+  module results to standard envelopes.
+- Proposed PAN/Aadhaar values are duplicate-checked at request and approval time. Database
+  uniqueness failures are translated to field validation inside the atomic workflow, so member,
+  request status, history, and audit evidence roll back together.
+- Identity approval actions and writes share the requester/checker, pending-state, member-version,
+  KYC-state, and permission evaluation. A requester with checker permission sees the same disabled
+  maker-checker reason returned by the write.
+- The staff registration modal now sends every API §13.2 individual and institution profile field;
+  successful mutations retain canonical server refetch behavior and protected identifiers remain
+  masked outside immediate write payloads.
 - 006Y2 requires witness edit but delivered GET/POST only under A-066. 006Y4 owns versioned audited
   correction, immutable 004E2 evidence, resource actions, canonical refetch, and mounted/browser
   `400`/`403`/`409` proof.

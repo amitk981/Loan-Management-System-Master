@@ -118,7 +118,7 @@ def _masked_payload(value, key=""):
 
 
 @transaction.atomic
-def create_member(payload, actor_user, request_ip_value="", request_user_agent_value=""):
+def _create_member(payload, actor_user, request_ip_value="", request_user_agent_value=""):
     allowed = {
         "member_type", "legal_name", "display_name", "folio_number",
         "membership_start_date", "pan", "aadhaar", "registered_address",
@@ -244,7 +244,7 @@ def _safe_member_values(member, fields):
 
 
 @transaction.atomic
-def update_member(member_id, payload, actor_user, *, reverification=False, request_ip_value="", request_user_agent_value=""):
+def _update_member(member_id, payload, actor_user, *, reverification=False, request_ip_value="", request_user_agent_value=""):
     member = Member.objects.select_for_update().filter(member_id=member_id, is_deleted=False).first()
     if member is None:
         return None
@@ -463,7 +463,7 @@ def serialize_member(member):
     }
 
 
-def get_member_profile(member_id):
+def _get_member_profile(member_id):
     try:
         return (
             Member.objects.select_related("individual_profile", "producer_institution_profile")
@@ -2098,7 +2098,9 @@ def _available_actions(member, user):
     can_update = user_can_update_members(user)
     locked = member.kyc_status == "verified"
     request_pending = member.identity_change_requests.filter(status="pending").exists()
-    can_approve = "members.member.identity_change.approve" in auth_service.effective_permission_codes(user)
+    pending_change = member.identity_change_requests.filter(status="pending").first()
+    from sfpcl_credit.members.modules.member_registry import MemberRegistry
+    approval = MemberRegistry.evaluate_identity_approval(member, pending_change, user)
     return [
         {
             "action_code": "members.member.update", "label": "Update member",
@@ -2113,8 +2115,8 @@ def _available_actions(member, user):
         },
         {
             "action_code": "members.member.identity_change.approve", "label": "Approve identity change",
-            "enabled": can_approve and request_pending,
-            "disabled_reason": None if can_approve and request_pending else ("No identity change request is pending." if can_approve else "Missing identity change approval permission."),
+            "enabled": approval["enabled"],
+            "disabled_reason": approval["disabled_reason"],
             "required_permission": "members.member.identity_change.approve", "required_role": None,
         },
     ]

@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_public_registry_enforces_read_permission_and_member_ownership (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_public_registry_enforces_read_permission_and_member_ownership)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_133148_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 149, in test_public_registry_enforces_read_permission_and_member_ownership
+    self.assertEqual(MemberRegistry.get(member.member_id, owner).member_id, member.member_id)
+                     ^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'MemberRegistry' has no attribute 'get'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

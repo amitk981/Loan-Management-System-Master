@@ -1,9 +1,14 @@
 import json
+from unittest.mock import patch
 
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.test import Client, TestCase
 
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import Member, MemberIdentityChangeRequest
+from sfpcl_credit.members.modules import MemberRegistry
+from sfpcl_credit.members.protected_identity import identity_hash
+from sfpcl_credit.identity.modules.object_permissions import ObjectAccessResult
 from sfpcl_credit.tests.api_contracts import assert_success_envelope
 
 
@@ -134,6 +139,23 @@ class MemberGovernanceApiTests(TestCase):
         self.assertEqual(forbidden.status_code, 403)
         self.assertEqual(Member.objects.count(), 0)
 
+    def test_public_registry_enforces_read_permission_and_member_ownership(self):
+        owner = self._user("owner@sfpcl.example", "members.member.read")
+        member = Member.objects.create(
+            member_type="individual_farmer", legal_name="Owned Member", display_name="Owned Member",
+            folio_number="OWN-1", membership_status="active", pan_encrypted="enc:owned",
+            pan_hash="owned-pan", kyc_status="pending", default_status="no_default",
+            created_by_user=owner,
+        )
+
+        self.assertEqual(MemberRegistry.get(member.member_id, owner).member_id, member.member_id)
+        denied_result = ObjectAccessResult(False, "owner_mismatch", "OBJECT_ACCESS_DENIED", "members.member.read")
+        with patch("sfpcl_credit.members.modules.member_registry.evaluate_object_access", return_value=denied_result), self.assertRaises(PermissionDenied) as denied:
+            MemberRegistry.get(member.member_id, owner)
+        self.assertEqual(str(denied.exception), "You cannot access this member.")
+        with self.assertRaises(PermissionDenied):
+            MemberRegistry.get(member.member_id, self.creator)
+
     def test_duplicate_pan_and_aadhaar_are_field_errors_with_zero_writes(self):
         payload = {
             "member_type": "individual_farmer", "legal_name": "First", "display_name": "First",
@@ -149,6 +171,22 @@ class MemberGovernanceApiTests(TestCase):
         self.assertEqual(duplicate.status_code, 400)
         self.assertEqual(set(duplicate.json()["error"]["field_errors"]), {"pan", "aadhaar"})
         self.assertEqual((Member.objects.count(), AuditLog.objects.count()), counts)
+
+    def test_identity_change_request_rejects_duplicate_identity_without_evidence(self):
+        requester = self._user("duplicate-requester@sfpcl.example", "members.member.update")
+        member = Member.objects.create(
+            member_type="individual_farmer", legal_name="Change Target", display_name="Change Target", folio_number="CHANGE-1",
+            membership_status="active", pan_encrypted="enc:old", pan_hash="old-change-pan", kyc_status="verified", default_status="no_default",
+        )
+        Member.objects.create(
+            member_type="fpc", legal_name="Existing Identity", display_name="Existing Identity", folio_number="CHANGE-2",
+            membership_status="active", pan_encrypted="enc:existing", pan_hash=identity_hash("PQRST6789U"), kyc_status="pending", default_status="no_default",
+        )
+        counts = (MemberIdentityChangeRequest.objects.count(), member.change_history.count(), AuditLog.objects.count())
+        with self.assertRaises(ValidationError) as rejected:
+            MemberRegistry.request_identity_change(member.member_id, {"version": 1, "pan": "PQRST6789U", "reason": "Correction"}, requester)
+        self.assertIn("pan", rejected.exception.message_dict)
+        self.assertEqual((MemberIdentityChangeRequest.objects.count(), member.change_history.count(), AuditLog.objects.count()), counts)
 
     def test_update_with_membership_date_persists_json_safe_history(self):
         updater = self._user("date-updater@sfpcl.example", "members.member.update")
@@ -234,7 +272,7 @@ class MemberGovernanceApiTests(TestCase):
             self.assertEqual(len(action), 6)
 
     def test_identity_change_requires_a_different_permissioned_approver(self):
-        requester = self._user("requester@sfpcl.example", "members.member.update", "members.member.read")
+        requester = self._user("requester@sfpcl.example", "members.member.update", "members.member.read", "members.member.identity_change.approve")
         approver = self._user("approver@sfpcl.example", "members.member.identity_change.approve", "members.member.read")
         member = Member.objects.create(
             member_type="individual_farmer", legal_name="Governed Farmer", display_name="Governed Farmer",
@@ -254,6 +292,11 @@ class MemberGovernanceApiTests(TestCase):
         self.assertNotIn("PQRST6789U", json.dumps(requested.json()))
         member.refresh_from_db()
         self.assertEqual(member.pan_hash, "old-pan")
+
+        detail = self.client.get(f"/api/v1/members/{member.member_id}/", **self._headers(requester))
+        approval_action = next(item for item in detail.json()["data"]["available_actions"] if item["action_code"] == "members.member.identity_change.approve")
+        self.assertFalse(approval_action["enabled"])
+        self.assertEqual(approval_action["disabled_reason"], "Requester cannot approve their own change.")
 
         self_approval = self.client.post(
             f"/api/v1/member-identity-change-requests/{change_request.identity_change_request_id}/approve/",

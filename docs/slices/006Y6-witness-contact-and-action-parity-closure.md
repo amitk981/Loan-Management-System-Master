@@ -26,6 +26,11 @@ project the same permission/object/maker-checker denials as their writes.
 
 ## Scope
 
+Sharpened after 006Y5: address is the S09 free-text witness address captured as one persisted
+field; mobile is an optional string validated at the API boundary. Neither field is protected
+identity evidence, but both must appear in versioned old/new correction history. Existing PAN,
+Aadhaar, member, shareholding, folio, and verifier snapshots remain immutable.
+
 - Add S09 address and mobile to the versioned witness record, protected correction history, API
   projection, form, and non-destructive migration. Preserve immutable member/shareholding/folio/
   verification provenance.
@@ -59,4 +64,3 @@ High
 - All S09 mutable witness fields round-trip through governed correction without rewriting
   verification evidence.
 - Disabled resource actions expose stable reasons and cannot diverge from public writes.
-

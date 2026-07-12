@@ -1,7 +1,7 @@
 # Slice 006Y5: Member Registry Governance and Form Contract Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master
@@ -65,4 +65,3 @@ High
 - Member governance cannot be bypassed outside HTTP and duplicate approval cannot become a `500`.
 - Approval actions match writes for requester-checker separation, and both source registration
   variants are reachable end to end.
-

@@ -20,6 +20,14 @@ describe('MemberGovernanceForm', () => {
     await userEvent.type(screen.getByLabelText('Folio Number'), 'FOL-SYNTHETIC');
     await userEvent.type(screen.getByLabelText('PAN'), 'ABCDE1234F');
     await userEvent.type(screen.getByLabelText('Authorised Signatory'), 'Synthetic Signatory');
+    await userEvent.type(screen.getByLabelText('Registration Number'), 'REG-001');
+    await userEvent.type(screen.getByLabelText('Signatory PAN'), 'KLMNO1234P');
+    await userEvent.type(screen.getByLabelText('Signatory Aadhaar'), '999988887777');
+    await userEvent.clear(screen.getByLabelText('Board Resolution Required'));
+    await userEvent.type(screen.getByLabelText('Board Resolution Required'), 'true');
+    await userEvent.clear(screen.getByLabelText('Services Availed'));
+    await userEvent.type(screen.getByLabelText('Services Availed'), 'true');
+    await userEvent.type(screen.getByLabelText('Produce Supply Years'), '2');
     await userEvent.click(screen.getByRole('button', { name: 'Save member' }));
 
     expect(create).toHaveBeenCalledTimes(1);
@@ -27,10 +35,32 @@ describe('MemberGovernanceForm', () => {
     expect(payload).toEqual(expect.objectContaining({
       member_type: 'fpc',
       pan: 'ABCDE1234F',
-      producer_institution_profile: expect.objectContaining({ authorised_signatory_name: 'Synthetic Signatory' }),
+      producer_institution_profile: {
+        institution_type: 'farmer_producer_company', registration_number: 'REG-001', authorised_signatory_name: 'Synthetic Signatory',
+        authorised_signatory_pan: 'KLMNO1234P', authorised_signatory_aadhaar: '999988887777', board_resolution_required_flag: true,
+        services_availed_flag: true, produce_supply_years: '2',
+      },
     }));
     expect(payload).not.toHaveProperty('aadhaar');
     expect(payload).not.toHaveProperty('individual_profile');
+  });
+
+  it('submits every individual registration profile field', async () => {
+    const create = vi.spyOn(memberApi, 'createMember').mockResolvedValueOnce(profile);
+    render(<MemberGovernanceForm onSaved={vi.fn()} />);
+    const entries = [
+      ['Legal Name', 'Complete Farmer'], ['Display Name', 'Complete Farmer'], ['Folio Number', 'FOL-COMPLETE'], ['PAN', 'ABCDE1234F'], ['Aadhaar', '123412341234'],
+      ['First Name', 'Complete'], ['Middle Name', 'Middle'], ['Last Name', 'Farmer'], ['Gender', 'female'], ['Occupation', 'Farmer'],
+      ['Cultivation Area (acres)', '5'], ['Primary Crop', 'grapes'], ['Employment / Service Years', '3'],
+    ];
+    for (const [label, value] of entries) await userEvent.type(screen.getByLabelText(label), value);
+    await userEvent.type(screen.getByLabelText('Date of Birth'), '1980-01-15');
+    await userEvent.clear(screen.getByLabelText('Services Availed')); await userEvent.type(screen.getByLabelText('Services Availed'), 'true');
+    await userEvent.click(screen.getByRole('button', { name: 'Save member' }));
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ individual_profile: {
+      first_name: 'Complete', middle_name: 'Middle', last_name: 'Farmer', gender: 'female', date_of_birth: '1980-01-15', occupation: 'Farmer',
+      land_area_under_cultivation_acres: '5', primary_crop: 'grapes', services_availed_flag: true, employment_or_service_years: '3',
+    }}));
   });
 
   it('renders verified identity values read-only and exposes only the resource-enabled reverification path', async () => {
