@@ -50,6 +50,13 @@ Medium
 - Exactly one enriched approval case exists per submitted application, with an immutable authority snapshot naming rule and users.
 - All gates pass; API examples saved.
 
+## Run-Ahead Sharpening Review (006Z2, 2026-07-13)
+
+- Consume the stored authoritative loan-limit assessment's `exception_required_flag`, not the
+  borrower portal projection or a fresh amount comparison, when selecting the exception rule.
+  Snapshot the assessment/policy provenance with the matrix projection so later portal/configuration
+  changes cannot reroute or reinterpret the existing case.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

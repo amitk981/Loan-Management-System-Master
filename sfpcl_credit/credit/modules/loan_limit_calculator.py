@@ -37,6 +37,19 @@ from sfpcl_credit.workflows.events import record_workflow_event
 LOAN_LIMIT_CALCULATED_AUDIT_ACTION = "loan_limit.calculated"
 
 
+def calculate_limit_amounts(*, number_of_shares, valuation_per_share, land_area, policy):
+    per_share_limits = []
+    if policy.share_limit_percentage is not None:
+        per_share_limits.append(
+            valuation_per_share * policy.share_limit_percentage / Decimal("100")
+        )
+    if policy.per_share_cap_amount is not None:
+        per_share_limits.append(policy.per_share_cap_amount)
+    share_limit = (Decimal(number_of_shares) * min(per_share_limits)).quantize(Decimal("0.01"))
+    land_limit = (land_area * policy.default_scale_of_finance_per_acre_amount).quantize(Decimal("0.01"))
+    return share_limit, land_limit, min(share_limit, land_limit)
+
+
 @dataclass(frozen=True)
 class LoanLimitSnapshot:
     loan_limit_assessment_id: str
@@ -196,19 +209,13 @@ class LoanLimitCalculator:
         valuation_per_share = shareholding.valuation_per_share
         percentage = policy.share_limit_percentage
         cap_amount = policy.per_share_cap_amount
-        per_share_limits = []
-        if percentage is not None:
-            per_share_limits.append(valuation_per_share * percentage / Decimal("100"))
-        if cap_amount is not None:
-            per_share_limits.append(cap_amount)
-        shareholding_limit = (
-            Decimal(shareholding.number_of_shares) * min(per_share_limits)
-        ).quantize(Decimal("0.01"))
         land_area = cleaned["cultivated_acreage"]
-        land_limit = (
-            land_area * policy.default_scale_of_finance_per_acre_amount
-        ).quantize(Decimal("0.01"))
-        final_eligible_amount = min(shareholding_limit, land_limit)
+        shareholding_limit, land_limit, final_eligible_amount = calculate_limit_amounts(
+            number_of_shares=shareholding.number_of_shares,
+            valuation_per_share=valuation_per_share,
+            land_area=land_area,
+            policy=policy,
+        )
         requested_amount = cleaned["requested_amount"].quantize(Decimal("0.01"))
         amount_within_limit = requested_amount <= final_eligible_amount
 

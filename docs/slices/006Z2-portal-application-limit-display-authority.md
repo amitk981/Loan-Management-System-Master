@@ -1,7 +1,7 @@
 # Slice 006Z2: Portal Application Limit Display Authority
 
 ## Status
-Not Started
+Complete
 
 Interim owner fix applied 2026-07-11 (outside the Ralph loop): the client-side limit math (`shareholdingLimit`, hard-coded `landBasedLimit = 675000`, `Math.min`), the local submission gate, the red over-limit warning, and the review-step "Maximum Limit" row were removed from `MP05_NewApplication.tsx` and replaced with explicit "limit is determined during credit assessment" notes; regression tests added in `MP05_NewApplication.test.tsx`; typecheck/lint/tests/build all pass. This slice still owns the real deliverable: the borrower-scoped server limit-projection endpoint and its display (requirements 1, 2, and 4 below). Requirement 3 (server-driven advisory) also remains.
 
@@ -121,16 +121,16 @@ Medium
 
 ## Done Checklist
 
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated
-- [ ] Permissions tested
-- [ ] Visual evidence saved
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated
+- [x] Permissions tested
+- [x] Visual evidence saved
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates
 
 ## Run-Ahead Sharpening Review (006Y11, 2026-07-12)

@@ -60,6 +60,12 @@ Medium
   result with no audit or partial configuration evidence; an application/case snapshot referencing
   the prior rule remains readable and immutable.
 
+## Run-Ahead Sharpening Review (006Z2, 2026-07-13)
+
+- Preserve `exceeds_permissible_limit` as an explicit resolver condition supplied by a canonical
+  server assessment; neither the matrix API nor future React consumers may derive it by comparing
+  displayed money. The resolved projection must retain the effective policy/rule version used.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

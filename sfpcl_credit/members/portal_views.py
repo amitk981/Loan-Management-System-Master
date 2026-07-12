@@ -47,6 +47,21 @@ def portal_produce_supply(request):
     return success_response(portal_services.produce_supply(member), request)
 
 
+@require_GET
+def portal_application_limit_projection(request):
+    member, _user, response = _portal_member_or_response(request)
+    if response is not None:
+        return response
+    try:
+        projection = portal_services.application_limit_projection(
+            member,
+            requested_amount=request.GET.get("requested_amount"),
+        )
+    except ValidationError as exc:
+        return _portal_application_validation_error(request, exc)
+    return success_response(projection, request)
+
+
 @require_http_methods(["GET", "POST"])
 def portal_applications(request):
     member, user, response = _portal_member_or_response(request)

@@ -1,5 +1,15 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006Z2 Portal Application Limit Display Authority
+
+- A read-only PortalAccount-scoped endpoint exposes only redacted available/unavailable limit facts.
+  It accepts authority only from the current effective record whose identifier and complete snapshot
+  still match the member-domain result derived as of today.
+- The shared 006C calculator computes effective-policy share, verified-land, and lower limits;
+  requested-amount comparison is server-owned. Contradictory or incomplete facts never become zero.
+- MP05 restores the existing green three-card composition, explicit unavailable/error states,
+  server exception advisory, and review-row maximum with no client limit arithmetic or fallback.
+
 ## 006Z6 Active-Member Evidence Atomicity And History Closure
 
 - Results include complete qualifying dated service and distinct relaxation evidence; every review

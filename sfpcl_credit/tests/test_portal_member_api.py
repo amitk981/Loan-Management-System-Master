@@ -1,10 +1,12 @@
 import json
+from datetime import timedelta
 from uuid import uuid4
 
 from django.test import Client, TestCase
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import ApplicationDeficiency, LoanApplication
+from sfpcl_credit.configurations.models import LoanPolicyConfig
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.models import Permission, PortalAccount, Role, RolePermission, User
 from sfpcl_credit.members.models import (
@@ -15,9 +17,12 @@ from sfpcl_credit.members.models import (
     KycProfile,
     LandHolding,
     Member,
+    MemberServiceEvidence,
     Nominee,
     Shareholding,
+    ActiveMemberStatus,
 )
+from sfpcl_credit.members.modules.active_member_status import ActiveMemberStatusModule
 from sfpcl_credit.tests.api_contracts import assert_error_envelope, assert_success_envelope
 from sfpcl_credit.workflows.models import WorkflowEvent
 
@@ -274,6 +279,7 @@ class PortalMemberApiTests(TestCase):
             "/api/v1/portal/dashboard/",
             "/api/v1/portal/profile/",
             "/api/v1/portal/produce-supply/",
+            "/api/v1/portal/application-limit-projection/?requested_amount=250000.00",
         ):
             response = self.client.get(path, headers={"Authorization": f"Bearer {token}"})
             self.assertEqual(response.status_code, 403)
@@ -429,6 +435,141 @@ class PortalMemberApiTests(TestCase):
             WorkflowEvent.objects.filter(entity_type="loan_application", to_state="submitted").count(),
             1,
         )
+
+    def test_portal_limit_projection_is_explicitly_unavailable_without_current_verified_authority(self):
+        token = self._portal_token()
+
+        response = self.client.get(
+            "/api/v1/portal/application-limit-projection/?requested_amount=250000.00",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        assert_success_envelope(self, body)
+        self.assertEqual(
+            body["data"],
+            {
+                "status": "unavailable",
+                "unavailable_reason": "verified_active_member_authority_not_available",
+                "shareholding_based_limit_amount": None,
+                "land_based_limit_amount": None,
+                "final_eligible_loan_amount": None,
+                "requested_amount": "250000.00",
+                "amount_within_limit_flag": None,
+                "exception_required_flag": None,
+                "calculated_as_of_date": None,
+                "calculation_rule_version": None,
+            },
+        )
+        serialized = json.dumps(body)
+        self.assertNotIn(str(self.member.member_id), serialized)
+        self.assertNotIn("available_actions", serialized)
+
+    def test_portal_limit_projection_uses_current_verified_facts_and_redacts_internal_authority(self):
+        today = timezone.localdate()
+        IndividualMemberProfile.objects.create(
+            member=self.member,
+            first_name="Ganesh",
+            last_name="Thorat",
+            land_area_under_cultivation_acres="4.50",
+        )
+        MemberServiceEvidence.objects.create(
+            member=self.member,
+            service_type="employment",
+            recipient_entity_type="subsidiary",
+            recipient_entity_id=uuid4(),
+            service_from=today - timedelta(days=1096),
+            service_to=today,
+            evidence_reference="PRIVATE-EVIDENCE-REF",
+            verified_by_user=self.staff_user,
+            verified_at=timezone.now(),
+        )
+        result = ActiveMemberStatusModule().calculate(
+            member_id=self.member.member_id,
+            as_of_date=today,
+        )
+        authority = ActiveMemberStatus.objects.create(
+            member=self.member,
+            result_id=result.result_id,
+            status="active",
+            member_type=self.member.member_type,
+            services_availed_flag=result.services_availed,
+            continuous_supply_years=result.continuous_supply_years,
+            evidence_summary="PRIVATE DECISION REASON",
+            evidence_snapshot=result.to_snapshot(),
+            verified_by_user=self.staff_user,
+            verified_at=timezone.now(),
+            effective_from=today,
+        )
+        self.member.active_member_status_id = authority.active_member_status_id
+        self.member.save(update_fields=["active_member_status_id"])
+        Shareholding.objects.create(
+            member=self.member,
+            folio_number=self.member.folio_number,
+            number_of_shares=5,
+            holding_mode="physical",
+            valuation_per_share="100000.00",
+            valuation_effective_date=today,
+            pledged_share_count=0,
+            available_share_count=5,
+            status="active",
+        )
+        LandHolding.objects.create(
+            member=self.member,
+            document_type="7_12_extract",
+            survey_number="123/4",
+            area_acres="4.50",
+            document_id=uuid4(),
+            verification_status="verified",
+            verified_by_user=self.staff_user,
+            verified_at=timezone.now(),
+        )
+        LoanPolicyConfig.objects.create(
+            policy_name="Board policy",
+            policy_version="portal-limit-v1",
+            effective_from=today,
+            short_term_duration_months=12,
+            approval_threshold_amount="500000.00",
+            default_scale_of_finance_per_acre_amount="20000.00",
+            share_limit_percentage="30.0000",
+            per_share_cap_amount=None,
+            interest_rate_type="fixed",
+            rekyc_frequency_months=24,
+            record_retention_years=8,
+            grace_period_months=1,
+            non_intentional_extension_months=3,
+            board_approval_reference="BOARD-2026-01",
+            status=LoanPolicyConfig.STATUS_ACTIVE,
+        )
+        token = self._portal_token()
+
+        response = self.client.get(
+            "/api/v1/portal/application-limit-projection/?requested_amount=95000.00",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()["data"]
+        self.assertEqual(data["status"], "available")
+        self.assertEqual(data["shareholding_based_limit_amount"], "150000.00")
+        self.assertEqual(data["land_based_limit_amount"], "90000.00")
+        self.assertEqual(data["final_eligible_loan_amount"], "90000.00")
+        self.assertEqual(data["amount_within_limit_flag"], False)
+        self.assertEqual(data["exception_required_flag"], True)
+        self.assertEqual(data["calculated_as_of_date"], today.isoformat())
+        self.assertEqual(data["calculation_rule_version"], "portal-limit-v1")
+        serialized = json.dumps(data)
+        for secret in (
+            str(self.member.member_id),
+            str(authority.active_member_status_id),
+            result.result_id,
+            "PRIVATE-EVIDENCE-REF",
+            "PRIVATE DECISION REASON",
+            str(self.staff_user.user_id),
+            "available_actions",
+        ):
+            self.assertNotIn(secret, serialized)
 
     def test_invalid_portal_nominee_create_and_patch_preserve_application_and_evidence(self):
         cross_member = Nominee.objects.create(

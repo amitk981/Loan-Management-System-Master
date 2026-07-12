@@ -63,6 +63,11 @@ urlpatterns = [
         name="portal-produce-supply",
     ),
     path(
+        "api/v1/portal/application-limit-projection/",
+        portal_views.portal_application_limit_projection,
+        name="portal-application-limit-projection",
+    ),
+    path(
         "api/v1/portal/applications/",
         portal_views.portal_applications,
         name="portal-applications",

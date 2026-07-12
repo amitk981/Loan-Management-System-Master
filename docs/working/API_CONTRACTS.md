@@ -1808,6 +1808,18 @@ Frontend wiring:
 - MP10 renders selected application status/detail from
   `GET /api/v1/portal/applications/{loan_application_id}/`.
 
+### Portal application limit projection (006Z2)
+
+- `GET /api/v1/portal/application-limit-projection/?requested_amount={money}` derives member scope
+  only from the active `PortalAccount` and is read-only.
+- `status = available` returns the server-calculated shareholding, land, and effective lower limit,
+  the effective policy version/date, and the server-owned requested-amount advisory flags.
+- Missing, stale, future, closed, manual, or provenance-mismatched active-member authority—and
+  incomplete or contradictory verified share/land facts—returns `status = unavailable` with null
+  amounts and no guessed zero.
+- The response deliberately omits member/effective-record/result IDs, evidence rows/references,
+  verifier and decision facts, configuration IDs, and staff actions.
+
 ## Eligibility assessment APIs (006A-006B)
 
 Protected staff endpoints:

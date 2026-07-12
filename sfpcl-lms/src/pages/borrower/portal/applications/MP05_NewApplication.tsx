@@ -4,10 +4,12 @@ import { useRole } from '../../../../contexts/RoleContext';
 import { AuthSessionError } from '../../../../services/authSession';
 import {
   createPortalApplicationDraft,
+  fetchPortalApplicationLimitProjection,
   fetchPortalProfile,
   submitPortalApplication,
   updatePortalApplicationDraft,
   type PortalApplication,
+  type PortalApplicationLimitProjection,
   type PortalNominee,
 } from '../../../../services/portalApi';
 
@@ -29,6 +31,9 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
   const [selectedNomineeId, setSelectedNomineeId] = useState('');
   const [nomineesLoading, setNomineesLoading] = useState(true);
   const [nomineesError, setNomineesError] = useState(false);
+  const [limitProjection, setLimitProjection] = useState<PortalApplicationLimitProjection | null>(null);
+  const [limitLoading, setLimitLoading] = useState(true);
+  const [limitError, setLimitError] = useState<string | null>(null);
   
   const [borrowerApplication, setBorrowerApplication] = useState({
     applicantType: 'individual_farmer',
@@ -82,6 +87,23 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
         if (!cancelled) setNomineesLoading(false);
       });
     return () => { cancelled = true; };
+  }, []);
+
+  const loadLimitProjection = async (requestedAmount: number) => {
+    setLimitLoading(true);
+    setLimitError(null);
+    try {
+      setLimitProjection(await fetchPortalApplicationLimitProjection(String(requestedAmount)));
+    } catch (error) {
+      setLimitProjection(null);
+      setLimitError(error instanceof AuthSessionError ? error.message : 'Eligible limit could not be loaded.');
+    } finally {
+      setLimitLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadLimitProjection(500000);
   }, []);
 
   const requiredApplicationDocuments = [
@@ -233,6 +255,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
         ? await updatePortalApplicationDraft(savedApplication.loan_application_id, portalDraftPayload())
         : await createPortalApplicationDraft(portalDraftPayload());
       const submitted = await submitPortalApplication(draft.loan_application_id);
+      await loadLimitProjection(Number(submitted.required_loan_amount ?? borrowerApplication.requestedAmount));
       setSavedApplication(submitted);
       setApplicationSubmitted(true);
     } catch (error) {
@@ -399,13 +422,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-1 gap-3">
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-                  Your eligible loan limit is determined by SFPCL during credit assessment as the lower of the
-                  shareholding-based limit and the land-based (Scale of Finance) limit. The confirmed limit will
-                  appear on your application status after completeness verification.
-                </div>
-              </div>
+              <PortalApplicationLimitView projection={limitProjection} loading={limitLoading} error={limitError} />
             </div>
           )}
 
@@ -418,7 +435,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Required Loan Amount</label>
-                  <input type="number" min={1} value={borrowerApplication.requestedAmount} onChange={e => updateApplication('requestedAmount', Number(e.target.value))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+                  <input type="number" min={1} value={borrowerApplication.requestedAmount} onChange={e => updateApplication('requestedAmount', Number(e.target.value))} onBlur={() => void loadLimitProjection(borrowerApplication.requestedAmount)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Loan Purpose</label>
@@ -451,10 +468,12 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
                   </select>
                 </div>
               </div>
-              <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-                <AlertTriangle size={16} className="mt-0.5 flex-shrink-0 text-slate-400" />
-                Requested amounts above your eligible limit are reviewed during credit assessment and may be reduced or returned.
-              </div>
+              {limitProjection?.exception_required_flag && (
+                <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                  <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+                  This request exceeds the current server projection and is subject to the configured exception/credit workflow.
+                </div>
+              )}
             </div>
           )}
 
@@ -556,6 +575,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
                       ['Applicant', borrowerApplication.borrowerName],
                       ['Folio / Shares', `${borrowerApplication.folioNumber} / ${borrowerApplication.sharesHeld}`],
                       ['Requested Amount', formatCurrency(borrowerApplication.requestedAmount)],
+                      ['Maximum Limit', limitProjection?.final_eligible_loan_amount ? formatMoney(limitProjection.final_eligible_loan_amount) : 'Not yet available'],
                       ['Purpose', borrowerApplication.loanPurpose.replace(/_/g, ' ')],
                       ['Nominee', selectedNominee ? `${selectedNominee.nominee_name}, age ${selectedNominee.age_at_application ?? 'not recorded'}` : 'Not selected'],
                     ].map(([label, value]) => (
@@ -624,6 +644,56 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
               </button>
             )}
           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const formatMoney = (value: string) => new Intl.NumberFormat('en-IN', {
+  style: 'currency',
+  currency: 'INR',
+  maximumFractionDigits: 0,
+}).format(Number(value));
+
+export const PortalApplicationLimitView: React.FC<{
+  projection: PortalApplicationLimitProjection | null;
+  loading: boolean;
+  error: string | null;
+}> = ({ projection, loading, error }) => {
+  if (loading) {
+    return <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">Loading eligible limit...</div>;
+  }
+  if (error) {
+    return <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>;
+  }
+  if (!projection || projection.status === 'unavailable') {
+    return (
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+        <div className="font-semibold text-slate-900">Limit not yet available</div>
+        <div className="mt-1">SFPCL needs current verified member, shareholding, and land facts before displaying a limit.</div>
+      </div>
+    );
+  }
+  const cards = [
+    ['Shareholding Limit', projection.shareholding_based_limit_amount],
+    ['Land-Based Limit', projection.land_based_limit_amount],
+    ['Maximum Permissible Limit', projection.final_eligible_loan_amount],
+  ];
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {cards.map(([label, amount]) => (
+          <div key={label} className="rounded-lg border border-green-200 bg-green-50 p-3">
+            <div className="text-xs font-medium text-green-700">{label}</div>
+            <div className="mt-1 font-semibold text-green-900">{amount ? formatMoney(amount) : 'Not available'}</div>
+          </div>
+        ))}
+      </div>
+      {projection.exception_required_flag && (
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+          This request exceeds the current server projection and is subject to the configured exception/credit workflow.
         </div>
       )}
     </div>

@@ -4499,3 +4499,25 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-13_002856_normal_run
+
+- Completed 006Z2 with a read-only PortalAccount-scoped limit projection that accepts only the
+  current effective provenance-matching active-member record and redacts internal authority facts.
+- Reused the server loan-limit calculator for effective policy, verified shares/land, lower-limit,
+  and requested-amount advisory; unavailable/contradictory facts never become a guessed zero.
+- Restored MP05's approved green three-card composition, explicit loading/error/unavailable states,
+  server exception advisory, and review maximum with no client money calculation or fallback.
+- Frontend typecheck/lint/build and 204 tests pass; backend check/migration sync and 478 tests pass
+  (8 expected skips) at 93% coverage. Chromium capture was sandbox-blocked; HTML/jsdom visual proof saved.
+- Next: architecture review is due.
+
+## 2026-07-13 00:44:51 - 2026-07-13_002856_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z2-portal-application-limit-display-authority
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_002856_normal_run/.ralph/runs/2026-07-13_002856_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_002856_normal_run/.ralph/runs/2026-07-13_002856_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

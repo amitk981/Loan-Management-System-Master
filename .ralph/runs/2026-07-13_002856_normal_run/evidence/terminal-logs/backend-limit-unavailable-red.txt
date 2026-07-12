@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_portal_limit_projection_is_explicitly_unavailable_without_current_verified_authority (sfpcl_credit.tests.test_portal_member_api.PortalMemberApiTests.test_portal_limit_projection_is_explicitly_unavailable_without_current_verified_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_002856_normal_run/sfpcl_credit/tests/test_portal_member_api.py", line 428, in test_portal_limit_projection_is_explicitly_unavailable_without_current_verified_authority
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
