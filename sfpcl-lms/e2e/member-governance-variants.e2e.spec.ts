@@ -19,8 +19,12 @@ test('complete member variants and protected identity approval cross real staff 
   const producerInstitution = identities('PRO', suffix, 'C');
   const mutations: Request[] = [];
   const canonicalReads: Request[] = [];
+  const requestLedger: Array<{ method: string; pathname: string; body: unknown }> = [];
   page.on('request', request => {
     const pathname = new URL(request.url()).pathname;
+    if ((request.method() === 'POST' || request.method() === 'PATCH') && (pathname.includes('/members/') || pathname.includes('/member-identity-change-requests/'))) {
+      requestLedger.push({ method: request.method(), pathname, body: request.postDataJSON() });
+    }
     if (request.method() === 'POST' && pathname === '/api/v1/members/') mutations.push(request);
     if (request.method() === 'GET' && /^\/api\/v1\/members\/[0-9a-f-]+\/$/.test(pathname)) canonicalReads.push(request);
   });
@@ -40,6 +44,14 @@ test('complete member variants and protected identity approval cross real staff 
   expect((await ordinaryUpdate).status()).toBe(200);
   await expect(page.getByRole('heading', { name: 'Complete Synthetic Farmer Corrected' })).toBeVisible();
   expect(canonicalReads).toHaveLength(2);
+  expect(requestLedger[1]).toEqual({
+    method: 'PATCH', pathname: expect.stringMatching(/^\/api\/v1\/members\/[0-9a-f-]+\/$/),
+    body: {
+      version: 1, legal_name: individual.body.legal_name, display_name: 'Complete Synthetic Farmer Corrected',
+      membership_start_date: individual.body.membership_start_date, registered_address: individual.body.registered_address,
+      email: individual.body.email,
+    },
+  });
   await capture(page, 'member-individual-complete-reloaded.png');
 
   await openMembers(page);
@@ -58,15 +70,25 @@ test('complete member variants and protected identity approval cross real staff 
   await expect(page.getByText(maskPan(producerInstitution.pan))).toBeVisible();
   await capture(page, 'member-producer-institution-complete-reloaded.png');
 
+  const requesterDetail = page.waitForResponse(response => response.request().method() === 'GET'
+    && response.url().endsWith(`/api/v1/members/${VERIFIED_MEMBER_ID}/`));
   await openSeededVerifiedMember(page);
+  const requesterBody = await requesterDetail.then(response => response.json());
   await expect(page.getByText('Verified identity locked')).toBeVisible();
   await page.getByRole('button', { name: 'Correct verified identity' }).click();
   await page.getByLabel('PAN').fill(`CDEFG${suffix}H`);
   await page.getByLabel('Reverification Reason').fill('Synthetic source-backed protected identity correction');
   const requested = page.waitForResponse(response => response.request().method() === 'POST'
     && response.url().endsWith(`/api/v1/members/${VERIFIED_MEMBER_ID}/identity-change-requests/`));
+  const requesterCanonicalRead = page.waitForResponse(response => response.request().method() === 'GET'
+    && response.url().endsWith(`/api/v1/members/${VERIFIED_MEMBER_ID}/`));
   await page.getByRole('button', { name: 'Request identity change' }).click();
   expect((await requested).status()).toBe(200);
+  expect((await requesterCanonicalRead).status()).toBe(200);
+  expect(requestLedger[4]).toEqual({ method: 'POST', pathname: `/api/v1/members/${VERIFIED_MEMBER_ID}/identity-change-requests/`, body: {
+    version: requesterBody.data.version, pan: `CDEFG${suffix}H`, reason: 'Synthetic source-backed protected identity correction',
+  } });
+  expect(canonicalReads).toHaveLength(6);
   const requesterApproval = projectedApproval(page);
   await expect(requesterApproval).toBeDisabled();
   await expect(requesterApproval).toHaveAttribute('title', 'Missing identity change approval permission.');
@@ -87,10 +109,19 @@ test('complete member variants and protected identity approval cross real staff 
   await expect(approve).toBeVisible();
   const approved = page.waitForResponse(response => response.request().method() === 'POST'
     && /\/api\/v1\/member-identity-change-requests\/[0-9a-f-]+\/approve\/$/.test(new URL(response.url()).pathname));
+  const checkerCanonicalRead = page.waitForResponse(response => response.request().method() === 'GET'
+    && response.url().endsWith(`/api/v1/members/${VERIFIED_MEMBER_ID}/`));
   await approve.click();
   expect((await approved).status()).toBe(200);
+  expect((await checkerCanonicalRead).status()).toBe(200);
+  expect(requestLedger[5]).toEqual({
+    method: 'POST', pathname: expect.stringMatching(/^\/api\/v1\/member-identity-change-requests\/[0-9a-f-]+\/approve\/$/), body: {},
+  });
+  expect(canonicalReads).toHaveLength(8);
   await expect(approve).toHaveCount(0);
   await expect(page.getByText(maskPan(`CDEFG${suffix}H`))).toBeVisible();
+  expect(requestLedger.map(entry => entry.method)).toEqual(['POST', 'PATCH', 'POST', 'POST', 'POST', 'POST']);
+  fs.writeFileSync(path.join(evidenceDir, 'member-governance-request-ledger.json'), JSON.stringify(requestLedger, null, 2));
   await capture(page, 'member-identity-checker-approved.png');
 });
 

@@ -40,8 +40,11 @@ const MemberGovernanceForm: React.FC<Props> = ({ profile, canReverify = false, o
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); setSubmitting(true); setErrors({}); setMessage('');
     const address = { line1: values.line1, line2: values.line2, village_city: values.village_city, district: values.district, state: values.state, pincode: values.pincode };
-    const payload: Record<string, unknown> = profile
-      ? { version: profile.version ?? 0, legal_name: values.legal_name, display_name: values.display_name, membership_start_date: values.membership_start_date, registered_address: address, mobile_number: values.mobile_number, email: values.email }
+    const unchangedMaskedMobile = Boolean(profile && values.mobile_number === profile.mobile_number && values.mobile_number.includes('*'));
+    const payload: Record<string, unknown> = profile && mode === 'reverification'
+      ? { version: profile.version ?? 0, ...(values.pan ? { pan: values.pan } : {}), ...(values.aadhaar && memberType === 'individual_farmer' ? { aadhaar: values.aadhaar } : {}), reason: values.reason }
+      : profile
+      ? { version: profile.version ?? 0, legal_name: values.legal_name, display_name: values.display_name, membership_start_date: values.membership_start_date, registered_address: address, ...(!unchangedMaskedMobile ? { mobile_number: values.mobile_number } : {}), email: values.email }
       : { member_type: memberType, legal_name: values.legal_name, display_name: values.display_name, folio_number: values.folio_number,
           membership_start_date: values.membership_start_date, pan: values.pan, ...(memberType === 'individual_farmer' ? { aadhaar: values.aadhaar } : {}),
           registered_address: address, mobile_number: values.mobile_number, email: values.email,
@@ -57,9 +60,6 @@ const MemberGovernanceForm: React.FC<Props> = ({ profile, canReverify = false, o
       if (values.pan) payload.pan = values.pan;
       if (values.aadhaar && memberType === 'individual_farmer') payload.aadhaar = values.aadhaar;
     }
-    if (profile && mode === 'reverification') Object.assign(payload, {
-      ...(values.pan ? { pan: values.pan } : {}), ...(values.aadhaar && memberType === 'individual_farmer' ? { aadhaar: values.aadhaar } : {}), reason: values.reason,
-    });
     try {
       if (profile && mode === 'reverification') {
         await reverifyMemberIdentity(profile.member_id, payload);

@@ -153,3 +153,9 @@ Medium
 - Treat `needs_review`, scalar-only three-year service, missing relaxation evidence, stale/future
   dates, and results without an effective verification record as unavailable. The portal response
   remains deliberately redacted even though the internal credit snapshot is complete.
+
+## Run-Ahead Sharpening Review (006Y13, 2026-07-12)
+
+- Seed conflicting projection/submission-response amounts and assert the routed portal renders only
+  the single canonical projection GET after submit. The browser request ledger must prove exact URL,
+  method, advisory body, one submit mutation, and one canonical read with no local response merge.

@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearStoredAuthSession, storedAuthSession } from '../../services/authSession';
 import type { MemberProfileDetail } from '../../services/memberProfileApi';
+import App from '../../App';
 import MemberGovernanceForm from './MemberGovernanceForm';
 import MemberProfile from './MemberProfile';
 
@@ -22,6 +23,54 @@ afterEach(() => {
 });
 
 describe('MemberGovernanceForm production container', () => {
+  it('routes Directory registration into canonical Profile readback before an ordinary update readback', async () => {
+    const mutationCreate = { ...profile, member_id: 'member-routed', display_name: 'Mutation create leak', pan: { masked: '******LEAK', can_view_full: false } };
+    const canonicalCreate = { ...profile, member_id: 'member-routed', display_name: 'Canonical created member', mobile_number: '********3210', available_actions: [updateAction] };
+    const mutationUpdate = { ...canonicalCreate, version: 8, display_name: 'Mutation update leak' };
+    const canonicalUpdate = { ...canonicalCreate, version: 8, display_name: 'Canonical updated member' };
+    const memberResponses = [mutationCreate, canonicalCreate, mutationUpdate, canonicalUpdate];
+    const memberRequests: Array<{ url: string; method: string; body?: unknown }> = [];
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (url.endsWith('/api/v1/auth/me/')) return response(200, { success: true, data: backendUser });
+      if (url.endsWith('/api/v1/dashboard/')) return response(200, { success: true, data: { role_context: 'credit_manager', cards: [], tasks: [] } });
+      if (url.includes('/api/v1/members/')) {
+        memberRequests.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+        if (method === 'GET' && new URL(url).pathname === '/api/v1/members/') return response(200, { success: true, data: [], pagination: { page: 1, page_size: 20, total_items: 0, total_pages: 0 } });
+        return response(200, { success: true, data: memberResponses.shift() });
+      }
+      return response(200, { success: true, data: { items: [], counts: {}, pagination: { page: 1, page_size: 20, total_items: 0, total_pages: 0 } } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<App />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Members & Borrowers' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Register Member' }));
+    await fillCompleteCreate('individual_farmer');
+    await userEvent.click(screen.getByRole('button', { name: 'Save member' }));
+
+    expect(await screen.findByRole('heading', { name: 'Canonical created member' })).toBeTruthy();
+    expect(screen.queryByText('Mutation create leak')).toBeNull();
+    await replace('Display Name', 'Requested display name');
+    await userEvent.click(screen.getByRole('button', { name: 'Save member' }));
+    expect(await screen.findByRole('heading', { name: 'Canonical updated member' })).toBeTruthy();
+    expect(screen.queryByText('Mutation update leak')).toBeNull();
+    expect(memberRequests.map(({ url, method }) => [method, new URL(url).pathname])).toEqual([
+      ['GET', '/api/v1/members/'], ['POST', '/api/v1/members/'], ['GET', '/api/v1/members/member-routed/'],
+      ['PATCH', '/api/v1/members/member-routed/'], ['GET', '/api/v1/members/member-routed/'],
+    ]);
+    expect(memberRequests[1].body).toEqual(JSON.parse(JSON.stringify(completeBody('individual_farmer'))));
+    expect(memberRequests[3].body).toEqual({
+      version: 7,
+      legal_name: canonicalCreate.legal_name,
+      display_name: 'Requested display name',
+      membership_start_date: canonicalCreate.membership_start_date,
+      registered_address: canonicalCreate.registered_address,
+      email: canonicalCreate.email,
+    });
+  });
+
   it.each(['individual_farmer', 'fpc', 'producer_institution'] as const)(
     'submits the complete %s body through the shared HTTP transport', async memberType => {
       const canonical = { ...profile, member_type: memberType };
@@ -43,6 +92,28 @@ describe('MemberGovernanceForm production container', () => {
       expect((fetchMock.mock.calls[1][1] as RequestInit).method).toBe('GET');
     },
   );
+
+  it('posts only the protected identity delta through the shared HTTP transport', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(response(200, { success: true, data: {
+      identity_change_request_id: 'request-1', member_id: profile.member_id, status: 'pending', member_version: 7,
+    } }));
+    vi.stubGlobal('fetch', fetchMock);
+    render(<MemberGovernanceForm profile={profile} canReverify onSaved={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Correct verified identity' }));
+    await userEvent.type(screen.getByLabelText('PAN'), 'ABCDE9999F');
+    await userEvent.type(screen.getByLabelText('Reverification Reason'), 'Correct protected identity');
+    await userEvent.click(screen.getByRole('button', { name: 'Request identity change' }));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://127.0.0.1:8000/api/v1/members/member-1/identity-change-requests/',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ version: 7, pan: 'ABCDE9999F', reason: 'Correct protected identity' }),
+      }),
+    );
+  });
 
   it('renders the backend stale-conflict reason verbatim after one PATCH and no refetch', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(response(409, {
@@ -163,4 +234,15 @@ const profile: MemberProfileDetail = {
   active_member_status: { status: 'active', verified_at: null },
   individual_profile: { first_name: 'Synthetic', middle_name: null, last_name: 'Member', gender: null, date_of_birth: null, occupation: null, land_area_under_cultivation_acres: null, primary_crop: null, services_availed_flag: false, employment_or_service_years: null },
   producer_institution_profile: null, available_actions: [],
+};
+
+const backendUser = {
+  user_id: 'staff-1', full_name: 'Mounted Finance', email: 'mounted@example.test', status: 'active',
+  roles: [{ role_code: 'credit_manager', role_name: 'Credit Manager' }], teams: [],
+  permissions: ['members.member.read', 'members.member.create', 'members.member.update'], available_actions: [],
+};
+
+const updateAction = {
+  action_code: 'members.member.update', label: 'Update member', enabled: true, disabled_reason: null,
+  required_permission: 'members.member.update', required_role: null,
 };

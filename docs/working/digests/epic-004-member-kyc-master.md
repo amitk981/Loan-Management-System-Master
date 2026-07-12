@@ -1,5 +1,20 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## 006Y13 Member Mutation Success Interaction Closure
+
+- The mounted real `App` route now proves Directory registration transitions into the production
+  Profile container and ordinary update uses one exact PATCH plus one canonical detail GET. Conflicting
+  mutation display values cannot leak because only the masked canonical response renders.
+- The trusted-browser member-governance ledger now asserts three exact creates, ordinary update,
+  identity request, checker approval, and eight canonical reads in order; it persists the exact request
+  table beside the existing five screenshots for each independent orchestrator run.
+- Repair verification established that canonical detail masks mobile numbers. An unchanged masked
+  mobile is therefore omitted from an ordinary partial PATCH; only a newly entered mobile value may
+  be sent, preventing the display mask from replacing persisted contact data.
+- Follow-up trusted-browser repair established that protected-identity requests must serialize a
+  separate delta body: optimistic `version`, changed `pan` and/or `aadhaar`, and `reason` only.
+  Ordinary profile fields hydrated in the same form must never cross the identity-request boundary.
+
 ## 006Y12 Witness Authority and Non-Disclosure Closure
 
 - Generic application access and witness correction projection/write execute one lower-level

@@ -1,7 +1,7 @@
 # Slice 006Y13: Member Mutation Success Interaction Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 004: Member, KYC, Nominee, Witness, and Profile Master

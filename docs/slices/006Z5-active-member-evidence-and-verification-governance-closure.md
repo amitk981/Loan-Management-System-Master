@@ -84,3 +84,12 @@ High
   summary scalars or generic history JSON.
 - Verification is permission- and object-scoped, non-disclosing, atomic, and concurrency-safe; credit
   and portal consume one complete internal result with deliberate external redaction.
+
+## Run-Ahead Sharpening Review (006Y13, 2026-07-12)
+
+- Mounted verification success must seed conflicting write-result/current-record projections and
+  assert the effective record is rendered/consumed only after one canonical member/result read; no
+  caller may merge the verification mutation response or infer current authority locally.
+- The PostgreSQL request ledger must show one verification write followed by one canonical effective
+  record read for the winner, with no duplicate write/read or loser evidence; retain exact object-scope
+  non-disclosure before verification-record lookup.

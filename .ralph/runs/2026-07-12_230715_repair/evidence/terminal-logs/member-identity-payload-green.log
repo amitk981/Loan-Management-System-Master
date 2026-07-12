@@ -1,0 +1,15 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/members/MemberGovernanceForm.container.test.tsx -t posts only the protected identity delta
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms
+
+ ✓ src/pages/members/MemberGovernanceForm.container.test.tsx (15 tests | 14 skipped) 280ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 14 skipped (15)
+   Start at  23:09:38
+   Duration  1.94s (transform 914ms, setup 0ms, collect 1.25s, tests 280ms, environment 198ms, prepare 36ms)
+

@@ -1,0 +1,92 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/members/MemberGovernanceForm.container.test.tsx -t posts only the protected identity delta
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms
+
+ ❯ src/pages/members/MemberGovernanceForm.container.test.tsx (15 tests | 1 failed | 14 skipped) 283ms
+   ↓ MemberGovernanceForm production container > routes Directory registration into canonical Profile readback before an ordinary update readback
+   ↓ MemberGovernanceForm production container > submits the complete individual_farmer body through the shared HTTP transport
+   ↓ MemberGovernanceForm production container > submits the complete fpc body through the shared HTTP transport
+   ↓ MemberGovernanceForm production container > submits the complete producer_institution body through the shared HTTP transport
+   × MemberGovernanceForm production container > posts only the protected identity delta through the shared HTTP transport 282ms
+     → expected "spy" to be called with arguments: [ …(2) ]
+
+Received: 
+
+  1st spy call:
+
+  [
+    "http://127.0.0.1:8000/api/v1/members/member-1/identity-change-requests/",
+-   ObjectContaining {
+-     "body": "{\"version\":7,\"pan\":\"ABCDE9999F\",\"reason\":\"Correct protected identity\"}",
++   {
++     "body": "{\"version\":7,\"legal_name\":\"Synthetic Member\",\"display_name\":\"Synthetic Member\",\"membership_start_date\":\"2026-01-01\",\"registered_address\":{\"line1\":\"Line 1\",\"line2\":\"Line 2\",\"village_city\":\"Nashik\",\"district\":\"Nashik\",\"state\":\"Maharashtra\",\"pincode\":\"422001\"},\"mobile_number\":\"+919876543210\",\"email\":\"member@example.test\",\"pan\":\"ABCDE9999F\",\"reason\":\"Correct protected identity\"}",
++     "headers": {
++       "Accept": "application/json",
++       "Authorization": "Bearer mounted-access",
++       "Content-Type": "application/json",
++     },
+      "method": "POST",
+    },
+  ]
+
+
+Number of calls: 1
+
+   ↓ MemberGovernanceForm production container > renders the backend stale-conflict reason verbatim after one PATCH and no refetch
+   ↓ MemberGovernanceForm production container > create preserves the backend 400 VALIDATION_ERROR facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > create preserves the backend 403 PERMISSION_DENIED facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > create preserves the backend 409 CONFLICT facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > update preserves the backend 400 VALIDATION_ERROR facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > update preserves the backend 403 OBJECT_ACCESS_DENIED facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > update preserves the backend 409 STALE_WRITE facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > request preserves the backend 400 VALIDATION_ERROR facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > request preserves the backend 403 PERMISSION_DENIED facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > request preserves the backend 409 STALE_WRITE facts after one mutation and no GET
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/members/MemberGovernanceForm.container.test.tsx > MemberGovernanceForm production container > posts only the protected identity delta through the shared HTTP transport
+AssertionError: expected "spy" to be called with arguments: [ …(2) ]
+
+Received: 
+
+  1st spy call:
+
+  [
+    "http://127.0.0.1:8000/api/v1/members/member-1/identity-change-requests/",
+-   ObjectContaining {
+-     "body": "{\"version\":7,\"pan\":\"ABCDE9999F\",\"reason\":\"Correct protected identity\"}",
++   {
++     "body": "{\"version\":7,\"legal_name\":\"Synthetic Member\",\"display_name\":\"Synthetic Member\",\"membership_start_date\":\"2026-01-01\",\"registered_address\":{\"line1\":\"Line 1\",\"line2\":\"Line 2\",\"village_city\":\"Nashik\",\"district\":\"Nashik\",\"state\":\"Maharashtra\",\"pincode\":\"422001\"},\"mobile_number\":\"+919876543210\",\"email\":\"member@example.test\",\"pan\":\"ABCDE9999F\",\"reason\":\"Correct protected identity\"}",
++     "headers": {
++       "Accept": "application/json",
++       "Authorization": "Bearer mounted-access",
++       "Content-Type": "application/json",
++     },
+      "method": "POST",
+    },
+  ]
+
+
+Number of calls: 1
+
+ ❯ src/pages/members/MemberGovernanceForm.container.test.tsx:109:23
+    107| 
+    108|     expect(fetchMock).toHaveBeenCalledTimes(1);
+    109|     expect(fetchMock).toHaveBeenCalledWith(
+       |                       ^
+    110|       'http://127.0.0.1:8000/api/v1/members/member-1/identity-change-r…
+    111|       expect.objectContaining({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  23:09:14
+   Duration  2.04s (transform 885ms, setup 0ms, collect 1.24s, tests 283ms, environment 296ms, prepare 38ms)
+

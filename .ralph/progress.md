@@ -4340,3 +4340,55 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+# Run 2026-07-12_224547_normal_run
+
+- Completed 006Y13 with a mounted real-App Directory registration-to-Profile interaction and an
+  exact ordinary-update canonical-read proof. Conflicting create/PATCH response display values do
+  not render; the subsequent masked member detail is authoritative.
+- Extended the trusted browser request ledger across three creates, ordinary PATCH, protected
+  identity request, separate checker approval, and eight canonical detail reads. The existing five
+  screenshots and two independent orchestrator runs remain the declared browser gate.
+- Frontend build/typecheck/lint and 200 tests pass. Backend check/migration sync and 462 tests pass
+  (8 expected SQLite skips) at 93% coverage. Browser collection passes. Next: 006Z5.
+
+# Repair 2026-07-12_225603_repair
+
+- Diagnosed both trusted-browser failures to the ordinary PATCH resubmitting canonical masked mobile
+  text as if it were a writable contact value.
+- Added a routed-container regression and changed the production form to omit only an unchanged
+  masked mobile from the partial PATCH; a newly entered mobile remains writable under API §13.4.
+- Mounted matrix 14/14, browser collection, frontend build/typecheck/lint and 201 tests pass.
+  Backend check/migration sync and 462 tests pass (8 expected skips) at 93% coverage.
+- Chromium launch is sandbox-blocked; Ralph's two independent trusted-browser runs own the final five
+  screenshots. Next: independent validation, then 006Z5.
+
+# Repair 2026-07-12_230715_repair
+
+- Diagnosed both trusted-browser failures to protected-identity requests inheriting the ordinary
+  profile payload before PAN/reason were appended.
+- Added a red/green shared-HTTP regression and split protected-identity serialization into the exact
+  `version` + changed PAN/Aadhaar + `reason` delta. The prior masked-mobile PATCH repair is preserved.
+- Frontend build/typecheck/lint and 202 tests pass. Backend check/migration sync and 462 tests pass
+  (8 expected skips) at 93% coverage. Browser collection passes; local Chromium is sandbox-blocked.
+- Next: independent trusted-browser validation with five screenshots, then 006Z5.
+
+# Repair 2026-07-12_231540_repair
+
+- Diagnosed both independent trusted-browser failures at the same premature canonical-read count:
+  server logs showed the identity-request refetch arrived immediately after the assertion failed.
+- Changed only the Playwright contract synchronization, awaiting the canonical member-detail GET
+  after identity request and checker approval before asserting six/eight exact reads.
+- Frontend build/typecheck/lint and 202 tests pass; backend migration sync and 462 tests pass at 93%
+  coverage. Browser collection passes. Local Chromium is sandbox-blocked before test execution.
+- Next: independent trusted-browser validation twice with five screenshots, then 006Z5.
+
+## 2026-07-12 23:24:57 - 2026-07-12_231540_repair
+- Agent tool used: codex
+- Slice attempted: 006Y13-member-mutation-success-interaction-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/.ralph/runs/2026-07-12_231540_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/.ralph/runs/2026-07-12_231540_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

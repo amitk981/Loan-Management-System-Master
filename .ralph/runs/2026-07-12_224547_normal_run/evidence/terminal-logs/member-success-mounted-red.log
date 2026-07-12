@@ -1,0 +1,116 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/members/MemberGovernanceForm.container.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms
+
+stderr | src/pages/members/MemberGovernanceForm.container.test.tsx > MemberGovernanceForm production container > routes Directory registration into canonical Profile readback before an ordinary update readback
+TypeError: Cannot read properties of undefined (reading 'replace')
+    at DashboardSummaryView (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms/src/pages/Dashboard.tsx:247:94)
+    at Object.react_stack_bottom_frame (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms/node_modules/react-dom/cjs/react-dom-client.development.js:25904:20)
+    at renderWithHooks (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms/node_modules/react-dom/cjs/react-dom-client.development.js:7662:22)
+    at updateFunctionComponent (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms/node_modules/react-dom/cjs/react-dom-client.development.js:10166:19)
+    at beginWork (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms/node_modules/react-dom/cjs/react-dom-client.development.js:11778:18)
+    at runWithFiberInDEV (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at performUnitOfWork (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms/node_modules/react-dom/cjs/react-dom-client.development.js:17641:22)
+    at workLoopSync (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms/node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+    at renderRootSync (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms/node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+    at performWorkOnRoot (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms/node_modules/react-dom/cjs/react-dom-client.development.js:16583:35)
+An error occurred in the <DashboardSummaryView> component.
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+
+
+ ❯ src/pages/members/MemberGovernanceForm.container.test.tsx (14 tests | 1 failed) 5456ms
+   × MemberGovernanceForm production container > routes Directory registration into canonical Profile readback before an ordinary update readback 1527ms
+     → Unable to find role="button" and name "Register Member"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+[36m</body>[39m
+   ✓ MemberGovernanceForm production container > submits the complete individual_farmer body through the shared HTTP transport  1232ms
+   ✓ MemberGovernanceForm production container > submits the complete fpc body through the shared HTTP transport  977ms
+   ✓ MemberGovernanceForm production container > submits the complete producer_institution body through the shared HTTP transport  1107ms
+   ✓ MemberGovernanceForm production container > renders the backend stale-conflict reason verbatim after one PATCH and no refetch 78ms
+   ✓ MemberGovernanceForm production container > create preserves the backend 400 VALIDATION_ERROR facts after one mutation and no GET 21ms
+   ✓ MemberGovernanceForm production container > create preserves the backend 403 PERMISSION_DENIED facts after one mutation and no GET 19ms
+   ✓ MemberGovernanceForm production container > create preserves the backend 409 CONFLICT facts after one mutation and no GET 20ms
+   ✓ MemberGovernanceForm production container > update preserves the backend 400 VALIDATION_ERROR facts after one mutation and no GET 17ms
+   ✓ MemberGovernanceForm production container > update preserves the backend 403 OBJECT_ACCESS_DENIED facts after one mutation and no GET 16ms
+   ✓ MemberGovernanceForm production container > update preserves the backend 409 STALE_WRITE facts after one mutation and no GET 16ms
+   ✓ MemberGovernanceForm production container > request preserves the backend 400 VALIDATION_ERROR facts after one mutation and no GET 156ms
+   ✓ MemberGovernanceForm production container > request preserves the backend 403 PERMISSION_DENIED facts after one mutation and no GET 146ms
+   ✓ MemberGovernanceForm production container > request preserves the backend 409 STALE_WRITE facts after one mutation and no GET 124ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/members/MemberGovernanceForm.container.test.tsx > MemberGovernanceForm production container > routes Directory registration into canonical Profile readback before an ordinary update readback
+TestingLibraryElementError: Unable to find role="button" and name "Register Member"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/members/MemberGovernanceForm.container.test.tsx:48:40
+     46| 
+     47|     await userEvent.click(await screen.findByRole('button', { name: 'M…
+     48|     await userEvent.click(await screen.findByRole('button', { name: 'R…
+       |                                        ^
+     49|     await fillCompleteCreate('individual_farmer');
+     50|     await userEvent.click(screen.getByRole('button', { name: 'Save mem…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'replace')
+ ❯ DashboardSummaryView src/pages/Dashboard.tsx:247:94
+    245|           </div>
+    246|           <div className="flex items-center justify-center py-8 text-s…
+    247|             <CheckCircle2 size={16} className="mr-2 text-green-500" />…
+       |                                                                                              ^
+    248|           </div>
+    249|         </div>
+ ❯ Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:25904:20
+ ❯ renderWithHooks node_modules/react-dom/cjs/react-dom-client.development.js:7662:22
+ ❯ updateFunctionComponent node_modules/react-dom/cjs/react-dom-client.development.js:10166:19
+ ❯ beginWork node_modules/react-dom/cjs/react-dom-client.development.js:11778:18
+ ❯ runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:874:13
+ ❯ performUnitOfWork node_modules/react-dom/cjs/react-dom-client.development.js:17641:22
+ ❯ workLoopSync node_modules/react-dom/cjs/react-dom-client.development.js:17469:41
+ ❯ renderRootSync node_modules/react-dom/cjs/react-dom-client.development.js:17450:11
+ ❯ performWorkOnRoot node_modules/react-dom/cjs/react-dom-client.development.js:16583:35
+
+This error originated in "src/pages/members/MemberGovernanceForm.container.test.tsx" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "routes Directory registration into canonical Profile readback before an ordinary update readback". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+     Errors  1 error
+   Start at  22:47:41
+   Duration  7.34s (transform 925ms, setup 0ms, collect 1.30s, tests 5.46s, environment 288ms, prepare 34ms)
+

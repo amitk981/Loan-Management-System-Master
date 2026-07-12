@@ -1,0 +1,77 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/.ralph/runs/2026-07-12_230715_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-governance-variants.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-governance-variants.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 17:44:37] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[12/Jul/2026 17:44:39] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "GET /api/v1/members/ HTTP/1.1" 200 1394
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "GET /api/v1/members/ HTTP/1.1" 200 1394
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "POST /api/v1/members/ HTTP/1.1" 200 2326
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "OPTIONS /api/v1/members/8bef6178-e979-43ae-af6f-f7fd1fda88a6/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "GET /api/v1/members/8bef6178-e979-43ae-af6f-f7fd1fda88a6/ HTTP/1.1" 200 2326
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "PATCH /api/v1/members/8bef6178-e979-43ae-af6f-f7fd1fda88a6/ HTTP/1.1" 200 2336
+[2m[WebServer] [22m[12/Jul/2026 17:44:40] "GET /api/v1/members/8bef6178-e979-43ae-af6f-f7fd1fda88a6/ HTTP/1.1" 200 2336
+[2m[WebServer] [22m[12/Jul/2026 17:44:41] "GET /api/v1/members/ HTTP/1.1" 200 2011
+[2m[WebServer] [22m[12/Jul/2026 17:44:41] "GET /api/v1/members/ HTTP/1.1" 200 2011
+[2m[WebServer] [22m[12/Jul/2026 17:44:41] "POST /api/v1/members/ HTTP/1.1" 200 2173
+[2m[WebServer] [22m[12/Jul/2026 17:44:41] "OPTIONS /api/v1/members/af2fc6f3-a4a6-4475-b9f6-a20f22e8fb03/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:44:41] "GET /api/v1/members/af2fc6f3-a4a6-4475-b9f6-a20f22e8fb03/ HTTP/1.1" 200 2173
+[2m[WebServer] [22m[12/Jul/2026 17:44:41] "GET /api/v1/members/ HTTP/1.1" 200 2598
+[2m[WebServer] [22m[12/Jul/2026 17:44:41] "GET /api/v1/members/ HTTP/1.1" 200 2598
+[2m[WebServer] [22m[12/Jul/2026 17:44:41] "POST /api/v1/members/ HTTP/1.1" 200 2224
+[2m[WebServer] [22m[12/Jul/2026 17:44:41] "OPTIONS /api/v1/members/63da7afc-172c-4838-8355-8e64a816481d/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:44:41] "GET /api/v1/members/63da7afc-172c-4838-8355-8e64a816481d/ HTTP/1.1" 200 2224
+[2m[WebServer] [22m[12/Jul/2026 17:44:42] "GET /api/v1/members/ HTTP/1.1" 200 3236
+[2m[WebServer] [22m[12/Jul/2026 17:44:42] "GET /api/v1/members/ HTTP/1.1" 200 3236
+[2m[WebServer] [22m[12/Jul/2026 17:44:42] "OPTIONS /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:44:42] "GET /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 17:44:42] "OPTIONS /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:44:42] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 5276
+[2m[WebServer] [22m[12/Jul/2026 17:44:42] "OPTIONS /api/v1/members/00000000-0000-4000-8000-000000000602/identity-change-requests/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:44:42] "POST /api/v1/members/00000000-0000-4000-8000-000000000602/identity-change-requests/ HTTP/1.1" 200 287
+[2m[WebServer] [22m[12/Jul/2026 17:44:42] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 5408
+[2m[WebServer] [22m[12/Jul/2026 17:44:42,381] - Broken pipe from ('127.0.0.1', 60171)
+  ✘  1 [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions (4.0s)
+
+
+  1) [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoHaveLength[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected length: [32m6[39m
+    Received length: [31m5[39m
+    Received array:  [31m[{"_guid": "request@e7638cc170c3560a5923eb2a4b3a7a71", "_type": "Request"}, {"_guid": "request@5f765d83c9ac5581bcf69d0e537f15c5", "_type": "Request"}, {"_guid": "request@1f8aa7d548d570b159e596fbddf1b5ae", "_type": "Request"}, {"_guid": "request@ce105a8f6099e9668e74eb3d2e6551b3", "_type": "Request"}, {"_guid": "request@63f54619213c30883b20e1bc0003c737", "_type": "Request"}][39m
+
+      86 |     version: requesterBody.data.version, pan: `CDEFG${suffix}H`, reason: 'Synthetic source-backed protected identity correction',
+      87 |   } });
+    > 88 |   expect(canonicalReads).toHaveLength(6);
+         |                          ^
+      89 |   const requesterApproval = projectedApproval(page);
+      90 |   await expect(requesterApproval).toBeDisabled();
+      91 |   await expect(requesterApproval).toHaveAttribute('title', 'Missing identity change approval permission.');
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts:88:26
+
+  1 failed
+    [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions 
+
+Exit code: 1

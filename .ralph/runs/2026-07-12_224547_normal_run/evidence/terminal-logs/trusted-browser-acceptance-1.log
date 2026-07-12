@@ -1,0 +1,70 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/.ralph/runs/2026-07-12_224547_normal_run/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-governance-variants.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-governance-variants.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 17:24:54] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "GET /api/v1/members/ HTTP/1.1" 200 1394
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "GET /api/v1/members/ HTTP/1.1" 200 1394
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "POST /api/v1/members/ HTTP/1.1" 200 2326
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "OPTIONS /api/v1/members/49de015a-e962-445c-8d9c-db37dbb400fb/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:24:57] "GET /api/v1/members/49de015a-e962-445c-8d9c-db37dbb400fb/ HTTP/1.1" 200 2326
+[2m[WebServer] [22m[12/Jul/2026 17:24:58] "PATCH /api/v1/members/49de015a-e962-445c-8d9c-db37dbb400fb/ HTTP/1.1" 200 2328
+[2m[WebServer] [22m[12/Jul/2026 17:24:58] "GET /api/v1/members/49de015a-e962-445c-8d9c-db37dbb400fb/ HTTP/1.1" 200 2328
+  ✘  1 [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions (2.5s)
+
+
+  1) [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  - 1[39m
+    [31m+ Received  + 1[39m
+
+    [33m@@ -2,11 +2,11 @@[39m
+    [2m    "body": Object {[22m
+    [2m      "display_name": "Complete Synthetic Farmer Corrected",[22m
+    [2m      "email": "ind.1783877095775@example.test",[22m
+    [2m      "legal_name": "Complete Synthetic Farmer",[22m
+    [2m      "membership_start_date": "2024-04-01",[22m
+    [32m-     "mobile_number": "+919100000001",[39m
+    [31m+     "mobile_number": "********0001",[39m
+    [2m      "registered_address": Object {[22m
+    [2m        "district": "Nashik",[22m
+    [2m        "line1": "Synthetic Registry Road",[22m
+    [2m        "line2": "Evidence Block",[22m
+    [2m        "pincode": "422001",[22m
+
+      45 |   await expect(page.getByRole('heading', { name: 'Complete Synthetic Farmer Corrected' })).toBeVisible();
+      46 |   expect(canonicalReads).toHaveLength(2);
+    > 47 |   expect(requestLedger[1]).toEqual({
+         |                            ^
+      48 |     method: 'PATCH', pathname: expect.stringMatching(/^\/api\/v1\/members\/[0-9a-f-]+\/$/),
+      49 |     body: {
+      50 |       version: 1, legal_name: individual.body.legal_name, display_name: 'Complete Synthetic Farmer Corrected',
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts:47:28
+
+  1 failed
+    [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions 
+
+Exit code: 1

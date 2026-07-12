@@ -89,6 +89,18 @@ describe('MemberGovernanceForm', () => {
     expect(update).toHaveBeenCalledWith('member-1', expect.objectContaining({ version: 7, email: 'bad@example.test' }));
     expect(await screen.findByText('Enter a valid email address.')).toBeTruthy();
   });
+
+  it('sends a newly entered mobile instead of suppressing a real contact update', async () => {
+    const update = vi.spyOn(memberApi, 'updateMember').mockResolvedValueOnce(profile);
+    render(<MemberGovernanceForm profile={{ ...profile, mobile_number: '********3210' }} onSaved={vi.fn()} />);
+
+    await userEvent.clear(screen.getByLabelText('Mobile Number'));
+    await userEvent.type(screen.getByLabelText('Mobile Number'), '+919876540000');
+    await userEvent.click(screen.getByRole('button', { name: 'Save member' }));
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledWith('member-1', expect.objectContaining({ mobile_number: '+919876540000' }));
+  });
 });
 
 const profile: memberApi.MemberProfileDetail = {
