@@ -342,6 +342,7 @@ ROLE_PERMISSIONS = {
         "credit.loan_limit.calculate",
         "credit.appraisal.review",
         "credit.appraisal.submit_sanction",
+        "approvals.case.read",
         "approvals.case.create",
         "finance.sap_request.create",
         "finance.sap_request.send",
@@ -383,6 +384,7 @@ ROLE_PERMISSIONS = {
         "members.witness.read",
         "members.witness.create",
         "members.witness.update",
+        "approvals.case.read",
         "documents.checklist.approve_cs",
         "documents.loan_document.verify",
         "documents.signature.resolve_mismatch",
@@ -463,6 +465,7 @@ ROLE_PERMISSIONS = {
     ],
     "internal_auditor": [
         "members.witness.read",
+        "approvals.case.read",
         "audit.audit_log.read",
         "audit.workflow_event.read",
         "audit.version_history.read",
@@ -564,6 +567,12 @@ def seed_catalogue():
             permission = permissions_by_code[permission_code]
             RolePermission.objects.get_or_create(role=role, permission=permission)
             link_count += 1
+
+    from sfpcl_credit.approvals.modules.read_scope import (
+        seed_default_read_scope_grants,
+    )
+
+    seed_default_read_scope_grants()
 
     return {
         "permissions": Permission.objects.count(),

@@ -1,5 +1,22 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007C3 Source Read-Scope Closure
+
+- `approvals.case.read` is now seeded for Credit Manager, Company Secretary, and Internal Auditor,
+  but it remains only the action permission gate. Object scope comes from the immutable approver
+  snapshot, the existing Credit Manager application object-access decision/case submitter, or one
+  active persisted role grant.
+- `ApprovalCaseReadScopeGrant` permits only `legal_readonly`, `audit_readonly`, or
+  `management_readonly`, with unique role/scope pairs and active-role/active-grant enforcement.
+  Defaults seed only Company Secretary legal read-only and Internal Auditor audit read-only.
+- One attributable `can_read_approval_case` decision is used by list, detail, and actions. Persisted
+  readers can inspect routed packages but never enter assigned queues, enable actions, or write any
+  case/action/sanction/audit/workflow/notification evidence.
+- The approval-owned selector applies role/credit/immutable scope in SQL. A save-maintained
+  coherence projection (refreshed when the owning appraisal changes) allows exact database count
+  and pagination before page serialization; detail/actions still revalidate the complete live
+  immutable snapshot. Permission-only readers and unassigned Directors remain empty-list/403.
+
 ## Architecture Review 2026-07-13 13:16 - Read Scope, Action Race, and Cycle Closure
 
 - 006Z15 closes the real member public-action matrix; 007A6 closes exact winner evidence in all

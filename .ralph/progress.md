@@ -1,5 +1,23 @@
 # Ralph Progress Log
 
+# Run 2026-07-13_135007_normal_run
+
+- Completed 007C3 by separating `approvals.case.read` from attributable object scope: immutable
+  approvers, Credit Manager application/case ownership, and active persisted legal/audit/management
+  role grants are the only read authorities.
+- Seeded source-required case-read permission for Credit Manager, Company Secretary, and Internal
+  Auditor; default grants are limited to Company Secretary `legal_readonly` and Internal Auditor
+  `audit_readonly`. Read-only roles never enter assigned queues or mutate any approval ledger.
+- Added exact required-approver UUID indexing and a save/appraisal-refreshed coherence projection so
+  collection scope, count, and LIMIT/OFFSET happen in SQL without JSON substring authority or
+  repository-wide materialization. Detail/actions still execute full canonical coherence checks.
+- Migration 0010 backfills the full frozen predicate and exact index from historical 0009 state;
+  coherent/malformed migration fixtures pass. Independent Standards and Spec reviews report no
+  remaining findings.
+- Frontend build/typecheck/lint and 208 tests pass. Backend check/migration sync and 602 tests pass
+  with 16 expected PostgreSQL-only skips and 93% coverage. Evidence:
+  `.ralph/runs/2026-07-13_135007_normal_run/`. Next: 007D2, then 007D3 before 007E.
+
 # Run 2026-07-13_131622_architecture_review
 
 - Reviewed 006Z15, 007A6, 007C2, and 007D independently across Standards and Spec; production code
@@ -5342,6 +5360,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_131622_architecture_review/.ralph/runs/2026-07-13_131622_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_131622_architecture_review/.ralph/runs/2026-07-13_131622_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 14:32:49 - 2026-07-13_135007_normal_run
+- Agent tool used: codex
+- Slice attempted: 007C3-approval-case-source-read-scope-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_135007_normal_run/.ralph/runs/2026-07-13_135007_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_135007_normal_run/.ralph/runs/2026-07-13_135007_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

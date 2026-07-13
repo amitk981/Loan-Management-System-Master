@@ -1,6 +1,6 @@
 import uuid
 
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 
@@ -209,6 +209,42 @@ class ApprovalCase(models.Model):
     decision_date = models.DateField(null=True, blank=True)
     version = models.PositiveIntegerField(default=1)
     closed_at = models.DateTimeField(null=True, blank=True)
+    routing_snapshot_is_coherent = models.BooleanField(default=False, db_index=True)
+
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        from sfpcl_credit.approvals.modules.approval_case_engine import (
+            is_routable_approval_case,
+        )
+
+        self.routing_snapshot_is_coherent = is_routable_approval_case(self)
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            kwargs["update_fields"] = set(update_fields) | {
+                "routing_snapshot_is_coherent"
+            }
+        result = super().save(*args, **kwargs)
+        indexed_user_ids = set()
+        if isinstance(self.required_approvers_json, list):
+            for item in self.required_approvers_json:
+                try:
+                    indexed_user_ids.add(uuid.UUID(str(item.get("user_id"))))
+                except (AttributeError, TypeError, ValueError):
+                    continue
+        ApprovalCaseRequiredApprover.objects.filter(approval_case=self).exclude(
+            user_id__in=indexed_user_ids
+        ).delete()
+        ApprovalCaseRequiredApprover.objects.bulk_create(
+            [
+                ApprovalCaseRequiredApprover(
+                    approval_case=self,
+                    user_id=user_id,
+                )
+                for user_id in indexed_user_ids
+            ],
+            ignore_conflicts=True,
+        )
+        return result
 
     class Meta:
         db_table = "approval_cases"
@@ -226,6 +262,87 @@ class ApprovalCase(models.Model):
             models.CheckConstraint(
                 check=models.Q(version__gte=1), name="approval_case_version_positive"
             )
+        ]
+
+
+class ApprovalCaseRequiredApprover(models.Model):
+    approval_case_required_approver_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    approval_case = models.ForeignKey(
+        ApprovalCase,
+        on_delete=models.CASCADE,
+        related_name="required_approver_index",
+    )
+    user_id = models.UUIDField(db_index=True)
+
+    class Meta:
+        db_table = "approval_case_required_approvers"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["approval_case", "user_id"],
+                name="unique_case_required_approver",
+            )
+        ]
+
+
+class ApprovalCaseReadScopeGrant(models.Model):
+    SCOPE_LEGAL_READONLY = "legal_readonly"
+    SCOPE_AUDIT_READONLY = "audit_readonly"
+    SCOPE_MANAGEMENT_READONLY = "management_readonly"
+    SCOPE_TYPES = (
+        (SCOPE_LEGAL_READONLY, "Legal read-only"),
+        (SCOPE_AUDIT_READONLY, "Audit read-only"),
+        (SCOPE_MANAGEMENT_READONLY, "Management read-only"),
+    )
+    STATUS_ACTIVE = "active"
+    STATUS_INACTIVE = "inactive"
+    STATUSES = (
+        (STATUS_ACTIVE, "Active"),
+        (STATUS_INACTIVE, "Inactive"),
+    )
+
+    approval_case_read_scope_grant_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    role = models.ForeignKey(
+        "identity.Role",
+        on_delete=models.PROTECT,
+        related_name="approval_case_read_scope_grants",
+    )
+    scope_type = models.CharField(max_length=40, choices=SCOPE_TYPES)
+    status = models.CharField(
+        max_length=20, choices=STATUSES, default=STATUS_ACTIVE, db_index=True
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "approval_case_read_scope_grants"
+        indexes = [
+            models.Index(
+                fields=["role", "status", "scope_type"],
+                name="idx_case_read_role_scope",
+            )
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["role", "scope_type"],
+                name="unique_case_read_role_scope",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    scope_type__in=[
+                        "legal_readonly",
+                        "audit_readonly",
+                        "management_readonly",
+                    ]
+                ),
+                name="case_read_scope_type_valid",
+            ),
+            models.CheckConstraint(
+                check=models.Q(status__in=["active", "inactive"]),
+                name="case_read_scope_status_valid",
+            ),
         ]
 
 

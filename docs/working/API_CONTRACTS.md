@@ -2444,17 +2444,30 @@ facts never fall back to amount, the current matrix, or the current committee.
 
 `GET /api/v1/approval-cases/{approval_case_id}/` also requires `approvals.case.read`. Any global
 object scope must be persisted separately; the permission alone is not global scope. A complete
-routed case is visible only when its immutable `required_approvers` snapshot names the caller,
-including the caller's own acted history. Unassigned Directors, the case maker, and arbitrary
-custom-role permission holders receive an empty scope-filtered collection (`total_count = 0`) and
-direct detail returns `403 OBJECT_ACCESS_DENIED`. A non-reader receives `403 FORBIDDEN`; an
-incomplete or internally contradictory snapshot is not a public case and returns `404 NOT_FOUND`.
-Reads and denials write no audit or workflow evidence.
+routed case is visible when its immutable `required_approvers` snapshot names the caller (including
+the caller's own acted history), when a Credit Manager owns the case submission or passes the
+existing application object-scope decision, or when the caller's active role has an active persisted approval-case
+read-scope grant. The bounded grant types are `legal_readonly`, `audit_readonly`, and
+`management_readonly`; the default catalogue seeds only Company Secretary legal read-only and
+Internal Auditor audit read-only grants. The broad `management_readonly` permission, role display
+text, and caller query flags never imply a grant. Unassigned Directors, unrelated case makers, and
+arbitrary custom-role permission holders receive an empty scope-filtered collection
+(`total_count = 0`) and direct detail returns `403 OBJECT_ACCESS_DENIED`. A non-reader receives
+`403 FORBIDDEN`; an incomplete or internally contradictory snapshot is not a public case and
+returns `404 NOT_FOUND`. Reads and denials write no audit or workflow evidence.
 
 Object scope is applied before pagination and count calculation. `assigned_to_me=true` is the
 narrower queue filter: the caller must additionally be pending, unexcluded, and without an
 immutable action. The ordinary collection does not bypass object scope and keeps acted cases in
-the assigned actor's readable history.
+the assigned actor's readable history. Read-only role grants and Credit Manager ownership never
+create an assignment, enable an action, or bypass its action-specific permission. The collection
+selector narrows candidates in the database by persisted role scope, immutable approver candidacy,
+or Credit Manager ownership before the remaining JSON coherence validation runs.
+
+The selector's indexed `routing_snapshot_is_coherent` projection is recomputed whenever an approval
+case is saved and whenever its owning appraisal snapshot changes. It permits database count and
+`LIMIT/OFFSET` before collection serialization; detail and action requests still execute the full
+canonical snapshot-coherence check and never trust the projection as action authority.
 
 Detail returns stored authority/provenance (`approval_matrix_rule_id` and version,
 `sanction_committee_id` and version, `decision_date`, ordered required/excluded approvers,

@@ -79,3 +79,12 @@ High
 - 007D's completion and loser invariants are proved under PostgreSQL serialization.
 - Every approval read/write projection agrees, and M05-FR-010 crosses the communication boundary.
 
+## Run-Ahead Sharpening Review (007C3, 2026-07-13)
+
+- Execute the action-denial matrix through the attributable `can_read_approval_case` decision.
+  Company Secretary and Internal Auditor persisted read-only grants must reach detail but every
+  approve/reject/return POST remains `403 FORBIDDEN`, absent from `assigned_to_me`, and zero-write
+  across case/action/sanction/audit/workflow/communication/notification ledgers.
+- Every successful or losing action must preserve/recompute the case's database coherence
+  projection so ordinary SQL-scoped list counts and detail's live coherence decision still agree
+  immediately after the race. Do not reintroduce Python-wide collection pagination.

@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_seed_creates_only_source_named_approval_case_read_scope_grants (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_seed_creates_only_source_named_approval_case_read_scope_grants)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_135007_normal_run/sfpcl_credit/tests/test_catalogue_seed.py", line 247, in test_seed_creates_only_source_named_approval_case_read_scope_grants
+    self.assertEqual(
+AssertionError: Items in the second set but not the first:
+('internal_auditor', 'audit_readonly')
+('company_secretary', 'legal_readonly')
+
+----------------------------------------------------------------------
+Ran 1 test in 0.127s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

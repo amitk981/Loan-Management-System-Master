@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.core.management import call_command
 from django.test import TestCase
 
@@ -222,6 +223,34 @@ class CatalogueSeedTests(TestCase):
                         permission__permission_code="management_readonly",
                     ).exists()
                 )
+
+    def test_source_sanction_package_readers_receive_case_read_permission(self):
+        seed_catalogue()
+
+        for role_code in {
+            "credit_manager",
+            "company_secretary",
+            "internal_auditor",
+        }:
+            with self.subTest(role_code=role_code):
+                self.assertTrue(
+                    RolePermission.objects.filter(
+                        role__role_code=role_code,
+                        permission__permission_code="approvals.case.read",
+                    ).exists()
+                )
+
+    def test_seed_creates_only_source_named_approval_case_read_scope_grants(self):
+        seed_catalogue()
+
+        grant_model = apps.get_model("approvals", "ApprovalCaseReadScopeGrant")
+        self.assertEqual(
+            set(grant_model.objects.values_list("role__role_code", "scope_type")),
+            {
+                ("company_secretary", "legal_readonly"),
+                ("internal_auditor", "audit_readonly"),
+            },
+        )
 
     def test_every_dashboard_context_role_can_read_dashboard(self):
         # 003G2 regression: every role named in the dashboard role-context mapping

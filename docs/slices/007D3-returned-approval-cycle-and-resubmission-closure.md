@@ -76,3 +76,12 @@ High
 - Return-for-clarification no longer leaves the application permanently unable to re-enter sanction.
 - Every material re-approval is a new immutable case/review cycle; prior decisions never leak forward.
 
+## Run-Ahead Sharpening Review (007C3, 2026-07-13)
+
+- Preserve the 007C3 read-scope interface across cycles: persisted Company Secretary/Auditor grants
+  may read coherent current and returned historical cycles, Credit Manager reads still derive from
+  case submission/application object scope, and permission-only/unassigned readers remain excluded
+  before count and pagination.
+- Migration and resubmission must set the database coherence projection independently for every
+  cycle. `assigned_to_me=true` may select only the coherent pending current cycle; a returned
+  historical cycle is readable history and can never become an assignment or action source.

@@ -90,7 +90,9 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
     )
     if not approval_case_engine.is_routable_approval_case(case):
         raise ApprovalCase.DoesNotExist
-    if not approval_case_engine.can_read_approval_case(actor=actor, case=case):
+    if not approval_case_engine.can_read_approval_case(
+        actor=actor, case=case, actor_permissions=actor_permissions
+    ).allowed:
         raise ApprovalActionConflict(
             "You cannot access this approval case.",
             code="OBJECT_ACCESS_DENIED",

@@ -7,7 +7,14 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from sfpcl_credit.approvals.models import ApprovalCase
+from sfpcl_credit.approvals.modules.approval_case_selector import (
+    select_approval_case_candidates,
+)
+from sfpcl_credit.approvals.modules.read_scope import (
+    evaluate_approval_case_read_scope,
+)
 from sfpcl_credit.domain_errors import DomainObjectAccessDenied
+from sfpcl_credit.identity.modules.auth_service import effective_permission_codes
 from sfpcl_credit.identity.modules.object_permissions import ObjectAccessResult
 
 
@@ -23,42 +30,48 @@ def list_approval_cases(*, actor, query_params):
     page = _positive_int("page", query_params.get("page"), 1)
     page_size = min(_positive_int("page_size", query_params.get("page_size"), 20), 100)
     assigned_to_me = _boolean("assigned_to_me", query_params.get("assigned_to_me"))
-    queryset = (
-        ApprovalCase.objects.select_related("loan_application", "loan_appraisal_note")
-        .prefetch_related("actions")
-        .filter(
-            version__gte=2,
-            approval_matrix_rule_id__isnull=False,
-            sanction_committee_id__isnull=False,
-            decision_date__isnull=False,
-            amount__isnull=False,
-            related_entity_id__isnull=False,
-        )
-        .order_by("-submitted_at", "-approval_case_id")
+    actor_permissions = effective_permission_codes(actor)
+    queryset, persisted_scope_type = select_approval_case_candidates(
+        actor=actor,
+        current_status=query_params.get("current_status"),
+        approval_type=query_params.get("approval_type"),
+        assigned_to_me=assigned_to_me,
+        actor_permissions=actor_permissions,
     )
-    if query_params.get("current_status"):
-        queryset = queryset.filter(current_status=query_params["current_status"])
-    if query_params.get("approval_type"):
-        queryset = queryset.filter(approval_type=query_params["approval_type"])
-    cases = [
-        case for case in queryset
-        if (
-            is_routable_approval_case(case)
-            and can_read_approval_case(actor=actor, case=case)
-        )
-    ]
     if assigned_to_me:
         actor_id = str(actor.pk)
-        cases = [
-            case
-            for case in cases
-            if is_pending_approval_case_actor(case=case, actor_id=actor_id)
+        scoped_ids = [
+            case.pk
+            for case in queryset.iterator(chunk_size=100)
+            if is_routable_approval_case(case)
+            and can_read_approval_case(
+                actor=actor,
+                case=case,
+                persisted_scope_type=persisted_scope_type,
+                persisted_scope_resolved=True,
+                actor_permissions=actor_permissions,
+            ).allowed
+            and is_pending_approval_case_actor(case=case, actor_id=actor_id)
         ]
-    total_count = len(cases)
+        queryset = queryset.filter(pk__in=scoped_ids)
+    total_count = queryset.count()
     total_pages = ceil(total_count / page_size) if total_count else 1
     page = min(page, total_pages)
     offset = (page - 1) * page_size
-    return [serialize_case_snapshot(case) for case in cases[offset : offset + page_size]], {
+    cases = list(queryset[offset : offset + page_size])
+    cases = [
+        case
+        for case in cases
+        if is_routable_approval_case(case)
+        and can_read_approval_case(
+            actor=actor,
+            case=case,
+            persisted_scope_type=persisted_scope_type,
+            persisted_scope_resolved=True,
+            actor_permissions=actor_permissions,
+        ).allowed
+    ]
+    return [serialize_case_snapshot(case) for case in cases], {
         "page": page,
         "page_size": page_size,
         "total_count": total_count,
@@ -80,7 +93,9 @@ def get_approval_case(*, actor, case_id, actor_permissions):
     )
     if case is None or not is_routable_approval_case(case):
         raise ApprovalCase.DoesNotExist
-    if not can_read_approval_case(actor=actor, case=case):
+    if not can_read_approval_case(
+        actor=actor, case=case, actor_permissions=actor_permissions
+    ).allowed:
         raise DomainObjectAccessDenied(
             ObjectAccessResult(
                 allowed=False,
@@ -92,12 +107,21 @@ def get_approval_case(*, actor, case_id, actor_permissions):
     return serialize_case_detail(case, actor, set(actor_permissions))
 
 
-def can_read_approval_case(*, actor, case):
-    """Return whether the immutable case snapshot gives this actor object scope."""
-    actor_id = str(actor.pk)
-    return any(
-        isinstance(item, dict) and str(item.get("user_id")) == actor_id
-        for item in case.required_approvers_json
+def can_read_approval_case(
+    *,
+    actor,
+    case,
+    persisted_scope_type=None,
+    persisted_scope_resolved=False,
+    actor_permissions=None,
+):
+    """Return whether the attributable read-scope decision authorises this case."""
+    return evaluate_approval_case_read_scope(
+        actor=actor,
+        case=case,
+        persisted_scope_type=persisted_scope_type,
+        persisted_scope_resolved=persisted_scope_resolved,
+        actor_permissions=actor_permissions,
     )
 
 

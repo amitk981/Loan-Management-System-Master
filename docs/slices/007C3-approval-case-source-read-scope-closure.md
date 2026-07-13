@@ -1,7 +1,7 @@
 # Slice 007C3: Approval-Case Source Read-Scope Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -74,4 +74,3 @@ High
 
 - Every source-named read-only role can inspect exactly its persisted sanction-package scope.
 - Action permission and read-only scope remain independent; no permission-only global read returns.
-
