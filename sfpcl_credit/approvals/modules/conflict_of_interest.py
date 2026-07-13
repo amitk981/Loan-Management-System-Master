@@ -40,12 +40,11 @@ class ConflictOfInterestModule:
         general_meeting_required = False
         declarations = ApprovalConflictDeclaration.objects.filter(
             loan_application_id=case.loan_application_id,
-            user_id__in=candidate_ids,
             is_active=True,
         ).order_by("created_at", "approval_conflict_declaration_id")
         for declaration in declarations:
             user_id = str(declaration.user_id)
-            if user_id not in excluded_ids:
+            if user_id in candidate_ids and user_id not in excluded_ids:
                 exclusions.append(
                     {
                         "user_id": user_id,
@@ -91,7 +90,7 @@ class ConflictOfInterestModule:
         ]
         for approver in case.required_approvers_json:
             user_id = str(approver.get("user_id"))
-            if user_id not in excluded_ids:
+            if user_id not in excluded_ids and user_id not in used_ids:
                 effective.append(dict(approver))
                 used_ids.add(user_id)
                 continue
@@ -107,7 +106,11 @@ class ConflictOfInterestModule:
             )
             if replacement_id:
                 effective.append(
-                    {"role_code": "director", "user_id": replacement_id}
+                    {
+                        "role_code": "director",
+                        "user_id": replacement_id,
+                        "replacement_for_user_id": user_id,
+                    }
                 )
                 used_ids.add(replacement_id)
         return tuple(effective)

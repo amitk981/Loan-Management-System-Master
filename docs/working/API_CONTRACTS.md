@@ -2464,10 +2464,14 @@ create an assignment, enable an action, or bypass its action-specific permission
 selector narrows candidates in the database by persisted role scope, immutable approver candidacy,
 or Credit Manager ownership before the remaining JSON coherence validation runs.
 
-The selector's indexed `routing_snapshot_is_coherent` projection is recomputed whenever an approval
-case is saved and whenever its owning appraisal snapshot changes. It permits database count and
-`LIMIT/OFFSET` before collection serialization; detail and action requests still execute the full
-canonical snapshot-coherence check and never trust the projection as action authority.
+The selector's indexed `routing_snapshot_is_coherent` and attributable-reader projection are
+updated only through the explicit approval-owned projection interface. Case creation, workflow
+linkage, enrichment, actions/abstention, and owning-appraisal refresh invoke it atomically; an
+ordinary model save has no hidden cross-table side effect. The reader projection contains only
+original routed actors, current effective replacements, and actors with an immutable action. It
+permits exact database count and `LIMIT/OFFSET` before collection serialization; detail and action
+requests still execute the full canonical snapshot-coherence check and never trust the projection
+as action authority.
 
 Detail returns stored authority/provenance (`approval_matrix_rule_id` and version,
 `sanction_committee_id` and version, `decision_date`, ordered required/excluded approvers,
@@ -2607,3 +2611,34 @@ and immutable action ledger with decision `abstained`, increments case version, 
 satisfy the matrix; otherwise it closes as `blocked_by_conflict` and notifies the Credit Assessment
 team through the communication adapter. Prior-cycle exclusions/abstentions never populate a later
 cycle; every enrichment recomputes from that cycle's frozen facts.
+
+# Conflict authority, history projection, and scope closure (007E2)
+
+Conflict replacement fills frozen role slots with distinct users. A user can occupy at most one
+effective CFO/Director slot; a two-Director route with either Director excluded therefore blocks
+when the frozen committee has only one remaining distinct Director. `conflict_block_reason` names
+the exact missing CFO or Director authority, the case closes atomically, and no sanction is
+created. `required_approvers_json` remains immutable route provenance.
+
+Collection, detail, action success, and historical-cycle reads share these authority facts (the
+§25.2 enrichment response preserves its backward-compatible raw `required_approvers` shape):
+
+- `route_approvers`: the unchanged ordered matrix/committee route snapshot.
+- `required_approvers`: the currently executable distinct actors with `role_code`, `user_id`,
+  `full_name`, nullable `decision`/`acted_at`, and `replacement_for_user_id` only when the actor
+  replaces an excluded original.
+- `approval_actions`: every immutable action with `approval_action_id`, role/user/name, decision,
+  comments, acted time, and replacement attribution when applicable.
+
+These three fields are identical in collection, detail, and the case portion of action responses;
+only caller-specific `available_actions` and the action endpoint's top-level result fields differ.
+An excluded original may retain COI-005 history access only because it is an original, effective,
+or already-acted cycle participant. Frozen committee candidacy, an unused-alternate declaration,
+or action permission alone grants no row, count, detail, queue, or write scope. An unused alternate
+therefore receives `total_count: 0` and direct `403 OBJECT_ACCESS_DENIED`.
+
+Active borrower and Director-relative declarations set
+`general_meeting_evidence_required = true` even when the related Director/committee member is not
+assigned to this case. Material-interest and maker-checker facts alone do not set the flag.
+Exclusions remain limited to frozen authority candidates, and database validation rejects empty or
+whitespace-only declaration reasons.

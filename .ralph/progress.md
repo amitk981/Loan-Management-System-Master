@@ -5503,3 +5503,28 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_171041_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007E2-conflict-authority-projection-and-scope-closure
+- Summary: Closed distinct CFO/Director conflict authority, canonical replacement/action history,
+  exact pre-pagination reader scope, general-meeting detection scope, whitespace declaration
+  validation, and the explicit approval-owned projection updater/backfill.
+- Tests run: retained six RED/GREEN tracer bullets; 86 conflict/projection and migration tests;
+  backend check/migration sync and 651 tests with 19 expected SQLite skips at 93% coverage;
+  frontend build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_171041_normal_run/evidence/`
+- Result: Success
+- Risk level: High
+- Next action: 007F exception approval workflow.
+
+## 2026-07-13 17:45:35 - 2026-07-13_171041_normal_run
+- Agent tool used: codex
+- Slice attempted: 007E2-conflict-authority-projection-and-scope-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_171041_normal_run/.ralph/runs/2026-07-13_171041_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_171041_normal_run/.ralph/runs/2026-07-13_171041_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

@@ -1,4 +1,5 @@
 from datetime import timedelta
+from uuid import UUID
 
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
@@ -246,6 +247,80 @@ class ApprovalReadScopeMigrationTests(TransactionTestCase):
             "malformed_case_id": case_ids[1],
             "required_user_ids": {users["cfo"].pk, users["director"].pk},
         }
+
+
+class ApprovalConflictProjectionMigrationTests(TransactionTestCase):
+    migrate_from = [
+        ("credit", "0007_eligibility_active_member_snapshot"),
+        ("approvals", "0012_approvalconflictdeclaration_and_more"),
+    ]
+    migrate_to = [
+        ("credit", "0007_eligibility_active_member_snapshot"),
+        ("approvals", "0013_conflict_projection_scope_closure"),
+    ]
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_migration_backfills_only_original_effective_and_acted_readers(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        fixtures = ApprovalReadScopeMigrationTests._create_historical_cases(old_apps)
+        ApprovalCase = old_apps.get_model("approvals", "ApprovalCase")
+        ReadActor = old_apps.get_model(
+            "approvals", "ApprovalCaseRequiredApprover"
+        )
+        valid = ApprovalCase.objects.get(pk=fixtures["valid_case_id"])
+        replacement_case = ApprovalCase.objects.get(pk=fixtures["malformed_case_id"])
+        director_ids = replacement_case.committee_projection_json[
+            "director_user_ids"
+        ]
+        replacement_case.excluded_approvers_json = [
+            {
+                "user_id": director_ids[0],
+                "conflict_code": "director_relative",
+                "reason": "Historical related-party conflict.",
+            }
+        ]
+        replacement_case.save(update_fields=["excluded_approvers_json"])
+        all_committee_ids = {
+            valid.committee_projection_json["cfo_user_id"],
+            *valid.committee_projection_json["director_user_ids"],
+        }
+        ReadActor.objects.bulk_create(
+            [
+                ReadActor(approval_case=case, user_id=user_id)
+                for case in (valid, replacement_case)
+                for user_id in all_committee_ids
+            ]
+        )
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        migrated_apps = executor.loader.project_state(self.migrate_to).apps
+        MigratedReadActor = migrated_apps.get_model(
+            "approvals", "ApprovalCaseRequiredApprover"
+        )
+
+        self.assertEqual(
+            set(
+                MigratedReadActor.objects.filter(
+                    approval_case_id=valid.pk
+                ).values_list("user_id", flat=True)
+            ),
+            fixtures["required_user_ids"],
+        )
+        self.assertEqual(
+            set(
+                MigratedReadActor.objects.filter(
+                    approval_case_id=replacement_case.pk
+                ).values_list("user_id", flat=True)
+            ),
+            {*(fixtures["required_user_ids"]), UUID(director_ids[1])},
+        )
 
 
 class ApprovalCycleMigrationTests(TransactionTestCase):

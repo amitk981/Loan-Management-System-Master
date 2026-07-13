@@ -9,6 +9,9 @@ from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalAction, ApprovalCase, SanctionDecision
 from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
+from sfpcl_credit.approvals.modules.approval_case_projection import (
+    refresh_approval_case_projection,
+)
 from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow
 from sfpcl_credit.communications import services as communication_services
 from sfpcl_credit.identity.models import AuditLog
@@ -307,6 +310,7 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         "current_status", "reason_for_rejection", "closed_at",
         "excluded_approvers_json", "conflict_block_reason", "version",
     ])
+    refresh_approval_case_projection(case)
     AuditLog.objects.create(
         actor_user=actor,
         action="approval_case.action_recorded",

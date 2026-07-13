@@ -14,6 +14,7 @@ from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import (
     ApprovalAction,
     ApprovalCase,
+    ApprovalCaseRequiredApprover,
     ApprovalCaseReadScopeGrant,
     ApprovalConflictDeclaration,
     ApprovalMatrixRule,
@@ -24,6 +25,9 @@ from sfpcl_credit.approvals.modules.approval_case_selector import (
 )
 from sfpcl_credit.approvals.modules import approval_actions, approval_case_engine
 from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
+from sfpcl_credit.approvals.modules.approval_case_projection import (
+    refresh_approval_case_projection,
+)
 from sfpcl_credit.approvals.modules.sanction_handoff import SanctionHandoffModule
 from sfpcl_credit.credit.models import (
     AppraisalReviewDecision,
@@ -229,6 +233,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
             decision_date=decision_date,
             version=2,
         )
+        refresh_approval_case_projection(self.case)
 
     def test_assigned_to_me_returns_the_pending_snapshotted_case(self):
         response = self.client.get(
@@ -494,6 +499,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
             }
         ]
         self.case.save(update_fields=["excluded_approvers_json"])
+        refresh_approval_case_projection(self.case)
 
         queue = self.client.get(
             "/api/v1/approval-cases/?assigned_to_me=true", **self._auth(alternate)
@@ -518,6 +524,290 @@ class ApprovalCaseRoutingApiTests(TestCase):
                 approval_case=self.case, approver_user=alternate
             ).approver_role_code,
             "director",
+        )
+
+    def test_two_director_route_never_reuses_remaining_director(self):
+        alternate = self.committee.director_2_user
+        self.case.required_approvers_json = [
+            *self.case.required_approvers_json,
+            {
+                "role_code": "director",
+                "user_id": str(alternate.pk),
+                "full_name": alternate.full_name,
+            },
+        ]
+        self.case.matrix_projection_json = {
+            **self.case.matrix_projection_json,
+            "required_director_count": 2,
+        }
+        self.case.excluded_approvers_json = [
+            {
+                "user_id": str(self.director.pk),
+                "conflict_code": "director_relative",
+                "reason": "Borrower is relative of Director 1.",
+            }
+        ]
+
+        effective = ConflictOfInterestModule.effective_approvers(self.case)
+
+        self.assertEqual(
+            [(item["role_code"], item["user_id"]) for item in effective],
+            [("cfo", str(self.cfo.pk)), ("director", str(alternate.pk))],
+        )
+        self.assertEqual(len({item["user_id"] for item in effective}), 2)
+        self.assertFalse(ConflictOfInterestModule.authority_is_satisfiable(self.case))
+        self.assertEqual(
+            ConflictOfInterestModule.authority_gap_reason(self.case),
+            "Required Director approval authority is unavailable after conflict exclusion.",
+        )
+
+    def test_public_enrichment_blocks_when_first_of_two_directors_is_excluded(self):
+        self._assert_public_two_director_conflict_block(self.director)
+
+    def test_public_enrichment_blocks_when_second_of_two_directors_is_excluded(self):
+        self._assert_public_two_director_conflict_block(
+            self.committee.director_2_user
+        )
+
+    def test_alternate_action_is_canonical_without_rewriting_route_provenance(self):
+        alternate = self.committee.director_2_user
+        for permission in (
+            self.read_permission,
+            self.approve_permission,
+            self.reject_permission,
+            self.return_permission,
+        ):
+            RolePermission.objects.create(role=alternate.primary_role, permission=permission)
+        immutable_route = list(self.case.required_approvers_json)
+        self.case.excluded_approvers_json = [
+            {
+                "user_id": str(self.director.pk),
+                "conflict_code": "director_relative",
+                "reason": "Borrower is relative of Director.",
+            }
+        ]
+        self.case.save(update_fields=["excluded_approvers_json"])
+
+        first = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        final = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3},
+            content_type="application/json",
+            **self._auth(alternate),
+        )
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **self._auth(alternate)
+        )
+        collection = self.client.get(
+            "/api/v1/approval-cases/", **self._auth(alternate)
+        )
+
+        self.assertEqual(first.status_code, 200, first.json())
+        self.assertEqual(final.status_code, 200, final.json())
+        self.assertEqual(detail.status_code, 200, detail.json())
+        self.assertEqual(collection.status_code, 200, collection.json())
+        action_facts = {
+            key: final.json()["data"][key]
+            for key in ("route_approvers", "required_approvers", "approval_actions")
+        }
+        self.assertEqual(
+            {key: detail.json()["data"][key] for key in action_facts}, action_facts
+        )
+        self.assertEqual(
+            {key: collection.json()["data"][0][key] for key in action_facts},
+            action_facts,
+        )
+        alternate_row = next(
+            item
+            for item in action_facts["required_approvers"]
+            if item["user_id"] == str(alternate.pk)
+        )
+        self.assertEqual(alternate_row["decision"], "approved")
+        self.assertEqual(alternate_row["replacement_for_user_id"], str(self.director.pk))
+        self.assertEqual(
+            {item["user_id"] for item in action_facts["approval_actions"]},
+            {str(self.cfo.pk), str(alternate.pk)},
+        )
+        self.case.refresh_from_db()
+        self.assertEqual(self.case.required_approvers_json, immutable_route)
+        self.assertEqual(action_facts["route_approvers"], immutable_route)
+
+    def test_unused_committee_alternate_is_nondisclosed_before_pagination(self):
+        unused_alternate = self.committee.director_2_user
+        RolePermission.objects.create(
+            role=unused_alternate.primary_role, permission=self.read_permission
+        )
+        headers = self._auth(unused_alternate)
+
+        for declared in (False, True):
+            with self.subTest(declared=declared):
+                if declared:
+                    ApprovalConflictDeclaration.objects.create(
+                        loan_application=self.application,
+                        user=unused_alternate,
+                        conflict_type="material_interest",
+                        reason="Unused committee alternate declared an interest.",
+                        declared_by_user=self.preparer,
+                    )
+                    self.case.excluded_approvers_json = [
+                        {
+                            "user_id": str(unused_alternate.pk),
+                            "conflict_code": "material_interest",
+                            "reason": "Unused committee alternate declared an interest.",
+                        }
+                    ]
+                    self.case.save(update_fields=["excluded_approvers_json"])
+                ordinary = self.client.get("/api/v1/approval-cases/", **headers)
+                assigned = self.client.get(
+                    "/api/v1/approval-cases/?assigned_to_me=true", **headers
+                )
+                detail = self.client.get(
+                    f"/api/v1/approval-cases/{self.case.pk}/", **headers
+                )
+                action = self.client.post(
+                    f"/api/v1/approval-cases/{self.case.pk}/approve/",
+                    {"version": 2},
+                    content_type="application/json",
+                    **headers,
+                )
+
+                self.assertEqual(ordinary.status_code, 200, ordinary.json())
+                self.assertEqual(ordinary.json()["data"], [])
+                self.assertEqual(ordinary.json()["pagination"]["total_count"], 0)
+                self.assertEqual(assigned.json()["pagination"]["total_count"], 0)
+                self.assertEqual(detail.status_code, 403, detail.json())
+                self.assertEqual(detail.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
+                self.assertEqual(action.status_code, 403, action.json())
+                self.assertEqual(action.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
+                self.assertFalse(
+                    ApprovalAction.objects.filter(approval_case=self.case).exists()
+                )
+
+        RolePermission.objects.filter(
+            role=unused_alternate.primary_role, permission=self.read_permission
+        ).delete()
+        removed_list = self.client.get("/api/v1/approval-cases/", **headers)
+        removed_detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **headers
+        )
+        removed_action = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2},
+            content_type="application/json",
+            **headers,
+        )
+        self.assertEqual(removed_list.status_code, 403, removed_list.json())
+        self.assertEqual(removed_detail.status_code, 403, removed_detail.json())
+        self.assertEqual(removed_action.status_code, 403, removed_action.json())
+        self.assertFalse(ApprovalAction.objects.filter(approval_case=self.case).exists())
+
+    def test_noncommittee_related_director_sets_general_meeting_flag_only(self):
+        noncommittee_director = self._user(
+            "noncommittee_director", "Noncommittee Related Director"
+        )
+        ApprovalConflictDeclaration.objects.create(
+            loan_application=self.application,
+            user=noncommittee_director,
+            conflict_type="director_relative",
+            reason="Borrower is a relative of a Director outside this committee.",
+            declared_by_user=self.preparer,
+        )
+
+        assessment = ConflictOfInterestModule().evaluate_for_case(self.case)
+
+        self.assertTrue(assessment.general_meeting_evidence_required)
+        self.assertEqual(assessment.exclusions, ())
+
+    def test_public_committee_borrower_conflict_matrix(self):
+        self._assert_public_conflict_class(
+            actor=self.director,
+            conflict_type="borrower",
+            expected_code="borrower",
+            expected_general_meeting=True,
+        )
+
+    def test_public_director_relative_conflict_matrix(self):
+        self._assert_public_conflict_class(
+            actor=self.director,
+            conflict_type="director_relative",
+            expected_code="director_relative",
+            expected_general_meeting=True,
+        )
+
+    def test_public_material_interest_conflict_matrix(self):
+        self._assert_public_conflict_class(
+            actor=self.director,
+            conflict_type="material_interest",
+            expected_code="material_interest",
+            expected_general_meeting=False,
+        )
+
+    def test_public_own_application_conflict_matrix(self):
+        self._assert_public_conflict_class(
+            actor=self.cfo,
+            source_fact="application_created_by_user",
+            expected_code="own_application",
+            expected_general_meeting=False,
+        )
+
+    def test_public_maker_checker_conflict_matrix(self):
+        self._assert_public_conflict_class(
+            actor=self.director,
+            source_fact="appraisal_prepared_by_user",
+            expected_code="maker_checker",
+            expected_general_meeting=False,
+        )
+
+    def test_conflict_declaration_rejects_whitespace_only_reason(self):
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            ApprovalConflictDeclaration.objects.create(
+                loan_application=self.application,
+                user=self.director,
+                conflict_type="director_relative",
+                reason="  \t  ",
+                declared_by_user=self.preparer,
+            )
+
+        self.assertFalse(
+            ApprovalConflictDeclaration.objects.filter(
+                loan_application=self.application,
+                user=self.director,
+            ).exists()
+        )
+
+    def test_plain_model_save_does_not_hide_projection_mutation(self):
+        projection_before = set(
+            ApprovalCaseRequiredApprover.objects.filter(
+                approval_case=self.case
+            ).values_list("user_id", flat=True)
+        )
+        coherence_before = self.case.routing_snapshot_is_coherent
+        injected = self._user("projection_injected", "Projection Injected User")
+        self.case.required_approvers_json = [
+            self.case.required_approvers_json[0],
+            {
+                "role_code": "director",
+                "user_id": str(injected.pk),
+                "full_name": injected.full_name,
+            },
+        ]
+
+        self.case.save(update_fields=["required_approvers_json"])
+
+        self.case.refresh_from_db()
+        self.assertEqual(self.case.routing_snapshot_is_coherent, coherence_before)
+        self.assertEqual(
+            set(
+                ApprovalCaseRequiredApprover.objects.filter(
+                    approval_case=self.case
+                ).values_list("user_id", flat=True)
+            ),
+            projection_before,
         )
 
     def test_conflict_abstention_uses_immutable_action_and_assigns_frozen_alternate(self):
@@ -2276,6 +2566,210 @@ class ApprovalCaseRoutingApiTests(TestCase):
                 assert_error_envelope(self, denied.json(), "FORBIDDEN")
                 self.assertEqual(self._action_ledgers(), before)
 
+    def _assert_public_two_director_conflict_block(self, excluded_director):
+        self.application.required_loan_amount = "600000.00"
+        self.application.save(update_fields=["required_loan_amount"])
+        self.note.recommended_amount = "600000.00"
+        self.note.loan_limit_snapshot_json = {
+            **self.note.loan_limit_snapshot_json,
+            "final_eligible_loan_amount": "600000.00",
+        }
+        self.note.save(
+            update_fields=["recommended_amount", "loan_limit_snapshot_json"]
+        )
+        upper_rule = ApprovalMatrixRule.objects.create(
+            decision_type="loan_sanction",
+            amount_min="500000.01",
+            amount_max=None,
+            required_approver_roles_json=["cfo", "director"],
+            required_director_count=2,
+            joint_approval_required_flag=True,
+            register_required="credit_sanction_register",
+            effective_from=self.case.decision_date,
+            status="active",
+            version_number="upper-conflict-v1",
+        )
+        ApprovalMatrixRule.objects.exclude(pk=upper_rule.pk).update(status="inactive")
+        SanctionCommittee.objects.exclude(pk=self.committee.pk).update(status="inactive")
+        review = AppraisalReviewDecision.objects.create(
+            loan_appraisal_note=self.note,
+            decision="reviewed",
+            review_comments="Reviewed for two-Director conflict acceptance.",
+            reviewer_user=self.preparer,
+            decided_at=self.note.reviewed_at,
+            from_state=LoanAppraisalNote.STATUS_REVIEW_PENDING,
+            to_state=LoanAppraisalNote.STATUS_REVIEWED,
+        )
+        self._reset_case_to_unrouted(review)
+        ApprovalConflictDeclaration.objects.create(
+            loan_application=self.application,
+            user=excluded_director,
+            conflict_type="director_relative",
+            reason="Borrower is relative of the routed Director.",
+            declared_by_user=self.preparer,
+        )
+
+        snapshot = SanctionHandoffModule().enrich_pending(
+            actor=self.preparer,
+            application_id=self.application.pk,
+            payload={
+                "approval_type": "sanction",
+                "amount": "600000.00",
+                "reason_for_approval": "Upper route conflict acceptance.",
+                "force_exception_route": False,
+            },
+            actor_permissions={"approvals.case.create"},
+        ).snapshot
+
+        self.case.refresh_from_db()
+        effective = ConflictOfInterestModule.effective_approvers(self.case)
+        self.assertEqual(snapshot["current_status"], "blocked_by_conflict")
+        self.assertEqual(
+            snapshot["conflict_block_reason"],
+            "Required Director approval authority is unavailable after conflict exclusion.",
+        )
+        self.assertEqual(len(effective), 2)
+        self.assertEqual(len({item["user_id"] for item in effective}), 2)
+        self.assertEqual(
+            {item["role_code"] for item in effective}, {"cfo", "director"}
+        )
+        self.assertFalse(
+            ApprovalAction.objects.filter(approval_case=self.case).exists()
+        )
+        self.assertFalse(
+            apps.get_model("approvals", "SanctionDecision").objects.filter(
+                approval_case=self.case
+            ).exists()
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="approval_case.enriched", entity_id=self.case.pk
+            ).count(),
+            1,
+        )
+
+    def _assert_public_conflict_class(
+        self,
+        *,
+        actor,
+        expected_code,
+        expected_general_meeting,
+        conflict_type=None,
+        source_fact=None,
+    ):
+        if source_fact == "application_created_by_user":
+            self.application.created_by_user = actor
+            self.application.save(update_fields=["created_by_user"])
+        elif source_fact == "appraisal_prepared_by_user":
+            self.note.prepared_by_user = actor
+            self.note.save(update_fields=["prepared_by_user"])
+        review = AppraisalReviewDecision.objects.create(
+            loan_appraisal_note=self.note,
+            decision="reviewed",
+            review_comments="Reviewed for the public conflict matrix.",
+            reviewer_user=self.preparer,
+            decided_at=self.note.reviewed_at,
+            from_state=LoanAppraisalNote.STATUS_REVIEW_PENDING,
+            to_state=LoanAppraisalNote.STATUS_REVIEWED,
+        )
+        self._reset_case_to_unrouted(review)
+        ApprovalMatrixRule.objects.exclude(pk=self.rule.pk).update(status="inactive")
+        SanctionCommittee.objects.exclude(pk=self.committee.pk).update(status="inactive")
+        if conflict_type:
+            ApprovalConflictDeclaration.objects.create(
+                loan_application=self.application,
+                user=actor,
+                conflict_type=conflict_type,
+                reason=f"Public {conflict_type} conflict evidence.",
+                declared_by_user=self.preparer,
+            )
+
+        snapshot = SanctionHandoffModule().enrich_pending(
+            actor=self.preparer,
+            application_id=self.application.pk,
+            payload={
+                "approval_type": "sanction",
+                "amount": "500000.00",
+                "reason_for_approval": "Public conflict matrix acceptance.",
+                "force_exception_route": False,
+            },
+            actor_permissions={"approvals.case.create"},
+        ).snapshot
+        self.case.refresh_from_db()
+        exclusion = next(
+            item
+            for item in self.case.excluded_approvers_json
+            if item["user_id"] == str(actor.pk)
+        )
+        headers = self._auth(actor)
+        queue = self.client.get(
+            "/api/v1/approval-cases/?assigned_to_me=true", **headers
+        )
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **headers
+        )
+        denied = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": self.case.version, "comments": "Conflicted public attempt."},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID=f"req-{expected_code}",
+            **headers,
+        )
+
+        self.assertEqual(exclusion["conflict_code"], expected_code)
+        self.assertEqual(
+            snapshot["general_meeting_evidence_required"],
+            expected_general_meeting,
+        )
+        self.assertEqual(queue.status_code, 200, queue.json())
+        self.assertEqual(queue.json()["pagination"]["total_count"], 0)
+        self.assertEqual(detail.status_code, 200, detail.json())
+        self.assertEqual(denied.status_code, 409, denied.json())
+        self.assertEqual(
+            denied.json()["error"]["code"], "CONFLICTED_APPROVER_NOT_ALLOWED"
+        )
+        self.assertEqual(
+            denied.json()["error"]["details"]["conflict_reason"],
+            exclusion["reason"],
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="approval_case.conflicted_action_denied",
+                entity_id=self.case.pk,
+                actor_user=actor,
+            ).count(),
+            1,
+        )
+        self.assertFalse(
+            ApprovalAction.objects.filter(approval_case=self.case).exists()
+        )
+
+    def _reset_case_to_unrouted(self, review):
+        self.case.approval_matrix_rule = None
+        self.case.approval_matrix_rule_version = ""
+        self.case.sanction_committee = None
+        self.case.sanction_committee_version = ""
+        self.case.required_approvers_json = {}
+        self.case.excluded_approvers_json = []
+        self.case.general_meeting_evidence_required = False
+        self.case.conflict_block_reason = ""
+        self.case.amount = None
+        self.case.related_entity_type = ""
+        self.case.related_entity_id = None
+        self.case.reason_for_approval = ""
+        self.case.reason_for_rejection = ""
+        self.case.matrix_projection_json = {}
+        self.case.committee_projection_json = {}
+        self.case.loan_limit_provenance_json = {}
+        self.case.appraisal_facts_json = {}
+        self.case.decision_date = None
+        self.case.appraisal_review_decision = review
+        self.case.current_status = ApprovalCase.STATUS_PENDING
+        self.case.closed_at = None
+        self.case.version = 1
+        self.case.save()
+        refresh_approval_case_projection(self.case)
+
     def _assert_disabled_action_post_parity(
         self, *, actor, action_code, action_path, expected_status, expected_code
     ):
@@ -2437,6 +2931,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(audit["new_value_json"]["comments"], "Concurrent approval.")
 
     def _assert_snapshot_is_hidden_without_writes(self, actor):
+        refresh_approval_case_projection(self.case)
         headers = self._auth(actor)
         before = {
             "case": ApprovalCase.objects.filter(pk=self.case.pk).values().get(),

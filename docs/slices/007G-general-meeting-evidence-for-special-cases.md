@@ -65,6 +65,17 @@ Related-party loans cannot be sanctioned without the legally required general-me
   007H can evidence the actual distinct approvers. Unused committee candidates remain outside
   list/detail counts and cannot obtain meeting-document access through conflict declaration alone.
 
+## Run-Ahead Sharpening Review (007E2 delivered contract, 2026-07-13)
+
+- Treat `general_meeting_evidence_required` as the sole immutable per-cycle gate input. 007E2 sets
+  it for active borrower/Director-relative declarations even when the related person is outside the
+  assigned route, and does not set it for material-interest or maker-checker facts alone.
+- Meeting-document read authority must start from the corrected original/effective/acted case scope;
+  a declaration, unused committee candidacy, or `approvals.case.read` permission cannot create it.
+- Return the meeting reference beside, but never inside or instead of, the canonical
+  `route_approvers`/`required_approvers`/`approval_actions` facts so authority provenance remains
+  byte-stable across collection, detail, action response, and historical cycles.
+
 ## Out of Scope
 Conflict determination (007E), register generation (007H), document upload itself (003C/§26), UI (007I).
 

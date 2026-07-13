@@ -86,6 +86,16 @@ Above-limit or policy-exception lending is possible only through the stricter au
   An unused or merely conflicted committee candidate cannot learn an exception row or count; an
   authorised historical actor sees the exact cycle without gaining action authority.
 
+## Run-Ahead Sharpening Review (007E2 delivered contract, 2026-07-13)
+
+- Read authority/action facts only from the canonical `route_approvers`, `required_approvers`, and
+  `approval_actions` projection documented in `API_CONTRACTS.md`. A replacement row carries
+  `replacement_for_user_id`; register code must not re-run conflict replacement.
+- Register selectors must join or delegate to the exact original/effective/acted reader projection
+  before count and pagination. `routing_snapshot_is_coherent` alone is not object scope.
+- `blocked_by_conflict` plus `conflict_block_reason` is the terminal no-sanction outcome for an
+  unsatisfied two-Director route; preserve the immutable action list, including abstentions.
+
 ## Out of Scope
 Loan-limit calculation (006C/006D), general-meeting evidence (007G), register UI (007J), waiver workflows beyond vocabulary.
 

@@ -148,23 +148,8 @@ def serialize_case_detail(case, actor, actor_permissions):
     action_by_user = {
         str(action.approver_user_id): action for action in case.actions.all()
     }
-    required_approvers = []
-    for item in case.required_approvers_json:
-        action = action_by_user.get(str(item["user_id"]))
-        required_approvers.append(
-            {
-                **item,
-                "decision": action.decision if action else None,
-                "acted_at": (
-                    action.acted_at.isoformat().replace("+00:00", "Z")
-                    if action
-                    else None
-                ),
-            }
-        )
     snapshot = {
         **serialize_case_snapshot(case),
-        "required_approvers": required_approvers,
         "review_facts": case.appraisal_facts_json or serialize_case_review_facts(case),
         "available_actions": _available_actions(
             case, actor, actor_permissions, action_by_user
@@ -181,7 +166,7 @@ def serialize_case_snapshot(case):
         "approval_matrix_rule_version": case.approval_matrix_rule_version,
         "sanction_committee_id": str(case.sanction_committee_id),
         "sanction_committee_version": case.sanction_committee_version,
-        "required_approvers": case.required_approvers_json,
+        **serialize_case_authority(case),
         "excluded_approvers": case.excluded_approvers_json,
         "general_meeting_evidence_required": case.general_meeting_evidence_required,
         "conflict_block_reason": case.conflict_block_reason or None,
@@ -191,6 +176,65 @@ def serialize_case_snapshot(case):
         "committee_projection": case.committee_projection_json,
         "loan_limit_provenance": case.loan_limit_provenance_json,
     }
+
+
+def serialize_case_authority(case):
+    """Project immutable route, executable replacements, and every action together."""
+    actions = list(case.actions.all())
+    action_by_user = {str(action.approver_user_id): action for action in actions}
+    effective = ConflictOfInterestModule.effective_approvers(case)
+    user_ids = {
+        str(item["user_id"])
+        for item in effective
+        if isinstance(item, dict) and item.get("user_id")
+    } | {str(action.approver_user_id) for action in actions}
+    from sfpcl_credit.identity.models import User
+
+    users = {str(pk): user for pk, user in User.objects.in_bulk(user_ids).items()}
+    required_approvers = []
+    replacement_by_user = {}
+    for item in effective:
+        user_id = str(item["user_id"])
+        action = action_by_user.get(user_id)
+        row = {
+            "role_code": item["role_code"],
+            "user_id": user_id,
+            "full_name": users[user_id].full_name,
+            "decision": action.decision if action else None,
+            "acted_at": _action_time(action),
+        }
+        if item.get("replacement_for_user_id"):
+            row["replacement_for_user_id"] = str(
+                item["replacement_for_user_id"]
+            )
+            replacement_by_user[user_id] = row["replacement_for_user_id"]
+        required_approvers.append(row)
+    approval_actions = []
+    for action in actions:
+        user_id = str(action.approver_user_id)
+        row = {
+            "approval_action_id": str(action.pk),
+            "role_code": action.approver_role_code,
+            "user_id": user_id,
+            "full_name": users[user_id].full_name,
+            "decision": action.decision,
+            "comments": action.comments,
+            "acted_at": _action_time(action),
+        }
+        if user_id in replacement_by_user:
+            row["replacement_for_user_id"] = replacement_by_user[user_id]
+        approval_actions.append(row)
+    return {
+        "route_approvers": case.required_approvers_json,
+        "required_approvers": required_approvers,
+        "approval_actions": approval_actions,
+    }
+
+
+def _action_time(action):
+    if action is None:
+        return None
+    return action.acted_at.isoformat().replace("+00:00", "Z")
 
 
 def serialize_case_review_facts(case):

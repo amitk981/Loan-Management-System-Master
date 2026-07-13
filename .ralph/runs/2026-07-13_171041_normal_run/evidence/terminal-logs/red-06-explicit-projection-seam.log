@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_plain_model_save_does_not_hide_projection_mutation (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_plain_model_save_does_not_hide_projection_mutation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_171041_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 732, in test_plain_model_save_does_not_hide_projection_mutation
+    self.assertEqual(self.case.routing_snapshot_is_coherent, coherence_before)
+AssertionError: False != True
+
+----------------------------------------------------------------------
+Ran 1 test in 0.014s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

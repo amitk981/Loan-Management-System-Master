@@ -9,6 +9,9 @@ from django.utils import timezone
 from sfpcl_credit.approvals.models import ApprovalCase
 from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
+from sfpcl_credit.approvals.modules.approval_case_projection import (
+    refresh_approval_case_projection,
+)
 from sfpcl_credit.approvals.modules.approval_matrix import resolve_approval_matrix
 from sfpcl_credit.approvals.modules.sanction_committee import resolve_sanction_committee
 from sfpcl_credit.applications import services as application_services
@@ -109,6 +112,7 @@ class SanctionHandoffModule:
             submitted_by_user=actor,
             submitted_at=now,
         )
+        refresh_approval_case_projection(case)
         application.application_status = LoanApplication.STATUS_SUBMITTED_TO_SANCTION
         application.save(update_fields=["application_status"])
         appraisal_note.appraisal_status = appraisal_note.STATUS_SUBMITTED_TO_SANCTION
@@ -159,6 +163,7 @@ class SanctionHandoffModule:
         )
         case.workflow_event = event
         case.save(update_fields=["workflow_event"])
+        refresh_approval_case_projection(case)
         return SanctionHandoffResult(
             snapshot=self.serialize(case, prepared.latest_review)
         )
@@ -316,6 +321,7 @@ class SanctionHandoffModule:
             "appraisal_facts_json", "general_meeting_evidence_required",
             "current_status", "conflict_block_reason", "closed_at", "version",
         ])
+        refresh_approval_case_projection(case)
         request_meta = request_meta or {}
         AuditLog.objects.create(
             actor_user=actor,
@@ -452,4 +458,5 @@ class SanctionHandoffModule:
         }
         if case.approval_matrix_rule_id is not None:
             snapshot.update(approval_case_engine.serialize_case_snapshot(case))
+            snapshot["required_approvers"] = case.required_approvers_json
         return snapshot

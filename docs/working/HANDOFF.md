@@ -1,41 +1,40 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_164911_architecture_review
+2026-07-13_171041_normal_run
 
 ## Current Status
 
-The architecture review covered 007C3, 007D2, 007D3, and 007E from fixed point `48ef331`. 007C3's
-source-reader grants, 007D2's guarded communication-backed actions/PostgreSQL races, and 007D3's
-immutable correction/review cycles are otherwise substantive, but three executable probes exposed
-one Critical authority flaw and two High public-boundary regressions.
+007E2 closed the Critical duplicate-Director route and both High public-boundary regressions from
+the preceding architecture review. Conflict replacement now fills exact frozen role slots with
+distinct users; excluding either Director on a two-Director route closes the case as
+`blocked_by_conflict` with the exact missing role and no sanction.
 
-On a CFO + two-Director route, excluding Director 1 can yield effective slots `(CFO, Director 2,
-Director 2)` and the length-only check calls that satisfiable. On the lower one-Director route, a
-real alternate can approve but is absent from canonical history. The selector's helper index also
-contains the unused committee alternate, producing empty data with `total_count: 1` for a reader
-who direct detail correctly denies. Conflict-limited access is evaluated before base object scope,
-and the full §17.1 public enrichment/action matrix remains partial.
+Canonical collection/detail/action/history reads preserve raw `route_approvers`, expose executable
+`required_approvers` with `replacement_for_user_id`, and include every immutable
+`approval_actions` row. The §25.2 enrichment response retains its backward-compatible raw required
+approver shape. Unused committee alternates are absent from SQL counts and direct scope even when a
+declaration exists.
 
-Corrective slice 007E2 now owns distinct role/user authority, replacement/action projection,
-exact pre-pagination read projection/backfill, attributable COI-005 access, general-meeting flag
-scope, and the explicit approval-owned projection update seam. 007F and 007G were sharpened to
-consume that corrected outcome. No production code changed in this review.
+Coherence and original/effective/acted reader synchronization moved out of `ApprovalCase.save()`
+into one explicit approval-owned projection updater. Creation, workflow linkage, enrichment,
+actions/abstention, appraisal refresh, and migration invoke that interface atomically. Migration
+0013 backfills the exact reader set and rejects whitespace-only declaration reasons.
 
 ## Validation
 
-Independent Standards and Spec axes were retained in the run evidence. Dynamic isolated-Django
-probes failed `1 != 0` for alternate count nondisclosure, `2 != 3` for distinct authority, and
-`0 != 1` for alternate history visibility. These are review evidence, not implementation tests;
-007E2 must turn them GREEN test-first.
+Retained RED/GREEN logs cover duplicate identity, alternate-history omission, unused-alternate
+count/scope disclosure, noncommittee general-meeting detection, whitespace reason validation, and
+the hidden model-save projection seam. Public matrices cover both two-Director exclusion
+directions and all source §17.1 declaration/maker classes. Migration acceptance proves unused
+candidates are removed and effective replacements retained.
 
 Frontend build/typecheck/lint and all 208 tests pass. Backend check and migration sync pass; the
-full 637-test suite passes with 19 expected PostgreSQL-only SQLite skips and 93% coverage. Slice
-queue/dependency lint, state JSON, and diff whitespace checks pass. No Blocked slice exists, no
-ADR was needed because source documents already decide the fixes, and CONTEXT.md remains truthful.
+full 651-test suite passes with 19 expected PostgreSQL-only SQLite skips and 93% coverage. One
+initial full-suite failure exposed and repaired the §25.2 enrichment response compatibility issue;
+the final full suite is green.
 
 ## Next Run
 
-Run `007E2-conflict-authority-projection-and-scope-closure` next. It is the queue blocker for 007F
-and must close the Critical duplicate-Director path before exception/register or general-meeting
-work consumes approval outcomes. Then run 007F and 007G in dependency order.
+Run `007F-exception-approval-workflow` next. It now consumes the delivered canonical authority,
+action, and exact-reader projections. Then run 007G in dependency order.

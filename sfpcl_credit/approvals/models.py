@@ -1,6 +1,6 @@
 import uuid
 
-from django.db import models, transaction
+from django.db import models
 from django.utils import timezone
 
 
@@ -224,51 +224,6 @@ class ApprovalCase(models.Model):
     closed_at = models.DateTimeField(null=True, blank=True)
     routing_snapshot_is_coherent = models.BooleanField(default=False, db_index=True)
 
-    @transaction.atomic
-    def save(self, *args, **kwargs):
-        from sfpcl_credit.approvals.modules.approval_case_engine import (
-            is_routable_approval_case,
-        )
-
-        self.routing_snapshot_is_coherent = is_routable_approval_case(self)
-        update_fields = kwargs.get("update_fields")
-        if update_fields is not None:
-            kwargs["update_fields"] = set(update_fields) | {
-                "routing_snapshot_is_coherent"
-            }
-        result = super().save(*args, **kwargs)
-        indexed_user_ids = set()
-        if isinstance(self.required_approvers_json, list):
-            for item in self.required_approvers_json:
-                try:
-                    indexed_user_ids.add(uuid.UUID(str(item.get("user_id"))))
-                except (AttributeError, TypeError, ValueError):
-                    continue
-        if isinstance(self.committee_projection_json, dict):
-            committee_ids = [self.committee_projection_json.get("cfo_user_id")]
-            director_ids = self.committee_projection_json.get("director_user_ids")
-            if isinstance(director_ids, list):
-                committee_ids.extend(director_ids)
-            for user_id in committee_ids:
-                try:
-                    indexed_user_ids.add(uuid.UUID(str(user_id)))
-                except (TypeError, ValueError):
-                    continue
-        ApprovalCaseRequiredApprover.objects.filter(approval_case=self).exclude(
-            user_id__in=indexed_user_ids
-        ).delete()
-        ApprovalCaseRequiredApprover.objects.bulk_create(
-            [
-                ApprovalCaseRequiredApprover(
-                    approval_case=self,
-                    user_id=user_id,
-                )
-                for user_id in indexed_user_ids
-            ],
-            ignore_conflicts=True,
-        )
-        return result
-
     class Meta:
         db_table = "approval_cases"
         indexes = [
@@ -444,7 +399,7 @@ class ApprovalConflictDeclaration(models.Model):
                 name="approval_conflict_type_valid",
             ),
             models.CheckConstraint(
-                check=~models.Q(reason=""),
+                check=models.Q(reason__regex=r"\S"),
                 name="approval_conflict_reason_nonblank",
             ),
         ]

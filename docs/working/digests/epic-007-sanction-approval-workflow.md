@@ -1,5 +1,22 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007E2 Conflict Authority, Projection, and Scope Closure
+
+- Conflict replacement now fills exact frozen CFO/Director slots with distinct users; excluding
+  either Director on a two-Director route cannot reuse the survivor and instead produces the exact
+  conflict-blocked, no-sanction ledger.
+- Immutable `required_approvers_json` remains route provenance. Canonical reads expose unchanged
+  `route_approvers`, executable `required_approvers` with replacement attribution, and every
+  immutable `approval_actions` row identically across collection/detail/action/history.
+- One explicit approval-owned projection updater owns coherence and exact reader actors for case
+  creation, workflow linkage, enrichment, actions/abstention, appraisal refresh, and migration.
+  Ordinary model saves have no hidden cross-table workflow behavior.
+- Reader SQL includes only original/effective/acted cycle participants. Unused committee alternates
+  disclose neither counts nor rows; COI-005 is applied only after attributable base scope.
+- General-meeting detection scans active borrower/Director-relative declarations independently of
+  case assignment, while exclusions remain limited to frozen candidates. Whitespace-only reasons
+  are rejected by database constraint.
+
 ## 007E Conflict-of-Interest Blocking
 
 - `approvals.modules.conflict_of_interest` evaluates typed persisted borrower/Director-relative/

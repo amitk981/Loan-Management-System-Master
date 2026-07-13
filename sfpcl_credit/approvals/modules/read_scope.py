@@ -48,19 +48,27 @@ def evaluate_approval_case_read_scope(
 ):
     """Return the exact persisted or object-owned reason an actor can read a case."""
     actor_id = str(actor.pk)
-    if ConflictOfInterestModule.conflict_reason(case=case, actor_id=actor_id):
+    is_original_actor = any(
+        isinstance(item, dict) and str(item.get("user_id")) == actor_id
+        for item in case.required_approvers_json
+    )
+    is_effective_actor = any(
+        str(item.get("user_id")) == actor_id
+        for item in ConflictOfInterestModule.effective_approvers(case)
+    )
+    has_acted = any(
+        str(action.approver_user_id) == actor_id for action in case.actions.all()
+    )
+    attributable = is_original_actor or is_effective_actor or has_acted
+    if attributable and ConflictOfInterestModule.conflict_reason(
+        case=case, actor_id=actor_id
+    ):
         return ApprovalCaseReadScopeDecision(
             True, "conflict_limited_readonly", "case_exclusion"
         )
-    if any(
-        str(item.get("user_id")) == actor_id
-        for item in ConflictOfInterestModule.effective_approvers(case)
-    ):
+    if is_effective_actor:
         return ApprovalCaseReadScopeDecision(True, "approval_assigned", "case_snapshot")
-    if any(
-        isinstance(item, dict) and str(item.get("user_id")) == actor_id
-        for item in case.required_approvers_json
-    ):
+    if is_original_actor or has_acted:
         return ApprovalCaseReadScopeDecision(True, "approval_assigned", "case_snapshot")
 
     if not persisted_scope_resolved:
