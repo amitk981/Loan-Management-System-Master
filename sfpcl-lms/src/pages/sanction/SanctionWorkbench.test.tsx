@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SanctionWorkbench from './SanctionWorkbench';
-import { AuthSessionError, authenticatedMultipartRequest, authenticatedRequest } from '../../services/authSession';
+import { AuthSessionError, authenticatedMultipartRequest, authenticatedPaginatedRequest, authenticatedRequest } from '../../services/authSession';
 import workbenchSource from './SanctionWorkbench.tsx?raw';
 import panelSource from '../../components/loan/ApprovalPanel.tsx?raw';
 import appSource from '../../App.tsx?raw';
@@ -23,7 +23,12 @@ vi.mock('../../contexts/RoleContext', () => ({
 }));
 vi.mock('../../services/authSession', async importOriginal => {
   const actual = await importOriginal<typeof import('../../services/authSession')>();
-  return { ...actual, authenticatedRequest: vi.fn(), authenticatedMultipartRequest: vi.fn() };
+  return { ...actual, authenticatedRequest: vi.fn(), authenticatedPaginatedRequest: vi.fn(), authenticatedMultipartRequest: vi.fn() };
+});
+
+const pagination = (items: unknown[], overrides: Record<string, unknown> = {}) => ({
+  items,
+  pagination: { page: 1, page_size: 20, total_count: items.length, total_pages: 1, has_next: false, has_previous: false, ...overrides },
 });
 
 const action = (action_code: string) => ({
@@ -62,11 +67,62 @@ const approvalCase = {
 };
 
 describe('SanctionWorkbench authenticated container', () => {
+  beforeEach(() => {
+    vi.mocked(authenticatedPaginatedRequest).mockImplementation(async path => {
+      const items = await authenticatedRequest(path) as unknown[];
+      return pagination(items) as never;
+    });
+  });
   afterEach(() => { cleanup(); vi.clearAllMocks(); vi.unstubAllGlobals(); localStorage.clear(); userPermissions = ['approvals.case.read', 'approvals.case.approve', 'approvals.case.reject', 'approvals.case.return', 'approvals.sanction.read']; userRoleCodes = ['cfo']; userId = 'cfo-1'; });
+
+  it('renders the authoritative total and replaces the queue from the next server page', async () => {
+    const secondPageCase = { ...approvalCase, approval_case_id: 'case-21', application_reference_number: 'LO000021' };
+    vi.mocked(authenticatedPaginatedRequest)
+      .mockResolvedValueOnce(pagination([approvalCase], { total_count: 101, total_pages: 6, has_next: true }) as never)
+      .mockResolvedValueOnce(pagination([secondPageCase], { page: 2, total_count: 101, total_pages: 6, has_next: true, has_previous: true }) as never)
+      .mockResolvedValueOnce(pagination([], { total_count: 0 }) as never);
+    vi.mocked(authenticatedRequest).mockImplementation(async path => {
+      if (path === '/api/v1/approval-cases/case-1/') return approvalCase as never;
+      if (path === '/api/v1/approval-cases/case-21/') return secondPageCase as never;
+      throw new Error(`Unexpected request ${path}`);
+    });
+
+    render(<SanctionWorkbench onOpenApplication={vi.fn()} />);
+
+    expect(await screen.findByText('101 cases from the approval-case service')).toBeTruthy();
+    expect(screen.getByText('Page 1 of 6')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(await screen.findAllByText('LO000021')).toHaveLength(2);
+    expect(screen.queryByText('LO000001')).toBeNull();
+    expect(authenticatedPaginatedRequest).toHaveBeenNthCalledWith(1, '/api/v1/approval-cases/?approval_type=sanction&current_status=pending&assigned_to_me=true&page=1&page_size=20');
+    expect(authenticatedPaginatedRequest).toHaveBeenNthCalledWith(2, '/api/v1/approval-cases/?approval_type=sanction&current_status=pending&assigned_to_me=true&page=2&page_size=20');
+    await userEvent.selectOptions(screen.getByLabelText('Sanction case status'), 'approved');
+    expect(await screen.findByText('Sanction queue is clear')).toBeTruthy();
+    expect(screen.getByText('0 cases from the approval-case service')).toBeTruthy();
+    expect(authenticatedPaginatedRequest).toHaveBeenNthCalledWith(3, '/api/v1/approval-cases/?approval_type=sanction&current_status=approved&page=1&page_size=20');
+  });
+
+  it.each([
+    [new AuthSessionError('OBJECT_ACCESS_DENIED', 'Permission was removed.', 403), 'Sanction access denied'],
+    [new AuthSessionError('MALFORMED_RESPONSE', 'The server returned an invalid paginated response.', 200), 'Sanction action could not be completed'],
+  ])('clears prior rows and totals when a later collection fails with $code', async (error, heading) => {
+    vi.mocked(authenticatedPaginatedRequest)
+      .mockResolvedValueOnce(pagination([approvalCase], { total_count: 101, total_pages: 6, has_next: true }) as never)
+      .mockRejectedValueOnce(error);
+    vi.mocked(authenticatedRequest).mockResolvedValue(approvalCase as never);
+
+    render(<SanctionWorkbench onOpenApplication={vi.fn()} />);
+    expect(await screen.findByText('101 cases from the approval-case service')).toBeTruthy();
+    await userEvent.selectOptions(screen.getByLabelText('Sanction case status'), 'approved');
+
+    expect(await screen.findByText(heading)).toBeTruthy();
+    expect(screen.getByText('0 cases from the approval-case service')).toBeTruthy();
+    expect(screen.queryByText('LO000001')).toBeNull();
+  });
 
   it('loads frozen case truth and approves through the exact case boundary before canonical refresh', async () => {
     vi.mocked(authenticatedRequest).mockImplementation(async (path, options) => {
-      if (path === '/api/v1/approval-cases/?approval_type=sanction&current_status=pending&assigned_to_me=true&page_size=100') return [approvalCase] as never;
+      if (path === '/api/v1/approval-cases/?approval_type=sanction&current_status=pending&assigned_to_me=true&page=1&page_size=20') return [approvalCase] as never;
       if (path === '/api/v1/approval-cases/case-1/' && !options?.method) return approvalCase as never;
       if (path === '/api/v1/approval-cases/case-1/approve/' && options?.method === 'POST') return { ...approvalCase, version: 5 } as never;
       throw new Error(`Unexpected request ${path}`);

@@ -1,0 +1,3 @@
+Listing tests:
+  [chromium] › sanction-workbench.e2e.spec.ts:9:5 › sanction workbench preserves the prototype composition across authoritative states
+Total: 1 test in 1 file

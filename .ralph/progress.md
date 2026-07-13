@@ -1,5 +1,36 @@
 # Ralph Progress Log
 
+# Repair 2026-07-14_050413_repair
+
+- Preserved the complete 007P implementation and repaired only the independently demonstrated
+  trusted-browser failure. The malformed-envelope response mode now expects the UI's selected
+  `approved` query filter instead of incorrectly demanding an unfiltered request.
+- The prior mock assertion had aborted route fulfillment, allowed a real unauthenticated request,
+  and cascaded into the missing malformed-response error. No production transport, pagination,
+  approval boundary, styling, or business behavior changed.
+- Playwright collection passes. Local Chromium reached the documented macOS Mach-port denial before
+  test execution; the orchestrator retains ownership of the required two post-repair browser runs.
+- Frontend build/typecheck/lint and all 269 tests pass. Django check/migration sync and all 692 tests
+  pass with 19 expected PostgreSQL-only skips and 93% coverage.
+- Evidence: `.ralph/runs/2026-07-14_050413_repair/`. Next: independent full validation and two-run
+  browser acceptance, then 007Q.
+
+# Run 2026-07-14_043916_normal_run
+
+- Completed 007P by making the shared authenticated list interface reject non-array data and
+  missing, malformed, negative, or internally inconsistent pagination instead of fabricating an
+  empty page.
+- S21 now retains exact sanction/status/assignment filters with explicit page/page size, renders
+  the server total, navigates every page, resets filters to page one, and clears prior rows/totals
+  on permission, transport, or malformed-response failure.
+- Approval collection rejects unknown type/status values and applies actor/type/status/assignment
+  narrowing before the canonical frozen/read-scope validator. Instrumentation proves irrelevant
+  candidates cause no validator calls and a stale-malformed candidate creates no total/page hole.
+- Frontend build/typecheck/lint and 269 tests pass. Django check/migration sync and 692 tests pass
+  with 19 expected PostgreSQL-only skips and 93% coverage. The trusted spec collects; local
+  Chromium hit the expected Mach-port sandbox denial, leaving the two declared screenshot runs to
+  orchestrator acceptance. Next: 007Q.
+
 # Run 2026-07-14_034706_architecture_review
 
 - Independently reviewed commits `d106e16...eab8b0d` covering completed slices 007K-007N across
@@ -6043,6 +6074,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_041501_normal_run/.ralph/runs/2026-07-14_041501_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_041501_normal_run/.ralph/runs/2026-07-14_041501_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 05:18:34 - 2026-07-14_050413_repair
+- Agent tool used: codex
+- Slice attempted: 007P-sanction-queue-pagination-and-read-boundary-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_043916_normal_run/.ralph/runs/2026-07-14_050413_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_043916_normal_run/.ralph/runs/2026-07-14_050413_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

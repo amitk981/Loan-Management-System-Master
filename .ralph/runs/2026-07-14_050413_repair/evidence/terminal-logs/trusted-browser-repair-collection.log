@@ -1,0 +1,12 @@
+Command:
+RALPH_EVIDENCE_DIR=<repair-run>/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- --list e2e/sanction-workbench.e2e.spec.ts
+
+Output:
+> sfpcl-lms@1.0.0 e2e
+> playwright test --list e2e/sanction-workbench.e2e.spec.ts
+
+Listing tests:
+  [chromium] > sanction-workbench.e2e.spec.ts:9:5 > sanction workbench preserves the prototype composition across authoritative states
+Total: 1 test in 1 file
+
+Exit code: 0

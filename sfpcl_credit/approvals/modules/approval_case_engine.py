@@ -22,6 +22,14 @@ from sfpcl_credit.identity.modules.object_permissions import ObjectAccessResult
 
 
 _LIST_PARAMS = {"page", "page_size", "current_status", "approval_type", "assigned_to_me"}
+_LIST_APPROVAL_TYPES = {ApprovalCase.TYPE_SANCTION}
+_LIST_STATUSES = {
+    ApprovalCase.STATUS_PENDING,
+    ApprovalCase.STATUS_APPROVED,
+    ApprovalCase.STATUS_REJECTED,
+    ApprovalCase.STATUS_RETURNED,
+    ApprovalCase.STATUS_BLOCKED_CONFLICT,
+}
 
 
 def select_readable_approval_cases(*, actor, actor_permissions=None):
@@ -76,13 +84,21 @@ def list_approval_cases(*, actor, query_params):
     page = _positive_int("page", query_params.get("page"), 1)
     page_size = min(_positive_int("page_size", query_params.get("page_size"), 20), 100)
     assigned_to_me = _boolean("assigned_to_me", query_params.get("assigned_to_me"))
+    current_status = query_params.get("current_status")
+    approval_type = query_params.get("approval_type")
+    filter_errors = {}
+    if approval_type is not None and approval_type not in _LIST_APPROVAL_TYPES:
+        filter_errors["approval_type"] = "Unknown approval type."
+    if current_status is not None and current_status not in _LIST_STATUSES:
+        filter_errors["current_status"] = "Unknown approval case status."
+    if filter_errors:
+        raise ValidationError(filter_errors)
+
     actor_permissions = effective_permission_codes(actor)
-    queryset, _ = select_readable_approval_cases(
+    queryset, persisted_scope_type = select_approval_case_candidates(
         actor=actor,
         actor_permissions=actor_permissions,
     )
-    current_status = query_params.get("current_status")
-    approval_type = query_params.get("approval_type")
     if current_status:
         queryset = queryset.filter(current_status=current_status)
     if approval_type:
@@ -92,13 +108,24 @@ def list_approval_cases(*, actor, query_params):
             current_status=ApprovalCase.STATUS_PENDING,
             required_approver_index__user_id=actor.pk,
         )
-        actor_id = str(actor.pk)
-        scoped_ids = [
-            case.pk
-            for case in queryset.iterator(chunk_size=100)
-            if is_pending_approval_case_actor(case=case, actor_id=actor_id)
-        ]
-        queryset = queryset.filter(pk__in=scoped_ids)
+    actor_id = str(actor.pk)
+    scoped_ids = []
+    for case in queryset.iterator(chunk_size=100):
+        if assigned_to_me and not is_pending_approval_case_actor(
+            case=case, actor_id=actor_id
+        ):
+            continue
+        if approval_case_is_readable(
+            actor=actor,
+            case=case,
+            persisted_scope_type=persisted_scope_type,
+            persisted_scope_resolved=True,
+            actor_permissions=actor_permissions,
+        ):
+            scoped_ids.append(case.pk)
+    queryset = queryset.filter(pk__in=scoped_ids).order_by(
+        "-submitted_at", "-approval_case_id"
+    )
     total_count = queryset.count()
     total_pages = ceil(total_count / page_size) if total_count else 1
     page = min(page, total_pages)

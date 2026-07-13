@@ -2442,7 +2442,10 @@ committee, pending-proposal, or losing-proposal changes never rewrite the stored
 
 `GET /api/v1/approval-cases/` requires `approvals.case.read` and accepts only `current_status`,
 `approval_type`, `assigned_to_me`, `page`, and `page_size`. It returns the standard top-level
-pagination envelope. `assigned_to_me=true` includes only complete version-2-or-later 007B routing
+pagination envelope. `approval_type`, when present, is exactly `sanction`; `current_status`, when
+present, is exactly `pending`, `approved`, `rejected`, `returned_for_clarification`, or
+`blocked_by_conflict`. Unknown values return `400 VALIDATION_ERROR` rather than an empty successful
+page. `assigned_to_me=true` includes only complete version-2-or-later 007B routing
 snapshots where the caller remains in `required_approvers`, is absent from `excluded_approvers`,
 has no immutable `approval_actions` row, and the case is still pending. Missing/default snapshot
 facts never fall back to amount, the current matrix, or the current committee.
@@ -2480,6 +2483,12 @@ over every narrowed candidate before collection/register filters, counts, page n
 `LIMIT/OFFSET`, or serialization. Detail, action, sanction-decision, and register reads execute the
 same decision and never trust the projection as read or action authority.
 
+For the approval-case collection, coarse actor scope plus valid approval type, status, and
+assignment/index filters run before canonical Python validation. Every remaining candidate still
+passes through the single frozen-validity/read-scope decision before totals, pages, or rows are
+produced. A stale true projection can therefore add validator work but cannot create a page hole or
+inflate `total_count`; unrelated actors, types, and statuses are not materialized for validation.
+
 Detail returns stored authority/provenance (`approval_matrix_rule_id` and version,
 `sanction_committee_id` and version, `decision_date`, ordered required/excluded approvers,
 matrix/committee/loan-limit snapshots, distinct `reason_for_approval` and `exception_reason`, and
@@ -2516,7 +2525,12 @@ before the later workflow-TAT policy boundary exists.
 
 The S21 frontend sends `approval_type=sanction` on every collection request. The assigned pending
 queue additionally sends `current_status=pending&assigned_to_me=true`; historical filters send their
-exact status without assignment. S22 renders every immutable `approval_actions` actor, role,
+exact status without assignment. Every request also sends explicit `page` and `page_size=20`; S21
+renders `pagination.total_count`, exposes the existing previous/next pattern, resets to page one on
+filter changes, and replaces rows plus pagination from the same response. Collection failure clears
+both. The shared authenticated paginated client accepts success only when `data` is an array and all
+six top-level pagination fields are present, non-negative/in-range, and internally consistent; it
+returns `MALFORMED_RESPONSE` rather than fabricating empty pagination. S22 renders every immutable `approval_actions` actor, role,
 decision/abstention, comment/reason, and acted-at confirmation separately from required/effective
 authority.
 

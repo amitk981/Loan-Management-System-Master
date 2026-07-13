@@ -44,7 +44,9 @@ register evidence outside the captured viewport or contain opaque rendering arte
    authority/actions, and supporting metadata. Keep the register read-only and actor-scoped.
 3. Render all named source columns using the existing register table/detail composition. If the
    existing horizontal table cannot show the evidence legibly at the trusted viewport, reuse an
-   existing row-detail/card pattern; do not redesign or introduce styling.
+   existing row-detail/card pattern; do not redesign or introduce styling. Keep both register
+   collections on the 007P shared strict paginated transport: explicit page/page size, exact server
+   totals, and atomic row/pagination replacement with malformed success rendered as an error.
 4. Keep document ids as metadata. Register visibility, a global document permission, or a frozen
    file name never creates a download control; only a separately returned enabled document action
    may do so.

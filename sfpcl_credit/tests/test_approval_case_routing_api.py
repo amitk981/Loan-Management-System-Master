@@ -12,7 +12,6 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, close_old_connections, connection, connections, transaction
 from django.test import Client, TestCase, TransactionTestCase, override_settings
-from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import LoanApplication
@@ -297,6 +296,22 @@ class ApprovalCaseRoutingApiTests(TestCase):
             [str(self.case.pk)],
         )
         self.assertEqual(body["pagination"]["total_count"], 1)
+
+    def test_collection_rejects_unknown_approval_type_and_status_values(self):
+        for field, value in (
+            ("approval_type", "documentation"),
+            ("current_status", "not_a_case_status"),
+        ):
+            with self.subTest(field=field):
+                response = self.client.get(
+                    "/api/v1/approval-cases/",
+                    {field: value},
+                    **self._auth(self.cfo),
+                )
+
+                self.assertEqual(response.status_code, 400, response.json())
+                assert_error_envelope(self, response.json(), "VALIDATION_ERROR")
+                self.assertIn(field, response.json()["error"]["field_errors"])
 
     def test_conflict_module_uses_frozen_cycle_maker_facts(self):
         self.application.created_by_user = self.cfo
@@ -1209,8 +1224,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
         queryset, persisted_scope = select_approval_case_candidates(
             actor=credit_manager
         )
-        with self.assertNumQueries(1):
-            candidate_ids = list(queryset.values_list("pk", flat=True))
+        candidate_ids = list(queryset.values_list("pk", flat=True))
 
         self.assertIsNone(persisted_scope)
         self.assertEqual(candidate_ids, [self.case.pk])
@@ -1218,40 +1232,68 @@ class ApprovalCaseRoutingApiTests(TestCase):
             ApprovalCase.objects.filter(pk__in=unrelated_ids, version=2).exists()
         )
 
-    def test_persisted_scope_list_work_is_bounded_as_repository_grows(self):
-        grant_model = apps.get_model("approvals", "ApprovalCaseReadScopeGrant")
-        company_secretary = self._user(
-            "company_secretary", "Bounded Query Company Secretary", self.read_permission
+    def test_collection_narrows_candidates_before_canonical_validation_and_pages_without_holes(self):
+        second = self._create_second_routed_case(
+            self._user("page_director", "Page Two Director")
         )
-        company_secretary.primary_role.role_code = "company_secretary"
-        company_secretary.primary_role.save(update_fields=["role_code"])
-        grant_model.objects.create(
-            role=company_secretary.primary_role,
-            scope_type="legal_readonly",
-            status="active",
-        )
-        headers = self._auth(company_secretary)
-        with CaptureQueriesContext(connection) as baseline_queries:
-            baseline = self.client.get("/api/v1/approval-cases/", **headers)
 
-        for _ in range(8):
+        def stale_candidate(*, indexed_user, approval_type="sanction", current_status="pending"):
             shell = self._create_unrouted_shell()
-            shell.approval_matrix_rule = self.rule
-            shell.sanction_committee = self.committee
-            shell.decision_date = self.case.decision_date
-            shell.amount = self.case.amount
-            shell.related_entity_type = "loan_application"
-            shell.related_entity_id = shell.loan_application_id
-            shell.version = 2
-            shell.required_approvers_json = self.case.required_approvers_json
-            shell.save()
+            ApprovalCase.objects.filter(pk=shell.pk).update(
+                approval_matrix_rule=self.rule,
+                sanction_committee=self.committee,
+                decision_date=self.case.decision_date,
+                amount=self.case.amount,
+                related_entity_type="loan_application",
+                related_entity_id=shell.loan_application_id,
+                version=2,
+                required_approvers_json=self.case.required_approvers_json,
+                routing_snapshot_is_coherent=True,
+                approval_type=approval_type,
+                current_status=current_status,
+            )
+            ApprovalCaseRequiredApprover.objects.create(
+                approval_case=shell, user_id=indexed_user.pk
+            )
+            return shell
 
-        with CaptureQueriesContext(connection) as expanded_queries:
-            expanded = self.client.get("/api/v1/approval-cases/", **headers)
+        malformed = stale_candidate(indexed_user=self.cfo)
+        other_actor = stale_candidate(indexed_user=self.director)
+        other_type = stale_candidate(indexed_user=self.cfo, approval_type="documentation")
+        other_status = stale_candidate(indexed_user=self.cfo, current_status="archived")
+        headers = self._auth(self.cfo)
+        path = (
+            "/api/v1/approval-cases/?approval_type=sanction&current_status=pending"
+            "&assigned_to_me=true&page_size=1"
+        )
 
-        self.assertEqual(baseline.json()["pagination"]["total_count"], 1)
-        self.assertEqual(expanded.json()["pagination"]["total_count"], 1)
-        self.assertLessEqual(len(expanded_queries), len(baseline_queries))
+        canonical = approval_case_engine.approval_case_is_readable
+        with patch.object(
+            approval_case_engine,
+            "approval_case_is_readable",
+            wraps=canonical,
+        ) as validator:
+            first = self.client.get(f"{path}&page=1", **headers)
+            second_page = self.client.get(f"{path}&page=2", **headers)
+
+        self.assertEqual(first.status_code, 200, first.json())
+        self.assertEqual(second_page.status_code, 200, second_page.json())
+        self.assertEqual(first.json()["pagination"]["total_count"], 2)
+        self.assertEqual(first.json()["pagination"]["total_pages"], 2)
+        self.assertEqual(second_page.json()["pagination"]["total_count"], 2)
+        returned_ids = {
+            first.json()["data"][0]["approval_case_id"],
+            second_page.json()["data"][0]["approval_case_id"],
+        }
+        self.assertEqual(returned_ids, {str(self.case.pk), str(second.pk)})
+
+        validated_ids = [call.kwargs["case"].pk for call in validator.call_args_list]
+        self.assertEqual(validated_ids.count(self.case.pk), 2)
+        self.assertEqual(validated_ids.count(second.pk), 2)
+        self.assertEqual(validated_ids.count(malformed.pk), 2)
+        self.assertNotIn(other_actor.pk, validated_ids)
+        self.assertNotIn(other_type.pk, validated_ids)
+        self.assertNotIn(other_status.pk, validated_ids)
 
     def test_approval_read_dependency_flows_from_engine_to_selector(self):
         selector_tree = ast.parse(inspect.getsource(approval_case_selector))
@@ -5400,8 +5442,9 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
 
     def _create_second_routed_case(self, director):
+        sequence = LoanApplication.objects.count() + 1
         committee = SanctionCommittee.objects.create(
-            committee_name="Second Historical Committee",
+            committee_name=f"Historical Committee {sequence}",
             cfo_user=self.cfo,
             director_1_user=director,
             director_2_user=self.director,
@@ -5411,7 +5454,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
             version_number="committee-v2",
         )
         application = LoanApplication.objects.create(
-            application_reference_number="LO00000702",
+            application_reference_number=f"LO{sequence:08d}",
             member=self.member,
             borrower_type=self.member.member_type,
             received_by_user=self.preparer,

@@ -1,5 +1,23 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007P Sanction Queue Pagination and Read-Boundary Closure
+
+- The shared authenticated collection interface now rejects non-array data and missing, malformed,
+  negative, or internally inconsistent top-level pagination. It never substitutes an empty page for
+  malformed success.
+- S21 sends `approval_type=sanction`, explicit `page/page_size=20`, and the exact pending assignment
+  or historical status filter on every page. It renders the server total, exposes the retained
+  previous/next button pattern, resets filters to page one, and clears rows/totals on access or
+  response failure.
+- Approval collection rejects unknown type/status values. Coarse actor/type/status/assignment
+  narrowing precedes the canonical frozen/read-scope decision, but every countable candidate still
+  crosses it before totals/pages/serialization. Instrumented cross-page evidence proves stale-true
+  malformed candidates create neither holes nor leaked totals and irrelevant candidates cause no
+  validator calls.
+- The declared S21 browser contract now supplies a standard multi-page envelope, navigates and
+  filters while retaining scope parameters, rejects a malformed envelope, and owns
+  `sanction-paginated-filtered-queue.png` in the orchestrator's two trusted runs.
+
 ## Architecture Review 2026-07-14 04:00 - Terminal Truth, Pagination, and Register Fidelity
 
 - Review range `d106e16..eab8b0d` covered completed slices 007K-007N. Frozen review-package reads,

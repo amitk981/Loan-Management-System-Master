@@ -15,6 +15,7 @@ interface ApiEnvelope<T> {
   success: boolean;
   data?: T;
   pagination?: Pagination;
+  response_status?: number;
   error?: {
     code: string;
     message: string;
@@ -36,15 +37,6 @@ export interface PaginatedResult<T> {
   items: T[];
   pagination: Pagination;
 }
-
-const EMPTY_PAGINATION: Pagination = {
-  page: 1,
-  page_size: 20,
-  total_count: 0,
-  total_pages: 1,
-  has_next: false,
-  has_previous: false,
-};
 
 interface LoginData {
   access_token: string;
@@ -302,7 +294,33 @@ const parseAuthenticatedEnvelope = async <T>(response: Response): Promise<ApiEnv
       : undefined;
     throw new AuthSessionError(envelope.error?.code ?? 'REQUEST_FAILED', envelope.error?.message ?? 'Request failed.', response.status, fieldErrors, envelope.error?.details);
   }
-  return envelope;
+  return { ...envelope, response_status: response.status };
+};
+
+const isValidPagination = (value: unknown, itemCount: number): value is Pagination => {
+  if (!value || typeof value !== 'object') return false;
+  const pagination = value as Record<string, unknown>;
+  const integer = (field: string, minimum: number) =>
+    Number.isInteger(pagination[field]) && (pagination[field] as number) >= minimum;
+  if (
+    !integer('page', 1)
+    || !integer('page_size', 1)
+    || !integer('total_count', 0)
+    || !integer('total_pages', 1)
+    || typeof pagination.has_next !== 'boolean'
+    || typeof pagination.has_previous !== 'boolean'
+  ) return false;
+
+  const { page, page_size: pageSize, total_count: totalCount, total_pages: totalPages } = pagination as unknown as Pagination;
+  const expectedPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const firstItemOffset = (page - 1) * pageSize;
+  return totalPages === expectedPages
+    && page <= totalPages
+    && pagination.has_next === (page < totalPages)
+    && pagination.has_previous === (page > 1)
+    && itemCount <= pageSize
+    && firstItemOffset + itemCount <= totalCount
+    && (page === totalPages || itemCount === pageSize);
 };
 
 const authenticatedHeaders = (accessToken: string, jsonBody = false): Record<string, string> => ({
@@ -330,7 +348,14 @@ export const authenticatedRequest = async <T>(path: string, options: { method?: 
 
 export const authenticatedPaginatedRequest = async <T>(path: string): Promise<PaginatedResult<T>> => {
   const envelope = await authenticatedEnvelopeRequest<T[]>(path);
-  return { items: envelope.data ?? [], pagination: envelope.pagination ?? EMPTY_PAGINATION };
+  if (!Array.isArray(envelope.data) || !isValidPagination(envelope.pagination, envelope.data.length)) {
+    throw new AuthSessionError(
+      'MALFORMED_RESPONSE',
+      'The server returned an invalid paginated response.',
+      envelope.response_status,
+    );
+  }
+  return { items: envelope.data, pagination: envelope.pagination };
 };
 
 export const authenticatedMultipartRequest = async <T>(path: string, fields: Record<string, string | Blob>): Promise<T> => {

@@ -1,4 +1,4 @@
-import { authenticatedMultipartRequest, authenticatedRequest } from './authSession';
+import { authenticatedMultipartRequest, authenticatedPaginatedRequest, authenticatedRequest, type PaginatedResult } from './authSession';
 
 export interface ApprovalAvailableAction {
   action_code: 'approve' | 'reject' | 'return' | 'abstain' | 'record_general_meeting_approval';
@@ -130,13 +130,14 @@ export interface GeneralMeetingPayload {
   approval_status: 'pending' | 'approved' | 'rejected';
 }
 
-export const listApprovalCases = (status = 'pending') => {
+export const listApprovalCases = (status = 'pending', page = 1, pageSize = 20): Promise<PaginatedResult<ApprovalCase>> => {
   const params = new URLSearchParams();
   params.set('approval_type', 'sanction');
   if (status !== 'all') params.set('current_status', status);
   if (status === 'pending') params.set('assigned_to_me', 'true');
-  params.set('page_size', '100');
-  return authenticatedRequest<ApprovalCase[]>(`/api/v1/approval-cases/?${params.toString()}`);
+  params.set('page', String(page));
+  params.set('page_size', String(pageSize));
+  return authenticatedPaginatedRequest<ApprovalCase>(`/api/v1/approval-cases/?${params.toString()}`);
 };
 
 export const fetchApprovalCase = (caseId: string) =>

@@ -17,10 +17,10 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   Borrower 360, application intake, member portal (auth/dashboard/profile/applications), and the
   Epic 006 credit screens are API-backed. The Epic 007 sanction workbench, sanction/exception
   registers, approval matrix, and loan-policy settings use authenticated backend boundaries;
-  corrective slices 007K-007N completed frozen review facts, S21/S22/S25 evidence, shared
-  transport, prototype-layout fidelity, and trusted browser acceptance. Corrective slices
-  007O-007Q are queued to close terminal reads from mutable appraisal data, full S21 pagination,
-  source-required S23/S25 columns, and reviewable trusted-browser evidence.
+  corrective slices 007K-007P completed frozen review facts and terminal evidence, S21/S22/S25
+  contract evidence, strict shared pagination, full S21 navigation, prototype-layout fidelity,
+  and declared trusted-browser contracts. Corrective slice 007Q is queued to close source-required S23/S25
+  columns and reviewable trusted-browser evidence.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

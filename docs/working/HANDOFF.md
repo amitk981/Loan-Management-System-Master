@@ -2,31 +2,32 @@
 
 ## Last Run
 
-2026-07-14_041501_normal_run
+2026-07-14_050413_repair
 
 ## Current Status
 
-Slice 007O is complete. The routed credit review package now freezes member/application identity
-and reviewed sanction terms. Final approval revalidates the locked canonical package and creates
-the sanction decision and immutable Credit Sanction Register only from frozen facts. The register
-retains the exact review package, so later application/member/appraisal/risk changes cannot alter
-approved or rejected formal evidence. Malformed terminal truth is exact zero-write.
+Slice 007P remains complete after repair of the independently demonstrated trusted-browser harness
+failure. The malformed-envelope response mode had incorrectly asserted that `current_status` was
+absent even though the scenario selected `approved`; that assertion aborted mocked fulfillment,
+caused a real 401, and hid the intended strict-pagination error. The mock now expects the exact
+selected status. No production code or business behavior changed during repair.
 
-General Meeting availability and mutation now use the same public `approval_case_is_readable`
-decision as detail/actions/registers while retaining legal-audience and document authority.
-Migration 0018 adds the immutable register's `source_review_facts_json` field. No frontend behavior
-changed. 007P and 007Q were sharpened with the newly explicit boundary/source ownership.
+The underlying 007P implementation remains intact: S21 preserves server pagination and exact
+sanction/status/assignment filters, the shared client rejects malformed pagination, and approval
+collection narrows candidates before canonical per-case validation. 007Q is already concretely
+sharpened to retain those boundaries.
 
 ## Validation
 
-Run evidence is in `.ralph/runs/2026-07-14_041501_normal_run/evidence/`. Backend RED/GREEN proves
-approved/rejected between-routing mutation, malformed-package zero-write, and shared General
-Meeting readability. Django check/migration sync and all 691 backend tests pass with 19 expected
-PostgreSQL-only skips at 93% coverage. Frontend build/typecheck/lint and all 257 tests pass.
+Repair evidence is in `.ralph/runs/2026-07-14_050413_repair/evidence/`. Django check/migration sync
+and all 692 backend tests pass with 19 expected PostgreSQL-only skips at 93% coverage. Frontend
+build/typecheck/lint and all 269 tests pass; Playwright collection passes. Local Chromium hit the
+expected macOS Mach-port denial before test execution, so independent validation owns both declared
+post-repair browser runs and the final screenshot verdict.
 
 ## Next Run
 
-Run `007P-sanction-queue-pagination-and-read-boundary-closure`, then
-`007Q-register-source-fields-and-visual-evidence-closure`. Only after those correctives, start
+Complete independent full validation and both trusted browser runs for repaired 007P, then run
+`007Q-register-source-fields-and-visual-evidence-closure`. Only after that corrective, start
 sharpened 008A/008B. Their concurrency requirements declare the required PostgreSQL five-race
 capability; A-095 still owns the unresolved S72 active-versus-approved question.

@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertCircle, AlertOctagon, Check, CheckCircle2, FileText, Gavel, RefreshCw, Shield } from 'lucide-react';
+import { AlertCircle, AlertOctagon, Check, CheckCircle2, ChevronLeft, ChevronRight, FileText, Gavel, RefreshCw, Shield } from 'lucide-react';
 import AlertBanner from '../../components/ui/AlertBanner';
 import StatusBadge from '../../components/ui/StatusBadge';
 import ApprovalPanel from '../../components/loan/ApprovalPanel';
 import Modal from '../../components/ui/Modal';
 import { useRole } from '../../contexts/RoleContext';
-import { AuthSessionError } from '../../services/authSession';
+import { AuthSessionError, type PaginatedResult } from '../../services/authSession';
 import {
   fetchApprovalCase,
   fetchSanctionDecision,
@@ -28,6 +28,10 @@ interface SanctionWorkbenchProps {
 const money = (value: string | null | undefined) => value ? `₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—';
 const text = (value: unknown) => value === null || value === undefined || value === '' ? 'Not recorded' : String(value).replace(/_/g, ' ');
 const truth = (value: unknown) => typeof value === 'boolean' ? (value ? 'Confirmed' : 'Not confirmed') : text(value);
+const emptyQueue: PaginatedResult<ApprovalCase> = {
+  items: [],
+  pagination: { page: 1, page_size: 20, total_count: 0, total_pages: 1, has_next: false, has_previous: false },
+};
 
 const describeError = (error: unknown): { status: WorkbenchStatus; message: string } => {
   if (!(error instanceof AuthSessionError)) return { status: 'error', message: error instanceof Error ? error.message : 'The sanction workbench could not be loaded.' };
@@ -44,10 +48,13 @@ const authoritySummary = (item: ApprovalCase) => {
 
 const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication, initialSelectedId }) => {
   const { currentUser } = useRole();
-  const [cases, setCases] = useState<ApprovalCase[]>([]);
+  const [queue, setQueue] = useState<PaginatedResult<ApprovalCase>>(emptyQueue);
+  const cases = queue.items;
+  const pagination = queue.pagination;
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
   const [selected, setSelected] = useState<ApprovalCase | null>(null);
   const [filter, setFilter] = useState('pending');
+  const [page, setPage] = useState(1);
   const [status, setStatus] = useState<WorkbenchStatus>('loading');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -79,22 +86,23 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
     }
   }, [currentUser.permissions]);
 
-  const loadQueue = useCallback(async (nextFilter = filter) => {
+  const loadQueue = useCallback(async (nextFilter = filter, nextPage = page) => {
     setStatus('loading'); setMessage('');
     try {
-      const items = await listApprovalCases(nextFilter);
-      setCases(items);
+      const result = await listApprovalCases(nextFilter, nextPage, 20);
+      const items = result.items;
+      setQueue(result);
       const requested = selectedId ? items.find(item => item.approval_case_id === selectedId || item.loan_application_id === selectedId || item.application_reference_number === selectedId) : null;
       const nextId = requested?.approval_case_id ?? items[0]?.approval_case_id ?? null;
       if (!nextId) { setSelected(null); setSelectedId(null); setStatus('empty'); return; }
       await loadDetail(nextId);
     } catch (error) {
       const next = describeError(error);
-      setCases([]); setSelected(null); setStatus(next.status); setMessage(next.message);
+      setQueue(emptyQueue); setSelected(null); setSelectedId(null); setStatus(next.status); setMessage(next.message);
     }
-  }, [filter, loadDetail, selectedId]);
+  }, [filter, loadDetail, page, selectedId]);
 
-  useEffect(() => { void loadQueue(filter); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void loadQueue(filter, page); }, [filter, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const act = async (action: ApprovalAvailableAction['action_code'], comments: string) => {
     if (!selected) return false;
@@ -103,7 +111,7 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
       await recordApprovalAction(selected.approval_case_id, action, selected.version, comments);
       const refreshed = await fetchApprovalCase(selected.approval_case_id);
       setSelected(refreshed);
-      setCases(previous => previous.map(item => item.approval_case_id === refreshed.approval_case_id ? refreshed : item));
+      setQueue(previous => ({ ...previous, items: previous.items.map(item => item.approval_case_id === refreshed.approval_case_id ? refreshed : item) }));
       setStatus('success');
       if (refreshed.current_status === 'approved' && currentUser.permissions.includes('approvals.sanction.read')) {
         setDecision(await fetchSanctionDecision(refreshed.loan_application_id));
@@ -163,8 +171,8 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div><h1 className="text-xl font-bold text-slate-900">Sanction Workbench</h1><p className="text-sm text-slate-500 mt-0.5">{cases.length} cases from the approval-case service</p></div>
-        <select aria-label="Sanction case status" value={filter} onChange={event => setFilter(event.target.value)} className="field-input w-auto">
+        <div><h1 className="text-xl font-bold text-slate-900">Sanction Workbench</h1><p className="text-sm text-slate-500 mt-0.5">{pagination.total_count} cases from the approval-case service</p></div>
+        <select aria-label="Sanction case status" value={filter} onChange={event => { setFilter(event.target.value); setPage(1); }} className="field-input w-auto">
           <option value="pending">Pending my approval</option><option value="approved">Approved history</option><option value="rejected">Rejected history</option><option value="returned_for_clarification">Returned history</option><option value="blocked_by_conflict">Conflict-blocked history</option><option value="all">All readable cases</option>
         </select>
       </div>
@@ -178,8 +186,9 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
       {selected && status !== 'loading' && !denied && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="card p-0 overflow-hidden lg:col-span-1">
-            <div className="p-4 bg-slate-50 border-b border-slate-200"><p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Cases ({cases.length})</p></div>
+            <div className="p-4 bg-slate-50 border-b border-slate-200"><p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Cases ({pagination.total_count})</p></div>
             <div className="divide-y divide-slate-100">{cases.map(item => <button key={item.approval_case_id} onClick={() => void loadDetail(item.approval_case_id)} className={`w-full p-4 hover:bg-slate-50 text-left ${selectedId === item.approval_case_id ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}><div className="flex items-start gap-3"><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="font-semibold text-slate-900 num text-sm">{item.application_reference_number}</span>{item.workbench_summary.exception_flag && <AlertOctagon size={12} className="text-violet-600" />}{item.workbench_summary.related_party_flag && <Shield size={12} className="text-amber-600" />}</div><div className="text-sm text-slate-700 mt-1">{item.workbench_summary.borrower_name}</div><div className="text-xs text-slate-500">{text(item.workbench_summary.member_type)} · {text(item.workbench_summary.risk_rating)} risk</div></div><StatusBadge label={item.workbench_summary.current_decision_status} size="sm" /></div><div className="text-xs text-slate-500 mt-3 space-y-1"><p>Requested {money(item.workbench_summary.requested_amount)} · Recommended {money(item.workbench_summary.recommended_amount)} · Eligible {money(item.workbench_summary.eligible_amount)}</p><p>{item.workbench_summary.approval_path}</p><p>Submitted {item.workbench_summary.submitted_at}{item.workbench_summary.pending_age ? ` · ${item.workbench_summary.pending_age.label}: ${item.workbench_summary.pending_age.display}` : ''}</p>{item.approval_actions.length > 0 && <p>{item.approval_actions.length} decision(s) recorded</p>}</div></button>)}</div>
+            <div className="p-3 border-t border-slate-200 flex items-center justify-between gap-2 text-xs"><span className="text-slate-500">Page {pagination.page} of {pagination.total_pages}</span><div className="flex gap-2"><button className="btn-secondary flex items-center gap-1 text-sm" disabled={!pagination.has_previous} onClick={() => setPage(pagination.page - 1)}><ChevronLeft size={14} /> Previous</button><button className="btn-secondary flex items-center gap-1 text-sm" disabled={!pagination.has_next} onClick={() => setPage(pagination.page + 1)}>Next <ChevronRight size={14} /></button></div></div>
           </div>
 
           <div className="lg:col-span-2 space-y-4">

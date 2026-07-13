@@ -7,7 +7,8 @@ if (!evidenceDir) throw new Error('RALPH_EVIDENCE_DIR is required for sanction w
 fs.mkdirSync(evidenceDir, { recursive: true });
 
 test('sanction workbench preserves the prototype composition across authoritative states', async ({ page }) => {
-  let mode: 'pending' | 'approved' | 'rejected' | 'returned_for_clarification' | 'empty' | 'denied' | 'error' = 'pending';
+  let mode: 'pending' | 'approved' | 'rejected' | 'returned_for_clarification' | 'empty' | 'denied' | 'error' | 'malformed' = 'pending';
+  let currentCases = [caseFor('pending')];
   let release: (() => void) | undefined;
   let hold = true;
   const waiting = new Promise<void>(resolve => { release = resolve; });
@@ -25,12 +26,14 @@ test('sanction workbench preserves the prototype composition across authoritativ
     const url = new URL(route.request().url());
     if (url.pathname === '/api/v1/approval-cases/') {
       expect(url.searchParams.get('approval_type')).toBe('sanction');
-      expect(url.searchParams.get('page_size')).toBe('100');
+      expect(url.searchParams.get('page_size')).toBe('20');
+      expect(url.searchParams.get('page')).toMatch(/^\d+$/);
       if (mode === 'pending' || mode === 'denied') {
         expect(url.searchParams.get('current_status')).toBe('pending');
         expect(url.searchParams.get('assigned_to_me')).toBe('true');
-      } else if (mode === 'approved' || mode === 'rejected' || mode === 'returned_for_clarification') {
-        expect(url.searchParams.get('current_status')).toBe(mode);
+      } else if (mode === 'approved' || mode === 'rejected' || mode === 'returned_for_clarification' || mode === 'malformed') {
+        const expectedStatus = mode === 'malformed' ? 'approved' : mode;
+        expect(url.searchParams.get('current_status')).toBe(expectedStatus);
         expect(url.searchParams.has('assigned_to_me')).toBe(false);
       } else {
         expect(url.searchParams.has('current_status')).toBe(false);
@@ -39,25 +42,44 @@ test('sanction workbench preserves the prototype composition across authoritativ
       if (hold) await waiting;
       if (mode === 'denied') return failure(route, 403, 'OBJECT_ACCESS_DENIED', 'You cannot access this approval case.');
       if (mode === 'error') return failure(route, 500, 'SERVICE_UNAVAILABLE', 'Approval-case service unavailable.');
-      if (mode === 'empty') return json(route, []);
-      return json(route, [caseFor(mode)]);
+      if (mode === 'malformed') return json(route, []);
+      const requestedPage = Number(url.searchParams.get('page'));
+      if (mode === 'empty') return paginated(route, [], requestedPage, 0);
+      const total = mode === 'pending' ? 121 : mode === 'approved' ? 25 : 1;
+      const pageSize = requestedPage < Math.ceil(total / 20) ? 20 : total - ((requestedPage - 1) * 20);
+      currentCases = Array.from({ length: pageSize }, (_, index) => caseFor(mode, requestedPage, index + 1));
+      return paginated(route, currentCases, requestedPage, total);
     }
-    return json(route, caseFor(mode === 'empty' || mode === 'denied' || mode === 'error' ? 'pending' : mode));
+    const caseId = url.pathname.split('/').filter(Boolean).at(-1);
+    return json(route, currentCases.find(item => item.approval_case_id === caseId) ?? currentCases[0]);
   });
 
   await page.goto('/');
   await page.getByRole('button', { name: /^Sanction(?:\s+\d+)?$/ }).click();
   await expect(page.getByText('Loading sanction workbench')).toBeVisible();
   hold = false; release?.();
-  await expect(page.getByRole('heading', { name: 'LOVIS00701' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'LOVIS0101' })).toBeVisible();
   await expect(page.getByText('Approved frozen package.')).toBeVisible();
   await expect(page.getByText('Confirmed at 2026-07-13T10:00:00Z')).toBeVisible();
+  await expect(page.getByText('121 cases from the approval-case service')).toBeVisible();
+  await expect(page.getByText('Page 1 of 7')).toBeVisible();
   await capture(page, 'pending-special-conflict');
 
-  for (const [value, name] of [['approved', 'approved'], ['rejected', 'rejected'], ['returned_for_clarification', 'returned']] as const) {
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText('Page 2 of 7')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'LOVIS0201' })).toBeVisible();
+
+  mode = 'approved';
+  await page.getByLabel('Sanction case status').selectOption('approved');
+  await expect(page.getByText('25 cases from the approval-case service')).toBeVisible();
+  await expect(page.getByText('Page 1 of 2')).toBeVisible();
+  await capture(page, 'paginated-filtered-queue');
+  await capture(page, 'approved');
+
+  for (const [value, name] of [['rejected', 'rejected'], ['returned_for_clarification', 'returned']] as const) {
     mode = value;
     await page.getByLabel('Sanction case status').selectOption(value);
-    await expect(page.getByRole('heading', { name: 'LOVIS00701' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'LOVIS0101' })).toBeVisible();
     await capture(page, name);
   }
 
@@ -76,14 +98,18 @@ test('sanction workbench preserves the prototype composition across authoritativ
   await expect(page.getByText(/Approval-case service unavailable/)).toBeVisible();
   await capture(page, 'error');
 
+  mode = 'malformed';
+  await page.getByLabel('Sanction case status').selectOption('approved');
+  await expect(page.getByText(/invalid paginated response/)).toBeVisible();
+
   expect(observedApiPaths.some(pathname => pathname.includes('appraisal-note'))).toBe(false);
   expect(observedApiPaths.some(pathname => pathname.includes('loan-policy'))).toBe(false);
 });
 
-const caseFor = (status: 'pending' | 'approved' | 'rejected' | 'returned_for_clarification') => ({
-  approval_case_id: 'case-visual-007', cycle_number: status === 'returned_for_clarification' ? 1 : 2,
+const caseFor = (status: 'pending' | 'approved' | 'rejected' | 'returned_for_clarification', page = 1, index = 1) => ({
+  approval_case_id: `case-visual-${status}-${page}-${index}`, cycle_number: status === 'returned_for_clarification' ? 1 : 2,
   approval_type: 'sanction', related_entity_type: 'loan_application', related_entity_id: 'application-visual-007', loan_application_id: 'application-visual-007',
-  application_reference_number: 'LOVIS00701', amount: '675000.00', current_status: status, decision_date: '2026-07-13', version: 6,
+  application_reference_number: `LOVIS${String(page).padStart(2, '0')}${String(index).padStart(2, '0')}`, amount: '675000.00', current_status: status, decision_date: '2026-07-13', version: 6,
   approval_matrix_rule_id: 'rule-visual', approval_matrix_rule_version: 4, sanction_committee_id: 'committee-visual', sanction_committee_version: 3,
   route_approvers: [approver('cfo', 'cfo-visual', 'Visual CFO'), approver('director', 'director-conflict', 'Conflicted Director'), approver('director', 'director-visual', 'Visual Director')],
   required_approvers: [
@@ -111,6 +137,7 @@ const approver = (role_code: string, user_id: string, full_name: string) => ({ r
 const currentUser = { user_id: 'cfo-visual', full_name: 'Visual CFO', email: 'visual.cfo@sfpcl.example', status: 'active', roles: [{ role_code: 'cfo', role_name: 'CFO' }], teams: [], role_codes: ['cfo'], team_codes: [], permissions: ['approvals.case.read', 'approvals.case.approve', 'approvals.case.reject', 'approvals.case.return', 'approvals.sanction.read'], available_actions: [] };
 const sanctionDecision = { sanction_decision_id: 'sanction-visual', decision: 'sanctioned', sanctioned_amount: '675000.00', sanctioned_tenure_months: null, interest_rate_type: null, interest_rate_value: null, repayment_date: null, penal_interest_rate: null, charges: {}, security_required_summary: null, conditions_precedent: null, decision_reason: 'Approved by the frozen exception-route authority.' };
 const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data }) });
+const paginated = (route: Route, data: unknown[], page: number, totalCount: number) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, pagination: { page, page_size: 20, total_count: totalCount, total_pages: Math.max(1, Math.ceil(totalCount / 20)), has_next: page < Math.max(1, Math.ceil(totalCount / 20)), has_previous: page > 1 } }) });
 const failure = (route: Route, status: number, code: string, message: string) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ success: false, error: { code, message, details: {}, field_errors: {} } }) });
 
 async function capture(page: Page, name: string) {

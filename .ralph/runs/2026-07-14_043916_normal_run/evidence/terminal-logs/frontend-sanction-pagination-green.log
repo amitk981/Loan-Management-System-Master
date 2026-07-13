@@ -1,0 +1,15 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/sanction/SanctionWorkbench.test.tsx -t authoritative total
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_043916_normal_run/sfpcl-lms
+
+ ✓ src/pages/sanction/SanctionWorkbench.test.tsx (23 tests | 22 skipped) 128ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 22 skipped (23)
+   Start at  04:44:56
+   Duration  1.24s (transform 188ms, setup 0ms, collect 370ms, tests 128ms, environment 308ms, prepare 43ms)
+

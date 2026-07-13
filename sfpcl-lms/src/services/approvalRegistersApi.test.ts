@@ -35,7 +35,7 @@ describe('approval registers API client', () => {
 
   it('keeps sanction and exception filters on their independent scoped endpoints', async () => {
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce(ok([sanctionRow], { ...pagination, page: 2, total_count: 21, total_pages: 3 }))
+      .mockResolvedValueOnce(ok([sanctionRow], { ...pagination, page: 2, total_count: 21, total_pages: 2, has_previous: true }))
       .mockResolvedValueOnce(ok([exceptionRow], pagination));
     vi.stubGlobal('fetch', fetchMock);
 

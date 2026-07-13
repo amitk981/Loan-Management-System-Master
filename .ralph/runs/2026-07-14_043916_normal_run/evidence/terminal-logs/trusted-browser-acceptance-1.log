@@ -1,0 +1,58 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_043916_normal_run/.ralph/runs/2026-07-14_043916_normal_run/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/sanction-workbench.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/sanction-workbench.e2e.spec.ts
+
+[2m[WebServer] [22m[13/Jul/2026 23:31:13] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22mUnauthorized: /api/v1/approval-cases/
+[2m[WebServer] [22m[13/Jul/2026 23:31:18] "GET /api/v1/approval-cases/?approval_type=sanction&current_status=approved&page=1&page_size=20 HTTP/1.1" 401 257
+  ✘  1 [chromium] › sanction-workbench.e2e.spec.ts:9:5 › sanction workbench preserves the prototype composition across authoritative states (3.4s)
+
+
+  1) [chromium] › sanction-workbench.e2e.spec.ts:9:5 › sanction workbench preserves the prototype composition across authoritative states 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32mfalse[39m
+    Received: [31mtrue[39m
+
+      36 |         expect(url.searchParams.has('assigned_to_me')).toBe(false);
+      37 |       } else {
+    > 38 |         expect(url.searchParams.has('current_status')).toBe(false);
+         |                                                        ^
+      39 |         expect(url.searchParams.has('assigned_to_me')).toBe(false);
+      40 |       }
+      41 |       if (hold) await waiting;
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_043916_normal_run/sfpcl-lms/e2e/sanction-workbench.e2e.spec.ts:38:56
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m
+
+    Locator: getByText(/invalid paginated response/)
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByText(/invalid paginated response/)[22m
+
+
+      100 |   mode = 'malformed';
+      101 |   await page.getByLabel('Sanction case status').selectOption('approved');
+    > 102 |   await expect(page.getByText(/invalid paginated response/)).toBeVisible();
+          |                                                              ^
+      103 |
+      104 |   expect(observedApiPaths.some(pathname => pathname.includes('appraisal-note'))).toBe(false);
+      105 |   expect(observedApiPaths.some(pathname => pathname.includes('loan-policy'))).toBe(false);
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_043916_normal_run/sfpcl-lms/e2e/sanction-workbench.e2e.spec.ts:102:62
+
+  1 failed
+    [chromium] › sanction-workbench.e2e.spec.ts:9:5 › sanction workbench preserves the prototype composition across authoritative states 
+
+Exit code: 1

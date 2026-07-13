@@ -120,6 +120,42 @@ describe('auth session API flow', () => {
     );
   });
 
+  it.each([
+    ['non-array data', { success: true, data: { approval_matrix_rule_id: 'rule-1' }, pagination: { page: 1, page_size: 20, total_count: 1, total_pages: 1, has_next: false, has_previous: false } }],
+    ['missing pagination', { success: true, data: [] }],
+    ['missing pagination field', { success: true, data: [], pagination: { page: 1, page_size: 20, total_count: 0, total_pages: 1, has_next: false } }],
+    ['negative pagination field', { success: true, data: [], pagination: { page: 1, page_size: 20, total_count: -1, total_pages: 1, has_next: false, has_previous: false } }],
+    ['non-integer pagination field', { success: true, data: [], pagination: { page: 1.5, page_size: 20, total_count: 0, total_pages: 1, has_next: false, has_previous: false } }],
+    ['inconsistent total pages', { success: true, data: [{ approval_matrix_rule_id: 'rule-1' }], pagination: { page: 1, page_size: 10, total_count: 11, total_pages: 1, has_next: false, has_previous: false } }],
+    ['inconsistent navigation flags', { success: true, data: [{ approval_matrix_rule_id: 'rule-1' }], pagination: { page: 1, page_size: 10, total_count: 11, total_pages: 2, has_next: false, has_previous: true } }],
+    ['page data beyond the total', { success: true, data: [{ approval_matrix_rule_id: 'rule-1' }], pagination: { page: 2, page_size: 10, total_count: 10, total_pages: 1, has_next: false, has_previous: true } }],
+  ])('rejects a successful collection envelope with %s', async (_label, body) => {
+    storedAuthSession({ accessToken: 'list-access', refreshToken: 'list-refresh' });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(response(200, body)));
+
+    await expect(authenticatedPaginatedRequest('/api/v1/approval-cases/')).rejects.toMatchObject({
+      code: 'MALFORMED_RESPONSE',
+      status: 200,
+    });
+  });
+
+  it('preserves authentication and server-error behavior for paginated requests', async () => {
+    await expect(authenticatedPaginatedRequest('/api/v1/approval-cases/')).rejects.toMatchObject({
+      code: 'AUTH_REQUIRED',
+      status: 401,
+    });
+
+    storedAuthSession({ accessToken: 'list-access', refreshToken: 'list-refresh' });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(response(403, {
+      success: false,
+      error: { code: 'FORBIDDEN', message: 'Approval case read is not permitted.' },
+    })));
+    await expect(authenticatedPaginatedRequest('/api/v1/approval-cases/')).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+      status: 403,
+    });
+  });
+
   it('sends multipart bodies through the shared authenticated envelope boundary', async () => {
     storedAuthSession({ accessToken: 'upload-access', refreshToken: 'upload-refresh' });
     const fetchMock = vi.fn().mockResolvedValueOnce(response(201, {
