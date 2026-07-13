@@ -16,6 +16,28 @@
   increment, and either frozen-alternate reassignment or a communication-backed blocked outcome.
   Returned-cycle exclusions/actions never leak into a later recomputed cycle.
 
+## Architecture Review 2026-07-13 17:04 - Conflict Authority and Scope Corrections
+
+- 007E's replacement loop can reuse the same Director for an excluded slot and that Director's
+  original slot. The length-only satisfiability check then accepts CFO + one distinct Director for
+  a rule requiring CFO + two Directors. `007E2` requires exact distinct role/user cardinality and a
+  conflict-blocked no-sanction outcome when the frozen candidate set cannot fill it.
+- The canonical detail/action projection joins actions only to original
+  `required_approvers_json`; a successful frozen alternate therefore disappears from history while
+  the excluded original appears undecided. `007E2` preserves immutable route provenance and adds
+  explicit replacement/action history shared by collection, detail, action, returned cycles, and
+  downstream registers.
+- The read helper index currently contains every committee candidate. An unused second Director can
+  receive `total_count: 1` before the Python object check removes the row, and a declaration can
+  grant that unused actor conflict-limited detail. `007E2` backfills an exact read projection and
+  applies COI-005 only after attributable original/effective/acted cycle participation.
+- Source auth §16.2 and API/data-model §25.11/§15.8 require general-meeting evidence for Director,
+  relative, and Sanction Committee member borrowers. The flag must see a related Director/member
+  even when they are outside this case's assigned approvers; material-interest or maker-checker
+  conflict alone does not trigger it.
+- M05-FR-007/008/010 remain substantive. M05-FR-011 is partial/unsafe until 007E2 closes distinct
+  authority and public history; M05-FR-009 remains 007H and M05-FR-012's evidence gate remains 007G.
+
 ## 007D3 Returned Approval Cycles
 
 - Approval cases are numbered immutable cycles per application. The database enforces positive

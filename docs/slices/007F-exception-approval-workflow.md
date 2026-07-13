@@ -14,7 +14,7 @@ Implement the exception route: cases that exceed the permissible limit (or are f
 Above-limit or policy-exception lending is possible only through the stricter authority route and always leaves a register trail (M05-FR-006).
 
 ## Depends On
-- 007E
+- 007E2
 
 ## Source References
 - docs/source/data-model.md §15.7 `exception_register_entries` (exception_type: exceeds limit / stage bypass / waiver; business_reason; risk_assessment; status lifecycle)
@@ -72,6 +72,19 @@ Above-limit or policy-exception lending is possible only through the stricter au
   pending; a terminal conflict-blocked abstention and its communication share the existing locked
   case action transaction. Confirm the source §15.7 status vocabulary before naming that terminal
   register status; do not infer one from display text.
+
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_164911, 2026-07-13)
+
+- Consume 007E2's distinct effective-authority projection. An exception case requiring two
+  Directors must never become approved, close its register as approved, or expose an authority
+  summary when one Director identity has filled two slots.
+- Generate `authority_applied_summary` and conflict/abstention register facts only from the
+  canonical history-aware case projection. Preserve original route authority, replacement mapping,
+  and acted alternate identity; do not reconstruct authority from `required_approvers_json`, live
+  committee membership, display role text, or register-local calculations.
+- Register collection counts and cycle rows must use the corrected approval-case object boundary.
+  An unused or merely conflicted committee candidate cannot learn an exception row or count; an
+  authorised historical actor sees the exact cycle without gaining action authority.
 
 ## Out of Scope
 Loan-limit calculation (006C/006D), general-meeting evidence (007G), register UI (007J), waiver workflows beyond vocabulary.

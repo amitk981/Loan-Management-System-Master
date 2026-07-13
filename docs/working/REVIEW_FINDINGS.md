@@ -2,6 +2,109 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-13 17:04 - Architecture Review 2026-07-13_164911_architecture_review
+
+Reviewed completed product work since architecture-review commit `48ef331`:
+- `007C3-approval-case-source-read-scope-closure` (`846947a`)
+- `007D2-approval-action-boundary-and-postgresql-race-closure` (`111305d`)
+- `007D3-returned-approval-cycle-and-resubmission-closure` (`3736749`)
+- `007E-conflict-of-interest-blocking` (`e46ced6`)
+
+The review checked `git diff 48ef331...HEAD`, production/test hunks, retained RED/GREEN and
+twice-run PostgreSQL evidence, the Epic 007 digest, cited auth/API/data-model/security/codebase-
+design sections, and M05-FR-007..012. Standards and spec fidelity were reviewed independently.
+Three dynamic HTTP/module probes reproduced the significant defects without changing production
+code. `CONTEXT.md` remains truthful, and state/files contain no Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - Critical - A two-Director route can collapse to one distinct Director
+
+`ConflictOfInterestModule.effective_approvers` replaces excluded Director 1 with Director 2, then
+appends Director 2 again when it reaches that actor's original slot. `authority_is_satisfiable`
+compares list lengths rather than exact distinct role/user counts, while final completion converts
+the list to a user-id set. A CFO + two-Director route can therefore be marked satisfiable and
+sanctioned by only CFO + one distinct Director. The executable review probe produced three slots
+but only two distinct user ids. This violates auth §§16.2/27.1, security §12, and codebase-design
+§13.1's all-required-approvals invariant. `007E2` owns distinct replacement and blocked ledgers.
+
+#### Finding 2 - High - Alternate approvals disappear from canonical case history
+
+The supported one-Director replacement path can approve through a frozen alternate, but
+`serialize_case_detail` attaches actions only to the original `required_approvers_json`. The
+approved response/readback can still show the excluded original Director as undecided and omit the
+alternate entirely. The executable HTTP probe completed the case and then found zero alternate rows
+in `required_approvers`. This breaks API §25.4 and 007D2's single history-aware projection claim.
+`007E2` preserves immutable route provenance while projecting every effective replacement/action.
+
+#### Finding 3 - High - Ordinary list counts disclose cases to an unused committee alternate
+
+`ApprovalCase.save` populates `ApprovalCaseRequiredApprover` with every frozen committee candidate,
+not only original/effective approvers. The SQL selector counts that table before the Python object-
+scope check. On the lower rule, the unused second Director with `approvals.case.read` receives an
+empty data array but `total_count: 1`; direct detail correctly returns 403. The focused HTTP probe
+failed exactly `1 != 0`. This violates auth §§32.1/37.3 and the selector/count contract. `007E2`
+backfills an exact approval-owned read projection and tests pre-pagination nondisclosure.
+
+#### Finding 4 - Medium judgment call - Ordinary model saves hide a cross-table workflow seam
+
+`ApprovalCase.save` dynamically imports the approval engine, computes domain coherence, and
+synchronises a second table; appraisal signals invoke the same hidden side effect. This creates
+models-to-modules cyclic ownership and makes a nominal row save mutate read authority. Codebase-
+design §§42.1-42.2 favour an explicit deep-module projection seam. `007E2` makes projection refresh
+explicit and tests every production writer. Migration-local historical duplication remains valid
+and is not classified as drift.
+
+### Spec
+
+#### Finding 1 - Critical - 007E's “do not silently reduce authority” requirement is false
+
+007E requirement 2 requires exclusions to preserve matrix authority or block the case. The
+duplicate-Director path above silently reduces an above-limit/exception route from two Directors to
+one distinct Director. Existing alternate tests exercise only the lower one-Director rule. `007E2`
+adds both excluded-Director directions, missing-alternate, and abstention through public enrichment
+and final action with exact no-sanction ledgers.
+
+#### Finding 2 - High - 007C3's counts-before-pagination acceptance is false for alternates
+
+007C3 requirements 3-5 require an attributable object decision before counts/pagination and keep an
+unassigned Director at empty-list/403. The helper index's unused committee candidates make the row
+count visible even though page serialization later removes it. Existing tests create a completely
+unrelated Director, not the frozen unused alternate that discriminates the selector. `007E2`
+corrects both the projection and its migration/backfill acceptance.
+
+#### Finding 3 - Medium - Conflict-limited read can bypass the base object boundary
+
+007E sharpening says conflict access applies after 007C2 and an unassigned reader stays
+nondisclosed. `evaluate_approval_case_read_scope` instead grants conflict-limited read before base
+scope. Because conflict evaluation includes all frozen committee candidates, a declaration on an
+unused alternate can grant full case detail despite that user never being required, effective, or
+acted. `007E2` restricts COI-005 history access to attributable cycle participants.
+
+#### Finding 4 - Medium - Conflict and related-party public acceptance is incomplete
+
+007E requires every §17.1 class to exclude at enrichment and receive the exact public denial/audit.
+Only Director-relative conflict crosses enrichment; borrower/material-interest/maker cases are
+module-only, while action tests manually inject exclusions. The combined flag test also cannot
+prove that a related Director outside the current committee still triggers the source §16.2 general-
+meeting requirement. `007E2` adds the complete public matrix. A CFO/committee-member borrower
+trigger is not scope creep: auth §16.2 and API/data-model §25.11/§15.8 explicitly include Sanction
+Committee member borrowing.
+
+No material scope creep was found. 007C3's persisted source-reader scopes, 007D2's guarded action/
+communication transactions and twice-run races, and 007D3's immutable correction/review cycles are
+otherwise substantive. M05-FR-007/008/010 work through current public seams; M05-FR-011 is unsafe
+until 007E2 closes distinct authority and projection. M05-FR-009 remains explicitly owned by 007H,
+and M05-FR-012's evidence record/gate remains explicitly owned by 007G after 007E2 fixes flag scope.
+
+No ADR was added because auth §§16-17/27, API §25.4, security §12, and codebase-design §13 already
+decide distinct authority, historical projection, conflict scope, and module ownership. `007F` and
+`007G` were sharpened to depend on/consume the corrected conflict outcome.
+
+Summary: Standards found 1 Critical, 2 High, and 1 Medium/judgment issue; the worst is duplicate
+Director authority. Spec found 1 Critical, 1 High, and 2 Medium issues; the worst is the same silent
+authority reduction at the public workflow boundary.
+
 ## 2026-07-13 13:16 - Architecture Review 2026-07-13_131622_architecture_review
 
 Reviewed completed product work since architecture-review commit `26cc7a8`:

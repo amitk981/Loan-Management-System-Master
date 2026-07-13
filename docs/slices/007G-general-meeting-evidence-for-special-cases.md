@@ -53,6 +53,18 @@ Related-party loans cannot be sanctioned without the legally required general-me
   a later cycle consumes only an applicable approved record under the §25.11 application-history
   rules and retains its own `cycle_number` in detail/action evidence.
 
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_164911, 2026-07-13)
+
+- Consume only 007E2's immutable per-cycle flag. The source §16.2 set includes Director, relative,
+  and Sanction Committee member borrowers even when the related Director/member is not an assigned
+  approver; material-interest and maker-checker conflicts alone do not trigger meeting evidence.
+- The final sanction gate must run after distinct effective authority has been proved. Approved
+  meeting evidence cannot make a duplicated/insufficient CFO-or-Director set satisfiable, and a
+  missing meeting record cannot mask the more fundamental `blocked_by_conflict` outcome.
+- Project the applicable meeting reference alongside the canonical replacement/action history so
+  007H can evidence the actual distinct approvers. Unused committee candidates remain outside
+  list/detail counts and cannot obtain meeting-document access through conflict declaration alone.
+
 ## Out of Scope
 Conflict determination (007E), register generation (007H), document upload itself (003C/§26), UI (007I).
 

@@ -1,39 +1,41 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_160532_normal_run
+2026-07-13_164911_architecture_review
 
 ## Current Status
 
-007E is complete. The approval-owned conflict module evaluates typed persisted borrower,
-Director-relative, and material-interest declarations plus immutable application/appraisal maker
-facts for each case cycle. Enrichment preserves ordered required-authority history, freezes unique
-exclusions/reasons, and sets the general-meeting-evidence flag.
+The architecture review covered 007C3, 007D2, 007D3, and 007E from fixed point `48ef331`. 007C3's
+source-reader grants, 007D2's guarded communication-backed actions/PostgreSQL races, and 007D3's
+immutable correction/review cycles are otherwise substantive, but three executable probes exposed
+one Critical authority flaw and two High public-boundary regressions.
 
-Excluded actors retain limited history/detail read but never queue or action authority. Frozen
-same-role committee alternates preserve the matrix role/count; missing CFO/Director authority
-closes the case as `blocked_by_conflict` without a sanction. Approve/reject/return use exact
-`CONFLICTED_APPROVER_NOT_ALLOWED` details and add only the cycle-attributed COI-006 denial audit.
-Reasoned abstention uses the immutable action ledger and either assigns a frozen alternate or
-creates a communication-backed conflict-blocked outcome. Prior-cycle exclusions/actions never
-populate a later cycle.
+On a CFO + two-Director route, excluding Director 1 can yield effective slots `(CFO, Director 2,
+Director 2)` and the length-only check calls that satisfiable. On the lower one-Director route, a
+real alternate can approve but is absent from canonical history. The selector's helper index also
+contains the unused committee alternate, producing empty data with `total_count: 1` for a reader
+who direct detail correctly denies. Conflict-limited access is evaluated before base object scope,
+and the full §17.1 public enrichment/action matrix remains partial.
+
+Corrective slice 007E2 now owns distinct role/user authority, replacement/action projection,
+exact pre-pagination read projection/backfill, attributable COI-005 access, general-meeting flag
+scope, and the explicit approval-owned projection update seam. 007F and 007G were sharpened to
+consume that corrected outcome. No production code changed in this review.
 
 ## Validation
 
-TDD red/green evidence covers frozen maker facts, declarations, enrichment, exact denial/audit,
-alternate authority, satisfiable and blocked abstention, and malformed snapshot rejection. The
-focused approval suite passes 70 tests with two expected PostgreSQL-only skips. Backend check and
-migration sync pass; the full 637-test suite passes with 19 expected PostgreSQL-only SQLite skips
-and 93% coverage. Frontend build/typecheck/lint and all 208 tests pass.
+Independent Standards and Spec axes were retained in the run evidence. Dynamic isolated-Django
+probes failed `1 != 0` for alternate count nondisclosure, `2 != 3` for distinct authority, and
+`0 != 1` for alternate history visibility. These are review evidence, not implementation tests;
+007E2 must turn them GREEN test-first.
 
-The first full backend attempt exposed a migration-graph interaction with the legacy witness
-migration test. The approvals migration dependency was narrowed from applications 0014 to the
-earliest schema it consumes (0011); the three migration tests plus approval regressions then passed,
-followed by the full green suite. No protected files or source documents changed.
+Frontend build/typecheck/lint and all 208 tests pass. Backend check and migration sync pass; the
+full 637-test suite passes with 19 expected PostgreSQL-only SQLite skips and 93% coverage. Slice
+queue/dependency lint, state JSON, and diff whitespace checks pass. No Blocked slice exists, no
+ADR was needed because source documents already decide the fixes, and CONTEXT.md remains truthful.
 
 ## Next Run
 
-Architecture review is now due after four completed slices. After that review, run
-`007F-exception-approval-workflow`; it is sharpened for conflict-blocked outcomes and COI-006
-zero-mutation register behavior. `007G` is also sharpened to consume the immutable per-cycle
-general-meeting flag without re-evaluating live conflict facts.
+Run `007E2-conflict-authority-projection-and-scope-closure` next. It is the queue blocker for 007F
+and must close the Critical duplicate-Director path before exception/register or general-meeting
+work consumes approval outcomes. Then run 007F and 007G in dependency order.
