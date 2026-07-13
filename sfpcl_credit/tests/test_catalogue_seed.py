@@ -240,6 +240,24 @@ class CatalogueSeedTests(TestCase):
                     ).exists()
                 )
 
+    def test_exception_register_permissions_support_system_generation_and_source_readers(self):
+        seed_catalogue()
+
+        self.assertTrue(
+            RolePermission.objects.filter(
+                role__role_code="credit_manager",
+                permission__permission_code="approvals.exception.create",
+            ).exists()
+        )
+        for role_code in {"cfo", "director", "internal_auditor"}:
+            with self.subTest(role_code=role_code):
+                self.assertTrue(
+                    RolePermission.objects.filter(
+                        role__role_code=role_code,
+                        permission__permission_code="approvals.exception_register.read",
+                    ).exists()
+                )
+
     def test_seed_creates_only_source_named_approval_case_read_scope_grants(self):
         seed_catalogue()
 

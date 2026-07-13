@@ -5,6 +5,7 @@ from sfpcl_credit.api import error_response, list_response, parse_json_body, suc
 from sfpcl_credit.approvals.modules import approval_matrix_configuration as services
 from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.approvals.modules import approval_actions
+from sfpcl_credit.approvals.modules import exception_register
 from sfpcl_credit.domain_errors import DomainObjectAccessDenied
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.identity.modules.auth_service import effective_permission_codes
@@ -56,6 +57,36 @@ def approval_case_collection(request):
         )
 
 
+@require_http_methods(["GET"])
+def exception_register_collection(request):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    permissions = effective_permission_codes(user)
+    if exception_register.READ_PERMISSION not in permissions:
+        return error_response(
+            request,
+            403,
+            "FORBIDDEN",
+            "You do not have Exception Register read permission.",
+        )
+    try:
+        data, pagination = exception_register.list_entries(
+            actor=user, query_params=request.GET, actor_permissions=permissions
+        )
+        return list_response(data, pagination, request)
+    except ValidationError as exc:
+        details = exc.message_dict if hasattr(exc, "message_dict") else {}
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Exception Register filters failed validation.",
+            {
+                key: value[0] if isinstance(value, list) else value
+                for key, value in details.items()
+            },
+        )
 @require_http_methods(["GET"])
 def approval_case_detail(request, approval_case_id):
     user, response = http_auth.authenticated_user(request)

@@ -9,6 +9,7 @@ from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalAction, ApprovalCase, SanctionDecision
 from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
+from sfpcl_credit.approvals.modules import exception_register
 from sfpcl_credit.approvals.modules.approval_case_projection import (
     refresh_approval_case_projection,
 )
@@ -311,6 +312,9 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         "excluded_approvers_json", "conflict_block_reason", "version",
     ])
     refresh_approval_case_projection(case)
+    exception_register.project_case_outcome(
+        actor=actor, case=case, request_meta=request_meta
+    )
     AuditLog.objects.create(
         actor_user=actor,
         action="approval_case.action_recorded",

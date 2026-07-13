@@ -1,5 +1,21 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007F Exception Approval Workflow
+
+- Exception enrichment requires a distinct business reason, optional risk assessment, and the
+  Critical system-generation permission. One immutable entry is keyed to each case/cycle;
+  ordinary routes create none and exact replay is zero-write.
+- Vocabulary is bounded to `exceeds_loan_limit`, `stage_bypass`, and `waiver`. Entry status is
+  pending/approved/rejected; approval/rejection project atomically from the locked case action.
+  Returned and conflict-blocked closed cycles retain pending because §15.7 names no fourth status.
+  A forced within-limit caller must state stage-bypass or waiver so it cannot be mislabeled as a
+  frozen loan-limit breach; replay includes exact optional risk text.
+- The read-only register delegates to the corrected original/effective/acted selector before
+  count/pagination and returns cycle linkage plus canonical route/replacement/action history.
+  Creation/status projection write attributable audit and workflow evidence.
+- Credit Manager receives the system-generation grant needed by enrichment; CFO, Director, and
+  Internal Auditor receive the source-backed generated-register read permission.
+
 ## 007E2 Conflict Authority, Projection, and Scope Closure
 
 - Conflict replacement now fills exact frozen CFO/Director slots with distinct users; excluding

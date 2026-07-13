@@ -5528,3 +5528,26 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_174603_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007F-exception-approval-workflow
+- Summary: Added immutable case/cycle Exception Register creation, truthful typed forced routes,
+  exact replay, atomic outcome projection, canonical scoped read API, evidence, and seeded access.
+- Tests run: retained five RED/GREEN cycles and review repairs; backend check/migration sync and
+  656 tests with 19 expected SQLite skips at 93% coverage; frontend typecheck/lint, 208 tests, build.
+- Evidence saved: `.ralph/runs/2026-07-13_174603_normal_run/evidence/`
+- Result: Success
+- Risk level: Medium slice with Critical permission and approval-ledger controls reviewed.
+- Next action: Run 007G general-meeting evidence.
+
+## 2026-07-13 18:24:33 - 2026-07-13_174603_normal_run
+- Agent tool used: codex
+- Slice attempted: 007F-exception-approval-workflow
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_174603_normal_run/.ralph/runs/2026-07-13_174603_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_174603_normal_run/.ralph/runs/2026-07-13_174603_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

@@ -39,6 +39,18 @@ The committee, CS, and auditors read a complete, generated register of every san
 - Register projection matches the 15 fields against a seeded exception + related-party + abstention case.
 - Filters/pagination/permission negatives on both read APIs; mutation attempts have no route.
 
+## Run-Ahead Sharpening Review (007F delivered contract, 2026-07-13)
+
+- Resolve an exception reference only through the final case's one-to-one
+  `ExceptionRegisterEntry`; never select by application alone because returned/re-enriched cycles
+  may retain multiple immutable historical rows.
+- Project exception id, type, business reason, status, and cycle from 007F. Authority still comes
+  from that same case's canonical route/effective/action history, never from register summary text
+  or live committee membership.
+- A rejected exception case has a rejected exception row but no `SanctionDecision`; use terminal
+  case/action facts without inventing a sanction id. Pending returned/conflict-blocked exception
+  rows are not terminal sanction-register decisions.
+
 ## Out of Scope
 Register UI (007J), file exports (012B/012C), exception register (007F owns), disbursement handoff (Epic 009).
 

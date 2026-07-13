@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_exception_register_permissions_support_system_generation_and_source_readers (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_exception_register_permissions_support_system_generation_and_source_readers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_catalogue_seed.py", line 246, in test_exception_register_permissions_support_system_generation_and_source_readers
+    self.assertTrue(
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.088s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

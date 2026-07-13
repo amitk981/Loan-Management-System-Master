@@ -168,14 +168,15 @@
     "007D2-approval-action-boundary-and-postgresql-race-closure",
     "007D3-returned-approval-cycle-and-resubmission-closure",
     "007E-conflict-of-interest-blocking",
-    "007E2-conflict-authority-projection-and-scope-closure"
+    "007E2-conflict-authority-projection-and-scope-closure",
+    "007F-exception-approval-workflow"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "6c6a4da",
-  "last_run_id": "2026-07-13_171041_normal_run",
+  "last_run_id": "2026-07-13_174603_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 1,
+  "slices_completed_since_architecture_review": 2,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

@@ -2419,6 +2419,11 @@ separate author/approver VersionHistory plus `config.changed`; rejection changes
 holder of `approvals.case.create` with object access to the application. It accepts exactly the
 source §25.2 fields `approval_type = sanction`, an `amount` equal to the reviewed appraisal's
 recommended amount, a non-blank `reason_for_approval`, and boolean `force_exception_route`.
+When the frozen assessment requires an exception or the caller forces that route, the request also
+requires a distinct non-blank `business_reason` and may include a string `risk_assessment`.
+An assessment-required route has canonical `exception_type = exceeds_loan_limit`; a forced
+within-limit route must explicitly name `stage_bypass` or `waiver` so the register never claims a
+limit breach that did not occur.
 
 The adapter never creates a row. It enriches the unique pending shell created by the §24.5 sanction
 submission or returns `404 NOT_FOUND`. It derives application/appraisal identity from that shell,
@@ -2542,6 +2547,36 @@ rolls back the action, case/application outcome, sanction, workflow, communicati
 and audits. Application, appraisal, and case source states are re-evaluated through the shared
 transition guard after locking and before mutation. No register row is created in 007D/007D2
 (007F/007H own those projections).
+
+# Exception approval and generated Exception Register (007F)
+
+An exception-routed §25.2 enrichment requires both `approvals.case.create` and
+`approvals.exception.create`. It atomically creates exactly one
+`exception_register_entries` row for that approval case/cycle. The canonical type is
+`exceeds_loan_limit`; the bounded future-caller vocabulary is `stage_bypass` and `waiver`, and an
+unknown type is rejected. The entry copies the request's distinct `business_reason` and optional
+`risk_assessment`, links the loan application and approval case, and begins `pending`. An ordinary
+within-limit route creates no entry. Exact enrichment replay creates no duplicate or evidence.
+
+Inside the locked approval-action transaction, partial approval leaves the entry pending. Final
+approval changes it to `approved`; rejection changes it to `rejected`; both copy the case
+`closed_at`. Return-for-clarification and `blocked_by_conflict` also copy the case closure time but
+remain `pending`, because source data-model §15.7 defines no additional status. Denied conflicted
+actions never mutate the entry. Creation and outcome projection write attributable
+`exception_register.*` audit plus `exception_register` workflow evidence.
+
+`GET /api/v1/exception-register/?status=&exception_type=&page=&page_size=` requires
+`approvals.exception_register.read`, accepts only the source status/type vocabulary, and returns
+the standard pagination envelope. It is generated/read-only: mutation methods are not routed.
+Object scope delegates to the canonical approval-case selector before count and pagination. Each
+row includes register/application/case ids, `cycle_number`, type, description, business/risk facts,
+entry/case statuses, conflict reason, timestamps, `authority_applied_summary`, and canonical
+`route_approvers`, `required_approvers`, and complete `approval_actions`. Reads never re-run
+conflict replacement or consult live committee membership.
+
+The nullable `loan_account_id` is currently a UUID reference, not a foreign key to the tracer app's
+synthetic demo account. A protected FK is deferred to the production finance loan-account owner
+(A-084); exception entries created before sanction naturally carry no loan account.
 
 # Returned approval cycles and resubmission (007D3)
 

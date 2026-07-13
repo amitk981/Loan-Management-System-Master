@@ -487,3 +487,84 @@ class SanctionDecision(models.Model):
         indexes = [
             models.Index(fields=["decision", "recorded_at"], name="idx_sanction_decision_time")
         ]
+
+
+class ExceptionRegisterEntry(models.Model):
+    TYPE_EXCEEDS_LOAN_LIMIT = "exceeds_loan_limit"
+    TYPE_STAGE_BYPASS = "stage_bypass"
+    TYPE_WAIVER = "waiver"
+    EXCEPTION_TYPES = (
+        (TYPE_EXCEEDS_LOAN_LIMIT, "Exceeds loan limit"),
+        (TYPE_STAGE_BYPASS, "Stage bypass"),
+        (TYPE_WAIVER, "Waiver"),
+    )
+    STATUS_PENDING = "pending"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+    STATUSES = (
+        (STATUS_PENDING, "Pending"),
+        (STATUS_APPROVED, "Approved"),
+        (STATUS_REJECTED, "Rejected"),
+    )
+
+    exception_register_entry_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    loan_application = models.ForeignKey(
+        "applications.LoanApplication",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="exception_register_entries",
+    )
+    loan_account_id = models.UUIDField(null=True, blank=True, db_index=True)
+    exception_type = models.CharField(
+        max_length=100, choices=EXCEPTION_TYPES, db_index=True
+    )
+    description = models.TextField()
+    business_reason = models.TextField()
+    risk_assessment = models.TextField(null=True, blank=True)
+    approval_case = models.OneToOneField(
+        ApprovalCase,
+        on_delete=models.PROTECT,
+        related_name="exception_register_entry",
+    )
+    status = models.CharField(
+        max_length=60, choices=STATUSES, default=STATUS_PENDING, db_index=True
+    )
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "exception_register_entries"
+        ordering = ["-created_at", "-exception_register_entry_id"]
+        indexes = [
+            models.Index(
+                fields=["exception_type", "status", "created_at"],
+                name="idx_exception_type_status",
+            )
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(
+                    exception_type__in=[
+                        "exceeds_loan_limit",
+                        "stage_bypass",
+                        "waiver",
+                    ]
+                ),
+                name="exception_register_type_valid",
+            ),
+            models.CheckConstraint(
+                check=models.Q(status__in=["pending", "approved", "rejected"]),
+                name="exception_register_status_valid",
+            ),
+            models.CheckConstraint(
+                check=models.Q(description__regex=r"\S"),
+                name="exception_register_description_nonblank",
+            ),
+            models.CheckConstraint(
+                check=models.Q(business_reason__regex=r"\S"),
+                name="exception_register_reason_nonblank",
+            ),
+        ]

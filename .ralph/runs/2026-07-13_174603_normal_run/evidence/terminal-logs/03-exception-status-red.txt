@@ -1,0 +1,31 @@
+Creating test database for alias 'default'...
+Found 3 test(s).
+System check identified no issues (0 silenced).
+.FF
+======================================================================
+FAIL: test_final_joint_approval_creates_source_shaped_sanction_and_completion_evidence (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_final_joint_approval_creates_source_shaped_sanction_and_completion_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1335, in test_final_joint_approval_creates_source_shaped_sanction_and_completion_evidence
+    self.assertEqual(entry.status, "approved")
+AssertionError: 'pending' != 'approved'
+- pending
++ approved
+
+
+======================================================================
+FAIL: test_reject_closes_case_and_application_without_sanction (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_reject_closes_case_and_application_without_sanction)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1468, in test_reject_closes_case_and_application_without_sanction
+    self.assertEqual(entry.status, "rejected")
+AssertionError: 'pending' != 'rejected'
+- pending
++ rejected
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.063s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

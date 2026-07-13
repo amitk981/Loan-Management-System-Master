@@ -14,6 +14,7 @@ from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import (
     ApprovalAction,
     ApprovalCase,
+    ExceptionRegisterEntry,
     ApprovalCaseRequiredApprover,
     ApprovalCaseReadScopeGrant,
     ApprovalConflictDeclaration,
@@ -852,6 +853,13 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(queue.json()["pagination"]["total_count"], 1)
 
     def test_unsatisfiable_abstention_blocks_case_without_creating_sanction(self):
+        entry = ExceptionRegisterEntry.objects.create(
+            loan_application=self.application,
+            exception_type="waiver",
+            description="A governed policy requirement was waived.",
+            business_reason="Exception requires conflict-safe authority.",
+            approval_case=self.case,
+        )
         response = self.client.post(
             f"/api/v1/approval-cases/{self.case.pk}/abstain/",
             {"version": 2, "comments": "I have a material interest."},
@@ -870,6 +878,9 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.case.refresh_from_db()
         self.assertEqual(self.case.current_status, "blocked_by_conflict")
         self.assertIsNotNone(self.case.closed_at)
+        entry.refresh_from_db()
+        self.assertEqual(entry.status, "pending")
+        self.assertEqual(entry.closed_at, self.case.closed_at)
         self.assertFalse(
             apps.get_model("approvals", "SanctionDecision").objects.filter(
                 approval_case=self.case
@@ -1182,6 +1193,13 @@ class ApprovalCaseRoutingApiTests(TestCase):
             )
 
     def test_assigned_approver_can_record_partial_approval_through_canonical_case_projection(self):
+        entry = ExceptionRegisterEntry.objects.create(
+            loan_application=self.application,
+            exception_type="exceeds_loan_limit",
+            description="Frozen permissible limit exceeded.",
+            business_reason="Exception requires joint authority.",
+            approval_case=self.case,
+        )
         response = self.client.post(
             f"/api/v1/approval-cases/{self.case.pk}/approve/",
             {"version": 2, "comments": "Approved after reviewing the appraisal."},
@@ -1219,6 +1237,72 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.case.refresh_from_db()
         self.assertEqual(self.case.current_status, "pending")
         self.assertEqual(self.case.version, 3)
+        entry.refresh_from_db()
+        self.assertEqual(entry.status, "pending")
+        self.assertIsNone(entry.closed_at)
+
+    def test_exception_register_is_read_only_filtered_paginated_and_object_scoped(self):
+        read_permission = self._permission("approvals.exception_register.read")
+        RolePermission.objects.create(
+            role=self.cfo.primary_role, permission=read_permission
+        )
+        entry = ExceptionRegisterEntry.objects.create(
+            loan_application=self.application,
+            exception_type="exceeds_loan_limit",
+            description="Frozen permissible limit exceeded.",
+            business_reason="Exception requires joint authority.",
+            risk_assessment="Seasonal cash-flow monitoring.",
+            approval_case=self.case,
+        )
+
+        response = self.client.get(
+            "/api/v1/exception-register/?status=pending&exception_type=exceeds_loan_limit&page=1&page_size=10",
+            **self._auth(self.cfo),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        assert_success_envelope(self, response.json())
+        assert_pagination_shape(self, response.json())
+        self.assertEqual(response.json()["pagination"]["total_count"], 1)
+        row = response.json()["data"][0]
+        self.assertEqual(row["exception_register_entry_id"], str(entry.pk))
+        self.assertEqual(row["approval_case_id"], str(self.case.pk))
+        self.assertEqual(row["cycle_number"], 1)
+        self.assertEqual(row["status"], "pending")
+        self.assertEqual(row["exception_type"], "exceeds_loan_limit")
+        self.assertEqual(row["route_approvers"], self.case.required_approvers_json)
+        self.assertEqual(len(row["required_approvers"]), 2)
+        self.assertEqual(row["approval_actions"], [])
+        self.assertIn("CFO", row["authority_applied_summary"])
+        self.assertIn("Director", row["authority_applied_summary"])
+
+        unmatched = self.client.get(
+            "/api/v1/exception-register/?status=approved", **self._auth(self.cfo)
+        )
+        self.assertEqual(unmatched.status_code, 200)
+        self.assertEqual(unmatched.json()["data"], [])
+        self.assertEqual(unmatched.json()["pagination"]["total_count"], 0)
+        denied = self.client.get(
+            "/api/v1/exception-register/", **self._auth(self.director)
+        )
+        self.assertEqual(denied.status_code, 403)
+        self.assertEqual(denied.json()["error"]["code"], "FORBIDDEN")
+        unused_candidate = self._user(
+            "unused_exception_reader", "Unused Exception Reader", read_permission
+        )
+        unused = self.client.get(
+            "/api/v1/exception-register/", **self._auth(unused_candidate)
+        )
+        self.assertEqual(unused.status_code, 200)
+        self.assertEqual(unused.json()["pagination"]["total_count"], 0)
+        self.assertEqual(unused.json()["data"], [])
+        mutation = self.client.post(
+            "/api/v1/exception-register/",
+            {"exception_type": "waiver"},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        self.assertEqual(mutation.status_code, 405)
 
     def test_partial_action_collection_detail_and_action_share_history_aware_projection(self):
         action_response = self.client.post(
@@ -1268,6 +1352,13 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertIsNotNone(acted["acted_at"])
 
     def test_final_joint_approval_creates_source_shaped_sanction_and_completion_evidence(self):
+        entry = ExceptionRegisterEntry.objects.create(
+            loan_application=self.application,
+            exception_type="exceeds_loan_limit",
+            description="Frozen permissible limit exceeded.",
+            business_reason="Exception requires joint authority.",
+            approval_case=self.case,
+        )
         self.client.post(
             f"/api/v1/approval-cases/{self.case.pk}/approve/",
             {"version": 2, "comments": "CFO approval."},
@@ -1313,6 +1404,16 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertIsNotNone(self.case.closed_at)
         self.assertEqual(self.application.application_status, "approved_by_sanction_committee")
         self.assertEqual(ApprovalAction.objects.filter(approval_case=self.case).count(), 2)
+        entry.refresh_from_db()
+        self.assertEqual(entry.status, "approved")
+        self.assertEqual(entry.closed_at, self.case.closed_at)
+        transition_audit = AuditLog.objects.get(action="exception_register.status_changed")
+        self.assertEqual(transition_audit.entity_id, entry.pk)
+        self.assertEqual(transition_audit.old_value_json["status"], "pending")
+        self.assertEqual(transition_audit.new_value_json["status"], "approved")
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="exception_register").count(), 1
+        )
 
         action_audits = AuditLog.objects.filter(
             action="approval_case.action_recorded", entity_id=self.case.pk
@@ -1416,6 +1517,13 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(self._action_ledgers(), before)
 
     def test_reject_closes_case_and_application_without_sanction(self):
+        entry = ExceptionRegisterEntry.objects.create(
+            loan_application=self.application,
+            exception_type="exceeds_loan_limit",
+            description="Frozen permissible limit exceeded.",
+            business_reason="Exception requires joint authority.",
+            approval_case=self.case,
+        )
         response = self.client.post(
             f"/api/v1/approval-cases/{self.case.pk}/reject/",
             {"version": 2, "comments": "Eligibility evidence is insufficient."},
@@ -1429,8 +1537,18 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.application.refresh_from_db()
         self.assertEqual(self.case.reason_for_rejection, "Eligibility evidence is insufficient.")
         self.assertEqual(self.application.application_status, "rejected_by_sanction_committee")
+        entry.refresh_from_db()
+        self.assertEqual(entry.status, "rejected")
+        self.assertEqual(entry.closed_at, self.case.closed_at)
 
     def test_return_restores_reviewed_precommittee_state_without_sanction(self):
+        entry = ExceptionRegisterEntry.objects.create(
+            loan_application=self.application,
+            exception_type="waiver",
+            description="A governed policy requirement was waived.",
+            business_reason="Clarification may change exception evidence.",
+            approval_case=self.case,
+        )
         response = self.client.post(
             f"/api/v1/approval-cases/{self.case.pk}/return-for-clarification/",
             {"version": 2, "comments": "Clarify crop plan evidence."},
@@ -1444,6 +1562,10 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(self.application.application_status, "appraisal_reviewed")
         self.assertEqual(self.note.appraisal_status, "draft")
         self.assertFalse(apps.get_model("approvals", "SanctionDecision").objects.exists())
+        self.case.refresh_from_db()
+        entry.refresh_from_db()
+        self.assertEqual(entry.status, "pending")
+        self.assertEqual(entry.closed_at, self.case.closed_at)
 
     def test_return_correction_fresh_review_creates_immutable_second_cycle(self):
         returned = self.client.post(

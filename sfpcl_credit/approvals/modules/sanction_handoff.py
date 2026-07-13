@@ -4,11 +4,13 @@ from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from sfpcl_credit.approvals.models import ApprovalCase
 from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
+from sfpcl_credit.approvals.modules import exception_register
 from sfpcl_credit.approvals.modules.approval_case_projection import (
     refresh_approval_case_projection,
 )
@@ -230,7 +232,7 @@ class SanctionHandoffModule:
         if case is None:
             raise DomainNotFound("Pending sanction case was not found.")
         normalized = self._validate_enrichment_payload(
-            payload, facts.recommended_amount
+            payload, facts.recommended_amount, facts.exception_required_flag
         )
         if case.current_status != ApprovalCase.STATUS_PENDING:
             raise DomainInvalidStateError("Only a pending approval case can be enriched.")
@@ -290,7 +292,7 @@ class SanctionHandoffModule:
         case.reason_for_approval = normalized["reason_for_approval"]
         case.exception_condition_code = condition_code or ""
         case.exception_reason = (
-            normalized["reason_for_approval"] if condition_code else ""
+            normalized["business_reason"] if condition_code else ""
         )
         case.matrix_projection_json = matrix_projection
         case.committee_projection_json = committee_projection
@@ -323,6 +325,16 @@ class SanctionHandoffModule:
         ])
         refresh_approval_case_projection(case)
         request_meta = request_meta or {}
+        if condition_code:
+            exception_register.create_for_case(
+                actor=actor,
+                case=case,
+                exception_type=normalized["exception_type"],
+                business_reason=normalized["business_reason"],
+                risk_assessment=normalized["risk_assessment"],
+                actor_permissions=permissions,
+                request_meta=request_meta,
+            )
         AuditLog.objects.create(
             actor_user=actor,
             action="approval_case.enriched",
@@ -363,8 +375,18 @@ class SanctionHandoffModule:
         return SanctionHandoffResult(snapshot=self.serialize(case, facts.latest_review))
 
     @staticmethod
-    def _validate_enrichment_payload(payload, recommended_amount):
-        allowed = {"approval_type", "amount", "reason_for_approval", "force_exception_route"}
+    def _validate_enrichment_payload(
+        payload, recommended_amount, assessment_requires_exception
+    ):
+        allowed = {
+            "approval_type",
+            "amount",
+            "reason_for_approval",
+            "force_exception_route",
+            "business_reason",
+            "risk_assessment",
+            "exception_type",
+        }
         errors = {key: "Unknown field." for key in sorted(set(payload) - allowed)}
         if payload.get("approval_type") != ApprovalCase.TYPE_SANCTION:
             errors["approval_type"] = "Must be sanction."
@@ -381,6 +403,36 @@ class SanctionHandoffModule:
         forced = payload.get("force_exception_route")
         if not isinstance(forced, bool):
             errors["force_exception_route"] = "Must be a boolean."
+        exception_requested = forced is True or assessment_requires_exception
+        supplied_exception_type = payload.get("exception_type")
+        exception_type = None
+        if supplied_exception_type is not None:
+            try:
+                exception_type = exception_register.validate_exception_type(
+                    supplied_exception_type
+                )
+            except ValidationError:
+                errors["exception_type"] = "Unknown exception type."
+        if assessment_requires_exception:
+            if exception_type not in (None, "exceeds_loan_limit"):
+                errors["exception_type"] = (
+                    "A frozen loan-limit exception must use exceeds_loan_limit."
+                )
+            exception_type = "exceeds_loan_limit"
+        elif forced is True and exception_type not in {"stage_bypass", "waiver"}:
+            errors["exception_type"] = (
+                "A forced within-limit exception must use stage_bypass or waiver."
+            )
+        elif not exception_requested and supplied_exception_type is not None:
+            errors["exception_type"] = "This field is only valid for an exception route."
+        business_reason = payload.get("business_reason")
+        if exception_requested and (
+            not isinstance(business_reason, str) or not business_reason.strip()
+        ):
+            errors["business_reason"] = "This field must not be blank."
+        risk_assessment = payload.get("risk_assessment")
+        if risk_assessment is not None and not isinstance(risk_assessment, str):
+            errors["risk_assessment"] = "Must be a string."
         if errors:
             from sfpcl_credit.domain_errors import DomainValidationError
             raise DomainValidationError(errors)
@@ -389,6 +441,17 @@ class SanctionHandoffModule:
             "amount": amount,
             "reason_for_approval": reason.strip(),
             "force_exception_route": forced,
+            "business_reason": (
+                business_reason.strip()
+                if isinstance(business_reason, str) and business_reason.strip()
+                else None
+            ),
+            "risk_assessment": (
+                risk_assessment.strip()
+                if isinstance(risk_assessment, str) and risk_assessment.strip()
+                else None
+            ),
+            "exception_type": exception_type,
         }
 
     @staticmethod
@@ -424,6 +487,19 @@ class SanctionHandoffModule:
             and case.amount == facts.recommended_amount
             and case.reason_for_approval == normalized["reason_for_approval"]
             and bool(case.exception_condition_code) == expected_exception
+            and case.exception_reason == (
+                normalized["business_reason"] if expected_exception else ""
+            )
+            and (
+                not expected_exception
+                or (
+                    hasattr(case, "exception_register_entry")
+                    and case.exception_register_entry.exception_type
+                    == normalized["exception_type"]
+                    and case.exception_register_entry.risk_assessment
+                    == normalized["risk_assessment"]
+                )
+            )
             and case.exception_required_flag == facts.exception_required_flag
             and case.decision_date == facts.decision_date
             and case.loan_application_id == facts.application.pk

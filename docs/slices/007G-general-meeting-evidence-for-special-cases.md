@@ -76,6 +76,17 @@ Related-party loans cannot be sanctioned without the legally required general-me
   `route_approvers`/`required_approvers`/`approval_actions` facts so authority provenance remains
   byte-stable across collection, detail, action response, and historical cycles.
 
+## Run-Ahead Sharpening Review (007F delivered contract, 2026-07-13)
+
+- Meeting evidence must never mutate or reuse the case-unique `ExceptionRegisterEntry`. A related-
+  party exception cycle keeps its own entry identity/status/closed time; a later cycle receives a
+  new exception entry only when its own frozen route requires one.
+- A missing/rejected meeting gate runs before final action insertion, leaving the exception row
+  pending with no exception status evidence. Successful final approval lets 007F's existing locked
+  action projection close that exact row as approved.
+- Meeting-document permission or application-level evidence must not widen Exception Register
+  counts beyond the canonical original/effective/acted case reader scope.
+
 ## Out of Scope
 Conflict determination (007E), register generation (007H), document upload itself (003C/§26), UI (007I).
 
