@@ -1,5 +1,19 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007M Exception Supporting Evidence and Register Closure
+
+- Exception enrichment now accepts an optional bounded ordered list of distinct document ids. The
+  documents-owned boundary proves public upload, exact application, legal category, matching
+  sensitivity, document permission, source audience, workflow context, and canonical object scope;
+  approvals never imports or queries `DocumentFile`.
+- Accepted files freeze only immutable display metadata on the exact Exception Register cycle.
+  Omitted evidence stays empty, exact ordered replay is zero-write, changed replay conflicts, and
+  initial association is attributable in the locked creation audit/workflow evidence.
+- S25 now renders distinct description/business reason, every immutable action actor/decision/
+  comment/time, and supporting metadata in its existing table composition. It exposes no mutation
+  or inferred download authority. `e2e/exception-register-evidence.e2e.spec.ts` owns the two named
+  supporting-evidence and denied-action trusted screenshots.
+
 ## 007L Sanction Workbench Contract and Browser Closure
 
 - The credit-owned `approval-review-v2` package now freezes borrower name/type alongside the

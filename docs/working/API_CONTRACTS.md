@@ -2591,6 +2591,15 @@ unknown type is rejected. The entry copies the request's distinct `business_reas
 `risk_assessment`, links the loan application and approval case, and begins `pending`. An ordinary
 within-limit route creates no entry. Exact enrichment replay creates no duplicate or evidence.
 
+The same request may include optional `supporting_document_ids` as an ordered list of at most 20
+distinct UUIDs. The documents owner validates every supplied id through public-upload provenance,
+exact application attribution, legal category, matching sensitivity, document permission, role,
+workflow, and object scope before the locked enrichment writes. Approvals stores only the returned
+immutable display projection (`document_id`, file name, MIME type, size, sensitivity, upload time)
+on the exact register entry/cycle and never queries `DocumentFile`. Empty/omitted evidence freezes
+an empty list. Exact ordered-id replay is zero-write; any changed ordered list after routing returns
+the existing immutable-snapshot `409` conflict.
+
 Inside the locked approval-action transaction, partial approval leaves the entry pending. Final
 approval changes it to `approved`; rejection changes it to `rejected`; both copy the case
 `closed_at`. Return-for-clarification and `blocked_by_conflict` also copy the case closure time but
@@ -2605,7 +2614,10 @@ Object scope delegates to the canonical approval-case selector before count and 
 row includes register/application/case ids, `cycle_number`, type, description, business/risk facts,
 entry/case statuses, conflict reason, timestamps, `authority_applied_summary`, and canonical
 `route_approvers`, `required_approvers`, and complete `approval_actions`. Reads never re-run
-conflict replacement or consult live committee membership.
+conflict replacement or consult live committee membership. Each row also includes
+`supporting_documents` with the frozen metadata above. Register visibility and metadata never grant
+download; S25 exposes no download control unless a separate document resource independently
+authorises an action.
 
 The nullable `loan_account_id` is currently a UUID reference, not a foreign key to the tracer app's
 synthetic demo account. A protected FK is deferred to the production finance loan-account owner

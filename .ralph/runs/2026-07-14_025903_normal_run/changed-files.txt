@@ -1,0 +1,19 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/007M-exception-supporting-evidence-and-register-closure.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+ M sfpcl-lms/src/pages/registers/ApprovalRegisterPanels.tsx
+ M sfpcl-lms/src/pages/registers/RegistersHub.test.tsx
+ M sfpcl-lms/src/services/approvalRegistersApi.ts
+ M sfpcl_credit/approvals/models.py
+ M sfpcl_credit/approvals/modules/exception_register.py
+ M sfpcl_credit/approvals/modules/sanction_handoff.py
+ M sfpcl_credit/documents/services.py
+ M sfpcl_credit/tests/test_document_files_api.py
+ M sfpcl_credit/tests/test_sanction_submission_api.py
+?? .ralph/runs/2026-07-14_025903_normal_run/
+?? sfpcl-lms/e2e/exception-register-evidence.e2e.spec.ts
+?? sfpcl_credit/approvals/migrations/0017_exceptionregisterentry_supporting_documents_json.py

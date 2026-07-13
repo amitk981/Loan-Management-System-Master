@@ -4,11 +4,13 @@ import uuid
 from pathlib import Path
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.utils.dateparse import parse_datetime
 
 from sfpcl_credit.documents.models import DocumentFile
+from sfpcl_credit.documents import services as document_services
 from sfpcl_credit.identity.models import (
     AuditLog,
     Permission,
@@ -188,6 +190,92 @@ class DocumentFilesApiTests(TestCase):
         self.assertEqual(audit.new_value_json["storage_provider"], "local")
         self.assertNotIn("file", audit.new_value_json)
         self.assertNotIn("file_bytes", audit.new_value_json)
+
+    def test_exception_reference_boundary_enforces_provenance_scope_and_access_without_writes(self):
+        self.upload_role.role_code = "credit_manager"
+        self.upload_role.save(update_fields=["role_code"])
+        download_permission = Permission.objects.get(
+            permission_code=DOCUMENT_DOWNLOAD_PERMISSION
+        )
+        RolePermission.objects.create(
+            role=self.upload_role, permission=download_permission
+        )
+        application_id = uuid.uuid4()
+
+        def upload(name="support.pdf", category="legal"):
+            response = self.client.post(
+                DOCUMENT_UPLOAD_URL,
+                data={
+                    "file": self._sample_file(name=name),
+                    "document_category": category,
+                    "sensitivity_level": "restricted",
+                    "related_entity_type": "application",
+                    "related_entity_id": str(application_id),
+                },
+                headers=self._auth_headers(),
+            )
+            self.assertEqual(response.status_code, 200, response.content)
+            return response.json()["data"]["document_id"]
+
+        def resolve(
+            document_id,
+            *,
+            permissions=None,
+            related_id=application_id,
+            related_access=True,
+            role_codes=frozenset({"credit_manager"}),
+        ):
+            document_id = uuid.UUID(str(document_id))
+            return document_services.resolve_referenceable_documents(
+                actor_permissions=(
+                    {DOCUMENT_DOWNLOAD_PERMISSION}
+                    if permissions is None
+                    else permissions
+                ),
+                document_ids_by_field={"supporting_document_ids.0": document_id},
+                context=document_services.DocumentReferenceContext(
+                    related_entity_type="application",
+                    related_entity_id=related_id,
+                    related_entity_access_allowed=related_access,
+                    workflow_scope=document_services.EXCEPTION_WORKFLOW_SCOPE,
+                    actor_role_codes=role_codes,
+                    actor_is_related_case_approver=False,
+                ),
+                purpose=document_services.EXCEPTION_REFERENCE_PURPOSE,
+            )
+
+        valid_id = upload()
+        before = list(AuditLog.objects.order_by("audit_log_id").values())
+        resolved = resolve(valid_id)
+        self.assertEqual(
+            str(resolved["supporting_document_ids.0"].document_id), valid_id
+        )
+        self.assertEqual(list(AuditLog.objects.order_by("audit_log_id").values()), before)
+
+        finance_id = upload(name="finance.pdf", category="finance")
+        denied_cases = (
+            lambda: resolve(valid_id, related_id=uuid.uuid4()),
+            lambda: resolve(finance_id),
+            lambda: resolve(valid_id, permissions=set()),
+            lambda: resolve(valid_id, related_access=False),
+            lambda: resolve(valid_id, role_codes=frozenset({"plain_staff"})),
+        )
+        for denied in denied_cases:
+            ledger = list(AuditLog.objects.order_by("audit_log_id").values())
+            with self.assertRaises(ValidationError) as error:
+                denied()
+            self.assertIn("not found or is inaccessible", str(error.exception))
+            self.assertEqual(
+                list(AuditLog.objects.order_by("audit_log_id").values()), ledger
+            )
+
+        document = DocumentFile.objects.get(pk=valid_id)
+        document.sensitivity_level = "internal"
+        document.save(update_fields=["sensitivity_level"])
+        ledger = list(AuditLog.objects.order_by("audit_log_id").values())
+        with self.assertRaises(ValidationError):
+            resolve(valid_id)
+        self.assertEqual(list(AuditLog.objects.order_by("audit_log_id").values()), ledger)
 
     def test_sensitivity_level_is_case_normalized(self):
         response = self.client.post(

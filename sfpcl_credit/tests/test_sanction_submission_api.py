@@ -7,6 +7,7 @@ from importlib.util import resolve_name
 from pathlib import Path
 from threading import Event
 import tempfile
+import uuid
 from unittest import skipUnless
 from unittest.mock import patch
 
@@ -557,11 +558,30 @@ class SanctionSubmissionApiTests(TestCase):
         self.assertFalse(
             apps.get_model("approvals", "ExceptionRegisterEntry").objects.exists()
         )
+        reviewer_token = self._login(self.reviewer)
+        supporting_upload = self.client.post(
+            "/api/v1/document-files/",
+            data={
+                "file": SimpleUploadedFile(
+                    "cash-flow-evidence.pdf",
+                    b"public exception supporting evidence",
+                    content_type="application/pdf",
+                ),
+                "document_category": "legal",
+                "sensitivity_level": "restricted",
+                "related_entity_type": "application",
+                "related_entity_id": str(self.application.pk),
+            },
+            headers={"Authorization": f"Bearer {reviewer_token}"},
+        )
+        self.assertEqual(supporting_upload.status_code, 200, supporting_upload.content)
+        supporting_document_id = supporting_upload.json()["data"]["document_id"]
         exception_payload = {
             "approval_type": "sanction", "amount": "600000.00",
             "reason_for_approval": "Stored assessment requires exception approval.",
             "business_reason": "Seasonal exception is commercially justified.",
             "risk_assessment": "Seasonal cash-flow monitoring.",
+            "supporting_document_ids": [supporting_document_id],
             "force_exception_route": False,
         }
         denied = self._enrich(exception_payload)
@@ -572,6 +592,30 @@ class SanctionSubmissionApiTests(TestCase):
         self.assertFalse(AuditLog.objects.filter(action="approval_case.enriched").exists())
         RolePermission.objects.create(
             role=self.reviewer.primary_role, permission=exception_permission
+        )
+        duplicate_ids = self._enrich(
+            exception_payload
+            | {"supporting_document_ids": [supporting_document_id, supporting_document_id]}
+        )
+        self.assertEqual(duplicate_ids.status_code, 400, duplicate_ids.content)
+        self.assertIn(
+            "supporting_document_ids",
+            duplicate_ids.json()["error"]["field_errors"],
+        )
+        self.assertFalse(
+            apps.get_model("approvals", "ExceptionRegisterEntry").objects.exists()
+        )
+        too_many_ids = self._enrich(
+            exception_payload
+            | {"supporting_document_ids": [str(uuid.uuid4()) for _ in range(21)]}
+        )
+        self.assertEqual(too_many_ids.status_code, 400, too_many_ids.content)
+        self.assertIn(
+            "supporting_document_ids",
+            too_many_ids.json()["error"]["field_errors"],
+        )
+        self.assertFalse(
+            apps.get_model("approvals", "ExceptionRegisterEntry").objects.exists()
         )
         response = self._enrich(exception_payload)
 
@@ -609,6 +653,19 @@ class SanctionSubmissionApiTests(TestCase):
             "Seasonal exception is commercially justified.",
         )
         self.assertEqual(register_entry.risk_assessment, "Seasonal cash-flow monitoring.")
+        self.assertEqual(
+            register_entry.supporting_documents_json,
+            [
+                {
+                    "document_id": supporting_document_id,
+                    "file_name": "cash-flow-evidence.pdf",
+                    "mime_type": "application/pdf",
+                    "file_size_bytes": 36,
+                    "sensitivity_level": "restricted",
+                    "uploaded_at": supporting_upload.json()["data"]["uploaded_at"],
+                }
+            ],
+        )
         self.assertEqual(register_entry.status, "pending")
         self.assertIsNone(register_entry.closed_at)
         creation_audit = AuditLog.objects.get(action="exception_register.created")
@@ -617,8 +674,18 @@ class SanctionSubmissionApiTests(TestCase):
             creation_audit.new_value_json["approval_case_id"], data["approval_case_id"]
         )
         self.assertEqual(
+            creation_audit.new_value_json["supporting_document_ids"],
+            [supporting_document_id],
+        )
+        self.assertEqual(
             WorkflowEvent.objects.filter(workflow_name="exception_register").count(),
             1,
+        )
+        self.assertIn(
+            "with 1 supporting document reference(s)",
+            WorkflowEvent.objects.get(
+                workflow_name="exception_register"
+            ).trigger_reason,
         )
         case_before = apps.get_model("approvals", "ApprovalCase").objects.values().get()
         repeat = self._enrich({
@@ -626,6 +693,7 @@ class SanctionSubmissionApiTests(TestCase):
             "reason_for_approval": "Stored assessment requires exception approval.",
             "business_reason": "Seasonal exception is commercially justified.",
             "risk_assessment": "Seasonal cash-flow monitoring.",
+            "supporting_document_ids": [supporting_document_id],
             "force_exception_route": False,
         })
         self.assertEqual(repeat.status_code, 200, repeat.content)
@@ -658,6 +726,28 @@ class SanctionSubmissionApiTests(TestCase):
             register_entry.business_reason,
             "Seasonal exception is commercially justified.",
         )
+        changed_document_upload = self.client.post(
+            "/api/v1/document-files/",
+            data={
+                "file": SimpleUploadedFile(
+                    "changed-evidence.pdf",
+                    b"changed exception supporting evidence",
+                    content_type="application/pdf",
+                ),
+                "document_category": "legal",
+                "sensitivity_level": "restricted",
+                "related_entity_type": "application",
+                "related_entity_id": str(self.application.pk),
+            },
+            headers={"Authorization": f"Bearer {reviewer_token}"},
+        )
+        changed_document_id = changed_document_upload.json()["data"]["document_id"]
+        before_changed_document = self._approval_case_business_ledger()
+        changed_document = self._enrich(
+            exception_payload | {"supporting_document_ids": [changed_document_id]}
+        )
+        self.assertEqual(changed_document.status_code, 409, changed_document.content)
+        self.assertEqual(self._approval_case_business_ledger(), before_changed_document)
         conflict = self._enrich({
             "approval_type": "sanction", "amount": "600000.00",
             "reason_for_approval": "A conflicting immutable reason.",
@@ -794,6 +884,18 @@ class SanctionSubmissionApiTests(TestCase):
         self.assertEqual(
             exception_rows.json()["data"][0]["exception_register_entry_id"],
             str(register_entry.pk),
+        )
+        exception_row = exception_rows.json()["data"][0]
+        self.assertEqual(
+            exception_row["supporting_documents"],
+            register_entry.supporting_documents_json,
+        )
+        self.assertEqual(
+            [action["comments"] for action in exception_row["approval_actions"]],
+            [f"{approver.full_name} approves." for approver in members],
+        )
+        self.assertTrue(
+            all(action["acted_at"] for action in exception_row["approval_actions"])
         )
         self.assertEqual(decision.status_code, 200, decision.content)
         self.assertEqual(

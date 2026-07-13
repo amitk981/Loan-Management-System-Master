@@ -1,7 +1,7 @@
 # Slice 007M: Exception Supporting Evidence and Register Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -78,4 +78,3 @@ High
 - S25 contains its source-required immutable decision comments and supporting evidence.
 - Documents remain owned and authorised by the document boundary.
 - Backend TDD evidence, trusted screenshots, and all configured gates pass.
-

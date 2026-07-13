@@ -636,6 +636,7 @@ class ExceptionRegisterEntry(models.Model):
     description = models.TextField()
     business_reason = models.TextField()
     risk_assessment = models.TextField(null=True, blank=True)
+    supporting_documents_json = models.JSONField(default=list)
     approval_case = models.OneToOneField(
         ApprovalCase,
         on_delete=models.PROTECT,

@@ -93,6 +93,14 @@ export interface ExceptionRegisterRow {
   route_approvers: RegisterApprover[];
   required_approvers: RegisterApprover[];
   approval_actions: Array<RegisterApprover & { approval_action_id: string; comments: string }>;
+  supporting_documents: Array<{
+    document_id: string;
+    file_name: string;
+    mime_type: string | null;
+    file_size_bytes: number | null;
+    sensitivity_level: string;
+    uploaded_at: string;
+  }>;
   created_at: string;
   closed_at: string | null;
 }

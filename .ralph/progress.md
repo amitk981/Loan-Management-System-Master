@@ -1,5 +1,22 @@
 # Ralph Progress Log
 
+# Run 2026-07-14_025903_normal_run
+
+- Completed 007M by extending exception enrichment with an optional ordered, distinct, bounded
+  supporting-document list. The documents owner validates public upload, exact application,
+  legal category, matching sensitivity, role, permission, workflow, and object scope; approvals
+  freezes only returned metadata on the exact Exception Register cycle.
+- Exact ordered replay is zero-write, changed evidence conflicts, and denial matrices leave
+  business/audit/workflow ledgers unchanged. Creation evidence records the associated ids and the
+  workflow event records the attributable reference count in the locked transaction.
+- S25 now renders distinct description/business reason, immutable actor/decision/comment/time, and
+  supporting metadata in the existing table pattern without exposing mutation or inferred download.
+- Backend check/migration sync and 687 tests pass with 19 expected skips and 93% coverage. Frontend
+  build/typecheck/lint and 253 tests pass. The named Playwright spec collects; local Chromium hit
+  the expected macOS Mach-port sandbox denial, so the orchestrator owns both trusted screenshot runs.
+- 007N was inspected and remains concretely sharpened with exact fields, authority rules, shared
+  transport work, and six trusted screenshots. Next: 007N.
+
 # Run 2026-07-13_135007_normal_run
 
 - Completed 007C3 by separating `approvals.case.read` from attributable object scope: immutable
@@ -5934,6 +5951,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/.ralph/runs/2026-07-14_023135_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/.ralph/runs/2026-07-14_023135_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 03:21:03 - 2026-07-14_025903_normal_run
+- Agent tool used: codex
+- Slice attempted: 007M-exception-supporting-evidence-and-register-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_025903_normal_run/.ralph/runs/2026-07-14_025903_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_025903_normal_run/.ralph/runs/2026-07-14_025903_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

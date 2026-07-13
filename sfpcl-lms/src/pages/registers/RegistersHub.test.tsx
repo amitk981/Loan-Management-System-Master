@@ -79,13 +79,18 @@ describe('RegistersHub owned approval register panels', () => {
     }));
   });
 
-  it('loads S25 independently and keeps description and business reason distinct', async () => {
+  it('loads S25 independently with immutable comments and evidence but no inferred download', async () => {
     permissions = ['approvals.exception_register.read'];
     vi.mocked(fetchExceptionRegister).mockResolvedValue({ items: [exceptionRow], pagination });
     render(<RegistersHub />);
 
     expect(await screen.findByText('Frozen exception description')).toBeTruthy();
     expect(screen.getByText('Frozen exception business reason')).toBeTruthy();
+    expect(screen.getByText('CFO approved with monitoring.')).toBeTruthy();
+    expect(screen.getByText('cash-flow-evidence.pdf')).toBeTruthy();
+    expect(screen.getByText(/restricted/i)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /download/i })).toBeNull();
+    expect(screen.queryByRole('link', { name: /download/i })).toBeNull();
     expect(fetchCreditSanctionRegister).not.toHaveBeenCalled();
 
     await userEvent.selectOptions(screen.getByLabelText('Exception status'), 'approved');
@@ -151,5 +156,7 @@ const exceptionRow = {
   exception_register_entry_id: 'exception-1', loan_application_id: 'application-valid', loan_account_id: null, approval_case_id: 'case-valid', cycle_number: 1,
   exception_type: 'stage_bypass' as const, description: 'Frozen exception description', business_reason: 'Frozen exception business reason', risk_assessment: 'Medium',
   status: 'pending' as const, case_status: 'pending', conflict_block_reason: null, authority_applied_summary: 'CFO: CFO One (pending)',
-  route_approvers: [], required_approvers: [], approval_actions: [], created_at: '2026-07-13T10:00:00Z', closed_at: null,
+  route_approvers: [], required_approvers: [], approval_actions: [{ approval_action_id: 'action-1', role_code: 'cfo', user_id: 'cfo-1', full_name: 'CFO One', decision: 'approved', comments: 'CFO approved with monitoring.', acted_at: '2026-07-13T11:30:00Z' }],
+  supporting_documents: [{ document_id: 'document-1', file_name: 'cash-flow-evidence.pdf', mime_type: 'application/pdf', file_size_bytes: 2048, sensitivity_level: 'restricted', uploaded_at: '2026-07-13T09:00:00Z' }],
+  created_at: '2026-07-13T10:00:00Z', closed_at: null,
 };

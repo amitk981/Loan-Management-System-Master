@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
+import uuid
 
 from django.db import transaction
 from django.core.exceptions import ValidationError
@@ -328,7 +329,9 @@ class SanctionHandoffModule:
                 exception_type=normalized["exception_type"],
                 business_reason=normalized["business_reason"],
                 risk_assessment=normalized["risk_assessment"],
+                supporting_document_ids=normalized["supporting_document_ids"],
                 actor_permissions=permissions,
+                related_entity_access_allowed=object_access.allowed,
                 request_meta=request_meta,
             )
         refresh_approval_case_projection(case)
@@ -383,6 +386,7 @@ class SanctionHandoffModule:
             "business_reason",
             "risk_assessment",
             "exception_type",
+            "supporting_document_ids",
         }
         errors = {key: "Unknown field." for key in sorted(set(payload) - allowed)}
         if payload.get("approval_type") != ApprovalCase.TYPE_SANCTION:
@@ -430,6 +434,24 @@ class SanctionHandoffModule:
         risk_assessment = payload.get("risk_assessment")
         if risk_assessment is not None and not isinstance(risk_assessment, str):
             errors["risk_assessment"] = "Must be a string."
+        raw_document_ids = payload.get("supporting_document_ids", [])
+        supporting_document_ids = []
+        if not isinstance(raw_document_ids, list):
+            errors["supporting_document_ids"] = "Must be a list."
+        elif len(raw_document_ids) > 20:
+            errors["supporting_document_ids"] = "Must contain no more than 20 documents."
+        else:
+            for index, value in enumerate(raw_document_ids):
+                try:
+                    supporting_document_ids.append(uuid.UUID(str(value)))
+                except (TypeError, ValueError, AttributeError):
+                    errors[f"supporting_document_ids.{index}"] = "Must be a valid UUID."
+            if len(set(supporting_document_ids)) != len(supporting_document_ids):
+                errors["supporting_document_ids"] = "Document ids must be distinct."
+        if not exception_requested and raw_document_ids:
+            errors["supporting_document_ids"] = (
+                "This field is only valid for an exception route."
+            )
         if errors:
             from sfpcl_credit.domain_errors import DomainValidationError
             raise DomainValidationError(errors)
@@ -449,6 +471,7 @@ class SanctionHandoffModule:
                 else None
             ),
             "exception_type": exception_type,
+            "supporting_document_ids": supporting_document_ids,
         }
 
     @staticmethod
@@ -495,6 +518,11 @@ class SanctionHandoffModule:
                     == normalized["exception_type"]
                     and case.exception_register_entry.risk_assessment
                     == normalized["risk_assessment"]
+                    and [
+                        item["document_id"]
+                        for item in case.exception_register_entry.supporting_documents_json
+                    ]
+                    == [str(value) for value in normalized["supporting_document_ids"]]
                 )
             )
             and case.exception_required_flag == facts.exception_required_flag

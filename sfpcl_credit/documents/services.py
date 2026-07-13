@@ -19,6 +19,8 @@ DOCUMENT_DOWNLOAD_AUDIT_ACTION = "documents.file.downloaded"
 ALLOWED_SENSITIVITY_LEVELS = DocumentFile.SENSITIVITY_LEVELS
 GENERAL_MEETING_REFERENCE_PURPOSE = "general_meeting_evidence"
 GENERAL_MEETING_WORKFLOW_SCOPE = "related_party_sanction_case"
+EXCEPTION_REFERENCE_PURPOSE = "exception_supporting_evidence"
+EXCEPTION_WORKFLOW_SCOPE = "approval_case_exception"
 _INACCESSIBLE_REFERENCE_MESSAGE = "Document file was not found or is inaccessible."
 
 
@@ -124,6 +126,8 @@ def resolve_referenceable_documents(
     purpose,
 ):
     """Resolve document references only when immutable upload provenance proves access."""
+    if not document_ids_by_field:
+        return {}
     permissions = set(actor_permissions)
     if DOCUMENT_DOWNLOAD_PERMISSION not in permissions:
         raise ValidationError(
@@ -132,9 +136,13 @@ def resolve_referenceable_documents(
                 for field in document_ids_by_field
             }
         )
-    purpose_is_allowed = purpose == GENERAL_MEETING_REFERENCE_PURPOSE
-    workflow_scope_is_allowed = (
-        context.workflow_scope == GENERAL_MEETING_WORKFLOW_SCOPE
+    general_meeting_context = (
+        purpose == GENERAL_MEETING_REFERENCE_PURPOSE
+        and context.workflow_scope == GENERAL_MEETING_WORKFLOW_SCOPE
+    )
+    exception_context = (
+        purpose == EXCEPTION_REFERENCE_PURPOSE
+        and context.workflow_scope == EXCEPTION_WORKFLOW_SCOPE
     )
     legal_category_access_allowed = (
         bool(
@@ -160,8 +168,7 @@ def resolve_referenceable_documents(
         document = documents.get(document_id)
         metadata = upload_metadata.get(str(document_id), {})
         reference_is_allowed = (
-            purpose_is_allowed
-            and workflow_scope_is_allowed
+            (general_meeting_context or exception_context)
             and context.related_entity_access_allowed
             and legal_category_access_allowed
             and document is not None
@@ -246,6 +253,8 @@ __all__ = [
     "DOCUMENT_UPLOAD_PERMISSION",
     "download_document_file",
     "DocumentReferenceContext",
+    "EXCEPTION_REFERENCE_PURPOSE",
+    "EXCEPTION_WORKFLOW_SCOPE",
     "GENERAL_MEETING_REFERENCE_PURPOSE",
     "GENERAL_MEETING_WORKFLOW_SCOPE",
     "resolve_referenceable_documents",

@@ -215,11 +215,11 @@ export const ExceptionRegisterPanel: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-max">
               <thead><tr className="bg-slate-50 border-b border-slate-200">
-                {['Exception ID', 'Application / loan', 'Cycle', 'Type', 'Description', 'Business reason', 'Risk', 'Required authority', 'Decision', 'Case status', 'Created', 'Closed'].map(label => <th key={label} className="table-header text-left">{label}</th>)}
+                {['Exception ID', 'Application / loan', 'Cycle', 'Type', 'Description', 'Business reason', 'Risk', 'Required authority', 'Approver comments', 'Supporting documents', 'Decision', 'Case status', 'Created', 'Closed'].map(label => <th key={label} className="table-header text-left">{label}</th>)}
               </tr></thead>
               <tbody className="divide-y divide-slate-100">
-                {state === 'loading' ? <tr><td colSpan={12} className="table-cell text-center text-slate-400 py-12">Loading Exception Register…</td></tr>
-                  : rows.length === 0 ? <tr><td colSpan={12} className="table-cell text-center text-slate-400 py-12">No exceptions match these filters.</td></tr>
+                {state === 'loading' ? <tr><td colSpan={14} className="table-cell text-center text-slate-400 py-12">Loading Exception Register…</td></tr>
+                  : rows.length === 0 ? <tr><td colSpan={14} className="table-cell text-center text-slate-400 py-12">No exceptions match these filters.</td></tr>
                     : rows.map(row => <tr key={row.exception_register_entry_id} className="hover:bg-slate-50">
                       <td className="table-cell num font-semibold text-violet-700">{row.exception_register_entry_id}</td>
                       <td className="table-cell num">{row.loan_application_id ?? row.loan_account_id ?? '—'}</td>
@@ -229,6 +229,12 @@ export const ExceptionRegisterPanel: React.FC = () => {
                       <td className="table-cell text-slate-600 max-w-72 whitespace-normal">{row.business_reason}</td>
                       <td className="table-cell">{row.risk_assessment || '—'}</td>
                       <td className="table-cell text-slate-600 max-w-72 whitespace-normal">{row.authority_applied_summary}</td>
+                      <td className="table-cell text-slate-600 max-w-72 whitespace-normal">
+                        {row.approval_actions.length === 0 ? '—' : row.approval_actions.map(action => <span key={action.approval_action_id} className="block"><span className="font-medium">{action.full_name}</span> · <span className="capitalize">{action.decision}</span><br /><span>{action.comments}</span><br /><span className="text-xs">{date(action.acted_at ?? null)}</span></span>)}
+                      </td>
+                      <td className="table-cell text-slate-600 max-w-72 whitespace-normal">
+                        {row.supporting_documents.length === 0 ? '—' : row.supporting_documents.map(document => <span key={document.document_id} className="block"><span className="font-medium">{document.file_name}</span><br /><span className="capitalize">{document.sensitivity_level}</span> · {date(document.uploaded_at)}</span>)}
+                      </td>
                       <td className="table-cell"><StatusBadge label={row.status} size="sm" /></td>
                       <td className="table-cell"><StatusBadge label={row.case_status} size="sm" /></td>
                       <td className="table-cell">{date(row.created_at)}</td><td className="table-cell">{date(row.closed_at)}</td>

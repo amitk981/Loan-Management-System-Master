@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 
 from sfpcl_credit.approvals.models import ApprovalCase, ExceptionRegisterEntry
 from sfpcl_credit.approvals.modules import approval_case_engine
+from sfpcl_credit.documents import services as document_services
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.workflows.events import record_workflow_event
 
@@ -25,7 +26,8 @@ _LIST_PARAMS = {"page", "page_size", "status", "exception_type"}
 
 def create_for_case(
     *, actor, case, exception_type, business_reason, risk_assessment=None,
-    actor_permissions, request_meta=None
+    supporting_document_ids=(), actor_permissions, related_entity_access_allowed,
+    request_meta=None
 ):
     """Create the immutable case/cycle register identity inside enrichment."""
     if CREATE_PERMISSION not in actor_permissions:
@@ -36,6 +38,28 @@ def create_for_case(
         )
     exception_type = validate_exception_type(exception_type)
     reason = _required_text("business_reason", business_reason)
+    documents = document_services.resolve_referenceable_documents(
+        actor_permissions=actor_permissions,
+        document_ids_by_field={
+            f"supporting_document_ids.{index}": document_id
+            for index, document_id in enumerate(supporting_document_ids)
+        },
+        context=document_services.DocumentReferenceContext(
+            related_entity_type="application",
+            related_entity_id=case.loan_application_id,
+            related_entity_access_allowed=related_entity_access_allowed,
+            workflow_scope=document_services.EXCEPTION_WORKFLOW_SCOPE,
+            actor_role_codes=frozenset(actor.role_codes()),
+            actor_is_related_case_approver=False,
+        ),
+        purpose=document_services.EXCEPTION_REFERENCE_PURPOSE,
+    )
+    supporting_documents = [
+        document_services.serialize_document_file(
+            documents[f"supporting_document_ids.{index}"]
+        )
+        for index in range(len(supporting_document_ids))
+    ]
     entry, created = ExceptionRegisterEntry.objects.get_or_create(
         approval_case=case,
         defaults={
@@ -44,6 +68,7 @@ def create_for_case(
             "description": DESCRIPTIONS[exception_type],
             "business_reason": reason,
             "risk_assessment": (risk_assessment or "").strip() or None,
+            "supporting_documents_json": supporting_documents,
             "closed_at": case.closed_at,
         },
     )
@@ -53,6 +78,7 @@ def create_for_case(
             or entry.business_reason != reason
             or entry.risk_assessment != ((risk_assessment or "").strip() or None)
             or entry.loan_application_id != case.loan_application_id
+            or entry.supporting_documents_json != supporting_documents
         ):
             from sfpcl_credit.domain_errors import DomainInvalidStateError
 
@@ -73,6 +99,9 @@ def create_for_case(
             "loan_application_id": str(case.loan_application_id),
             "exception_type": entry.exception_type,
             "status": entry.status,
+            "supporting_document_ids": [
+                item["document_id"] for item in entry.supporting_documents_json
+            ],
             "request_id": request_meta.get("request_id"),
         },
         ip_address=request_meta.get("ip_address", ""),
@@ -87,9 +116,16 @@ def create_for_case(
         to_state=entry.status,
         trigger_reason=(
             f"Exception entry created for approval case {case.pk} cycle "
-            f"{case.cycle_number}."
+            f"{case.cycle_number} with {len(entry.supporting_documents_json)} "
+            "supporting document reference(s)."
         ),
         action_code="exception_register.created",
+        metadata={
+            "approval_case_id": str(case.pk),
+            "supporting_document_ids": [
+                item["document_id"] for item in entry.supporting_documents_json
+            ],
+        },
     )
     return entry
 
@@ -221,6 +257,7 @@ def serialize_entry(entry):
         "description": entry.description,
         "business_reason": entry.business_reason,
         "risk_assessment": entry.risk_assessment,
+        "supporting_documents": list(entry.supporting_documents_json),
         "status": entry.status,
         "case_status": case.current_status,
         "conflict_block_reason": case.conflict_block_reason or None,
