@@ -1,4 +1,5 @@
 import uuid
+from dataclasses import dataclass
 from pathlib import Path
 
 from django.core.exceptions import ValidationError
@@ -16,6 +17,19 @@ DOCUMENT_DOWNLOAD_PERMISSION = "documents.file.download"
 DOCUMENT_UPLOAD_AUDIT_ACTION = "documents.file.uploaded"
 DOCUMENT_DOWNLOAD_AUDIT_ACTION = "documents.file.downloaded"
 ALLOWED_SENSITIVITY_LEVELS = DocumentFile.SENSITIVITY_LEVELS
+GENERAL_MEETING_REFERENCE_PURPOSE = "general_meeting_evidence"
+GENERAL_MEETING_WORKFLOW_SCOPE = "related_party_sanction_case"
+_INACCESSIBLE_REFERENCE_MESSAGE = "Document file was not found or is inaccessible."
+
+
+@dataclass(frozen=True)
+class DocumentReferenceContext:
+    related_entity_type: str
+    related_entity_id: uuid.UUID
+    related_entity_access_allowed: bool
+    workflow_scope: str
+    actor_role_codes: frozenset[str]
+    actor_is_related_case_approver: bool
 
 
 def user_can_upload_documents(user):
@@ -102,6 +116,72 @@ def download_document_file(user, request, document_id, storage=None):
     return descriptor
 
 
+def resolve_referenceable_documents(
+    *,
+    actor_permissions,
+    document_ids_by_field,
+    context,
+    purpose,
+):
+    """Resolve document references only when immutable upload provenance proves access."""
+    permissions = set(actor_permissions)
+    if DOCUMENT_DOWNLOAD_PERMISSION not in permissions:
+        raise ValidationError(
+            {
+                field: _INACCESSIBLE_REFERENCE_MESSAGE
+                for field in document_ids_by_field
+            }
+        )
+    purpose_is_allowed = purpose == GENERAL_MEETING_REFERENCE_PURPOSE
+    workflow_scope_is_allowed = (
+        context.workflow_scope == GENERAL_MEETING_WORKFLOW_SCOPE
+    )
+    legal_category_access_allowed = (
+        bool(
+            context.actor_role_codes
+            & {"compliance_team_member", "company_secretary", "credit_manager"}
+        )
+        or context.actor_is_related_case_approver
+    )
+    documents = DocumentFile.objects.in_bulk(document_ids_by_field.values())
+    upload_metadata = {}
+    for audit in (
+        AuditLog.objects.filter(
+            action=DOCUMENT_UPLOAD_AUDIT_ACTION,
+            entity_type="document_file",
+            entity_id__in=document_ids_by_field.values(),
+        )
+        .order_by("-created_at", "-audit_log_id")
+    ):
+        upload_metadata.setdefault(str(audit.entity_id), audit.new_value_json or {})
+
+    denied_fields = {}
+    for field, document_id in document_ids_by_field.items():
+        document = documents.get(document_id)
+        metadata = upload_metadata.get(str(document_id), {})
+        reference_is_allowed = (
+            purpose_is_allowed
+            and workflow_scope_is_allowed
+            and context.related_entity_access_allowed
+            and legal_category_access_allowed
+            and document is not None
+            and metadata.get("document_id") == str(document_id)
+            and metadata.get("related_entity_type") == context.related_entity_type
+            and metadata.get("related_entity_id") == str(context.related_entity_id)
+            and metadata.get("document_category") == "legal"
+            and document.sensitivity_level in ALLOWED_SENSITIVITY_LEVELS
+            and metadata.get("sensitivity_level") == document.sensitivity_level
+        )
+        if not reference_is_allowed:
+            denied_fields[field] = _INACCESSIBLE_REFERENCE_MESSAGE
+    if denied_fields:
+        raise ValidationError(denied_fields)
+    return {
+        field: documents[document_id]
+        for field, document_id in document_ids_by_field.items()
+    }
+
+
 def validate_upload_request(request):
     field_errors = {}
     uploaded_file = request.FILES.get("file")
@@ -165,6 +245,10 @@ __all__ = [
     "DOCUMENT_UPLOAD_AUDIT_ACTION",
     "DOCUMENT_UPLOAD_PERMISSION",
     "download_document_file",
+    "DocumentReferenceContext",
+    "GENERAL_MEETING_REFERENCE_PURPOSE",
+    "GENERAL_MEETING_WORKFLOW_SCOPE",
+    "resolve_referenceable_documents",
     "upload_document_file",
     "user_can_download_documents",
     "user_can_upload_documents",

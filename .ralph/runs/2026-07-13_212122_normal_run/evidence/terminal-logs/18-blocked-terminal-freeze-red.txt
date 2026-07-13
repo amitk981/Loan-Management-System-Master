@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_unsatisfiable_abstention_blocks_case_without_creating_sanction (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_unsatisfiable_abstention_blocks_case_without_creating_sanction)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_212122_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 917, in test_unsatisfiable_abstention_blocks_case_without_creating_sanction
+    self.assertEqual(
+AssertionError: None != {'general_meeting_approval_id': 'b1936ae8[707 chars]zen'}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.043s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

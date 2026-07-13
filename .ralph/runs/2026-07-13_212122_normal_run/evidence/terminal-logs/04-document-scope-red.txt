@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_general_meeting_document_and_permission_denials_are_zero_write (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_general_meeting_document_and_permission_denials_are_zero_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_212122_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1617, in test_general_meeting_document_and_permission_denials_are_zero_write
+    self.assertEqual(cross_application.status_code, 400, cross_application.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"general_meeting_approval_id": "5ecf6902-13c7-4d91-b0f0-65813727c2d3", "loan_application_id": "e57ccba7-c5e0-4e65-a0ae-05d839748d8a", "related_party_type": "director_relative", "related_party_user_id": "1c79f83e-6be2-4f95-a816-289617e8a9f4", "relationship_description": "Borrower is a relative of a Director.", "meeting_date": "2026-07-13", "notice_document_id": "36c443c1-d691-4bed-b2b3-5d4995dab731", "minutes_document_id": "c5756737-a394-4aa2-8377-06b5d83a3bd4", "resolution_document_id": "8774c9fc-f9ee-44b7-a39a-3eac3171a5cf", "approval_status": "approved", "recorded_by_user_id": "23c1df7a-e95c-4d9b-833b-a306d6549532", "recorded_at": "2026-07-13T15:58:36.441588Z", "supersedes_general_meeting_approval_id": null}, "meta": {"request_id": null, "timestamp": "2026-07-13T15:58:36.442140Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.042s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

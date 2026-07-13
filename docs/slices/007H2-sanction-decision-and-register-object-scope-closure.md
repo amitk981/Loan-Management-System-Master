@@ -72,3 +72,15 @@ High
 - No same-permission user can read or count an unrelated sanction decision/register row.
 - Source-backed global/read-only scopes remain explicit and do not create action authority.
 - All configured gates pass with public role/object regression evidence.
+
+## Run-Ahead Sharpening Review (007G2 delivered contract, 2026-07-13)
+
+- Register generation must consume only the terminal case FK frozen by 007G2. Reject, return, and
+  final approval freeze the applicable row; later application-level supersession is never a valid
+  register or sanction-decision lookup source.
+- Case readers add `evidence_scope`, but the existing register's
+  `general_meeting_approval_reference` remains a frozen metadata projection and must not acquire a
+  client/current-evidence discriminator or document authority.
+- Preserve 007G2's documents-owned seam: a scoped register reader may see evidence metadata ids but
+  does not gain reference or download scope, and 007H2 must not query upload provenance to widen its
+  case selector.

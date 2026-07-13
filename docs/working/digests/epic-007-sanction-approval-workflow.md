@@ -1,5 +1,22 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007G2 General-Meeting Current Evidence and Document Scope Closure
+
+- An evidence-required pending case now projects the current unsuperseded application outcome in
+  canonical collection, detail, action, and gate-error shapes with `evidence_scope = current_pending`.
+  Reject, return, conflict-blocked abstention, and final approval freeze the then-current row;
+  historical readers expose only that row with `evidence_scope = cycle_frozen`, so later
+  supersession cannot rewrite a cycle.
+- The General Meeting module no longer reads `DocumentFile`. One documents-owned reference
+  interface requires public-upload provenance, exact application attribution, legal category,
+  a matching source-defined sensitivity, global document permission, and a typed attributable
+  related-party-case workflow context for each notice/minutes/resolution id. The source §19.4 legal
+  audience is enforced separately from generic/audit-only case read. Every denial is per-field
+  nondisclosing and zero-write, including no download audit.
+- The real 007F2 above-limit submit/enrich/read/three-approver tracer now records pending, rejected,
+  and approved meeting outcomes through public document and §25.11 endpoints. Supersession preserves
+  the sanction reason, distinct exception business reason/register identity, and queue visibility.
+
 ## 007F2 Exception Routing Coherence and Explicit Projection Closure
 
 - Non-forced exception routing now derives from coherent frozen facts: reviewed amount above the

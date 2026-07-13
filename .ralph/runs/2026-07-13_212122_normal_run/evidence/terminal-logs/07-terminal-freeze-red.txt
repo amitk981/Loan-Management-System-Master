@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_rejected_cycle_freezes_current_evidence_before_later_supersession (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_rejected_cycle_freezes_current_evidence_before_later_supersession)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_212122_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1857, in test_rejected_cycle_freezes_current_evidence_before_later_supersession
+    self.assertEqual(
+AssertionError: None != {'general_meeting_approval_id': '42918d55[707 chars]zen'}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.047s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

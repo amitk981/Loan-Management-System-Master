@@ -5679,3 +5679,28 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_212122_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007G2-general-meeting-current-evidence-and-document-scope-closure
+- Summary: Added canonical current-pending/cycle-frozen General Meeting projection semantics,
+  terminal evidence freezing, and a documents-owned typed per-file reference decision with exact
+  application/category/sensitivity/workflow/role scope and nondisclosing zero-write denials.
+- Tests run: retained four RED/GREEN defect cycles; 130 affected approval tests; backend
+  check/migration sync and 672 tests with 19 expected SQLite skips at 93% coverage; frontend
+  build/typecheck/lint and 208 tests; independent Standards/Spec review with no remaining findings.
+- Evidence saved: `.ralph/runs/2026-07-13_212122_normal_run/evidence/`
+- Result: Success
+- Risk level: High
+- Next action: Run 007H2, then 007I.
+
+## 2026-07-13 21:57:16 - 2026-07-13_212122_normal_run
+- Agent tool used: codex
+- Slice attempted: 007G2-general-meeting-current-evidence-and-document-scope-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_212122_normal_run/.ralph/runs/2026-07-13_212122_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_212122_normal_run/.ralph/runs/2026-07-13_212122_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

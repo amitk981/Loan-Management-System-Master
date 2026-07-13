@@ -1,13 +1,15 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
+import tempfile
 from unittest import skipUnless
 from unittest.mock import patch
 
 from django.apps import apps
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, close_old_connections, connection, connections, transaction
-from django.test import Client, TestCase, TransactionTestCase
+from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
@@ -51,6 +53,7 @@ from sfpcl_credit.tests.api_contracts import (
 from sfpcl_credit.workflows.models import WorkflowEvent
 
 
+@override_settings(DOCUMENT_STORAGE_ROOT=tempfile.mkdtemp(prefix="sfpcl-gm-doc-tests-"))
 class ApprovalCaseRoutingApiTests(TestCase):
     def setUp(self):
         self.client = Client()
@@ -885,6 +888,14 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(queue.json()["pagination"]["total_count"], 1)
 
     def test_unsatisfiable_abstention_blocks_case_without_creating_sanction(self):
+        recorder, payload = self._general_meeting_recorder_and_payload()
+        meeting = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/general-meeting-approval/",
+            {**payload, "approval_status": "pending"},
+            content_type="application/json",
+            **self._auth(recorder),
+        )
+        self.assertEqual(meeting.status_code, 200, meeting.content)
         entry = ExceptionRegisterEntry.objects.create(
             loan_application=self.application,
             exception_type="waiver",
@@ -903,6 +914,10 @@ class ApprovalCaseRoutingApiTests(TestCase):
         data = response.json()["data"]
         self.assertEqual(data["decision"], "abstained")
         self.assertEqual(data["current_status"], "blocked_by_conflict")
+        self.assertEqual(
+            data["general_meeting_approval"],
+            {**meeting.json()["data"], "evidence_scope": "cycle_frozen"},
+        )
         self.assertEqual(
             data["conflict_block_reason"],
             "Required CFO approval authority is unavailable after conflict exclusion.",
@@ -1416,8 +1431,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
             {
                 "approval_case_id": str(self.case.pk),
                 "cycle_number": 1,
-                "general_meeting_approval_id": None,
-                "approval_status": None,
+                "general_meeting_approval": None,
             },
         )
         self.assertEqual(self._action_ledgers(), before)
@@ -1444,6 +1458,16 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
         self.assertEqual(rejected.status_code, 200, rejected.content)
         rejected_id = rejected.json()["data"]["general_meeting_approval_id"]
+        rejected_evidence = {
+            **rejected.json()["data"],
+            "evidence_scope": "current_pending",
+        }
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **self._auth(self.director)
+        )
+        self.assertEqual(
+            detail.json()["data"]["general_meeting_approval"], rejected_evidence
+        )
         partial = self.client.post(
             f"/api/v1/approval-cases/{self.case.pk}/approve/",
             {"version": 2},
@@ -1451,6 +1475,9 @@ class ApprovalCaseRoutingApiTests(TestCase):
             **self._auth(self.cfo),
         )
         self.assertEqual(partial.status_code, 200, partial.content)
+        self.assertEqual(
+            partial.json()["data"]["general_meeting_approval"], rejected_evidence
+        )
         director_headers = self._auth(self.director)
         before = self._action_ledgers()
 
@@ -1464,10 +1491,9 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(denied.status_code, 409, denied.content)
         assert_error_envelope(self, denied.json(), "GENERAL_MEETING_APPROVAL_REJECTED")
         self.assertEqual(
-            denied.json()["error"]["details"]["general_meeting_approval_id"],
-            rejected_id,
+            denied.json()["error"]["details"]["general_meeting_approval"],
+            rejected_evidence,
         )
-        self.assertEqual(denied.json()["error"]["details"]["approval_status"], "rejected")
         self.assertEqual(self._action_ledgers(), before)
 
         approved = self.client.post(
@@ -1493,7 +1519,8 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(completed_data["current_status"], "approved")
         self.assertTrue(completed_data["sanction_decision_created"])
         self.assertEqual(
-            completed_data["general_meeting_approval"], approved_data
+            completed_data["general_meeting_approval"],
+            {**approved_data, "evidence_scope": "cycle_frozen"},
         )
         self.case.refresh_from_db()
         self.assertEqual(
@@ -1505,7 +1532,8 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
         self.assertEqual(detail.status_code, 200, detail.content)
         self.assertEqual(
-            detail.json()["data"]["general_meeting_approval"], approved_data
+            detail.json()["data"]["general_meeting_approval"],
+            {**approved_data, "evidence_scope": "cycle_frozen"},
         )
 
     def test_pending_general_meeting_outcome_blocks_final_sanction(self):
@@ -1517,6 +1545,24 @@ class ApprovalCaseRoutingApiTests(TestCase):
             **self._auth(recorder),
         )
         self.assertEqual(meeting.status_code, 200, meeting.content)
+        pending_evidence = {
+            **meeting.json()["data"],
+            "evidence_scope": "current_pending",
+        }
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **self._auth(self.director)
+        )
+        collection = self.client.get(
+            "/api/v1/approval-cases/", **self._auth(self.director)
+        )
+        self.assertEqual(detail.status_code, 200, detail.content)
+        self.assertEqual(
+            detail.json()["data"]["general_meeting_approval"], pending_evidence
+        )
+        self.assertEqual(
+            collection.json()["data"][0]["general_meeting_approval"],
+            pending_evidence,
+        )
         partial = self.client.post(
             f"/api/v1/approval-cases/{self.case.pk}/approve/",
             {"version": 2},
@@ -1524,6 +1570,9 @@ class ApprovalCaseRoutingApiTests(TestCase):
             **self._auth(self.cfo),
         )
         self.assertEqual(partial.status_code, 200, partial.content)
+        self.assertEqual(
+            partial.json()["data"]["general_meeting_approval"], pending_evidence
+        )
         denied = self.client.post(
             f"/api/v1/approval-cases/{self.case.pk}/approve/",
             {"version": 3},
@@ -1532,7 +1581,10 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
         self.assertEqual(denied.status_code, 409, denied.content)
         assert_error_envelope(self, denied.json(), "GENERAL_MEETING_APPROVAL_PENDING")
-        self.assertEqual(denied.json()["error"]["details"]["approval_status"], "pending")
+        self.assertEqual(
+            denied.json()["error"]["details"]["general_meeting_approval"],
+            pending_evidence,
+        )
         self.assertFalse(
             ApprovalAction.objects.filter(
                 approval_case=self.case, approver_user=self.director
@@ -1562,6 +1614,26 @@ class ApprovalCaseRoutingApiTests(TestCase):
             "Document file was not found or is inaccessible.",
         )
         self.assertEqual(meeting_model.objects.count(), 0)
+
+        cross_application_document = self._upload_general_meeting_document(
+            recorder,
+            "other-application-notice.pdf",
+            related_entity_id="70000000-0000-0000-0000-000000000008",
+        )
+        before_cross_application = self._general_meeting_ledgers()
+        cross_application = self.client.post(
+            url,
+            {**payload, "notice_document_id": cross_application_document},
+            content_type="application/json",
+            **auth,
+        )
+        self.assertEqual(cross_application.status_code, 400, cross_application.content)
+        assert_error_envelope(self, cross_application.json(), "VALIDATION_ERROR")
+        self.assertEqual(
+            cross_application.json()["error"]["field_errors"]["notice_document_id"],
+            "Document file was not found or is inaccessible.",
+        )
+        self.assertEqual(self._general_meeting_ledgers(), before_cross_application)
         self.assertFalse(
             AuditLog.objects.filter(
                 action__startswith="general_meeting_approval."
@@ -1620,6 +1692,43 @@ class ApprovalCaseRoutingApiTests(TestCase):
         assert_error_envelope(self, no_case_scope.json(), "OBJECT_ACCESS_DENIED")
         self.assertEqual(meeting_model.objects.count(), 0)
 
+        audit_reader = self._user(
+            "audit_only_general_meeting_recorder",
+            "Audit-only General Meeting Recorder",
+            self.read_permission,
+            Permission.objects.get(
+                permission_code="approvals.general_meeting.record"
+            ),
+            document_permission,
+        )
+        audit_reader.primary_role.role_code = "internal_auditor"
+        audit_reader.primary_role.save(update_fields=["role_code"])
+        ApprovalCaseReadScopeGrant.objects.create(
+            role=audit_reader.primary_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+        )
+        before_audit_denial = self._general_meeting_ledgers()
+        audit_only = self.client.post(
+            url,
+            payload,
+            content_type="application/json",
+            **self._auth(audit_reader),
+        )
+        self.assertEqual(audit_only.status_code, 400, audit_only.content)
+        assert_error_envelope(self, audit_only.json(), "VALIDATION_ERROR")
+        self.assertEqual(
+            audit_only.json()["error"]["field_errors"],
+            {
+                field: "Document file was not found or is inaccessible."
+                for field in (
+                    "notice_document_id",
+                    "minutes_document_id",
+                    "resolution_document_id",
+                )
+            },
+        )
+        self.assertEqual(self._general_meeting_ledgers(), before_audit_denial)
+
     def test_general_meeting_payload_and_related_case_scope_are_bounded(self):
         recorder, payload = self._general_meeting_recorder_and_payload()
         url = (
@@ -1670,6 +1779,63 @@ class ApprovalCaseRoutingApiTests(TestCase):
             0,
         )
 
+    def test_each_general_meeting_document_field_uses_nondisclosing_reference_scope(self):
+        recorder, payload = self._general_meeting_recorder_and_payload()
+        url = (
+            f"/api/v1/loan-applications/{self.application.pk}/"
+            "general-meeting-approval/"
+        )
+        corrupt_sensitivity_document = self._upload_general_meeting_document(
+            recorder,
+            "unsupported-sensitivity.pdf",
+            sensitivity_level="public",
+        )
+        document_model = apps.get_model("documents", "DocumentFile")
+        document_model.objects.filter(pk=corrupt_sensitivity_document).update(
+            sensitivity_level="unsupported"
+        )
+        denied_documents = {
+            "cross_application": self._upload_general_meeting_document(
+                recorder,
+                "cross-application.pdf",
+                related_entity_id="70000000-0000-0000-0000-000000000009",
+            ),
+            "unrelated": self._upload_general_meeting_document(
+                recorder,
+                "unrelated.pdf",
+                related_entity_type="",
+                related_entity_id="",
+            ),
+            "disallowed_category": self._upload_general_meeting_document(
+                recorder,
+                "finance-category.pdf",
+                document_category="finance",
+            ),
+            "disallowed_sensitivity": corrupt_sensitivity_document,
+            "missing": "70000000-0000-0000-0000-000000000010",
+        }
+        before = self._general_meeting_ledgers()
+
+        for field in (
+            "notice_document_id",
+            "minutes_document_id",
+            "resolution_document_id",
+        ):
+            for denial, document_id in denied_documents.items():
+                with self.subTest(field=field, denial=denial):
+                    response = self.client.post(
+                        url,
+                        {**payload, field: document_id},
+                        content_type="application/json",
+                        **self._auth(recorder),
+                    )
+                    self.assertEqual(response.status_code, 400, response.content)
+                    assert_error_envelope(self, response.json(), "VALIDATION_ERROR")
+                    self.assertEqual(
+                        response.json()["error"]["field_errors"][field],
+                        "Document file was not found or is inaccessible.",
+                    )
+                    self.assertEqual(self._general_meeting_ledgers(), before)
     def test_returned_cycle_keeps_its_applicable_general_meeting_reference(self):
         recorder, payload = self._general_meeting_recorder_and_payload()
         meeting_url = (
@@ -1695,7 +1861,8 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(returned.status_code, 200, returned.content)
         self.assertEqual(returned.json()["data"]["current_status"], "returned_for_clarification")
         self.assertEqual(
-            returned.json()["data"]["general_meeting_approval"], approved_data
+            returned.json()["data"]["general_meeting_approval"],
+            {**approved_data, "evidence_scope": "cycle_frozen"},
         )
         rejected = self.client.post(
             meeting_url,
@@ -1714,7 +1881,51 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
         self.assertEqual(historical.status_code, 200, historical.content)
         self.assertEqual(
-            historical.json()["data"]["general_meeting_approval"], approved_data
+            historical.json()["data"]["general_meeting_approval"],
+            {**approved_data, "evidence_scope": "cycle_frozen"},
+        )
+
+    def test_rejected_cycle_freezes_current_evidence_before_later_supersession(self):
+        recorder, payload = self._general_meeting_recorder_and_payload()
+        meeting_url = (
+            f"/api/v1/loan-applications/{self.application.pk}/"
+            "general-meeting-approval/"
+        )
+        pending = self.client.post(
+            meeting_url,
+            {**payload, "approval_status": "pending"},
+            content_type="application/json",
+            **self._auth(recorder),
+        )
+        self.assertEqual(pending.status_code, 200, pending.content)
+        pending_data = pending.json()["data"]
+
+        rejected_case = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/reject/",
+            {"version": 2, "comments": "Sanction case rejected."},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        self.assertEqual(rejected_case.status_code, 200, rejected_case.content)
+        self.assertEqual(rejected_case.json()["data"]["current_status"], "rejected")
+        self.assertEqual(
+            rejected_case.json()["data"]["general_meeting_approval"],
+            {**pending_data, "evidence_scope": "cycle_frozen"},
+        )
+
+        later = self.client.post(
+            meeting_url,
+            {**payload, "approval_status": "approved"},
+            content_type="application/json",
+            **self._auth(recorder),
+        )
+        self.assertEqual(later.status_code, 200, later.content)
+        historical = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **self._auth(self.cfo)
+        )
+        self.assertEqual(
+            historical.json()["data"]["general_meeting_approval"],
+            {**pending_data, "evidence_scope": "cycle_frozen"},
         )
 
     def test_exception_register_is_read_only_filtered_paginated_and_object_scoped(self):
@@ -3423,26 +3634,23 @@ class ApprovalCaseRoutingApiTests(TestCase):
     def _general_meeting_recorder_and_payload(self):
         record_permission = self._permission("approvals.general_meeting.record")
         document_permission = self._permission("documents.file.download")
+        upload_permission = self._permission("documents.file.upload")
         recorder = self._user(
             "general_meeting_recorder",
             "General Meeting Recorder",
             self.read_permission,
             record_permission,
             document_permission,
+            upload_permission,
         )
+        recorder.primary_role.role_code = "company_secretary"
+        recorder.primary_role.save(update_fields=["role_code"])
         ApprovalCaseReadScopeGrant.objects.create(
             role=recorder.primary_role,
             scope_type=ApprovalCaseReadScopeGrant.SCOPE_LEGAL_READONLY,
         )
-        document_model = apps.get_model("documents", "DocumentFile")
-        documents = [
-            document_model.objects.create(
-                file_name=file_name,
-                storage_provider="local",
-                storage_key=f"general-meeting/{file_name}",
-                uploaded_by_user=recorder,
-                sensitivity_level="restricted",
-            )
+        document_ids = [
+            self._upload_general_meeting_document(recorder, file_name)
             for file_name in ("notice.pdf", "minutes.pdf", "resolution.pdf")
         ]
         self.case.general_meeting_evidence_required = True
@@ -3452,10 +3660,64 @@ class ApprovalCaseRoutingApiTests(TestCase):
             "related_party_user_id": str(self.director.pk),
             "relationship_description": "Borrower is a relative of a Director.",
             "meeting_date": timezone.localdate().isoformat(),
-            "notice_document_id": str(documents[0].pk),
-            "minutes_document_id": str(documents[1].pk),
-            "resolution_document_id": str(documents[2].pk),
+            "notice_document_id": document_ids[0],
+            "minutes_document_id": document_ids[1],
+            "resolution_document_id": document_ids[2],
             "approval_status": "approved",
+        }
+
+    def _upload_general_meeting_document(
+        self,
+        recorder,
+        file_name,
+        *,
+        related_entity_id=None,
+        related_entity_type="application",
+        document_category="legal",
+        sensitivity_level="restricted",
+    ):
+        response = self.client.post(
+            "/api/v1/document-files/",
+            {
+                "file": SimpleUploadedFile(
+                    file_name,
+                    f"evidence:{file_name}".encode(),
+                    content_type="application/pdf",
+                ),
+                "document_category": document_category,
+                "sensitivity_level": sensitivity_level,
+                "related_entity_type": related_entity_type,
+                "related_entity_id": (
+                    str(self.application.pk)
+                    if related_entity_id is None
+                    else related_entity_id
+                ),
+            },
+            **self._auth(recorder),
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        return response.json()["data"]["document_id"]
+
+    def _general_meeting_ledgers(self):
+        return {
+            "meetings": list(
+                apps.get_model("approvals", "GeneralMeetingApproval").objects.values()
+            ),
+            "cases": list(ApprovalCase.objects.values()),
+            "exceptions": list(ExceptionRegisterEntry.objects.values()),
+            "meeting_audits": list(
+                AuditLog.objects.filter(
+                    action__startswith="general_meeting_approval."
+                ).values()
+            ),
+            "meeting_workflows": list(
+                WorkflowEvent.objects.filter(
+                    workflow_name="general_meeting_approval"
+                ).values()
+            ),
+            "download_audits": list(
+                AuditLog.objects.filter(action="documents.file.downloaded").values()
+            ),
         }
 
     def _action_ledgers(self):

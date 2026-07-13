@@ -87,6 +87,18 @@ The Sanction Committee reviews and decides real cases — with the ten-point che
 ## Visual Acceptance Criteria
 Queue, case detail (pending/partially approved/approved/rejected/returned), exception-flagged case, special-case panel, conflict/abstention display, empty, loading, denied, and error states; deterministic Playwright baselines per the 006H3 harness conventions.
 
+## Run-Ahead Sharpening Review (007G2 delivered contract, 2026-07-13)
+
+- Render `general_meeting_approval.evidence_scope` exactly: `current_pending` may change while the
+  case remains pending; `cycle_frozen` is immutable historical evidence after reject, return, or
+  final approval. The §25.11 POST success itself has no scope discriminator.
+- Final-gate errors now carry the same nullable nested `general_meeting_approval` object as case
+  readers. Do not reconstruct status from legacy flat id/status details or fetch application-latest
+  evidence for a returned/terminal cycle.
+- Offer a reference only for document resources uploaded as exact-application legal evidence with
+  a source-defined sensitivity matching immutable upload provenance. Backend nondisclosing rejection remains authoritative; case
+  or register metadata visibility never enables download/reference on its own.
+
 ## Risk Level
 Medium
 

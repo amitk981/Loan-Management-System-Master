@@ -1,7 +1,7 @@
 # Slice 007G2: General Meeting Current Evidence and Document Scope Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers

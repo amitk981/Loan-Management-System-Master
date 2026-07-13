@@ -173,11 +173,7 @@ def serialize_case_snapshot(case):
         **serialize_case_authority(case),
         "excluded_approvers": case.excluded_approvers_json,
         "general_meeting_evidence_required": case.general_meeting_evidence_required,
-        "general_meeting_approval": (
-            general_meeting.serialize(case.general_meeting_approval)
-            if case.general_meeting_approval_id
-            else None
-        ),
+        "general_meeting_approval": general_meeting.serialize_for_case(case),
         "conflict_block_reason": case.conflict_block_reason or None,
         "reason_for_approval": case.reason_for_approval,
         "exception_condition_code": case.exception_condition_code or None,

@@ -10,7 +10,7 @@ from django.utils.dateparse import parse_date
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalCase, GeneralMeetingApproval
 from sfpcl_credit.approvals.modules import approval_case_engine
-from sfpcl_credit.documents.models import DocumentFile
+from sfpcl_credit.documents import services as document_services
 from sfpcl_credit.domain_errors import (
     DomainInvalidStateError,
     DomainObjectAccessDenied,
@@ -63,14 +63,15 @@ def record_for_application(
             .order_by("-cycle_number")
             .first()
         )
+        case_access = approval_case_engine.can_read_approval_case(
+            actor=actor,
+            case=case,
+            actor_permissions=permissions,
+        ) if case is not None else None
         if (
             case is None
             or not approval_case_engine.is_routable_approval_case(case)
-            or not approval_case_engine.can_read_approval_case(
-                actor=actor,
-                case=case,
-                actor_permissions=permissions,
-            ).allowed
+            or not case_access.allowed
         ):
             raise DomainObjectAccessDenied(None)
         if not case.general_meeting_evidence_required:
@@ -96,20 +97,28 @@ def record_for_application(
             raise ValidationError(
                 {"document_ids": "Notice, minutes, and resolution must be distinct documents."}
             )
-        documents = DocumentFile.objects.in_bulk(document_ids)
-        missing_fields = {
-            field: "Document file was not found or is inaccessible."
-            for field in (
-                "notice_document_id",
-                "minutes_document_id",
-                "resolution_document_id",
-            )
-            if cleaned[field] not in documents
-        }
-        if missing_fields:
-            raise ValidationError(
-                missing_fields
-            )
+        documents = document_services.resolve_referenceable_documents(
+            actor_permissions=permissions,
+            document_ids_by_field={
+                field: cleaned[field]
+                for field in (
+                    "notice_document_id",
+                    "minutes_document_id",
+                    "resolution_document_id",
+                )
+            },
+            context=document_services.DocumentReferenceContext(
+                related_entity_type="application",
+                related_entity_id=application.pk,
+                related_entity_access_allowed=case_access.allowed,
+                workflow_scope=document_services.GENERAL_MEETING_WORKFLOW_SCOPE,
+                actor_role_codes=frozenset(actor.role_codes()),
+                actor_is_related_case_approver=(
+                    case_access.scope_type == "approval_assigned"
+                ),
+            ),
+            purpose=document_services.GENERAL_MEETING_REFERENCE_PURPOSE,
+        )
 
         latest = (
             GeneralMeetingApproval.objects.filter(
@@ -128,9 +137,9 @@ def record_for_application(
             related_party_user=related_party_user,
             relationship_description=cleaned["relationship_description"],
             meeting_date=cleaned["meeting_date"],
-            notice_document=documents[cleaned["notice_document_id"]],
-            minutes_document=documents[cleaned["minutes_document_id"]],
-            resolution_document=documents[cleaned["resolution_document_id"]],
+            notice_document=documents["notice_document_id"],
+            minutes_document=documents["minutes_document_id"],
+            resolution_document=documents["resolution_document_id"],
             approval_status=cleaned["approval_status"],
             recorded_by_user=actor,
             supersedes=latest,
@@ -197,16 +206,31 @@ def serialize(meeting):
     }
 
 
+def serialize_for_case(case):
+    """Project current evidence for an open cycle or its immutable frozen evidence."""
+    if not case.general_meeting_evidence_required:
+        return None
+    if case.current_status == ApprovalCase.STATUS_PENDING:
+        meeting = latest_evidence_for_case(case)
+        evidence_scope = "current_pending"
+    else:
+        meeting = case.general_meeting_approval
+        evidence_scope = "cycle_frozen"
+    if meeting is None:
+        return None
+    return {**serialize(meeting), "evidence_scope": evidence_scope}
+
+
 def approved_evidence_for_final_action(case):
     """Return the latest approved application evidence or deny final sanction."""
     if not case.general_meeting_evidence_required:
         return None
     latest = latest_evidence_for_case(case)
+    projection = serialize_for_case(case)
     details = {
         "approval_case_id": str(case.pk),
         "cycle_number": case.cycle_number,
-        "general_meeting_approval_id": str(latest.pk) if latest else None,
-        "approval_status": latest.approval_status if latest else None,
+        "general_meeting_approval": projection,
     }
     if latest is None:
         raise GeneralMeetingGateConflict(

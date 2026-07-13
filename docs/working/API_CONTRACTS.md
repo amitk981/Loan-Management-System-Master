@@ -2721,10 +2721,21 @@ routed approval cycle, and `documents.file.download`. The case's immutable
 
 `related_party_type` is exactly `director`, `director_relative`, or `committee_member`.
 Description and ISO date are mandatory. Notice, minutes, and resolution must be three distinct,
-existing document files accessible under the recorder's document authority. Missing files return
-`400 VALIDATION_ERROR` on their exact request fields; missing record/document permission returns
+existing document files resolved through the documents module's reference-authorization interface.
+Each file must have immutable `documents.file.uploaded` provenance from the public upload path,
+`related_entity_type = application`, the exact loan-application id, category `legal`, and sensitivity
+matching one of the document model's source-defined levels (`public`, `internal`, `confidential`, or
+`restricted`). The approval owner supplies a typed reference context only after the latest routed
+case has canonical object access and its immutable related-party evidence flag proves the
+`related_party_sanction_case` workflow scope; the documents owner combines that decision with each
+file's provenance and the source §19.4 legal audience (Compliance Team, Company Secretary, Credit
+Manager, or an attributable case approver). Audit-only or generic case read scope is not legal-file
+reference authority even if the global permissions are granted. Missing, cross-application,
+unattributed, wrong-category, unsupported/mismatched-sensitivity, and otherwise inaccessible files all return the same nondisclosing
+`400 VALIDATION_ERROR` text on each denied request field. Missing record/document permission returns
 `403 FORBIDDEN`; missing case scope returns `403 OBJECT_ACCESS_DENIED`; a non-related-party cycle
-returns `409 INVALID_STATE`.
+returns `409 INVALID_STATE`. Denial creates no meeting/audit/workflow/case/exception mutation and
+never emits a `documents.file.downloaded` audit.
 
 Success returns the standard envelope with the request fields plus
 `general_meeting_approval_id`, `recorded_by_user_id`, `recorded_at`, and nullable
@@ -2740,18 +2751,22 @@ The locked approval action transaction evaluates this gate only after object sco
 conflict, assignment/action permission, and distinct effective authority establish that an
 `approve` action would be final. Missing, pending, and rejected current evidence return 409 with
 codes `GENERAL_MEETING_EVIDENCE_REQUIRED`, `GENERAL_MEETING_APPROVAL_PENDING`, and
-`GENERAL_MEETING_APPROVAL_REJECTED`. Details contain `approval_case_id`, `cycle_number`, nullable
-`general_meeting_approval_id`, and nullable `approval_status`. These denials insert no action or
-sanction and do not close/project an Exception Register entry. A conflict still returns the earlier
-canonical `CONFLICTED_APPROVER_NOT_ALLOWED` contract.
+`GENERAL_MEETING_APPROVAL_REJECTED`. Details contain `approval_case_id`, `cycle_number`, and the
+same nullable `general_meeting_approval` object used by case readers. These denials insert no action
+or sanction and do not close/project an Exception Register entry. A conflict still returns the
+earlier canonical `CONFLICTED_APPROVER_NOT_ALLOWED` contract.
 
-Successful final approval freezes the current approved record on that case cycle. Return for
-clarification also freezes whichever current record exists without requiring it to be approved;
-no evidence is needed to return. Collection, detail, and action success expose that immutable
-record as nullable `general_meeting_approval`, beside unchanged `route_approvers`,
-`required_approvers`, and `approval_actions`. Later application-level supersession cannot change a
-returned or completed cycle's reference. A later cycle resolves the then-current unsuperseded
-application record independently.
+While an evidence-required cycle is `pending`, collection, detail, action success, and final-gate
+details expose the application's current unsuperseded record as nullable `general_meeting_approval`;
+the object has `evidence_scope = current_pending`. Successful final approval, rejection, return for
+clarification, and an abstention that closes the case as `blocked_by_conflict` freeze whichever
+current record exists on that exact cycle (final approval still requires `approved`; other terminal
+outcomes do not). Returned and terminal readers expose only that frozen
+record with `evidence_scope = cycle_frozen`, beside unchanged `route_approvers`,
+`required_approvers`, and `approval_actions`. Later application-level supersession cannot change
+historical case or register references. A later pending cycle resolves the then-current
+unsuperseded application record independently. §25.11 success remains the source record shape
+without `evidence_scope`; the scope discriminator belongs to case/gate projections.
 
 # Sanction decision and Credit Sanction Register reads (007H)
 

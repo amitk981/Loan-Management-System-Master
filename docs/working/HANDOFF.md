@@ -1,39 +1,34 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_205450_normal_run
+2026-07-13_212122_normal_run
 
 ## Current Status
 
-CR-004 is complete. The mounted member-governance production-container suite now owns a local
-15-second integration-test budget and explicit sequential execution. The complete frontend suite
-still uses the unchanged `vitest run` command and every other suite retains Vitest's 5000 ms default.
+007G2 is complete. Evidence-required pending approval cases expose the current unsuperseded General
+Meeting record with `evidence_scope = current_pending`; reject, return, conflict-blocked abstention,
+and final approval freeze the applicable record with `evidence_scope = cycle_frozen`. Gate errors,
+collection/detail reads, and action responses share the same nested meeting projection.
 
-`npm run test:member-governance-container:ci` is the retained one-worker/file-serial command. The
-exact routed create-ledger journey passed against a deliberately constrained 1 ms command-line
-default after failing under that same command before the repair. Ten fresh-process repeats, all 16
-container rows, and the complete 208-test frontend suite pass without changing any journey
-assertion, production UI, backend behavior, dependency, or global timeout.
-
-The remaining architecture-review corrections are still queued in dependency order:
-
-1. `007G2-general-meeting-current-evidence-and-document-scope-closure`
-2. `007H2-sanction-decision-and-register-object-scope-closure`
-
-007G2 and 007H2 remain next and were re-sharpened with the exact General Meeting endpoint and Credit
-Sanction Register pagination fields. 007I remains blocked by those corrections. A-085 remains open
-for 007G2 to resolve.
+General Meeting recording no longer imports or queries `DocumentFile`. The documents module owns a
+typed reference decision combining global permission, exact application upload provenance, legal
+category/audience, source-defined sensitivity integrity, canonical case access, and related-party
+workflow scope. Cross-application, unattributed, wrong-category/sensitivity, missing, unscoped, and
+audit-only inputs receive identical per-field denial with zero business or download-audit writes.
+A-085 is resolved. The next two slices were sharpened with the delivered contract.
 
 ## Validation
 
-Retained RED/GREEN logs prove the exact mounted journey fails when it inherits a 1 ms default and
-passes when the suite-local integration policy is present. Ten repeated exact journeys, the
-single-worker 16-test file, frontend build/typecheck/lint and all 208 tests pass. Backend check and
-migration sync pass; the complete 670-test suite passes with 19 expected PostgreSQL-only SQLite
-skips and 93% coverage. Independent standards/spec review found no code-side findings. The
-orchestrator still must validate, commit, push `staging`, and observe the external push/PR checks.
+Retained RED/GREEN logs prove missing current projection, cross-application reference widening,
+terminal rejection freezing, and conflict-blocked freezing before each correction. The real 007F2
+above-limit public tracer preserves distinct sanction/exception reasons, Exception Register
+identity, and queue visibility through pending/rejected/approved meeting supersession. Backend
+check/migration sync and all 672 tests pass with 19 expected PostgreSQL-only SQLite skips and 93%
+coverage. Frontend build/typecheck/lint and all 208 tests pass. Final independent Standards and Spec
+reviews found no remaining findings. The orchestrator still must independently validate, commit,
+merge, and push `staging`.
 
 ## Next Run
 
-Run `007G2`, then `007H2`. Resume `007I-sanction-workbench-ui` only after those corrective
-dependencies are complete. CR-004 remains an independent queued maintenance repair.
+Run `007H2-sanction-decision-and-register-object-scope-closure`. Then run
+`007I-sanction-workbench-ui`, which now has the final current/frozen and document-reference contract.

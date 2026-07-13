@@ -6,12 +6,14 @@ import ast
 from importlib.util import resolve_name
 from pathlib import Path
 from threading import Event
+import tempfile
 from unittest import skipUnless
 from unittest.mock import patch
 
 from django.apps import apps
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import close_old_connections, connection, connections
-from django.test import Client, RequestFactory, TestCase, TransactionTestCase
+from django.test import Client, RequestFactory, TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import LoanApplication, RejectionNote
@@ -96,6 +98,7 @@ def business_app_dependency_violations(*, owner, references):
     raise ValueError(f"Unsupported business app owner: {owner}")
 
 
+@override_settings(DOCUMENT_STORAGE_ROOT=tempfile.mkdtemp(prefix="sfpcl-sanction-doc-tests-"))
 class SanctionSubmissionApiTests(TestCase):
     def setUp(self):
         self.client = Client()
@@ -452,6 +455,15 @@ class SanctionSubmissionApiTests(TestCase):
         exception_permission = self._permission(
             "approvals.exception.create", "Create exception entry"
         )
+        for code, name in (
+            ("approvals.general_meeting.record", "Record general meeting evidence"),
+            ("documents.file.download", "Reference document files"),
+            ("documents.file.upload", "Upload document files"),
+        ):
+            RolePermission.objects.create(
+                role=self.reviewer.primary_role,
+                permission=self._permission(code, name),
+            )
         members = []
         for code, name, authority in (
             ("exception_cfo", "Exception CFO", "cfo"),
@@ -493,6 +505,16 @@ class SanctionSubmissionApiTests(TestCase):
             director_1_user=members[1], director_2_user=members[2],
             board_meeting_reference="BOARD-EXCEPTION-1", effective_from=decision_date,
             status="active", version_number="exception-committee-v1",
+        )
+        related_director = self._user(
+            "related_noncommittee_director", "Related Noncommittee Director"
+        )
+        apps.get_model("approvals", "ApprovalConflictDeclaration").objects.create(
+            loan_application=self.application,
+            user=related_director,
+            conflict_type="director_relative",
+            reason="Borrower is related to a Director outside the assigned committee.",
+            declared_by_user=self.reviewer,
         )
         snapshot = deepcopy(self.note.loan_limit_snapshot_json)
         snapshot.update({
@@ -648,6 +670,75 @@ class SanctionSubmissionApiTests(TestCase):
         self.assertEqual(detail.status_code, 200, detail.content)
         self.assertEqual(detail.json()["data"]["approval_case_id"], str(case.pk))
         self.assertEqual(detail.json()["data"]["exception_reason"], register_entry.business_reason)
+        self.assertTrue(detail.json()["data"]["general_meeting_evidence_required"])
+
+        document_ids = []
+        reviewer_token = self._login(self.reviewer)
+        for file_name in ("notice.pdf", "minutes.pdf", "resolution.pdf"):
+            upload = self.client.post(
+                "/api/v1/document-files/",
+                data={
+                    "file": SimpleUploadedFile(
+                        file_name,
+                        f"public exception evidence:{file_name}".encode(),
+                        content_type="application/pdf",
+                    ),
+                    "document_category": "legal",
+                    "sensitivity_level": "restricted",
+                    "related_entity_type": "application",
+                    "related_entity_id": str(self.application.pk),
+                },
+                headers={"Authorization": f"Bearer {reviewer_token}"},
+            )
+            self.assertEqual(upload.status_code, 200, upload.content)
+            document_ids.append(upload.json()["data"]["document_id"])
+        meeting_payload = {
+            "related_party_type": "director_relative",
+            "related_party_user_id": str(related_director.pk),
+            "relationship_description": "Borrower is related to a noncommittee Director.",
+            "meeting_date": timezone.localdate().isoformat(),
+            "notice_document_id": document_ids[0],
+            "minutes_document_id": document_ids[1],
+            "resolution_document_id": document_ids[2],
+        }
+        original_reasons = (
+            data["reason_for_approval"],
+            data["exception_reason"],
+            str(register_entry.pk),
+        )
+        for status in ("pending", "rejected", "approved"):
+            meeting = self.client.post(
+                f"/api/v1/loan-applications/{self.application.pk}/general-meeting-approval/",
+                data={**meeting_payload, "approval_status": status},
+                content_type="application/json",
+                headers={"Authorization": f"Bearer {reviewer_token}"},
+            )
+            self.assertEqual(meeting.status_code, 200, meeting.content)
+            current = self.client.get(
+                f"/api/v1/approval-cases/{case.pk}/",
+                headers={"Authorization": f"Bearer {cfo_token}"},
+            )
+            current_assigned = self.client.get(
+                "/api/v1/approval-cases/?assigned_to_me=true",
+                headers={"Authorization": f"Bearer {cfo_token}"},
+            )
+            self.assertEqual(
+                current.json()["data"]["general_meeting_approval"],
+                {**meeting.json()["data"], "evidence_scope": "current_pending"},
+            )
+            self.assertEqual(current_assigned.json()["pagination"]["total_count"], 1)
+            self.assertEqual(
+                (
+                    current.json()["data"]["reason_for_approval"],
+                    current.json()["data"]["exception_reason"],
+                    str(
+                        apps.get_model(
+                            "approvals", "ExceptionRegisterEntry"
+                        ).objects.get(approval_case=case).pk
+                    ),
+                ),
+                original_reasons,
+            )
 
         action_responses = []
         for version, approver in zip((2, 3, 4), members, strict=True):

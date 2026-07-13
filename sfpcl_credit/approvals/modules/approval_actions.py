@@ -194,7 +194,7 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
     ) == required_ids
     meeting_evidence = (
         general_meeting.latest_evidence_for_case(case)
-        if action_code == "return"
+        if action_code in {"abstain", "reject", "return"}
         else None
     )
     if completes_approval:
@@ -294,10 +294,12 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
                 ConflictOfInterestModule.authority_gap_reason(case)
             )
             case.closed_at = timezone.now()
+            case.general_meeting_approval = meeting_evidence
     elif action_code == "reject":
         case.current_status = case_transition.next_state
         case.reason_for_rejection = comments
         case.closed_at = timezone.now()
+        case.general_meeting_approval = meeting_evidence
         application.application_status = application_transition.next_state
         application.save(update_fields=["application_status"])
     elif action_code == "return":
