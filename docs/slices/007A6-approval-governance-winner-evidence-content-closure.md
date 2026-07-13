@@ -53,6 +53,9 @@ facts in every governed PostgreSQL race.
 - Four PostgreSQL races with exact winner version/audit content and a byte-for-byte pending loser.
 - Mutation/omission checks that fail when the new evidence row has the wrong actor, target, reason,
   old/new values, or proposal identity even if counts still pass.
+- Register the rule-create, rule-supersede, committee-create, and committee-supersede methods as
+  four independently resolvable test callables; the twice-run acceptance command must report four
+  executed tests and zero skips on each invocation rather than selecting an aggregate wrapper.
 
 ## Evidence Required
 
@@ -66,4 +69,3 @@ High
 
 - Complete-ledger acceptance proves what the winner wrote, not merely that one row was added.
 - No losing proposal fact appears in winner history or audit evidence.
-

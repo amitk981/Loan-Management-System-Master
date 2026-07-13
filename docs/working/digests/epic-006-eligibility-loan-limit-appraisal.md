@@ -1,5 +1,24 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006Z15 Member Public-Action Authority Matrix Closure
+
+- Ten independently selectable rows now invoke the real member list/detail/update, identity
+  approval, supply capture/verification, service-evidence create/update, staff eligibility
+  calculation, and active-status verification interfaces. No row imports or calls the authority
+  evaluator as acceptance; exact denial and success ledgers cover member, identity, scope, supply,
+  service-maker, status, eligibility, history, audit, and workflow facts.
+- Permission-without-scope detail/mutations return `403 OBJECT_ACCESS_DENIED`; the source-required
+  list contract filters to an empty `200` page before counts. Matching assigned, global,
+  created-by, active-team, inactive-team, unrelated-team, and unrelated-member behavior executes
+  real list/detail/mutation seams.
+- Staff calculation rejects cross-member query/body substitution after application authority and
+  derives the member only from the owned application. Portal self-service and borrower-limit reads
+  reject a different `member_id` from the authenticated `PortalAccount` without writes or identifier
+  disclosure. `ActiveMemberStatusModule.calculate` remains actorless and internal.
+- HTTP adapters now preserve object-scope denial separately from missing-permission and
+  maker-checker denial using typed module exceptions; member calculations and M02-FR-004..006
+  business rules are unchanged.
+
 ## Architecture Review 2026-07-13 10:09 - Public Action Proof Still Shallow
 
 - 006Z14 correctly removes the dead `calculate_for_actor` seam and brittle filename/string caller

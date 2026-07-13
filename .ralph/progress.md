@@ -5218,3 +5218,28 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_111515_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 006Z15-member-public-action-authority-matrix-closure
+- Summary: Replaced evaluator-only member authority aliases with ten real public action rows,
+  canonical object-denial transport behavior, exact ledgers, scope-kind execution, and cross-member
+  substitution rejection at staff application and authenticated portal ownership seams.
+- Tests run: 13 independently selectable matrix/omission tests; 68 focused member regressions;
+  backend 568 tests at 93% coverage; frontend build/typecheck/lint and 208 tests; Django check and
+  migration sync.
+- Evidence saved: `.ralph/runs/2026-07-13_111515_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High
+- Next action: 007A6 approval governance winner-evidence content closure.
+
+## 2026-07-13 12:05:51 - 2026-07-13_111515_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z15-member-public-action-authority-matrix-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_111515_normal_run/.ralph/runs/2026-07-13_111515_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_111515_normal_run/.ralph/runs/2026-07-13_111515_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

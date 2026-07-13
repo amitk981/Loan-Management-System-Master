@@ -635,12 +635,16 @@ def loan_application_eligibility_assessment_run(request, loan_application_id):
     if response is not None:
         return response
     try:
-        parse_json_body(request)
+        body = parse_json_body(request)
         result = EligibilityAssessmentModule().run(
             actor=user,
             application_id=loan_application_id,
             request_meta=_credit_request_meta(request),
             actor_permissions=permissions,
+            claimed_member_ids=(
+                request.GET.get("member_id"),
+                body.get("member_id") if isinstance(body, dict) else None,
+            ),
         )
     except ValidationError as exc:
         return error_response(

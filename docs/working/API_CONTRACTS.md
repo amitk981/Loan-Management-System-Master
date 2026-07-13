@@ -1683,7 +1683,8 @@ Protected borrower portal endpoints:
 
 Rules:
 - The member scope comes only from the authenticated active `PortalAccount` linked to the bearer
-  token user. Client-supplied `member_id` query values are ignored and never grant authority.
+  token user. A client-supplied `member_id` query value that differs from that account returns
+  `403 OBJECT_ACCESS_DENIED`; it is never ignored, disclosed, or used for a read/write.
 - If the linked `PortalAccount` becomes suspended/inactive after token issuance, the shared
   session-bound auth validator revokes the active session with reason
   `portal_account_status_changed` and these endpoints return `401 INVALID_TOKEN`.
@@ -1717,11 +1718,14 @@ Frontend wiring:
   `supply_route`, and non-blank `evidence_reference`. Unknown fields, invalid UUID relationships,
   and negative/over-precision quantity or value facts return `400 VALIDATION_ERROR`; stale member
   versions return `409 STALE_WRITE` without record, history, or audit evidence.
+  An existing member outside the actor's action-specific persisted scope returns
+  `403 OBJECT_ACCESS_DENIED` without supply, member-version, history, or audit writes.
 - Direct supply forbids `producer_institution_member_id`; the Producer Institution route requires
   an active, non-self FPC/Producer Institution member UUID. Subsidiary and step-down subsidiary
   destinations require `supplied_to_entity_id`.
 - `POST /api/v1/produce-supply-records/{record_id}/verify/` retains maker-checker separation and
-  the current supply-record `version`; stale verification returns `409 STALE_WRITE`.
+  the current supply-record `version`; stale verification returns `409 STALE_WRITE`. Object-scope
+  denial is `403 OBJECT_ACCESS_DENIED`, while maker-checker denial remains `403 FORBIDDEN`.
 - `POST /api/v1/members/{member_id}/active-status/verify/` requires
   `members.active_status.verify` plus `result_id`, current member `version`, ISO `as_of_date`,
   `decision` (`active`, `inactive`, or `relaxation`), and a non-blank `reason`; missing/future dates
@@ -1830,7 +1834,8 @@ Frontend wiring:
 ### Portal application limit projection (006Z2)
 
 - `GET /api/v1/portal/application-limit-projection/?requested_amount={money}` derives member scope
-  only from the active `PortalAccount` and is read-only.
+  only from the active `PortalAccount` and is read-only. A different client-supplied `member_id`
+  returns `403 OBJECT_ACCESS_DENIED` without assessment, audit, or workflow writes.
 - `status = available` returns the server-calculated shareholding, land, and effective lower limit,
   the effective policy version/date, and the server-owned requested-amount advisory flags.
 - Missing, stale, future, closed, manual, or provenance-mismatched active-member authority—and
@@ -1849,6 +1854,9 @@ Rules:
 - Run requires `credit.eligibility.run` and the existing loan-application object-access boundary.
   A user missing the global run permission receives `403 FORBIDDEN`; a user with the
   permission but outside the application scope receives `403 OBJECT_ACCESS_DENIED`.
+  After application authority succeeds, a query/body `member_id` different from the application's
+  stored member also returns `403 OBJECT_ACCESS_DENIED` without assessment, audit, or workflow
+  writes; the actorless member calculation always derives its member from the application.
 - Read requires the existing `applications.loan_application.read` permission and object-access
   boundary used by application detail.
 - Missing applications return `404 NOT_FOUND`. Reading before an assessment exists returns

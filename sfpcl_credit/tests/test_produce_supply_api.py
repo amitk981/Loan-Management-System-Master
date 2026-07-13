@@ -401,8 +401,15 @@ class ProduceSupplyApiTests(TestCase):
         )
         token = login.json()["data"]["access_token"]
 
-        response = self.client.get(
+        substituted = self.client.get(
             f"/api/v1/portal/produce-supply/?member_id={other.member_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(substituted.status_code, 403)
+        self.assertEqual(substituted.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
+
+        response = self.client.get(
+            "/api/v1/portal/produce-supply/",
             headers={"Authorization": f"Bearer {token}"},
         )
 

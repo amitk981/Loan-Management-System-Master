@@ -159,14 +159,15 @@
     "006Z14-member-authority-action-and-calculation-proof-closure",
     "007A5-approval-governance-complete-loser-ledger",
     "007B-approval-case-creation-from-appraisal",
-    "007C-cfo-and-director-threshold-routing"
+    "007C-cfo-and-director-threshold-routing",
+    "006Z15-member-public-action-authority-matrix-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "6c6a4da",
-  "last_run_id": "2026-07-13_100911_architecture_review",
+  "last_run_id": "2026-07-13_111515_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
+  "slices_completed_since_architecture_review": 1,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

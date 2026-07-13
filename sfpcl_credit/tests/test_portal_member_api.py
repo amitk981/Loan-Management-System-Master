@@ -249,6 +249,23 @@ class PortalMemberApiTests(TestCase):
             headers={"Authorization": f"Bearer {token}"},
         )
 
+        for substituted in (dashboard_response, profile_response, supply_response):
+            self.assertEqual(substituted.status_code, 403)
+            assert_error_envelope(self, substituted.json(), "OBJECT_ACCESS_DENIED")
+
+        dashboard_response = self.client.get(
+            "/api/v1/portal/dashboard/",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        profile_response = self.client.get(
+            "/api/v1/portal/profile/",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        supply_response = self.client.get(
+            "/api/v1/portal/produce-supply/",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
         self.assertEqual(dashboard_response.status_code, 200)
         assert_success_envelope(self, dashboard_response.json())
         dashboard = dashboard_response.json()["data"]
@@ -362,8 +379,14 @@ class PortalMemberApiTests(TestCase):
         self.assertIsNone(submitted["application_reference_number"])
         self.assertIsNotNone(submitted["submitted_at"])
 
-        list_response = self.client.get(
+        substituted_list = self.client.get(
             f"/api/v1/portal/applications/?member_id={self.other_member.member_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(substituted_list.status_code, 403)
+        assert_error_envelope(self, substituted_list.json(), "OBJECT_ACCESS_DENIED")
+        list_response = self.client.get(
+            "/api/v1/portal/applications/",
             headers={"Authorization": f"Bearer {token}"},
         )
         self.assertEqual(list_response.status_code, 200)
@@ -554,6 +577,29 @@ class PortalMemberApiTests(TestCase):
         self.assertEqual(unchanged.result_id, result.result_id)
         self.assertEqual(unchanged.to_snapshot(), authority.evidence_snapshot)
 
+        ledger_before_substitution = (
+            LoanLimitAssessment.objects.count(),
+            AuditLog.objects.count(),
+            WorkflowEvent.objects.count(),
+        )
+        substituted = self.client.get(
+            (
+                "/api/v1/portal/application-limit-projection/?requested_amount=95000.00"
+                f"&member_id={self.other_member.member_id}"
+            ),
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(substituted.status_code, 403)
+        assert_error_envelope(self, substituted.json(), "OBJECT_ACCESS_DENIED")
+        self.assertEqual(
+            (
+                LoanLimitAssessment.objects.count(),
+                AuditLog.objects.count(),
+                WorkflowEvent.objects.count(),
+            ),
+            ledger_before_substitution,
+        )
+
         response = self.client.get(
             "/api/v1/portal/application-limit-projection/?requested_amount=95000.00",
             headers={"Authorization": f"Bearer {token}"},
@@ -570,6 +616,7 @@ class PortalMemberApiTests(TestCase):
         self.assertEqual(data["calculated_as_of_date"], calculation_date.isoformat())
         self.assertEqual(data["calculation_rule_version"], "portal-limit-v1")
         serialized = json.dumps(data)
+        self.assertNotIn(str(self.other_member.member_id), serialized)
         for secret in (
             str(self.member.member_id),
             str(authority.active_member_status_id),

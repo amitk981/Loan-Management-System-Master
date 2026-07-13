@@ -70,6 +70,9 @@ replays must match the frozen credit provenance and §25.2 response contract.
 
 - Assigned CFO/Director list/detail, acted history, unassigned Director, maker, arbitrary permission
   holder, and missing-read-permission rows with scoped counts and nondisclosure.
+- For every permission-without-object-scope actor, assert the ordinary list returns no case data and
+  a scope-filtered `total_count` of zero, then assert direct detail returns the canonical
+  `403 OBJECT_ACCESS_DENIED`; snapshot the case/action/audit/workflow ledger around both requests.
 - Contradictory stored snapshot matrix covering every mismatch in requirement 4; no enabled action
   or public row for any loser.
 - Exact enrichment replay versus changed assessment/policy/review provenance, each with complete
@@ -91,4 +94,3 @@ High
 - No permission holder can read an unrelated approval case without persisted source-backed scope.
 - Only a self-consistent stored routing snapshot can enter queues, detail, or later action seams.
 - Exact replay means the frozen credit provenance is identical, and §25.2 returns `current_status`.
-
