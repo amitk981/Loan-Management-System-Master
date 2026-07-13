@@ -37,8 +37,9 @@ accept evidence documents only through the document owner's per-file access deci
    supersession must not rewrite historical case reads.
 2. Collection, detail, action success, and final-gate error details use one source-shaped meeting
    projection and distinguish current-pending from cycle-frozen evidence without inventing client
-   state. The S24 UI can render missing/pending/rejected/approved status from the case response
-   before attempting final approval.
+   state. `POST /api/v1/loan-applications/{loan_application_id}/general-meeting-approval/` and the
+   canonical case readers expose the same missing/pending/rejected/approved vocabulary, so the S24
+   UI can render the gate before attempting final approval.
 3. Replace the General Meeting module's direct `DocumentFile` permission/existence lookup with one
    document-owned access interface. Each notice, minutes, and resolution reference must prove the
    actor's document-read permission, access to the related loan application, allowed sensitivity/

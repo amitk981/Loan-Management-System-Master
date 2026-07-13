@@ -1,0 +1,14 @@
+Command: npm test
+Exit code: 0
+
+Test Files  29 passed (29)
+Tests       208 passed (208)
+Duration    7.04s
+
+Affected full-suite row:
+PASS MemberGovernanceForm.container.test.tsx (16 tests) 2557ms
+PASS routes Directory registration into canonical Profile readback with the exact create ledger 1347ms
+
+The default full-suite command was unchanged and all frontend tests ran. Other test modules retain
+Vitest's 5000 ms default because the larger timeout is declared only on the member-governance
+production-container suite.

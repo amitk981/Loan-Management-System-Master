@@ -5653,3 +5653,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_205450_normal_run
+
+- Agent tool used: codex
+- Slice attempted: CR-004-member-governance-container-recurring-ci-timeout
+- Summary: Added a suite-local 15-second integration budget and sequential policy to the mounted
+  member-governance container, plus a retained one-worker/file-serial CI-shaped command. Production
+  journeys and assertions are unchanged; the global frontend timeout remains 5000 ms.
+- Tests run: retained exact-command RED/GREEN; 10 repeated exact journeys; all 16 container rows;
+  frontend build/typecheck/lint and 208 tests; backend check/migration sync and 670 tests with 19
+  expected SQLite skips at 93% coverage.
+- Evidence saved: `.ralph/runs/2026-07-13_205450_normal_run/evidence/`
+- Result: Success
+- Risk level: High
+- Next action: Independent validation/commit/push, then confirm staging push and PR #5 frontend
+  checks are green; execute 007G2 next.
+
+## 2026-07-13 21:14:14 - 2026-07-13_205450_normal_run
+- Agent tool used: codex
+- Slice attempted: CR-004-member-governance-container-recurring-ci-timeout
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_205450_normal_run/.ralph/runs/2026-07-13_205450_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_205450_normal_run/.ralph/runs/2026-07-13_205450_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

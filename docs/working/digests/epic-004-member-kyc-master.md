@@ -1,5 +1,16 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## CR-004 Member Governance Container Recurring CI Timeout
+
+- The mounted production-container suite owns a 15-second integration budget and explicitly runs
+  its rows sequentially; every other frontend suite retains Vitest's 5000 ms default.
+- `npm run test:member-governance-container:ci` runs all 16 mounted rows in one worker with file
+  parallelism disabled. The exact create-ledger journey passes even when the command-line default is
+  constrained to 1 ms, proving the suite-local policy takes precedence without changing assertions.
+- Ten fresh-process exact-journey runs, the complete container file, and the complete 208-test
+  frontend suite pass. Authenticated App navigation, POST ledger, canonical profile refetch,
+  mutation-response non-disclosure, update coverage, and cleanup remain unchanged.
+
 ## CR-002 Member Governance Container CI Timeout
 
 - Complete registration fixture entry uses synchronous labeled-control change events, eliminating

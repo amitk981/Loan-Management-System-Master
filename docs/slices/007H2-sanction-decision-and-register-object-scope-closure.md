@@ -35,10 +35,11 @@ scope that governs approval history, including counts and pagination.
    effective, or acted approver may read their case's decision; an otherwise same-permission
    Director receives nondisclosing `403 OBJECT_ACCESS_DENIED` for an unrelated application. Source-
    backed persisted legal/audit/management readers retain their defined read-only scope.
-2. Credit Sanction Register collection filtering delegates to the canonical approval-case selector
-   before count, financial-year/decision filters, ordering, and pagination. A Director sees only
-   attributable cycles and cannot infer other rows from `total_count`, page bounds, or filters;
-   globally scoped CFO/legal/audit readers see only the scope their persisted grant defines.
+2. `GET /api/v1/credit-sanction-register/` delegates to the canonical approval-case selector before
+   count, financial-year/decision filters, ordering, and pagination. A Director sees only
+   attributable cycles and cannot infer other rows from `pagination.total_count`, `total_pages`,
+   page bounds, or filters; globally scoped CFO/legal/audit readers see only the scope their
+   persisted grant defines.
 3. Permission and object scope stay separate: possessing register/sanction permission does not make
    case permission global, and a case reader without the specific register/sanction permission
    remains forbidden. Register reads never grant action or document-download authority.
