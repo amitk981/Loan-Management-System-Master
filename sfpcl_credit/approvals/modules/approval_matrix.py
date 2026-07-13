@@ -30,6 +30,8 @@ class ApprovalMatrixProjection:
     version_number: str
     decision_type: str
     amount: Decimal
+    amount_min: Decimal | None
+    amount_max: Decimal | None
     condition_code: str | None
     decision_date: date
     required_approver_roles: tuple[str, ...]
@@ -72,6 +74,8 @@ def resolve_approval_matrix(*, decision_type, amount, condition_code, decision_d
         version_number=rule.version_number,
         decision_type=rule.decision_type,
         amount=amount,
+        amount_min=rule.amount_min,
+        amount_max=rule.amount_max,
         condition_code=rule.condition_code,
         decision_date=decision_date,
         required_approver_roles=tuple(rule.required_approver_roles_json),

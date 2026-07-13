@@ -82,6 +82,17 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - Approver selection, conflict exclusion, actions, sanction decisions, and register entries remain
   their later dedicated slices. Required approver facts are immutable snapshots once assigned.
 
+## 007B Delivered Enrichment Contract
+
+- Source §25.2 enriches, but never creates, the unique 006G shell. Credit owns a locked application
+  → appraisal → review-history projection; approvals then locks the case and consumes each dated
+  public configuration resolver exactly once.
+- The case freezes amount, related application, reason/exception condition, complete rule and
+  committee projections, concrete ordered CFO/Director users, excluded list, verified loan-limit
+  policy provenance, decision date, and version 2 while preserving the 006G workflow-event id.
+- Exact repeats are zero-write reads. Conflicts/decided cases are 409; stale provenance and missing
+  effective approved configuration leave the version-1 shell and all evidence unchanged.
+
 ## 007A Delivered Configuration Contract
 
 - Exact ₹5,00,000 is included in the lower persisted rule; the upper rule begins at ₹5,00,000.01.

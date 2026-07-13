@@ -45,6 +45,14 @@ CFO and Directors record real decisions with reasons; a loan is sanctioned only 
 ## Out of Scope
 Conflict determination (007E), exception register (007F), general-meeting gate (007G), register generation (007H), UI (007I).
 
+## Run-Ahead Sharpening Review (007B, 2026-07-13)
+
+- Require the complete 007B routing snapshot and optimistic `case.version` before any action;
+  unrouted version-1 shells are invalid state and must never be routed from current configuration.
+- Preserve the original 006G `workflow_event_id` as submission identity. Action/completion events
+  are additional rows. Source amount and authority come from immutable 007B projections, never
+  request payload or a fresh rule/committee resolver call.
+
 ## Risk Level
 High
 

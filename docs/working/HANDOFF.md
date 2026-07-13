@@ -1,26 +1,24 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_090059_normal_run
+2026-07-13_091510_normal_run
 
 ## Current Status
 
-007A5 is complete. All four governed rule/committee create/supersede races now prove the complete
-winner-only configuration ledger and publicly read back the unchanged pending loser. Every race
-carries a discriminating open case whose stored rule, committee, approvers, decision date, workflow
-event, and version remain identical. Historical/current committee resolution, conflicting backfill,
-duplicate membership, and swapped authority are independently attributable.
+007B is complete. Source §25.2 now enriches the existing 006G shell without a second create path.
+Credit owns the locked appraisal/review/provenance projection; approvals then snapshots the dated
+approved rule and committee, ordered concrete approvers, amount, related entity, exception route,
+and policy provenance atomically while preserving the submission workflow-event identity.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-13_090059_normal_run/`. RED proves the public loser omitted
-its immutable payload. GREEN proves the complete ledger, and the exact four PostgreSQL race methods
-pass twice after approvals migrations 0005/0006. Frontend build/typecheck/lint and 208 tests pass;
-backend check/migration sync and 548 tests pass with 16 expected PostgreSQL-only skips and 93%
-coverage.
+Evidence is under `.ralph/runs/2026-07-13_091510_normal_run/`. RED/GREEN logs cover the absent
+adapter, idempotent exception repeat, no-rule atomic loser, and decided-case rejection. Exact
+₹500,000, above-threshold, and same-amount exception routes pass. Frontend build/typecheck/lint and
+208 tests pass; backend check/migration sync and 553 tests pass with 16 expected PostgreSQL-only
+skips and 93% coverage.
 
 ## Next Run
 
-Run `007B-approval-case-creation-from-appraisal`: enrich the existing unrouted case shell through
-the real approval-case seam using approved resolver projections only. Then 007C excludes empty
-shells and derives queues/actions only from the stored historical snapshot.
+Run `007C-cfo-and-director-threshold-routing`: exclude unrouted version-1 shells and derive queue,
+detail provenance, assignment, and actions only from the complete stored 007B snapshots.

@@ -87,6 +87,15 @@ Medium
   assignment. Prove an eligible configuration checker absent from `required_approvers_json` sees no
   case action and cannot enter `assigned_to_me`.
 
+## Run-Ahead Sharpening Review (007B, 2026-07-13)
+
+- A routable row has non-null rule/committee ids, matching stored versions and decision date,
+  `version >= 2`, a non-empty list-shaped `required_approvers_json`, and complete matrix/committee
+  projections. Exclude any row missing one of those facts even if amount/status resembles a case.
+- Consume the stored ordered `{role_code,user_id,full_name}` approver items unchanged; do not join
+  current users or committees to rebuild assignment. Preserve `excluded_approvers_json` separately
+  for 007E instead of destructively filtering the required snapshot.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

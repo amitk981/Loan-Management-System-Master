@@ -2404,3 +2404,23 @@ The checker must be active, distinct from the maker, and carry persisted `cfo` o
 conflicts return `409 CONFIGURATION_CONFLICT` or `409 PROPOSAL_STALE`. Validation uses the standard
 `400 VALIDATION_ERROR` field-error envelope. Approval atomically activates/supersedes and writes
 separate author/approver VersionHistory plus `config.changed`; rejection changes no effective row.
+
+# Approval-case enrichment from appraisal (007B)
+
+`POST /api/v1/loan-applications/{loan_application_id}/approval-cases/` requires an authenticated
+holder of `approvals.case.create` with object access to the application. It accepts exactly the
+source §25.2 fields `approval_type = sanction`, an `amount` equal to the reviewed appraisal's
+recommended amount, a non-blank `reason_for_approval`, and boolean `force_exception_route`.
+
+The adapter never creates a row. It enriches the unique pending shell created by the §24.5 sanction
+submission or returns `404 NOT_FOUND`. It derives application/appraisal identity from that shell,
+uses the latest immutable review date, and consumes the stored verified loan-limit assessment's
+condition and policy provenance. Missing/stale provenance is `409 INVALID_STATE_TRANSITION`;
+missing or ambiguous effective approved configuration uses the resolver's stable 400 code.
+
+Success returns the existing submission projection plus immutable `approval_type`, amount,
+rule/committee ids and versions, decision date, concrete `required_approvers`, empty
+`excluded_approvers`, related-entity facts, reason, canonical exception condition, complete matrix
+and committee projections, loan-limit provenance, and case `version`. An identical repeat returns
+the same projection without writes. A conflicting repeat or decided case returns 409. Later matrix,
+committee, pending-proposal, or losing-proposal changes never rewrite the stored projection.

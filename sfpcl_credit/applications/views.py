@@ -10,6 +10,8 @@ from sfpcl_credit.api import (
     success_response,
 )
 from sfpcl_credit.approvals.modules.sanction_handoff import SanctionHandoffModule
+from sfpcl_credit.approvals.modules.approval_matrix import ApprovalMatrixResolutionError
+from sfpcl_credit.approvals.modules.sanction_committee import SanctionCommitteeResolutionError
 from sfpcl_credit.applications import services
 from sfpcl_credit.applications.modules import application_authority
 from sfpcl_credit.applications.modules.witness_corrections import WitnessCorrectionError, correct_witness
@@ -710,6 +712,37 @@ def loan_application_sanction_case(request, loan_application_id):
             application_id=loan_application_id,
             actor_permissions=permissions,
         )
+    except (
+        CreditModuleNotFound,
+        CreditModuleObjectAccessDenied,
+        CreditModulePermissionDenied,
+    ) as exc:
+        return _credit_module_error_response(request, exc)
+    return success_response(result.snapshot, request)
+
+
+@require_http_methods(["POST"])
+def loan_application_approval_case(request, loan_application_id):
+    user, permissions, response = http_auth.authenticated_user_with_permissions(request)
+    if response is not None:
+        return response
+    try:
+        result = SanctionHandoffModule().enrich_pending(
+            actor=user,
+            application_id=loan_application_id,
+            payload=parse_json_body(request),
+            request_meta=_credit_request_meta(request),
+            actor_permissions=permissions,
+        )
+    except CreditModuleValidationError as exc:
+        return error_response(
+            request, 400, "VALIDATION_ERROR",
+            "Approval-case payload failed validation.", exc.field_errors,
+        )
+    except (ApprovalMatrixResolutionError, SanctionCommitteeResolutionError) as exc:
+        return error_response(request, 400, exc.code, str(exc))
+    except CreditModuleInvalidStateError as exc:
+        return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
     except (
         CreditModuleNotFound,
         CreditModuleObjectAccessDenied,

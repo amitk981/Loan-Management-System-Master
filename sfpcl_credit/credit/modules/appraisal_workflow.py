@@ -1,7 +1,7 @@
 """Deep module for appraisal-note preparation and review transitions."""
 
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
@@ -184,6 +184,17 @@ class ReviewedAppraisalHandoff:
     previous_application_status: str
     previous_appraisal_status: str
     exception_required_flag: bool
+
+
+@dataclass(frozen=True)
+class ApprovalCaseEnrichmentFacts:
+    application: LoanApplication
+    appraisal_note: LoanAppraisalNote
+    latest_review: AppraisalReviewDecision
+    decision_date: date
+    recommended_amount: Decimal
+    exception_required_flag: bool
+    loan_limit_provenance: dict
 
 
 class AppraisalWorkflow:
@@ -890,6 +901,82 @@ class AppraisalWorkflow:
             previous_application_status=previous_application_status,
             previous_appraisal_status=previous_appraisal_status,
             exception_required_flag=exception_required,
+        )
+
+    def prepare_approval_case_enrichment(self, *, application_id):
+        """Lock and project the reviewed credit facts consumed by approvals."""
+        application = (
+            LoanApplication.objects.select_for_update(of=("self",))
+            .filter(loan_application_id=application_id)
+            .first()
+        )
+        if application is None:
+            raise CreditModuleNotFound("Loan application was not found.")
+        note = (
+            LoanAppraisalNote.objects.select_for_update(of=("self",))
+            .filter(loan_application=application)
+            .first()
+        )
+        if note is None:
+            raise CreditModuleInvalidStateError(
+                "A submitted reviewed appraisal is required for approval routing."
+            )
+        history = list(
+            note.review_decisions.select_for_update(of=("self",)).order_by(
+                "decided_at", "appraisal_review_decision_id"
+            )
+        )
+        latest_review = history[-1] if history else None
+        if (
+            application.application_status
+            != LoanApplication.STATUS_SUBMITTED_TO_SANCTION
+            or note.appraisal_status != LoanAppraisalNote.STATUS_SUBMITTED_TO_SANCTION
+            or latest_review is None
+            or latest_review.decision != "reviewed"
+            or note.last_review_decision != "reviewed"
+            or note.reviewed_at != latest_review.decided_at
+            or note.reviewed_by_user_id != latest_review.reviewer_user_id
+        ):
+            raise CreditModuleInvalidStateError(
+                "The submitted appraisal no longer matches its reviewed decision."
+            )
+        snapshot = note.loan_limit_snapshot_json
+        required = (
+            "loan_limit_assessment_id",
+            "loan_application_id",
+            "exception_required_flag",
+            "calculation_rule_version",
+            "policy_config_id",
+            "policy_name",
+            "calculated_at",
+        )
+        valid = (
+            note.prerequisite_provenance == "verified"
+            and all(snapshot.get(key) not in (None, "") for key in required)
+            and str(snapshot.get("loan_limit_assessment_id"))
+            == str(note.loan_limit_assessment_id_snapshot)
+            and str(snapshot.get("loan_application_id")) == str(application.pk)
+            and isinstance(snapshot.get("exception_required_flag"), bool)
+        )
+        try:
+            calculated_at = timezone.datetime.fromisoformat(
+                str(snapshot.get("calculated_at", "")).replace("Z", "+00:00")
+            )
+            valid = valid and calculated_at <= latest_review.decided_at
+        except (TypeError, ValueError):
+            valid = False
+        if not valid:
+            raise CreditModuleInvalidStateError(
+                "The stored loan-limit assessment is missing, stale, or lacks policy provenance."
+            )
+        return ApprovalCaseEnrichmentFacts(
+            application=application,
+            appraisal_note=note,
+            latest_review=latest_review,
+            decision_date=timezone.localdate(latest_review.decided_at),
+            recommended_amount=note.recommended_amount,
+            exception_required_flag=snapshot["exception_required_flag"],
+            loan_limit_provenance={key: snapshot[key] for key in required},
         )
 
 

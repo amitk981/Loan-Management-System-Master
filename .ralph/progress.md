@@ -5135,3 +5135,27 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_091510_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007B-approval-case-creation-from-appraisal
+- Summary: Enriched the unique appraisal handoff shell with immutable dated matrix, committee,
+  approver, amount, related-entity, exception, and loan-limit provenance snapshots through the
+  approvals-owned public seam.
+- Tests run: focused red/green tracer bullets; backend 553 tests at 93% coverage; frontend
+  build/typecheck/lint and 208 tests; Django check and migration sync.
+- Evidence saved: `.ralph/runs/2026-07-13_091510_normal_run/evidence/`
+- Result: Success
+- Risk level: Medium
+- Next action: 007C CFO and Director threshold routing.
+
+## 2026-07-13 09:39:47 - 2026-07-13_091510_normal_run
+- Agent tool used: codex
+- Slice attempted: 007B-approval-case-creation-from-appraisal
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/.ralph/runs/2026-07-13_091510_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/.ralph/runs/2026-07-13_091510_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
