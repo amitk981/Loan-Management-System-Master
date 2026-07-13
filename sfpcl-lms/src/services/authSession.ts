@@ -268,14 +268,7 @@ export const clearStoredAuthSession = (): void => {
   localStorage.removeItem(AUTH_STORAGE_KEY);
 };
 
-export const authenticatedRequest = async <T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> => {
-  const session = loadStoredAuthSession();
-  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: options.method ?? 'GET',
-    headers: { Accept: 'application/json', Authorization: `Bearer ${session.accessToken}`, ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
-    ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
-  });
+const parseAuthenticatedEnvelope = async <T>(response: Response): Promise<T> => {
   let envelope: ApiEnvelope<T>;
   try { envelope = await response.json() as ApiEnvelope<T>; }
   catch { throw new AuthSessionError('MALFORMED_RESPONSE', 'The server returned an invalid response.', response.status); }
@@ -286,6 +279,30 @@ export const authenticatedRequest = async <T>(path: string, options: { method?: 
     throw new AuthSessionError(envelope.error?.code ?? 'REQUEST_FAILED', envelope.error?.message ?? 'Request failed.', response.status, fieldErrors, envelope.error?.details);
   }
   return envelope.data;
+};
+
+export const authenticatedRequest = async <T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> => {
+  const session = loadStoredAuthSession();
+  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: options.method ?? 'GET',
+    headers: { Accept: 'application/json', Authorization: `Bearer ${session.accessToken}`, ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
+    ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
+  });
+  return parseAuthenticatedEnvelope<T>(response);
+};
+
+export const authenticatedMultipartRequest = async <T>(path: string, fields: Record<string, string | Blob>): Promise<T> => {
+  const session = loadStoredAuthSession();
+  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
+  const body = new FormData();
+  Object.entries(fields).forEach(([field, value]) => body.set(field, value));
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', Authorization: `Bearer ${session.accessToken}` },
+    body,
+  });
+  return parseAuthenticatedEnvelope<T>(response);
 };
 
 export const loginAndLoadCurrentUser = async (credentials: { email: string; password: string }): Promise<FrontendCurrentUser> => {

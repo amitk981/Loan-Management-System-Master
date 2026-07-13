@@ -1,5 +1,27 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007L Sanction Workbench Contract and Browser Closure
+
+- The credit-owned `approval-review-v2` package now freezes borrower name/type alongside the
+  complete 007K review truth. Approval-owned collection/detail serialization validates that schema
+  and exposes one `workbench_summary` containing all S21 row facts, frozen authority/flags/risk,
+  immutable partial-decision state, submitted time, and an honestly labelled elapsed-pending fact.
+  It never reconstructs missing facts from live appraisal/member/configuration rows and makes no
+  target/breach claim before 012EA.
+- S21 sends `approval_type=sanction` on every collection; the assigned queue also sends
+  `current_status=pending&assigned_to_me=true`. S22 renders immutable actor/role/decision-or-
+  abstention/comment/time history separately from required/effective authority, while actions remain
+  the intersection of server resource availability and `/auth/me` permission.
+- Authenticated JSON and multipart calls now share one frontend transport seam for session,
+  authorization, envelope parsing, and normalized errors. Sanction feature code owns only typed
+  paths/payloads/form fields. Changed General Meeting evidence always requires three fresh accepted
+  application-scoped legal uploads; case/register metadata ids are never described or reused as
+  document authority.
+- `e2e/sanction-workbench.e2e.spec.ts` is the declared trusted contract for the seven named pending,
+  approved, rejected, returned, empty, denied, and error screenshots. It opens the production route
+  inside the app shell, asserts exact collection parameters/history, and rejects live appraisal or
+  policy requests.
+
 ## 007K Frozen Review Snapshot and Selector Boundary Closure
 
 - Credit now assembles the complete sanction review package while holding the application,

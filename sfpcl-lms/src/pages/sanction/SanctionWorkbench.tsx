@@ -122,21 +122,14 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
 
   const canUploadMeetingFiles = currentUser.permissions.includes('documents.file.upload');
   const meetingAction = selected?.available_actions.find(action => action.action_code === 'record_general_meeting_approval');
-  const canRecordMeeting = Boolean(meetingAction?.enabled && currentUser.permissions.includes(meetingAction.required_permission));
+  const canRecordMeeting = Boolean(meetingAction?.enabled && currentUser.permissions.includes(meetingAction.required_permission) && canUploadMeetingFiles);
 
   const recordMeeting = async () => {
     if (!selected) return;
     setBusy(true); setMessage(''); setSuccessMessage('');
     try {
-      const existing = selected.general_meeting_approval;
-      const uploadedNewFiles = Boolean(meetingFiles.notice && meetingFiles.minutes && meetingFiles.resolution);
-      let ids: string[] = [];
-      if (meetingFiles.notice && meetingFiles.minutes && meetingFiles.resolution) {
-        ids = await Promise.all([uploadGeneralMeetingDocument(selected.loan_application_id, meetingFiles.notice), uploadGeneralMeetingDocument(selected.loan_application_id, meetingFiles.minutes), uploadGeneralMeetingDocument(selected.loan_application_id, meetingFiles.resolution)]);
-      } else if (existing) {
-        ids = [existing.notice_document_id, existing.minutes_document_id, existing.resolution_document_id];
-      }
-      if (ids.length !== 3) return;
+      if (!meetingFiles.notice || !meetingFiles.minutes || !meetingFiles.resolution) return;
+      const ids = await Promise.all([uploadGeneralMeetingDocument(selected.loan_application_id, meetingFiles.notice), uploadGeneralMeetingDocument(selected.loan_application_id, meetingFiles.minutes), uploadGeneralMeetingDocument(selected.loan_application_id, meetingFiles.resolution)]);
       const [notice, minutes, resolution] = ids;
       await recordGeneralMeetingApproval(selected.loan_application_id, {
         related_party_type: meetingType, related_party_user_id: null,
@@ -145,7 +138,7 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
         approval_status: meetingStatus,
       });
       await loadDetail(selected.approval_case_id);
-      setShowMeetingForm(false); setSuccessMessage(uploadedNewFiles ? 'General meeting evidence recorded from three application-scoped legal uploads.' : 'General meeting evidence updated using the case’s existing referenceable legal documents.');
+      setShowMeetingForm(false); setSuccessMessage('General meeting evidence recorded from three application-scoped legal uploads.');
       setMeetingFiles({ notice: null, minutes: null, resolution: null });
     } catch (error) {
       const next = describeError(error); setStatus(next.status); setMessage(next.message);
@@ -186,7 +179,7 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="card p-0 overflow-hidden lg:col-span-1">
             <div className="p-4 bg-slate-50 border-b border-slate-200"><p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Cases ({cases.length})</p></div>
-            <div className="divide-y divide-slate-100">{cases.map(item => <button key={item.approval_case_id} onClick={() => void loadDetail(item.approval_case_id)} className={`w-full flex items-center gap-3 p-4 hover:bg-slate-50 text-left ${selectedId === item.approval_case_id ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="font-semibold text-slate-900 num text-sm">{item.application_reference_number}</span>{item.exception_condition_code && <AlertOctagon size={12} className="text-violet-600" />}{item.general_meeting_evidence_required && <Shield size={12} className="text-amber-600" />}</div><div className="text-xs text-slate-400 num">Cycle {item.cycle_number} · {money(item.amount)}{item.approval_actions.length ? ` · ${item.approval_actions.length} decision(s) recorded` : ''}</div></div><StatusBadge label={item.current_status} size="sm" /></button>)}</div>
+            <div className="divide-y divide-slate-100">{cases.map(item => <button key={item.approval_case_id} onClick={() => void loadDetail(item.approval_case_id)} className={`w-full p-4 hover:bg-slate-50 text-left ${selectedId === item.approval_case_id ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}><div className="flex items-start gap-3"><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="font-semibold text-slate-900 num text-sm">{item.application_reference_number}</span>{item.workbench_summary.exception_flag && <AlertOctagon size={12} className="text-violet-600" />}{item.workbench_summary.related_party_flag && <Shield size={12} className="text-amber-600" />}</div><div className="text-sm text-slate-700 mt-1">{item.workbench_summary.borrower_name}</div><div className="text-xs text-slate-500">{text(item.workbench_summary.member_type)} · {text(item.workbench_summary.risk_rating)} risk</div></div><StatusBadge label={item.workbench_summary.current_decision_status} size="sm" /></div><div className="text-xs text-slate-500 mt-3 space-y-1"><p>Requested {money(item.workbench_summary.requested_amount)} · Recommended {money(item.workbench_summary.recommended_amount)} · Eligible {money(item.workbench_summary.eligible_amount)}</p><p>{item.workbench_summary.approval_path}</p><p>Submitted {item.workbench_summary.submitted_at}{item.workbench_summary.pending_age ? ` · ${item.workbench_summary.pending_age.label}: ${item.workbench_summary.pending_age.display}` : ''}</p>{item.approval_actions.length > 0 && <p>{item.approval_actions.length} decision(s) recorded</p>}</div></button>)}</div>
           </div>
 
           <div className="lg:col-span-2 space-y-4">
@@ -202,18 +195,20 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
 
             <div className="card"><h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><Gavel size={14} /> Sanction Committee Decision</h3><ApprovalPanel applicationNumber={selected.application_reference_number} amount={selected.amount} authoritySummary={authoritySummary(selected)} approvers={selected.required_approvers} excludedApprovers={selected.excluded_approvers} actions={selected.available_actions} permissions={currentUser.permissions} busy={busy} fieldError={decisionFieldError} onDecision={act} /></div>
 
+            <div className="card"><h3 className="text-sm font-semibold text-slate-700 mb-3">Immutable approval history</h3>{selected.approval_actions.length ? <div className="space-y-2">{selected.approval_actions.map(history => <div key={history.approval_action_id} className="border border-slate-200 rounded-lg p-3"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-slate-900">{history.full_name} · {text(history.role_code)}</p><StatusBadge label={history.decision} size="sm" /></div><p className="text-sm text-slate-700 mt-1">{history.comments}</p><p className="text-xs text-slate-500 mt-1">Confirmed at {history.acted_at}</p></div>)}</div> : <p className="text-sm text-slate-500">No committee action has been recorded for this cycle.</p>}</div>
+
             {decision && <div className="card border border-green-200"><h3 className="text-sm font-semibold text-green-800">Sanction decision</h3><p className="text-sm text-slate-700 mt-2">{decision.decision_reason}</p><p className="text-sm font-semibold text-slate-900 mt-1">{money(decision.sanctioned_amount)}</p></div>}
             {selected.conflict_block_reason && <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 rounded-lg flex gap-2"><AlertCircle size={16} />{selected.conflict_block_reason}</div>}
           </div>
         </div>
       )}
 
-      <Modal isOpen={showMeetingForm} onClose={() => setShowMeetingForm(false)} title="Record General Meeting Approval" subtitle={selected?.application_reference_number} footer={<><button onClick={() => setShowMeetingForm(false)} className="btn-secondary">Cancel</button><button onClick={() => void recordMeeting()} disabled={busy || !meetingDescription.trim() || !meetingDate || (!selected?.general_meeting_approval && Object.values(meetingFiles).some(file => !file))} className="btn-primary">Record Evidence</button></>}>
+      <Modal isOpen={showMeetingForm} onClose={() => setShowMeetingForm(false)} title="Record General Meeting Approval" subtitle={selected?.application_reference_number} footer={<><button onClick={() => setShowMeetingForm(false)} className="btn-secondary">Cancel</button><button onClick={() => void recordMeeting()} disabled={busy || !meetingDescription.trim() || !meetingDate || Object.values(meetingFiles).some(file => !file)} className="btn-primary">Record Evidence</button></>}>
         <div className="space-y-4">
           <div><label htmlFor="meeting-type" className="field-label">Special case type</label><select id="meeting-type" value={meetingType} onChange={event => setMeetingType(event.target.value as typeof meetingType)} className="field-input"><option value="director">Director</option><option value="director_relative">Director relative</option><option value="committee_member">Committee member</option></select></div>
           <div><label htmlFor="meeting-description" className="field-label">Relationship description <span className="text-red-500">*</span></label><textarea id="meeting-description" value={meetingDescription} onChange={event => setMeetingDescription(event.target.value)} className="field-input resize-none" rows={3} /></div>
           <div className="grid grid-cols-2 gap-3"><div><label htmlFor="meeting-date" className="field-label">General meeting date <span className="text-red-500">*</span></label><input id="meeting-date" type="date" value={meetingDate} onChange={event => setMeetingDate(event.target.value)} className="field-input" /></div><div><label htmlFor="meeting-status" className="field-label">Approval status</label><select id="meeting-status" value={meetingStatus} onChange={event => setMeetingStatus(event.target.value as typeof meetingStatus)} className="field-input"><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div></div>
-          {canUploadMeetingFiles ? (['notice', 'minutes', 'resolution'] as const).map(field => <div key={field}><label htmlFor={`meeting-${field}`} className="field-label">{field[0].toUpperCase() + field.slice(1)} document <span className="text-red-500">*</span></label><input id={`meeting-${field}`} type="file" accept="application/pdf" onChange={event => setMeetingFiles(previous => ({ ...previous, [field]: event.target.files?.[0] ?? null }))} className="field-input" /></div>) : <p className="text-sm text-slate-600">Existing referenceable evidence will be reused; you do not have document upload permission.</p>}
+          {canUploadMeetingFiles ? (['notice', 'minutes', 'resolution'] as const).map(field => <div key={field}><label htmlFor={`meeting-${field}`} className="field-label">{field[0].toUpperCase() + field.slice(1)} document <span className="text-red-500">*</span></label><input id={`meeting-${field}`} type="file" accept="application/pdf" onChange={event => setMeetingFiles(previous => ({ ...previous, [field]: event.target.files?.[0] ?? null }))} className="field-input" /></div>) : <p className="text-sm text-slate-600">Three new accepted legal uploads are required; document upload permission is not available.</p>}
           <p className="text-xs text-slate-500">Each file is uploaded as restricted legal evidence for this exact application before its returned document id is referenced.</p>
         </div>
       </Modal>

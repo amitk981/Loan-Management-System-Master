@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CANONICAL_TO_PROTOTYPE_PERMISSIONS,
+  authenticatedMultipartRequest,
   clearStoredAuthSession,
   loadStoredAuthSession,
   loginAndLoadCurrentUser,
@@ -89,6 +90,31 @@ afterEach(() => {
 });
 
 describe('auth session API flow', () => {
+  it('sends multipart bodies through the shared authenticated envelope boundary', async () => {
+    storedAuthSession({ accessToken: 'upload-access', refreshToken: 'upload-refresh' });
+    const fetchMock = vi.fn().mockResolvedValueOnce(response(201, {
+      success: true,
+      data: { document_id: 'document-1' },
+      meta: {},
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(authenticatedMultipartRequest<{ document_id: string }>(
+      '/api/v1/document-files/',
+      { document_category: 'legal' },
+    )).resolves.toEqual({ document_id: 'document-1' });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://127.0.0.1:8000/api/v1/document-files/',
+      expect.objectContaining({
+        method: 'POST',
+        headers: { Accept: 'application/json', Authorization: 'Bearer upload-access' },
+        body: expect.any(FormData),
+      }),
+    );
+    const body = fetchMock.mock.calls[0][1]?.body as FormData;
+    expect(body.get('document_category')).toBe('legal');
+  });
+
   it('posts credentials, stores tokens, calls /auth/me/, and returns backend current user state', async () => {
     const fetchMock = vi
       .fn()

@@ -1,5 +1,6 @@
 """Public read boundary for immutable approval-case routing snapshots."""
 
+from datetime import timezone as datetime_timezone
 from decimal import Decimal, InvalidOperation
 from math import ceil
 from uuid import UUID
@@ -198,6 +199,7 @@ def serialize_case_detail(case, actor, actor_permissions):
     snapshot = {
         **serialize_case_snapshot(case),
         "review_facts": case.appraisal_facts_json,
+        "workbench_summary": _workbench_summary(case),
         "available_actions": available_actions,
     }
     return snapshot
@@ -225,6 +227,82 @@ def serialize_case_snapshot(case):
         "committee_projection": case.committee_projection_json,
         "loan_limit_provenance": case.loan_limit_provenance_json,
     }
+
+
+def _workbench_summary(case):
+    facts = case.appraisal_facts_json
+    borrower = facts["borrower"]
+    amounts = facts["loan_amounts"]
+    risk = facts["risk"]
+    return {
+        "borrower_name": borrower["name"],
+        "member_type": borrower["member_type"],
+        "requested_amount": amounts["requested_amount"],
+        "recommended_amount": amounts["recommended_amount"],
+        "eligible_amount": amounts["eligible_amount"],
+        "approval_path": _approval_path(case),
+        "exception_flag": bool(case.exception_condition_code),
+        "related_party_flag": bool(
+            case.general_meeting_evidence_required or case.excluded_approvers_json
+        ),
+        "risk_rating": risk["overall_risk_rating"],
+        "submitted_at": _utc_time(case.submitted_at),
+        "current_decision_status": _current_decision_status(case),
+        "pending_age": _pending_age(case),
+    }
+
+
+def _approval_path(case):
+    projection = case.matrix_projection_json
+    roles = projection.get("required_approver_roles", [])
+    parts = []
+    if "cfo" in roles:
+        parts.append("CFO")
+    director_count = projection.get("required_director_count", 0)
+    if isinstance(director_count, int) and director_count > 0:
+        parts.append(
+            "one Director" if director_count == 1
+            else f"{director_count} Directors"
+        )
+    summary = " + ".join(parts) or "Approval path unavailable"
+    if case.general_meeting_evidence_required:
+        summary += " — special approval"
+    elif case.exception_condition_code:
+        summary += " — exception route"
+    return summary
+
+
+def _current_decision_status(case):
+    if case.current_status == ApprovalCase.STATUS_PENDING and any(
+        action.decision == "approved"
+        for action in case.actions.all()
+    ):
+        return "partially_approved"
+    return case.current_status
+
+
+def _pending_age(case):
+    if case.current_status != ApprovalCase.STATUS_PENDING:
+        return None
+    elapsed_seconds = max(0, int((timezone.now() - case.submitted_at).total_seconds()))
+    days, remainder = divmod(elapsed_seconds, 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes = remainder // 60
+    if days:
+        display = f"{days}d {hours}h"
+    elif hours:
+        display = f"{hours}h {minutes}m"
+    else:
+        display = f"{minutes}m"
+    return {
+        "label": "Elapsed pending time",
+        "elapsed_seconds": elapsed_seconds,
+        "display": display,
+    }
+
+
+def _utc_time(value):
+    return value.astimezone(datetime_timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def serialize_case_authority(case):
@@ -599,6 +677,7 @@ def _review_snapshot_is_complete(case):
         "snapshot_schema_version",
         "snapshot_provenance",
         "maker_checker",
+        "borrower",
         "eligibility",
         "loan_amounts",
         "purpose",
@@ -613,7 +692,7 @@ def _review_snapshot_is_complete(case):
 
     provenance = facts.get("snapshot_provenance")
     if (
-        facts.get("snapshot_schema_version") != "approval-review-v1"
+        facts.get("snapshot_schema_version") != "approval-review-v2"
         or not isinstance(provenance, dict)
         or provenance.get("owner") != "credit"
         or provenance.get("review_decision_id") in (None, "")
@@ -621,6 +700,7 @@ def _review_snapshot_is_complete(case):
         return False
 
     maker = facts.get("maker_checker")
+    borrower = facts.get("borrower")
     amounts = facts.get("loan_amounts")
     purpose = facts.get("purpose")
     compliance = facts.get("compliance_checks")
@@ -628,7 +708,7 @@ def _review_snapshot_is_complete(case):
     documentation = facts.get("documentation_completeness")
     references = facts.get("source_references")
     eligibility = facts.get("eligibility")
-    mappings = (maker, amounts, purpose, compliance, risk, documentation, references)
+    mappings = (maker, borrower, amounts, purpose, compliance, risk, documentation, references)
     if not all(isinstance(item, dict) for item in mappings):
         return False
     if not isinstance(eligibility, dict) or not eligibility:
@@ -645,6 +725,7 @@ def _review_snapshot_is_complete(case):
                 "appraisal_reviewed_by_user_id",
             },
         ),
+        (borrower, {"name", "member_type"}),
         (amounts, {"requested_amount", "eligible_amount", "recommended_amount"}),
         (purpose, {"category", "description"}),
         (
@@ -689,6 +770,11 @@ def _review_snapshot_is_complete(case):
             "application_submitted_by_user_id",
         })
         for key in maker
+    ):
+        return False
+    if any(
+        not isinstance(borrower.get(key), str) or not borrower.get(key).strip()
+        for key in ("name", "member_type")
     ):
         return False
     if any(

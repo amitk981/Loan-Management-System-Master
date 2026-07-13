@@ -205,7 +205,7 @@ def project_approval_case_review_facts(*, application, appraisal_note, review):
     risk = appraisal_note.risk_assessment
     application_id = str(application.pk)
     return {
-        "snapshot_schema_version": "approval-review-v1",
+        "snapshot_schema_version": "approval-review-v2",
         "snapshot_provenance": {
             "owner": "credit",
             "review_decision_id": str(review.pk),
@@ -222,6 +222,10 @@ def project_approval_case_review_facts(*, application, appraisal_note, review):
             ),
             "appraisal_prepared_by_user_id": str(appraisal_note.prepared_by_user_id),
             "appraisal_reviewed_by_user_id": str(review.reviewer_user_id),
+        },
+        "borrower": {
+            "name": application.member.display_name or application.member.legal_name,
+            "member_type": application.borrower_type,
         },
         "eligibility": eligibility,
         "loan_amounts": {

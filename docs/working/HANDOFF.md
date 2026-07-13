@@ -2,35 +2,41 @@
 
 ## Last Run
 
-2026-07-14_013505_normal_run
+2026-07-14_023135_normal_run
 
 ## Current Status
 
-`007K-frozen-review-snapshot-and-selector-boundary-closure` is complete. Credit owns the locked
-review-package projection; approvals stores it unchanged and requires its complete typed schema,
-persisted immutable review link, exact reviewer/provenance identity, typed nested identifiers and
-timestamps, exact application references, and amount/provenance consistency.
-Missing or malformed review truth now fails closed across collection, detail, actions, sanction
-decision, Exception Register, and Credit Sanction Register before counts or writes, even with stale
-true coherence/read projections.
+`007L-sanction-workbench-contract-and-browser-closure` is complete. Credit now freezes borrower
+name/type in the mandatory `approval-review-v2` package. The approval-owned case interface validates
+that package and returns a complete S21 `workbench_summary`: frozen borrower/amount/authority/flags/
+risk facts, submitted time, immutable partial-decision state, and an honestly labelled elapsed-
+pending value with no invented target or breach. Missing legacy/partial packages remain hidden;
+there is no live appraisal/member/configuration row repair and no migration/backfill.
 
-The selector again owns query shaping only. One approval-engine read decision owns frozen validity
-plus actor scope for every case/decision/register consumer. Live appraisal/application/risk changes
-do not alter pending or terminal detail/history/decision/register output, and returned/corrected
-cycle snapshots remain distinct. New packages carry credit schema/review-decision provenance;
-legacy 0011/0012 mutable-row reconstructions lack that proof and remain hidden. No migration was
-added and the worktree has no migrated retained application database; no unproven backfill ran.
+The sanction client sends `approval_type=sanction` for every collection and adds
+`current_status=pending&assigned_to_me=true` for the assigned queue. S22 separately renders every
+immutable action actor, role, decision/abstention, comment, and acted-at confirmation. All decisions
+still intersect server resource availability with `/auth/me` permission, preserve mandatory reasons,
+one-call stale/conflict/meeting failures, canonical refetch, cycle isolation, and independent sanction
+decision permission.
+
+Authenticated JSON and multipart calls now share one frontend transport seam for stored sessions,
+bearer headers, FormData construction, envelope parsing, and normalized errors. Sanction feature
+code owns typed paths/payload fields only. Changed General Meeting evidence always uploads three new
+application-scoped legal files; exposed case/register ids are not reused or labelled referenceable.
 
 ## Validation
 
-Backend RED/GREEN and review-fix evidence is retained in
-`.ralph/runs/2026-07-14_013505_normal_run/evidence/terminal-logs/`. Django check and migration sync
-pass; all 685 backend tests pass with 19 expected PostgreSQL-only skips and 93% coverage. Frontend
-build/typecheck/lint and all 251 tests pass. Independent Standards and Spec reviews were addressed.
+RED/GREEN evidence is retained in
+`.ralph/runs/2026-07-14_023135_normal_run/evidence/terminal-logs/`. Django check and migration sync
+pass; all 686 backend tests pass with 19 expected PostgreSQL-only skips and 93% coverage. Frontend
+build/typecheck/lint and all 253 tests pass. The named Playwright spec collects successfully. A real
+local launch reached Django/Vite but Chromium hit the expected macOS Mach-port sandbox denial; no
+screenshots were fabricated, and the orchestrator owns the two trusted browser runs.
 
 ## Next Run
 
-Run `007L-sanction-workbench-contract-and-browser-closure`, then
-`007M-exception-supporting-evidence-and-register-closure`. Both were inspected and already contain
-concrete fields, role/action rules, exact browser specs, and screenshot contracts. Do not close
-Epic 007 browser/fidelity evidence until `007N` also completes.
+Run `007M-exception-supporting-evidence-and-register-closure`, then
+`007N-register-matrix-settings-contract-and-browser-closure`. Both were inspected and are already
+concretely sharpened with fields, authority rules, exact browser specs, and screenshot contracts.
+Do not close Epic 007 browser/fidelity evidence until both complete.

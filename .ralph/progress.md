@@ -5911,3 +5911,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_023135_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007L-sanction-workbench-contract-and-browser-closure
+- Summary: Added the mandatory frozen S21 workbench projection and exact sanction queue filters;
+  rendered immutable S22 action history; deepened shared authenticated JSON/multipart transport;
+  required three fresh legal uploads for changed General Meeting evidence; and tightened the named
+  seven-state browser contract without introducing styling or client-owned business rules.
+- Tests run: retained backend/frontend RED/GREEN cycles; Django check and migration sync; 686 backend
+  tests with 19 expected SQLite skips at 93% coverage; frontend build/typecheck/lint and 253 tests;
+  Playwright collection successful; genuine local Chromium sandbox denial retained without images.
+- Evidence saved: `.ralph/runs/2026-07-14_023135_normal_run/evidence/`
+- Result: Success pending independent orchestrator browser/quality validation.
+- Risk level: High under standing approval; no migration or external side effect.
+- Next action: Independent orchestrator validation/commit/merge/push, then run 007M followed by 007N.
+
+## 2026-07-14 02:58:50 - 2026-07-14_023135_normal_run
+- Agent tool used: codex
+- Slice attempted: 007L-sanction-workbench-contract-and-browser-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/.ralph/runs/2026-07-14_023135_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_023135_normal_run/.ralph/runs/2026-07-14_023135_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

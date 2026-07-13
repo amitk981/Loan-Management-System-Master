@@ -1,7 +1,7 @@
 # Slice 007L: Sanction Workbench Contract and Browser Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers

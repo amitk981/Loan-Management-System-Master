@@ -11,6 +11,11 @@ test('sanction workbench preserves the prototype composition across authoritativ
   let release: (() => void) | undefined;
   let hold = true;
   const waiting = new Promise<void>(resolve => { release = resolve; });
+  const observedApiPaths: string[] = [];
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.pathname.startsWith('/api/v1/')) observedApiPaths.push(url.pathname);
+  });
 
   await page.addInitScript(() => localStorage.setItem('sfpcl_staff_auth_session', JSON.stringify({ accessToken: 'sanction-access', refreshToken: 'sanction-refresh' })));
   await page.route('**/api/v1/auth/me/', route => json(route, currentUser));
@@ -19,6 +24,18 @@ test('sanction workbench preserves the prototype composition across authoritativ
   await page.route('**/api/v1/approval-cases/**', async route => {
     const url = new URL(route.request().url());
     if (url.pathname === '/api/v1/approval-cases/') {
+      expect(url.searchParams.get('approval_type')).toBe('sanction');
+      expect(url.searchParams.get('page_size')).toBe('100');
+      if (mode === 'pending' || mode === 'denied') {
+        expect(url.searchParams.get('current_status')).toBe('pending');
+        expect(url.searchParams.get('assigned_to_me')).toBe('true');
+      } else if (mode === 'approved' || mode === 'rejected' || mode === 'returned_for_clarification') {
+        expect(url.searchParams.get('current_status')).toBe(mode);
+        expect(url.searchParams.has('assigned_to_me')).toBe(false);
+      } else {
+        expect(url.searchParams.has('current_status')).toBe(false);
+        expect(url.searchParams.has('assigned_to_me')).toBe(false);
+      }
       if (hold) await waiting;
       if (mode === 'denied') return failure(route, 403, 'OBJECT_ACCESS_DENIED', 'You cannot access this approval case.');
       if (mode === 'error') return failure(route, 500, 'SERVICE_UNAVAILABLE', 'Approval-case service unavailable.');
@@ -33,6 +50,8 @@ test('sanction workbench preserves the prototype composition across authoritativ
   await expect(page.getByText('Loading sanction workbench')).toBeVisible();
   hold = false; release?.();
   await expect(page.getByRole('heading', { name: 'LOVIS00701' })).toBeVisible();
+  await expect(page.getByText('Approved frozen package.')).toBeVisible();
+  await expect(page.getByText('Confirmed at 2026-07-13T10:00:00Z')).toBeVisible();
   await capture(page, 'pending-special-conflict');
 
   for (const [value, name] of [['approved', 'approved'], ['rejected', 'rejected'], ['returned_for_clarification', 'returned']] as const) {
@@ -56,6 +75,9 @@ test('sanction workbench preserves the prototype composition across authoritativ
   await page.getByLabel('Sanction case status').selectOption('all');
   await expect(page.getByText(/Approval-case service unavailable/)).toBeVisible();
   await capture(page, 'error');
+
+  expect(observedApiPaths.some(pathname => pathname.includes('appraisal-note'))).toBe(false);
+  expect(observedApiPaths.some(pathname => pathname.includes('loan-policy'))).toBe(false);
 });
 
 const caseFor = (status: 'pending' | 'approved' | 'rejected' | 'returned_for_clarification') => ({
@@ -75,6 +97,13 @@ const caseFor = (status: 'pending' | 'approved' | 'rejected' | 'returned_for_cla
   conflict_block_reason: null, reason_for_approval: 'Credit review recommends the requested exception.', exception_condition_code: 'exceeds_permissible_limit', exception_reason: 'Seasonal working-capital need exceeds the verified limit.',
   matrix_projection: { required_director_count: 2, authority_summary: 'CFO + two Directors — exception route' }, committee_projection: {}, loan_limit_provenance: { policy_name: 'Board Loan Policy FY 2026' },
   review_facts: { maker_checker: {}, eligibility: { overall_result: 'eligible' }, loan_amounts: { requested_amount: '700000.00', eligible_amount: '625000.00', recommended_amount: '675000.00' }, purpose: { category: 'crop_production', description: 'Kharif crop production and procurement.' }, compliance_checks: { member_active_check: 'pass', default_check: 'no_default', terms_acceptance_check: 'accepted', purpose_check: 'agriculture_aligned' }, borrowing_history: 'Prior seasonal loan repaid on schedule.', risk: { overall_risk_rating: 'medium', risk_mitigation_notes: 'Crop insurance and receivable controls verified.' }, documentation_completeness: { status: 'complete', document_check: 'complete' }, source_references: {} },
+  workbench_summary: {
+    borrower_name: 'Visual Farmer Member', member_type: 'individual_farmer',
+    requested_amount: '700000.00', recommended_amount: '675000.00', eligible_amount: '625000.00',
+    approval_path: 'CFO + 2 Directors — special approval', exception_flag: true, related_party_flag: true,
+    risk_rating: 'medium', submitted_at: '2026-07-13T09:00:00Z', current_decision_status: status === 'pending' ? 'partially_approved' : status,
+    pending_age: status === 'pending' ? { label: 'Elapsed pending time', elapsed_seconds: 9000, display: '2h 30m' } : null,
+  },
   available_actions: status === 'pending' ? ['approve', 'reject', 'return', 'abstain'].map(code => ({ action_code: code, label: code, enabled: code !== 'abstain', disabled_reason: code === 'abstain' ? 'No self-declared conflict exists.' : null, required_permission: code === 'return' ? 'approvals.case.return' : code === 'reject' ? 'approvals.case.reject' : 'approvals.case.approve' })) : [],
 });
 

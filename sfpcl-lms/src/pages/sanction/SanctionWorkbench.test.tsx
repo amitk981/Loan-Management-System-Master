@@ -3,10 +3,11 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import SanctionWorkbench from './SanctionWorkbench';
-import { AuthSessionError, authenticatedRequest, storedAuthSession } from '../../services/authSession';
+import { AuthSessionError, authenticatedMultipartRequest, authenticatedRequest } from '../../services/authSession';
 import workbenchSource from './SanctionWorkbench.tsx?raw';
 import panelSource from '../../components/loan/ApprovalPanel.tsx?raw';
 import appSource from '../../App.tsx?raw';
+import sanctionApiSource from '../../services/sanctionApi.ts?raw';
 
 let userPermissions = ['approvals.case.read', 'approvals.case.approve', 'approvals.case.reject', 'approvals.case.return', 'approvals.sanction.read'];
 let userRoleCodes = ['cfo'];
@@ -22,7 +23,7 @@ vi.mock('../../contexts/RoleContext', () => ({
 }));
 vi.mock('../../services/authSession', async importOriginal => {
   const actual = await importOriginal<typeof import('../../services/authSession')>();
-  return { ...actual, authenticatedRequest: vi.fn() };
+  return { ...actual, authenticatedRequest: vi.fn(), authenticatedMultipartRequest: vi.fn() };
 });
 
 const action = (action_code: string) => ({
@@ -50,6 +51,13 @@ const approvalCase = {
     documentation_completeness: { status: 'complete', document_check: 'complete' },
     source_references: {}, maker_checker: {},
   },
+  workbench_summary: {
+    borrower_name: 'Frozen Borrower', member_type: 'individual_farmer',
+    requested_amount: '440000.00', recommended_amount: '450000.00', eligible_amount: '475000.00',
+    approval_path: 'CFO + one Director', exception_flag: false, related_party_flag: false,
+    risk_rating: 'medium', submitted_at: '2026-07-13T09:00:00Z', current_decision_status: 'pending',
+    pending_age: { label: 'Elapsed pending time', elapsed_seconds: 9000, display: '2h 30m' },
+  },
   available_actions: [action('approve'), action('reject'), action('return'), action('abstain')],
 };
 
@@ -58,7 +66,7 @@ describe('SanctionWorkbench authenticated container', () => {
 
   it('loads frozen case truth and approves through the exact case boundary before canonical refresh', async () => {
     vi.mocked(authenticatedRequest).mockImplementation(async (path, options) => {
-      if (path === '/api/v1/approval-cases/?assigned_to_me=true&page_size=100') return [approvalCase] as never;
+      if (path === '/api/v1/approval-cases/?approval_type=sanction&current_status=pending&assigned_to_me=true&page_size=100') return [approvalCase] as never;
       if (path === '/api/v1/approval-cases/case-1/' && !options?.method) return approvalCase as never;
       if (path === '/api/v1/approval-cases/case-1/approve/' && options?.method === 'POST') return { ...approvalCase, version: 5 } as never;
       throw new Error(`Unexpected request ${path}`);
@@ -67,8 +75,11 @@ describe('SanctionWorkbench authenticated container', () => {
     render(<SanctionWorkbench onOpenApplication={vi.fn()} />);
 
     expect(await screen.findAllByText('LO000001')).toHaveLength(2);
+    expect(screen.getByText('Frozen Borrower')).toBeTruthy();
+    expect(screen.getByText(/individual farmer/)).toBeTruthy();
+    expect(screen.getByText(/2h 30m/)).toBeTruthy();
     expect(screen.getByText('No prior defaults; repayments timely.')).toBeTruthy();
-    expect(screen.getAllByText('CFO + one Director')).toHaveLength(2);
+    expect(screen.getAllByText('CFO + one Director')).toHaveLength(3);
     await userEvent.click(screen.getByRole('button', { name: 'Record My Decision' }));
     await userEvent.type(screen.getByLabelText('Decision reason'), 'Approved after committee review.');
     await userEvent.click(screen.getByRole('button', { name: 'Confirm Decision' }));
@@ -80,12 +91,31 @@ describe('SanctionWorkbench authenticated container', () => {
     expect(vi.mocked(authenticatedRequest).mock.calls.filter(([path]) => path === '/api/v1/approval-cases/case-1/')).toHaveLength(2);
   });
 
+  it('renders immutable action actor, role, decision, comment, and acted-at confirmation', async () => {
+    const withHistory = {
+      ...approvalCase,
+      approval_actions: [{
+        approval_action_id: 'action-1', role_code: 'director', user_id: 'director-1',
+        full_name: 'API Director', decision: 'abstained', comments: 'Related-party conflict declared.',
+        acted_at: '2026-07-13T10:15:00Z',
+      }],
+    };
+    vi.mocked(authenticatedRequest).mockImplementation(async path => path.includes('assigned_to_me=true') ? [withHistory] as never : withHistory as never);
+
+    render(<SanctionWorkbench onOpenApplication={vi.fn()} />);
+
+    expect(await screen.findByText('Related-party conflict declared.')).toBeTruthy();
+    expect(screen.getByText('API Director · director')).toBeTruthy();
+    expect(screen.getByText('Confirmed at 2026-07-13T10:15:00Z')).toBeTruthy();
+    expect(screen.getByText('Abstained')).toBeTruthy();
+  });
+
   it.each([
     ['Reject', 'reject', '/api/v1/approval-cases/case-1/reject/'],
     ['Return for Clarification', 'return', '/api/v1/approval-cases/case-1/return-for-clarification/'],
   ])('requires a reason and sends the exact %s request', async (button, actionCode, path) => {
     vi.mocked(authenticatedRequest).mockImplementation(async (requestPath, options) => {
-      if (requestPath.includes('?assigned_to_me=')) return [approvalCase] as never;
+      if (requestPath.includes('assigned_to_me=true')) return [approvalCase] as never;
       if (requestPath === '/api/v1/approval-cases/case-1/' && !options?.method) return approvalCase as never;
       if (requestPath === path && options?.method === 'POST') return { ...approvalCase, version: 5 } as never;
       throw new Error(`Unexpected request ${requestPath}`);
@@ -111,7 +141,7 @@ describe('SanctionWorkbench authenticated container', () => {
     userPermissions = permissions;
     userId = roles[0] === 'director' ? 'director-1' : 'cfo-1';
     const projected = actionable ? { ...approvalCase, required_approvers: approvalCase.required_approvers.map(item => item.role_code === roles[0] ? { ...item, user_id: userId } : item) } : { ...approvalCase, available_actions: [] };
-    vi.mocked(authenticatedRequest).mockImplementation(async path => path.includes('?assigned_to_me=') ? [projected] as never : projected as never);
+    vi.mocked(authenticatedRequest).mockImplementation(async path => path.includes('assigned_to_me=true') ? [projected] as never : projected as never);
     render(<SanctionWorkbench onOpenApplication={vi.fn()} />);
     await screen.findAllByText('LO000001');
     expect(Boolean(screen.queryByRole('button', { name: 'Record My Decision' }))).toBe(actionable);
@@ -127,7 +157,7 @@ describe('SanctionWorkbench authenticated container', () => {
 
   it('does not union global permission into absent or disabled resource authority', async () => {
     const readOnly = { ...approvalCase, available_actions: [] };
-    vi.mocked(authenticatedRequest).mockImplementation(async path => path.includes('?assigned_to_me=') ? [readOnly] as never : readOnly as never);
+    vi.mocked(authenticatedRequest).mockImplementation(async path => path.includes('assigned_to_me=true') ? [readOnly] as never : readOnly as never);
     render(<SanctionWorkbench onOpenApplication={vi.fn()} />);
     await screen.findAllByText('LO000001');
     expect(screen.queryByRole('button', { name: 'Record My Decision' })).toBeNull();
@@ -141,7 +171,7 @@ describe('SanctionWorkbench authenticated container', () => {
     ['GENERAL_MEETING_APPROVAL_REJECTED', 'The current general meeting approval was rejected.'],
   ])('surfaces %s without fabricating completion or refetching', async (code, errorMessage) => {
     vi.mocked(authenticatedRequest).mockImplementation(async (path, options) => {
-      if (path.includes('?assigned_to_me=')) return [approvalCase] as never;
+      if (path.includes('assigned_to_me=true')) return [approvalCase] as never;
       if (path === '/api/v1/approval-cases/case-1/' && !options?.method) return approvalCase as never;
       if (path.endsWith('/approve/')) throw new AuthSessionError(code, errorMessage, 409);
       throw new Error(`Unexpected request ${path}`);
@@ -157,7 +187,7 @@ describe('SanctionWorkbench authenticated container', () => {
     const oldCycle = { ...approvalCase, approval_case_id: 'case-old', application_reference_number: 'LO-OLD', cycle_number: 1, current_status: 'returned_for_clarification', version: 5, review_facts: { ...approvalCase.review_facts, borrowing_history: 'Cycle one history.', loan_amounts: { ...approvalCase.review_facts.loan_amounts, recommended_amount: '400000.00' } }, loan_limit_provenance: { policy_name: 'Frozen old policy' }, available_actions: [] };
     const newCycle = { ...approvalCase, approval_case_id: 'case-new', application_reference_number: 'LO-NEW', cycle_number: 2, review_facts: { ...approvalCase.review_facts, borrowing_history: 'Cycle two corrected history.' }, loan_limit_provenance: { policy_name: 'Frozen corrected policy' } };
     vi.mocked(authenticatedRequest).mockImplementation(async path => {
-      if (path.includes('?assigned_to_me=')) return [oldCycle, newCycle] as never;
+      if (path.includes('assigned_to_me=true')) return [oldCycle, newCycle] as never;
       if (path === '/api/v1/approval-cases/case-old/') return oldCycle as never;
       if (path === '/api/v1/approval-cases/case-new/') return newCycle as never;
       throw new Error(`Unexpected request ${path}`);
@@ -174,7 +204,7 @@ describe('SanctionWorkbench authenticated container', () => {
   it('reads terminal sanction terms only with the independent sanction permission', async () => {
     const approved = { ...approvalCase, current_status: 'approved', available_actions: [] };
     vi.mocked(authenticatedRequest).mockImplementation(async path => {
-      if (path.includes('?assigned_to_me=')) return [approved] as never;
+      if (path.includes('assigned_to_me=true')) return [approved] as never;
       if (path === '/api/v1/approval-cases/case-1/') return approved as never;
       if (path.endsWith('/sanction-decision/')) return { sanction_decision_id: 'sanction-1', decision: 'sanctioned', sanctioned_amount: '450000.00', sanctioned_tenure_months: null, interest_rate_type: null, interest_rate_value: null, repayment_date: null, penal_interest_rate: null, charges: {}, security_required_summary: null, conditions_precedent: null, decision_reason: 'Approved by frozen cycle authority.' } as never;
       throw new Error(`Unexpected request ${path}`);
@@ -186,14 +216,23 @@ describe('SanctionWorkbench authenticated container', () => {
 
   it('uploads three application-scoped legal files before recording bounded special-case evidence', async () => {
     userPermissions = ['approvals.case.read', 'approvals.general_meeting.record', 'documents.file.download', 'documents.file.upload'];
-    storedAuthSession({ accessToken: 'special-token', refreshToken: 'refresh' });
-    const special = { ...approvalCase, general_meeting_evidence_required: true, available_actions: [{ action_code: 'record_general_meeting_approval', label: 'Record General Meeting Approval', enabled: true, disabled_reason: null, required_permission: 'approvals.general_meeting.record' }] };
+    const special = {
+      ...approvalCase,
+      general_meeting_evidence_required: true,
+      general_meeting_approval: {
+        general_meeting_approval_id: 'old-meeting', loan_application_id: 'application-1',
+        related_party_type: 'director_relative', related_party_user_id: null,
+        relationship_description: 'Prior submission.', meeting_date: '2026-07-01',
+        notice_document_id: 'old-notice', minutes_document_id: 'old-minutes', resolution_document_id: 'old-resolution',
+        approval_status: 'approved', recorded_by_user_id: 'secretary-1', recorded_at: '2026-07-01T12:00:00Z',
+        supersedes_general_meeting_approval_id: null,
+      },
+      available_actions: [{ action_code: 'record_general_meeting_approval', label: 'Record General Meeting Approval', enabled: true, disabled_reason: null, required_permission: 'approvals.general_meeting.record' }],
+    };
     const ids = ['notice-id', 'minutes-id', 'resolution-id'];
-    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => ({
-      ok: true, status: 200, json: async () => ({ success: true, data: { document_id: ids.shift() } }),
-    })));
+    vi.mocked(authenticatedMultipartRequest).mockImplementation(async () => ({ document_id: ids.shift() }) as never);
     vi.mocked(authenticatedRequest).mockImplementation(async (path, options) => {
-      if (path.includes('?assigned_to_me=')) return [special] as never;
+      if (path.includes('assigned_to_me=true')) return [special] as never;
       if (path === '/api/v1/approval-cases/case-1/' && !options?.method) return special as never;
       if (path.endsWith('/general-meeting-approval/') && options?.method === 'POST') return { general_meeting_approval_id: 'meeting-1' } as never;
       throw new Error(`Unexpected request ${path}`);
@@ -215,14 +254,15 @@ describe('SanctionWorkbench authenticated container', () => {
         notice_document_id: 'notice-id', minutes_document_id: 'minutes-id', resolution_document_id: 'resolution-id', approval_status: 'approved',
       } },
     ));
-    const uploads = vi.mocked(fetch).mock.calls;
+    const uploads = vi.mocked(authenticatedMultipartRequest).mock.calls;
     expect(uploads).toHaveLength(3);
-    uploads.forEach(([, options]) => {
-      const form = options?.body as FormData;
-      expect(form.get('document_category')).toBe('legal');
-      expect(form.get('sensitivity_level')).toBe('restricted');
-      expect(form.get('related_entity_type')).toBe('application');
-      expect(form.get('related_entity_id')).toBe('application-1');
+    uploads.forEach(([path, fields]) => {
+      expect(path).toBe('/api/v1/document-files/');
+      expect(fields.document_category).toBe('legal');
+      expect(fields.sensitivity_level).toBe('restricted');
+      expect(fields.related_entity_type).toBe('application');
+      expect(fields.related_entity_id).toBe('application-1');
+      expect(fields.file).toBeInstanceOf(File);
     });
   });
 
@@ -251,7 +291,7 @@ describe('SanctionWorkbench authenticated container', () => {
     [new AuthSessionError('STALE_VERSION', 'The approval case has changed.', 409), /STALE_VERSION/],
   ])('surfaces action error state $code without retry', async (error, expected) => {
     vi.mocked(authenticatedRequest).mockImplementation(async (path, options) => {
-      if (path.includes('?assigned_to_me=')) return [approvalCase] as never;
+      if (path.includes('assigned_to_me=true')) return [approvalCase] as never;
       if (path === '/api/v1/approval-cases/case-1/' && !options?.method) return approvalCase as never;
       if (path.endsWith('/approve/')) throw error;
       throw new Error(`Unexpected request ${path}`);
@@ -270,5 +310,9 @@ describe('SanctionWorkbench authenticated container', () => {
     expect(panelSource).not.toContain('requestedAmount <= 500000');
     expect(panelSource).not.toContain('currentUser.role');
     expect(appSource).not.toContain('applications={[]}');
+    expect(workbenchSource).not.toContain('referenceable');
+    expect(sanctionApiSource).not.toContain('loadStoredAuthSession');
+    expect(sanctionApiSource).not.toContain('API_BASE_URL');
+    expect(sanctionApiSource).not.toContain('fetch(');
   });
 });

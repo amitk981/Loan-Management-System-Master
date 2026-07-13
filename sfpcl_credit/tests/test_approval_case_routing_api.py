@@ -1338,6 +1338,10 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertFalse(data["sanction_decision_created"])
         self.assertIsNone(data["sanction_decision_id"])
         self.assertEqual(data["current_status"], "pending")
+        self.assertEqual(
+            data["workbench_summary"]["current_decision_status"],
+            "partially_approved",
+        )
         self.assertEqual(data["version"], 3)
         self.assertEqual(
             next(
@@ -4072,6 +4076,50 @@ class ApprovalCaseRoutingApiTests(TestCase):
             data["review_facts"]["documentation_completeness"]["status"], "complete"
         )
         self.assertEqual(AuditLog.objects.count(), audits_before)
+
+    def test_collection_projects_complete_frozen_s21_workbench_facts(self):
+        self.case.submitted_at = timezone.now() - timedelta(days=2, hours=3, minutes=4)
+        self.case.save(update_fields=["submitted_at"])
+        self.member.display_name = "Changed live borrower name"
+        self.member.member_type = "fpc"
+        self.member.save(update_fields=["display_name", "member_type"])
+        self.application.required_loan_amount = "123.00"
+        self.application.save(update_fields=["required_loan_amount"])
+        self.risk.overall_risk_rating = "critical"
+        self.risk.save(update_fields=["overall_risk_rating"])
+
+        response = self.client.get(
+            "/api/v1/approval-cases/?current_status=pending"
+            "&approval_type=sanction&assigned_to_me=true",
+            **self._auth(self.cfo),
+        )
+
+        self.assertEqual(response.status_code, 200, response.json())
+        self.assertEqual(response.json()["pagination"]["total_count"], 1)
+        row = response.json()["data"][0]["workbench_summary"]
+        elapsed_seconds = row["pending_age"].pop("elapsed_seconds")
+        self.assertGreaterEqual(elapsed_seconds, 183840)
+        self.assertLess(elapsed_seconds, 183845)
+        self.assertEqual(
+            row,
+            {
+                "borrower_name": "Approval Queue Member",
+                "member_type": "individual_farmer",
+                "requested_amount": "500000.00",
+                "recommended_amount": "500000.00",
+                "eligible_amount": "500000.00",
+                "approval_path": "CFO + one Director",
+                "exception_flag": False,
+                "related_party_flag": False,
+                "risk_rating": "low",
+                "submitted_at": self.case.submitted_at.isoformat().replace("+00:00", "Z"),
+                "current_decision_status": "pending",
+                "pending_age": {
+                    "label": "Elapsed pending time",
+                    "display": "2d 3h",
+                },
+            },
+        )
 
     def test_list_filters_are_strict_and_preserve_the_exact_threshold_route(self):
         response = self.client.get(

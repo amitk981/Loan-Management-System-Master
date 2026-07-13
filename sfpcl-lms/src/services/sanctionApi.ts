@@ -1,4 +1,4 @@
-import { API_BASE_URL, AuthSessionError, authenticatedRequest, loadStoredAuthSession } from './authSession';
+import { authenticatedMultipartRequest, authenticatedRequest } from './authSession';
 
 export interface ApprovalAvailableAction {
   action_code: 'approve' | 'reject' | 'return' | 'abstain' | 'record_general_meeting_approval';
@@ -43,6 +43,7 @@ export interface GeneralMeetingApproval {
 }
 
 export interface ApprovalReviewFacts {
+  borrower: { name: string; member_type: string };
   maker_checker: Record<string, unknown>;
   eligibility: Record<string, unknown>;
   loan_amounts: { requested_amount: string | null; eligible_amount: string | null; recommended_amount: string | null };
@@ -52,6 +53,21 @@ export interface ApprovalReviewFacts {
   risk: Record<string, unknown>;
   documentation_completeness: Record<string, unknown>;
   source_references: Record<string, string>;
+}
+
+export interface ApprovalWorkbenchSummary {
+  borrower_name: string;
+  member_type: string;
+  requested_amount: string | null;
+  recommended_amount: string | null;
+  eligible_amount: string | null;
+  approval_path: string;
+  exception_flag: boolean;
+  related_party_flag: boolean;
+  risk_rating: string;
+  submitted_at: string;
+  current_decision_status: string;
+  pending_age: { label: 'Elapsed pending time'; elapsed_seconds: number; display: string } | null;
 }
 
 export interface ApprovalCase {
@@ -84,6 +100,7 @@ export interface ApprovalCase {
   committee_projection: Record<string, unknown>;
   loan_limit_provenance: Record<string, unknown>;
   review_facts: ApprovalReviewFacts;
+  workbench_summary: ApprovalWorkbenchSummary;
   available_actions: ApprovalAvailableAction[];
 }
 
@@ -113,16 +130,11 @@ export interface GeneralMeetingPayload {
   approval_status: 'pending' | 'approved' | 'rejected';
 }
 
-interface DocumentUploadEnvelope {
-  success: boolean;
-  data?: { document_id: string };
-  error?: { code: string; message: string; field_errors?: Record<string, string>; details?: Record<string, unknown> };
-}
-
 export const listApprovalCases = (status = 'pending') => {
   const params = new URLSearchParams();
+  params.set('approval_type', 'sanction');
+  if (status !== 'all') params.set('current_status', status);
   if (status === 'pending') params.set('assigned_to_me', 'true');
-  if (status !== 'all' && status !== 'pending') params.set('current_status', status);
   params.set('page_size', '100');
   return authenticatedRequest<ApprovalCase[]>(`/api/v1/approval-cases/?${params.toString()}`);
 };
@@ -150,20 +162,12 @@ export const recordGeneralMeetingApproval = (applicationId: string, payload: Gen
   );
 
 export const uploadGeneralMeetingDocument = async (applicationId: string, file: File) => {
-  const session = loadStoredAuthSession();
-  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
-  const body = new FormData();
-  body.set('file', file);
-  body.set('document_category', 'legal');
-  body.set('sensitivity_level', 'restricted');
-  body.set('related_entity_type', 'application');
-  body.set('related_entity_id', applicationId);
-  const response = await fetch(`${API_BASE_URL}/api/v1/document-files/`, {
-    method: 'POST', headers: { Accept: 'application/json', Authorization: `Bearer ${session.accessToken}` }, body,
+  const result = await authenticatedMultipartRequest<{ document_id: string }>('/api/v1/document-files/', {
+    file,
+    document_category: 'legal',
+    sensitivity_level: 'restricted',
+    related_entity_type: 'application',
+    related_entity_id: applicationId,
   });
-  const envelope = await response.json() as DocumentUploadEnvelope;
-  if (!response.ok || !envelope.success || !envelope.data) {
-    throw new AuthSessionError(envelope.error?.code ?? 'REQUEST_FAILED', envelope.error?.message ?? 'Document upload failed.', response.status, envelope.error?.field_errors, envelope.error?.details);
-  }
-  return envelope.data.document_id;
+  return result.document_id;
 };
