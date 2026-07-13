@@ -1,0 +1,3 @@
+./credit/modules/eligibility_assessment.py:95:        member_result = ActiveMemberStatusModule().calculate(member_id=application.member_id)
+./credit/modules/borrower_limit_projection.py:38:    current_result = ActiveMemberStatusModule().calculate(
+./members/portal_services.py:89:    status = ActiveMemberStatusModule().calculate(member_id=member.member_id)

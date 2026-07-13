@@ -1,5 +1,17 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006Z13 Member Scope Persistence and Calculation Boundary Closure
+
+- Database check constraints now enforce every `MemberScopeAssignment` scope/member/team shape,
+  and conditional unique constraints close nullable SQL duplicate grants. Migration 0014 retains
+  the earliest valid authority fact while removing only exact legacy duplicates before enforcement.
+- Real evaluator tests cover global, assigned, created-by, active team, and inactive-team behavior;
+  the focused public member suites retain list/detail/update, identity, supply, service evidence,
+  active verification, portal ownership, zero-write denial, and immutable maker behavior.
+- Actorless active-member calculation remains a domain computation. Staff has an explicit
+  `calculate_for_actor` boundary; a dependency guard fixes the only production callers to the
+  application-scoped eligibility path and authenticated-PortalAccount-derived portal/credit paths.
+
 ## Architecture Review 2026-07-13 06:01 - Member Scope Closure Status
 
 - 006Z11 now separates action permission from persisted `global`/`team`/`assigned`/`created_by`

@@ -103,9 +103,28 @@ class MemberScopeAssignment(models.Model):
     class Meta:
         db_table = "member_scope_assignments"
         constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(scope_type__in=("global", "created_by"), member__isnull=True, team__isnull=True)
+                    | models.Q(scope_type="assigned", member__isnull=False, team__isnull=True)
+                    | models.Q(scope_type="team", member__isnull=False, team__isnull=False)
+                ),
+                name="member_scope_valid_shape",
+            ),
             models.UniqueConstraint(
-                fields=["user", "permission_code", "scope_type", "member", "team"],
-                name="uniq_member_scope_assignment",
+                fields=["user", "permission_code", "scope_type"],
+                condition=models.Q(scope_type__in=("global", "created_by")),
+                name="uniq_member_scope_unbound",
+            ),
+            models.UniqueConstraint(
+                fields=["user", "permission_code", "member"],
+                condition=models.Q(scope_type="assigned"),
+                name="uniq_member_scope_assigned",
+            ),
+            models.UniqueConstraint(
+                fields=["user", "permission_code", "member", "team"],
+                condition=models.Q(scope_type="team"),
+                name="uniq_member_scope_team",
             )
         ]
         indexes = [

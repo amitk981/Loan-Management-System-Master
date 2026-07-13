@@ -1,31 +1,26 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_055322_architecture_review
+2026-07-13_061140_normal_run
 
 ## Current Status
 
-Architecture review of 006Z11, 006Z12, 007A2, and 007A3 is complete; production code was not
-changed. Member scope is now separated from action permission, maker provenance is retained, the
-portal denial ledger is complete, and sequential approval history/authority/pagination/governance
-behavior is substantive. The review found that 007A3 invalidated the retained PostgreSQL race suite
-by moving activation behind proposals without updating the race interface. It also found partial
-approval case/lifecycle matrices, a noncanonical authority error code, unprotected proposal detail,
-and remaining member-scope persistence/public-matrix gaps.
+006Z13 is complete. Persisted member scope now has database-enforced shape and conditional
+uniqueness across global, created-by, assigned, and team grants, with a non-destructive exact-
+duplicate cleanup migration. Real evaluator coverage includes inactive team membership and scoped
+list totals. Staff calculation has an explicit actor/scope boundary, while dependency proof limits
+actorless domain calculation to application-scoped eligibility and authenticated portal-owned
+member paths. Existing public member action and maker-provenance suites remain green.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-13_055322_architecture_review/`. The review pinned
-`23331d5...955cfc1`, inspected production/tests and retained PostgreSQL/red-green packets, and ran
-queue plus configured quality gates. Frontend build/typecheck/lint and 207 tests pass; backend
-check/migration sync and 527 tests pass with 16 expected PostgreSQL-only skips and 93% coverage.
-The focused current concurrency class applies proposal migration 0005 but skips all four races on
-SQLite; the pre-007A3 PostgreSQL logs cannot validate the governed activation interface.
-`CONTEXT.md` remains truthful, and no Blocked slice is stale.
+Evidence is under `.ralph/runs/2026-07-13_061140_normal_run/`. The database and staff-calculation
+tracer bullets retain RED/GREEN logs; the focused public matrix passes 85 tests. Frontend build,
+typecheck, lint, and 207 tests pass. Backend check/migration sync and 531 tests pass with 16 expected
+PostgreSQL-only skips and 93% coverage.
 
 ## Next Run
 
-Run `006Z13-member-scope-persistence-and-action-matrix-closure`, then
-`007A4-approval-governance-concurrency-and-case-snapshot-closure`. Both are concrete, source-linked,
-and queue-lint clean. `007B-approval-case-creation-from-appraisal` now depends on 007A4 so only a
-currently proven governed configuration can be snapshotted into a real approval case.
+Run `007A4-approval-governance-concurrency-and-case-snapshot-closure`, then
+`007B-approval-case-creation-from-appraisal`. Both remain concrete and source-linked; 007B already
+requires the governed, concurrency-proven configuration versions produced by 007A4.

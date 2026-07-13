@@ -101,6 +101,17 @@ class ActiveMemberStatusResult:
 class ActiveMemberStatusModule:
     """Public member-owned projection for BR-004/BR-007 evidence."""
 
+    def calculate_for_actor(self, *, actor, member_id, permission, as_of_date=None):
+        """Calculate for a staff action only after its member object boundary succeeds."""
+        member = Member.objects.filter(member_id=member_id, is_deleted=False).first()
+        if member is None:
+            raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+        if not evaluate_member_authority(
+            actor_user=actor, member=member, permission=permission
+        ).allowed:
+            raise ActiveMemberObjectAccessDenied("You cannot access this member.")
+        return self.calculate(member_id=member.member_id, as_of_date=as_of_date)
+
     def calculate(self, *, member_id, as_of_date=None, lock_evidence=False):
         calculated_as_of_date = as_of_date or timezone.localdate()
         member = (

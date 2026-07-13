@@ -4975,3 +4975,23 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_061140_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z13-member-scope-persistence-and-action-matrix-closure
+- Summary: Database-enforced member scope shapes/uniqueness, calculation boundary, and real scope evaluation closure completed.
+- Tests run: Backend 531 tests at 93% coverage; focused public matrix 85 tests; frontend 207 tests plus build/typecheck/lint.
+- Evidence saved: `.ralph/runs/2026-07-13_061140_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High, mitigated by constraints, non-destructive migration, red/green proof, and full gates.
+- Next action: 007A4 approval governance concurrency and case snapshot closure.
+
+## 2026-07-13 06:23:59 - 2026-07-13_061140_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z13-member-scope-persistence-and-action-matrix-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_061140_normal_run/.ralph/runs/2026-07-13_061140_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_061140_normal_run/.ralph/runs/2026-07-13_061140_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

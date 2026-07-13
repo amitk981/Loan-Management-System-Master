@@ -424,6 +424,26 @@ class CreditEligibilityModuleTests(TestCase):
         ):
             self.assertNotIn(forbidden, projection_body)
 
+    def test_actorless_active_member_calculation_has_only_owned_domain_callers(self):
+        package_root = Path(__file__).resolve().parents[1]
+        callers = set()
+        for path in package_root.rglob("*.py"):
+            if "tests" in path.parts or path.name == "active_member_status.py":
+                continue
+            source = path.read_text()
+            if "ActiveMemberStatusModule().calculate(" in source:
+                callers.add(path.relative_to(package_root).as_posix())
+
+        self.assertEqual(callers, {
+            "credit/modules/borrower_limit_projection.py",
+            "credit/modules/eligibility_assessment.py",
+            "members/portal_services.py",
+        })
+        portal_source = (package_root / "members" / "portal_services.py").read_text()
+        self.assertIn("PortalAccount.objects.select_related(\"member\")", portal_source)
+        self.assertNotIn("def produce_supply(member_id", portal_source)
+        self.assertNotIn("def application_limit_projection(member_id", portal_source)
+
     def test_boundary_import_inspection_resolves_package_alias_imports(self):
         tree = ast.parse(
             "import sfpcl_credit.credit.models as credit_models\n"
