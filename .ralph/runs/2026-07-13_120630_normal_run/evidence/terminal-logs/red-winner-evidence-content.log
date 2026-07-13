@@ -1,0 +1,59 @@
+Using existing test database for alias 'default' ('test_sfpcl_credit')...
+Found 1 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, approvals, communications, configurations, contenttypes, credit, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying approvals.0007_approvalcase_enrichment_snapshot... OK
+  Applying approvals.0008_approvalaction... OK
+System check identified no issues (0 silenced).
+test_competing_supersedes_have_one_winner_and_zero_write_loser (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixConcurrencyTests.test_competing_supersedes_have_one_winner_and_zero_write_loser) ... FAIL
+
+======================================================================
+FAIL: test_competing_supersedes_have_one_winner_and_zero_write_loser (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixConcurrencyTests.test_competing_supersedes_have_one_winner_and_zero_write_loser)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_120630_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 1032, in test_competing_supersedes_have_one_winner_and_zero_write_loser
+    self._race(proposals, loser_code="PROPOSAL_STALE")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_120630_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 971, in _race
+    self.assertEqual(audit["old_value_json"], target_before)
+AssertionError: {'status': 'active', 'amount_max': '500000.[395 chars]True} != {'approval_matrix_rule_id': UUID('85e98ef4-[437 chars]nal'}
+Diff is 918 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.904s
+
+FAILED (failures=1)
+Preserving test database for alias 'default' ('test_sfpcl_credit')...
+Using existing test database for alias 'default' ('test_sfpcl_credit')...
+Found 1 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, approvals, communications, configurations, contenttypes, credit, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  No migrations to apply.
+System check identified no issues (0 silenced).
+test_competing_supersedes_have_one_winner_and_zero_write_loser (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixConcurrencyTests.test_competing_supersedes_have_one_winner_and_zero_write_loser) ... FAIL
+
+======================================================================
+FAIL: test_competing_supersedes_have_one_winner_and_zero_write_loser (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixConcurrencyTests.test_competing_supersedes_have_one_winner_and_zero_write_loser)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_120630_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 1045, in test_competing_supersedes_have_one_winner_and_zero_write_loser
+    self._race(proposals, loser_code="PROPOSAL_STALE")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_120630_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 985, in _race
+    self.assertEqual(audit["new_value_json"], expected_new_value)
+AssertionError: {'reason': 'Governed rule activation replac[689 chars]07f'} != {'configuration': {'approval_matrix_rule_id[1174 chars]al'}}
+Diff is 2025 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.471s
+
+FAILED (failures=1)
+Preserving test database for alias 'default' ('test_sfpcl_credit')...

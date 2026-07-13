@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from decimal import Decimal
+import json
 from unittest import skipUnless
 
 from django.db import close_old_connections, connection
@@ -772,10 +773,16 @@ class ApprovalMatrixConcurrencyTests(TransactionTestCase):
 
     @staticmethod
     def _payload(version):
-        return ApprovalMatrixApiTests._payload(version_number=version)
+        return ApprovalMatrixApiTests._payload(
+            version_number=version,
+            reason=f"Governed rule activation {version}",
+        )
 
     def _propose_rule(self, version, *, target_id=None):
-        request = RequestFactory().post("/api/v1/approval-matrix-rules/")
+        request = RequestFactory().post(
+            "/api/v1/approval-matrix-rules/",
+            HTTP_X_REQUEST_ID=f"rule-proposal-{version}",
+        )
         if target_id is None:
             return approval_matrix_configuration.create_rule(self.user, request, self._payload(version))
         payload = self._payload(version)
@@ -798,6 +805,19 @@ class ApprovalMatrixConcurrencyTests(TransactionTestCase):
 
     def _race(self, proposals, *, loser_code="CONFIGURATION_CONFLICT"):
         ledger_before = ApprovalMatrixApiTests._configuration_snapshot()
+        target_serialized_before = None
+        if proposals[0]["target_entity_id"]:
+            target_model = (
+                ApprovalMatrixRule
+                if proposals[0]["proposal_type"].startswith("rule_")
+                else SanctionCommittee
+            )
+            target = target_model.objects.get(pk=proposals[0]["target_entity_id"])
+            target_serialized_before = (
+                approval_matrix_configuration.serialize_rule(target)
+                if target_model is ApprovalMatrixRule
+                else approval_matrix_configuration.serialize_committee(target)
+            )
         original = {
             row["approval_configuration_proposal_id"]: ApprovalConfigurationProposal.objects.filter(
                 pk=row["approval_configuration_proposal_id"]
@@ -850,6 +870,7 @@ class ApprovalMatrixConcurrencyTests(TransactionTestCase):
         self.assertEqual(approved_after["version"], 2)
         self.assertIsNotNone(approved_after["decided_by_user_id"])
         self.assertIsNotNone(approved_after["decided_at"])
+        added_evidence = {}
         for key, primary_key in (
             ("versions", "version_history_id"), ("audits", "audit_log_id")
         ):
@@ -859,7 +880,9 @@ class ApprovalMatrixConcurrencyTests(TransactionTestCase):
             self.assertEqual(
                 {row_id: after_rows[row_id] for row_id in before_rows}, before_rows
             )
-            self.assertEqual(len(set(after_rows) - set(before_rows)), 1)
+            new_evidence_ids = set(after_rows) - set(before_rows)
+            self.assertEqual(len(new_evidence_ids), 1)
+            added_evidence[key] = after_rows[new_evidence_ids.pop()]
         resource_key = "rules" if approved.proposal_type.startswith("rule_") else "committees"
         other_resource_key = "committees" if resource_key == "rules" else "rules"
         self.assertEqual(ledger_after[other_resource_key], ledger_before[other_resource_key])
@@ -880,6 +903,8 @@ class ApprovalMatrixConcurrencyTests(TransactionTestCase):
         new_resource_ids = set(after_resources) - set(before_resources)
         self.assertEqual(len(new_resource_ids), 1)
         new_resource_id = new_resource_ids.pop()
+        target_before = None
+        target_after = None
         if approved.target_entity_id:
             target_id = str(approved.target_entity_id)
             target_before = before_resources[target_id]
@@ -915,6 +940,78 @@ class ApprovalMatrixConcurrencyTests(TransactionTestCase):
             approved.payload_json,
         )
         self.assertEqual(serialized_resource["status"], "active")
+        expected_entity_type = (
+            "approval_matrix_rule" if resource_key == "rules" else "sanction_committee"
+        )
+        history = added_evidence["versions"]
+        self.assertEqual(history["versioned_entity_type"], expected_entity_type)
+        self.assertEqual(str(history["versioned_entity_id"]), new_resource_id)
+        self.assertEqual(history["version_number"], approved.payload_json["version_number"])
+        self.assertEqual(history["change_summary"], approved.reason)
+        self.assertEqual(history["author_user_id"], approved.made_by_user_id)
+        self.assertEqual(history["approver_user_id"], approved.decided_by_user_id)
+        self.assertNotEqual(history["author_user_id"], history["approver_user_id"])
+        self.assertIsNone(history["reviewer_user_id"])
+        self.assertIsNone(history["board_approval_reference"])
+        self.assertEqual(history["approval_reference"], approved.request_id)
+        self.assertEqual(history["approved_at"], approved.decided_at)
+        self.assertEqual(history["effective_from"], new_resource.effective_from)
+        self.assertEqual(history["effective_to"], new_resource.effective_to)
+        self.assertEqual(history["created_at"], history["approved_at"])
+
+        audit = added_evidence["audits"]
+        expected_new_value = {
+            "configuration": serialized_resource,
+            "reason": approved.reason,
+            "proposal_id": str(approved.pk),
+            "author_user_id": str(approved.made_by_user_id),
+            "approver_user_id": str(approved.decided_by_user_id),
+            "request_id": approved.request_id,
+        }
+        if target_after is not None:
+            expected_new_value["superseded_configuration"] = (
+                approval_matrix_configuration.serialize_rule(new_resource.__class__.objects.get(
+                    pk=target_after[resource_primary_key]
+                ))
+                if resource_key == "rules"
+                else approval_matrix_configuration.serialize_committee(new_resource.__class__.objects.get(
+                    pk=target_after[resource_primary_key]
+                ))
+            )
+        expected_history_old_value = None
+        if target_serialized_before is not None:
+            expected_history_old_value = {
+                "configuration": target_serialized_before,
+                "target_entity_id": str(approved.target_entity_id),
+            }
+        expected_history_new_value = {
+            "proposal_id": str(approved.pk),
+            "proposal_type": approved.proposal_type,
+            "proposal_payload": approved.payload_json,
+            "target_entity_id": (
+                str(approved.target_entity_id) if approved.target_entity_id else None
+            ),
+            "activated_configuration": serialized_resource,
+        }
+        if target_after is not None:
+            expected_history_new_value["superseded_configuration"] = expected_new_value[
+                "superseded_configuration"
+            ]
+        self.assertEqual(history["old_value_json"], expected_history_old_value)
+        self.assertEqual(history["new_value_json"], expected_history_new_value)
+        self.assertEqual(audit["actor_user_id"], approved.decided_by_user_id)
+        self.assertEqual(audit["actor_type"], "user")
+        self.assertEqual(audit["action"], "config.changed")
+        self.assertEqual(audit["entity_type"], expected_entity_type)
+        self.assertEqual(str(audit["entity_id"]), new_resource_id)
+        self.assertEqual(audit["old_value_json"], target_serialized_before)
+        self.assertEqual(audit["new_value_json"], expected_new_value)
+        winner_evidence = json.dumps(
+            {"history": history, "audit": audit}, default=str, sort_keys=True
+        )
+        self.assertNotIn(loser.reason, winner_evidence)
+        self.assertNotIn(loser.request_id, winner_evidence)
+        self.assertNotIn(loser.payload_json["version_number"], winner_evidence)
         detail = self.client.get(
             f"/api/v1/approval-configuration-proposals/{loser.pk}/",
             headers=self.proposal_headers,
@@ -975,11 +1072,16 @@ class ApprovalMatrixConcurrencyTests(TransactionTestCase):
 
     def _committee_payload(self, version, effective_from="2026-04-01"):
         return ApprovalMatrixApiTests._committee_payload(
-            self.cfo, self.d1, self.d2, version_number=version, effective_from=effective_from
+            self.cfo, self.d1, self.d2, version_number=version,
+            effective_from=effective_from,
+            reason=f"Governed committee activation {version}",
         )
 
     def _propose_committee(self, version, *, target_id=None):
-        request = RequestFactory().post("/api/v1/sanction-committees/")
+        request = RequestFactory().post(
+            "/api/v1/sanction-committees/",
+            HTTP_X_REQUEST_ID=f"committee-proposal-{version}",
+        )
         payload = self._committee_payload(
             version, effective_from="2027-01-01" if target_id else "2026-04-01"
         )

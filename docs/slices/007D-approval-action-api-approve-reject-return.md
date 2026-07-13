@@ -73,6 +73,16 @@ Conflict determination (007E), exception register (007F), general-meeting gate (
   be produced through the deep approval-case module. Do not add a third case serializer or a second
   required-approver parser in the action adapter.
 
+## Run-Ahead Sharpening Review (007A6, 2026-07-13)
+
+- Assert action audit content, not counts: actor/type, action, case/application target, request id,
+  IP/user-agent metadata, decision/comments metadata, and masked old/new case status. Evidence must
+  identify only the executed action and must not claim a sanction decision or notification that the
+  transaction did not create.
+- Snapshot complete action/case/sanction/workflow/audit ledgers before denied, duplicate, and losing
+  concurrent actions. Zero-write losers require exact equality; the winner adds only attributable
+  action/completion evidence required by the stored snapshot.
+
 ## Risk Level
 High
 

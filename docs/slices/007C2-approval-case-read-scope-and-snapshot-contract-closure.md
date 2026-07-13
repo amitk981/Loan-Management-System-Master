@@ -94,3 +94,12 @@ High
 - No permission holder can read an unrelated approval case without persisted source-backed scope.
 - Only a self-consistent stored routing snapshot can enter queues, detail, or later action seams.
 - Exact replay means the frozen credit provenance is identical, and §25.2 returns `current_status`.
+
+## Run-Ahead Sharpening Review (007A6, 2026-07-13)
+
+- In requirement 7's governed-configuration sequence, assert exact winner evidence content: the
+  audit names the proposal/request, maker/checker, activated resource, and, for supersession, the
+  retained predecessor's closed projection. Rejected/pending loser reason, request id, and version
+  must not appear in either winner evidence row.
+- Keep a full enriched-case ledger around that sequence. Rule/committee ids and versions, decision
+  date, required approvers, workflow identity, and case version remain byte-for-byte unchanged.

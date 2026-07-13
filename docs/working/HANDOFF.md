@@ -1,33 +1,31 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_111515_normal_run
+2026-07-13_120630_normal_run
 
 ## Current Status
 
-006Z15 is complete. The member authority matrix now executes ten independently selectable public
-HTTP/module rows instead of evaluator aliases, with exact no-scope/success ledgers and persisted
-global, assigned, created-by, active-team, inactive-team, unrelated-team, and unrelated-member
-scope proof through list, detail, and mutation seams.
-The matrix completeness guard requires ordered denied/success calls and an action-specific public
-response or returned-object assertion for each named row, so phase omission fails the suite.
+007A6 is complete. The four governed rule/committee create/supersede races now prove the sole new
+VersionHistory and `config.changed` rows contain the exact winning resource/version, maker,
+distinct checker, reason, proposal/request provenance, approval timestamp/reference, effective
+dates, and old/new configuration values. Discriminating loser reason/request/version facts are
+explicitly absent from winner evidence.
 
-Staff eligibility, portal self-service, and borrower-limit projection now reject a different
-client-supplied member id without writes or identifier disclosure. The actorless active-member
-calculation remains internal and derives its member only from the already-authorised application or
-authenticated PortalAccount. Typed member object-denial exceptions preserve the canonical
-`OBJECT_ACCESS_DENIED` transport code without collapsing maker-checker or permission denials.
+VersionHistory now stores generic approval evidence through nullable old/new JSON and dedicated
+approval reference/time fields. Supersession evidence retains the predecessor's pre-activation old
+value and exact closed projection; creation is predecessor-free. Activation remains behind
+`decide_proposal` and the shared configuration lock, and open cases remain unchanged.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-13_111515_normal_run/`. RED captured the uncaught supply
-object denial and the evaluator-only replacement matrix; GREEN covers 13 matrix tests plus portal
-substitution rows and 68 focused member regressions. Frontend build/typecheck/lint and 208 tests
-pass. Backend check/migration sync and 568 tests pass with 16 expected PostgreSQL-only skips and 93%
-coverage. No migration or frontend visual change was introduced.
+Evidence is under `.ralph/runs/2026-07-13_120630_normal_run/`. RED captures missing closed-
+predecessor audit evidence and missing VersionHistory approval content; GREEN includes two
+independent four-test PostgreSQL runs with zero skips and 26 focused approval tests. Frontend
+build/typecheck/lint and 208 tests pass. Backend check/migration sync and 568 tests pass with 16
+expected PostgreSQL-only skips and 93% coverage. No frontend change was introduced.
 
 ## Next Run
 
-Run `007A6-approval-governance-winner-evidence-content-closure`, then
-`007C2-approval-case-read-scope-and-snapshot-contract-closure`. Both are sharpened and execution-
-ready; after them, 007D adds immutable approval actions on the validated object/snapshot boundary.
+Run `007C2-approval-case-read-scope-and-snapshot-contract-closure`, then
+`007D-approval-action-api-approve-reject-return`. Both are sharpened and execution-ready; 007C2
+closes object scope/snapshot coherence before 007D writes immutable approval actions.

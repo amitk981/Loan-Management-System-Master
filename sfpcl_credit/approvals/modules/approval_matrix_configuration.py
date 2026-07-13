@@ -241,14 +241,15 @@ def decide_proposal(proposal_id, user, request, payload, decision):
         raise ValidationError({key: "Unknown field." for key in unknown})
     if decision == "reject" and (not isinstance(rejection_reason, str) or not rejection_reason.strip()):
         raise ValidationError({"reason": "This field is required."})
+    decision_time = timezone.now()
     if decision == "approve":
-        _activate_proposal(proposal, user, request)
+        _activate_proposal(proposal, user, request, approved_at=decision_time)
         proposal.status = ApprovalConfigurationProposal.STATUS_APPROVED
     else:
         proposal.status = ApprovalConfigurationProposal.STATUS_REJECTED
         proposal.rejection_reason = rejection_reason.strip()
     proposal.decided_by_user = user
-    proposal.decided_at = timezone.now()
+    proposal.decided_at = decision_time
     proposal.version += 1
     proposal.save(update_fields=["status", "rejection_reason", "decided_by_user", "decided_at", "version"])
     return serialize_proposal(proposal, user)
@@ -261,9 +262,10 @@ def _require_business_approver(proposal, user):
         raise ConfigurationConflict("Active CFO or Company Secretary approval authority is required.", "APPROVAL_AUTHORITY_REQUIRED")
 
 
-def _activate_proposal(proposal, approver, request):
+def _activate_proposal(proposal, approver, request, *, approved_at):
     _lock_configuration_boundary()
     kind = proposal.proposal_type
+    superseded = None
     if kind.startswith("rule_"):
         cleaned = _validate_rule(proposal.payload_json)
         old = None
@@ -280,6 +282,7 @@ def _activate_proposal(proposal, approver, request):
             old.status = ApprovalMatrixRule.STATUS_SUPERSEDED
             old.effective_to = cleaned["effective_from"] - timedelta(days=1)
             old.save(update_fields=["status", "effective_to"])
+            superseded = serialize_rule(old)
         row = ApprovalMatrixRule.objects.create(**cleaned, status=ApprovalMatrixRule.STATUS_ACTIVE)
         entity_type, after = "approval_matrix_rule", serialize_rule(row)
     else:
@@ -296,20 +299,46 @@ def _activate_proposal(proposal, approver, request):
             old.status = SanctionCommittee.STATUS_SUPERSEDED
             old.effective_to = cleaned["effective_from"] - timedelta(days=1)
             old.save(update_fields=["status", "effective_to"])
+            superseded = serialize_committee(old)
         row = SanctionCommittee.objects.create(**cleaned, status=SanctionCommittee.STATUS_ACTIVE)
         entity_type, after = "sanction_committee", serialize_committee(row)
+    history_old_value = None
+    if before is not None:
+        history_old_value = {
+            "configuration": before,
+            "target_entity_id": str(proposal.target_entity_id),
+        }
+    history_new_value = {
+        "proposal_id": str(proposal.pk),
+        "proposal_type": proposal.proposal_type,
+        "proposal_payload": proposal.payload_json,
+        "target_entity_id": (
+            str(proposal.target_entity_id) if proposal.target_entity_id else None
+        ),
+        "activated_configuration": after,
+    }
+    if superseded is not None:
+        history_new_value["superseded_configuration"] = superseded
     VersionHistory.objects.create(
         versioned_entity_type=entity_type, versioned_entity_id=row.pk,
         version_number=row.version_number, change_summary=proposal.reason,
         author_user=proposal.made_by_user, approver_user=approver,
+        approval_reference=proposal.request_id, approved_at=approved_at,
+        old_value_json=history_old_value, new_value_json=history_new_value,
         effective_from=row.effective_from, effective_to=row.effective_to,
+        created_at=approved_at,
     )
+    audit_new_value = {
+        "configuration": after, "reason": proposal.reason,
+        "proposal_id": str(proposal.pk), "author_user_id": str(proposal.made_by_user_id),
+        "approver_user_id": str(approver.pk), "request_id": proposal.request_id,
+    }
+    if superseded is not None:
+        audit_new_value["superseded_configuration"] = superseded
     AuditLog.objects.create(
         actor_user=approver, action="config.changed", entity_type=entity_type, entity_id=row.pk,
         old_value_json=before,
-        new_value_json={"configuration": after, "reason": proposal.reason,
-                        "proposal_id": str(proposal.pk), "author_user_id": str(proposal.made_by_user_id),
-                        "approver_user_id": str(approver.pk), "request_id": proposal.request_id},
+        new_value_json=audit_new_value,
         ip_address=request_ip(request), user_agent=request_user_agent(request),
     )
 

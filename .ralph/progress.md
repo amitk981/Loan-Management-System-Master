@@ -1,5 +1,17 @@
 # Ralph Progress Log
 
+# Run 2026-07-13_120630_normal_run
+
+- Completed 007A6 by making all four governed PostgreSQL races prove exact winner history/audit
+  content instead of cardinality alone. Winner/loser reasons, request ids, and versions are
+  discriminating; no loser fact may appear in winner evidence.
+- VersionHistory now persists the exact approval time/reference plus proposal, target, and old/new
+  resource payloads. Supersession evidence includes the retained predecessor's closed projection;
+  creation remains explicitly predecessor-free.
+- The four exact race methods pass twice on PostgreSQL with zero skips. Focused approval tests pass;
+  backend check/migration sync and 568 tests pass with 16 expected SQLite skips at 93% coverage;
+  frontend build/typecheck/lint and 208 tests pass. Next: sharpened 007C2, then 007D.
+
 # Run 2026-07-13_100911_architecture_review
 
 - Reviewed 006Z14, 007A5, 007B, and 007C independently across Standards and Spec; production code
@@ -5240,6 +5252,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_111515_normal_run/.ralph/runs/2026-07-13_111515_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_111515_normal_run/.ralph/runs/2026-07-13_111515_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 12:25:14 - 2026-07-13_120630_normal_run
+- Agent tool used: codex
+- Slice attempted: 007A6-approval-governance-winner-evidence-content-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_120630_normal_run/.ralph/runs/2026-07-13_120630_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_120630_normal_run/.ralph/runs/2026-07-13_120630_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

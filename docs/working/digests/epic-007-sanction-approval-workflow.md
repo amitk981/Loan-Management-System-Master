@@ -186,3 +186,19 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - Historical and current committee dates resolve independently. A conflicting historical backfill
   returns the stable configuration conflict while the complete ledger and retained resolver output
   remain unchanged; duplicate and swapped authority failures have independently named public rows.
+
+## 007A6 Winner Evidence Content Closure
+
+- All four governed PostgreSQL create/supersede races identify the sole new VersionHistory and
+  `config.changed` rows and assert their exact winner target/version, maker, distinct checker,
+  reason, proposal/request provenance, approval timestamp/reference, effective dates, and
+  serialized configuration values.
+- Winner and loser proposals carry discriminating reasons, request ids, and versions. Exact content
+  assertions reject winner evidence containing the loser's reason, request id, or version even when
+  ledger cardinality remains correct.
+- Supersession audit evidence preserves the predecessor's pre-activation value in `old_value_json`
+  and adds its exact closed projection as `new_value_json.superseded_configuration`; creation omits
+  that key and retains a null old value.
+- VersionHistory now stores nullable generic old/new JSON plus the approval reference/time. Governed
+  activations persist the proposal id/type/payload, target id, activated resource, and closed
+  predecessor projection; the history timestamp is exactly the proposal decision timestamp.
