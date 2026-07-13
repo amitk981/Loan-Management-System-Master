@@ -1,7 +1,7 @@
 # Slice 007D2: Approval Action Boundary and PostgreSQL Race Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers

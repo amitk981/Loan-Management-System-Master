@@ -76,6 +76,15 @@ High
 - Return-for-clarification no longer leaves the application permanently unable to re-enter sanction.
 - Every material re-approval is a new immutable case/review cycle; prior decisions never leak forward.
 
+## Run-Ahead Sharpening Review (007D2, 2026-07-13)
+
+- Every cycle's collection/detail/action response must continue using 007D2's single history-aware
+  projection and canonical action-availability decision. A returned historical cycle exposes its
+  immutable decisions but every action remains disabled with the same POST conflict reason.
+- Resubmission concurrency must retain the application -> appraisal -> case lock order and shared
+  owner transition guards. Completion of cycle N+1 must create only one communication-backed Credit
+  Assessment notification; cycle N's communication/action/audit ledgers remain byte-for-byte stable.
+
 ## Run-Ahead Sharpening Review (007C3, 2026-07-13)
 
 - Preserve the 007C3 read-scope interface across cycles: persisted Company Secretary/Auditor grants

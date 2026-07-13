@@ -94,6 +94,15 @@ A Director, committee member, or preparer can never approve their own or a relat
   abstention is immutable history, not automatic authority for the new cycle; recompute the new
   cycle from its frozen borrower/appraisal facts and prove old conflict evidence cannot leak.
 
+## Run-Ahead Sharpening Review (007D2, 2026-07-13)
+
+- Extend `approval_case_action_availability` for conflict-specific disabled reasons and consume that
+  same result in detail and POST. Preserve 007D2's ordinary zero-write matrix; only the source
+  COI-006 conflict denial may append its narrowly attributable audit row.
+- Conflict-abstention and any terminal blocked outcome must retain the guarded application ->
+  appraisal -> case transaction and communication adapter. Never insert a direct Notification or
+  return the raw required-approver snapshot from collection.
+
 ## Out of Scope
 General-meeting evidence recording (007G), exception register (007F), relationship data capture UI (member master owns relationships).
 

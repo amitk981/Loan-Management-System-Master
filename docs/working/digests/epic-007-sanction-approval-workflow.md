@@ -51,6 +51,24 @@
 - The reviewed appraisal does not yet own numeric rate/repayment/charge/condition facts, so A-079
   preserves nullable/empty §25.8 fields rather than inventing financial rules.
 
+## 007D2 Approval Action Boundary Closure
+
+- Collection, detail, and action success now compose one history-aware approval-case projection;
+  immutable route provenance remains unchanged while decision/acted-at and caller actions reflect
+  the immutable action ledger immediately.
+- One canonical §44 availability decision drives detail and writes for acted, excluded, closed,
+  and action-permission states. Unassigned/object-scope and contradictory-snapshot nondisclosure
+  remain outside that decision and preserve their existing 403/404 contracts.
+- The locked application -> appraisal -> case transaction evaluates all three owner transitions
+  through the shared guard before inserting an action. Reject/return comments remain mandatory;
+  approve comments remain optional; every ordinary denial is exact zero-write.
+- Terminal outcomes call the communication-owned internal team adapter. The action transaction
+  persists one pending §24.2 Communication, one linked Credit Assessment notification, and one
+  metadata-only communication audit; any adapter failure rolls the entire outcome back.
+- PostgreSQL acceptance races different remaining actors on one version and duplicates the final
+  actor on one version. Both races passed twice with one serial winner, a stable stale loser, one
+  action per actor, no deadlock, and exactly one final sanction/communication/notification.
+
 Sources distilled while finishing 006G and sharpening 006H/006X:
 
 - `docs/source/implementation-roadmap.md` §12.1-§12.5

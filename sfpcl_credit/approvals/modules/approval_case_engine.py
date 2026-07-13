@@ -71,7 +71,9 @@ def list_approval_cases(*, actor, query_params):
             actor_permissions=actor_permissions,
         ).allowed
     ]
-    return [serialize_case_snapshot(case) for case in cases], {
+    return [
+        serialize_case_detail(case, actor, actor_permissions) for case in cases
+    ], {
         "page": page,
         "page_size": page_size,
         "total_count": total_count,
@@ -260,10 +262,10 @@ def _available_actions(case, actor, actor_permissions, action_by_user):
             reason = "Approval case is not pending."
         elif actor_id in action_by_user:
             reason = "You have already acted on this approval case."
-        elif not pending_assignment:
-            reason = "You are not a pending approver for this case."
         elif permission not in actor_permissions:
             reason = "Required permission is not granted."
+        elif not pending_assignment:
+            reason = "You are not a pending approver for this case."
         else:
             reason = None
         actions.append(
@@ -276,6 +278,21 @@ def _available_actions(case, actor, actor_permissions, action_by_user):
             }
         )
     return actions
+
+
+def approval_case_action_availability(
+    *, case, actor, actor_permissions, action_code
+):
+    """Return the canonical §44 decision consumed by detail and writes."""
+    action_by_user = {
+        str(action.approver_user_id): action for action in case.actions.all()
+    }
+    return next(
+        action for action in _available_actions(
+            case, actor, set(actor_permissions), action_by_user
+        )
+        if action["action_code"] == action_code
+    )
 
 
 def is_routable_approval_case(case):

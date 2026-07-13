@@ -1,8 +1,12 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+from threading import Barrier
+from unittest import skipUnless
+from unittest.mock import patch
 
 from django.apps import apps
-from django.db import IntegrityError, connection, transaction
-from django.test import Client, TestCase
+from django.db import IntegrityError, close_old_connections, connection, connections, transaction
+from django.test import Client, TestCase, TransactionTestCase
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
@@ -16,9 +20,11 @@ from sfpcl_credit.approvals.models import (
 from sfpcl_credit.approvals.modules.approval_case_selector import (
     select_approval_case_candidates,
 )
+from sfpcl_credit.approvals.modules import approval_actions
 from sfpcl_credit.credit.models import LoanAppraisalNote, RiskAssessment
-from sfpcl_credit.communications.models import Notification
+from sfpcl_credit.communications.models import Communication, Notification
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
+from sfpcl_credit.identity.modules.auth_service import effective_permission_codes
 from sfpcl_credit.members.models import Member
 from sfpcl_credit.tests.api_contracts import (
     assert_available_actions_shape,
@@ -502,6 +508,53 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(self.case.current_status, "pending")
         self.assertEqual(self.case.version, 3)
 
+    def test_partial_action_collection_detail_and_action_share_history_aware_projection(self):
+        action_response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        detail_response = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **self._auth(self.cfo)
+        )
+        collection_response = self.client.get(
+            "/api/v1/approval-cases/", **self._auth(self.cfo)
+        )
+
+        self.assertEqual(action_response.status_code, 200, action_response.json())
+        self.assertEqual(detail_response.status_code, 200, detail_response.json())
+        self.assertEqual(collection_response.status_code, 200, collection_response.json())
+        action_data = action_response.json()["data"]
+        detail_data = detail_response.json()["data"]
+        collection_data = collection_response.json()["data"][0]
+        shared_fields = (
+            "approval_case_id",
+            "current_status",
+            "version",
+            "approval_matrix_rule_id",
+            "approval_matrix_rule_version",
+            "sanction_committee_id",
+            "sanction_committee_version",
+            "required_approvers",
+            "excluded_approvers",
+            "available_actions",
+        )
+        self.assertEqual(
+            {field: action_data[field] for field in shared_fields},
+            {field: detail_data[field] for field in shared_fields},
+        )
+        self.assertEqual(
+            {field: action_data[field] for field in shared_fields},
+            {field: collection_data[field] for field in shared_fields},
+        )
+        acted = next(
+            item for item in collection_data["required_approvers"]
+            if item["user_id"] == str(self.cfo.pk)
+        )
+        self.assertEqual(acted["decision"], "approved")
+        self.assertIsNotNone(acted["acted_at"])
+
     def test_final_joint_approval_creates_source_shaped_sanction_and_completion_evidence(self):
         self.client.post(
             f"/api/v1/approval-cases/{self.case.pk}/approve/",
@@ -573,6 +626,56 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
         self.assertEqual(notification.recipient_team_code, "credit_assessment")
         self.assertEqual(notification.sender_user, self.director)
+        communication = Communication.objects.get(
+            related_entity_type="approval_case", related_entity_id=self.case.pk
+        )
+        self.assertEqual(communication.delivery_status, Communication.DELIVERY_PENDING)
+        self.assertEqual(communication.recipient_party_type, "team")
+        self.assertEqual(communication.recipient_address, "credit_assessment")
+        self.assertEqual(communication.channel, Communication.CHANNEL_EMAIL)
+        self.assertEqual(notification.communication, communication)
+        communication_audit = AuditLog.objects.get(
+            action="communications.communication.created",
+            entity_id=communication.pk,
+        )
+        self.assertNotIn("body_snapshot", communication_audit.new_value_json)
+        self.assertEqual(
+            communication_audit.new_value_json["delivery_status"], "pending"
+        )
+
+    def test_final_action_collection_detail_and_action_share_history_aware_projection(self):
+        self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2}, content_type="application/json", **self._auth(self.cfo),
+        )
+        action_response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3}, content_type="application/json", **self._auth(self.director),
+        )
+        detail_response = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **self._auth(self.director)
+        )
+        collection_response = self.client.get(
+            "/api/v1/approval-cases/", **self._auth(self.director)
+        )
+
+        self.assertEqual(action_response.status_code, 200)
+        action_data = action_response.json()["data"]
+        detail_data = detail_response.json()["data"]
+        collection_data = collection_response.json()["data"][0]
+        shared_fields = (
+            "current_status", "version", "approval_matrix_rule_id",
+            "approval_matrix_rule_version", "sanction_committee_id",
+            "sanction_committee_version", "required_approvers",
+            "excluded_approvers", "available_actions",
+        )
+        expected = {field: action_data[field] for field in shared_fields}
+        self.assertEqual({field: detail_data[field] for field in shared_fields}, expected)
+        self.assertEqual({field: collection_data[field] for field in shared_fields}, expected)
+        self.assertEqual(
+            [item["decision"] for item in collection_data["required_approvers"]],
+            ["approved", "approved"],
+        )
 
     def test_reject_requires_comments_before_any_ledger_write(self):
         auth = self._auth(self.cfo)
@@ -587,6 +690,17 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["error"]["code"], "VALIDATION_ERROR")
         self.assertIn("comments", response.json()["error"]["field_errors"])
+        self.assertEqual(self._action_ledgers(), before)
+
+    def test_reject_missing_comment_is_validation_error_without_writes(self):
+        auth = self._auth(self.cfo)
+        before = self._action_ledgers()
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/reject/",
+            {"version": 2}, content_type="application/json", **auth,
+        )
+        self.assertEqual(response.status_code, 400)
+        assert_error_envelope(self, response.json(), "VALIDATION_ERROR")
         self.assertEqual(self._action_ledgers(), before)
 
     def test_reject_closes_case_and_application_without_sanction(self):
@@ -619,6 +733,36 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(self.note.appraisal_status, "reviewed")
         self.assertFalse(apps.get_model("approvals", "SanctionDecision").objects.exists())
 
+    def test_action_rejects_mismatched_application_transition_without_writes(self):
+        self.application.application_status = LoanApplication.STATUS_APPRAISAL_REVIEWED
+        self.application.save(update_fields=["application_status"])
+        auth = self._auth(self.cfo)
+        before = self._action_ledgers()
+
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2}, content_type="application/json", **auth,
+        )
+
+        self.assertEqual(response.status_code, 409)
+        assert_error_envelope(self, response.json(), "TRANSITION_CONFLICT")
+        self.assertEqual(self._action_ledgers(), before)
+
+    def test_action_rejects_mismatched_appraisal_transition_without_writes(self):
+        self.note.appraisal_status = LoanAppraisalNote.STATUS_REVIEWED
+        self.note.save(update_fields=["appraisal_status"])
+        auth = self._auth(self.cfo)
+        before = self._action_ledgers()
+
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2}, content_type="application/json", **auth,
+        )
+
+        self.assertEqual(response.status_code, 409)
+        assert_error_envelope(self, response.json(), "TRANSITION_CONFLICT")
+        self.assertEqual(self._action_ledgers(), before)
+
     def test_stale_and_duplicate_actions_preserve_the_complete_ledger(self):
         auth = self._auth(self.cfo)
         before = self._action_ledgers()
@@ -643,6 +787,155 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(duplicate.status_code, 409)
         self.assertEqual(duplicate.json()["error"]["code"], "TRANSITION_CONFLICT")
         self.assertEqual(self._action_ledgers(), after_first)
+
+    def test_stale_post_is_independently_zero_write(self):
+        auth = self._auth(self.cfo)
+        before = self._action_ledgers()
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 1}, content_type="application/json", **auth,
+        )
+        self.assertEqual(response.status_code, 409)
+        assert_error_envelope(self, response.json(), "STALE_VERSION")
+        self.assertEqual(self._action_ledgers(), before)
+
+    def test_unassigned_reader_post_is_object_denied_without_writes(self):
+        actor = self._user(
+            "unassigned_reader", "Unassigned Reader", self.read_permission,
+            self.approve_permission,
+        )
+        auth = self._auth(actor)
+        before = self._action_ledgers()
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **auth
+        )
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2}, content_type="application/json", **auth,
+        )
+        self.assertEqual(detail.status_code, 403)
+        self.assertEqual(response.status_code, 403)
+        assert_error_envelope(self, detail.json(), "OBJECT_ACCESS_DENIED")
+        assert_error_envelope(self, response.json(), "OBJECT_ACCESS_DENIED")
+        self.assertEqual(self._action_ledgers(), before)
+
+    def test_contradictory_snapshot_detail_and_post_are_not_found_without_writes(self):
+        self.case.matrix_projection_json = {
+            **self.case.matrix_projection_json,
+            "required_director_count": 2,
+        }
+        self.case.save(update_fields=["matrix_projection_json"])
+        auth = self._auth(self.cfo)
+        before = self._action_ledgers()
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **auth
+        )
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2}, content_type="application/json", **auth,
+        )
+        self.assertEqual(detail.status_code, 404)
+        self.assertEqual(response.status_code, 404)
+        assert_error_envelope(self, detail.json(), "NOT_FOUND")
+        assert_error_envelope(self, response.json(), "NOT_FOUND")
+        self.assertEqual(self._action_ledgers(), before)
+
+    def test_communication_adapter_failure_rolls_back_final_action_and_outcome(self):
+        cfo_response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2}, content_type="application/json", **self._auth(self.cfo),
+        )
+        self.assertEqual(cfo_response.status_code, 200)
+        auth = self._auth(self.director)
+        before = self._action_ledgers()
+
+        with patch(
+            "sfpcl_credit.communications.services.Notification.objects.create",
+            side_effect=RuntimeError("forced notification persistence failure"),
+        ), self.assertRaisesRegex(RuntimeError, "forced notification persistence failure"):
+            self.client.post(
+                f"/api/v1/approval-cases/{self.case.pk}/approve/",
+                {"version": 3}, content_type="application/json", **auth,
+            )
+
+        self.assertEqual(self._action_ledgers(), before)
+
+    def test_acted_actor_post_matches_disabled_detail_reason_without_writes(self):
+        ApprovalAction.objects.create(
+            approval_case=self.case,
+            approver_user=self.cfo,
+            approver_role_code="cfo",
+            decision="approved",
+        )
+        self._assert_disabled_action_post_parity(
+            actor=self.cfo, action_code="approve", action_path="approve",
+            expected_status=409, expected_code="TRANSITION_CONFLICT",
+        )
+
+    def test_excluded_actor_post_matches_disabled_detail_reason_without_writes(self):
+        self.case.excluded_approvers_json = [{"user_id": str(self.cfo.pk)}]
+        self.case.save(update_fields=["excluded_approvers_json"])
+        self._assert_disabled_action_post_parity(
+            actor=self.cfo, action_code="approve", action_path="approve",
+            expected_status=409, expected_code="TRANSITION_CONFLICT",
+        )
+
+    def test_closed_case_post_matches_disabled_detail_reason_without_writes(self):
+        self.case.current_status = ApprovalCase.STATUS_APPROVED
+        self.case.save(update_fields=["current_status"])
+        self._assert_disabled_action_post_parity(
+            actor=self.cfo, action_code="approve", action_path="approve",
+            expected_status=409, expected_code="TRANSITION_CONFLICT",
+        )
+
+    def test_missing_approve_permission_matches_disabled_detail_reason_without_writes(self):
+        RolePermission.objects.filter(
+            role=self.cfo.primary_role, permission=self.approve_permission
+        ).delete()
+        self._assert_disabled_action_post_parity(
+            actor=self.cfo, action_code="approve", action_path="approve",
+            expected_status=403, expected_code="FORBIDDEN",
+        )
+
+    def test_missing_reject_permission_matches_disabled_detail_reason_without_writes(self):
+        RolePermission.objects.filter(
+            role=self.cfo.primary_role, permission=self.reject_permission
+        ).delete()
+        self._assert_disabled_action_post_parity(
+            actor=self.cfo, action_code="reject", action_path="reject",
+            expected_status=403, expected_code="FORBIDDEN",
+        )
+
+    def test_missing_return_permission_matches_disabled_detail_reason_without_writes(self):
+        RolePermission.objects.filter(
+            role=self.cfo.primary_role, permission=self.return_permission
+        ).delete()
+        self._assert_disabled_action_post_parity(
+            actor=self.cfo, action_code="return", action_path="return-for-clarification",
+            expected_status=403, expected_code="FORBIDDEN",
+        )
+
+    def test_return_blank_comment_is_validation_error_without_writes(self):
+        auth = self._auth(self.cfo)
+        before = self._action_ledgers()
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/return-for-clarification/",
+            {"version": 2, "comments": "  "}, content_type="application/json", **auth,
+        )
+        self.assertEqual(response.status_code, 400)
+        assert_error_envelope(self, response.json(), "VALIDATION_ERROR")
+        self.assertEqual(self._action_ledgers(), before)
+
+    def test_return_missing_comment_is_validation_error_without_writes(self):
+        auth = self._auth(self.cfo)
+        before = self._action_ledgers()
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/return-for-clarification/",
+            {"version": 2}, content_type="application/json", **auth,
+        )
+        self.assertEqual(response.status_code, 400)
+        assert_error_envelope(self, response.json(), "VALIDATION_ERROR")
+        self.assertEqual(self._action_ledgers(), before)
 
     def test_permission_and_snapshot_scope_denials_preserve_all_business_ledgers(self):
         outsider = self._user("custom_approver", "Unassigned Approver", self.approve_permission)
@@ -1185,6 +1478,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
             "sanctions": list(apps.get_model("approvals", "SanctionDecision").objects.order_by("pk").values()),
             "audits": list(AuditLog.objects.order_by("pk").values()),
             "workflows": list(WorkflowEvent.objects.order_by("pk").values()),
+            "communications": list(Communication.objects.order_by("pk").values()),
             "notifications": list(Notification.objects.order_by("pk").values()),
         }
 
@@ -1219,6 +1513,31 @@ class ApprovalCaseRoutingApiTests(TestCase):
                 assert_error_envelope(self, denied.json(), "FORBIDDEN")
                 self.assertEqual(self._action_ledgers(), before)
 
+    def _assert_disabled_action_post_parity(
+        self, *, actor, action_code, action_path, expected_status, expected_code
+    ):
+        headers = self._auth(actor)
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **headers
+        )
+        self.assertEqual(detail.status_code, 200, detail.json())
+        action = next(
+            item for item in detail.json()["data"]["available_actions"]
+            if item["action_code"] == action_code
+        )
+        self.assertFalse(action["enabled"])
+        before = self._action_ledgers()
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/{action_path}/",
+            {"version": self.case.version, "comments": "Public denial parity."},
+            content_type="application/json",
+            **headers,
+        )
+        self.assertEqual(response.status_code, expected_status, response.json())
+        assert_error_envelope(self, response.json(), expected_code)
+        self.assertEqual(response.json()["error"]["message"], action["disabled_reason"])
+        self.assertEqual(self._action_ledgers(), before)
+
     @staticmethod
     def _user(role_code, full_name, *permissions):
         role = Role.objects.create(
@@ -1247,6 +1566,112 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         return {"HTTP_AUTHORIZATION": f"Bearer {response.json()['data']['access_token']}"}
+
+
+    def _postgres_different_remaining_approvers_same_version_have_one_serial_winner(self):
+        before = self._race_ledger()
+        results = self._race((self.cfo.pk, self.director.pk), version=2)
+
+        self.assertEqual(sorted(code for code, _ in results), ["STALE_VERSION", "won"])
+        after = self._race_ledger()
+        self.assertEqual(after["case"]["version"], 3)
+        self.assertEqual(after["case"]["current_status"], ApprovalCase.STATUS_PENDING)
+        self.assertEqual(len(after["actions"]), len(before["actions"]) + 1)
+        self.assertEqual(len(after["sanctions"]), len(before["sanctions"]))
+        self.assertEqual(len(after["communications"]), len(before["communications"]))
+        self.assertEqual(len(after["notifications"]), len(before["notifications"]))
+        self._assert_single_attributable_action_delta(before, after)
+
+    def _postgres_final_remaining_approver_duplicate_submission_has_one_serial_winner(self):
+        approval_actions.approve_case(
+            actor=self.cfo,
+            case_id=self.case.pk,
+            payload={"version": 2, "comments": "Seed the final approval race."},
+            actor_permissions=effective_permission_codes(self.cfo),
+            request_meta={"request_id": "race-seed"},
+        )
+        before = self._race_ledger()
+        results = self._race((self.director.pk, self.director.pk), version=3)
+
+        self.assertEqual(sorted(code for code, _ in results), ["STALE_VERSION", "won"])
+        after = self._race_ledger()
+        self.assertEqual(after["case"]["version"], 4)
+        self.assertEqual(after["case"]["current_status"], ApprovalCase.STATUS_APPROVED)
+        self.assertEqual(len(after["actions"]), len(before["actions"]) + 1)
+        self.assertEqual(len(after["sanctions"]), len(before["sanctions"]) + 1)
+        self.assertEqual(len(after["communications"]), len(before["communications"]) + 1)
+        self.assertEqual(len(after["notifications"]), len(before["notifications"]) + 1)
+        self._assert_single_attributable_action_delta(before, after)
+        communication = Communication.objects.get(related_entity_id=self.case.pk)
+        notification = Notification.objects.get(communication=communication)
+        self.assertEqual(communication.delivery_status, "pending")
+        self.assertEqual(notification.recipient_team_code, "credit_assessment")
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="communications.communication.created",
+                entity_id=communication.pk,
+            ).count(),
+            1,
+        )
+
+    def _race(self, actor_ids, *, version):
+        gate = Barrier(2)
+
+        def act(actor_id):
+            close_old_connections()
+            try:
+                actor = User.objects.get(pk=actor_id)
+                gate.wait(timeout=10)
+                result = approval_actions.approve_case(
+                    actor=actor,
+                    case_id=self.case.pk,
+                    payload={"version": version, "comments": "Concurrent approval."},
+                    actor_permissions=effective_permission_codes(actor),
+                    request_meta={"request_id": f"race-{actor_id}"},
+                )
+                return "won", result
+            except approval_actions.ApprovalActionConflict as exc:
+                return exc.code, {"message": exc.message, "status": exc.status}
+            finally:
+                connections["default"].close()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(act, actor_id) for actor_id in actor_ids]
+            return [future.result(timeout=15) for future in futures]
+
+    def _race_ledger(self):
+        return {
+            "case": ApprovalCase.objects.filter(pk=self.case.pk).values().get(),
+            "actions": list(ApprovalAction.objects.filter(approval_case=self.case).values()),
+            "sanctions": list(apps.get_model("approvals", "SanctionDecision").objects.filter(approval_case=self.case).values()),
+            "audits": list(AuditLog.objects.filter(entity_id=self.case.pk, action="approval_case.action_recorded").values()),
+            "workflows": list(WorkflowEvent.objects.filter(entity_id=self.case.pk, workflow_name="sanction_approval").values()),
+            "communications": list(Communication.objects.filter(related_entity_id=self.case.pk).values()),
+            "notifications": list(Notification.objects.filter(related_entity_id=self.case.pk).values()),
+        }
+
+    def _assert_single_attributable_action_delta(self, before, after):
+        before_action_ids = {row["approval_action_id"] for row in before["actions"]}
+        new_actions = [row for row in after["actions"] if row["approval_action_id"] not in before_action_ids]
+        self.assertEqual(len(new_actions), 1)
+        action = new_actions[0]
+        self.assertEqual(action["decision"], "approved")
+        self.assertEqual(action["comments"], "Concurrent approval.")
+        self.assertEqual(
+            ApprovalAction.objects.filter(
+                approval_case=self.case, approver_user_id=action["approver_user_id"]
+            ).count(),
+            1,
+        )
+        self.assertEqual(len(after["audits"]), len(before["audits"]) + 1)
+        self.assertEqual(len(after["workflows"]), len(before["workflows"]) + 1)
+        audit = next(
+            row for row in after["audits"]
+            if row["new_value_json"]["approval_action_id"] == str(action["approval_action_id"])
+        )
+        self.assertEqual(audit["actor_user_id"], action["approver_user_id"])
+        self.assertEqual(audit["new_value_json"]["decision"], "approved")
+        self.assertEqual(audit["new_value_json"]["comments"], "Concurrent approval.")
 
     def _assert_snapshot_is_hidden_without_writes(self, actor):
         headers = self._auth(actor)
@@ -1329,3 +1754,22 @@ class ApprovalCaseRoutingApiTests(TestCase):
             submitted_by_user=self.preparer,
             submission_remarks="Unrouted version-one shell.",
         )
+
+
+@skipUnless(connection.vendor == "postgresql", "Authoritative approval action race requires PostgreSQL.")
+class ApprovalActionConcurrencyTests(TransactionTestCase):
+    reset_sequences = True
+    setUp = ApprovalCaseRoutingApiTests.setUp
+    _permission = staticmethod(ApprovalCaseRoutingApiTests._permission)
+    _user = staticmethod(ApprovalCaseRoutingApiTests._user)
+    _race = ApprovalCaseRoutingApiTests._race
+    _race_ledger = ApprovalCaseRoutingApiTests._race_ledger
+    _assert_single_attributable_action_delta = (
+        ApprovalCaseRoutingApiTests._assert_single_attributable_action_delta
+    )
+    test_different_remaining_approvers_same_version_have_one_serial_winner = (
+        ApprovalCaseRoutingApiTests._postgres_different_remaining_approvers_same_version_have_one_serial_winner
+    )
+    test_final_remaining_approver_duplicate_submission_has_one_serial_winner = (
+        ApprovalCaseRoutingApiTests._postgres_final_remaining_approver_duplicate_submission_has_one_serial_winner
+    )

@@ -9,7 +9,7 @@ from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalAction, ApprovalCase, SanctionDecision
 from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow
-from sfpcl_credit.communications.models import Notification
+from sfpcl_credit.communications import services as communication_services
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.workflows.events import record_workflow_event
 from sfpcl_credit.workflows.guard import TransitionDefinition, evaluate_transition
@@ -76,10 +76,10 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
     if identifiers is None:
         raise ApprovalCase.DoesNotExist
 
-    LoanApplication.objects.select_for_update().get(
+    application = LoanApplication.objects.select_for_update().get(
         pk=identifiers["loan_application_id"]
     )
-    AppraisalWorkflow.lock_submitted_appraisal(
+    note = AppraisalWorkflow.lock_submitted_appraisal(
         appraisal_id=identifiers["loan_appraisal_note_id"]
     )
     case = (
@@ -100,29 +100,82 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
         )
     if case.version != version:
         raise ApprovalActionConflict("Approval case version is stale.", code="STALE_VERSION")
-    try:
-        evaluate_transition(
-            current_state=case.current_status,
-            requested_action=action_code,
-            actor_permissions=actor_permissions,
-            transitions=(_ACTION_SPECS[action_code],),
+    availability = approval_case_engine.approval_case_action_availability(
+        case=case,
+        actor=actor,
+        actor_permissions=actor_permissions,
+        action_code=action_code,
+    )
+    if not availability["enabled"]:
+        missing_permission = (
+            availability["disabled_reason"] == "Required permission is not granted."
         )
-    except Exception as exc:
-        from sfpcl_credit.workflows.guard import InvalidStateTransition, MissingTransitionPermission
+        raise ApprovalActionConflict(
+            availability["disabled_reason"],
+            code="FORBIDDEN" if missing_permission else "TRANSITION_CONFLICT",
+            status=403 if missing_permission else 409,
+        )
 
-        if isinstance(exc, MissingTransitionPermission):
-            raise ApprovalActionConflict(
-                f"You do not have permission to {action_code} this case.",
-                code="FORBIDDEN",
-                status=403,
-            ) from exc
-        if isinstance(exc, InvalidStateTransition):
-            raise ApprovalActionConflict("Approval case is not pending.") from exc
-        raise
-    if not approval_case_engine.is_pending_approval_case_actor(
-        case=case, actor_id=str(actor.pk)
-    ):
-        raise ApprovalActionConflict("You are not a pending approver for this case.")
+    required_ids = {str(item["user_id"]) for item in case.required_approvers_json}
+    approved_ids = {
+        str(item.approver_user_id)
+        for item in ApprovalAction.objects.filter(
+            approval_case=case, decision="approved"
+        )
+    }
+    completes_approval = action_code == "approve" and (
+        approved_ids | {str(actor.pk)}
+    ) == required_ids
+    case_target = {
+        "reject": ApprovalCase.STATUS_REJECTED,
+        "return": ApprovalCase.STATUS_RETURNED,
+    }.get(
+        action_code,
+        (
+            ApprovalCase.STATUS_APPROVED
+            if completes_approval
+            else ApprovalCase.STATUS_PENDING
+        ),
+    )
+    application_target = {
+        "reject": LoanApplication.STATUS_REJECTED_BY_SANCTION,
+        "return": LoanApplication.STATUS_APPRAISAL_REVIEWED,
+    }.get(
+        action_code,
+        (
+            LoanApplication.STATUS_APPROVED_BY_SANCTION
+            if completes_approval
+            else LoanApplication.STATUS_SUBMITTED_TO_SANCTION
+        ),
+    )
+    appraisal_target = (
+        note.STATUS_REVIEWED if action_code == "return"
+        else note.STATUS_SUBMITTED_TO_SANCTION
+    )
+    case_transition = _guard_transition(
+        current_state=case.current_status,
+        expected_state=ApprovalCase.STATUS_PENDING,
+        target_state=case_target,
+        entity_type="approval_case",
+        action_code=action_code,
+        actor_permissions=actor_permissions,
+    )
+    application_transition = _guard_transition(
+        current_state=application.application_status,
+        expected_state=LoanApplication.STATUS_SUBMITTED_TO_SANCTION,
+        target_state=application_target,
+        entity_type="loan_application",
+        action_code=action_code,
+        actor_permissions=actor_permissions,
+    )
+    appraisal_transition = _guard_transition(
+        current_state=note.appraisal_status,
+        expected_state=note.STATUS_SUBMITTED_TO_SANCTION,
+        target_state=appraisal_target,
+        entity_type="loan_appraisal_note",
+        action_code=action_code,
+        actor_permissions=actor_permissions,
+    )
 
     role_code = next(
         item["role_code"]
@@ -139,39 +192,26 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
         ip_address=request_meta.get("ip_address") or None,
         user_agent=request_meta.get("user_agent") or None,
     )
-    required_ids = {
-        str(item["user_id"]) for item in case.required_approvers_json
-    }
-    approved_ids = {
-        str(item.approver_user_id)
-        for item in ApprovalAction.objects.filter(
-            approval_case=case, decision="approved"
-        )
-    }
     previous_status = case.current_status
     decision = None
     if action_code == "reject":
-        case.current_status = ApprovalCase.STATUS_REJECTED
+        case.current_status = case_transition.next_state
         case.reason_for_rejection = comments
         case.closed_at = timezone.now()
-        application = case.loan_application
-        application.application_status = LoanApplication.STATUS_REJECTED_BY_SANCTION
+        application.application_status = application_transition.next_state
         application.save(update_fields=["application_status"])
     elif action_code == "return":
-        case.current_status = ApprovalCase.STATUS_RETURNED
+        case.current_status = case_transition.next_state
         case.closed_at = timezone.now()
-        application = case.loan_application
-        application.application_status = LoanApplication.STATUS_APPRAISAL_REVIEWED
+        application.application_status = application_transition.next_state
         application.save(update_fields=["application_status"])
-        note = case.loan_appraisal_note
-        AppraisalWorkflow.restore_reviewed_state(note)
-    elif approved_ids == required_ids:
-        case.current_status = ApprovalCase.STATUS_APPROVED
+        note.appraisal_status = appraisal_transition.next_state
+        note.save(update_fields=["appraisal_status"])
+    elif completes_approval:
+        case.current_status = case_transition.next_state
         case.closed_at = timezone.now()
-        application = case.loan_application
-        application.application_status = LoanApplication.STATUS_APPROVED_BY_SANCTION
+        application.application_status = application_transition.next_state
         application.save(update_fields=["application_status"])
-        note = case.loan_appraisal_note
         decision = SanctionDecision.objects.create(
             loan_application=application,
             approval_case=case,
@@ -218,18 +258,16 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
         action_code="approval_case.action_recorded",
     )
     if case.current_status != ApprovalCase.STATUS_PENDING:
-        Notification.objects.create(
-            notification_type="approval_case_completed",
-            category="Application",
-            severity=Notification.SEVERITY_INFO,
-            title="Sanction approval completed",
-            message=f"Approval case {case.pk} was {case.current_status}.",
+        communication_services.create_internal_team_communication(
+            sender=actor,
+            team_code="credit_assessment",
             related_entity_type="approval_case",
             related_entity_id=case.pk,
+            subject="Sanction approval completed",
+            body=f"Approval case {case.pk} was {case.current_status}.",
             action_label="Open approval case",
             action_url=f"/sanctions/{case.pk}",
-            sender_user=actor,
-            recipient_team_code="credit_assessment",
+            request_meta=request_meta,
         )
     case = (
         ApprovalCase.objects.select_related(
@@ -246,6 +284,46 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
         "sanction_decision_created": decision is not None,
         "sanction_decision_id": str(decision.pk) if decision else None,
     }
+
+
+def _guard_transition(
+    *, current_state, expected_state, target_state, entity_type, action_code,
+    actor_permissions,
+):
+    permission = _ACTION_SPECS[action_code].required_permission
+    definition = TransitionDefinition(
+        entity_type=entity_type,
+        action_code=action_code,
+        from_states=frozenset({expected_state}),
+        to_state=target_state,
+        required_permission=permission,
+        audit_action=f"{entity_type}.{action_code}",
+        workflow_name="sanction_approval",
+    )
+    try:
+        return evaluate_transition(
+            current_state=current_state,
+            requested_action=action_code,
+            actor_permissions=actor_permissions,
+            transitions=(definition,),
+        )
+    except Exception as exc:
+        from sfpcl_credit.workflows.guard import (
+            InvalidStateTransition,
+            MissingTransitionPermission,
+        )
+
+        if isinstance(exc, MissingTransitionPermission):
+            raise ApprovalActionConflict(
+                f"You do not have permission to {action_code} this case.",
+                code="FORBIDDEN",
+                status=403,
+            ) from exc
+        if isinstance(exc, InvalidStateTransition):
+            raise ApprovalActionConflict(
+                f"{entity_type.replace('_', ' ').title()} is not in the required state."
+            ) from exc
+        raise
 
 
 def _submitted_version(payload):

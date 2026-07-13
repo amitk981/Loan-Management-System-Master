@@ -21,6 +21,7 @@ def select_approval_case_candidates(
         ApprovalCase.objects.select_related(
             "loan_application", "loan_appraisal_note"
         )
+        .prefetch_related("actions")
         .filter(
             version__gte=2,
             approval_matrix_rule_id__isnull=False,
@@ -56,5 +57,5 @@ def select_approval_case_candidates(
         queryset = queryset.filter(
             current_status=ApprovalCase.STATUS_PENDING,
             required_approver_index__user_id=actor.pk,
-        ).prefetch_related("actions")
+        )
     return queryset.order_by("-submitted_at", "-approval_case_id"), persisted_scope_type

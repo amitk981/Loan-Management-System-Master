@@ -1,0 +1,20 @@
+Using existing test database for alias 'default' ('test_sfpcl_credit')...
+Found 2 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, approvals, communications, configurations, contenttypes, credit, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying approvals.0009_sanction_decision_and_case_closure... OK
+  Applying approvals.0010_approvalcasereadscopegrant_and_more... OK
+System check identified no issues (0 silenced).
+test_different_remaining_approvers_same_version_have_one_serial_winner (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalActionConcurrencyTests.test_different_remaining_approvers_same_version_have_one_serial_winner) ... ok
+test_final_remaining_approver_duplicate_submission_has_one_serial_winner (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalActionConcurrencyTests.test_final_remaining_approver_duplicate_submission_has_one_serial_winner) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.859s
+
+OK
+Preserving test database for alias 'default' ('test_sfpcl_credit')...

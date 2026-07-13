@@ -2516,13 +2516,23 @@ comments are mandatory and non-blank for reject/return. The caller must hold the
 permission and remain a pending, unexcluded actor in the coherent immutable case snapshot.
 Permission failure is `403 FORBIDDEN`, missing object scope is `403 OBJECT_ACCESS_DENIED`, stale
 version is `409 STALE_VERSION`, and acted/closed/excluded state is `409 TRANSITION_CONFLICT`.
+The submitted `version` must be a positive JSON integer; booleans, zero, negative values, strings,
+missing values, and unknown request fields return `400 VALIDATION_ERROR` without writes. Approve
+permits omitted/blank comments; reject and return require a non-blank string.
 
 Success returns the §25.5 action identifiers/status/sanction flags merged with the canonical 007C2
-case detail projection. Each action increments case `version`, creates one immutable §15.4 row,
+case detail projection. Collection, detail, and action responses now compose the same history-aware
+projection: route provenance is immutable, while each required approver's `decision`/`acted_at` and
+the caller's `available_actions` reflect the action ledger immediately. Each action increments case `version`, creates one immutable §15.4 row,
 and immediately disables every action for that actor. Partial joint approval remains pending. Final
 approval atomically closes the case, advances the application to `approved_by_sanction_committee`,
 and creates the unique per-application §15.5 sanction decision. Reject advances the application to
 `rejected_by_sanction_committee`; return restores application/appraisal to `appraisal_reviewed`.
-Every successful action writes attributable audit/workflow evidence; each terminal outcome sends
-one in-app notification to the persisted `credit_assessment` team. No register row is created in
-007D (007F/007H own those projections).
+Every successful action writes attributable audit/workflow evidence. Each terminal outcome crosses
+the communication-owned internal adapter in the same transaction, persisting one source §24.2
+`pending` email `Communication` snapshot, one linked in-app notification to the persisted
+`credit_assessment` team, and a metadata-only communication audit. Any adapter persistence failure
+rolls back the action, case/application outcome, sanction, workflow, communication, notification,
+and audits. Application, appraisal, and case source states are re-evaluated through the shared
+transition guard after locking and before mutation. No register row is created in 007D/007D2
+(007F/007H own those projections).

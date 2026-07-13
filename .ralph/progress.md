@@ -5373,3 +5373,28 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_143342_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007D2-approval-action-boundary-and-postgresql-race-closure
+- Summary: Closed approval projection/action parity, guarded owner transitions, complete public
+  denial ledgers, communication-owned Credit Assessment notification persistence, adapter rollback,
+  and authoritative approval-action concurrency.
+- Tests run: retained RED/GREEN tracer bullets; 56 focused approval rows (2 PostgreSQL-only in the
+  SQLite suite); both PostgreSQL races twice; backend 621 tests at 93% coverage; frontend
+  build/typecheck/lint and 208 tests; Django check and migration sync.
+- Evidence saved: `.ralph/runs/2026-07-13_143342_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High
+- Next action: 007D3 returned approval cycle and resubmission closure.
+
+## 2026-07-13 14:59:19 - 2026-07-13_143342_normal_run
+- Agent tool used: codex
+- Slice attempted: 007D2-approval-action-boundary-and-postgresql-race-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_143342_normal_run/.ralph/runs/2026-07-13_143342_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_143342_normal_run/.ralph/runs/2026-07-13_143342_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
