@@ -82,6 +82,20 @@ The Sanction Committee, CS, and auditors read real registers generated from appr
 - Keep `reasons` and `exception_reference.business_reason` as distinct frozen values. Do not
   substitute one for the other or derive either from live application, case, or exception data.
 
+## Run-Ahead Sharpening Review (007H3 delivered contract, 2026-07-13)
+
+- Render only rows and pagination returned by the register endpoint after each actor/filter/page
+  request. The server now removes frozen-invalid cases before filters, `total_count`,
+  `total_pages`, and normalized `page`; the client must not preserve a stale earlier total or add a
+  row recovered from case/detail/decision data.
+- Add a container regression where a server fixture marks one terminal frozen case invalid while a
+  second remains valid: render exactly the valid row, server count `1`, normalized page, and no
+  placeholder indicating the hidden row. A later live-appraisal edit to the valid row must not
+  change its 15 frozen displayed fields.
+- Register metadata remains a read projection only. Even when a row contains case, exception, or
+  meeting ids, do not use them to grant case actions, sanction-decision access, evidence reference,
+  or document download.
+
 ## Out of Scope
 Register file exports (012B/012C), sanction case actions (007D/007I), stamp duty register (008D/011
 compliance views), and borrower MP12 outcome wiring. The source §25.8 endpoint is an internal

@@ -594,30 +594,39 @@ def _amount_inside_projection(amount, matrix):
 
 
 def _loan_limit_provenance_is_complete(case):
+    """Validate approval-owned frozen provenance without consulting live credit rows."""
     provenance = case.loan_limit_provenance_json
     required = (
         "loan_limit_assessment_id",
         "loan_application_id",
+        "final_eligible_loan_amount",
         "exception_required_flag",
         "calculation_rule_version",
         "policy_config_id",
         "policy_name",
         "calculated_at",
     )
-    snapshot = case.loan_appraisal_note.loan_limit_snapshot_json
     condition_requires_exception = bool(case.exception_condition_code)
-    return (
+    complete = (
         isinstance(provenance, dict)
         and all(provenance.get(key) not in (None, "") for key in required)
-        and str(provenance["loan_limit_assessment_id"])
-        == str(case.loan_appraisal_note.loan_limit_assessment_id_snapshot)
         and str(provenance["loan_application_id"]) == str(case.loan_application_id)
         and isinstance(provenance["exception_required_flag"], bool)
         and provenance["exception_required_flag"] == case.exception_required_flag
         and (not provenance["exception_required_flag"] or condition_requires_exception)
-        and isinstance(snapshot, dict)
-        and all(provenance.get(key) == snapshot.get(key) for key in required)
     )
+    if not complete:
+        return False
+    try:
+        final_eligible_amount = Decimal(
+            str(provenance["final_eligible_loan_amount"])
+        )
+        calculated_at = timezone.datetime.fromisoformat(
+            str(provenance["calculated_at"]).replace("Z", "+00:00")
+        )
+    except (InvalidOperation, TypeError, ValueError):
+        return False
+    return final_eligible_amount >= Decimal("0.00") and calculated_at is not None
 
 
 def is_pending_approval_case_actor(*, case, actor_id):

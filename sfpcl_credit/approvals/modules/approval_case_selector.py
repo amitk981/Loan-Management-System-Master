@@ -1,4 +1,4 @@
-"""Database-narrowed candidate selection for approval-case reads."""
+"""Database-narrowed, fully validated selection for approval-case reads."""
 
 from django.db.models import Q
 
@@ -15,7 +15,7 @@ def select_approval_case_candidates(
     assigned_to_me=False,
     actor_permissions=None,
 ):
-    """Return actor-scoped candidates and the persisted scope used to select them."""
+    """Return frozen-valid actor-scoped cases and the persisted selector scope."""
     persisted_scope_type = resolve_persisted_role_scope(actor)
     queryset = (
         ApprovalCase.objects.select_related(
@@ -61,4 +61,22 @@ def select_approval_case_candidates(
             current_status=ApprovalCase.STATUS_PENDING,
             required_approver_index__user_id=actor.pk,
         )
+    # The stored flag and reader index narrow the database scan; neither is authority.
+    # Materialize the canonical frozen-valid/read-scope decision before any caller
+    # computes counts, normalizes pages, applies register filters, or serializes rows.
+    from sfpcl_credit.approvals.modules import approval_case_engine
+
+    scoped_ids = [
+        case.pk
+        for case in queryset.iterator(chunk_size=100)
+        if approval_case_engine.is_routable_approval_case(case)
+        and approval_case_engine.can_read_approval_case(
+            actor=actor,
+            case=case,
+            persisted_scope_type=persisted_scope_type,
+            persisted_scope_resolved=True,
+            actor_permissions=actor_permissions,
+        ).allowed
+    ]
+    queryset = queryset.filter(pk__in=scoped_ids)
     return queryset.order_by("-submitted_at", "-approval_case_id"), persisted_scope_type

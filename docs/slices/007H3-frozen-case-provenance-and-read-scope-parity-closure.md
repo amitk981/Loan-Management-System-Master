@@ -1,7 +1,7 @@
 # Slice 007H3: Frozen Case Provenance and Read-Scope Parity Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers

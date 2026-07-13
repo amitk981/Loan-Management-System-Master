@@ -124,6 +124,19 @@ Queue, case detail (pending/partially approved/approved/rejected/returned), exce
   selected cycle's ids, version, provenance, meeting scope, and actions must stay isolated while
   navigating between them.
 
+## Run-Ahead Sharpening Review (007H3 delivered contract, 2026-07-13)
+
+- Treat a returned/terminal cycle returned by §25.3/§25.4 as self-contained. Its
+  `loan_limit_provenance`, `review_facts`, authority, attribution, and disabled actions remain
+  renderable after any later appraisal policy/correction; do not issue a live credit request to
+  validate or replace those fields.
+- Container-test old/new navigation with distinct `review_facts.borrowing_history`, cycle ids, and
+  versions. Switching rows must never retain cycle 2 facts/actions on cycle 1 or recompute either
+  cycle's queue membership.
+- Preserve the server's nondisclosure states independently: malformed/incoherent cases do not enter
+  list totals and detail/action return `NOT_FOUND`; an unrelated actor remains
+  `OBJECT_ACCESS_DENIED`. Do not recover either case from sanction-decision or register endpoints.
+
 ## Risk Level
 Medium
 

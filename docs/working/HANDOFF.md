@@ -1,38 +1,36 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_222951_architecture_review
+2026-07-13_225742_normal_run
 
 ## Current Status
 
-The architecture review of 007F2, CR-004, 007G2, and 007H2 is complete. Production code was not
-changed. Exception routing, General Meeting current/frozen evidence, document attribution, sanction
-generation, and object-scoped decision/register reads are substantive, but one High frozen-history
-defect remains: canonical case validity still compares frozen case provenance with the mutable live
-appraisal snapshot.
+007H3 is complete. Approval-case validity now checks the internally complete frozen loan-limit
+provenance only; it never compares an existing cycle with the mutable live appraisal snapshot or
+assessment-id field. Credit-owned enrichment remains the single point that validates the locked
+appraisal/source before the approval owner freezes provenance and review facts.
 
-Two public review probes changed only the live appraisal policy name. Pending case detail changed
-from 200 to 404 while its stored coherence/index remained unchanged. After terminal approval, case
-detail still returned 404 while the same actor's sanction decision and Credit Sanction Register
-returned 200/one row. `007H3-frozen-case-provenance-and-read-scope-parity-closure` is queued and
-`007I` now depends on it.
+The explicit coherence/reader projection now narrows database candidates only. Every candidate
+crosses the same frozen-validity and actor-scope decision before case/register filters, counts,
+page normalization, or serialization. Pending detail/queue/actions and terminal
+detail/decision/register reads remain unchanged after a live appraisal policy edit. A malformed
+frozen terminal case with a stale true flag/index fails closed at all four boundaries with zero
+count leakage or action writes. Returned cycle 1 retains its original provenance/review facts while
+corrected cycle 2 carries its independently frozen facts.
 
-The independent review also noted that CR-004's mandatory hosted staging/PR green criterion is not
-retained in repository evidence. Its local repair is substantive, but the owner/orchestrator must
-confirm the external check before promotion. A-085 remains the explicit source-silent sensitivity
-decision; no narrower compliance matrix was invented. 007J no longer proposes wiring borrower
-MP12 to the internal sanction-decision endpoint; A-089 records the safe boundary.
+No signal, cross-table model-save side effect, schema change, dependency, or frontend production
+change was introduced. 007I and 007J were sharpened with exact old/new-cycle and pre-count
+nondisclosure container regressions. The prior CR-004 hosted-CI evidence caveat remains an
+owner/orchestrator promotion check; it is unrelated to this slice.
 
 ## Validation
 
-Independent Standards and Spec reviews, production/test hunk inspection, retained slice evidence,
-functional IDs M05-FR-003/006/009/012, context truth, and Blocked-slice state were checked. Frontend
-build/typecheck/lint and all 208 tests pass. Backend check/migration sync and all 677 tests pass with
+Retained RED/GREEN public probes and all 106 approval-routing tests pass. Frontend
+build/typecheck/lint and all 208 tests pass. Backend check/migration sync and all 679 tests pass with
 19 expected PostgreSQL-only SQLite skips; coverage is 93% against the 85% floor. Queue/state/path
 checks and final Ralph artifact validation remain for the orchestrator.
 
 ## Next Run
 
-Run `007H3-frozen-case-provenance-and-read-scope-parity-closure`, then
-`007I-sanction-workbench-ui`. Do not start 007I until old/new cycle reads and
-detail/action/decision/register scope parity pass through frozen case facts only.
+Run `007I-sanction-workbench-ui`, consuming only the server-frozen cycle projection and the exact
+pre-count scope semantics documented by 007H3. Then run 007J for register/configuration wiring.

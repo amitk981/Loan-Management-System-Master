@@ -2475,9 +2475,10 @@ linkage, enrichment, and actions/abstention invoke it atomically; an ordinary ap
 appraisal save has no hidden cross-table side effect. A later live appraisal mutation cannot rewrite
 the coherence or reader index of a frozen historical cycle. The reader projection contains only
 original routed actors, current effective replacements, and actors with an immutable action. It
-permits exact database count and `LIMIT/OFFSET` before collection serialization; detail and action
-requests still execute the full canonical snapshot-coherence check and never trust the projection
-as action authority.
+narrows the database scan, but the approval-owned frozen-validity and actor-scope decision runs
+over every narrowed candidate before collection/register filters, counts, page normalization,
+`LIMIT/OFFSET`, or serialization. Detail, action, sanction-decision, and register reads execute the
+same decision and never trust the projection as read or action authority.
 
 Detail returns stored authority/provenance (`approval_matrix_rule_id` and version,
 `sanction_committee_id` and version, `decision_date`, ordered required/excluded approvers,
@@ -2499,13 +2500,17 @@ pre-007D3 rows are deterministically backfilled from their owning records during
 Changing current matrix/committee rows cannot change queue membership, stored provenance, or
 action assignment for an existing case.
 
-Routability is one approval-owned validation contract shared by list, detail, and later action
+Routability is one approval-owned validation contract shared by list, detail, action,
+sanction-decision, and register
 seams. Case/application/type/amount/decision/exception facts must agree with the stored matrix;
 rule and committee ids, versions, and dates must match; the snapshot must contain exactly the
 stored CFO and required distinct Directors with unique ids; required roles/director count and
 joint/register facts must be complete; and the loan-limit assessment/application/exception/policy
-provenance must equal the reviewed credit snapshot. Invalid or contradictory snapshots are hidden
-and non-actionable without writes; live rule, committee, or user membership is never queried to
+provenance must be internally complete. The credit-owned enrichment interface validates the locked
+appraisal and loan-limit source once, then freezes the complete provenance and `review_facts` on
+the case. Existing-cycle validation never compares those facts with the mutable live appraisal or
+a later revision. Invalid or contradictory frozen snapshots are hidden and non-actionable without
+writes or count leakage; live appraisal, rule, committee, or user membership is never queried to
 repair them.
 
 The §25.2 enrichment success projection now includes source-required `current_status`. Enrichment,
@@ -2809,6 +2814,14 @@ permission does not become global object authority and grants neither case actio
 decision permission, document-reference authority, nor document download. The selector—not
 `routing_snapshot_is_coherent`, register permission, Exception Register presence, or evidence
 metadata—is the object-authority source.
+
+A later direct appraisal save or public return/correction/re-review changes only the new credit
+owner state. It cannot hide, rewrite, or reattribute an earlier enriched cycle. Pending case
+detail/queue/actions, returned-cycle history, terminal case detail, the immutable sanction
+decision, and the generated register row continue to use that cycle's byte-for-byte
+`loan_limit_provenance` and `review_facts`. A new approval cycle freezes its newly reviewed facts
+independently. Conversely, a malformed frozen case is removed before every count/page and returns
+nondisclosing detail/action/decision results even when its stale projection flag/index remains true.
 
 Every approved or rejected terminal case creates exactly one immutable
 `credit_sanction_register_entries` row in the locked approval action transaction. Approved rows

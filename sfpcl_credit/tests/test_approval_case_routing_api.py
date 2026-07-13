@@ -229,6 +229,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
             loan_limit_provenance_json={
                 "loan_limit_assessment_id": str(self.note.loan_limit_assessment_id_snapshot),
                 "loan_application_id": str(self.application.pk),
+                "final_eligible_loan_amount": "500000.00",
                 "exception_required_flag": False,
                 "calculation_rule_version": "limit-v7",
                 "policy_config_id": "30000000-0000-0000-0000-000000000003",
@@ -821,7 +822,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
             projection_before,
         )
 
-    def test_plain_appraisal_save_does_not_mutate_frozen_case_projection(self):
+    def test_live_appraisal_policy_change_preserves_pending_case_reads_and_action(self):
         projection_before = list(
             ApprovalCaseRequiredApprover.objects.filter(
                 approval_case=self.case
@@ -829,14 +830,47 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
         self.case.refresh_from_db()
         self.assertTrue(self.case.routing_snapshot_is_coherent)
+        frozen_provenance = dict(self.case.loan_limit_provenance_json)
+        frozen_appraisal_facts = dict(self.case.appraisal_facts_json)
+        headers = self._auth(self.cfo)
+        detail_before = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **headers
+        )
+        queue_before = self.client.get(
+            "/api/v1/approval-cases/?assigned_to_me=true", **headers
+        )
+        self.assertEqual(detail_before.status_code, 200, detail_before.json())
+        self.assertEqual(queue_before.json()["pagination"]["total_count"], 1)
         snapshot = dict(self.note.loan_limit_snapshot_json)
         snapshot["policy_name"] = "Later live policy must not rewrite this cycle"
         self.note.loan_limit_snapshot_json = snapshot
 
         self.note.save(update_fields=["loan_limit_snapshot_json"])
 
+        detail_after = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **headers
+        )
+        queue_after = self.client.get(
+            "/api/v1/approval-cases/?assigned_to_me=true", **headers
+        )
+        self.assertEqual(detail_after.status_code, 200, detail_after.json())
+        self.assertEqual(detail_after.json()["data"], detail_before.json()["data"])
+        self.assertEqual(queue_after.json()["data"], queue_before.json()["data"])
+        self.assertEqual(
+            queue_after.json()["pagination"], queue_before.json()["pagination"]
+        )
+        approved = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2},
+            content_type="application/json",
+            **headers,
+        )
+        self.assertEqual(approved.status_code, 200, approved.json())
+        self.assertEqual(approved.json()["data"]["decision"], "approved")
         self.case.refresh_from_db()
         self.assertTrue(self.case.routing_snapshot_is_coherent)
+        self.assertEqual(self.case.loan_limit_provenance_json, frozen_provenance)
+        self.assertEqual(self.case.appraisal_facts_json, frozen_appraisal_facts)
         self.assertEqual(
             list(
                 ApprovalCaseRequiredApprover.objects.filter(
@@ -1189,10 +1223,16 @@ class ApprovalCaseRoutingApiTests(TestCase):
             for query in expanded_queries.captured_queries
             if 'FROM "approval_cases"' in query["sql"]
         ]
-        self.assertEqual(len(case_queries), 2)
+        self.assertEqual(len(case_queries), 3)
         paginated_query = next(query for query in case_queries if " LIMIT " in query)
-        count_query = next(query for query in case_queries if " LIMIT " not in query)
+        count_query = next(query for query in case_queries if "COUNT(" in query)
+        validation_query = next(
+            query
+            for query in case_queries
+            if " LIMIT " not in query and "COUNT(" not in query
+        )
         self.assertIn("COUNT(", count_query)
+        self.assertIn('"routing_snapshot_is_coherent"', validation_query)
         self.assertIn(
             '"approval_cases"."approval_type" = \'sanction\'', paginated_query
         )
@@ -2536,6 +2576,129 @@ class ApprovalCaseRoutingApiTests(TestCase):
                 self.assertEqual(detail.status_code, 403, detail.json())
                 assert_error_envelope(self, detail.json(), "FORBIDDEN")
 
+    def test_malformed_frozen_terminal_case_fails_closed_at_every_read_boundary(self):
+        sanction_read = self._permission("approvals.sanction.read")
+        register_read = self._permission("approvals.sanction_register.read")
+        for role in (self.cfo.primary_role, self.director.primary_role):
+            RolePermission.objects.create(role=role, permission=sanction_read)
+            RolePermission.objects.create(role=role, permission=register_read)
+        cfo_headers = self._auth(self.cfo)
+        first = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2},
+            content_type="application/json",
+            **cfo_headers,
+        )
+        final = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3},
+            content_type="application/json",
+            **self._auth(self.director),
+        )
+        self.assertEqual(first.status_code, 200, first.json())
+        self.assertEqual(final.status_code, 200, final.json())
+        self.case.refresh_from_db()
+        self.assertTrue(self.case.routing_snapshot_is_coherent)
+        self.assertTrue(
+            ApprovalCaseRequiredApprover.objects.filter(
+                approval_case=self.case, user_id=self.cfo.pk
+            ).exists()
+        )
+
+        malformed = dict(self.case.loan_limit_provenance_json)
+        malformed["policy_name"] = ""
+        self.case.loan_limit_provenance_json = malformed
+        self.case.save(update_fields=["loan_limit_provenance_json"])
+        ledgers_before = self._action_ledgers()
+
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **cfo_headers
+        )
+        collection = self.client.get("/api/v1/approval-cases/", **cfo_headers)
+        action = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": self.case.version},
+            content_type="application/json",
+            **cfo_headers,
+        )
+        decision = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/sanction-decision/",
+            **cfo_headers,
+        )
+        register = self.client.get(
+            "/api/v1/credit-sanction-register/?decision=sanctioned&page=7&page_size=1",
+            **cfo_headers,
+        )
+
+        self.assertEqual(detail.status_code, 404, detail.json())
+        self.assertEqual(action.status_code, 404, action.json())
+        self.assertEqual(collection.json()["data"], [])
+        self.assertEqual(collection.json()["pagination"]["total_count"], 0)
+        self.assertEqual(decision.status_code, 403, decision.json())
+        assert_error_envelope(self, decision.json(), "OBJECT_ACCESS_DENIED")
+        self.assertEqual(register.status_code, 200, register.json())
+        self.assertEqual(register.json()["data"], [])
+        self.assertEqual(register.json()["pagination"]["total_count"], 0)
+        self.assertEqual(register.json()["pagination"]["total_pages"], 1)
+        self.assertEqual(register.json()["pagination"]["page"], 1)
+        self.assertEqual(self._action_ledgers(), ledgers_before)
+
+    def test_live_appraisal_change_preserves_terminal_detail_decision_and_register(self):
+        sanction_read = self._permission("approvals.sanction.read")
+        register_read = self._permission("approvals.sanction_register.read")
+        for role in (self.cfo.primary_role, self.director.primary_role):
+            RolePermission.objects.create(role=role, permission=sanction_read)
+            RolePermission.objects.create(role=role, permission=register_read)
+        self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        final = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3},
+            content_type="application/json",
+            **self._auth(self.director),
+        )
+        self.assertEqual(final.status_code, 200, final.json())
+        headers = self._auth(self.cfo)
+        detail_before = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **headers
+        ).json()["data"]
+        decision_before = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/sanction-decision/",
+            **headers,
+        ).json()["data"]
+        register_before = self.client.get(
+            "/api/v1/credit-sanction-register/", **headers
+        ).json()
+
+        live_snapshot = dict(self.note.loan_limit_snapshot_json)
+        live_snapshot["policy_name"] = "Policy amended after terminal decision"
+        self.note.loan_limit_snapshot_json = live_snapshot
+        self.note.save(update_fields=["loan_limit_snapshot_json"])
+
+        detail_after = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **headers
+        )
+        decision_after = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/sanction-decision/",
+            **headers,
+        )
+        register_after = self.client.get(
+            "/api/v1/credit-sanction-register/", **headers
+        )
+        self.assertEqual(detail_after.status_code, 200, detail_after.json())
+        self.assertEqual(decision_after.status_code, 200, decision_after.json())
+        self.assertEqual(register_after.status_code, 200, register_after.json())
+        self.assertEqual(detail_after.json()["data"], detail_before)
+        self.assertEqual(decision_after.json()["data"], decision_before)
+        self.assertEqual(register_after.json()["data"], register_before["data"])
+        self.assertEqual(
+            register_after.json()["pagination"], register_before["pagination"]
+        )
+
     def test_rejected_and_returned_cycles_do_not_leak_decision_or_register_existence(self):
         sanction_read = self._permission("approvals.sanction.read")
         register_read = self._permission("approvals.sanction_register.read")
@@ -2970,6 +3133,15 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(entry.closed_at, self.case.closed_at)
 
     def test_return_correction_fresh_review_creates_immutable_second_cycle(self):
+        self.note.refresh_from_db()
+        self.case.refresh_from_db()
+        self.case.appraisal_facts_json = approval_case_engine.serialize_case_review_facts(
+            self.case
+        )
+        self.case.save(update_fields=["appraisal_facts_json"])
+        refresh_approval_case_projection(self.case)
+        cycle_one_provenance = dict(self.case.loan_limit_provenance_json)
+        cycle_one_appraisal_facts = dict(self.case.appraisal_facts_json)
         returned = self.client.post(
             f"/api/v1/approval-cases/{self.case.pk}/return-for-clarification/",
             {"version": 2, "comments": "Clarify crop plan evidence."},
@@ -3064,6 +3236,14 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
         self.assertEqual(returned_history.status_code, 200, returned_history.json())
         self.assertEqual(returned_history.json()["data"]["cycle_number"], 1)
+        self.assertEqual(
+            returned_history.json()["data"]["loan_limit_provenance"],
+            cycle_one_provenance,
+        )
+        self.assertEqual(
+            returned_history.json()["data"]["review_facts"],
+            cycle_one_appraisal_facts,
+        )
         self.assertTrue(
             all(
                 not action["enabled"]
@@ -3072,6 +3252,13 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
         self.assertEqual(
             [item["cycle_number"] for item in current_queue.json()["data"]], [2]
+        )
+        self.assertEqual(
+            current_queue.json()["data"][0]["review_facts"]["borrowing_history"],
+            "Corrected crop plan and borrowing history.",
+        )
+        self.assertNotEqual(
+            current_queue.json()["data"][0]["review_facts"], cycle_one_appraisal_facts
         )
         company_secretary = self._user(
             "company_secretary", "Cycle-history Company Secretary", self.read_permission
@@ -3984,6 +4171,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
         current_provenance = {
             "loan_limit_assessment_id": str(shell.loan_appraisal_note.loan_limit_assessment_id_snapshot),
             "loan_application_id": str(shell.loan_application_id),
+            "final_eligible_loan_amount": "500000.00",
             "exception_required_flag": False,
             "calculation_rule_version": "current-limit-v2",
             "policy_config_id": "60000000-0000-0000-0000-000000000006",

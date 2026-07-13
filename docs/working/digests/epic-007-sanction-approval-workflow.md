@@ -1,5 +1,21 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007H3 Frozen Case Provenance and Read-Scope Parity Closure
+
+- Credit-owned enrichment remains the only point that validates the locked appraisal and complete
+  loan-limit source. The approval case freezes all required provenance plus `review_facts`; canonical
+  validity no longer compares an existing cycle with the mutable live appraisal snapshot or its
+  assessment-id field.
+- The explicit coherence/reader projection is database narrowing only. Every narrowed candidate now
+  crosses the same approval-owned frozen-validity and actor-scope decision before case/register
+  filters, counts, page normalization, or serialization. Detail, action, sanction decision, and
+  Credit Sanction Register therefore agree even when a stale true projection/index survives a
+  direct malformed save.
+- Direct live appraisal edits leave pending reads/actions and terminal detail/decision/register
+  responses unchanged. Return -> correction -> fresh review preserves cycle 1 provenance and review
+  facts byte-for-byte while cycle 2 exposes only its newly frozen corrected facts. No model-save
+  signal or cross-table side effect was restored.
+
 ## Architecture Review 2026-07-13 22:42 - Frozen Provenance and Read Parity
 
 - 007F2 removed the appraisal save signal, but canonical case validity still compares frozen

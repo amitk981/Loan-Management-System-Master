@@ -5756,3 +5756,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_225742_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007H3-frozen-case-provenance-and-read-scope-parity-closure
+- Summary: Removed mutable live-appraisal comparisons from canonical frozen case validity and
+  applied frozen validity plus actor scope to every database-narrowed candidate before case/register
+  counts, pagination, decision lookup, and serialization. Added focused pending, terminal,
+  malformed-snapshot, and returned/new-cycle public regressions.
+- Tests run: retained RED/GREEN probes; all 106 approval-routing tests; related approval suites;
+  frontend build/typecheck/lint and 208 tests; backend check/migration sync and all 679 tests with 19
+  expected SQLite skips at 93% coverage.
+- Evidence saved: `.ralph/runs/2026-07-13_225742_normal_run/evidence/`
+- Result: Success
+- Risk level: High
+- Next action: Independent orchestrator validation/commit/merge/push, then run 007I.
+
+## 2026-07-13 23:19:55 - 2026-07-13_225742_normal_run
+- Agent tool used: codex
+- Slice attempted: 007H3-frozen-case-provenance-and-read-scope-parity-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_225742_normal_run/.ralph/runs/2026-07-13_225742_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_225742_normal_run/.ralph/runs/2026-07-13_225742_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
