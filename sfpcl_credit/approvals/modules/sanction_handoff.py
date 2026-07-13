@@ -36,7 +36,7 @@ class SanctionHandoffResult:
 
 
 class SanctionHandoffModule:
-    """Own the unique pending case and its canonical public projection."""
+    """Own immutable numbered sanction cycles and their public projection."""
 
     @transaction.atomic
     def submit_reviewed_appraisal(
@@ -56,18 +56,52 @@ class SanctionHandoffModule:
         )
         application = prepared.application
         appraisal_note = prepared.appraisal_note
-        if (
+        prior_cases = list(
             ApprovalCase.objects.select_for_update(of=("self",))
             .filter(loan_application=application)
-            .exists()
-        ):
-            raise DomainInvalidStateError(
-                "The appraisal has already been submitted for sanction."
-            )
+            .order_by("cycle_number", "approval_case_id")
+        )
+        previous_case = prior_cases[-1] if prior_cases else None
+        if previous_case is not None:
+            if previous_case.current_status != ApprovalCase.STATUS_RETURNED:
+                raise DomainInvalidStateError(
+                    "Only a returned approval cycle can be resubmitted."
+                )
+            corrections = [
+                audit
+                for audit in AuditLog.objects.filter(
+                        action="appraisal.updated",
+                        entity_type="loan_appraisal_note",
+                        entity_id=appraisal_note.pk,
+                        created_at__gt=previous_case.closed_at,
+                    ).order_by("-created_at", "-audit_log_id")
+                if audit.new_value_json.get("changed_fields")
+            ]
+            if not corrections:
+                raise DomainInvalidStateError(
+                    "A returned appraisal must be corrected before resubmission."
+                )
+            latest_correction = corrections[0]
+            if (
+                previous_case.closed_at is None
+                or prepared.latest_review.decided_at <= latest_correction.created_at
+            ):
+                raise DomainInvalidStateError(
+                    "A fresh Credit Manager review is required before resubmission."
+                )
+        cycle_number = previous_case.cycle_number + 1 if previous_case else 1
+        appraisal_revision = (
+            previous_case.appraisal_revision + len(corrections)
+            if previous_case
+            else 1
+        )
         now = timezone.now()
         case = ApprovalCase.objects.create(
             loan_application=application,
             loan_appraisal_note=appraisal_note,
+            appraisal_review_decision=prepared.latest_review,
+            appraisal_revision=appraisal_revision,
+            cycle_number=cycle_number,
             exception_required_flag=prepared.exception_required_flag,
             submission_remarks=payload["remarks"].strip(),
             submitted_by_user=actor,
@@ -95,6 +129,7 @@ class SanctionHandoffModule:
                 "application_status": application.application_status,
                 "appraisal_status": appraisal_note.appraisal_status,
                 "submission_status": case.current_status,
+                "cycle_number": case.cycle_number,
                 "exception_required_flag": prepared.exception_required_flag,
                 "submitted_by_user_id": str(actor.pk),
                 "submitted_at": timezone.localtime(now).isoformat(),
@@ -144,14 +179,16 @@ class SanctionHandoffModule:
                 "loan_appraisal_note",
                 "submitted_by_user",
             )
-            .filter(loan_application=application)
+            .filter(
+                loan_application=application,
+                current_status=ApprovalCase.STATUS_PENDING,
+            )
+            .order_by("-cycle_number")
             .first()
         )
         if case is None:
             raise DomainNotFound("Pending sanction case was not found.")
-        latest_review = case.loan_appraisal_note.review_decisions.order_by(
-            "-decided_at", "-appraisal_review_decision_id"
-        ).first()
+        latest_review = case.appraisal_review_decision
         return SanctionHandoffResult(
             snapshot=self.serialize(case, latest_review)
         )
@@ -180,6 +217,7 @@ class SanctionHandoffModule:
             ApprovalCase.objects.select_for_update(of=("self",))
             .select_related("loan_appraisal_note", "workflow_event")
             .filter(loan_application=application)
+            .order_by("-cycle_number")
             .first()
         )
         if case is None:
@@ -250,6 +288,9 @@ class SanctionHandoffModule:
         case.matrix_projection_json = matrix_projection
         case.committee_projection_json = committee_projection
         case.loan_limit_provenance_json = facts.loan_limit_provenance
+        case.appraisal_facts_json = approval_case_engine.serialize_case_review_facts(
+            case
+        )
         case.decision_date = facts.decision_date
         case.version += 1
         case.save(update_fields=[
@@ -259,7 +300,7 @@ class SanctionHandoffModule:
             "related_entity_type", "related_entity_id", "reason_for_approval",
             "exception_condition_code", "exception_reason", "matrix_projection_json",
             "committee_projection_json", "loan_limit_provenance_json", "decision_date",
-            "version",
+            "appraisal_facts_json", "version",
         ])
         request_meta = request_meta or {}
         AuditLog.objects.create(
@@ -363,10 +404,13 @@ class SanctionHandoffModule:
     def serialize(case, latest_review_decision):
         snapshot = {
             "approval_case_id": str(case.pk),
+            "cycle_number": case.cycle_number,
             "loan_application_id": str(case.loan_application_id),
             "loan_appraisal_note_id": str(case.loan_appraisal_note_id),
             "appraisal_review_decision_id": (
-                str(latest_review_decision.pk) if latest_review_decision else None
+                str(case.appraisal_review_decision_id)
+                if case.appraisal_review_decision_id
+                else (str(latest_review_decision.pk) if latest_review_decision else None)
             ),
             "workflow_event_id": str(case.workflow_event_id) if case.workflow_event_id else None,
             "application_status": case.loan_application.application_status,

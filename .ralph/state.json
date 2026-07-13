@@ -165,14 +165,15 @@
     "007C2-approval-case-read-scope-and-snapshot-contract-closure",
     "007D-approval-action-api-approve-reject-return",
     "007C3-approval-case-source-read-scope-closure",
-    "007D2-approval-action-boundary-and-postgresql-race-closure"
+    "007D2-approval-action-boundary-and-postgresql-race-closure",
+    "007D3-returned-approval-cycle-and-resubmission-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "6c6a4da",
-  "last_run_id": "2026-07-13_143342_normal_run",
+  "last_run_id": "2026-07-13_155025_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 2,
+  "slices_completed_since_architecture_review": 3,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

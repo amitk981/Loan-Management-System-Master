@@ -1,0 +1,22 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_return_correction_fresh_review_creates_immutable_second_cycle (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_return_correction_fresh_review_creates_immutable_second_cycle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_145943_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 767, in test_return_correction_fresh_review_creates_immutable_second_cycle
+    AppraisalWorkflow().create_or_update(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_145943_normal_run/sfpcl_credit/credit/modules/appraisal_workflow.py", line 304, in create_or_update
+    raise CreditModuleInvalidStateError(transition.reason)
+sfpcl_credit.domain_errors.DomainInvalidStateError: Only draft appraisal notes can be updated.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.030s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

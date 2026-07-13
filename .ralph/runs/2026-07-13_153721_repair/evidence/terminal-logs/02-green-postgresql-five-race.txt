@@ -1,0 +1,19 @@
+Command:
+SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_repair_2026_07_13_153721 /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2
+
+Working directory: sfpcl_credit/
+
+Found 5 test(s).
+System check identified no issues (0 silenced).
+test_competing_valid_and_invalid_calculations_preserve_valid_snapshot ... ok
+test_competing_valid_reruns_serialize_complete_snapshots_and_evidence ... ok
+test_duplicate_terminal_reviews_append_one_complete_decision_and_no_loser_evidence ... ok
+test_rejected_review_serializes_before_stale_draft_patch_without_deadlock ... ok
+test_concurrent_returned_cycle_resubmissions_create_one_cycle_two_ledger ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 5.109s
+
+OK
+Destroying test database for alias 'default' ('test_sfpcl_credit_repair_2026_07_13_153721')...
+Exit code: 0

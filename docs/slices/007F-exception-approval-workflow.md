@@ -49,6 +49,18 @@ Above-limit or policy-exception lending is possible only through the stricter au
   evidence must therefore reference the persisted action/case outcome and must not claim a sanction
   or completion artefact absent from the 007D result.
 
+## Run-Ahead Sharpening Review (007D3, 2026-07-13)
+
+- Exception-register identity is case/cycle-specific: enforce at most one entry per approval case,
+  expose the linked case `cycle_number`, and never reuse or rewrite a returned cycle's entry when a
+  corrected appraisal creates cycle N+1.
+- Recompute exception routing from cycle N+1's frozen loan-limit/appraisal facts during enrichment.
+  A prior returned cycle's exception condition, reason, register status, actions, and evidence are
+  immutable history and cannot force or satisfy the later cycle.
+- Keep the application-unique sanction decision linked only to the finally approved latest cycle;
+  register projections may show multiple historical cycle rows but must make the cycle/case linkage
+  unambiguous and preserve object scope before pagination.
+
 ## Out of Scope
 Loan-limit calculation (006C/006D), general-meeting evidence (007G), register UI (007J), waiver workflows beyond vocabulary.
 

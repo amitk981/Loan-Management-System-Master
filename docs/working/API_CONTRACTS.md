@@ -2474,7 +2474,8 @@ Detail returns stored authority/provenance (`approval_matrix_rule_id` and versio
 matrix/committee/loan-limit snapshots, and case `version`). Per-approver `decision`/`acted_at` are
 read from the immutable source §15.4 `approval_actions` ledger; 007C creates no action records.
 
-The nested `review_facts` object is a read-through projection, not approval-case storage:
+The nested `review_facts` object is frozen into each enriched approval cycle (007D3). Legacy
+pre-007D3 rows are deterministically backfilled from their owning records during migration:
 
 - `eligibility` and eligible amount come from the appraisal-owned frozen eligibility/loan-limit
   snapshots.
@@ -2527,7 +2528,8 @@ the caller's `available_actions` reflect the action ledger immediately. Each act
 and immediately disables every action for that actor. Partial joint approval remains pending. Final
 approval atomically closes the case, advances the application to `approved_by_sanction_committee`,
 and creates the unique per-application §15.5 sanction decision. Reject advances the application to
-`rejected_by_sanction_committee`; return restores application/appraisal to `appraisal_reviewed`.
+`rejected_by_sanction_committee`; return restores the application to `appraisal_reviewed` and the
+appraisal to editable `draft` so clarification can be supplied.
 Every successful action writes attributable audit/workflow evidence. Each terminal outcome crosses
 the communication-owned internal adapter in the same transaction, persisting one source §24.2
 `pending` email `Communication` snapshot, one linked in-app notification to the persisted
@@ -2536,3 +2538,31 @@ rolls back the action, case/application outcome, sanction, workflow, communicati
 and audits. Application, appraisal, and case source states are re-evaluated through the shared
 transition guard after locking and before mutation. No register row is created in 007D/007D2
 (007F/007H own those projections).
+
+# Returned approval cycles and resubmission (007D3)
+
+Every sanction approval case now carries positive `cycle_number`, immutable
+`appraisal_review_decision_id`/`appraisal_revision`, and frozen `review_facts`. The database enforces
+unique `(loan_application, cycle_number)` and at most one pending cycle per application. Existing
+cases migrate to cycle 1; collection, detail, submission, enrichment, and action success projections
+all expose `cycle_number`.
+
+A returned case is closed history and never becomes assigned or actionable again. Its case,
+approver/action snapshot, frozen appraisal/configuration facts, audit/workflow, and communication
+evidence remain attached to that exact cycle. The maker may PATCH the returned draft through the
+existing appraisal boundary; only a non-empty `appraisal.updated` changed-field ledger after the
+return counts as correction. A no-op PATCH does not create revision authority.
+
+The existing `POST /api/v1/loan-applications/{loan_application_id}/submit-to-sanction-committee/`
+boundary creates cycle N+1 only when the latest prior cycle is `returned_for_clarification`, the
+appraisal has a later attributable correction ledger, and the latest immutable Credit Manager
+`reviewed` decision follows that correction. Pending, approved, rejected,
+uncorrected, stale-review, or otherwise incompatible submissions return
+`409 INVALID_STATE_TRANSITION` without a new case or sanction-submission evidence. The standard
+application -> appraisal -> approval-case lock order plus database uniqueness serializes competing
+resubmissions to one new shell/evidence set.
+
+Cycle N+1 is enriched from its own current reviewed appraisal/configuration facts. Its action ledger
+starts empty, so a user who acted in cycle N may independently act again when snapshotted in cycle
+N+1. Final approval creates the application-unique sanction decision only from the latest pending
+cycle; prior returned actions never count toward joint approval.

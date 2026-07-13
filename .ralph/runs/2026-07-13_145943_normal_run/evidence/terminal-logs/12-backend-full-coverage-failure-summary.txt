@@ -1,0 +1,16 @@
+First full backend coverage attempt: FAILED before coverage report.
+
+Test result: 625 tests run; 3 errors in WitnessEvidenceMigrationTests.
+
+Failure signature:
+
+    django.db.utils.OperationalError:
+    table witnesses has no column named verification_folio_number
+
+Diagnosis: approvals migration 0011 was generated with an unnecessarily late direct dependency on
+applications migration 0014. During the historical witness migration test, the approvals leaf
+forced projected application state past the physically migrated applications-0011 schema.
+
+Repair: narrow the true approvals-0011 dependency to applications-0011 and restore all migration
+leaf nodes in ApprovalCycleMigrationTests. Cross-migration proof then passed (log 14); exact full
+backend coverage later passed (log 18).

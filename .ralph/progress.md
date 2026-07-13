@@ -1915,6 +1915,21 @@ Validation evidence added:
 - Risk level: See risk assessment.
 - Next action: Review packet.
 
+## 2026-07-13 - 2026-07-13_145943_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007D3-returned-approval-cycle-and-resubmission-closure
+- Summary: Added immutable numbered approval cycles, deterministic cycle-1 migration, correction
+  plus fresh-review resubmission, frozen per-cycle facts, cross-cycle read/action projections,
+  latest-cycle sanction closure, and complete lifecycle/object-scope denial matrices.
+- Tests run: retained RED/GREEN tracer bullets; review-finding closure matrix; backend 628 tests at
+  93% coverage; frontend build/typecheck/lint and 208 tests; Django check and migration sync.
+- Evidence saved: `.ralph/runs/2026-07-13_145943_normal_run/evidence/`
+- Result: Local gates passed; trusted twice-run PostgreSQL race delegated to the orchestrator under
+  the slice's declared runtime capability.
+- Risk level: High
+- Next action: 007E conflict-of-interest blocking.
+
 ## 2026-07-13 - 2026-07-13_090059_normal_run
 
 - Agent tool used: codex
@@ -5395,6 +5410,47 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_143342_normal_run/.ralph/runs/2026-07-13_143342_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_143342_normal_run/.ralph/runs/2026-07-13_143342_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 15:45:18 - 2026-07-13_153721_repair
+
+- Agent tool used: codex
+- Slice repaired: 007D3-returned-approval-cycle-and-resubmission-closure
+- Summary: Repaired the trusted PostgreSQL five-race selection after the returned-cycle test made
+  the protected exact-count predicate discover six tests. Preserved the legacy initial-submission
+  race in a separate PostgreSQL-only class and kept the returned-cycle race in the trusted class.
+- Tests run: exact five-race PostgreSQL selection twice; retained legacy PostgreSQL race; backend
+  Django check, migration sync, 628 tests with 19 expected SQLite skips and 93% coverage; frontend
+  build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_153721_repair/`
+- Result: Repair complete; ready for full independent revalidation.
+- Risk level: High (approval workflow), with repair limited to test organization.
+- Next action: Orchestrator revalidates and commits 007D3; then run 007E.
+
+## 2026-07-13 - 2026-07-13_155025_repair
+
+- Agent tool used: codex
+- Slice repaired: 007D3-returned-approval-cycle-and-resubmission-closure
+- Summary: Corrected the prior repair packet's agent-result wording after the protected safety
+  check interpreted its imperative commit instruction as an explicit veto. Preserved every 007D3
+  production, migration, test, contract, and run-ahead sharpening change.
+- Tests run: exact artifact predicate RED/GREEN; frontend build/typecheck/lint and 208 isolated
+  tests; backend Django check, migration sync, 628 tests with 19 expected SQLite skips and 93%
+  coverage; exact five-race PostgreSQL selection twice.
+- Evidence saved: `.ralph/runs/2026-07-13_155025_repair/`
+- Result: Success
+- Risk level: High (approval workflow), with this repair limited to Ralph result artifacts and
+  bookkeeping.
+- Next action: Full independent revalidation; then run 007E.
+
+## 2026-07-13 16:04:28 - 2026-07-13_155025_repair
+- Agent tool used: codex
+- Slice attempted: 007D3-returned-approval-cycle-and-resubmission-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_145943_normal_run/.ralph/runs/2026-07-13_155025_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_145943_normal_run/.ralph/runs/2026-07-13_155025_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

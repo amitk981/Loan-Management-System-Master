@@ -103,6 +103,18 @@ A Director, committee member, or preparer can never approve their own or a relat
   appraisal -> case transaction and communication adapter. Never insert a direct Notification or
   return the raw required-approver snapshot from collection.
 
+## Run-Ahead Sharpening Review (007D3, 2026-07-13)
+
+- Evaluate conflict facts against the exact cycle's frozen `appraisal_facts_json`, immutable
+  appraisal review/revision, and authority snapshot. Do not read a later corrected appraisal when
+  explaining or auditing an exclusion on a returned historical cycle.
+- Store exclusions and abstentions against the cycle-specific case id. A user excluded or acted in
+  cycle N may be evaluated afresh in cycle N+1; prior-cycle rows never disable, satisfy, or mutate a
+  later cycle's action slot.
+- Preserve the positive cycle/application constraints and one-pending-cycle rule while adding any
+  blocked outcome. Queue/detail/action responses must retain `cycle_number`, and COI-006 denial
+  evidence must name the exact cycle without changing its appraisal revision/frozen review facts.
+
 ## Out of Scope
 General-meeting evidence recording (007G), exception register (007F), relationship data capture UI (member master owns relationships).
 

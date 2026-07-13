@@ -1,5 +1,23 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007D3 Returned Approval Cycles
+
+- Approval cases are numbered immutable cycles per application. The database enforces positive
+  cycle/revision values, unique application + cycle, and at most one pending application cycle;
+  legacy rows migrate deterministically to cycle 1 with their matched immutable review and frozen
+  review-fact projection.
+- Return closes the current cycle and moves the appraisal to editable draft. Only actual appraisal
+  value changes produce a non-empty correction ledger; a fresh independent Credit Manager review
+  must follow that correction.
+- The existing sanction-handoff boundary creates cycle N+1 only after a returned prior cycle, a
+  newer corrected revision, and a post-return matching reviewed decision. Other prior outcomes,
+  no-op correction, stale review, and duplicate/concurrent attempts create no new cycle evidence.
+- Enrichment freezes each cycle's own appraisal/configuration facts. List/detail/action projections
+  expose `cycle_number`; returned history stays readable but unassigned/non-actionable, and prior
+  approver actions never satisfy the next cycle.
+- Final approval remains application-unique and links only to the latest cycle. Same approvers may
+  make new immutable decisions in a later cycle without changing cycle 1 ledgers.
+
 ## 007C3 Source Read-Scope Closure
 
 - `approvals.case.read` is now seeded for Credit Manager, Company Secretary, and Internal Auditor,

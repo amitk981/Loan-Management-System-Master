@@ -1530,6 +1530,121 @@ class SanctionSubmissionConcurrencyTests(TransactionTestCase):
     setUp = SanctionSubmissionApiTests.setUp
     _permission = staticmethod(SanctionSubmissionApiTests._permission)
     _user = staticmethod(SanctionSubmissionApiTests._user)
+    _submit = SanctionSubmissionApiTests._submit
+    _enrich = SanctionSubmissionApiTests._enrich
+    _login = SanctionSubmissionApiTests._login
+    _create_real_enriched_case = SanctionSubmissionApiTests._create_real_enriched_case
+
+    def test_concurrent_returned_cycle_resubmissions_create_one_cycle_two_ledger(self):
+        from sfpcl_credit.approvals.models import ApprovalCase
+        from sfpcl_credit.approvals.modules import approval_actions
+        from sfpcl_credit.approvals.modules.sanction_handoff import SanctionHandoffModule
+        from sfpcl_credit.credit.modules.appraisal_workflow import (
+            AppraisalWorkflow,
+            CreditModuleInvalidStateError,
+        )
+
+        setup = self._create_real_enriched_case()
+        cycle_one = ApprovalCase.objects.get(pk=setup["data"]["approval_case_id"])
+        approval_actions.return_case(
+            actor=setup["cfo"],
+            case_id=cycle_one.pk,
+            payload={"version": 2, "comments": "Correct and resubmit."},
+            actor_permissions={"approvals.case.read", "approvals.case.return"},
+        )
+        cycle_one.refresh_from_db()
+        cycle_one_before = ApprovalCase.objects.filter(pk=cycle_one.pk).values().get()
+        cycle_one_actions_before = list(cycle_one.actions.order_by("pk").values())
+
+        AppraisalWorkflow().create_or_update(
+            actor=self.preparer,
+            application_id=self.application.pk,
+            payload={"borrower_summary": "Corrected concurrent-resubmission facts."},
+            partial=True,
+            actor_permissions={"credit.appraisal.update"},
+        )
+        AppraisalWorkflow().submit_for_review(
+            actor=self.preparer,
+            appraisal_id=self.note.pk,
+            payload={"remarks": "Corrected facts ready."},
+            actor_permissions={"credit.appraisal.submit_review"},
+        )
+        AppraisalWorkflow().review(
+            actor=self.reviewer,
+            appraisal_id=self.note.pk,
+            decision="reviewed",
+            comments="Fresh independent review for cycle two.",
+            payload_fields={
+                "decision": "reviewed",
+                "review_comments": "Fresh independent review for cycle two.",
+            },
+            actor_permissions={"credit.appraisal.review"},
+        )
+
+        winner_reached_create = Event()
+        release_winner = Event()
+        original_create = ApprovalCase.objects.create
+
+        def coordinated_create(**kwargs):
+            winner_reached_create.set()
+            if not release_winner.wait(timeout=10):
+                raise AssertionError("Timed out releasing cycle-two submission.")
+            return original_create(**kwargs)
+
+        def resubmit(request_id):
+            close_old_connections()
+            try:
+                actor = User.objects.get(pk=self.reviewer.pk)
+                return SanctionHandoffModule().submit_reviewed_appraisal(
+                    actor=actor,
+                    application_id=self.application.pk,
+                    payload={"remarks": f"Concurrent resubmission {request_id}."},
+                    request_meta={"request_id": request_id},
+                ).snapshot
+            finally:
+                connections["default"].close()
+
+        with patch.object(ApprovalCase.objects, "create", side_effect=coordinated_create):
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                winner_future = executor.submit(resubmit, "winner")
+                self.assertTrue(winner_reached_create.wait(timeout=10))
+                loser_future = executor.submit(resubmit, "loser")
+                try:
+                    self.assertFalse(loser_future.done())
+                finally:
+                    release_winner.set()
+                winner = winner_future.result(timeout=10)
+                with self.assertRaises(CreditModuleInvalidStateError):
+                    loser_future.result(timeout=10)
+
+        cases = list(ApprovalCase.objects.order_by("cycle_number"))
+        self.assertEqual([case.cycle_number for case in cases], [1, 2])
+        self.assertEqual(winner["approval_case_id"], str(cases[1].pk))
+        self.assertEqual(
+            AuditLog.objects.filter(action="appraisal.submitted_to_sanction").count(),
+            2,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(workflow_name="sanction_submission").count(),
+            2,
+        )
+        self.assertEqual(
+            ApprovalCase.objects.filter(pk=cycle_one.pk).values().get(),
+            cycle_one_before,
+        )
+        self.assertEqual(
+            list(cycle_one.actions.order_by("pk").values()), cycle_one_actions_before
+        )
+
+
+@skipUnless(
+    connection.vendor == "postgresql",
+    "Authoritative sanction-submission concurrency proof requires PostgreSQL.",
+)
+class InitialSanctionSubmissionConcurrencyTests(TransactionTestCase):
+    setUp = SanctionSubmissionApiTests.setUp
+    _permission = staticmethod(SanctionSubmissionApiTests._permission)
+    _user = staticmethod(SanctionSubmissionApiTests._user)
 
     def test_duplicate_submissions_serialize_to_one_case_and_one_evidence_set(self):
         from sfpcl_credit.approvals.models import ApprovalCase

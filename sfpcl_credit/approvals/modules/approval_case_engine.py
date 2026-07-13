@@ -130,6 +130,7 @@ def can_read_approval_case(
 def serialize_case_summary(case):
     return {
         "approval_case_id": str(case.pk),
+        "cycle_number": case.cycle_number,
         "approval_type": case.approval_type,
         "related_entity_type": case.related_entity_type,
         "related_entity_id": str(case.related_entity_id),
@@ -163,7 +164,7 @@ def serialize_case_detail(case, actor, actor_permissions):
     snapshot = {
         **serialize_case_snapshot(case),
         "required_approvers": required_approvers,
-        "review_facts": _review_facts(case),
+        "review_facts": case.appraisal_facts_json or serialize_case_review_facts(case),
         "available_actions": _available_actions(
             case, actor, actor_permissions, action_by_user
         ),
@@ -189,7 +190,7 @@ def serialize_case_snapshot(case):
     }
 
 
-def _review_facts(case):
+def serialize_case_review_facts(case):
     application = case.loan_application
     note = case.loan_appraisal_note
     risk = note.risk_assessment
@@ -362,10 +363,22 @@ def _matrix_projection_is_coherent(case, matrix):
         and matrix.get("joint_approval_required") is True
         and isinstance(matrix.get("register_required"), str)
         and bool(matrix["register_required"].strip())
-        and case.loan_appraisal_note.reviewed_at is not None
-        and case.decision_date
-        == timezone.localdate(case.loan_appraisal_note.reviewed_at)
-        and case.amount == case.loan_appraisal_note.recommended_amount
+        and (
+            (
+                bool(case.appraisal_facts_json)
+                and case.appraisal_facts_json.get("loan_amounts", {}).get(
+                    "recommended_amount"
+                )
+                == f"{case.amount:.2f}"
+            )
+            or (
+                not case.appraisal_facts_json
+                and case.loan_appraisal_note.reviewed_at is not None
+                and case.decision_date
+                == timezone.localdate(case.loan_appraisal_note.reviewed_at)
+                and case.amount == case.loan_appraisal_note.recommended_amount
+            )
+        )
     )
 
 

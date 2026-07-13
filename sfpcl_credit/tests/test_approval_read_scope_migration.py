@@ -246,3 +246,57 @@ class ApprovalReadScopeMigrationTests(TransactionTestCase):
             "malformed_case_id": case_ids[1],
             "required_user_ids": {users["cfo"].pk, users["director"].pk},
         }
+
+
+class ApprovalCycleMigrationTests(TransactionTestCase):
+    migrate_from = [
+        ("credit", "0007_eligibility_active_member_snapshot"),
+        ("approvals", "0010_approvalcasereadscopegrant_and_more"),
+    ]
+    migrate_to = [
+        ("credit", "0007_eligibility_active_member_snapshot"),
+        ("approvals", "0011_approvalcase_appraisal_facts_json_and_more"),
+    ]
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_existing_cases_become_cycle_one_with_frozen_review_facts(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        fixtures = ApprovalReadScopeMigrationTests._create_historical_cases(old_apps)
+        ApprovalCase = old_apps.get_model("approvals", "ApprovalCase")
+        Review = old_apps.get_model("credit", "AppraisalReviewDecision")
+        review_ids = {}
+        for case in ApprovalCase.objects.order_by("submitted_at"):
+            note = case.loan_appraisal_note
+            review = Review.objects.create(
+                loan_appraisal_note=note,
+                decision="reviewed",
+                review_comments="Migration-reviewed appraisal.",
+                reviewer_user=case.submitted_by_user,
+                decided_at=note.reviewed_at,
+                from_state="review_pending",
+                to_state="reviewed",
+            )
+            review_ids[case.pk] = review.pk
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        migrated_apps = executor.loader.project_state(self.migrate_to).apps
+        MigratedCase = migrated_apps.get_model("approvals", "ApprovalCase")
+        for case_id in (fixtures["valid_case_id"], fixtures["malformed_case_id"]):
+            case = MigratedCase.objects.get(pk=case_id)
+            self.assertEqual(case.cycle_number, 1)
+            self.assertEqual(case.appraisal_revision, 1)
+            self.assertEqual(case.appraisal_review_decision_id, review_ids[case_id])
+            self.assertEqual(
+                case.appraisal_facts_json["loan_amounts"]["recommended_amount"],
+                "500000.00",
+            )
+            self.assertEqual(
+                case.appraisal_facts_json["risk"]["overall_risk_rating"], "low"
+            )

@@ -14,6 +14,7 @@ from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import (
     ApprovalAction,
     ApprovalCase,
+    ApprovalCaseReadScopeGrant,
     ApprovalMatrixRule,
     SanctionCommittee,
 )
@@ -21,7 +22,14 @@ from sfpcl_credit.approvals.modules.approval_case_selector import (
     select_approval_case_candidates,
 )
 from sfpcl_credit.approvals.modules import approval_actions
-from sfpcl_credit.credit.models import LoanAppraisalNote, RiskAssessment
+from sfpcl_credit.approvals.modules.sanction_handoff import SanctionHandoffModule
+from sfpcl_credit.credit.models import (
+    AppraisalReviewDecision,
+    LoanAppraisalNote,
+    RiskAssessment,
+)
+from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow
+from sfpcl_credit.domain_errors import DomainInvalidStateError
 from sfpcl_credit.communications.models import Communication, Notification
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.identity.modules.auth_service import effective_permission_codes
@@ -234,6 +242,50 @@ class ApprovalCaseRoutingApiTests(TestCase):
             [str(self.case.pk)],
         )
         self.assertEqual(body["pagination"]["total_count"], 1)
+
+    def test_cycle_database_constraints_reject_duplicate_pending_and_nonpositive_rows(self):
+        review = AppraisalReviewDecision.objects.create(
+            loan_appraisal_note=self.note,
+            decision="reviewed",
+            review_comments="Constraint fixture review.",
+            reviewer_user=self.preparer,
+            decided_at=self.note.reviewed_at,
+            from_state="review_pending",
+            to_state=LoanAppraisalNote.STATUS_REVIEWED,
+        )
+        common = {
+            "loan_application": self.application,
+            "loan_appraisal_note": self.note,
+            "appraisal_review_decision": review,
+            "submitted_by_user": self.preparer,
+            "submission_remarks": "Constraint fixture.",
+        }
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            ApprovalCase.objects.create(**common, cycle_number=2)
+
+        self.case.current_status = ApprovalCase.STATUS_RETURNED
+        self.case.save(update_fields=["current_status"])
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            ApprovalCase.objects.create(
+                **common,
+                cycle_number=1,
+                current_status=ApprovalCase.STATUS_RETURNED,
+            )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            ApprovalCase.objects.create(
+                **common,
+                cycle_number=0,
+                current_status=ApprovalCase.STATUS_RETURNED,
+            )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            ApprovalCase.objects.create(
+                loan_application=self.application,
+                loan_appraisal_note=self.note,
+                submitted_by_user=self.preparer,
+                submission_remarks="Missing later-cycle review.",
+                cycle_number=2,
+                current_status=ApprovalCase.STATUS_RETURNED,
+            )
 
     def test_credit_manager_reads_only_a_case_owned_through_the_credit_submission_scope(self):
         credit_manager = self._user(
@@ -730,8 +782,327 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.application.refresh_from_db()
         self.note.refresh_from_db()
         self.assertEqual(self.application.application_status, "appraisal_reviewed")
-        self.assertEqual(self.note.appraisal_status, "reviewed")
+        self.assertEqual(self.note.appraisal_status, "draft")
         self.assertFalse(apps.get_model("approvals", "SanctionDecision").objects.exists())
+
+    def test_return_correction_fresh_review_creates_immutable_second_cycle(self):
+        returned = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/return-for-clarification/",
+            {"version": 2, "comments": "Clarify crop plan evidence."},
+            content_type="application/json",
+            **self._auth(self.director),
+        )
+        self.assertEqual(returned.status_code, 200, returned.json())
+        cycle_one = ApprovalCase.objects.get(pk=self.case.pk)
+        self.note.eligibility_snapshot_json = {
+            **self.note.eligibility_snapshot_json,
+            "eligibility_assessment_id": str(
+                self.note.eligibility_assessment_id_snapshot
+            ),
+            "loan_application_id": str(self.application.pk),
+        }
+        self.note.save(update_fields=["eligibility_snapshot_json"])
+        cycle_one_ledger = {
+            "case": ApprovalCase.objects.filter(pk=cycle_one.pk).values().get(),
+            "actions": list(cycle_one.actions.order_by("pk").values()),
+            "audits": list(
+                AuditLog.objects.filter(entity_id=cycle_one.pk).order_by("pk").values()
+            ),
+            "workflows": list(
+                WorkflowEvent.objects.filter(entity_id=cycle_one.pk).order_by("pk").values()
+            ),
+            "communications": list(
+                Communication.objects.filter(related_entity_id=cycle_one.pk)
+                .order_by("pk")
+                .values()
+            ),
+        }
+
+        AppraisalWorkflow().create_or_update(
+            actor=self.preparer,
+            application_id=self.application.pk,
+            payload={"borrower_summary": "Corrected crop plan and borrowing history."},
+            partial=True,
+            actor_permissions={"credit.appraisal.update"},
+        )
+        AppraisalWorkflow().submit_for_review(
+            actor=self.preparer,
+            appraisal_id=self.note.pk,
+            payload={"remarks": "Corrected facts ready for independent review."},
+            actor_permissions={"credit.appraisal.submit_review"},
+        )
+        reviewer = self._user("credit_manager", "Second-cycle Credit Manager")
+        reviewer.primary_role.role_code = "credit_manager"
+        reviewer.primary_role.save(update_fields=["role_code"])
+        AppraisalWorkflow().review(
+            actor=reviewer,
+            appraisal_id=self.note.pk,
+            decision="reviewed",
+            comments="Corrected facts independently reviewed.",
+            payload_fields={"decision": "reviewed", "review_comments": "Corrected facts independently reviewed."},
+            actor_permissions={"credit.appraisal.review"},
+        )
+        submitted = SanctionHandoffModule().submit_reviewed_appraisal(
+            actor=reviewer,
+            application_id=self.application.pk,
+            payload={"remarks": "Resubmit corrected appraisal."},
+            actor_permissions={"credit.appraisal.submit_sanction"},
+        ).snapshot
+        cycle_two = ApprovalCase.objects.get(pk=submitted["approval_case_id"])
+        ApprovalMatrixRule.objects.exclude(pk=self.rule.pk).update(status="inactive")
+        SanctionCommittee.objects.exclude(pk=self.committee.pk).update(status="inactive")
+        enriched = SanctionHandoffModule().enrich_pending(
+            actor=reviewer,
+            application_id=self.application.pk,
+            payload={
+                "approval_type": "sanction",
+                "amount": "500000.00",
+                "reason_for_approval": "Corrected appraisal recommends approval.",
+                "force_exception_route": False,
+            },
+            actor_permissions={"approvals.case.create"},
+        ).snapshot
+        self.assertEqual(enriched["cycle_number"], 2)
+        returned_history = self.client.get(
+            f"/api/v1/approval-cases/{cycle_one.pk}/", **self._auth(self.director)
+        )
+        current_queue = self.client.get(
+            "/api/v1/approval-cases/?assigned_to_me=true", **self._auth(self.cfo)
+        )
+        self.assertEqual(returned_history.status_code, 200, returned_history.json())
+        self.assertEqual(returned_history.json()["data"]["cycle_number"], 1)
+        self.assertTrue(
+            all(
+                not action["enabled"]
+                for action in returned_history.json()["data"]["available_actions"]
+            )
+        )
+        self.assertEqual(
+            [item["cycle_number"] for item in current_queue.json()["data"]], [2]
+        )
+        company_secretary = self._user(
+            "company_secretary", "Cycle-history Company Secretary", self.read_permission
+        )
+        auditor = self._user(
+            "internal_auditor", "Cycle-history Auditor", self.read_permission
+        )
+        ApprovalCaseReadScopeGrant.objects.create(
+            role=company_secretary.primary_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_LEGAL_READONLY,
+        )
+        ApprovalCaseReadScopeGrant.objects.create(
+            role=auditor.primary_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+        )
+        for reader in (company_secretary, auditor):
+            history = self.client.get("/api/v1/approval-cases/", **self._auth(reader))
+            assigned = self.client.get(
+                "/api/v1/approval-cases/?assigned_to_me=true", **self._auth(reader)
+            )
+            self.assertEqual(
+                [item["cycle_number"] for item in history.json()["data"]], [2, 1]
+            )
+            self.assertEqual(assigned.json()["pagination"]["total_count"], 0)
+        permission_only = self._user(
+            "permission_only_cycle_reader",
+            "Permission-only Cycle Reader",
+            self.read_permission,
+        )
+        excluded = self.client.get(
+            "/api/v1/approval-cases/", **self._auth(permission_only)
+        )
+        self.assertEqual(excluded.json()["pagination"]["total_count"], 0)
+        first_approval = approval_actions.approve_case(
+            actor=self.cfo,
+            case_id=cycle_two.pk,
+            payload={"version": 2, "comments": "Corrected cycle approved."},
+            actor_permissions={"approvals.case.approve", "approvals.case.read"},
+        )
+        self.assertEqual(first_approval["current_status"], "pending")
+        self.assertEqual(first_approval["cycle_number"], 2)
+        final_approval = approval_actions.approve_case(
+            actor=self.director,
+            case_id=cycle_two.pk,
+            payload={"version": 3, "comments": "Fresh cycle jointly approved."},
+            actor_permissions={"approvals.case.approve", "approvals.case.read"},
+        )
+        self.assertEqual(final_approval["current_status"], "approved")
+        self.assertTrue(final_approval["sanction_decision_created"])
+        cycle_two.refresh_from_db()
+        self.assertEqual((cycle_one.cycle_number, cycle_two.cycle_number), (1, 2))
+        self.assertNotEqual(cycle_one.pk, cycle_two.pk)
+        self.assertEqual(cycle_two.appraisal_revision, 2)
+        self.assertEqual(
+            cycle_two.appraisal_review_decision_id,
+            AppraisalReviewDecision.objects.latest("decided_at").pk,
+        )
+        self.assertEqual(cycle_two.sanction_decision.loan_application_id, self.application.pk)
+        self.assertEqual(
+            {
+                "case": ApprovalCase.objects.filter(pk=cycle_one.pk).values().get(),
+                "actions": list(cycle_one.actions.order_by("pk").values()),
+                "audits": list(
+                    AuditLog.objects.filter(entity_id=cycle_one.pk).order_by("pk").values()
+                ),
+                "workflows": list(
+                    WorkflowEvent.objects.filter(entity_id=cycle_one.pk).order_by("pk").values()
+                ),
+                "communications": list(
+                    Communication.objects.filter(related_entity_id=cycle_one.pk)
+                    .order_by("pk")
+                    .values()
+                ),
+            },
+            cycle_one_ledger,
+        )
+
+    def test_fresh_review_without_correction_cannot_create_a_second_cycle(self):
+        returned = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/return-for-clarification/",
+            {"version": 2, "comments": "Clarify the unchanged facts."},
+            content_type="application/json",
+            **self._auth(self.director),
+        )
+        self.assertEqual(returned.status_code, 200, returned.json())
+        self.note.eligibility_snapshot_json = {
+            **self.note.eligibility_snapshot_json,
+            "eligibility_assessment_id": str(
+                self.note.eligibility_assessment_id_snapshot
+            ),
+            "loan_application_id": str(self.application.pk),
+        }
+        self.note.save(update_fields=["eligibility_snapshot_json"])
+        AppraisalWorkflow().create_or_update(
+            actor=self.preparer,
+            application_id=self.application.pk,
+            payload={"borrower_summary": self.note.borrower_summary},
+            partial=True,
+            actor_permissions={"credit.appraisal.update"},
+        )
+        AppraisalWorkflow().submit_for_review(
+            actor=self.preparer,
+            appraisal_id=self.note.pk,
+            payload={"remarks": "No material correction was supplied."},
+            actor_permissions={"credit.appraisal.submit_review"},
+        )
+        reviewer = self._user("credit_manager", "No-correction Credit Manager")
+        reviewer.primary_role.role_code = "credit_manager"
+        reviewer.primary_role.save(update_fields=["role_code"])
+        AppraisalWorkflow().review(
+            actor=reviewer,
+            appraisal_id=self.note.pk,
+            decision="reviewed",
+            comments="Fresh review of unchanged facts.",
+            payload_fields={
+                "decision": "reviewed",
+                "review_comments": "Fresh review of unchanged facts.",
+            },
+            actor_permissions={"credit.appraisal.review"},
+        )
+        before = self._action_ledgers()
+
+        with self.assertRaisesMessage(
+            DomainInvalidStateError,
+            "A returned appraisal must be corrected before resubmission.",
+        ):
+            SanctionHandoffModule().submit_reviewed_appraisal(
+                actor=reviewer,
+                application_id=self.application.pk,
+                payload={"remarks": "Attempt unchanged resubmission."},
+                actor_permissions={"credit.appraisal.submit_sanction"},
+            )
+
+        self.assertEqual(ApprovalCase.objects.count(), 1)
+        self.assertEqual(self._action_ledgers(), before)
+
+    def test_correction_without_fresh_review_cannot_create_a_second_cycle(self):
+        returned = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/return-for-clarification/",
+            {"version": 2, "comments": "Correct and obtain a fresh review."},
+            content_type="application/json",
+            **self._auth(self.director),
+        )
+        self.assertEqual(returned.status_code, 200, returned.json())
+        AppraisalWorkflow().create_or_update(
+            actor=self.preparer,
+            application_id=self.application.pk,
+            payload={"borrower_summary": "Corrected but not freshly reviewed."},
+            partial=True,
+            actor_permissions={"credit.appraisal.update"},
+        )
+        reviewer = self._user("credit_manager", "Missing-fresh-review Manager")
+        reviewer.primary_role.role_code = "credit_manager"
+        reviewer.primary_role.save(update_fields=["role_code"])
+        before = self._action_ledgers()
+
+        with self.assertRaisesMessage(
+            DomainInvalidStateError,
+            "Only a reviewed appraisal note can be submitted for sanction.",
+        ):
+            SanctionHandoffModule().submit_reviewed_appraisal(
+                actor=reviewer,
+                application_id=self.application.pk,
+                payload={"remarks": "Attempt without the required fresh review."},
+                actor_permissions={"credit.appraisal.submit_sanction"},
+            )
+
+        self.assertEqual(ApprovalCase.objects.count(), 1)
+        self.assertEqual(self._action_ledgers(), before)
+
+    def test_pending_approved_and_rejected_cycles_deny_resubmission_without_writes(self):
+        reviewer = self._user("credit_manager", "Lifecycle Credit Manager")
+        reviewer.primary_role.role_code = "credit_manager"
+        reviewer.primary_role.save(update_fields=["role_code"])
+        reviewed_at = timezone.now()
+        self.note.appraisal_status = LoanAppraisalNote.STATUS_REVIEWED
+        self.note.reviewed_by_user = reviewer
+        self.note.reviewed_at = reviewed_at
+        self.note.review_comments = "Lifecycle matrix review."
+        self.note.last_review_decision = "reviewed"
+        self.note.eligibility_snapshot_json = {
+            **self.note.eligibility_snapshot_json,
+            "eligibility_assessment_id": str(
+                self.note.eligibility_assessment_id_snapshot
+            ),
+            "loan_application_id": str(self.application.pk),
+        }
+        self.note.save()
+        AppraisalReviewDecision.objects.create(
+            loan_appraisal_note=self.note,
+            decision="reviewed",
+            review_comments=self.note.review_comments,
+            reviewer_user=reviewer,
+            decided_at=reviewed_at,
+            from_state="review_pending",
+            to_state=LoanAppraisalNote.STATUS_REVIEWED,
+        )
+
+        for status in (
+            ApprovalCase.STATUS_PENDING,
+            ApprovalCase.STATUS_APPROVED,
+            ApprovalCase.STATUS_REJECTED,
+        ):
+            with self.subTest(status=status):
+                self.case.current_status = status
+                self.case.closed_at = (
+                    None if status == ApprovalCase.STATUS_PENDING else timezone.now()
+                )
+                self.case.save(update_fields=["current_status", "closed_at"])
+                before = self._action_ledgers()
+
+                with self.assertRaisesMessage(
+                    DomainInvalidStateError,
+                    "Only a returned approval cycle can be resubmitted.",
+                ):
+                    SanctionHandoffModule().submit_reviewed_appraisal(
+                        actor=reviewer,
+                        application_id=self.application.pk,
+                        payload={"remarks": f"Do not resubmit {status}."},
+                        actor_permissions={"credit.appraisal.submit_sanction"},
+                    )
+
+                self.assertEqual(ApprovalCase.objects.count(), 1)
+                self.assertEqual(self._action_ledgers(), before)
 
     def test_action_rejects_mismatched_application_transition_without_writes(self):
         self.application.application_status = LoanApplication.STATUS_APPRAISAL_REVIEWED

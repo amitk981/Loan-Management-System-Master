@@ -1,0 +1,13 @@
+Commands and results:
+
+- `npm run build` — exit 0; Vite production build completed (1871 modules).
+- `npm run typecheck` — exit 0; TypeScript emitted no errors.
+- `npm run lint` — exit 0; ESLint emitted no errors.
+- Initial parallel `npm test` — exit 1; 207/208 passed and
+  `demoAuthFlag.test.tsx` timed out at 5 seconds while build, typecheck, lint, and full backend
+  coverage were running concurrently. This is retained as honest transient evidence.
+- Isolated `npm test` after all concurrent work completed — exit 0; 29 files and 208 tests passed
+  in 8.22 seconds. The previously timed-out case completed in 2.52 seconds.
+
+Conclusion: all configured frontend gates pass; the first timeout was reproducibly removed by
+eliminating local CPU contention and required no code change.

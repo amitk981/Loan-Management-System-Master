@@ -158,16 +158,26 @@ class ApprovalCase(models.Model):
         default=uuid.uuid4,
         editable=False,
     )
-    loan_application = models.OneToOneField(
+    loan_application = models.ForeignKey(
         "applications.LoanApplication",
         on_delete=models.PROTECT,
-        related_name="sanction_approval_case",
+        related_name="sanction_approval_cases",
     )
-    loan_appraisal_note = models.OneToOneField(
+    loan_appraisal_note = models.ForeignKey(
         "credit.LoanAppraisalNote",
         on_delete=models.PROTECT,
-        related_name="sanction_approval_case",
+        related_name="sanction_approval_cases",
     )
+    appraisal_review_decision = models.ForeignKey(
+        "credit.AppraisalReviewDecision",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="sanction_approval_cases",
+    )
+    appraisal_revision = models.PositiveIntegerField(default=1)
+    appraisal_facts_json = models.JSONField(default=dict, blank=True)
+    cycle_number = models.PositiveIntegerField(default=1)
     approval_type = models.CharField(max_length=80, default=TYPE_SANCTION, db_index=True)
     current_status = models.CharField(max_length=60, default=STATUS_PENDING, db_index=True)
     exception_required_flag = models.BooleanField(default=False, db_index=True)
@@ -261,7 +271,31 @@ class ApprovalCase(models.Model):
         constraints = [
             models.CheckConstraint(
                 check=models.Q(version__gte=1), name="approval_case_version_positive"
-            )
+            ),
+            models.CheckConstraint(
+                check=models.Q(cycle_number__gte=1),
+                name="approval_case_cycle_positive",
+            ),
+            models.CheckConstraint(
+                check=models.Q(appraisal_revision__gte=1),
+                name="approval_case_appraisal_revision_positive",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(cycle_number=1)
+                    | models.Q(appraisal_review_decision__isnull=False)
+                ),
+                name="approval_later_cycle_review_required",
+            ),
+            models.UniqueConstraint(
+                fields=["loan_application", "cycle_number"],
+                name="unique_application_approval_cycle",
+            ),
+            models.UniqueConstraint(
+                fields=["loan_application"],
+                condition=models.Q(current_status="pending"),
+                name="unique_pending_application_approval_cycle",
+            ),
         ]
 
 

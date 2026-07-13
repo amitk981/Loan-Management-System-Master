@@ -1,7 +1,7 @@
 # Slice 007D3: Returned Approval Cycle and Resubmission Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -12,7 +12,7 @@ Epic file: `docs/epics/007-sanction-approval-workflow.md`
 
 ## Runtime Capabilities
 
-none
+postgresql-five-race-acceptance
 
 ## Goal
 
@@ -75,6 +75,18 @@ High
 
 - Return-for-clarification no longer leaves the application permanently unable to re-enter sanction.
 - Every material re-approval is a new immutable case/review cycle; prior decisions never leak forward.
+
+## Done Checklist
+
+- [x] Execution plan written before product edits
+- [x] RED/GREEN two-cycle and no-op-correction evidence retained
+- [x] Deterministic cycle-1 migration and database constraints implemented
+- [x] Full lifecycle denial and cross-cycle object-scope matrices verified
+- [x] API contract, digest, assumption, and run-ahead slices updated
+- [x] Frontend and backend quality gates passed
+- [x] PostgreSQL capability declared for independent twice-run race validation
+- [x] Risk assessment, review packet, handoff, progress, and state updated
+- [x] Commit delegated to the Ralph orchestrator
 
 ## Run-Ahead Sharpening Review (007D2, 2026-07-13)
 

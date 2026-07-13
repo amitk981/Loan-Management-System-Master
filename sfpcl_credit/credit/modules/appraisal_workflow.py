@@ -318,8 +318,9 @@ class AppraisalWorkflow:
                     value = payload[field]
                     if field == "recommended_amount":
                         value = Decimal(str(value))
-                    setattr(current, field, value)
-                    changed_fields.append(field)
+                    if getattr(current, field) != value:
+                        setattr(current, field, value)
+                        changed_fields.append(field)
             risk_payload = payload.get("risk_assessment", {})
             for field in (
                 "market_risk_rating",
@@ -329,9 +330,14 @@ class AppraisalWorkflow:
                 "risk_mitigation_notes",
             ):
                 if field in risk_payload:
-                    setattr(current.risk_assessment, field, risk_payload[field])
-                    changed_fields.append(f"risk_assessment.{field}")
-            if risk_payload:
+                    value = risk_payload[field]
+                    if getattr(current.risk_assessment, field) != value:
+                        setattr(current.risk_assessment, field, value)
+                        changed_fields.append(f"risk_assessment.{field}")
+            risk_changed = any(
+                field.startswith("risk_assessment.") for field in changed_fields
+            )
+            if risk_changed:
                 current.risk_assessment.assessed_by_user = actor
                 current.risk_assessment.assessed_at = timezone.now()
                 current.risk_assessment.save()

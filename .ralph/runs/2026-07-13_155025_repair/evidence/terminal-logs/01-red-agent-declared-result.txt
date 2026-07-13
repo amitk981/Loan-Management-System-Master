@@ -1,0 +1,13 @@
+Command:
+packet=.ralph/runs/2026-07-13_153721_repair/review-packet.md
+result=$(awk '/^## Result/{while ((getline line) > 0) { if (line !~ /^[[:space:]]*$/) { print line; exit } }}' "$packet" | xargs || true)
+if printf '%s' "$result" | grep -qiE 'fail|blocked' || grep -qiE 'do not (commit|merge)' "$packet"; then ...
+
+Exit code: 1
+
+RED: agent-declared-result predicate rejected packet
+Result: Ready for independent revalidation
+Matched reserved veto text:
+54:passes. Do not commit manually.
+
+This is the exact predicate and exact symptom reported by the protected validator.

@@ -149,7 +149,7 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
         ),
     )
     appraisal_target = (
-        note.STATUS_REVIEWED if action_code == "return"
+        note.STATUS_DRAFT if action_code == "return"
         else note.STATUS_SUBMITTED_TO_SANCTION
     )
     case_transition = _guard_transition(
