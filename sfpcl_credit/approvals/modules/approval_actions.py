@@ -192,6 +192,11 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
     completes_approval = action_code == "approve" and (
         approved_ids | {str(actor.pk)}
     ) == required_ids
+    terminal_facts = (
+        approval_case_engine.validated_frozen_terminal_facts(case)
+        if completes_approval or action_code == "reject"
+        else None
+    )
     meeting_evidence = (
         general_meeting.latest_evidence_for_case(case)
         if action_code in {"abstain", "reject", "return"}
@@ -316,18 +321,19 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         case.general_meeting_approval = meeting_evidence
         application.application_status = application_transition.next_state
         application.save(update_fields=["application_status"])
+        terminal_facts = approval_case_engine.validated_frozen_terminal_facts(case)
         decision = SanctionDecision.objects.create(
             loan_application=application,
             approval_case=case,
             decision="sanctioned",
-            sanctioned_amount=note.recommended_amount,
-            sanctioned_tenure_months=note.recommended_tenure_months,
-            interest_rate_type=note.recommended_interest_type,
+            sanctioned_amount=terminal_facts["recommended_amount"],
+            sanctioned_tenure_months=terminal_facts["sanctioned_tenure_months"],
+            interest_rate_type=terminal_facts["interest_rate_type"],
             interest_rate_value=None,
             repayment_date=None,
             penal_interest_rate=None,
             charges_json={},
-            security_required_summary=note.recommended_security_summary,
+            security_required_summary=terminal_facts["security_required_summary"],
             conditions_precedent="",
             decision_reason=case.reason_for_approval,
         )

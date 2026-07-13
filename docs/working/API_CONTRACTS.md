@@ -2487,15 +2487,18 @@ case `version`). Per-approver `decision`/`acted_at` are
 read from the immutable source §15.4 `approval_actions` ledger; 007C creates no action records.
 
 The nested `review_facts` object is frozen into each enriched approval cycle. The current
-`approval-review-v2` schema includes credit-owned snapshot provenance and borrower name/type in
-addition to the review sections below. Legacy or partial packages without the complete schema are
-nondisclosing; reads never reconstruct missing facts from current owning rows:
+`approval-review-v2` schema includes credit-owned snapshot provenance; borrower member id,
+application reference, name, and type; and the reviewed sanction terms (tenure, interest type,
+and security summary) in addition to the review sections below. Legacy or partial packages without
+the complete terminal copy facts are nondisclosing. Reads and terminal writes never reconstruct
+missing facts from current owning rows:
 
 - `eligibility` and eligible amount come from the appraisal-owned frozen eligibility/loan-limit
   snapshots.
 - requested amount, purpose, and documentation/completeness status come from the owning loan
   application.
-- borrowing history and recommendation amount come from the owning appraisal note.
+- borrowing history, recommendation amount, and sanction terms come from the owning appraisal
+  note at review-package creation.
 - risk ratings/mitigation come from the owning risk assessment.
 - `source_references` links the application, appraisal, eligibility, and loan-limit owner APIs.
 
@@ -2810,7 +2813,7 @@ historical case or register references. A later pending cycle resolves the then-
 unsuperseded application record independently. §25.11 success remains the source record shape
 without `evidence_scope`; the scope discriminator belongs to case/gate projections.
 
-# Sanction decision and Credit Sanction Register reads (007H)
+# Sanction decision and Credit Sanction Register reads (007H/007O)
 
 `GET /api/v1/loan-applications/{loan_application_id}/sanction-decision/` requires
 `approvals.sanction.read`. It returns the source §25.8 decision shape: id, decision, sanctioned
@@ -2818,7 +2821,9 @@ amount/tenure, interest type/value, repayment date, penal rate, `charges`, secur
 conditions precedent, and decision reason. It returns `404 NOT_FOUND` when no sanctioned decision
 exists, including before terminal approval and after rejection. A-079 remains binding: numeric
 rates, repayment date, and penal rate are nullable, charges are `{}`, and the blank conditions
-snapshot is projected as `null` until an approved owner supplies those facts.
+snapshot is projected as `null` until an approved owner supplies those facts. Sanctioned amount,
+tenure, interest type, and security summary are copied exclusively from the canonically validated
+routed `review_facts`; terminal creation never reads their mutable appraisal-note counterparts.
 
 Permission and row scope are independent. The endpoint first delegates to the approval-owned
 coherent-case/read-index selector and revalidates the canonical case decision, then looks up the
@@ -2864,20 +2869,21 @@ Every approved or rejected terminal case creates exactly one immutable
 `credit_sanction_register_entries` row in the locked approval action transaction. Approved rows
 link the §15.5 sanction decision; rejected rows deliberately keep that link/amount null rather than
 inventing a sanction decision. The row also stores the exact terminal `sanction_approval` workflow
-event and writes one attributable `credit_sanction_register.created` audit. Stale/closed retries
-cannot duplicate the one-to-one case row. Partial approvals, returns, conflict-blocked cycles, and
-general-meeting gate denials create no row.
+event, a byte-for-byte `source_review_facts_json` copy of the validated routed package (including
+purpose and risk), and one attributable `credit_sanction_register.created` audit. Stale/closed
+retries cannot duplicate the one-to-one case row. Partial approvals, returns, conflict-blocked
+cycles, malformed frozen packages, and general-meeting gate denials create no row.
 
 The 15 functional-spec fields and their frozen sources are:
 
 | Response field | Frozen source |
 |---|---|
-| `application_number` | terminal case's loan application reference |
-| `borrower_name` | terminal application's member display/legal name |
-| `borrower_type` | terminal application's borrower type |
-| `requested_amount` | terminal application's required loan amount |
-| `eligible_amount` | case appraisal's verified loan-limit snapshot |
-| `recommended_amount` | case appraisal's reviewed recommendation |
+| `application_number` | routed review package's application reference |
+| `borrower_name` | routed review package's borrower name |
+| `borrower_type` | routed review package's borrower type |
+| `requested_amount` | routed review package's requested amount |
+| `eligible_amount` | routed review package's verified eligible amount |
+| `recommended_amount` | routed review package's reviewed recommendation |
 | `sanctioned_amount` | linked sanction decision; null for rejection |
 | `approval_authority` | case's canonical effective required-authority/action snapshot |
 | `approver_names` | ordered immutable actions for that case/cycle |

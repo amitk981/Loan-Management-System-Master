@@ -34,6 +34,7 @@ from sfpcl_credit.approvals.modules import (
     approval_case_engine,
     approval_case_selector,
     exception_register,
+    general_meeting,
     sanction_register,
 )
 from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
@@ -1270,6 +1271,19 @@ class ApprovalCaseRoutingApiTests(TestCase):
         action_source = inspect.getsource(approval_actions)
         self.assertIn("approval_case_engine.approval_case_is_readable", action_source)
         self.assertNotIn("approval_case_engine.can_read_approval_case", action_source)
+        general_meeting_source = inspect.getsource(general_meeting)
+        self.assertIn(
+            "approval_case_engine.approval_case_is_readable",
+            general_meeting_source,
+        )
+        self.assertNotIn(
+            "approval_case_engine.can_read_approval_case",
+            general_meeting_source,
+        )
+        self.assertNotIn(
+            "approval_case_engine.is_routable_approval_case",
+            general_meeting_source,
+        )
 
     def test_required_approver_selector_uses_exact_user_id_not_json_substring(self):
         reader = self._user("json_substring_reader", "JSON Substring Reader", self.read_permission)
@@ -1874,6 +1888,41 @@ class ApprovalCaseRoutingApiTests(TestCase):
             0,
         )
 
+    def test_general_meeting_availability_and_mutation_share_frozen_readability(self):
+        recorder, payload = self._general_meeting_recorder_and_payload()
+        corrupted = {
+            **self.case.appraisal_facts_json,
+            "sanction_terms": {
+                **self.case.appraisal_facts_json["sanction_terms"],
+                "recommended_tenure_months": "not-an-integer",
+            },
+        }
+        ApprovalCase.objects.filter(pk=self.case.pk).update(
+            appraisal_facts_json=corrupted,
+            routing_snapshot_is_coherent=True,
+        )
+        self.case.refresh_from_db()
+        permissions = effective_permission_codes(recorder)
+
+        availability = general_meeting.record_action_availability(
+            case=self.case,
+            actor=recorder,
+            actor_permissions=permissions,
+        )
+        recorder_headers = self._auth(recorder)
+        before = self._general_meeting_ledgers()
+        response = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/general-meeting-approval/",
+            payload,
+            content_type="application/json",
+            **recorder_headers,
+        )
+
+        self.assertFalse(availability["enabled"])
+        self.assertEqual(response.status_code, 403, response.json())
+        assert_error_envelope(self, response.json(), "OBJECT_ACCESS_DENIED")
+        self.assertEqual(self._general_meeting_ledgers(), before)
+
     def test_each_general_meeting_document_field_uses_nondisclosing_reference_scope(self):
         recorder, payload = self._general_meeting_recorder_and_payload()
         url = (
@@ -2237,6 +2286,128 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(
             communication_audit.new_value_json["delivery_status"], "pending"
         )
+
+    def test_final_approval_uses_routed_review_package_after_live_owner_mutation(self):
+        frozen_review = self.case.appraisal_facts_json
+        first = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2, "comments": "First frozen approval."},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        self.assertEqual(first.status_code, 200, first.json())
+
+        self.application.application_reference_number = "LIVE-MUTATED-REFERENCE"
+        self.application.borrower_type = "fpc"
+        self.application.required_loan_amount = "1.00"
+        self.application.declared_purpose = "Mutable purpose after routing"
+        self.application.purpose_category = "working_capital"
+        self.application.save(
+            update_fields=[
+                "application_reference_number",
+                "borrower_type",
+                "required_loan_amount",
+                "declared_purpose",
+                "purpose_category",
+            ]
+        )
+        self.member.display_name = "Mutable borrower after routing"
+        self.member.member_type = "fpc"
+        self.member.save(update_fields=["display_name", "member_type"])
+        self.note.recommended_amount = "2.00"
+        self.note.recommended_tenure_months = 99
+        self.note.recommended_interest_type = "fixed"
+        self.note.recommended_security_summary = "Mutable security after routing"
+        self.note.loan_limit_snapshot_json = {
+            **self.note.loan_limit_snapshot_json,
+            "final_eligible_loan_amount": "3.00",
+            "policy_name": "Mutable policy after routing",
+        }
+        self.note.save(
+            update_fields=[
+                "recommended_amount",
+                "recommended_tenure_months",
+                "recommended_interest_type",
+                "recommended_security_summary",
+                "loan_limit_snapshot_json",
+            ]
+        )
+        self.risk.overall_risk_rating = "high"
+        self.risk.risk_mitigation_notes = "Mutable risk after routing."
+        self.risk.save(update_fields=["overall_risk_rating", "risk_mitigation_notes"])
+
+        final = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3, "comments": "Terminal frozen approval."},
+            content_type="application/json",
+            **self._auth(self.director),
+        )
+
+        self.assertEqual(final.status_code, 200, final.json())
+        decision = apps.get_model("approvals", "SanctionDecision").objects.get(
+            approval_case=self.case
+        )
+        self.assertEqual(
+            str(decision.sanctioned_amount),
+            frozen_review["loan_amounts"]["recommended_amount"],
+        )
+        self.assertEqual(decision.sanctioned_tenure_months, 12)
+        self.assertEqual(decision.interest_rate_type, "floating")
+        self.assertEqual(
+            decision.security_required_summary,
+            "Standard member security package.",
+        )
+        entry = apps.get_model(
+            "approvals", "CreditSanctionRegisterEntry"
+        ).objects.get(approval_case=self.case)
+        self.assertEqual(entry.application_number, "LO00000701")
+        self.assertEqual(entry.borrower_name, frozen_review["borrower"]["name"])
+        self.assertEqual(entry.borrower_type, frozen_review["borrower"]["member_type"])
+        self.assertEqual(
+            str(entry.requested_amount),
+            frozen_review["loan_amounts"]["requested_amount"],
+        )
+        self.assertEqual(
+            str(entry.eligible_amount),
+            frozen_review["loan_amounts"]["eligible_amount"],
+        )
+        self.assertEqual(
+            str(entry.recommended_amount),
+            frozen_review["loan_amounts"]["recommended_amount"],
+        )
+
+    def test_corrupt_frozen_package_before_final_action_is_exact_zero_write(self):
+        first = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2, "comments": "Valid partial approval."},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        self.assertEqual(first.status_code, 200, first.json())
+        corrupted = {
+            **self.case.appraisal_facts_json,
+            "sanction_terms": {
+                **self.case.appraisal_facts_json["sanction_terms"],
+                "recommended_security_summary": ["malformed"],
+            },
+        }
+        ApprovalCase.objects.filter(pk=self.case.pk).update(
+            appraisal_facts_json=corrupted,
+            routing_snapshot_is_coherent=True,
+        )
+        director_headers = self._auth(self.director)
+        before = self._action_ledgers()
+
+        final = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3, "comments": "Must not use mutable owner truth."},
+            content_type="application/json",
+            **director_headers,
+        )
+
+        self.assertEqual(final.status_code, 404, final.json())
+        assert_error_envelope(self, final.json(), "NOT_FOUND")
+        self.assertEqual(self._action_ledgers(), before)
 
     def test_final_approval_publishes_immutable_register_and_sanction_decision_reads(self):
         sanction_read = self._permission("approvals.sanction.read")
@@ -3087,6 +3258,71 @@ class ApprovalCaseRoutingApiTests(TestCase):
             audit.new_value_json["workflow_event_id"], str(entry.workflow_event_id)
         )
         self.assertEqual(entry.workflow_event.entity_id, self.case.pk)
+
+    def test_rejected_register_retains_routed_source_package_after_live_owner_mutation(self):
+        frozen_review = self.case.appraisal_facts_json
+        self.application.application_reference_number = "LIVE-REJECTED-REFERENCE"
+        self.application.borrower_type = "fpc"
+        self.application.required_loan_amount = "11.00"
+        self.application.declared_purpose = "Mutable rejected purpose"
+        self.application.save(
+            update_fields=[
+                "application_reference_number",
+                "borrower_type",
+                "required_loan_amount",
+                "declared_purpose",
+            ]
+        )
+        self.member.display_name = "Mutable rejected borrower"
+        self.member.save(update_fields=["display_name"])
+        self.note.recommended_amount = "12.00"
+        self.note.loan_limit_snapshot_json = {
+            **self.note.loan_limit_snapshot_json,
+            "final_eligible_loan_amount": "13.00",
+        }
+        self.note.save(
+            update_fields=["recommended_amount", "loan_limit_snapshot_json"]
+        )
+        self.risk.overall_risk_rating = "high"
+        self.risk.risk_mitigation_notes = "Mutable rejected risk."
+        self.risk.save(update_fields=["overall_risk_rating", "risk_mitigation_notes"])
+
+        rejected = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/reject/",
+            {"version": 2, "comments": "Frozen rejection reason."},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+
+        self.assertEqual(rejected.status_code, 200, rejected.json())
+        entry = apps.get_model(
+            "approvals", "CreditSanctionRegisterEntry"
+        ).objects.get(approval_case=self.case)
+        self.assertEqual(entry.application_number, "LO00000701")
+        self.assertEqual(entry.borrower_name, frozen_review["borrower"]["name"])
+        self.assertEqual(entry.borrower_type, frozen_review["borrower"]["member_type"])
+        self.assertEqual(
+            str(entry.requested_amount),
+            frozen_review["loan_amounts"]["requested_amount"],
+        )
+        self.assertEqual(
+            str(entry.eligible_amount),
+            frozen_review["loan_amounts"]["eligible_amount"],
+        )
+        self.assertEqual(
+            str(entry.recommended_amount),
+            frozen_review["loan_amounts"]["recommended_amount"],
+        )
+        self.assertEqual(entry.reasons, "Frozen rejection reason.")
+        self.assertEqual(entry.source_review_facts_json, frozen_review)
+        self.assertEqual(
+            entry.source_review_facts_json["purpose"],
+            {
+                "category": "crop_production",
+                "description": "Crop production",
+            },
+        )
+        self.assertEqual(entry.source_review_facts_json["risk"]["overall_risk_rating"], "low")
 
     def test_register_freezes_same_case_exception_abstention_and_meeting_references(self):
         register_read = self._permission("approvals.sanction_register.read")
@@ -4666,6 +4902,11 @@ class ApprovalCaseRoutingApiTests(TestCase):
             "case": ApprovalCase.objects.filter(pk=self.case.pk).values().get(),
             "actions": list(ApprovalAction.objects.order_by("pk").values()),
             "sanctions": list(apps.get_model("approvals", "SanctionDecision").objects.order_by("pk").values()),
+            "registers": list(
+                apps.get_model(
+                    "approvals", "CreditSanctionRegisterEntry"
+                ).objects.order_by("pk").values()
+            ),
             "audits": list(AuditLog.objects.order_by("pk").values()),
             "workflows": list(WorkflowEvent.objects.order_by("pk").values()),
             "communications": list(Communication.objects.order_by("pk").values()),

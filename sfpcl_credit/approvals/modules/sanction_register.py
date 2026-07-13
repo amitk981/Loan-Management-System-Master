@@ -46,30 +46,28 @@ def generate_for_terminal_case(
 
     case = (
         ApprovalCase.objects.select_related(
-            "loan_application__member",
-            "loan_appraisal_note",
             "general_meeting_approval",
         )
         .prefetch_related("actions__approver_user")
         .get(pk=case.pk)
     )
-    application = case.loan_application
-    note = case.loan_appraisal_note
     authority = approval_case_engine.serialize_case_authority(case)
+    terminal_facts = approval_case_engine.validated_frozen_terminal_facts(case)
     action_rows = authority["approval_actions"]
     exception = _case_exception(case)
     meeting = case.general_meeting_approval
     defaults = {
-        "loan_application": application,
-        "member": application.member,
+        "loan_application_id": case.loan_application_id,
+        "member_id": terminal_facts["member_id"],
         "sanction_decision": sanction_decision,
         "workflow_event": workflow_event,
-        "application_number": application.application_reference_number,
-        "borrower_name": application.member.display_name or application.member.legal_name,
-        "borrower_type": application.borrower_type,
-        "requested_amount": application.required_loan_amount,
-        "eligible_amount": note.loan_limit_snapshot_json["final_eligible_loan_amount"],
-        "recommended_amount": note.recommended_amount,
+        "application_number": terminal_facts["application_number"],
+        "borrower_name": terminal_facts["borrower_name"],
+        "borrower_type": terminal_facts["borrower_type"],
+        "requested_amount": terminal_facts["requested_amount"],
+        "eligible_amount": terminal_facts["eligible_amount"],
+        "recommended_amount": terminal_facts["recommended_amount"],
+        "source_review_facts_json": terminal_facts["review_facts"],
         "sanctioned_amount": (
             sanction_decision.sanctioned_amount if sanction_decision else None
         ),
@@ -109,7 +107,7 @@ def generate_for_terminal_case(
         new_value_json={
             "approval_case_id": str(case.pk),
             "cycle_number": case.cycle_number,
-            "loan_application_id": str(application.pk),
+            "loan_application_id": str(case.loan_application_id),
             "sanction_decision_id": (
                 str(sanction_decision.pk) if sanction_decision else None
             ),

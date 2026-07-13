@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_rejected_register_retains_routed_source_package_after_live_owner_mutation (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_rejected_register_retains_routed_source_package_after_live_owner_mutation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_041501_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3235, in test_rejected_register_retains_routed_source_package_after_live_owner_mutation
+    self.assertEqual(entry.source_review_facts_json, frozen_review)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'CreditSanctionRegisterEntry' object has no attribute 'source_review_facts_json'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.027s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

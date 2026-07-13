@@ -36,7 +36,9 @@ register evidence outside the captured viewport or contain opaque rendering arte
 1. Extend the immutable Credit Sanction Register projection with the remaining source S23 facts:
    formal entry number, folio, loan type, purpose, per-approver decision times, rejection reason,
    conditions, and communication date/status. Use frozen case/decision/action/communication facts;
-   unavailable A-079 decision facts remain explicitly null, never copied from live rows.
+   purpose/risk and routed identity/amount facts must consume 007O's immutable
+   `source_review_facts_json` copy. Unavailable A-079 decision facts remain explicitly null, never
+   copied from live application/member/appraisal rows.
 2. Extend the immutable Exception Register projection with borrower, financial impact, requested-
    by actor, and decision date in addition to the delivered description/business reason, risk,
    authority/actions, and supporting metadata. Keep the register read-only and actor-scoped.

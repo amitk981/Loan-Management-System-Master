@@ -1,7 +1,7 @@
 # Slice 007O: Frozen Terminal Decision and Register Source Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers

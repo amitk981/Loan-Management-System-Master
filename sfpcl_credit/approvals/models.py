@@ -549,6 +549,7 @@ class CreditSanctionRegisterEntry(models.Model):
     requested_amount = models.DecimalField(max_digits=18, decimal_places=2)
     eligible_amount = models.DecimalField(max_digits=18, decimal_places=2)
     recommended_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    source_review_facts_json = models.JSONField(default=dict)
     sanctioned_amount = models.DecimalField(
         max_digits=18, decimal_places=2, null=True, blank=True
     )

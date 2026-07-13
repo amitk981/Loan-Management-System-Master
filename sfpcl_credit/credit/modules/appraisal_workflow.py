@@ -224,6 +224,8 @@ def project_approval_case_review_facts(*, application, appraisal_note, review):
             "appraisal_reviewed_by_user_id": str(review.reviewer_user_id),
         },
         "borrower": {
+            "member_id": str(application.member_id),
+            "application_reference_number": application.application_reference_number,
             "name": application.member.display_name or application.member.legal_name,
             "member_type": application.borrower_type,
         },
@@ -235,6 +237,13 @@ def project_approval_case_review_facts(*, application, appraisal_note, review):
             ),
             "eligible_amount": loan_limit.get("final_eligible_loan_amount"),
             "recommended_amount": f"{appraisal_note.recommended_amount:.2f}",
+        },
+        "sanction_terms": {
+            "recommended_tenure_months": appraisal_note.recommended_tenure_months,
+            "recommended_interest_type": appraisal_note.recommended_interest_type,
+            "recommended_security_summary": (
+                appraisal_note.recommended_security_summary
+            ),
         },
         "purpose": {
             "category": application.purpose_category or None,

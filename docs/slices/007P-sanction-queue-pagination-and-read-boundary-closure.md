@@ -43,7 +43,9 @@ query-count assertion.
    inconsistent. It must not fabricate `EMPTY_PAGINATION` for a malformed server response.
 4. Apply actor scope plus safe approval type/status/assignment query narrowing before canonical
    Python validation, while still validating every returned/countable case through the frozen
-   boundary before count/page serialization. Register-specific filters remain after object scope.
+   `approval_case_is_readable` boundary before count/page serialization. `current_status` and
+   `approval_type` must reject unknown values rather than silently producing an empty page;
+   register-specific filters remain after object scope.
 5. Replace exact SQL/query-count tests with observable instrumentation: populate enough
    SQL-candidate and noncandidate cases to cross pages, count canonical validator invocations, and
    prove irrelevant actors/types/statuses are not materialized while malformed stale-true rows do

@@ -10,6 +10,7 @@ from django.utils.dateparse import parse_date
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalCase, GeneralMeetingApproval
 from sfpcl_credit.approvals.modules import approval_case_engine
+from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
 from sfpcl_credit.documents import services as document_services
 from sfpcl_credit.domain_errors import (
     DomainInvalidStateError,
@@ -38,11 +39,12 @@ class GeneralMeetingGateConflict(Exception):
 def record_action_availability(*, case, actor, actor_permissions):
     """Project the §25.11 recorder decision for this exact routed case."""
     permissions = set(actor_permissions)
-    case_access = approval_case_engine.can_read_approval_case(
+    case_readable = approval_case_engine.approval_case_is_readable(
         actor=actor, case=case, actor_permissions=permissions
     )
+    actor_is_case_approver = _is_unconflicted_case_approver(case, actor)
     legal_audience = (
-        case_access.scope_type == "approval_assigned"
+        actor_is_case_approver
         or bool(
             set(actor.role_codes())
             & {"compliance_team_member", "company_secretary", "credit_manager"}
@@ -51,13 +53,13 @@ def record_action_availability(*, case, actor, actor_permissions):
     required = {RECORD_PERMISSION, CASE_READ_PERMISSION, DOCUMENT_READ_PERMISSION}
     enabled = (
         case.general_meeting_evidence_required
-        and case_access.allowed
+        and case_readable
         and legal_audience
         and required.issubset(permissions)
     )
     if not case.general_meeting_evidence_required:
         reason = "General meeting evidence is not required for this approval case."
-    elif not case_access.allowed or not legal_audience:
+    elif not case_readable or not legal_audience:
         reason = "The current user is not in the related-party legal audience for this case."
     elif not required.issubset(permissions):
         reason = "Required general meeting record, case read, and document access permissions are not granted."
@@ -100,17 +102,18 @@ def record_for_application(
             .order_by("-cycle_number")
             .first()
         )
-        case_access = approval_case_engine.can_read_approval_case(
-            actor=actor,
-            case=case,
-            actor_permissions=permissions,
-        ) if case is not None else None
-        if (
-            case is None
-            or not approval_case_engine.is_routable_approval_case(case)
-            or not case_access.allowed
-        ):
+        case_readable = (
+            approval_case_engine.approval_case_is_readable(
+                actor=actor,
+                case=case,
+                actor_permissions=permissions,
+            )
+            if case is not None
+            else False
+        )
+        if case is None or not case_readable:
             raise DomainObjectAccessDenied(None)
+        actor_is_case_approver = _is_unconflicted_case_approver(case, actor)
         if not case.general_meeting_evidence_required:
             raise DomainInvalidStateError(
                 "General meeting evidence is not required for this approval case."
@@ -147,12 +150,10 @@ def record_for_application(
             context=document_services.DocumentReferenceContext(
                 related_entity_type="application",
                 related_entity_id=application.pk,
-                related_entity_access_allowed=case_access.allowed,
+                related_entity_access_allowed=case_readable,
                 workflow_scope=document_services.GENERAL_MEETING_WORKFLOW_SCOPE,
                 actor_role_codes=frozenset(actor.role_codes()),
-                actor_is_related_case_approver=(
-                    case_access.scope_type == "approval_assigned"
-                ),
+                actor_is_related_case_approver=actor_is_case_approver,
             ),
             purpose=document_services.GENERAL_MEETING_REFERENCE_PURPOSE,
         )
@@ -315,6 +316,18 @@ def _matches(meeting, cleaned):
         and meeting.minutes_document_id == cleaned["minutes_document_id"]
         and meeting.resolution_document_id == cleaned["resolution_document_id"]
         and meeting.approval_status == cleaned["approval_status"]
+    )
+
+
+def _is_unconflicted_case_approver(case, actor):
+    actor_id = str(actor.pk)
+    attributable = any(
+        str(item.get("user_id")) == actor_id
+        for item in ConflictOfInterestModule.effective_approvers(case)
+        if isinstance(item, dict)
+    ) or any(str(action.approver_user_id) == actor_id for action in case.actions.all())
+    return attributable and not ConflictOfInterestModule.conflict_reason(
+        case=case, actor_id=actor_id
     )
 
 

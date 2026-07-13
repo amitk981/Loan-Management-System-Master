@@ -6020,3 +6020,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_041501_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007O-frozen-terminal-decision-and-register-source-closure
+- Summary: Froze terminal decision/register identity, amount, purpose, risk, and sanction-term
+  sources in the routed review package; removed live owner reads from final creation; unified
+  General Meeting readability; added immutable register source-package persistence.
+- Tests run: backend RED/GREEN cycles and 146 focused regressions; Django check/migration sync;
+  691 backend tests with 19 expected PostgreSQL-only skips at 93% coverage; frontend
+  build/typecheck/lint and 257 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_041501_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High under standing approval; one additive JSON migration, no deployment or real
+  external communication.
+- Next action: Independent orchestrator validation, then run 007P followed by 007Q.
+
+## 2026-07-14 04:39:07 - 2026-07-14_041501_normal_run
+- Agent tool used: codex
+- Slice attempted: 007O-frozen-terminal-decision-and-register-source-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_041501_normal_run/.ralph/runs/2026-07-14_041501_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_041501_normal_run/.ralph/runs/2026-07-14_041501_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

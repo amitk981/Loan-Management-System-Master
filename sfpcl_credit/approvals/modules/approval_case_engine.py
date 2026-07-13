@@ -467,6 +467,37 @@ def is_routable_approval_case(case):
     )
 
 
+def validated_frozen_terminal_facts(case):
+    """Return terminal copy facts only after canonical frozen-package validation."""
+    if not is_routable_approval_case(case):
+        raise ValidationError("The frozen approval review package is invalid.")
+    facts = case.appraisal_facts_json
+    borrower = facts["borrower"]
+    amounts = facts["loan_amounts"]
+    terms = facts.get("sanction_terms") or {}
+    member_id = borrower.get("member_id")
+    application_number = borrower.get("application_reference_number")
+    if not member_id or not application_number:
+        raise ValidationError(
+            "The frozen approval review package lacks register ownership facts."
+        )
+    return {
+        "application_number": application_number,
+        "member_id": member_id,
+        "borrower_name": borrower["name"],
+        "borrower_type": borrower["member_type"],
+        "requested_amount": amounts["requested_amount"],
+        "eligible_amount": amounts["eligible_amount"],
+        "recommended_amount": amounts["recommended_amount"],
+        "sanctioned_tenure_months": terms.get("recommended_tenure_months"),
+        "interest_rate_type": terms.get("recommended_interest_type") or "",
+        "security_required_summary": (
+            terms.get("recommended_security_summary") or ""
+        ),
+        "review_facts": facts,
+    }
+
+
 def _matrix_projection_is_coherent(case, matrix):
     condition = matrix.get("condition_code") or ""
     roles = matrix.get("required_approver_roles")
@@ -680,6 +711,7 @@ def _review_snapshot_is_complete(case):
         "borrower",
         "eligibility",
         "loan_amounts",
+        "sanction_terms",
         "purpose",
         "compliance_checks",
         "borrowing_history",
@@ -702,13 +734,24 @@ def _review_snapshot_is_complete(case):
     maker = facts.get("maker_checker")
     borrower = facts.get("borrower")
     amounts = facts.get("loan_amounts")
+    terms = facts.get("sanction_terms")
     purpose = facts.get("purpose")
     compliance = facts.get("compliance_checks")
     risk = facts.get("risk")
     documentation = facts.get("documentation_completeness")
     references = facts.get("source_references")
     eligibility = facts.get("eligibility")
-    mappings = (maker, borrower, amounts, purpose, compliance, risk, documentation, references)
+    mappings = (
+        maker,
+        borrower,
+        amounts,
+        terms,
+        purpose,
+        compliance,
+        risk,
+        documentation,
+        references,
+    )
     if not all(isinstance(item, dict) for item in mappings):
         return False
     if not isinstance(eligibility, dict) or not eligibility:
@@ -725,8 +768,24 @@ def _review_snapshot_is_complete(case):
                 "appraisal_reviewed_by_user_id",
             },
         ),
-        (borrower, {"name", "member_type"}),
+        (
+            borrower,
+            {
+                "member_id",
+                "application_reference_number",
+                "name",
+                "member_type",
+            },
+        ),
         (amounts, {"requested_amount", "eligible_amount", "recommended_amount"}),
+        (
+            terms,
+            {
+                "recommended_tenure_months",
+                "recommended_interest_type",
+                "recommended_security_summary",
+            },
+        ),
         (purpose, {"category", "description"}),
         (
             compliance,
@@ -775,6 +834,25 @@ def _review_snapshot_is_complete(case):
     if any(
         not isinstance(borrower.get(key), str) or not borrower.get(key).strip()
         for key in ("name", "member_type")
+    ):
+        return False
+    if not is_uuid_string(borrower["member_id"]):
+        return False
+    if (
+        not isinstance(borrower["application_reference_number"], str)
+        or not borrower["application_reference_number"].strip()
+    ):
+        return False
+    if (
+        (
+            terms["recommended_tenure_months"] is not None
+            and (
+                not isinstance(terms["recommended_tenure_months"], int)
+                or terms["recommended_tenure_months"] <= 0
+            )
+        )
+        or not isinstance(terms["recommended_interest_type"], str)
+        or not isinstance(terms["recommended_security_summary"], str)
     ):
         return False
     if any(

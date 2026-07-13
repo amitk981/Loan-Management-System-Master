@@ -23,6 +23,21 @@
   governance/model concern. M05-FR-007 is reopened pending 007O, while 001-005/008/010-012 remain
   substantive and 006/009 remain partial.
 
+## 007O Frozen Terminal Decision and Register Source Closure
+
+- The credit-owned `approval-review-v2` package now also freezes member/application identity and
+  the reviewed tenure, interest-type, and security recommendation used by a sanction decision.
+  Numeric rate, repayment, charge, penal-rate, and condition facts remain the honest A-079
+  nullable/empty values because no governed frozen owner supplies them.
+- The locked final action revalidates canonical frozen truth before the immutable action and again
+  immediately before decision/register creation. Approved decisions and both approved/rejected
+  register rows copy only routed facts; the register retains the exact review package so purpose
+  and risk cannot be replaced by later live owner edits.
+- Missing/malformed terminal truth rolls the whole transaction back without action, decision,
+  register, audit, workflow, communication, or notification writes. General Meeting availability
+  and mutation now consume `approval_case_is_readable` rather than independently recomposing
+  routability plus actor scope.
+
 ## 007N Register, Matrix, and Settings Contract and Browser Closure
 
 - The shared authenticated frontend client now owns JSON and multipart headers, request ids,
