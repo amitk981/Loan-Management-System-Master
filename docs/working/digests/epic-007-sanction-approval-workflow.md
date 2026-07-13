@@ -1,5 +1,28 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## Architecture Review 2026-07-14 04:00 - Terminal Truth, Pagination, and Register Fidelity
+
+- Review range `d106e16..eab8b0d` covered completed slices 007K-007N. Frozen review-package reads,
+  authenticated transport consolidation, immutable action/evidence projections, configuration-
+  owned matrix authority, and the declared trusted-browser runs are substantive.
+- Final approval and register generation still consume mutable appraisal/application/member rows
+  after routing. `007O` requires every terminal decision/register value to come from the exact
+  frozen review package, makes malformed packages zero-write, and routes General Meeting reads
+  through the same canonical case-read boundary.
+- S21 sends the right filters but truncates at a fixed first 100 rows and drops pagination metadata;
+  the shared paginated client can also fabricate empty metadata for malformed success responses.
+  `007P` requires typed pagination end-to-end, strict malformed-response failure, full filtered
+  navigation, and safe SQL narrowing backed by public-behavior validation rather than query-count-
+  only proof.
+- S23/S25 omit source-required register facts and retained screenshots can hide the right-side
+  contract behind opaque or off-viewport regions. `007Q` adds the available formal-entry/folio,
+  loan/purpose, approver-date, rejection/condition/communication, borrower, financial-impact,
+  requested-by, and decision-date facts; its trusted screenshots must visibly prove those fields.
+- Source S71 also names rule/abstention/special-case/Board-reference semantics that no current
+  owner model supplies. No business rule was invented; that gap remains an explicit future
+  governance/model concern. M05-FR-007 is reopened pending 007O, while 001-005/008/010-012 remain
+  substantive and 006/009 remain partial.
+
 ## 007N Register, Matrix, and Settings Contract and Browser Closure
 
 - The shared authenticated frontend client now owns JSON and multipart headers, request ids,

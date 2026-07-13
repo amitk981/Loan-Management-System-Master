@@ -18,6 +18,10 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 ## Depends On
 - 008A
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
 ## Source References
 - docs/source/implementation-roadmap.md section 13
 - docs/source/api-contracts.md sections 26-28

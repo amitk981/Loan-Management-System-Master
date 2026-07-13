@@ -2,33 +2,31 @@
 
 ## Last Run
 
-2026-07-14_032113_normal_run
+2026-07-14_034706_architecture_review
 
 ## Current Status
 
-`007N-register-matrix-settings-contract-and-browser-closure` is complete. S23/S25/S71 now use the
-shared authenticated JSON/pagination transport, including bearer/request headers and one envelope/
-error boundary. Approval-matrix list rows carry server-owned display authority and minimum count;
-React renders them verbatim. Sidebar and direct guards consume one navigation manifest while
-resource panels retain canonical permission checks.
+Architecture review of completed 007K-007N is complete with no production-code change. Frozen
+review-package reads, shared authenticated transport, immutable exception evidence/action history,
+server-owned matrix authority, source-shaped policy settings, and genuine two-run browser execution
+are substantive.
 
-S70 again uses the approved policy summary/field-card composition with complete real version facts,
-read-only/manager authority, create-only draft successors, retained history, and no ten-column
-table or fixtures. The S72/012EA panels remain honestly inert. The six-screenshot routed browser
-contract is authored and collects successfully.
+The review found final decision/register creation can still consume mutable application/member/
+appraisal truth after routing, S21 drops mandatory pagination and truncates after 100 cases, and
+S23/S25 plus retained screenshots do not yet prove all source-required record facts. Corrective
+slices 007O-007Q are dependency-valid and queued. No Blocked slice was stale; no ADR was required.
 
 ## Validation
 
-RED/GREEN and full-gate evidence is in
-`.ralph/runs/2026-07-14_032113_normal_run/evidence/terminal-logs/`. Frontend build, typecheck, lint,
-and all 257 tests pass. Django check/migration sync and all 687 backend tests pass with 19 expected
-PostgreSQL-only skips and 93% coverage. Local Django/Vite reached readiness; Chromium hit the
-expected macOS Mach-port denial, so no screenshots were fabricated and the orchestrator owns both
-trusted browser runs.
+Review and full-gate evidence is in
+`.ralph/runs/2026-07-14_034706_architecture_review/evidence/`. Frontend build, typecheck, lint, and
+all 257 tests pass. Django check/migration sync and all 687 backend tests pass with 19 expected
+PostgreSQL-only skips and 93% coverage. The architecture-review descriptor declares no browser
+runtime; retained 007L-007N orchestrator browser evidence was inspected rather than rerun.
 
 ## Next Run
 
-An architecture review is due after four completed corrective slices. Review 007K-007N and the
-trusted browser output before starting Epic 008. Then run already-sharpened `008A`; its run-ahead
-notes preserve §16.2/§26.3 vocabulary, unique successor codes, scoped pagination, and the unresolved
-S72 active-versus-approved lifecycle question (A-095). `008B` is also sharpened behind 008A.
+Run `007O-frozen-terminal-decision-and-register-source-closure`, then
+`007P-sanction-queue-pagination-and-read-boundary-closure`; 007Q depends on both. Only after those
+correctives, start sharpened 008A/008B. Their concurrency requirements now declare the required
+PostgreSQL five-race capability; A-095 still owns the unresolved S72 active-versus-approved question.

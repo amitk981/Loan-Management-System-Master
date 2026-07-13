@@ -2,6 +2,125 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-14 04:00 - Architecture Review 2026-07-14_034706_architecture_review
+
+Reviewed completed work since architecture-review commit `d106e16`:
+- `007K-frozen-review-snapshot-and-selector-boundary-closure` (`234cd52`)
+- `007L-sanction-workbench-contract-and-browser-closure` (`d0481b8`)
+- `007M-exception-supporting-evidence-and-register-closure` (`f52021e`)
+- `007N-register-matrix-settings-contract-and-browser-closure` (`eab8b0d`)
+
+The review checked `git diff d106e16...HEAD`, every production/test hunk, retained RED/GREEN/full-
+gate and two-run browser evidence, the four slice contracts, Epic 007/digest, cited screen/API/
+auth/data-model/functional/codebase-design sections, and M05-FR-001..012. Standards and Spec ran
+as isolated independent passes. `CONTEXT.md` is corrected below; state and slice files contain no
+Blocked item to reopen.
+
+### Standards
+
+#### Finding 1 - High - S21 discards the mandatory list envelope and truncates authoritative scope
+
+`sanctionApi.listApprovalCases` asks for `page_size=100` through the data-only request path, drops
+the server pagination object, and `SanctionWorkbench` labels `cases.length` as the service count.
+Cases after the first 100 are unreachable and a server total can never be shown. The trusted spec
+reinforces the defect by returning a non-paginated success envelope. This violates API §§6.2/8.1,
+codebase-design §23.5, and 007L's actor-scoped count/order requirement. `007P` migrates S21 to the
+shared paginated path, retains exact filters on every page, and adds multi-page browser proof.
+
+#### Finding 2 - Medium - Shared pagination fabricates success for malformed list responses
+
+`authenticatedPaginatedRequest` makes pagination optional and substitutes `EMPTY_PAGINATION`.
+A nonempty list without required top-level pagination can therefore display `total_count=0`; no
+test covers missing or malformed pagination. This contradicts API §6.2 and 007N's typed pagination
+boundary. `007P` rejects malformed data/pagination shapes and preserves permission/error clearing.
+
+#### Finding 3 - Medium - The claimed single readable-case boundary still has bypasses
+
+General Meeting availability and mutation independently compose `can_read_approval_case` and
+`is_routable_approval_case` instead of consuming `approval_case_is_readable`. Behavior currently
+matches, but ownership can drift and the static test inspects only registers and ordinary approval
+actions. `007O` sends evidence actions through the same public decision as detail/actions/registers.
+
+#### Finding 4 - Medium - The bounded-work regression measures the wrong thing
+
+The new persisted-scope test compares Django statement counts after adding rows that the stored
+SQL projection already excludes. Statement count remains flat even if canonical Python validation
+materializes arbitrarily more real candidates, so it does not prove 007K/007C3's bounded-work
+claim and conflicts with 007K's instruction to avoid exact ORM-query assertions. `007P` uses real
+candidate/noncandidate pages and validator-call outcomes without pinning SQL.
+
+#### Finding 5 - Medium judgment call - Exception workflow/sensitivity claims exceed persisted facts
+
+The documents boundary proves upload audit, exact application, legal category, matching valid
+sensitivity, download permission, source legal audience, and caller object scope. Its workflow
+scope is a caller constant and it stores no upload-time approval-case/cycle identity; sensitivity
+validation accepts every source-defined value rather than a finer role matrix. The attachment is
+still created inside the exact locked case transaction and audited with case plus document ids.
+Because API §26.1/auth §19.4 define neither upload workflow provenance nor finer role/sensitivity
+pairs, A-094 remains the conservative rule and no invented schema/permission corrective is queued.
+
+### Spec
+
+#### Finding 1 - Critical - Terminal decision/register creation returns to mutable live truth
+
+007K makes the frozen review package mandatory across actions, decisions, and registers, but the
+last approval still creates `SanctionDecision` from live appraisal amount/tenure/security and
+Credit Sanction Register generation reads live application/member/appraisal amounts. Existing
+tests mutate live rows only after terminal generation. An edit after routing but before the final
+approver can therefore change the financial decision/formal register while frozen detail remains
+unchanged. `007O` makes final writes consume only the locked validated case package and adds the
+missing between-routing-and-terminal mutation matrix.
+
+#### Finding 2 - High - S23 is still a reduced register rather than the source record
+
+The S23 DTO/table omit formal entry number, folio, loan type, purpose, per-approver dates,
+rejection reason, conditions, and communication date/status required by screen-spec S23. The
+trusted browser fixture encodes the reduced DTO, so 007N's “S23 contract closure” does not prove
+the source screen. `007Q` projects these facts from the frozen case/decision/action/communication
+owners and renders them without live reconstruction.
+
+#### Finding 3 - High - S25 still omits core source columns
+
+007M added comments and supporting metadata, but S25 still lacks borrower, financial impact,
+requested-by actor, and decision date from screen-spec S25. `007Q` adds those immutable facts while
+retaining distinct description/business reason, read-only scope, and no inferred download action.
+
+#### Finding 4 - High evidence gap - Browser success did not produce reviewable register proof
+
+The orchestrator genuinely ran each declared spec twice, but retained S25 and deferred-settings
+PNGs contain large opaque black regions. Both 007M outputs are byte-identical and the captured
+S25 viewport shows only the left table columns; comments and supporting documents are located in
+off-screen DOM, not visible evidence. DOM assertions plus nonempty-file checks did not catch this.
+`007Q` requires the named evidence inside the 1280x720 viewport and rejects opaque/blank captures.
+
+#### Finding 5 - Medium - S71 configuration is source-partial
+
+Screen-spec S71 also names rule name, abstention rules, special-case handling, and Board approval
+reference. The current §25.1 model/API and UI expose none of these, while 007N's narrower promise
+of complete retained *existing* rule/proposal facts is met. No corrective invents configuration
+semantics absent from API/data-model truth; the gap remains explicit for a source-backed matrix-
+governance expansion.
+
+#### Finding 6 - High - S21 pagination evidence accepts a nonstandard response
+
+007L requires the server's actor-scoped count/order, but its browser fixture omits pagination and
+the UI never exposes pages or total count. This is both a contract and screen-fidelity failure,
+separate from the shared-client standard above. `007P` adds exact multi-page/filter/error behavior.
+
+### Evidence, functional coverage, and state
+
+All 007L/007M/007N trusted browser commands passed twice and every declared file exists; the
+finding is evidence quality/content, not a fabricated or skipped run. No material scope creep was
+found. M05-FR-001..005 and M05-FR-008/010/011/012 remain substantive. M05-FR-007 behavior is
+present but terminal result correctness is affected by mutable-source use. M05-FR-006 is partial
+until S25 source facts/evidence close; M05-FR-009 is partial until terminal source and S23 fields
+close. `007O`-`007Q` are dependency-valid corrective slices. No ADR was added because the existing
+frozen-cycle, standard-envelope, deep-module, and frontend-fidelity rules already decide them.
+
+Summary: Standards found 1 High issue, 3 Medium issues, and 1 Medium judgment call; the worst is
+S21 truncating the authoritative scoped queue. Spec found 1 Critical, 4 High, and 1 Medium issue;
+the worst is mutable live appraisal/application truth changing terminal financial evidence.
+
 ## 2026-07-14 01:17 - Architecture Review 2026-07-14_010536_architecture_review
 
 Reviewed completed work since architecture-review commit `82027f7`:

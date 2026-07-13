@@ -1,0 +1,14 @@
+Frontend gates — PASS
+Working directory: sfpcl-lms
+
+Command: npm run build
+Result: PASS; Vite 5.4.21 built 1,877 modules in 2.30s. Existing >500 kB chunk warning retained.
+
+Command: npm run typecheck
+Result: PASS; tsc --noEmit.
+
+Command: npm run lint
+Result: PASS; eslint src.
+
+Command: npm test -- --run
+Result: PASS; 33 files, 257 tests, duration 7.84s.
