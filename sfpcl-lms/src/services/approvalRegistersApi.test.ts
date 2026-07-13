@@ -6,6 +6,7 @@ import {
   fetchExceptionRegister,
   supersedeApprovalMatrixRule,
 } from './approvalRegistersApi';
+import approvalRegistersSource from './approvalRegistersApi.ts?raw';
 
 const storage = new Map<string, string>();
 
@@ -26,6 +27,12 @@ afterEach(() => {
 });
 
 describe('approval registers API client', () => {
+  it('leaves authenticated envelope transport to the shared client', () => {
+    expect(approvalRegistersSource).toContain('authenticatedPaginatedRequest');
+    expect(approvalRegistersSource).toContain('authenticatedRequest');
+    expect(approvalRegistersSource).not.toMatch(/\bfetch\s*\(|loadStoredAuthSession|Authorization|ApiEnvelope|listRequest|envelopeRequest/);
+  });
+
   it('keeps sanction and exception filters on their independent scoped endpoints', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(ok([sanctionRow], { ...pagination, page: 2, total_count: 21, total_pages: 3 }))
@@ -104,7 +111,8 @@ const matrixRule = {
   approval_matrix_rule_id: 'rule-1', decision_type: 'loan_sanction', amount_min: '0.00', amount_max: '500000.00',
   condition_code: null, required_approver_roles: ['cfo', 'director'], required_director_count: 1,
   joint_approval_required_flag: true, register_required: 'credit_sanction_register', effective_from: '2026-04-01',
-  effective_to: null, status: 'active', version_number: 'AM-2026-01',
+  effective_to: null, status: 'active', version_number: 'AM-2026-01', authority_summary: 'CFO + one Director',
+  minimum_approver_count: 2,
 };
 
 const replacement = {
@@ -123,7 +131,12 @@ const proposal = {
 function request(method = 'GET', body?: unknown): RequestInit {
   return {
     method,
-    headers: { Accept: 'application/json', Authorization: 'Bearer register-token', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+    headers: expect.objectContaining({
+      Accept: 'application/json',
+      Authorization: 'Bearer register-token',
+      'X-Request-ID': expect.any(String),
+      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    }) as unknown as HeadersInit,
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   };
 }

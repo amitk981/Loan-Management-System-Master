@@ -1,0 +1,15 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/authSession.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_032113_normal_run/sfpcl-lms
+
+ ✓ src/services/authSession.test.ts (18 tests) 21ms
+
+ Test Files  1 passed (1)
+      Tests  18 passed (18)
+   Start at  03:26:21
+   Duration  320ms (transform 87ms, setup 0ms, collect 88ms, tests 21ms, environment 0ms, prepare 42ms)
+

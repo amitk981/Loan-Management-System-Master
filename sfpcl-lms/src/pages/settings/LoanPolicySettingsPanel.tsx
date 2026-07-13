@@ -138,47 +138,62 @@ export const LoanPolicySettingsPanel: React.FC = () => {
   const current = policies.find(policy => policy.status === 'active') ?? policies[0];
 
   return (
-    <div className="max-w-4xl space-y-5">
-      <div className="bg-white border border-slate-200 rounded-xl p-6 flex items-start justify-between gap-4">
-        <div>
-          <h3 className="font-semibold text-slate-900 mb-1 flex items-center gap-2"><Settings size={16} className="text-green-600" /> Loan Policy Versions</h3>
-          <p className="text-sm text-slate-500">Values come from the versioned loan-policy configuration service. Historical calculations retain their original version.</p>
-        </div>
-        {canManage && current ? (
-          <button onClick={() => beginCreate(current)} className="flex items-center gap-2 text-sm text-green-700 font-medium border border-green-200 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors">
-            <Plus size={14} /> Create new policy version
-          </button>
-        ) : <span className="bg-slate-100 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-slate-200">Read-only access</span>}
-      </div>
+    <div className="max-w-3xl space-y-6">
+      <AlertBanner type="warning" title="Versioned policy configuration" message="Policy changes affect future calculations only after activation. Existing loans retain the policy version used at sanction." />
 
       {created && <AlertBanner type="success" title="Draft policy version created" message={`${created.policy_version} is stored as a new draft. Activation remains a separate governed action.`} onDismiss={() => setCreated(null)} />}
       {message && !form && <AlertBanner type="error" title="Policy version not created" message={message} onDismiss={() => setMessage('')} />}
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-max">
-            <thead className="bg-slate-50"><tr>
-              {['Policy', 'Version', 'Effective dates', 'Approval threshold', 'Share rule', 'Scale of finance', 'Interest', 'Compliance', 'Board reference', 'Status'].map(label => <th key={label} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">{label}</th>)}
-            </tr></thead>
-            <tbody className="divide-y divide-slate-100">
-              {state === 'loading' ? <tr><td colSpan={10} className="px-4 py-12 text-center text-slate-400">Loading loan-policy versions…</td></tr>
-                : policies.length === 0 ? <tr><td colSpan={10} className="px-4 py-12 text-center text-slate-400">No loan-policy versions are configured.</td></tr>
-                  : policies.map(policy => <tr key={policy.loan_policy_config_id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-800">{policy.policy_name}</td>
-                    <td className="px-4 py-3 text-slate-700 num">{policy.policy_version}</td>
-                    <td className="px-4 py-3 text-slate-600 text-xs">{policy.effective_from} — {policy.effective_to ?? (policy.status === 'active' ? 'Current' : 'Not set')}</td>
-                    <td className="px-4 py-3 text-slate-700 num">₹{policy.approval_threshold_amount}</td>
-                    <td className="px-4 py-3 text-slate-600 text-xs">{policy.share_limit_percentage ? `${policy.share_limit_percentage}%` : 'No percentage'} · {policy.per_share_cap_amount ? `₹${policy.per_share_cap_amount} cap` : 'No cap'}</td>
-                    <td className="px-4 py-3 text-slate-700 num">₹{policy.default_scale_of_finance_per_acre_amount}/acre</td>
-                    <td className="px-4 py-3 text-slate-600 text-xs capitalize">{policy.interest_rate_type}{policy.interest_benchmark ? ` · ${policy.interest_benchmark}` : ''}</td>
-                    <td className="px-4 py-3 text-slate-600 text-xs">Re-KYC {policy.rekyc_frequency_months}m · retain {policy.record_retention_years}y · grace {policy.grace_period_months}m</td>
-                    <td className="px-4 py-3 text-slate-600 text-xs">{policy.board_approval_reference ?? 'Not supplied'}</td>
-                    <td className="px-4 py-3"><StatusBadge label={policy.status} size="sm" /></td>
-                  </tr>)}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {state === 'loading' ? <div className="bg-white border border-slate-200 rounded-xl p-6 text-sm text-slate-400">Loading loan-policy versions…</div>
+        : !current ? <div className="bg-white border border-slate-200 rounded-xl p-6 text-sm text-slate-400">No loan-policy versions are configured.</div>
+          : <>
+            <div className="bg-white border border-slate-200 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4 gap-4">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2"><Settings size={16} className="text-green-600" /> Policy Version Summary</h3>
+                <div className="flex items-center gap-3">
+                  <StatusBadge label={current.status} size="sm" />
+                  {canManage ? <button onClick={() => beginCreate(current)} className="flex items-center gap-2 text-sm text-green-700 font-medium border border-green-200 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors"><Plus size={14} /> Create new policy version</button>
+                    : <span className="bg-slate-100 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-slate-200">Read-only access</span>}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <PolicyFact label="Policy name" value={current.policy_name} />
+                <PolicyFact label="Policy version" value={current.policy_version} />
+                <PolicyFact label="Effective from" value={current.effective_from} />
+                <PolicyFact label="Effective to" value={current.effective_to ?? 'Current'} />
+                <PolicyFact label="Board approval reference" value={current.board_approval_reference ?? 'Not supplied'} />
+                <PolicyFact label="Configuration status" value={current.status} capitalize />
+              </div>
+            </div>
+
+            <PolicySection title="Loan Parameters" facts={[
+              ['Short-term duration', `${current.short_term_duration_months} months`],
+              ['Secured-loan term', `${current.min_secured_loan_months ?? 'Not set'} months minimum · ${current.max_secured_loan_years ?? 'Not set'} years maximum`],
+              ['Approval threshold', `₹${current.approval_threshold_amount}`],
+              ['Interest rate type', current.interest_rate_type],
+              ['Interest benchmark / source', current.interest_benchmark ?? 'Not supplied'],
+              ['Penal interest rate', current.penal_interest_rate ? `${current.penal_interest_rate}%` : 'Not supplied'],
+            ]} />
+            <PolicySection title="Eligibility Rules" facts={[
+              ['Share limit percentage', current.share_limit_percentage ? `${current.share_limit_percentage}%` : 'Not supplied'],
+              ['Per-share cap', current.per_share_cap_amount ? `₹${current.per_share_cap_amount}` : 'Not supplied'],
+              ['Scale of finance per acre', `₹${current.default_scale_of_finance_per_acre_amount}`],
+            ]} />
+            <PolicySection title="Compliance Thresholds" facts={[
+              ['Re-KYC frequency', `${current.rekyc_frequency_months} months`],
+              ['Record retention', `${current.record_retention_years} years`],
+              ['Grace period', `${current.grace_period_months} months`],
+              ['Non-intentional extension', `${current.non_intentional_extension_months} months`],
+            ]} />
+
+            {policies.filter(policy => policy.loan_policy_config_id !== current.loan_policy_config_id).length > 0 && <div className="bg-white border border-slate-200 rounded-xl p-6">
+              <h3 className="font-semibold text-slate-900 mb-4">Retained Version History</h3>
+              <div className="space-y-3">{policies.filter(policy => policy.loan_policy_config_id !== current.loan_policy_config_id).map(policy => <div key={policy.loan_policy_config_id} className="border border-slate-200 rounded-lg p-4 flex items-center justify-between gap-4">
+                <div><div className="font-medium text-slate-900 text-sm">{policy.policy_name}</div><div className="text-xs text-slate-500 mt-1"><span className="num">{policy.policy_version}</span> · {policy.effective_from} — {policy.effective_to ?? (policy.status === 'active' ? 'Current' : 'Not set')} · {policy.board_approval_reference ?? 'No board reference'}</div></div>
+                <StatusBadge label={policy.status} size="sm" />
+              </div>)}</div>
+            </div>}
+          </>}
 
       <Modal isOpen={Boolean(form)} onClose={() => !busy && setForm(null)} title="Create new policy version" size="lg" footer={<>
         <button onClick={() => setForm(null)} disabled={busy} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
@@ -194,3 +209,16 @@ export const LoanPolicySettingsPanel: React.FC = () => {
     </div>
   );
 };
+
+const PolicyFact: React.FC<{ label: string; value: string; capitalize?: boolean }> = ({ label, value, capitalize }) => <div>
+  <span className="text-slate-500">{label}</span>
+  <div className={`font-medium text-slate-900 mt-1 ${capitalize ? 'capitalize' : ''}`}>{value}</div>
+</div>;
+
+const PolicySection: React.FC<{ title: string; facts: Array<[string, string]> }> = ({ title, facts }) => <div className="bg-white border border-slate-200 rounded-xl p-6">
+  <h3 className="font-semibold text-slate-900 mb-4">{title}</h3>
+  <div className="grid grid-cols-1 gap-4">{facts.map(([label, value]) => <div key={label} className="flex items-start gap-4">
+    <span className="w-72 text-sm text-slate-700 flex-shrink-0">{label}</span>
+    <span className="text-sm font-medium text-slate-900">{value}</span>
+  </div>)}</div>
+</div>;

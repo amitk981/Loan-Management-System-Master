@@ -2,39 +2,33 @@
 
 ## Last Run
 
-2026-07-14_025903_normal_run
+2026-07-14_032113_normal_run
 
 ## Current Status
 
-`007M-exception-supporting-evidence-and-register-closure` is complete. Exception enrichment accepts
-an optional ordered list of up to 20 distinct document ids. The documents-owned boundary validates
-public-upload provenance, exact application attribution, legal category, matching sensitivity,
-document permission, source audience, workflow context, and canonical object scope. Approvals does
-not import or query `DocumentFile`; it freezes only the returned immutable display metadata on the
-exact Exception Register entry/cycle.
+`007N-register-matrix-settings-contract-and-browser-closure` is complete. S23/S25/S71 now use the
+shared authenticated JSON/pagination transport, including bearer/request headers and one envelope/
+error boundary. Approval-matrix list rows carry server-owned display authority and minimum count;
+React renders them verbatim. Sidebar and direct guards consume one navigation manifest while
+resource panels retain canonical permission checks.
 
-Omitted evidence remains an honest empty list. Exact ordered replay is zero-write, changed ids are
-an immutable-snapshot conflict, and denied category/sensitivity/permission/role/application/object
-rows write no association evidence. Initial association ids are attributable in the locked creation
-audit, with the same actor/case/cycle represented by the workflow event.
-
-S25 renders distinct description/business reason, every immutable approval actor/decision/comment/
-time, and supporting file metadata in the existing register table composition. Register permission
-and metadata create no download affordance or mutation authority. The typed frontend contract and
-trusted browser spec cover both the evidence-rich and download-denied states.
+S70 again uses the approved policy summary/field-card composition with complete real version facts,
+read-only/manager authority, create-only draft successors, retained history, and no ten-column
+table or fixtures. The S72/012EA panels remain honestly inert. The six-screenshot routed browser
+contract is authored and collects successfully.
 
 ## Validation
 
-RED/GREEN evidence is retained in
-`.ralph/runs/2026-07-14_025903_normal_run/evidence/terminal-logs/`. Django check and migration sync
-pass; all 687 backend tests pass with 19 expected PostgreSQL-only skips and 93% coverage. Frontend
-build/typecheck/lint and all 253 tests pass. The named Playwright spec collects successfully. A real
-local launch reached Django/Vite but Chromium hit the expected macOS Mach-port sandbox denial; no
-screenshots were fabricated, and the orchestrator owns the two trusted browser runs.
+RED/GREEN and full-gate evidence is in
+`.ralph/runs/2026-07-14_032113_normal_run/evidence/terminal-logs/`. Frontend build, typecheck, lint,
+and all 257 tests pass. Django check/migration sync and all 687 backend tests pass with 19 expected
+PostgreSQL-only skips and 93% coverage. Local Django/Vite reached readiness; Chromium hit the
+expected macOS Mach-port denial, so no screenshots were fabricated and the orchestrator owns both
+trusted browser runs.
 
 ## Next Run
 
-Run `007N-register-matrix-settings-contract-and-browser-closure`. It was inspected and is already
-concretely sharpened with shared transport, server-projected matrix facts, navigation parity,
-Settings fidelity, exact browser scenarios, and six screenshot contracts. Do not close Epic 007
-browser/fidelity evidence until 007N completes.
+An architecture review is due after four completed corrective slices. Review 007K-007N and the
+trusted browser output before starting Epic 008. Then run already-sharpened `008A`; its run-ahead
+notes preserve §16.2/§26.3 vocabulary, unique successor codes, scoped pagination, and the unresolved
+S72 active-versus-approved lifecycle question (A-095). `008B` is also sharpened behind 008A.

@@ -1,7 +1,7 @@
 # Slice 007N: Register, Matrix, and Settings Contract and Browser Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -84,3 +84,18 @@ High
 - The approved Settings composition is preserved without mock/live-looking fixtures.
 - Trusted browser evidence and all configured gates pass.
 
+## Done Checklist
+
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated
+- [x] Database rules followed (no schema change required)
+- [x] Permissions tested
+- [x] Audit behavior retained by the governed successor boundary
+- [x] Browser contract collected; local Chromium sandbox denial retained honestly
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [x] Commit left to the orchestrator after independent gates

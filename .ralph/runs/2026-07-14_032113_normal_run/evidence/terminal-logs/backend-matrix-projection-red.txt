@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_configuration_collections_are_bounded_paginated_and_reject_unknown_params (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_configuration_collections_are_bounded_paginated_and_reject_unknown_params)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_032113_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 554, in test_configuration_collections_are_bounded_paginated_and_reject_unknown_params
+    self.assertEqual(rule["authority_summary"], "CFO + one Director")
+                     ~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'authority_summary'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.010s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

@@ -5964,3 +5964,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_032113_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007N-register-matrix-settings-contract-and-browser-closure
+- Summary: Centralised register/matrix pagination and authenticated transport; added server-owned
+  matrix authority/count display facts; unified sidebar/direct-guard navigation permissions;
+  restored the approved S70 policy card/field composition; and authored the six-state routed
+  S23/S25/S70/S71 trusted browser contract.
+- Tests run: retained backend/frontend RED/GREEN cycles; frontend build/typecheck/lint and 257
+  tests; backend check/migration sync and 687 tests with 19 expected skips at 93% coverage;
+  Playwright collection successful and honest local Chromium sandbox denial retained.
+- Evidence saved: `.ralph/runs/2026-07-14_032113_normal_run/evidence/`
+- Result: Success pending independent orchestrator browser/quality validation.
+- Risk level: High under standing approval; no migration, external communication, or deployment.
+- Next action: Independent orchestrator validation/commit/merge/push, then the due architecture
+  review before 008A.
+
+## 2026-07-14 03:46:54 - 2026-07-14_032113_normal_run
+- Agent tool used: codex
+- Slice attempted: 007N-register-matrix-settings-contract-and-browser-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_032113_normal_run/.ralph/runs/2026-07-14_032113_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_032113_normal_run/.ralph/runs/2026-07-14_032113_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

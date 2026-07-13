@@ -14,6 +14,7 @@ export interface AuthSession {
 interface ApiEnvelope<T> {
   success: boolean;
   data?: T;
+  pagination?: Pagination;
   error?: {
     code: string;
     message: string;
@@ -21,6 +22,29 @@ interface ApiEnvelope<T> {
     field_errors?: Record<string, unknown>;
   };
 }
+
+export interface Pagination {
+  page: number;
+  page_size: number;
+  total_count: number;
+  total_pages: number;
+  has_next: boolean;
+  has_previous: boolean;
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  pagination: Pagination;
+}
+
+const EMPTY_PAGINATION: Pagination = {
+  page: 1,
+  page_size: 20,
+  total_count: 0,
+  total_pages: 1,
+  has_next: false,
+  has_previous: false,
+};
 
 interface LoginData {
   access_token: string;
@@ -268,7 +292,7 @@ export const clearStoredAuthSession = (): void => {
   localStorage.removeItem(AUTH_STORAGE_KEY);
 };
 
-const parseAuthenticatedEnvelope = async <T>(response: Response): Promise<T> => {
+const parseAuthenticatedEnvelope = async <T>(response: Response): Promise<ApiEnvelope<T>> => {
   let envelope: ApiEnvelope<T>;
   try { envelope = await response.json() as ApiEnvelope<T>; }
   catch { throw new AuthSessionError('MALFORMED_RESPONSE', 'The server returned an invalid response.', response.status); }
@@ -278,18 +302,35 @@ const parseAuthenticatedEnvelope = async <T>(response: Response): Promise<T> => 
       : undefined;
     throw new AuthSessionError(envelope.error?.code ?? 'REQUEST_FAILED', envelope.error?.message ?? 'Request failed.', response.status, fieldErrors, envelope.error?.details);
   }
-  return envelope.data;
+  return envelope;
 };
 
-export const authenticatedRequest = async <T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> => {
+const authenticatedHeaders = (accessToken: string, jsonBody = false): Record<string, string> => ({
+  Accept: 'application/json',
+  Authorization: `Bearer ${accessToken}`,
+  'X-Request-ID': globalThis.crypto?.randomUUID?.() ?? `web-${Date.now()}`,
+  ...(jsonBody ? { 'Content-Type': 'application/json' } : {}),
+});
+
+const authenticatedEnvelopeRequest = async <T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<ApiEnvelope<T>> => {
   const session = loadStoredAuthSession();
   if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options.method ?? 'GET',
-    headers: { Accept: 'application/json', Authorization: `Bearer ${session.accessToken}`, ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
+    headers: authenticatedHeaders(session.accessToken, options.body !== undefined),
     ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
   });
   return parseAuthenticatedEnvelope<T>(response);
+};
+
+export const authenticatedRequest = async <T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> => {
+  const envelope = await authenticatedEnvelopeRequest<T>(path, options);
+  return envelope.data as T;
+};
+
+export const authenticatedPaginatedRequest = async <T>(path: string): Promise<PaginatedResult<T>> => {
+  const envelope = await authenticatedEnvelopeRequest<T[]>(path);
+  return { items: envelope.data ?? [], pagination: envelope.pagination ?? EMPTY_PAGINATION };
 };
 
 export const authenticatedMultipartRequest = async <T>(path: string, fields: Record<string, string | Blob>): Promise<T> => {
@@ -299,10 +340,11 @@ export const authenticatedMultipartRequest = async <T>(path: string, fields: Rec
   Object.entries(fields).forEach(([field, value]) => body.set(field, value));
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
-    headers: { Accept: 'application/json', Authorization: `Bearer ${session.accessToken}` },
+    headers: authenticatedHeaders(session.accessToken),
     body,
   });
-  return parseAuthenticatedEnvelope<T>(response);
+  const envelope = await parseAuthenticatedEnvelope<T>(response);
+  return envelope.data as T;
 };
 
 export const loginAndLoadCurrentUser = async (credentials: { email: string; password: string }): Promise<FrontendCurrentUser> => {

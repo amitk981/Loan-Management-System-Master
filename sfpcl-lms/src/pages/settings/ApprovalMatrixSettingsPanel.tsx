@@ -161,8 +161,8 @@ export const ApprovalMatrixSettingsPanel: React.FC = () => {
                   <td className="px-4 py-3 font-medium text-slate-800 num">{rule.version_number}</td>
                   <td className="px-4 py-3 text-slate-700 capitalize">{words(rule.decision_type)}</td>
                   <td className="px-4 py-3 text-slate-600 text-xs">{amountCondition(rule)}</td>
-                  <td className="px-4 py-3 text-slate-700">{authority(rule)}</td>
-                  <td className="px-4 py-3 text-slate-700 text-center">{minimumApprovals(rule)}</td>
+                  <td className="px-4 py-3 text-slate-700">{rule.authority_summary}</td>
+                  <td className="px-4 py-3 text-slate-700 text-center">{rule.minimum_approver_count}</td>
                   <td className="px-4 py-3 text-slate-600 text-xs capitalize">{rule.register_required ? words(rule.register_required) : 'None'}</td>
                   <td className="px-4 py-3 text-slate-600 text-xs">{rule.effective_from} — {rule.effective_to ?? 'Current'}</td>
                   <td className="px-4 py-3"><StatusBadge label={rule.status} size="sm" /></td>
@@ -225,14 +225,3 @@ const amountCondition = (rule: ApprovalMatrixRule) => {
   if (rule.amount_max !== null) return `Up to ${money(rule.amount_max)}`;
   return 'All amounts';
 };
-
-const authority = (rule: ApprovalMatrixRule) => rule.required_approver_roles.map(role => {
-  if (role === 'cfo') return 'CFO';
-  if (role === 'director') return `${rule.required_director_count} Director${rule.required_director_count === 1 ? '' : 's'}`;
-  return words(role).replace(/\b\w/g, (letter: string) => letter.toUpperCase());
-}).join(' + ');
-
-const minimumApprovals = (rule: ApprovalMatrixRule) => rule.required_approver_roles.reduce(
-  (total, role) => total + (role === 'director' ? rule.required_director_count : 1),
-  0,
-);

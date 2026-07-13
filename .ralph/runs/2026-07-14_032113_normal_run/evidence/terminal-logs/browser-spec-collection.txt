@@ -1,0 +1,3 @@
+Listing tests:
+  [chromium] › approval-register-settings.e2e.spec.ts:9:5 › S23/S25/S70/S71 preserve scoped contracts through routed app-shell navigation
+Total: 1 test in 1 file

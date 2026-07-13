@@ -104,6 +104,22 @@ borrower content. Denials and validation failures create no loan document, file,
 - Architecture regression: generation uses the document-owned seam and does not import private
   models from member/credit/approval modules for business decisions.
 
+## Run-Ahead Sharpening Review (007N completion, 2026-07-14)
+
+- The §26.4 success object is exact: `loan_document_id`, `document_type`,
+  `generation_status=generated`, `document_id`, and safe `file_name`. Do not return template bytes,
+  a download URL, merge-source payload, or borrower-sensitive audit content; §26.2 remains the
+  separate permissioned download boundary.
+- The §26.5 list is application-scoped and metadata-only. Apply application object scope before
+  count/pagination and return only retained generated-document facts; ids confer neither template
+  mutation nor file download/verification/signature authority.
+- Data-model §16.3 is broader than this slice. Persist the named nullable later-workflow columns but
+  leave stamp, notarisation, custody, retention, verifier, loan-account, and signed-copy facts null;
+  do not infer “complete” from initial generated/execution/verification state.
+- Template selection must use 008A's exact approved/effective retained row and nullable borrower
+  variant. S72 “active” display wording is not a second generation-authority state, and Annexure
+  lettering is never a selector.
+
 ## Visual Acceptance Criteria
 None.
 

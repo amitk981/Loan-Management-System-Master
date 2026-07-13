@@ -59,7 +59,10 @@ const policy = { loan_policy_config_id: 'policy-1', status: 'active', ...success
 function request(method = 'GET', body?: unknown): RequestInit {
   return {
     method,
-    headers: { Accept: 'application/json', Authorization: 'Bearer policy-token', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+    headers: expect.objectContaining({
+      Accept: 'application/json', Authorization: 'Bearer policy-token', 'X-Request-ID': expect.any(String),
+      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    }) as unknown as HeadersInit,
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   };
 }

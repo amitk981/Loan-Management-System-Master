@@ -1,5 +1,23 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007N Register, Matrix, and Settings Contract and Browser Closure
+
+- The shared authenticated frontend client now owns JSON and multipart headers, request ids,
+  standard envelope/error parsing, malformed responses, and typed pagination. The S23/S25/S71
+  feature service retains only exact paths, filters, payloads, and DTOs; each scoped response still
+  atomically replaces rows and pagination.
+- Approval-matrix list rows project configuration-owned `authority_summary` and
+  `minimum_approver_count`. React renders them verbatim and contains no Director/cardinality
+  calculation. Sidebar visibility and direct-route guards consume one navigation permission
+  manifest while every panel keeps its canonical resource permission.
+- S70 policy truth is restored to the approved card/field composition with complete retained API
+  values, read-only/manager authority, complete create-only draft successor behavior, and no
+  fixture or ten-column table. The 008A template and 012EA TAT panels remain explicit and inert.
+- `e2e/approval-register-settings.e2e.spec.ts` owns the six named scoped-register, matrix reader/
+  successor, loan-policy reader, and deferred-panel screenshots. Collection passes; the local
+  servers reached readiness but Chromium hit the expected macOS Mach-port sandbox denial, so no
+  screenshot was fabricated and the declared two-run orchestrator contract remains authoritative.
+
 ## 007M Exception Supporting Evidence and Register Closure
 
 - Exception enrichment now accepts an optional bounded ordered list of distinct document ids. The

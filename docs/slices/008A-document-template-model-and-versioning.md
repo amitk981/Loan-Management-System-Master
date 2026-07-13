@@ -82,6 +82,25 @@ must not duplicate business evidence.
   content, exact replay, and one-winner concurrent successor creation on PostgreSQL.
 - Prove the catalogue stores template metadata only and performs no generation/storage download.
 
+## Run-Ahead Sharpening Review (007N completion, 2026-07-14)
+
+- Section 26.3 provides no activate/retire action endpoint. Keep `approval_status` on the exact
+  data-model §16.2 vocabulary (`draft`, `approved`, `retired`) and do not create an `/activate/`
+  route merely because S72 labels its display state “active”. Record that vocabulary conflict and
+  leave lifecycle refinement to a source-backed follow-up; 008B may select only an approved row
+  whose effective dates include the generation date.
+- `template_code` is source-unique and the §26.3 example includes a version suffix. A PATCH
+  successor therefore needs a new unique code/version in its complete payload, retains the target
+  row unchanged, and links old/new facts through attributable version-history evidence; do not add
+  an uncited mutable “current template” pointer.
+- List responses use the standard §6.2 envelope and §8 bounded pagination. Exact supported filters
+  must be limited to source/model facts (`document_type`, nullable borrower variant,
+  `approval_status`, page, page size); unknown query keys fail validation rather than widening the
+  catalogue or returning download descriptors.
+- S72's annexure field must stay descriptive metadata independent of `template_code`. A-087 and the
+  Epic 008 digest prohibit routing, generation selection, or register authority from depending on
+  disputed J/K/L lettering.
+
 ## Visual Acceptance Criteria
 None.
 

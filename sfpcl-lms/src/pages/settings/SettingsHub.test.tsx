@@ -7,6 +7,7 @@ import { fetchApprovalMatrixRules, supersedeApprovalMatrixRule } from '../../ser
 import { createLoanPolicyVersion, fetchLoanPolicyVersions } from '../../services/loanPolicyApi';
 import settingsSource from './SettingsHub.tsx?raw';
 import policyPanelSource from './LoanPolicySettingsPanel.tsx?raw';
+import matrixPanelSource from './ApprovalMatrixSettingsPanel.tsx?raw';
 
 let permissions = ['approvals.matrix.read'];
 
@@ -46,7 +47,8 @@ describe('SettingsHub Approval Matrix panel', () => {
 
     expect(await screen.findByText('AM-2026-02')).toBeTruthy();
     expect(screen.getByText('AM-2026-01')).toBeTruthy();
-    expect(screen.getByText('CFO + 2 Directors')).toBeTruthy();
+    expect(screen.getByText('Server-owned CFO + two Directors')).toBeTruthy();
+    expect(screen.getByText('3')).toBeTruthy();
     expect(screen.getByText('Superseded')).toBeTruthy();
     expect(fetchApprovalMatrixRules).toHaveBeenCalledWith({ page: 1, pageSize: 100 });
     expect(screen.queryByRole('button', { name: /Edit AM-2026-02/ })).toBeNull();
@@ -103,6 +105,12 @@ describe('SettingsHub Approval Matrix panel', () => {
     const panel = settingsSource.slice(settingsSource.indexOf('OWNED S71 START'), settingsSource.indexOf('OWNED S71 END'));
     expect(panel).not.toMatch(/Standard sanction|High-value sanction|Disbursement initiation|AM-2026-01/);
   });
+
+  it('renders authority facts verbatim and contains no React approver-count calculation', () => {
+    expect(matrixPanelSource).toContain('rule.authority_summary');
+    expect(matrixPanelSource).toContain('rule.minimum_approver_count');
+    expect(matrixPanelSource).not.toMatch(/const authority|const minimumApprovals|reduce\s*\(|role === ['"]director['"]/);
+  });
 });
 
 describe('SettingsHub remaining panels', () => {
@@ -116,6 +124,11 @@ describe('SettingsHub remaining panels', () => {
     expect(screen.getByText('Board Loan Policy 2025')).toBeTruthy();
     expect(screen.getByText('LP-2026')).toBeTruthy();
     expect(screen.getByText('Read-only access')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Policy Version Summary' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Loan Parameters' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Eligibility Rules' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Compliance Thresholds' })).toBeTruthy();
+    expect(screen.queryByRole('table')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Create new policy version' })).toBeNull();
     expect(fetchLoanPolicyVersions).toHaveBeenCalledWith({ page: 1, pageSize: 100 });
   });
@@ -188,12 +201,14 @@ const activeRule = {
   condition_code: null, required_approver_roles: ['cfo', 'director'], required_director_count: 2,
   joint_approval_required_flag: true, register_required: 'credit_sanction_register', effective_from: '2026-08-01',
   effective_to: null, status: 'active' as const, version_number: 'AM-2026-02',
+  authority_summary: 'Server-owned CFO + two Directors', minimum_approver_count: 3,
 };
 
 const historicalRule = {
   ...activeRule, approval_matrix_rule_id: 'rule-history', amount_min: '0.00', amount_max: '500000.00',
   required_director_count: 1, effective_from: '2026-04-01', effective_to: '2026-07-31',
   status: 'superseded' as const, version_number: 'AM-2026-01',
+  authority_summary: 'Server-owned CFO + one Director', minimum_approver_count: 2,
 };
 
 const pagination = { page: 1, page_size: 100, total_count: 2, total_pages: 1, has_next: false, has_previous: false };

@@ -1,18 +1,9 @@
-import { API_BASE_URL, AuthSessionError, loadStoredAuthSession } from './authSession';
-
-export interface Pagination {
-  page: number;
-  page_size: number;
-  total_count: number;
-  total_pages: number;
-  has_next: boolean;
-  has_previous: boolean;
-}
-
-export interface PaginatedResult<T> {
-  items: T[];
-  pagination: Pagination;
-}
+import {
+  authenticatedPaginatedRequest,
+  authenticatedRequest,
+  type PaginatedResult,
+} from './authSession';
+export type { Pagination, PaginatedResult } from './authSession';
 
 export interface SanctionRegisterExceptionReference {
   exception_register_entry_id: string;
@@ -113,6 +104,8 @@ export interface ApprovalMatrixRule {
   condition_code: string | null;
   required_approver_roles: string[];
   required_director_count: number;
+  authority_summary: string;
+  minimum_approver_count: number;
   joint_approval_required_flag: boolean;
   register_required: string | null;
   effective_from: string;
@@ -160,27 +153,6 @@ export interface ApprovalConfigurationProposal {
   available_actions: ConfigurationProposalAction[];
 }
 
-interface ApiEnvelope<T> {
-  success: boolean;
-  data?: T;
-  pagination?: Pagination;
-  error?: {
-    code: string;
-    message: string;
-    details?: Record<string, unknown>;
-    field_errors?: Record<string, unknown>;
-  };
-}
-
-const emptyPagination: Pagination = {
-  page: 1,
-  page_size: 20,
-  total_count: 0,
-  total_pages: 1,
-  has_next: false,
-  has_previous: false,
-};
-
 export const fetchCreditSanctionRegister = async (filters: {
   financialYear?: string;
   decision?: 'sanctioned' | 'rejected';
@@ -192,7 +164,7 @@ export const fetchCreditSanctionRegister = async (filters: {
   setParam(params, 'decision', filters.decision);
   setNumberParam(params, 'page', filters.page);
   setNumberParam(params, 'page_size', filters.pageSize);
-  return listRequest<CreditSanctionRegisterRow>(`/api/v1/credit-sanction-register/${query(params)}`);
+  return authenticatedPaginatedRequest<CreditSanctionRegisterRow>(`/api/v1/credit-sanction-register/${query(params)}`);
 };
 
 export const fetchExceptionRegister = async (filters: {
@@ -206,67 +178,23 @@ export const fetchExceptionRegister = async (filters: {
   setParam(params, 'exception_type', filters.exceptionType);
   setNumberParam(params, 'page', filters.page);
   setNumberParam(params, 'page_size', filters.pageSize);
-  return listRequest<ExceptionRegisterRow>(`/api/v1/exception-register/${query(params)}`);
+  return authenticatedPaginatedRequest<ExceptionRegisterRow>(`/api/v1/exception-register/${query(params)}`);
 };
 
 export const fetchApprovalMatrixRules = async (filters: { page?: number; pageSize?: number } = {}): Promise<PaginatedResult<ApprovalMatrixRule>> => {
   const params = new URLSearchParams();
   setNumberParam(params, 'page', filters.page);
   setNumberParam(params, 'page_size', filters.pageSize);
-  return listRequest<ApprovalMatrixRule>(`/api/v1/approval-matrix-rules/${query(params)}`);
+  return authenticatedPaginatedRequest<ApprovalMatrixRule>(`/api/v1/approval-matrix-rules/${query(params)}`);
 };
 
 export const supersedeApprovalMatrixRule = (
   ruleId: string,
   payload: ApprovalMatrixRuleReplacement,
-): Promise<ApprovalConfigurationProposal> => request<ApprovalConfigurationProposal>(
+): Promise<ApprovalConfigurationProposal> => authenticatedRequest<ApprovalConfigurationProposal>(
   `/api/v1/approval-matrix-rules/${ruleId}/`,
-  'PATCH',
-  payload,
+  { method: 'PATCH', body: payload },
 );
-
-async function listRequest<T>(path: string): Promise<PaginatedResult<T>> {
-  const envelope = await envelopeRequest<T[]>(path);
-  return { items: envelope.data ?? [], pagination: envelope.pagination ?? emptyPagination };
-}
-
-async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
-  const envelope = await envelopeRequest<T>(path, method, body);
-  return envelope.data as T;
-}
-
-async function envelopeRequest<T>(path: string, method = 'GET', body?: unknown): Promise<ApiEnvelope<T>> {
-  const session = loadStoredAuthSession();
-  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${session.accessToken}`,
-      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
-    },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
-  let envelope: ApiEnvelope<T>;
-  try {
-    envelope = await response.json() as ApiEnvelope<T>;
-  } catch {
-    throw new AuthSessionError('MALFORMED_RESPONSE', 'The server returned an invalid response.', response.status);
-  }
-  if (!response.ok || !envelope.success || envelope.data === undefined) {
-    const fieldErrors = envelope.error?.field_errors
-      ? Object.fromEntries(Object.entries(envelope.error.field_errors).map(([field, value]) => [field, String(value)]))
-      : undefined;
-    throw new AuthSessionError(
-      envelope.error?.code ?? 'REQUEST_FAILED',
-      envelope.error?.message ?? 'Request failed.',
-      response.status,
-      fieldErrors,
-      envelope.error?.details,
-    );
-  }
-  return envelope;
-}
 
 function setParam(params: URLSearchParams, key: string, value?: string): void {
   if (value) params.set(key, value);

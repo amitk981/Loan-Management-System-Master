@@ -2903,7 +2903,10 @@ collections, recover hidden rows from case/detail APIs, retain an earlier total,
 authority or money, or turn case/application/document metadata ids into actions or downloads.
 
 The S71 matrix panel consumes `GET /api/v1/approval-matrix-rules/?page=1&page_size=100` and renders
-active, inactive, and retained superseded versions as returned. A holder of
+active, inactive, and retained superseded versions as returned. Each rule additionally projects
+display-ready `authority_summary` and numeric `minimum_approver_count` from the approvals
+configuration owner; React renders these facts verbatim and does not recompute role or Director
+cardinality. A holder of
 `approvals.matrix.manage` may submit a complete successor through
 `PATCH /api/v1/approval-matrix-rules/{approval_matrix_rule_id}/`; success is a pending governed
 configuration proposal, not an immediate edit. The active rule remains unchanged until a distinct
@@ -2913,3 +2916,8 @@ Register export remains deferred to 012B/012C. The existing `Export Register` ac
 only with canonical `reports.export`; in 007J it displays an explicit deferred-state notice and
 makes no network request, creates no file, and does not imply broader register visibility. This
 interim behavior must be replaced, not extended, when the export-job contract lands.
+
+As of 007N, the register/matrix feature service delegates bearer/session headers, request ids,
+standard envelope and field-error parsing, malformed-response handling, and pagination extraction
+to the shared authenticated frontend client. The feature boundary owns only its exact endpoints,
+query filters, successor payload, and typed DTOs.

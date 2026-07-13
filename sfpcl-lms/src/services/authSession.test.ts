@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CANONICAL_TO_PROTOTYPE_PERMISSIONS,
   authenticatedMultipartRequest,
+  authenticatedPaginatedRequest,
   clearStoredAuthSession,
   loadStoredAuthSession,
   loginAndLoadCurrentUser,
@@ -90,6 +91,35 @@ afterEach(() => {
 });
 
 describe('auth session API flow', () => {
+  it('returns typed list data and pagination through the shared authenticated envelope boundary', async () => {
+    storedAuthSession({ accessToken: 'list-access', refreshToken: 'list-refresh' });
+    const fetchMock = vi.fn().mockResolvedValueOnce(response(200, {
+      success: true,
+      data: [{ approval_matrix_rule_id: 'rule-1' }],
+      pagination: { page: 2, page_size: 10, total_count: 11, total_pages: 2, has_next: false, has_previous: true },
+      meta: {},
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(authenticatedPaginatedRequest<{ approval_matrix_rule_id: string }>(
+      '/api/v1/approval-matrix-rules/?page=2&page_size=10',
+    )).resolves.toEqual({
+      items: [{ approval_matrix_rule_id: 'rule-1' }],
+      pagination: { page: 2, page_size: 10, total_count: 11, total_pages: 2, has_next: false, has_previous: true },
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://127.0.0.1:8000/api/v1/approval-matrix-rules/?page=2&page_size=10',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({
+          Accept: 'application/json',
+          Authorization: 'Bearer list-access',
+          'X-Request-ID': expect.any(String),
+        }),
+      }),
+    );
+  });
+
   it('sends multipart bodies through the shared authenticated envelope boundary', async () => {
     storedAuthSession({ accessToken: 'upload-access', refreshToken: 'upload-refresh' });
     const fetchMock = vi.fn().mockResolvedValueOnce(response(201, {
@@ -107,7 +137,11 @@ describe('auth session API flow', () => {
       'http://127.0.0.1:8000/api/v1/document-files/',
       expect.objectContaining({
         method: 'POST',
-        headers: { Accept: 'application/json', Authorization: 'Bearer upload-access' },
+        headers: expect.objectContaining({
+          Accept: 'application/json',
+          Authorization: 'Bearer upload-access',
+          'X-Request-ID': expect.any(String),
+        }),
         body: expect.any(FormData),
       }),
     );
