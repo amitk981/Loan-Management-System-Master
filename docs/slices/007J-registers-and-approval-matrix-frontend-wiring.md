@@ -25,14 +25,12 @@ The Sanction Committee, CS, and auditors read real registers generated from appr
 ## Prototype Reference
 - sfpcl-lms/src/pages/registers/RegistersHub.tsx
 - sfpcl-lms/src/pages/settings/SettingsHub.tsx (approval matrix panel)
-- sfpcl-lms/src/pages/borrower/portal/applications/MP12_SanctionOutcome.tsx
 
 ## Concrete Requirements
 1. Wire the sanction and exception register views in `RegistersHub.tsx` to the 007H register APIs with pagination/filtering per api-contracts §8; registers stay read-only generated views — no manual row editing.
 2. Wire the approval matrix panel in `SettingsHub.tsx` to the 007A configuration API: display current versioned rules; edits only for permitted admin roles, creating a new config version (003E pattern), never overwriting silently.
 3. Export actions appear only for roles with register-export permission; actual export jobs arrive in 012B — show the permitted action state, keep the button wired to whatever exists, and record the interim behaviour in API_CONTRACTS.md.
-4. Wire the member portal Sanction Outcome view (spec MP12, `MP12_SanctionOutcome.tsx`) to the sanction decision API: borrower sees own outcome, sanctioned amount, and borrower-facing terms only — no internal approval history.
-5. Loading, empty, error, unauthorized states throughout; reuse existing table/queue patterns only.
+4. Loading, empty, error, unauthorized states throughout; reuse existing table/queue patterns only.
 
 ## Owned Mock Removals
 - `src/pages/registers/RegistersHub.tsx` — the S23 (Credit Sanction Register) and S25 (Exception Register) views must run with no mock reads after this slice; the file's remaining register views and final `mockData` import removal are owned by 012DA.
@@ -85,7 +83,12 @@ The Sanction Committee, CS, and auditors read real registers generated from appr
   substitute one for the other or derive either from live application, case, or exception data.
 
 ## Out of Scope
-Register file exports (012B/012C), sanction case actions (007D/007I), stamp duty register (008D/011 compliance views).
+Register file exports (012B/012C), sanction case actions (007D/007I), stamp duty register (008D/011
+compliance views), and borrower MP12 outcome wiring. The source §25.8 endpoint is an internal
+approval-scoped read and deliberately returns no rejected decision; do not grant its permission to
+borrowers or widen it from this frontend slice. MP12 may continue to show the member-owned
+application status from `/api/v1/portal/applications/{id}/` until a separately sliced,
+source-authorised borrower outcome/terms projection exists.
 
 ## Risk Level
 Medium

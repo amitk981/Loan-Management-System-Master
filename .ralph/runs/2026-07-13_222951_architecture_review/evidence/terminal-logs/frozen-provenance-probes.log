@@ -1,0 +1,23 @@
+Diagnostic public HTTP probes (in-memory injection; no repository file changed)
+
+Pending frozen-provenance probe:
+before live appraisal edit: approval case detail HTTP 200
+stored routing_snapshot_is_coherent after edit: true
+expected detail after edit: HTTP 200
+actual detail after edit: HTTP 404 NOT_FOUND
+test result: FAILED as diagnostic RED evidence
+
+Terminal scope-parity probe:
+public CFO action: HTTP 200
+public Director final action: HTTP 200
+after live appraisal policy-name edit:
+  approval case detail: HTTP 404
+  sanction decision: HTTP 200
+  Credit Sanction Register: HTTP 200
+  register total_count: 1
+expected tuple: (200, 200, 200, 1)
+actual tuple:   (404, 200, 200, 1)
+test result: FAILED as diagnostic RED evidence
+
+Both isolated SQLite test databases were destroyed normally. Corrective GREEN evidence belongs to
+007H3; these failures do not represent a configured quality-gate failure for this docs-only review.

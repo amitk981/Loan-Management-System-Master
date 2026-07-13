@@ -1,5 +1,22 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## Architecture Review 2026-07-13 22:42 - Frozen Provenance and Read Parity
+
+- 007F2 removed the appraisal save signal, but canonical case validity still compares frozen
+  `loan_limit_provenance_json` to the mutable live appraisal snapshot. A public probe changed only
+  live `policy_name` and made case detail return 404 while the stored projection remained coherent.
+- On a terminal cycle after the same live edit, 007H2 still returned the sanction decision and one
+  register row through its stored read projection while canonical case detail returned 404. `007H3`
+  makes frozen case facts the sole validity input and aligns detail/action/decision/register scope
+  before counts and pagination without restoring signals.
+- M05-FR-003/006/009/012 remain functionally substantive; 007H3 closes historical-cycle and
+  cross-endpoint authority consistency. 007I depends on it and must render old/new cycles only from
+  their server-frozen projections.
+- Auth §19.4 names no finer role/sensitivity pairs for Legal documents. A-085 therefore remains the
+  explicit rule: every source-defined sensitivity is eligible only inside the exact legal audience,
+  application provenance, related-party workflow, case scope, and permission boundary. Do not
+  invent a narrower compliance matrix without governed configuration.
+
 ## 007H2 Sanction Decision and Register Object-Scope Closure
 
 - Sanction-decision reads now require both `approvals.sanction.read` and the approval-owned

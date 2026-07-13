@@ -15,6 +15,7 @@ The Sanction Committee reviews and decides real cases — with the ten-point che
 
 ## Depends On
 - 007H2
+- 007H3
 
 ## Source References
 - docs/source/screen-spec.md S21, S22, S24
@@ -110,6 +111,18 @@ Queue, case detail (pending/partially approved/approved/rejected/returned), exce
 - The workbench must not call the Credit Sanction Register for counts or case reconstruction. Its
   independently scoped pages grant no action, decision, evidence-reference, or document-download
   authority.
+
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_222951, 2026-07-13)
+
+- Depend on 007H3 before wiring historical/terminal reads. The same frozen cycle must remain
+  reachable after a later appraisal correction; never treat a detail `404` plus a successful
+  sanction/register read as a client-recoverable split state.
+- Render `loan_limit_provenance`, `review_facts`, authority, and available actions only from the
+  case projection. Do not refresh any historical fact from the live appraisal or loan-limit APIs,
+  and never use a live mismatch to hide a server-returned frozen cycle.
+- Add a container regression with a returned old cycle and a corrected/re-reviewed new cycle. The
+  selected cycle's ids, version, provenance, meeting scope, and actions must stay isolated while
+  navigating between them.
 
 ## Risk Level
 Medium

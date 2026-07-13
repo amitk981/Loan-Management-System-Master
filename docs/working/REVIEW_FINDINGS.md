@@ -2,6 +2,101 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-13 22:42 - Architecture Review 2026-07-13_222951_architecture_review
+
+Reviewed completed work since architecture-review commit `c843ea8`:
+- `007F2-exception-routing-coherence-and-explicit-projection-closure` (`14bb8d9`)
+- `CR-004-member-governance-container-recurring-ci-timeout` (`241ff25`)
+- `007G2-general-meeting-current-evidence-and-document-scope-closure` (`9f98060`)
+- `007H2-sanction-decision-and-register-object-scope-closure` (`5ea122b`)
+
+The review checked `git diff c843ea8...HEAD`, every production/test hunk, retained RED/GREEN and
+full-gate evidence, the four slice/CR contracts, the Epic 007 digest, cited API/auth/data-model/
+functional/codebase-design sections, and M05-FR-003/006/009/012. Standards and spec fidelity ran
+as independent passes. Two injected public HTTP probes reproduced the significant frozen-
+provenance defect without changing production code. `CONTEXT.md` remains truthful; state and slice
+files contain no Blocked item to reopen.
+
+### Standards
+
+#### Finding 1 - High - Frozen case validity still follows the mutable live appraisal
+
+`approval_case_engine._loan_limit_provenance_is_complete` compares the case's immutable
+`loan_limit_provenance_json` to the current `LoanAppraisalNote.loan_limit_snapshot_json`. A later
+appraisal edit therefore changes whether the old case is routable even though 007F2 deliberately
+removed the save signal and leaves its stored coherence/read index untouched. The public probe
+changed only live `policy_name`; case detail changed from 200 to `404 NOT_FOUND`. On a terminal
+case, detail returned 404 while the same actor's sanction decision and register remained 200 with
+one row because 007H2's selector trusted the stored projection. This violates codebase-design
+§13.1's frozen cycle invariant and §27.1's single deep approval boundary. `007H3` owns frozen-only
+validation and detail/action/decision/register parity before counts and pagination.
+
+#### Finding 2 - Low judgment call - Sensitivity well-formedness substitutes for a finer role matrix
+
+The independent Standards pass noted that `documents/services.py` accepts all four valid
+sensitivity values for every actor in the source-named legal audience, while auth §32.1 says
+sensitivity must be allowed for the actor's role. The negative test corrupts a row to
+`unsupported`, so it does not discriminate two valid sensitivities. This review does not classify
+that as an implementable hard defect: source §19.4 names the Legal audience but no finer
+role/sensitivity pairs, and A-085 explicitly records the DECISION_POLICY-compliant choice to accept
+each source-defined value rather than invent compliance policy. Governance must make any narrower
+matrix explicit/configurable; the current legal-category/application/workflow/role checks remain
+substantive.
+
+#### Finding 3 - Low judgment call - The complete exception tracer is too broad for failure locality
+
+The public exception tracer in `test_sanction_submission_api.py` spans enrichment/replay, General
+Meeting supersession, three actions, two registers, decision reads, and cross-case scoping in one
+very long test. Its assertions are real and the end-to-end proof is valuable, but codebase-design
+§26.2 favours focused observable tests. `007H3` requires splitting the scope/parity regressions
+while retaining one full tracer; no separate slice is justified.
+
+### Spec
+
+#### Finding 1 - High - 007F2's frozen-history requirement is false and 007H2 exposes split authority
+
+007F2 requirement 4 says direct appraisal saves cannot silently change read authority and
+historical cycles keep frozen facts. The shipped regression asserts only that the stored Boolean/
+index do not mutate; it never performs a public read after the save. The executable probe proves
+the full canonical validator then rejects the case from live-snapshot mismatch. 007H2 requirement
+5 additionally says its reads use the coherent-case interface rather than treating the stored
+Boolean as authority, yet decision/register remain visible while detail is hidden. `007H3` adds
+pending, returned/new-cycle, terminal, and malformed-frozen-snapshot public matrices.
+
+#### Finding 2 - High evidence gap - CR-004's hosted-CI acceptance remains unproved
+
+CR-004 requires the resulting `staging` push and PR #5 frontend check to be green. Its retained
+review packet explicitly leaves both as post-push follow-up, while the slice is Complete. The
+suite-local 15-second budget, unchanged assertions, one-worker command, ten repeated journeys, and
+full local gates substantively address the code-side failure, but local Vitest evidence cannot
+prove the mandatory hosted-run criterion. This sandbox has no network and the repository contains
+no trusted status artifact, so no additional code slice is invented; the owner/orchestrator must
+confirm and retain the external check before promotion.
+
+#### Finding 3 - Medium judgment call - No valid-but-role-disallowed sensitivity row exists
+
+The independent Spec pass read 007G2 requirement 3 literally and flagged that its
+“disallowed-sensitivity” row uses an invalid database literal rather than a valid sensitivity
+forbidden to one role. A-085 documents why such a row cannot yet be source-derived: no finer
+role/sensitivity matrix exists. The implemented exact application, legal category, matching valid
+sensitivity, legal audience, workflow, case scope, and permission matrix satisfies the available
+source facts; a future narrower policy must replace A-085 explicitly rather than being guessed here.
+
+No material scope creep was found. M05-FR-003 and M05-FR-006 remain substantively exercised by the
+real exception workflow; M05-FR-012 is substantive through current/frozen meeting evidence and the
+document-owned seam; M05-FR-009 generation and actor-scoped reads are substantive. `007H3` is still
+required for frozen-history/read-boundary consistency, not for the functional outcomes themselves.
+
+No ADR was added: data-model §15.3, codebase-design §13.1, and 007F2 already decide frozen-cycle
+ownership. `007I` now depends on `007H3` and carries the old/new-cycle UI contract. `007J` was
+sharpened to remove unsupported borrower use of the internal §25.8 endpoint; MP12 remains on the
+member-owned application status until a separately authorised outcome/terms projection is sliced.
+
+Summary: Standards found 1 High issue and 2 Low judgment calls; the worst is mutable appraisal data
+hiding a frozen case. Spec found 2 High issues and 1 Medium judgment call; the worst shipped defect
+is the false frozen-history/read-parity claim, while CR-004 separately lacks mandatory external
+acceptance evidence.
+
 ## 2026-07-13 20:10 - Architecture Review 2026-07-13_200023_architecture_review
 
 Reviewed completed product work since architecture-review commit `b32559c`:

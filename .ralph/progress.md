@@ -5730,3 +5730,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_222951_architecture_review
+
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Review window: `c843ea8...5ea122b` (007F2, CR-004, 007G2, and 007H2).
+- Summary: Found a High frozen-provenance/read-parity defect: a live appraisal edit hides the
+  frozen case detail while terminal sanction/register reads remain visible. Queued 007H3, blocked
+  007I on it, removed unsupported borrower use of internal §25.8 from 007J, and retained CR-004's
+  hosted-CI evidence gap for owner/orchestrator confirmation. Production code unchanged.
+- Tests run: two injected public HTTP repro probes; frontend build/typecheck/lint and 208 tests;
+  backend check/migration sync and 677 tests with 19 expected SQLite skips at 93% coverage.
+- Evidence saved: `.ralph/runs/2026-07-13_222951_architecture_review/evidence/`
+- Result: Success
+- Risk level: Low review run; queued corrective slice 007H3 is High risk.
+- Next action: Run 007H3, then 007I.
+
+## 2026-07-13 22:57:23 - 2026-07-13_222951_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_222951_architecture_review/.ralph/runs/2026-07-13_222951_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_222951_architecture_review/.ralph/runs/2026-07-13_222951_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
