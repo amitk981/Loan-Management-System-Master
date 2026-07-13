@@ -58,6 +58,20 @@ The Sanction Committee reviews and decides real cases — with the ten-point che
   Keep document download actions behind the existing document permission rather than case/register
   visibility.
 
+## Run-Ahead Sharpening Review (007H delivered contract, 2026-07-13)
+
+- After a final approved action, render decision terms only from
+  `GET /api/v1/loan-applications/{id}/sanction-decision/` under
+  `approvals.sanction.read`; do not copy the action response's sanction id into a client-owned
+  financial projection. Before final approval and after rejection the endpoint deliberately
+  returns `404 NOT_FOUND`, so case status/reason remains the authoritative rejected/pending UI.
+- The workbench does not gain register scope from case or sanction permission. Do not call the
+  Credit Sanction Register to reconstruct a case, approver, exception, conflict, meeting, or
+  decision view; it is a separate `approvals.sanction_register.read` compliance projection.
+- A terminal action is atomic with the generated register row and its audit/workflow reference.
+  The UI must treat action failure as no completion and re-fetch the canonical case/decision only
+  after success; never optimistically fabricate a register or sanction outcome.
+
 ## Visual Acceptance Criteria
 Queue, case detail (pending/partially approved/approved/rejected/returned), exception-flagged case, special-case panel, conflict/abstention display, empty, loading, denied, and error states; deterministic Playwright baselines per the 006H3 harness conventions.
 

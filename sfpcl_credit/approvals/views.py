@@ -7,6 +7,7 @@ from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.approvals.modules import approval_actions
 from sfpcl_credit.approvals.modules import exception_register
 from sfpcl_credit.approvals.modules import general_meeting
+from sfpcl_credit.approvals.modules import sanction_register
 from sfpcl_credit.domain_errors import DomainObjectAccessDenied
 from sfpcl_credit.domain_errors import DomainInvalidStateError, DomainPermissionDenied
 from sfpcl_credit.identity.modules import http_auth
@@ -89,6 +90,53 @@ def exception_register_collection(request):
                 for key, value in details.items()
             },
         )
+
+
+@require_http_methods(["GET"])
+def credit_sanction_register_collection(request):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    permissions = effective_permission_codes(user)
+    if sanction_register.REGISTER_READ_PERMISSION not in permissions:
+        return error_response(
+            request,
+            403,
+            "FORBIDDEN",
+            "You do not have Credit Sanction Register read permission.",
+        )
+    try:
+        data, pagination = sanction_register.list_entries(request.GET)
+        return list_response(data, pagination, request)
+    except ValidationError as exc:
+        details = exc.message_dict if hasattr(exc, "message_dict") else {}
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Credit Sanction Register filters failed validation.",
+            {
+                key: value[0] if isinstance(value, list) else value
+                for key, value in details.items()
+            },
+        )
+
+
+@require_http_methods(["GET"])
+def loan_application_sanction_decision(request, loan_application_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if sanction_register.SANCTION_READ_PERMISSION not in effective_permission_codes(user):
+        return error_response(
+            request, 403, "FORBIDDEN", "You do not have sanction decision read permission."
+        )
+    try:
+        return success_response(
+            sanction_register.get_sanction_decision(loan_application_id), request
+        )
+    except ObjectDoesNotExist:
+        return error_response(request, 404, "NOT_FOUND", "Sanction decision was not found.")
 
 
 @require_http_methods(["POST"])

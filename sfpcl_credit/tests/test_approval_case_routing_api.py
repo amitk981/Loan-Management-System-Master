@@ -5,6 +5,7 @@ from unittest import skipUnless
 from unittest.mock import patch
 
 from django.apps import apps
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, close_old_connections, connection, connections, transaction
 from django.test import Client, TestCase, TransactionTestCase
 from django.test.utils import CaptureQueriesContext
@@ -1905,6 +1906,298 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(
             communication_audit.new_value_json["delivery_status"], "pending"
         )
+
+    def test_final_approval_publishes_immutable_register_and_sanction_decision_reads(self):
+        sanction_read = self._permission("approvals.sanction.read")
+        register_read = self._permission("approvals.sanction_register.read")
+        RolePermission.objects.create(role=self.cfo.primary_role, permission=sanction_read)
+        RolePermission.objects.create(role=self.cfo.primary_role, permission=register_read)
+        self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        final = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3, "comments": "Approved within authority."},
+            content_type="application/json",
+            **self._auth(self.director),
+        )
+
+        decision = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/sanction-decision/",
+            **self._auth(self.cfo),
+        )
+        register = self.client.get(
+            "/api/v1/credit-sanction-register/", **self._auth(self.cfo)
+        )
+
+        self.assertEqual(final.status_code, 200, final.json())
+        self.assertEqual(decision.status_code, 200, decision.json())
+        self.assertEqual(
+            decision.json()["data"],
+            {
+                "sanction_decision_id": final.json()["data"]["sanction_decision_id"],
+                "decision": "sanctioned",
+                "sanctioned_amount": "500000.00",
+                "sanctioned_tenure_months": 12,
+                "interest_rate_type": "floating",
+                "interest_rate_value": None,
+                "repayment_date": None,
+                "penal_interest_rate": None,
+                "charges": {},
+                "security_required_summary": "Standard member security package.",
+                "conditions_precedent": None,
+                "decision_reason": "Reviewed appraisal recommends approval.",
+            },
+        )
+        self.assertEqual(register.status_code, 200, register.json())
+        assert_pagination_shape(self, register.json())
+        self.assertEqual(register.json()["pagination"]["total_count"], 1)
+        row = register.json()["data"][0]
+        self.assertEqual(row["approval_case_id"], str(self.case.pk))
+        self.assertEqual(row["application_number"], "LO00000701")
+        self.assertEqual(row["borrower_name"], "Approval Queue Member")
+        self.assertEqual(row["borrower_type"], "individual_farmer")
+        self.assertEqual(row["requested_amount"], "500000.00")
+        self.assertEqual(row["eligible_amount"], "500000.00")
+        self.assertEqual(row["recommended_amount"], "500000.00")
+        self.assertEqual(row["sanctioned_amount"], "500000.00")
+        self.assertEqual(row["decision"], "sanctioned")
+        self.assertEqual(row["reasons"], "Reviewed appraisal recommends approval.")
+        self.assertEqual(row["exception_reference"], None)
+        self.assertEqual(row["conflict_abstention_details"], [])
+        self.assertEqual(row["general_meeting_approval_reference"], None)
+        self.assertEqual(len(row["approver_names"]), 2)
+        register_model = apps.get_model("approvals", "CreditSanctionRegisterEntry")
+        entry = register_model.objects.get(approval_case=self.case)
+        self.assertEqual(register_model._meta.get_field("borrower_name").max_length, 255)
+        self.assertEqual(str(entry.sanction_decision_id), decision.json()["data"]["sanction_decision_id"])
+        with self.assertRaises(ValidationError):
+            entry.save()
+        with self.assertRaises(ValidationError):
+            register_model.objects.filter(pk=entry.pk).update(reasons="Rewritten")
+        with self.assertRaises(ValidationError):
+            register_model.objects.filter(pk=entry.pk).delete()
+
+    def test_rejection_registers_once_without_inventing_a_sanction_decision(self):
+        sanction_read = self._permission("approvals.sanction.read")
+        RolePermission.objects.create(role=self.cfo.primary_role, permission=sanction_read)
+
+        rejected = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/reject/",
+            {"version": 2, "comments": "Repayment capacity is insufficient."},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="req-register-rejected",
+            **self._auth(self.cfo),
+        )
+        retried = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/reject/",
+            {"version": 2, "comments": "Repayment capacity is insufficient."},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        decision = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/sanction-decision/",
+            **self._auth(self.cfo),
+        )
+
+        self.assertEqual(rejected.status_code, 200, rejected.json())
+        self.assertEqual(retried.status_code, 409, retried.json())
+        assert_error_envelope(self, retried.json(), "STALE_VERSION")
+        self.assertEqual(decision.status_code, 404, decision.json())
+        assert_error_envelope(self, decision.json(), "NOT_FOUND")
+        register_model = apps.get_model("approvals", "CreditSanctionRegisterEntry")
+        self.assertEqual(register_model.objects.filter(approval_case=self.case).count(), 1)
+        entry = register_model.objects.get(approval_case=self.case)
+        self.assertEqual(entry.decision, "rejected")
+        self.assertIsNone(entry.sanction_decision_id)
+        self.assertEqual(entry.sanctioned_amount, None)
+        self.assertEqual(entry.reasons, "Repayment capacity is insufficient.")
+        audit = AuditLog.objects.get(action="credit_sanction_register.created")
+        self.assertEqual(audit.entity_id, entry.pk)
+        self.assertEqual(audit.new_value_json["request_id"], "req-register-rejected")
+        self.assertEqual(
+            audit.new_value_json["workflow_event_id"], str(entry.workflow_event_id)
+        )
+        self.assertEqual(entry.workflow_event.entity_id, self.case.pk)
+
+    def test_register_freezes_same_case_exception_abstention_and_meeting_references(self):
+        register_read = self._permission("approvals.sanction_register.read")
+        RolePermission.objects.create(role=self.cfo.primary_role, permission=register_read)
+        exception = ExceptionRegisterEntry.objects.create(
+            loan_application=self.application,
+            exception_type="waiver",
+            description="A governed policy requirement was waived.",
+            business_reason="Committee approved a documented waiver.",
+            approval_case=self.case,
+        )
+        recorder, payload = self._general_meeting_recorder_and_payload()
+        meeting_response = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/general-meeting-approval/",
+            payload,
+            content_type="application/json",
+            **self._auth(recorder),
+        )
+        self.assertEqual(meeting_response.status_code, 200, meeting_response.json())
+        meeting = meeting_response.json()["data"]
+        alternate = self.committee.director_2_user
+        for permission in (
+            self.read_permission,
+            self.approve_permission,
+            self.reject_permission,
+            self.return_permission,
+        ):
+            RolePermission.objects.create(role=alternate.primary_role, permission=permission)
+        abstained = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/abstain/",
+            {"version": 2, "comments": "Borrower is my relative."},
+            content_type="application/json",
+            **self._auth(self.director),
+        )
+        self.assertEqual(abstained.status_code, 200, abstained.json())
+        self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        final = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 4},
+            content_type="application/json",
+            **self._auth(alternate),
+        )
+        register = self.client.get(
+            "/api/v1/credit-sanction-register/", **self._auth(self.cfo)
+        )
+
+        self.assertEqual(final.status_code, 200, final.json())
+        self.assertEqual(register.status_code, 200, register.json())
+        row = register.json()["data"][0]
+        self.assertIn(f"Director: {alternate.full_name} (approved)", row["approval_authority"])
+        self.assertEqual(row["approver_names"], [self.cfo.full_name, alternate.full_name])
+        self.assertEqual(
+            row["exception_reference"],
+            {
+                "exception_register_entry_id": str(exception.pk),
+                "exception_type": "waiver",
+                "business_reason": "Committee approved a documented waiver.",
+                "status": "approved",
+                "cycle_number": 1,
+            },
+        )
+        self.assertEqual(
+            row["conflict_abstention_details"],
+            [
+                {
+                    "type": "abstention",
+                    "user_id": str(self.director.pk),
+                    "full_name": self.director.full_name,
+                    "conflict_code": "self_declared_abstention",
+                    "reason": "Borrower is my relative.",
+                    "approval_action_id": abstained.json()["data"]["approval_action_id"],
+                    "acted_at": abstained.json()["data"]["approval_actions"][0]["acted_at"],
+                }
+            ],
+        )
+        self.assertEqual(
+            row["general_meeting_approval_reference"],
+            {
+                "general_meeting_approval_id": meeting["general_meeting_approval_id"],
+                "approval_status": "approved",
+                "meeting_date": meeting["meeting_date"],
+                "related_party_type": "director_relative",
+                "related_party_user_id": str(self.director.pk),
+                "notice_document_id": meeting["notice_document_id"],
+                "minutes_document_id": meeting["minutes_document_id"],
+                "resolution_document_id": meeting["resolution_document_id"],
+            },
+        )
+
+    def test_register_filters_pagination_permissions_and_read_only_routes(self):
+        register_read = self._permission("approvals.sanction_register.read")
+        sanction_read = self._permission("approvals.sanction.read")
+        RolePermission.objects.create(role=self.cfo.primary_role, permission=register_read)
+        RolePermission.objects.create(role=self.cfo.primary_role, permission=sanction_read)
+        rejected = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/reject/",
+            {"version": 2, "comments": "Risk appetite does not permit approval."},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        self.assertEqual(rejected.status_code, 200, rejected.json())
+        entry = apps.get_model("approvals", "CreditSanctionRegisterEntry").objects.get()
+        financial_year = (
+            f"FY{entry.approval_date.year}-{str(entry.approval_date.year + 1)[-2:]}"
+            if entry.approval_date.month >= 4
+            else f"FY{entry.approval_date.year - 1}-{str(entry.approval_date.year)[-2:]}"
+        )
+
+        allowed = self.client.get(
+            f"/api/v1/credit-sanction-register/?financial_year={financial_year}"
+            "&decision=rejected&page=1&page_size=1",
+            **self._auth(self.cfo),
+        )
+        wrong_decision = self.client.get(
+            f"/api/v1/credit-sanction-register/?financial_year={financial_year}"
+            "&decision=sanctioned",
+            **self._auth(self.cfo),
+        )
+        invalid_year = self.client.get(
+            "/api/v1/credit-sanction-register/?financial_year=2026-27",
+            **self._auth(self.cfo),
+        )
+        invalid_decision = self.client.get(
+            "/api/v1/credit-sanction-register/?decision=maybe",
+            **self._auth(self.cfo),
+        )
+        invalid_year_range = self.client.get(
+            "/api/v1/credit-sanction-register/?financial_year=FY0000-01",
+            **self._auth(self.cfo),
+        )
+        forbidden_register = self.client.get(
+            "/api/v1/credit-sanction-register/", **self._auth(self.director)
+        )
+        forbidden_decision = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/sanction-decision/",
+            **self._auth(self.director),
+        )
+        unauthenticated = self.client.get("/api/v1/credit-sanction-register/")
+        post_register = self.client.post(
+            "/api/v1/credit-sanction-register/", {}, content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        put_register = self.client.put(
+            f"/api/v1/credit-sanction-register/{entry.pk}/",
+            {},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+
+        self.assertEqual(allowed.status_code, 200, allowed.json())
+        self.assertEqual(allowed.json()["pagination"]["page_size"], 1)
+        self.assertEqual(allowed.json()["pagination"]["total_count"], 1)
+        self.assertEqual(allowed.json()["data"][0]["approval_date"], entry.approval_date.isoformat())
+        self.assertEqual(wrong_decision.json()["pagination"]["total_count"], 0)
+        self.assertEqual(invalid_year.status_code, 400, invalid_year.json())
+        assert_error_envelope(self, invalid_year.json(), "VALIDATION_ERROR")
+        self.assertIn("financial_year", invalid_year.json()["error"]["field_errors"])
+        self.assertEqual(invalid_decision.status_code, 400, invalid_decision.json())
+        assert_error_envelope(self, invalid_decision.json(), "VALIDATION_ERROR")
+        self.assertIn("decision", invalid_decision.json()["error"]["field_errors"])
+        self.assertEqual(invalid_year_range.status_code, 400, invalid_year_range.json())
+        self.assertIn(
+            "financial_year", invalid_year_range.json()["error"]["field_errors"]
+        )
+        self.assertEqual(forbidden_register.status_code, 403, forbidden_register.json())
+        self.assertEqual(forbidden_decision.status_code, 403, forbidden_decision.json())
+        self.assertEqual(unauthenticated.status_code, 401, unauthenticated.json())
+        self.assertEqual(post_register.status_code, 405)
+        self.assertEqual(put_register.status_code, 404)
+        with self.assertRaises(ValidationError):
+            entry.delete()
 
     def test_final_action_collection_detail_and_action_share_history_aware_projection(self):
         self.client.post(

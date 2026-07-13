@@ -5576,3 +5576,28 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_190107_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007H-credit-sanction-register
+- Summary: Added immutable approved/rejected Credit Sanction Register generation in the terminal
+  approval transaction, complete frozen 15-field projection, permissioned sanction/register read
+  APIs, April-March filtering, workflow/audit linkage, and source reader role grants.
+- Tests run: retained RED/GREEN tracer and review-repair logs; 94 focused approval tests; backend
+  check/migration sync and 669 tests with 19 expected SQLite skips at 93% coverage; frontend
+  build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_190107_normal_run/evidence/`
+- Result: Success
+- Risk level: Medium compliance/money projection with immutable financial decision evidence.
+- Next action: Architecture review is due; then run 007I Sanction Workbench UI.
+
+## 2026-07-13 19:31:27 - 2026-07-13_190107_normal_run
+- Agent tool used: codex
+- Slice attempted: 007H-credit-sanction-register
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_190107_normal_run/.ralph/runs/2026-07-13_190107_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_190107_normal_run/.ralph/runs/2026-07-13_190107_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

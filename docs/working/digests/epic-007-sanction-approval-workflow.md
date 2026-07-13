@@ -1,5 +1,21 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007H Credit Sanction Register
+
+- Approved and rejected terminal actions now create exactly one immutable case/cycle register row
+  inside the existing locked approval transaction. Approved rows link the sanction decision;
+  rejected rows retain a null sanction link/amount. Partial, returned, conflict-blocked, and
+  general-meeting-denied outcomes create none. The row references the terminal sanction workflow
+  event and has attributable creation audit evidence.
+- The 15-field projection freezes application/member, verified loan-limit, reviewed appraisal,
+  effective authority/action, same-case 007F exception, frozen 007E exclusion/abstention, and
+  case-frozen 007G meeting evidence. It never selects the latest exception/meeting by application,
+  and metadata ids do not grant document downloads.
+- §25.8 sanction-decision GET requires `approvals.sanction.read` and returns 404 before approval or
+  after rejection. §25.9 register GET requires `approvals.sanction_register.read`, standard bounded
+  pagination, exact decision values, and A-086 April-March `FYyyyy-yy` filtering. There is no
+  mutation route. Annexure K/template code remains absent under unresolved OC-002/A-087.
+
 ## 007G General-Meeting Evidence
 
 - The §25.11 endpoint records immutable Director/relative/committee-member evidence with notice,

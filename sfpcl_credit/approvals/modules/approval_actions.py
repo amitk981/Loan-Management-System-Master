@@ -11,6 +11,7 @@ from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
 from sfpcl_credit.approvals.modules import exception_register
 from sfpcl_credit.approvals.modules import general_meeting
+from sfpcl_credit.approvals.modules import sanction_register
 from sfpcl_credit.approvals.modules.approval_case_projection import (
     refresh_approval_case_projection,
 )
@@ -355,7 +356,7 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         ip_address=request_meta.get("ip_address", ""),
         user_agent=request_meta.get("user_agent", ""),
     )
-    record_workflow_event(
+    workflow_event = record_workflow_event(
         actor=actor,
         workflow_name="sanction_approval",
         entity_type="approval_case",
@@ -365,6 +366,17 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         trigger_reason=f"Approver {actor.pk} recorded {action.decision}.",
         action_code="approval_case.action_recorded",
     )
+    if case.current_status in {
+        ApprovalCase.STATUS_APPROVED,
+        ApprovalCase.STATUS_REJECTED,
+    }:
+        sanction_register.generate_for_terminal_case(
+            actor=actor,
+            case=case,
+            sanction_decision=decision,
+            workflow_event=workflow_event,
+            request_meta=request_meta,
+        )
     if case.current_status != ApprovalCase.STATUS_PENDING:
         communication_services.create_internal_team_communication(
             sender=actor,

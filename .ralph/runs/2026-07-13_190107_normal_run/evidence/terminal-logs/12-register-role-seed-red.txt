@@ -1,0 +1,41 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFFF
+======================================================================
+FAIL: test_credit_sanction_register_is_seeded_for_committee_cs_and_auditor (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_credit_sanction_register_is_seeded_for_committee_cs_and_auditor) (role_code='company_secretary')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_catalogue_seed.py", line 266, in test_credit_sanction_register_is_seeded_for_committee_cs_and_auditor
+    self.assertTrue(
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_credit_sanction_register_is_seeded_for_committee_cs_and_auditor (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_credit_sanction_register_is_seeded_for_committee_cs_and_auditor) (role_code='internal_auditor')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_catalogue_seed.py", line 266, in test_credit_sanction_register_is_seeded_for_committee_cs_and_auditor
+    self.assertTrue(
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_credit_sanction_register_is_seeded_for_committee_cs_and_auditor (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_credit_sanction_register_is_seeded_for_committee_cs_and_auditor) (role_code='director')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_catalogue_seed.py", line 266, in test_credit_sanction_register_is_seeded_for_committee_cs_and_auditor
+    self.assertTrue(
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_credit_sanction_register_is_seeded_for_committee_cs_and_auditor (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_credit_sanction_register_is_seeded_for_committee_cs_and_auditor) (role_code='cfo')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_catalogue_seed.py", line 266, in test_credit_sanction_register_is_seeded_for_committee_cs_and_auditor
+    self.assertTrue(
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.090s
+
+FAILED (failures=4)
+Destroying test database for alias 'default'...

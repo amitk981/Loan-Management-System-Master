@@ -2543,10 +2543,11 @@ Every successful action writes attributable audit/workflow evidence. Each termin
 the communication-owned internal adapter in the same transaction, persisting one source §24.2
 `pending` email `Communication` snapshot, one linked in-app notification to the persisted
 `credit_assessment` team, and a metadata-only communication audit. Any adapter persistence failure
-rolls back the action, case/application outcome, sanction, workflow, communication, notification,
-and audits. Application, appraisal, and case source states are re-evaluated through the shared
-transition guard after locking and before mutation. No register row is created in 007D/007D2
-(007F/007H own those projections).
+rolls back the action, case/application outcome, sanction, register, workflow, communication,
+notification, and audits. Application, appraisal, and case source states are re-evaluated through
+the shared transition guard after locking and before mutation. As delivered by 007H, an approved
+or rejected terminal action also freezes exactly one Credit Sanction Register row in this same
+transaction; partial approval, return, and conflict-blocked outcomes do not.
 
 # Exception approval and generated Exception Register (007F)
 
@@ -2731,3 +2732,57 @@ record as nullable `general_meeting_approval`, beside unchanged `route_approvers
 `required_approvers`, and `approval_actions`. Later application-level supersession cannot change a
 returned or completed cycle's reference. A later cycle resolves the then-current unsuperseded
 application record independently.
+
+# Sanction decision and Credit Sanction Register reads (007H)
+
+`GET /api/v1/loan-applications/{loan_application_id}/sanction-decision/` requires
+`approvals.sanction.read`. It returns the source §25.8 decision shape: id, decision, sanctioned
+amount/tenure, interest type/value, repayment date, penal rate, `charges`, security summary,
+conditions precedent, and decision reason. It returns `404 NOT_FOUND` when no sanctioned decision
+exists, including before terminal approval and after rejection. A-079 remains binding: numeric
+rates, repayment date, and penal rate are nullable, charges are `{}`, and the blank conditions
+snapshot is projected as `null` until an approved owner supplies those facts.
+
+`GET /api/v1/credit-sanction-register/?financial_year=FY2026-27&decision=sanctioned&page=1&page_size=20`
+requires `approvals.sanction_register.read` and returns the standard list/pagination envelope.
+`decision` is exactly `sanctioned` or `rejected`; `financial_year` is canonical `FYyyyy-yy` and
+uses the April 1 inclusive / following April 1 exclusive window (A-086). Page defaults to 1,
+page size defaults to 20 and is capped at 100. Unknown parameters or invalid filter values return
+`400 VALIDATION_ERROR`. The collection is generated/read-only: POST is method-denied and there is
+no row detail/update/delete route. The slice's named readers—CFO and Director committee members,
+Company Secretary, and Internal Auditor—receive this read grant in the canonical role seed;
+possession of other approval/case permissions does not imply register access.
+
+Every approved or rejected terminal case creates exactly one immutable
+`credit_sanction_register_entries` row in the locked approval action transaction. Approved rows
+link the §15.5 sanction decision; rejected rows deliberately keep that link/amount null rather than
+inventing a sanction decision. The row also stores the exact terminal `sanction_approval` workflow
+event and writes one attributable `credit_sanction_register.created` audit. Stale/closed retries
+cannot duplicate the one-to-one case row. Partial approvals, returns, conflict-blocked cycles, and
+general-meeting gate denials create no row.
+
+The 15 functional-spec fields and their frozen sources are:
+
+| Response field | Frozen source |
+|---|---|
+| `application_number` | terminal case's loan application reference |
+| `borrower_name` | terminal application's member display/legal name |
+| `borrower_type` | terminal application's borrower type |
+| `requested_amount` | terminal application's required loan amount |
+| `eligible_amount` | case appraisal's verified loan-limit snapshot |
+| `recommended_amount` | case appraisal's reviewed recommendation |
+| `sanctioned_amount` | linked sanction decision; null for rejection |
+| `approval_authority` | case's canonical effective required-authority/action snapshot |
+| `approver_names` | ordered immutable actions for that case/cycle |
+| `approval_date` | terminal case closure date |
+| `decision` | terminal case outcome mapped to `sanctioned`/`rejected` |
+| `reasons` | case approval or rejection reason |
+| `exception_reference` | that case's one-to-one 007F row: id/type/business reason/status/cycle |
+| `conflict_abstention_details` | that case's frozen exclusions plus attributable abstention action |
+| `general_meeting_approval_reference` | that case's frozen 007G row: id/outcome/date/party/user/document metadata ids |
+
+The response additionally includes register/case/application/sanction/workflow ids and
+`recorded_at`. Register permission never grants document download: the three general-meeting
+document values are metadata ids only, and the document module retains its own permission and
+sensitivity checks. No template/Annexure code is stored or projected because OC-002 still leaves
+the Annexure K label conflicted (A-087).

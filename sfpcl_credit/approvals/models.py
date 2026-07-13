@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -494,6 +495,110 @@ class SanctionDecision(models.Model):
         indexes = [
             models.Index(fields=["decision", "recorded_at"], name="idx_sanction_decision_time")
         ]
+
+
+class ImmutableRegisterQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError("Credit Sanction Register entries are immutable.")
+
+    def delete(self):
+        raise ValidationError("Credit Sanction Register entries are immutable.")
+
+
+class CreditSanctionRegisterEntry(models.Model):
+    DECISION_SANCTIONED = "sanctioned"
+    DECISION_REJECTED = "rejected"
+    DECISIONS = (
+        (DECISION_SANCTIONED, "Sanctioned"),
+        (DECISION_REJECTED, "Rejected"),
+    )
+
+    credit_sanction_register_entry_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    approval_case = models.OneToOneField(
+        ApprovalCase,
+        on_delete=models.PROTECT,
+        related_name="credit_sanction_register_entry",
+    )
+    loan_application = models.ForeignKey(
+        "applications.LoanApplication",
+        on_delete=models.PROTECT,
+        related_name="credit_sanction_register_entries",
+    )
+    member = models.ForeignKey(
+        "members.Member",
+        on_delete=models.PROTECT,
+        related_name="credit_sanction_register_entries",
+    )
+    sanction_decision = models.OneToOneField(
+        SanctionDecision,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="credit_sanction_register_entry",
+    )
+    workflow_event = models.OneToOneField(
+        "workflows.WorkflowEvent",
+        on_delete=models.PROTECT,
+        related_name="credit_sanction_register_entry",
+    )
+    application_number = models.CharField(max_length=40)
+    borrower_name = models.CharField(max_length=255)
+    borrower_type = models.CharField(max_length=60)
+    requested_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    eligible_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    recommended_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    sanctioned_amount = models.DecimalField(
+        max_digits=18, decimal_places=2, null=True, blank=True
+    )
+    authority_applied_summary = models.TextField()
+    approver_names_json = models.JSONField(default=list)
+    approval_date = models.DateField(db_index=True)
+    decision = models.CharField(max_length=60, choices=DECISIONS, db_index=True)
+    reasons = models.TextField()
+    exception_reference_json = models.JSONField(null=True, blank=True)
+    conflict_abstention_details_json = models.JSONField(default=list)
+    general_meeting_approval_reference_json = models.JSONField(null=True, blank=True)
+    recorded_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="recorded_credit_sanction_register_entries",
+    )
+    recorded_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    objects = ImmutableRegisterQuerySet.as_manager()
+
+    class Meta:
+        db_table = "credit_sanction_register_entries"
+        ordering = ["-approval_date", "-recorded_at", "-credit_sanction_register_entry_id"]
+        indexes = [
+            models.Index(
+                fields=["decision", "approval_date"],
+                name="idx_sanction_register_decision",
+            )
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(decision__in=["sanctioned", "rejected"]),
+                name="sanction_register_valid_decision",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(decision="sanctioned", sanction_decision__isnull=False)
+                    | models.Q(decision="rejected", sanction_decision__isnull=True)
+                ),
+                name="sanction_register_decision_link",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError("Credit Sanction Register entries are immutable.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Credit Sanction Register entries are immutable.")
 
 
 class ExceptionRegisterEntry(models.Model):

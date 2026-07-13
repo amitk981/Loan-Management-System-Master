@@ -170,15 +170,16 @@
     "007E-conflict-of-interest-blocking",
     "007E2-conflict-authority-projection-and-scope-closure",
     "007F-exception-approval-workflow",
-    "007G-general-meeting-evidence-for-special-cases"
+    "007G-general-meeting-evidence-for-special-cases",
+    "007H-credit-sanction-register"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "6c6a4da",
-  "last_run_id": "2026-07-13_182512_normal_run",
+  "last_run_id": "2026-07-13_190107_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 3,
-  "architecture_review_due": false,
+  "slices_completed_since_architecture_review": 4,
+  "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null

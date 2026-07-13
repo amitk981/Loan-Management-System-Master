@@ -258,6 +258,18 @@ class CatalogueSeedTests(TestCase):
                     ).exists()
                 )
 
+    def test_credit_sanction_register_is_seeded_for_committee_cs_and_auditor(self):
+        seed_catalogue()
+
+        for role_code in {"cfo", "director", "company_secretary", "internal_auditor"}:
+            with self.subTest(role_code=role_code):
+                self.assertTrue(
+                    RolePermission.objects.filter(
+                        role__role_code=role_code,
+                        permission__permission_code="approvals.sanction_register.read",
+                    ).exists()
+                )
+
     def test_seed_creates_only_source_named_approval_case_read_scope_grants(self):
         seed_catalogue()
 
