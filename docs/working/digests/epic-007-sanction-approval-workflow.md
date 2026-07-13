@@ -7,6 +7,21 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - `docs/source/data-model.md` §15.1-§15.4 and §30/§34
 - `docs/source/auth-permissions.md` §12.6, §15.8-§15.9, §20.1, §34.5
 
+## Architecture Review 2026-07-13 08:41 - Complete Governance Ledger
+
+- 007A4 restores the real `decide_proposal` seam and passes all four governed races twice on
+  PostgreSQL after proposal migration 0005; canonical authority and proposal-detail access are
+  aligned, and snapshot storage fields exist.
+- The race helper proves one winner plus an unchanged pending proposal but compares only resource/
+  version/audit counts. It has no open case and does not read the loser publicly. The separate case
+  test performs rejection and sequential approval, not the required conflicting activation race.
+- `007A5` adds full proposal/effective/history/audit/case equality, public loser readback, a
+  discriminating open case inside all four PostgreSQL races, and the remaining historical/current/
+  backfill committee rows.
+- Production case snapshot population remains deliberately owned by 007B. The 006G case is an
+  unrouted shell until 007B atomically consumes the approved rule/committee resolver projections;
+  007C must exclude empty shells from approver queues and actions.
+
 ## Architecture Review 2026-07-13 06:01 - Governed Activation Regression
 
 - 007A2 closes retained-history lifecycle, persisted committee authority, pagination, and the four

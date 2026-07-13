@@ -2,6 +2,118 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-13 08:41 - Architecture Review 2026-07-13_083408_architecture_review
+
+Reviewed completed product work since architecture-review commit `8b1af41`:
+- `006Z13-member-scope-persistence-and-action-matrix-closure` (`fb6de5b`)
+- `CR-002-member-governance-container-ci-timeout` (`b8b9ef5`, plus intake `1f1e7c2`)
+- `CR-003-member-governance-container-pr-ci-timeout` (`349d62c`, plus intake `87a7a46`)
+- `007A4-approval-governance-concurrency-and-case-snapshot-closure` (`a58effa`)
+
+The review checked `git diff 8b1af41...a58effa`, production/test hunks, retained RED/GREEN,
+20-run frontend stress, and two-run PostgreSQL evidence, Epic 004/006/007 digests, cited auth/API/
+data-model/codebase-design sections, and M02-FR-004..006, M04-FR-005..007, and M05-FR-003..006.
+Standards and spec fidelity were reviewed independently. Production code was not changed.
+`CONTEXT.md` remains truthful, and state/files contain no Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - Member calculation authority is claimed by a dead seam and source-text guard
+
+006Z13 adds `ActiveMemberStatusModule.calculate_for_actor`, but no production caller uses it.
+`test_actorless_active_member_calculation_has_only_owned_domain_callers` then recursively scans
+source text, requires an exact three-filename set, and asserts implementation strings in
+`portal_services.py`. This is not observable authorization proof: an equivalent refactor can fail
+while a real cross-member bypass can pass under a permitted filename. It conflicts with codebase-
+design §§26.1-26.3's interface test surface and leaves an unused security-shaped interface. The
+production callers do have application, portal-account, or member-owned seams, but those facts must
+be executed rather than inferred from spelling. `006Z14` owns the behavioral caller matrix and
+removes or adopts the unused seam based on the source-backed public boundary.
+
+#### Finding 2 - Medium - Governed race tests assert counts where the spec claims complete state
+
+007A4 correctly races `decide_proposal` twice on PostgreSQL and proves one effective winner. Its
+`_race` helper snapshots only proposal rows, however, then checks resource/version/audit counts.
+It does not compare the full effective/history/audit/case ledger or read the losing proposal through
+the public detail boundary. That falls below DECISION_POLICY §2 and codebase-design §§22.3/26.1-
+26.3 for a claimed complete zero-write concurrency invariant. `007A5` adds discriminating full-state
+equality and public loser reads.
+
+#### Finding 3 - Low judgment call - Approval proposal reader policy remains locally duplicated
+
+`can_read_proposal` directly repeats active CFO/Company Secretary authority alongside the central
+permission engine. This is persisted authority rather than forbidden display-role inference and is
+correctly tested, so it is not a current access defect. It is nevertheless a duplication seam
+against codebase-design §27.1; a later approval-authority module should become the single predicate
+when 007C/007D add case assignment/action checks. No standalone slice is justified yet.
+
+#### Finding 4 - Low judgment call - CR-003 retains a testing-library call-count assertion
+
+The split create/update container tests preserve exact POST/PATCH ledgers, canonical readbacks, and
+one human-like update. The additional `userEvent.type` spy checks a library invocation count rather
+than UI/HTTP behavior and may be refactor-brittle, but it is test-only and directly supports the CR's
+human-like interaction requirement. No corrective slice was created.
+
+The Standards reviewer also flagged that production sanction handoff does not populate the new
+ApprovalCase snapshot columns. That is real repository state but not a 007A4 scope violation: the
+Epic 007 digest and 007B explicitly reserve enrichment of the existing 006G shell for 007B. This
+review sharpened 007B so an unrouted shell cannot be treated as routable and production acceptance
+must traverse the real handoff/case interface rather than manually filling a test row.
+
+### Spec
+
+#### Finding 1 - High - 006Z13 still lacks its required permission-without-scope action matrix
+
+Requirement 3 asks for independently selected module and HTTP rows for list, detail/update,
+identity approval, supply capture/verification, service/relaxation evidence, active calculation,
+and active verification: one custom-role actor holds every action permission but no scope, then one
+matching grant enables only its row with a complete zero-write denial ledger. The diff adds database
+constraints, scope-shape evaluation, one direct calculation row, and a broad 85-test rerun. Existing
+fixtures frequently pre-create assignments (the produce-supply helper automatically grants one),
+and the registry's broad negative uses a user without permissions. Those tests do not execute the
+slice's permission-versus-scope matrix. `006Z14` supplies the independently selectable public rows.
+
+#### Finding 2 - High - 007A4 omits complete loser state and the required conflicting case race
+
+Requirements 1/3 and the run-ahead sharpening require each governed race loser to preserve its
+complete pending proposal plus effective/history/audit/case state, require public proposal-detail
+readback, and require a real open case across rejection, winning activation, a conflicting losing
+activation, and later reads. The concurrency class has no ApprovalCase fixture; the separate case
+test manually fills a case and performs rejection plus one sequential approval, but never a
+conflicting race. Thus the retained PostgreSQL runs prove serialization, not the full CFG-007
+scenario or zero-write ledger. `007A5` adds the case to all four PostgreSQL races and retains two
+post-migration runs.
+
+#### Finding 3 - Medium - The promised committee history matrix remains partial
+
+007A4 independently proves inactive non-resolution and selected malformed/duplicate/swapped
+authority rows, but historical/current committee resolution and committee backfill conflict are not
+independently exercised. Several malformed cases are compressed into one tuple loop despite the
+slice requiring attributable public rows. `007A5` closes the historical/current/backfill cases and
+makes the security-relevant loser rows independently identifiable.
+
+#### Finding 4 - Low evidence limitation - CR-003 retains local stress but no later GitHub result
+
+CR-003 has a legitimate red-capable 1000 ms baseline, 20 consecutive five-test green sequences,
+and complete local gates. The requested subsequent green `staging` push and PR checks are not saved
+in the run packet. Later commits reran the full frontend suite locally, so there is no repository
+regression signal, but the external acceptance fact is not independently reviewable from retained
+evidence. This requires orchestrator/owner evidence retention rather than a product corrective slice.
+
+No material scope creep was found. CR-002's first repair was correctly superseded by CR-003's split
+tests without production changes. M04-FR-005..007 remain passing and unchanged. M02-FR-004..006
+business behavior is substantive, but its public authority proof remains partial until 006Z14.
+M05-FR-003..006 configuration/race behavior is substantive; complete loser/CFG-007 proof belongs to
+007A5 and production case routing remains explicitly deferred to 007B.
+
+No ADR was added because the cited auth, API, data-model, codebase-design, and existing ADR-0005
+already decide object authority, interface-level testing, approval locking, immutable case
+snapshots, and module ownership.
+
+Summary: Standards found 1 High, 1 Medium, and 2 Low/judgment issues; the worst is non-behavioral
+member-calculation authority proof. Spec found 2 High, 1 Medium, and 1 Low evidence issue; the worst
+issues are the missing complete member action matrix and incomplete governed loser/CFG-007 race.
+
 ## 2026-07-13 06:01 - Architecture Review 2026-07-13_055322_architecture_review
 
 Reviewed completed product work since architecture-review commit `23331d5`:

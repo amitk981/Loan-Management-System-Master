@@ -1,5 +1,17 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-13 08:41 - Member Authority Proof Closure
+
+- 006Z13 correctly adds database shape/uniqueness constraints, retains valid legacy assignments,
+  and preserves the underlying M02-FR-004..006 supply/status/relaxation behavior.
+- Its promised public permission-versus-scope action matrix is not present: broad existing suites
+  commonly pre-grant scope, while registry negatives often omit permission too. `006Z14` must use
+  one all-permissions/no-scope actor, independently deny every public action with a complete ledger,
+  then enable only the row receiving a matching assignment.
+- The new `calculate_for_actor` has no production caller and the caller guard asserts exact source
+  filenames/strings. `006Z14` replaces that with application/portal/member-owned behavioral proof
+  and removes the unused seam unless a source-backed public boundary actually consumes it.
+
 ## 006Z13 Member Scope Persistence and Calculation Boundary Closure
 
 - Database check constraints now enforce every `MemberScopeAssignment` scope/member/team shape,

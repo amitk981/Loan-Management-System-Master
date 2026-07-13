@@ -14,7 +14,7 @@ Enrich the approval case shell that 006G already creates: resolve the effective 
 Every submitted appraisal becomes exactly one routed approval case whose required authority is a durable snapshot of the rule that applied on that day.
 
 ## Depends On
-- 007A4
+- 007A5
 
 ## Source References
 - docs/working/digests/epic-007-sanction-approval-workflow.md (007B section: 006G owns the unique pending case shell; enrichment only; no duplicate create path)
@@ -124,6 +124,20 @@ Medium
 - Populate all snapshot columns in one approval-owned atomic enrichment and increment the case
   version exactly once. A missing/ambiguous resolver projection or conflicting repeat leaves every
   column, the original workflow-event identity, audit rows, and case version unchanged.
+
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_083408, 2026-07-13)
+
+- The 006G row is an explicitly unrouted shell until enrichment. No approval queue, detail action,
+  or decision boundary may treat nullable/empty 007A4 snapshot fields as a valid route. After
+  enrichment, persist the source-required amount and excluded-approver projection alongside the
+  existing rule/committee/required-approver fields; do not silently default a routable case.
+- Prove creation through the real sanction-handoff/approval-case module interface: submit one
+  reviewed appraisal, enrich the existing case atomically, then read the canonical case. A test
+  that manually assigns snapshot fields after case creation is fixture setup only and cannot count
+  as production snapshot acceptance.
+- Reuse 007A5's complete configuration/case ledger so a later winning or losing governed activation
+  leaves every enriched case fact unchanged. This slice depends on 007A5 rather than accepting
+  count-only concurrency evidence.
 
 ## Done Checklist
 

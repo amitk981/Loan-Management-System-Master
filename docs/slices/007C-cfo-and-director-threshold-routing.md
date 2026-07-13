@@ -68,6 +68,16 @@ Medium
   not grant approval-case object access; case access remains governed by `approvals.case.read` plus
   the approval-case object boundary.
 
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_083408, 2026-07-13)
+
+- Exclude the pre-enrichment 006G shell from `assigned_to_me` and return no enabled approval action
+  from detail until every 007B routing snapshot fact is populated. Empty/default snapshot JSON must
+  never mean globally assigned or fall back to the current matrix/committee.
+- Add contradictory fixtures: a historical case whose stored approvers differ from the current
+  committee and an unrouted shell with the same amount/status. Only the stored historical snapshot
+  determines queue membership; amount, current status, live configuration, and proposal-detail
+  eligibility cannot infer assignment.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated
