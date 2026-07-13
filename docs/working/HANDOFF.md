@@ -1,36 +1,38 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_225742_normal_run
+
+2026-07-13_232007_normal_run
 
 ## Current Status
 
-007H3 is complete. Approval-case validity now checks the internally complete frozen loan-limit
-provenance only; it never compares an existing cycle with the mutable live appraisal snapshot or
-assessment-id field. Credit-owned enrichment remains the single point that validates the locked
-appraisal/source before the approval owner freezes provenance and review facts.
+007I is complete. The S21/S22/S24 Sanction Workbench now loads the actor-scoped approval-case queue
+and frozen case detail through one typed authenticated service. It renders the ten review facts,
+required and excluded approvers, immutable decisions, exception/conflict facts, General Meeting
+scope, and terminal sanction decision without reading the live appraisal or either register.
 
-The explicit coherence/reader projection now narrows database candidates only. Every candidate
-crosses the same frozen-validity and actor-scope decision before case/register filters, counts,
-page normalization, or serialization. Pending detail/queue/actions and terminal
-detail/decision/register reads remain unchanged after a live appraisal policy edit. A malformed
-frozen terminal case with a stale true flag/index fails closed at all four boundaries with zero
-count leakage or action writes. Returned cycle 1 retains its original provenance/review facts while
-corrected cycle 2 carries its independently frozen facts.
+Approval controls preserve the prototype's single decision-button/radio-modal composition. Only an
+enabled case resource action intersected with `/auth/me` permissions is usable. Reject/return reasons
+and server field errors remain in the modal; successful actions refetch the case and sanction truth.
+Loading, empty, stale, denied, nondisclosing, gate, conflict, partial, terminal, and old/new-cycle
+states have container coverage. CFO and Director assigned action behavior, Credit Manager read-only,
+and unauthorized access are explicit regressions.
 
-No signal, cross-table model-save side effect, schema change, dependency, or frontend production
-change was introduced. 007I and 007J were sharpened with exact old/new-cycle and pre-count
-nondisclosure container regressions. The prior CR-004 hosted-CI evidence caveat remains an
-owner/orchestrator promotion check; it is unrelated to this slice.
+Evidence-required case detail now projects a backend-owned
+`record_general_meeting_approval` action. The workbench uploads three exact-application legal files
+when permitted, then submits their distinct ids through §25.11. It never treats metadata visibility
+or a global permission as document-reference authority. A-090 records the missing documents-owned
+selector for a recorder who must reuse previously uploaded referenceable files.
 
 ## Validation
 
-Retained RED/GREEN public probes and all 106 approval-routing tests pass. Frontend
-build/typecheck/lint and all 208 tests pass. Backend check/migration sync and all 679 tests pass with
-19 expected PostgreSQL-only SQLite skips; coverage is 93% against the 85% floor. Queue/state/path
-checks and final Ralph artifact validation remain for the orchestrator.
+Focused RED/GREEN evidence is retained. Frontend build/typecheck/lint and all 227 tests pass.
+Backend check/migration sync and all 680 tests pass with 19 expected PostgreSQL-only SQLite skips;
+coverage is 93% against the 85% floor. Playwright discovers the deterministic visual contract, but
+the sandbox denies its localhost web-server process with `Operation not permitted`; the genuine
+attempt log is retained and the orchestrator's declared external browser gate remains authoritative.
 
 ## Next Run
 
-Run `007I-sanction-workbench-ui`, consuming only the server-frozen cycle projection and the exact
-pre-count scope semantics documented by 007H3. Then run 007J for register/configuration wiring.
+Run `007J-registers-and-approval-matrix-frontend-wiring`, following 007I's fail-closed resource
+action pattern and the already sharpened scoped pagination/frozen-row requirements. Then run 007J2.

@@ -17,6 +17,9 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
 - Members: `MemberDirectory`, `MemberProfile`, `Borrower360`
 - Appraisal and sanction: `AppraisalWorkbench`, `SanctionWorkbench`
 - `AppraisalWorkbench` and Application Detail's credit tab consume Epic 006 staff APIs (006H).
+- `SanctionWorkbench` consumes the Epic 007 approval-case, action, general-meeting evidence, and
+  independently permissioned sanction-decision APIs (007I); its checklist and authority are frozen
+  server projections rather than client calculations.
 - Documentation and disbursement: `DocumentationHub`, `DisbursementHub`, `PaymentAuthorisationHub`
 - Servicing: `LoanAccount360`, `RepaymentsHub`, `InterestManagement`, `MonitoringDashboard`
 - Default/closure/compliance: `DefaultRecoveryHub`, `LoanClosureHub`, `ComplianceDashboard`, `GrievancesHub`, `AuditArchiveHub`, `RegistersHub`
@@ -42,6 +45,7 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
 | `MyProfile` | `GET /api/v1/auth/me/` | API-backed read-only profile | Shows the authenticated user's backend identity, active role, teams, and permissions. Profile editing remains future scope. |
 | `TaskInbox` | None implemented yet | Prototype/mock shell | Source S03 requires actionable assigned/role tasks with filters and workflow actions. 003J added only internal `scheduled_jobs` metadata/services and did not add a task inbox endpoint, dashboard task generation, notification generation rules, or scheduler UI. |
 | `CompletenessWorkbench` | `GET /api/v1/loan-applications/`; `GET /document-checklist/`; `GET/POST /completeness-check/`; deficiency and rejection-note actions | API-backed staff workbench | 005E2 removes application/member/document mocks, seeded deficiency decisions, and client reference generation. Queue/checklist/history facts and all action outcomes are re-read from backend state; canonical `/auth/me` permission controls interim action visibility. |
+| `SanctionWorkbench` | `GET /api/v1/approval-cases/`; case action endpoints; `POST /general-meeting-approval/`; `GET /sanction-decision/` | API-backed committee workbench | Uses assigned and scoped historical case pages, frozen ten-point review facts, case `available_actions`, optimistic versions, conflict/exclusion facts, exact-application legal uploads for special-case evidence, and an independently permissioned terminal decision read. No register or live appraisal fallback and no local authority matrix remain. |
 
 ## API-Backed Borrower Portal Screens
 

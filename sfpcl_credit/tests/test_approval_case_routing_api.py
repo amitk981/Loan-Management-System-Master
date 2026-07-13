@@ -1328,6 +1328,24 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(entry.status, "pending")
         self.assertIsNone(entry.closed_at)
 
+    def test_case_detail_projects_general_meeting_record_authority(self):
+        recorder, _payload = self._general_meeting_recorder_and_payload()
+
+        response = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **self._auth(recorder)
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        action = next(
+            item
+            for item in response.json()["data"]["available_actions"]
+            if item["action_code"] == "record_general_meeting_approval"
+        )
+        self.assertTrue(action["enabled"])
+        self.assertEqual(
+            action["required_permission"], "approvals.general_meeting.record"
+        )
+
     def test_authorized_recorder_creates_approved_general_meeting_evidence(self):
         recorder, payload = self._general_meeting_recorder_and_payload()
 

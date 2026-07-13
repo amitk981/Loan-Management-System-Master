@@ -147,15 +147,24 @@ def serialize_case_summary(case):
 
 
 def serialize_case_detail(case, actor, actor_permissions):
+    from sfpcl_credit.approvals.modules import general_meeting
+
     action_by_user = {
         str(action.approver_user_id): action for action in case.actions.all()
     }
+    available_actions = _available_actions(
+        case, actor, actor_permissions, action_by_user
+    )
+    if case.general_meeting_evidence_required:
+        available_actions.append(
+            general_meeting.record_action_availability(
+                case=case, actor=actor, actor_permissions=actor_permissions
+            )
+        )
     snapshot = {
         **serialize_case_snapshot(case),
         "review_facts": case.appraisal_facts_json or serialize_case_review_facts(case),
-        "available_actions": _available_actions(
-            case, actor, actor_permissions, action_by_user
-        ),
+        "available_actions": available_actions,
     }
     return snapshot
 

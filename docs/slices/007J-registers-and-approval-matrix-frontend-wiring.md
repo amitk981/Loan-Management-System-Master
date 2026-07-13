@@ -96,6 +96,17 @@ The Sanction Committee, CS, and auditors read real registers generated from appr
   meeting ids, do not use them to grant case actions, sanction-decision access, evidence reference,
   or document download.
 
+## Run-Ahead Sharpening Review (007I delivered frontend seam, 2026-07-13)
+
+- Reuse `services/sanctionApi.ts` types only where the §25 register payload genuinely shares a
+  frozen nested shape; do not fetch approval-case pages through the workbench queue to populate or
+  “repair” register rows. Register filters/counts remain one independent server interface.
+- A register row's case/application/document ids are display metadata. Do not reuse the workbench's
+  enabled case actions or general-meeting upload/record affordance in `RegistersHub`; register
+  permission and row visibility grant neither capability.
+- Add a raw-source regression for the owned S23/S25 paths analogous to 007I: no `mockData` import may
+  feed those tabs, while unrelated register tabs remain explicitly owned by 012DA.
+
 ## Out of Scope
 Register file exports (012B/012C), sanction case actions (007D/007I), stamp duty register (008D/011
 compliance views), and borrower MP12 outcome wiring. The source §25.8 endpoint is an internal

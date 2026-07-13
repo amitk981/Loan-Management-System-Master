@@ -1,5 +1,21 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007I Sanction Workbench UI
+
+- S21/S22/S24 now consume the authenticated approval-case queue/detail/action and sanction-decision
+  boundaries. The workbench renders the frozen ten-point review projection, required/excluded
+  authority, action history, exception and conflict facts, and current-pending versus cycle-frozen
+  General Meeting evidence without live appraisal/register reconstruction.
+- Decision controls follow the existing Approval Panel composition and intersect only enabled
+  resource actions with `/auth/me` permissions. Reject/return reasons, stale writes, conflict/gate
+  denials, server field errors, read-only history, and terminal outcomes retain their canonical
+  server behavior; success refetches instead of fabricating completion.
+- Evidence-required case detail now projects `record_general_meeting_approval` as a backend-owned
+  resource action. The UI can upload three application-scoped legal files through the document
+  boundary and submit their distinct ids, while backend document-reference validation remains
+  authoritative. Deterministic browser coverage is authored for pending/special/conflict, approved,
+  rejected, returned, empty, denied, loading, and error states.
+
 ## 007H3 Frozen Case Provenance and Read-Scope Parity Closure
 
 - Credit-owned enrichment remains the only point that validates the locked appraisal and complete

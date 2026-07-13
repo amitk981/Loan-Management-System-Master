@@ -2519,6 +2519,14 @@ decision date, required/excluded authority, and loan-limit provenance). Detail a
 decision history, review read-throughs, and caller-specific actions; existing submission fields
 remain backward-compatible additions.
 
+For a case whose frozen projection requires General Meeting evidence, detail also includes the
+resource action `record_general_meeting_approval`. The backend enables it only when the actor has
+canonical case scope, belongs to the §19.4 legal audience, and holds
+`approvals.general_meeting.record`, `approvals.case.read`, and `documents.file.download`; otherwise
+the same action is returned disabled with a reason. Ordinary cases omit this inapplicable action.
+The frontend may intersect the enabled resource action with `/auth/me` permissions for usability,
+but a global permission never creates or enables the action.
+
 An enrichment replay is exact only when the locked reviewed decision date and recommended amount,
 assessment/application ids, exception flag, calculation rule, policy id/name, and calculation time
 equal the frozen case provenance. Any changed reviewed or credit fact returns stable

@@ -35,6 +35,43 @@ class GeneralMeetingGateConflict(Exception):
         return self.message
 
 
+def record_action_availability(*, case, actor, actor_permissions):
+    """Project the §25.11 recorder decision for this exact routed case."""
+    permissions = set(actor_permissions)
+    case_access = approval_case_engine.can_read_approval_case(
+        actor=actor, case=case, actor_permissions=permissions
+    )
+    legal_audience = (
+        case_access.scope_type == "approval_assigned"
+        or bool(
+            set(actor.role_codes())
+            & {"compliance_team_member", "company_secretary", "credit_manager"}
+        )
+    )
+    required = {RECORD_PERMISSION, CASE_READ_PERMISSION, DOCUMENT_READ_PERMISSION}
+    enabled = (
+        case.general_meeting_evidence_required
+        and case_access.allowed
+        and legal_audience
+        and required.issubset(permissions)
+    )
+    if not case.general_meeting_evidence_required:
+        reason = "General meeting evidence is not required for this approval case."
+    elif not case_access.allowed or not legal_audience:
+        reason = "The current user is not in the related-party legal audience for this case."
+    elif not required.issubset(permissions):
+        reason = "Required general meeting record, case read, and document access permissions are not granted."
+    else:
+        reason = None
+    return {
+        "action_code": "record_general_meeting_approval",
+        "label": "Record General Meeting Approval",
+        "enabled": enabled,
+        "disabled_reason": reason,
+        "required_permission": RECORD_PERMISSION,
+    }
+
+
 def record_for_application(
     *, actor, application_id, payload, actor_permissions, request_meta=None
 ):

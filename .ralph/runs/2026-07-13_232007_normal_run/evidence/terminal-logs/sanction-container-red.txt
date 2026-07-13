@@ -1,0 +1,63 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/sanction/SanctionWorkbench.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_232007_normal_run/sfpcl-lms
+
+stderr | src/pages/sanction/SanctionWorkbench.test.tsx > SanctionWorkbench authenticated container > loads frozen case truth and approves through the exact case boundary before canonical refresh
+In HTML, <div> cannot be a descendant of <p>.
+This will cause a hydration error.
+
+  <SanctionWorkbench onOpenApplication={function spy}>
+    <div className="p-6 space-y-4">
+      <div>
+      <AlertBanner type="exception" title="7 exceptio..." message={<div>}>
+        <div className="rounded-lg...">
+          <div className="flex items...">
+            <OctagonAlert>
+            <div className="flex-1 min...">
+              <p>
+>             <p className="text-sm mt-0.5 text-violet-700">
+                <div className="flex flex-...">
+>                 <div>
+                  ...
+      ...
+
+<p> cannot contain a nested <div>.
+See this log for the ancestor stack trace.
+
+ ❯ src/pages/sanction/SanctionWorkbench.test.tsx (1 test | 1 failed) 49ms
+   × SanctionWorkbench authenticated container > loads frozen case truth and approves through the exact case boundary before canonical refresh 48ms
+     → can is not a function
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/sanction/SanctionWorkbench.test.tsx > SanctionWorkbench authenticated container > loads frozen case truth and approves through the exact case boundary before canonical refresh
+TypeError: can is not a function
+ ❯ ApprovalPanel src/components/loan/ApprovalPanel.tsx:59:29
+     57|   );
+     58| 
+     59|   const canRecordDecision = can('approve_sanction') && mySlot && (mySl…
+       |                             ^
+     60| 
+     61|   const isValid = () => {
+ ❯ Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:25904:20
+ ❯ renderWithHooks node_modules/react-dom/cjs/react-dom-client.development.js:7662:22
+ ❯ updateFunctionComponent node_modules/react-dom/cjs/react-dom-client.development.js:10166:19
+ ❯ beginWork node_modules/react-dom/cjs/react-dom-client.development.js:11778:18
+ ❯ runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:874:13
+ ❯ performUnitOfWork node_modules/react-dom/cjs/react-dom-client.development.js:17641:22
+ ❯ workLoopSync node_modules/react-dom/cjs/react-dom-client.development.js:17469:41
+ ❯ renderRootSync node_modules/react-dom/cjs/react-dom-client.development.js:17450:11
+ ❯ performWorkOnRoot node_modules/react-dom/cjs/react-dom-client.development.js:16583:35
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  23:24:03
+   Duration  1.05s (transform 142ms, setup 0ms, collect 313ms, tests 49ms, environment 294ms, prepare 36ms)
+

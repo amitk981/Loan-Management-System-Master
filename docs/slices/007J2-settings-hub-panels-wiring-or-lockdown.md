@@ -42,6 +42,17 @@ Admins cannot believe they changed a production policy when nothing was saved; e
 - Read-only panels expose no mutation path.
 - Regression: no inline config fixture rendered as editable/live.
 
+## Run-Ahead Sharpening Review (007I delivered frontend authority pattern, 2026-07-13)
+
+- Follow 007I's fail-closed authority rule for every versioned settings resource: an `/auth/me`
+  permission may make a resource action usable, but must never create a missing resource action or
+  turn a disabled action into an enabled control.
+- Keep SettingsHub independent from approval-case and register reads. The approval workbench's
+  frozen `matrix_projection` is historical display truth for one cycle, not the current editable
+  configuration source and never a fallback when the settings endpoint is denied or empty.
+- Add a raw-source regression that rejects editable-looking inline policy/rate/threshold/retention
+  fixtures after classification, while allowing explicit controlled vocabularies and inert labels.
+
 ## Out of Scope
 Approval matrix panel (007J), new configuration domains not in the source, notification/communication template content (003F).
 

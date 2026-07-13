@@ -92,13 +92,15 @@ export class AuthSessionError extends Error {
   code: string;
   status?: number;
   fieldErrors?: Record<string, string>;
+  details?: Record<string, unknown>;
 
-  constructor(code: string, message: string, status?: number, fieldErrors?: Record<string, string>) {
+  constructor(code: string, message: string, status?: number, fieldErrors?: Record<string, string>, details?: Record<string, unknown>) {
     super(message);
     this.name = 'AuthSessionError';
     this.code = code;
     this.status = status;
     this.fieldErrors = fieldErrors;
+    this.details = details;
   }
 }
 
@@ -277,7 +279,7 @@ export const authenticatedRequest = async <T>(path: string, options: { method?: 
     const fieldErrors = envelope.error?.field_errors
       ? Object.fromEntries(Object.entries(envelope.error.field_errors).map(([field, value]) => [field, String(value)]))
       : undefined;
-    throw new AuthSessionError(envelope.error?.code ?? 'REQUEST_FAILED', envelope.error?.message ?? 'Request failed.', response.status, fieldErrors);
+    throw new AuthSessionError(envelope.error?.code ?? 'REQUEST_FAILED', envelope.error?.message ?? 'Request failed.', response.status, fieldErrors, envelope.error?.details);
   }
   return envelope.data;
 };

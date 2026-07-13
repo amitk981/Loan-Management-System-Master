@@ -1,7 +1,7 @@
 # Slice 007I: Sanction Workbench UI
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -145,15 +145,15 @@ Medium
 - All gates pass; screenshots/baselines saved via the pinned e2e harness.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Visual evidence saved
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Visual evidence saved
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates
