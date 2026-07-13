@@ -14,7 +14,7 @@ Detect conflicted approvers, exclude them from the required-approver set, block 
 A Director, committee member, or preparer can never approve their own or a relative's loan; the exclusion and reason are recorded and auditable (M05-FR-011).
 
 ## Depends On
-- 007D
+- 007D3
 
 ## Source References
 - docs/source/auth-permissions.md §17.1 (conflicted cases: committee member/Director/relative as borrower, material interest, own application, maker-checker), §17.2 (COI-001..006), §17.3 (`CONFLICTED_APPROVER_NOT_ALLOWED` error body)
@@ -85,6 +85,14 @@ A Director, committee member, or preparer can never approve their own or a relat
   action, sanction, workflow, or notification ledgers.
 - Conflict-abstention must use the existing immutable action ledger and case version increment; do
   not add a parallel action serializer or mutate the frozen required-approver snapshot.
+
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_131622, 2026-07-13)
+
+- Extend 007D2's history-aware action projection and communication-backed evidence; do not restore
+  raw collection snapshots or direct notification persistence while adding conflict outcomes.
+- Evaluate and persist conflicts per 007D3 approval cycle. A returned prior-cycle exclusion or
+  abstention is immutable history, not automatic authority for the new cycle; recompute the new
+  cycle from its frozen borrower/appraisal facts and prove old conflict evidence cannot leak.
 
 ## Out of Scope
 General-meeting evidence recording (007G), exception register (007F), relationship data capture UI (member master owns relationships).

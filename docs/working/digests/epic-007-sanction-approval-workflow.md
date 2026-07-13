@@ -1,5 +1,24 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## Architecture Review 2026-07-13 13:16 - Read Scope, Action Race, and Cycle Closure
+
+- 006Z15 closes the real member public-action matrix; 007A6 closes exact winner evidence in all
+  four twice-run PostgreSQL configuration races. No new material gap was found in either slice.
+- 007C2 correctly denies arbitrary permission holders and unassigned Directors, but it also denies
+  the source-required Credit Manager, Company Secretary, and Auditor sanction-package reads and
+  scans all eligible cases before Python scope filtering. `007C3` adds persisted read-only scope
+  separate from action permission and a bounded selector.
+- 007D's sequential approve/reject/return behavior is substantive, but collection omits action
+  history, its mandatory final-action PostgreSQL race was never implemented, application/appraisal
+  transitions bypass shared guard acceptance, and terminal notifications bypass the 003I
+  communication boundary. `007D2` closes those claims through one public action matrix and two
+  twice-run PostgreSQL races.
+- A returned case is a permanent dead end because approval cases are one-to-one and sanction
+  handoff rejects any existing case. Data-model cardinality and codebase-design §13.1 require a new
+  immutable approval cycle after correction/fresh review; `007D3` owns that lifecycle.
+- M05-FR-001..006 are substantive. M05-FR-007/008 remain partial on parity/race/cycle acceptance;
+  M05-FR-009 stays with 007H; M05-FR-010 is partial until 007D2 crosses the communication adapter.
+
 ## 007D Approval Action Boundary
 
 - Approve/reject/return execute through one locked application -> appraisal -> case transaction and

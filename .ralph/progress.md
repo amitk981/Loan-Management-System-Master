@@ -1,5 +1,26 @@
 # Ralph Progress Log
 
+# Run 2026-07-13_131622_architecture_review
+
+- Reviewed 006Z15, 007A6, 007C2, and 007D independently across Standards and Spec; production code
+  was not changed.
+- Confirmed 006Z15's ten real member action rows and 007A6's exact twice-run PostgreSQL winner
+  evidence. M02-FR-004..006 and the governed M05-FR-003..006 configuration facts remain substantive.
+- Found that 007C2 overcorrects assignment reads by denying source-required Credit Manager,
+  Company Secretary, and Auditor views and scans the full eligible case ledger before pagination.
+  Created High-risk corrective slice 007C3.
+- Found false collection/action history parity, no required PostgreSQL action race, partial
+  communication-adapter notification evidence, incomplete guard/denial acceptance, and a returned
+  case that cannot enter a new approval cycle. Created High-risk slices 007D2 and 007D3.
+- Made 007E depend on 007D3 and sharpened conflict behavior across the history-aware action and
+  multi-cycle boundaries. No Blocked slice was stale and CONTEXT remains truthful.
+- M05-FR-007/008 are sequentially substantive but partial on race/parity/cycle proof;
+  M05-FR-009 remains with 007H; M05-FR-010 is partial until 007D2.
+- Frontend build/typecheck/lint and 208 tests pass. Backend check/migration sync and 592 tests pass
+  with 16 expected PostgreSQL-only skips and 93% coverage. Queue/integrity gates pass. Evidence:
+  `.ralph/runs/2026-07-13_131622_architecture_review/`.
+- Next: 007C3, then 007D2 and 007D3 before 007E.
+
 # Run 2026-07-13_120630_normal_run
 
 - Completed 007A6 by making all four governed PostgreSQL races prove exact winner history/audit
@@ -5311,6 +5332,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_125427_normal_run/.ralph/runs/2026-07-13_125427_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_125427_normal_run/.ralph/runs/2026-07-13_125427_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 13:49:22 - 2026-07-13_131622_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_131622_architecture_review/.ralph/runs/2026-07-13_131622_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_131622_architecture_review/.ralph/runs/2026-07-13_131622_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

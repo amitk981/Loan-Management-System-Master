@@ -2,6 +2,114 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-13 13:16 - Architecture Review 2026-07-13_131622_architecture_review
+
+Reviewed completed product work since architecture-review commit `26cc7a8`:
+- `006Z15-member-public-action-authority-matrix-closure` (`c63982d`)
+- `007A6-approval-governance-winner-evidence-content-closure` (`2055adc`)
+- `007C2-approval-case-read-scope-and-snapshot-contract-closure` (`984d2cc`)
+- `007D-approval-action-api-approve-reject-return` (`d0f2fbe`)
+
+The review checked targeted production/test diffs, retained RED/GREEN and two-run PostgreSQL
+evidence, Epic 006/007 digests, cited auth/API/data-model/codebase-design sections,
+M02-FR-004..006, and M05-FR-001..010. Standards and spec fidelity were reviewed independently.
+Production code was not changed. `CONTEXT.md` remains truthful, and state/files contain no Blocked
+slice to reopen. Commit `25212f3` changed only protected run-prompt guidance and was excluded from
+product findings.
+
+### Standards
+
+#### Finding 1 - High - Approval-case reads overcorrect assignment scope and deny source readers
+
+007C2 correctly removes permission-implied global reads for arbitrary users and unassigned
+Directors, but `can_read_approval_case` now allows only immutable required approvers. The source
+role matrix says the Credit Manager can view the sanction package and Company Secretary/Auditor
+have read access (auth §§14.1 and 26.3); object scope §19.1 explicitly names `audit_readonly` and
+management/read-only scopes. The current catalogue does not grant these roles
+`approvals.case.read`, and even a custom grant cannot pass the case predicate. `007C3` persists a
+separate source-backed read scope, restores the named read-only roles, and keeps actions and
+unassigned-Director access denied.
+
+#### Finding 2 - High - Return-for-clarification creates a permanent one-case dead end
+
+`record_action` closes the case as returned and restores reviewed statuses, but
+`SanctionHandoffModule.submit_reviewed_appraisal` rejects every application that already has any
+case. `ApprovalCase` also uses one-to-one application/appraisal links. A returned case therefore
+cannot be corrected and submitted again. This conflicts with data-model's application-to-many-case
+cardinality and codebase-design §13.1's invariant that material re-approval creates a new cycle;
+the positive return test checks only the immediate status and misses the next public step. `007D3`
+adds immutable numbered approval cycles and a fresh-review resubmission path.
+
+#### Finding 3 - Medium judgment call - Scoped approval lists still scan the whole case ledger
+
+`list_approval_cases` materializes every broadly eligible case, runs coherence and object access in
+Python, then paginates. The result is correct for small data, but work scales with the repository
+rather than the actor's scope and leaves a complex read inside the workflow module. Codebase-design
+§42.2 calls for selectors to own complex reads. `007C3` adds a database-narrowed approval selector
+while preserving the post-filter coherence check where JSON makes it necessary.
+
+006Z15 now executes all ten advertised member actions through their real boundaries with exact
+denial/success ledgers and substitution proof; no material standards gap remains. 007A6's four
+twice-run PostgreSQL races assert exact winner history/audit content and loser omission; no
+material standards gap remains.
+
+The Standards reviewer also flagged the required action `version`, missing register creation, and
+conflict-denial audit. The version is an explicitly documented optimistic-concurrency addition from
+007C2 sharpening. Register generation and conflict determination are explicitly assigned to 007H
+and 007E, so they are not reclassified as 007D defects in this window.
+
+### Spec
+
+#### Finding 1 - High - Collection/action serializer parity is false after an action
+
+007D requires collection, detail, and action responses to agree on per-approver decision and
+`acted_at`. The action response composes `serialize_case_detail`, but collection returns
+`serialize_case_snapshot`, which emits the raw immutable `required_approvers_json` without action
+history. The new partial-approval test asserts only its action response; the acted-history test
+asserts collection count but not its row. `007D2` makes all three paths compose one history-aware
+projection and adds immediate post-action parity acceptance.
+
+#### Finding 2 - High - The mandatory final-approval PostgreSQL race was never run
+
+007D requirement 5 and its test plan require simultaneous action/final-approval races, a single
+sanction decision, and an exact zero-write loser ledger. The commit adds only ordinary `TestCase`
+methods; no threaded `TransactionTestCase`, race method, runtime capability, or retained race output
+exists. Its own risk assessment says SQLite cannot exercise the locks and the slice declared no
+PostgreSQL capability. `007D2` adds distinct-approver and duplicate-final-action races, each twice on
+PostgreSQL with exact action/sanction/evidence ledgers.
+
+#### Finding 3 - Medium - M05-FR-010 reaches a notification row but bypasses its required adapter
+
+The terminal action directly calls `Notification.objects.create`. That does produce an internal
+workflow notification, so M05-FR-010 is not absent, but 007D requirement 6 explicitly requires the
+003I communication/notification adapter. No source §24.2 `Communication` snapshot, linked
+notification, or communication audit proves the message crossed that boundary. `007D2` routes the
+team notification through a communication-owned internal adapter in the action transaction and
+tests adapter-failure rollback.
+
+#### Finding 4 - Medium - Guard and denial acceptance covers only a subset of the promised matrix
+
+Approval-case state uses `evaluate_transition`, while application and appraisal statuses are set
+directly; no invalid application/appraisal-state test proves the required 002H guard semantics.
+The test plan also names blank return comments and closed, excluded, contradictory-snapshot, and
+per-action permission denials, but the new tests cover blank reject comments, one permission row,
+one outsider, stale, and duplicate only. The production coherence/pending predicates are promising,
+but the claimed write/read parity and complete zero-write matrix are unearned. `007D2` supplies the
+independently runnable public matrix and guarded owner-state transitions.
+
+No material scope creep was found. M02-FR-004..006 remain substantive and now have real-boundary
+authority/substitution proof through 006Z15. M05-FR-001..006 routing/configuration and exact winner
+evidence are substantive through 007A6/007C2. M05-FR-007/008 work sequentially but retain the race,
+parity, guard, and cycle gaps above; M05-FR-009 remains explicitly owned by 007H; M05-FR-010 is
+partial until 007D2. Conflict/general-meeting requirements remain explicitly owned by 007E/007G.
+
+No ADR was added because auth §§14/19/26, data-model approval cardinality, codebase-design §13.1,
+and the existing communication/transition boundaries already decide the corrective direction.
+
+Summary: Standards found 2 High and 1 Medium/judgment issue; the worst issues are missing
+source-required read scopes and the returned-case dead end. Spec found 2 High and 2 Medium issues;
+the worst issues are false post-action serializer parity and absent PostgreSQL race acceptance.
+
 ## 2026-07-13 10:09 - Architecture Review 2026-07-13_100911_architecture_review
 
 Reviewed completed product work since architecture-review commit `1752bcb`:
