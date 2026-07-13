@@ -7,6 +7,25 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - `docs/source/data-model.md` §15.1-§15.4 and §30/§34
 - `docs/source/auth-permissions.md` §12.6, §15.8-§15.9, §20.1, §34.5
 
+## Architecture Review 2026-07-13 10:09 - Case Boundary and Evidence Closure
+
+- 007A5 materially closes the pending loser and open-case ledger, but the sole new VersionHistory
+  and `config.changed` rows are asserted only by cardinality. `007A6` proves their exact winner,
+  maker/checker, reason, target, and old/new content in all four two-run PostgreSQL races.
+- 007B enriches the real shell atomically and freezes complete configuration projections, but its
+  replay predicate ignores changed loan-limit policy/assessment provenance, its governed
+  immutability test manually fills a shell, and §25.2 success omits `current_status`.
+- 007C correctly avoids live configuration and excludes obviously incomplete shells, but any user
+  holding `approvals.case.read` can list/retrieve every routed case. Auth §15.9/§32.1/§37.3 requires
+  unassigned Directors to be denied. Its routable predicate also accepts contradictory required-
+  approver/matrix/committee JSON that can enable an injected user.
+- `007C2` adds one case object-access predicate, validates the complete stored routing snapshot,
+  tightens exact provenance replay, restores §25.2 status, and replaces the manual governance
+  fixture with submit → enrich → read evidence. 007D now depends on that boundary.
+- M05-FR-003..006 threshold/configuration behavior is substantive with winner-evidence content
+  pending 007A6. M05-FR-001..003 routing/review behavior is present but not authority-complete until
+  007C2; actions/conflicts remain explicitly owned by 007D/007E.
+
 ## Architecture Review 2026-07-13 08:41 - Complete Governance Ledger
 
 - 007A4 restores the real `decide_proposal` seam and passes all four governed races twice on

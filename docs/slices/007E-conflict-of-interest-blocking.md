@@ -43,6 +43,17 @@ A Director, committee member, or preparer can never approve their own or a relat
   no enabled action even if globally readable, and must receive the exact source denial from every
   007D write without creating an `ApprovalAction`. Keep current committee membership irrelevant.
 
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_100911, 2026-07-13)
+
+- Extend 007C2's coherent-snapshot validator rather than adding a separate exclusion parser.
+  Excluded ids must be unique objects with a non-blank source reason, must refer to users in the
+  immutable committee/required authority context, and cannot silently reduce the stored matrix's
+  required CFO/Director count.
+- Apply conflict access after the base 007C2 case object boundary. An unassigned reader remains
+  nondisclosed; an assigned user newly excluded by the conflict service receives only the limited
+  read explicitly chosen under requirement 6 and never inherits a global case read from permission
+  possession.
+
 ## Test Cases
 - Each §17.1 conflict class excludes at enrichment with recorded reason; attempted approval by each returns the exact §17.3 body and an audit row.
 - Exclusion that breaks required authority blocks the case rather than completing with fewer approvers.

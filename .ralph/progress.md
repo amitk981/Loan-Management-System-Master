@@ -1,5 +1,29 @@
 # Ralph Progress Log
 
+# Run 2026-07-13_100911_architecture_review
+
+- Reviewed 006Z14, 007A5, 007B, and 007C independently across Standards and Spec; production code
+  was not changed.
+- Confirmed substantive member calculations/scope persistence, governed PostgreSQL one-winner and
+  pending-loser behavior, real approval-case enrichment, historical configuration snapshots, and
+  stored-snapshot queue/action projections.
+- Found that 006Z14's ten named action rows call only the authority evaluator and never execute the
+  public member actions. Created High-risk corrective slice 006Z15.
+- Found that 007A5 checks new history/audit cardinality without exact winner content. Created
+  High-risk corrective slice 007A6.
+- Found permission-implied global approval-case reads, contradictory routable snapshots, incomplete
+  provenance replay, fixture-only governed enrichment evidence, and §25.2 status drift. Created
+  High-risk corrective slice 007C2 and made 007D depend on it.
+- Sharpened 007D/007E to share the single validated case object/snapshot boundary. No Blocked slice
+  was stale and CONTEXT remains truthful.
+- M02-FR-004..006 remain substantive with public authority proof assigned to 006Z15.
+  M05-FR-003..006 are substantive with winner evidence assigned to 007A6; M05-FR-001..003 remain
+  partial on object/snapshot authority until 007C2.
+- Frontend build/typecheck/lint and 208 tests pass. Backend check/migration sync and 566 tests pass
+  with 16 expected PostgreSQL-only skips and 93% coverage. Queue/integrity gates pass. Evidence:
+  `.ralph/runs/2026-07-13_100911_architecture_review/`.
+- Next: 006Z15, 007A6, then 007C2 before 007D.
+
 # Run 2026-07-13_094017_normal_run
 
 - Completed 007C with paginated approval-case list/detail APIs, strict filters,
@@ -5181,6 +5205,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_094017_normal_run/.ralph/runs/2026-07-13_094017_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_094017_normal_run/.ralph/runs/2026-07-13_094017_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 10:31:01 - 2026-07-13_100911_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_100911_architecture_review/.ralph/runs/2026-07-13_100911_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_100911_architecture_review/.ralph/runs/2026-07-13_100911_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

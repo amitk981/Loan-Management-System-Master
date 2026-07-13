@@ -14,7 +14,7 @@ Implement the individual approver actions (approve / reject / return-for-clarifi
 CFO and Directors record real decisions with reasons; a loan is sanctioned only when every required approver has approved (M05-FR-007/008).
 
 ## Depends On
-- 007C
+- 007C2
 
 ## Source References
 - docs/source/api-contracts.md §25.5 approve (response includes `sanction_decision_created`/`sanction_decision_id`), §25.6 reject, §25.7 return-for-clarification, §25.8 sanction decision shape
@@ -62,6 +62,16 @@ Conflict determination (007E), exception register (007F), general-meeting gate (
 - Execute through the same complete-routing and pending-assignment predicates that drive 007C's
   projections. Add parity tests proving any actor/action reported disabled by detail receives the
   matching write denial with unchanged case/action/sanction/audit/workflow ledgers.
+
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_100911, 2026-07-13)
+
+- Consume 007C2's single case object-access and coherent-snapshot predicates before locking/writing
+  an action. An action permission or `approvals.case.read` alone is never global object authority;
+  an unassigned Director/custom-role reader and every contradictory snapshot receive the same
+  denial as the read projection with zero action/case/sanction/evidence writes.
+- Preserve serializer parity: after an action, collection/detail/status/action projections must all
+  be produced through the deep approval-case module. Do not add a third case serializer or a second
+  required-approver parser in the action adapter.
 
 ## Risk Level
 High

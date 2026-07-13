@@ -2,6 +2,123 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-13 10:09 - Architecture Review 2026-07-13_100911_architecture_review
+
+Reviewed completed product work since architecture-review commit `1752bcb`:
+- `006Z14-member-authority-action-and-calculation-proof-closure` (`6038a83`)
+- `007A5-approval-governance-complete-loser-ledger` (`2e14521`)
+- `007B-approval-case-creation-from-appraisal` (`71fdd50`)
+- `007C-cfo-and-director-threshold-routing` (`b37a349`)
+
+The review checked `git diff 1752bcb...b37a349`, production/test hunks, retained RED/GREEN and
+two-run PostgreSQL evidence, Epic 006/007 digests, cited auth/API/data-model/codebase-design
+sections, M02-FR-004..006, and M05-FR-001..006. Standards and spec fidelity were reviewed
+independently. Production code was not changed. `CONTEXT.md` remains truthful, and state/files
+contain no Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - Approval-case read permission is treated as global object scope
+
+`approval_case_collection` checks only `approvals.case.read`; without
+`assigned_to_me=true`, `list_approval_cases` returns every routed case. Detail likewise returns any
+routed id to any permission holder. The test named `global_reader...` creates only an arbitrary
+custom role with that permission, so it positively encodes permission-implied global access rather
+than a persisted management/audit scope. This violates auth §24.1's queryset/object enforcement,
+§32.1's user-scoped lists, §15.9's assigned-case Director access, and §37.3's explicit “Director
+views unassigned approval case | Denied.” `007C2` introduces one list/detail object-access
+predicate, applies it before counts/pagination, and defaults unrelated permission holders to
+nondisclosure until a source-backed global case scope is actually persisted.
+
+#### Finding 2 - High - The member “public action matrix” never calls a public action
+
+`test_member_authority_action_matrix.py` gives ten test names to one helper that calls
+`evaluate_member_authority` directly. It never invokes list, detail, update, identity approval,
+supply capture/verification, service-evidence mutation, calculation, or verification. An action
+label can therefore pass while its real HTTP/module boundary leaks, mutates, or maps the wrong
+error. This conflicts with codebase-design §§26.1-26.3 and §42.1: tests must cross the same seam as
+callers and assert observable outcomes. `006Z15` replaces each alias with an independently runnable
+production action and exact denial/success ledgers.
+
+#### Finding 3 - Medium - The approval-case seam now has divergent canonical serializers
+
+ADR-0005 and codebase-design §13.1/§27.1 assign case creation, enrichment, reads, routing, and later
+decisions to one deep approval-owned boundary. `SanctionHandoffModule.serialize` and
+`approval_case_engine.serialize_case_*` now expose divergent status and completeness projections;
+the §25.2 POST response has `submission_status` but omits source-required `current_status`.
+`007C2` consolidates/composes these projections behind the deep case boundary and proves parity
+before 007D adds writes.
+
+#### Finding 4 - Low judgment call - Review facts are owner read-throughs, not case snapshots
+
+007C intentionally reads purpose/completeness/risk from their owning rows and tests that direct row
+changes alter detail. API design §3 says borrower details are snapshotted at decision time, while
+the slice requires read-through rather than copied owners and the normal appraisal workflow is
+closed after submission. This review does not classify direct-fixture mutation as a shipped bypass:
+`007C2` must prove public owners cannot mutate the reviewed package after routing, and 007D must
+freeze final sanction-decision facts. No separate slice is justified.
+
+The Standards reviewer also flagged empty conflict exclusions, nullable pre-enrichment case fields,
+and the UUID signature reference. These are real repository states but not unrecorded 007B/007C
+defects: conflict determination/actions are explicitly deferred to 007E, A-059 governs the unique
+unrouted shell, and A-077 governs the signature FK until its documentation-owned target exists.
+
+### Spec
+
+#### Finding 1 - High - 006Z14 still lacks its required real action/scope matrix
+
+Requirements 1-5 demand real module/HTTP rows, one all-permissions/no-scope actor, exact no-write
+denials, matching-scope success, independent global/created-by/team behavior, and executable staff/
+portal/borrower calculation ownership. The diff's new matrix exercises only assigned/unrelated
+evaluator Booleans and mostly empty table counts. Existing focused suites substantively cover scope
+shapes and owned calculations, but they are not tied to each advertised action and cannot make the
+new aliases public acceptance. `006Z15` closes the exact matrix and omission proof.
+
+#### Finding 2 - High - 007B replay and governed immutability acceptance are incomplete
+
+The slice says only an identical assessment/rule repeat is idempotent. `_matches_enrichment`
+compares type, amount, reason, and exception Boolean, but not the locked decision date or frozen
+assessment/policy provenance; changed credit provenance can therefore return the old route as a
+successful repeat. The governed-immutability test also submits a shell and manually assigns route
+fields instead of executing submit → enrich → canonical read before rejected/winning/losing
+configuration decisions, contrary to its explicit sharpening. `007C2` adds exact provenance replay,
+complete no-write conflicts, and real enriched-case governance evidence.
+
+#### Finding 3 - High - 007C accepts contradictory authority snapshots
+
+`_is_routed` checks broad JSON shapes and matching ids/versions/dates, but does not reconcile the
+case amount/condition, required roles/director count/joint/register facts, or the required user list
+with the stored matrix and committee projections. A malformed stored row can inject an arbitrary
+approver into queue membership and enabled actions. This fails 007C's requirement that only a
+complete matching 007B snapshot routes. `007C2` adds independently attributable mismatch rows and
+one coherent stored-snapshot validator shared with 007D.
+
+#### Finding 4 - Medium - 007A5 proves new evidence counts but not winner evidence content
+
+The four PostgreSQL races now preserve the complete old proposal/resource/history/audit/case ledger,
+read the pending loser publicly, and create exactly one new VersionHistory and audit row. They do
+not assert the new rows' actor, approver, reason, proposal/resource target, or old/new payload, so a
+misattributed winner can pass the claimed complete ledger. `007A6` adds exact evidence-content
+assertions and omission checks to all four twice-run races.
+
+No material scope creep was found. Adding the §15.4 `ApprovalAction` read ledger in 007C is a
+bounded prerequisite for projecting immutable decisions and is explicitly reused by 007D. Conflict
+rules remain deferred rather than silently approximated.
+
+M02-FR-004..006 calculations and persistence remain substantive, but their public authority proof
+is partial until 006Z15. M05-FR-003..006 configuration/routing behavior is substantive with exact
+winner evidence pending 007A6. M05-FR-001..003 queue/review behavior exists, but object authority
+and contradictory-snapshot safety remain partial until 007C2. M05-FR-007 onward remains owned by
+007D and later slices, not implicitly claimed by this review window.
+
+No ADR was added because auth object-scope rules, API §3/§25, data-model §15, codebase-design §13.1,
+and ADR-0005 already decide the required boundaries.
+
+Summary: Standards found 2 High, 1 Medium, and 1 Low/judgment issue; the worst issues are global
+approval-case reads and evaluator-only public-action proof. Spec found 3 High and 1 Medium issue;
+the worst issues are the still-missing member action matrix and approval routing/replay authority
+gaps.
+
 ## 2026-07-13 08:41 - Architecture Review 2026-07-13_083408_architecture_review
 
 Reviewed completed product work since architecture-review commit `8b1af41`:

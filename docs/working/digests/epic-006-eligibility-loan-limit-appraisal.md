@@ -1,5 +1,19 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-13 10:09 - Public Action Proof Still Shallow
+
+- 006Z14 correctly removes the dead `calculate_for_actor` seam and brittle filename/string caller
+  whitelist. Existing focused suites retain substantive member calculations, persisted scope
+  shapes, and application/portal ownership behavior.
+- Its new ten-row “action matrix” never invokes the named list/detail/update/identity/supply/
+  evidence/status boundaries. Every row calls only `evaluate_member_authority`, asserts a Boolean,
+  and counts mostly empty ledgers; a label can therefore claim a public action without executing it.
+- `006Z15` replaces those aliases with independently selectable real module/HTTP actions, exact
+  no-scope denial ledgers, matching-scope success, all persisted scope kinds, and actorless staff/
+  portal/borrower-limit substitution proof.
+- M02-FR-004..006 business behavior remains substantive, but the source-required public authority
+  proof remains partial until 006Z15.
+
 ## 006Z14 Member Authority Action and Calculation Proof Closure
 
 - Eleven independently selectable member-authority rows now use one custom-role actor with every
