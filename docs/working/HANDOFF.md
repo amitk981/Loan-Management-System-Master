@@ -2,33 +2,40 @@
 
 ## Last Run
 
-2026-07-14_004058_normal_run
+2026-07-14_010536_architecture_review
 
 ## Current Status
 
-007J2 is complete. SettingsHub no longer presents inline policy/rate/threshold/retention, workflow
-TAT, document-template, or user/role fixtures as live truth. S70 reads all retained 003E/006C loan
-policy versions through a typed authenticated client. `config.loan_policy.manage` actors can clone
-the current server row into a complete new POST-created draft; readers remain read-only, errors stay
-inside the form, drafts are not labeled current, and no PATCH or activation path exists. The
-create-only boundary cannot destructively overwrite retained rows with stale form state.
+The independent review of 007H3, 007I, 007J, and 007J2 is complete. Production code was not
+changed. Epic 007's core approval actions, conflict/general-meeting gates, sanction/register
+generation, scoped reads, real frontend services, and create-only policy settings remain
+substantive, but the review found four correction groups:
 
-Workflow TAT is explicitly inert until 012EA and document-template management until 008A, both
-using existing card/AlertBanner patterns. The duplicate user/role tab and fixture matrix are removed;
-002G/002G2 Admin User Management remains the sole API-backed authority. The delivered 007J
-`ApprovalMatrixSettingsPanel` and `approvalRegistersApi` are unchanged.
+- an empty frozen `appraisal_facts_json` still falls back to mutable live appraisal fields, and the
+  approval selector now imports the engine that imports it;
+- S21 lacks its explicit sanction filter and most required queue facts, while S22 drops immutable
+  action comments/times and S24 overstates case-metadata document referenceability;
+- S25 omits action comments and source-required supporting-document evidence;
+- frontend auth/envelope transport and approval-rule calculations are duplicated, the policy panel
+  departs from the approved Settings composition, and 007I/J/J2 never triggered trusted browser
+  acceptance because their completed slices declared no localhost capability.
+
+Corrective slices `007K` through `007N` are queued before Epic 008. `CONTEXT.md`, the Epic 007
+digest, A-090, and REVIEW_FINDINGS now state the repository truth. No Blocked slice exists to
+reopen, and the new dependency graph passes Ralph queue lint.
 
 ## Validation
 
-Focused RED/GREEN and review-fix evidence is retained. Frontend production build, typecheck, lint,
-and all 251 tests pass. Backend check/migration sync and all 680 tests pass with 19 expected
-PostgreSQL-only SQLite skips; coverage is 93% against the 85% floor. Vite localhost binding was
-denied by the sandbox with `EPERM`, so no screenshot was fabricated; the genuine attempt log is
-retained. Independent Standards and Spec re-reviews found no remaining implementation issue.
+Independent Standards and Spec passes, source/digest/functional-ID traceability, production/test
+hunk inspection, retained run evidence, context accuracy, and Blocked-state checks were completed.
+Frontend build/typecheck/lint and all 251 tests pass. Backend check/migration sync and all 680 tests
+pass with 19 expected PostgreSQL-only SQLite skips; coverage is 93% against the 85% floor. Queue,
+runtime-capability, JSON, protected-path, and diff-integrity checks pass. Evidence is retained in
+`.ralph/runs/2026-07-14_010536_architecture_review/`; the orchestrator still performs its own
+independent validation before commit/merge.
 
 ## Next Run
 
-An architecture review is due after four completed slices. Review the post-007H3 window including
-007I, 007J, and 007J2. After that review, run sharpened `008A-document-template-model-and-versioning`;
-`008B-document-generation-shell` now also has concrete API/model/permission/test requirements and a
-matching Epic 008 digest extract.
+Run `007K-frozen-review-snapshot-and-selector-boundary-closure`, then
+`007L-sanction-workbench-contract-and-browser-closure`. Do not treat Epic 007 UI fidelity/evidence
+as closed until `007M` and `007N` also complete their declared trusted browser contracts.

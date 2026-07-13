@@ -2,6 +2,128 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-14 01:17 - Architecture Review 2026-07-14_010536_architecture_review
+
+Reviewed completed work since architecture-review commit `82027f7`:
+- `007H3-frozen-case-provenance-and-read-scope-parity-closure` (`e9c330d`)
+- `007I-sanction-workbench-ui` (`63280d4`)
+- `007J-registers-and-approval-matrix-frontend-wiring` (`ee9d365`)
+- `007J2-settings-hub-panels-wiring-or-lockdown` (`0f0968d`)
+
+The review checked `git diff 82027f7...HEAD`, every production/test hunk, retained RED/GREEN and
+full-gate evidence, the four slice contracts, the Epic 007 file/digest, cited screen/API/auth/data-
+model/functional/codebase-design sections, and M05-FR-001..012. Standards and Spec ran as isolated
+independent passes. `CONTEXT.md` was stale after 007I and is corrected by this review; state and
+slice files contain no Blocked item to reopen.
+
+### Standards
+
+#### Finding 1 - High - The selector and approval engine now form a circular dependency
+
+`approval_case_engine` imports `approval_case_selector`, while the selector added a function-local
+import back to the engine and now executes routability and authorization business validation. This
+puts deep policy in a query-shaping module and reverses codebase-design §§7.2/36.1's intended
+`module -> selector/models` direction. `007K` makes frozen validity/read scope a single public
+approval-engine boundary and leaves the selector responsible only for actor-scoped query shaping.
+
+#### Finding 2 - High - Authenticated HTTP transport is duplicated across feature services
+
+`approvalRegistersApi.ts` independently loads JWT state, calls `fetch`, parses envelopes/errors,
+and normalizes field errors; `sanctionApi.ts` repeats the same work for multipart upload. This is
+exactly the machinery codebase-design §23.5 assigns to the shared frontend API client. `007L`
+deepens JSON/upload ownership and `007N` adds the paginated envelope path before migrating the
+register/matrix service.
+
+#### Finding 3 - High - React derives approval authority facts
+
+`ApprovalMatrixSettingsPanel` computes authority composition and minimum approvals from roles and
+Director count. Even though the source fields come from the server, the resulting approval fact is
+a backend-owned rule under FRONTEND_DESIGN_RULES' mock-surface ratchet and codebase-design
+§§23.3/28.3. `007N` adds display-ready server projections and removes the React calculation.
+
+#### Finding 4 - High - The policy settings surface changes the approved existing layout
+
+`LoanPolicySettingsPanel` replaces the Settings policy card/field composition with a new ten-column
+table, header treatment, and modal button styling. A-092 explains component extraction but cannot
+override FRONTEND_DESIGN_RULES' no-redesign/no-new-table rule. `007N` retains real API truth and
+authority states while restoring the closest existing card/form composition.
+
+#### Finding 5 - Medium judgment call - Navigation authority has two manifests
+
+Sidebar visibility and direct-route guards independently repeat alternative register/matrix
+permissions. Tests currently align them, but the duplication weakens locality and can drift.
+`007N` gives both consumers one navigation manifest while preserving panel-level canonical checks.
+
+#### Finding 6 - Low judgment call - A regression pins Django's generated SQL
+
+The 007H3 query regression requires exactly three approval-case queries and literal SQL fragments.
+Its public parity assertions are valuable, but codebase-design §§26.1-26.2 prefer observable
+module behavior over ORM internals. `007K` replaces this brittle assertion with public outcome and
+bounded-work evidence.
+
+### Spec
+
+#### Finding 1 - High - Empty frozen review facts still fall back to mutable appraisal truth
+
+`serialize_case_detail` synthesizes `review_facts` from the live appraisal when
+`appraisal_facts_json` is empty, and `_matrix_projection_is_coherent` likewise validates live
+review date/recommended amount in that state. A malformed empty frozen review object can therefore
+remain routable and change with later appraisal edits. This contradicts 007H3 requirements 1-2/4
+and the digest's “freezes all required provenance plus review_facts” claim. `007K` makes the frozen
+object mandatory and fail-closed across detail/action/decision/register boundaries.
+
+#### Finding 2 - High - S24 treats case document ids as currently referenceable
+
+When no new files are chosen, the workbench resubmits the three ids from
+`general_meeting_approval` and describes them as existing referenceable evidence without a current
+document-owned selection decision. This conflicts with 007I's explicit rule that case/register
+metadata grants neither reference nor download authority. The backend does revalidate each file,
+so this is not an authorization bypass, but the frontend claim/affordance is still false. `007L`
+requires a document-owned selector or three new accepted uploads and keeps backend validation
+authoritative; it supersedes the over-broad wording in A-090.
+
+#### Finding 3 - Medium - S22 omits immutable per-approver action history
+
+The UI renders required approver name/role/decision but drops `approval_actions` comments and
+`acted_at`. S22 requires decision, date/time, comment, confirmation, and abstention reason per
+approver, and the epic requires immutable history display. `007L` renders the complete action
+ledger separately from frozen route/effective/excluded authority.
+
+#### Finding 4 - Medium - S21 is only a compact case picker, not the required workbench queue
+
+The pending request omits explicit `approval_type=sanction` and `current_status=pending`; each row
+shows only reference, cycle, amount, action count, and status. S21 also requires borrower/type,
+requested/recommended/eligible amounts, approval path, exception/related flags, risk, submitted
+date, and TAT. `007L` extends the frozen list projection and renders those facts without N+1 live
+reads or client-owned TAT policy.
+
+#### Finding 5 - Medium - S25 drops available decision and supporting-document evidence
+
+The Exception Register API already returns complete `approval_actions`, but S25 does not render
+their comments/time. The source also requires supporting documents, while the current entry/API
+has no immutable document association at all. `007M` adds a document-owned exact-application
+reference seam, freezes accepted metadata on the entry/cycle, and renders both evidence groups
+without granting download from register visibility.
+
+### Evidence, functional coverage, and state
+
+007I added a deterministic Playwright spec and promised external two-run acceptance, but its slice
+does not declare `localhost-e2e-server`; the orchestrator therefore recorded E2E as skipped and no
+trusted screenshots exist. 007J/007J2 likewise retain genuine sandbox-denied server attempts but
+no external browser contract. `007L`, `007M`, and `007N` declare exact specs/screenshots so the
+trusted gate runs twice instead of accepting collection-only/local evidence.
+
+M05-FR-001/003-012 remain substantive at the backend workflow boundary, subject to 007K's frozen-
+truth correction. M05-FR-002 is only partial at the frontend until the complete S21 queue and S22
+history land; M05-FR-006's generated exception decision is substantive but S25 supporting evidence
+is partial until 007M. No material scope creep was found. No ADR was added because the source and
+existing deep-module/API-client rules already decide the corrections.
+
+Summary: Standards found 4 High issues, 1 Medium judgment call, and 1 Low judgment call; the worst
+is the circular selector/approval-engine seam combined with mutable fallback. Spec found 2 High and
+3 Medium issues; the worst is live appraisal truth still authorising a cycle with missing frozen
+review facts.
+
 ## 2026-07-13 22:42 - Architecture Review 2026-07-13_222951_architecture_review
 
 Reviewed completed work since architecture-review commit `c843ea8`:

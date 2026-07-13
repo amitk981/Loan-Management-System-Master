@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+?? .ralph/runs/2026-07-14_010536_architecture_review/
+?? docs/slices/007K-frozen-review-snapshot-and-selector-boundary-closure.md
+?? docs/slices/007L-sanction-workbench-contract-and-browser-closure.md
+?? docs/slices/007M-exception-supporting-evidence-and-register-closure.md
+?? docs/slices/007N-register-matrix-settings-contract-and-browser-closure.md

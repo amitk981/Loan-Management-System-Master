@@ -1,5 +1,26 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## Architecture Review 2026-07-14 01:17 - Frozen Review and Frontend Contract Closure
+
+- 007H3 removed live loan-limit comparison, but an empty `appraisal_facts_json` still makes
+  coherence/detail fall back to mutable appraisal review fields. Its selector also imports the
+  engine that imports it. `007K` makes frozen review facts mandatory, restores one-way
+  engine-to-selector flow, and replaces literal ORM-query assertions with public boundary proof.
+- 007I's action authority and canonical refetch are substantive, but S21 remains a compact picker
+  without its full frozen queue facts or explicit sanction filter, and S22 drops immutable action
+  comments/times. Case meeting ids are also described as referenceable without a current document
+  decision. `007L` closes those contracts, deepens the shared upload client, and declares the seven
+  trusted browser screenshots that 007I never caused the orchestrator to run.
+- 007J's scoped S23/S25 reads and 007J2's real/create-only policy boundary are substantive. The
+  register client duplicates auth/envelope transport, the matrix UI derives approval counts, the
+  policy panel departs from the approved Settings composition, and S25 omits action/supporting-
+  document evidence. `007M` owns immutable exception documents/comments; `007N` owns shared
+  pagination transport, server-projected matrix display facts, navigation locality, Settings
+  fidelity, and trusted register/settings browser evidence.
+- M05-FR-001/003-012 remain substantive at the workflow boundary subject to 007K. M05-FR-002's UI
+  is partial until 007L; M05-FR-006's decision/register lifecycle is substantive but its S25
+  supporting evidence remains partial until 007M.
+
 ## 007J2 SettingsHub Remaining Panels
 
 - S70 and M01 make loan product, share/scale, interest, approval threshold, re-KYC, retention, and
