@@ -1,0 +1,1199 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/authSession.test.ts src/services/approvalRegistersApi.test.ts src/pages/registers/RegistersHub.test.tsx src/pages/settings/SettingsHub.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_000359_normal_run/sfpcl-lms
+
+ ✓ src/services/approvalRegistersApi.test.ts (4 tests) 7ms
+ ❯ src/services/authSession.test.ts (16 tests | 1 failed) 19ms
+   ✓ auth session API flow > posts credentials, stores tokens, calls /auth/me/, and returns backend current user state 3ms
+   ✓ auth session API flow > does not store a session when login returns invalid credentials 1ms
+   ✓ auth session API flow > clears stored auth when /auth/me/ rejects an expired or invalid token 1ms
+   ✓ auth session API flow > posts the refresh token on logout and clears local auth state 2ms
+   ✓ member portal auth API flow > posts portal credentials, stores tokens, and maps borrower member scope from /auth/me/ 1ms
+   ✓ member portal auth API flow > calls portal activation and password reset endpoints using standard envelopes 1ms
+   ✓ member portal auth API flow > posts portal password changes with the stored bearer token 1ms
+   ✓ backend current-user mapping > uses roles and teams objects for display and derives compatibility codes from those arrays 0ms
+   ✓ backend current-user mapping > maps canonical backend permissions to existing prototype permission checks without granting unknown codes 0ms
+   × backend current-user mapping > maps approval register and matrix permissions to resource-scoped navigation gates 6ms
+     → expected [ 'view_registers', …(2) ] to deeply equal [ 'view_approval_registers', …(1) ]
+   ✓ backend current-user mapping > maps only the explicit tracer permission to the tracer workspace action 0ms
+   ✓ backend current-user mapping > keeps tracer lifecycle mapping isolated from every non-tracer prototype permission 1ms
+   ✓ backend current-user mapping > keeps zero-permission roles restricted to unrestricted routes 0ms
+   ✓ backend current-user mapping > maps zero-permission IT Head to a neutral backend staff role without auditor/admin/borrower behavior 1ms
+   ✓ backend current-user mapping > maps zero-permission Management Viewer to a neutral backend staff role without prototype permissions 0ms
+   ✓ backend current-user mapping > maps unknown and empty-role current-user responses to neutral backend staff without prototype permissions 0ms
+ ❯ src/pages/settings/SettingsHub.test.tsx (5 tests | 1 failed) 522ms
+   ✓ SettingsHub Approval Matrix panel > renders active and retained historical rules from the versioned API without local fixtures 121ms
+   ✓ SettingsHub Approval Matrix panel > permits a canonical manager to submit a complete successor version as a pending proposal  333ms
+   ✓ SettingsHub Approval Matrix panel > shows denied/error states without falling back to the inline prototype matrix 30ms
+   × SettingsHub Approval Matrix panel > clears matrix rows when the actor loses canonical read permission 37ms
+     → expected <td …(1)></td> to be null
+   ✓ SettingsHub Approval Matrix panel > removes inline business fixtures from the owned S71 panel source 0ms
+ ❯ src/pages/registers/RegistersHub.test.tsx (6 tests | 2 failed) 518ms
+   × RegistersHub owned approval register panels > renders only the server-scoped frozen sanction page and replaces pagination after a filter change 153ms
+     → Unable to find an element with the text: /approved · cycle 1/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-book-open text-green-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v14"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRegisters[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mStatutory and internal registers · 8-year retention[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col flex-1 min-h-0"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"border-b border-slate-200 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-0 min-w-max pr-6"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mLoan account register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mLoan request register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+            [36m>[39m
+              [0mCredit sanction register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mSecurity register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mException register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mMember register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mCompliance register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mStamp duty register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mAudit log[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mGrievance register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mRecovery log[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+    ...
+   × RegistersHub owned approval register panels > applies only canonical financial-year values 181ms
+     → Unable to find an accessible element with the role "button" and name "Apply financial year"
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "Registers":
+  [36m<h1[39m
+    [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm font-semibold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Loan account register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Loan request register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Credit sanction register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+  [36m/>[39m
+
+  Name "Security register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Exception register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Member register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Compliance register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Stamp duty register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Audit log":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Grievance register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Recovery log":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Blank-dated cheque register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "SH-4 register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "CDSL pledge register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "SAP customer code register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Disbursement register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Repayment register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Interest invoice register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Accrual register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "DPD / monitoring register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "NOC / closure register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Archive register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "SOP change register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Previous":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+    [33mdisabled[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Next":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+    [33mdisabled[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  textbox:
+
+  Name "Financial year":
+  [36m<input[39m
+    [33maria-label[39m=[32m"Financial year"[39m
+    [33mclass[39m=[32m"field-input text-sm py-2 max-w-44"[39m
+    [33mplaceholder[39m=[32m"FY2026-27"[39m
+    [33mvalue[39m=[32m"2026"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Sanction decision":
+  [36m<select[39m
+    [33maria-label[39m=[32m"Sanction decision"[39m
+    [33mclass[39m=[32m"field-select text-sm py-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  option:
+
+  Name "All decisions":
+  [36m<option[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Sanctioned":
+  [36m<option[39m
+    [33mvalue[39m=[32m"sanctioned"[39m
+  [36m/>[39m
+
+  Name "Rejected":
+  [36m<option[39m
+    [33mvalue[39m=[32m"rejected"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  table:
+
+  Name "":
+  [36m<table[39m
+    [33mclass[39m=[32m"w-full text-sm min-w-max"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  rowgroup:
+
+  Name "":
+  [36m<thead />[39m
+
+  Name "":
+  [36m<tbody[39m
+    [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  row:
+
+  Name "Application Borrower Borrower type Requested Eligible Recommended Sanctioned Decision Approval authority Approvers Approval date Reasons Exception Conflict / abstention General meeting evidence":
+  [36m<tr[39m
+    [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+  [36m/>[39m
+
+  Name "No sanction decisions match these filters.":
+  [36m<tr />[39m
+
+  --------------------------------------------------
+  columnheader:
+
+  Name "Application":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Borrower":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Borrower type":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Requested":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left text-right"[39m
+  [36m/>[39m
+
+  Name "Eligible":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left text-right"[39m
+  [36m/>[39m
+
+  Name "Recommended":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left text-right"[39m
+  [36m/>[39m
+
+  Name "Sanctioned":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left text-right"[39m
+  [36m/>[39m
+
+  Name "Decision":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Approval authority":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Approvers":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Approval date":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Reasons":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Exception":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Conflict / abstention":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "General meeting evidence":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  cell:
+
+  Name "No sanction decisions match these filters.":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell text-center text-slate-400 py-12"[39m
+    [33mcolspan[39m=[32m"15"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-book-open text-green-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v14"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRegisters[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mStatutory and internal registers · 8-year retention[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col flex-1 min-h-0"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"border-b border-slate-200 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-0 min-w-max pr-6"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mLoan account register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mLoan request register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+            [36m>[39m
+              [0mCredit sanction register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mSecurity register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mException register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mMember register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mCompliance register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mStamp duty register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mAudit log[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mGrievance register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mRecovery log[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+    ...
+   ✓ RegistersHub owned approval register panels > loads S25 independently and keeps description and business reason distinct 83ms
+   ✓ RegistersHub owned approval register panels > hides export without canonical permission and reports its deferred state when permitted 59ms
+   ✓ RegistersHub owned approval register panels > shows a nondisclosing denied state with no fallback register facts 40ms
+   ✓ RegistersHub owned approval register panels > keeps mock-backed variables outside the owned S23/S25 panel source 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/authSession.test.ts > backend current-user mapping > maps approval register and matrix permissions to resource-scoped navigation gates
+AssertionError: expected [ 'view_registers', …(2) ] to deeply equal [ 'view_approval_registers', …(1) ]
+
+- Expected
++ Received
+
+  [
+-   "view_approval_registers",
+-   "view_approval_matrix",
++   "view_registers",
++   "view_settings",
++   "manage_settings",
+  ]
+
+ ❯ src/services/authSession.test.ts:273:9
+    271|       'approvals.matrix.read',
+    272|       'approvals.matrix.manage',
+    273|     ])).toEqual(['view_approval_registers', 'view_approval_matrix']);
+       |         ^
+    274|   });
+    275| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/pages/registers/RegistersHub.test.tsx > RegistersHub owned approval register panels > renders only the server-scoped frozen sanction page and replaces pagination after a filter change
+TestingLibraryElementError: Unable to find an element with the text: /approved · cycle 1/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-book-open text-green-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v14"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRegisters[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mStatutory and internal registers · 8-year retention[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col flex-1 min-h-0"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"border-b border-slate-200 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-0 min-w-max pr-6"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mLoan account register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mLoan request register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+            [36m>[39m
+              [0mCredit sanction register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mSecurity register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mException register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mMember register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mCompliance register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mStamp duty register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mAudit log[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mGrievance register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mRecovery log[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+    ...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/registers/RegistersHub.test.tsx:44:19
+     42|     expect(screen.getByText('Frozen sanction reason')).toBeTruthy();
+     43|     expect(screen.getByText('Frozen exception business reason')).toBeT…
+     44|     expect(screen.getByText(/approved · cycle 1/i)).toBeTruthy();
+       |                   ^
+     45|     expect(screen.getByText(/self declared abstention/i)).toBeTruthy();
+     46|     expect(screen.getByText(/director relative/i)).toBeTruthy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/pages/registers/RegistersHub.test.tsx > RegistersHub owned approval register panels > applies only canonical financial-year values
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "Apply financial year"
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "Registers":
+  [36m<h1[39m
+    [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm font-semibold text-slate-900 flex items-center gap-2"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-xs text-slate-500 mt-0.5"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Loan account register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Loan request register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Credit sanction register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+  [36m/>[39m
+
+  Name "Security register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Exception register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Member register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Compliance register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Stamp duty register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Audit log":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Grievance register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Recovery log":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Blank-dated cheque register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "SH-4 register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "CDSL pledge register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "SAP customer code register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Disbursement register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Repayment register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Interest invoice register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Accrual register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "DPD / monitoring register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "NOC / closure register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Archive register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "SOP change register":
+  [36m<button[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+  [36m/>[39m
+
+  Name "Previous":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+    [33mdisabled[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Next":
+  [36m<button[39m
+    [33mclass[39m=[32m"btn-secondary flex items-center gap-1 text-sm"[39m
+    [33mdisabled[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  textbox:
+
+  Name "Financial year":
+  [36m<input[39m
+    [33maria-label[39m=[32m"Financial year"[39m
+    [33mclass[39m=[32m"field-input text-sm py-2 max-w-44"[39m
+    [33mplaceholder[39m=[32m"FY2026-27"[39m
+    [33mvalue[39m=[32m"2026"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Sanction decision":
+  [36m<select[39m
+    [33maria-label[39m=[32m"Sanction decision"[39m
+    [33mclass[39m=[32m"field-select text-sm py-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  option:
+
+  Name "All decisions":
+  [36m<option[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Sanctioned":
+  [36m<option[39m
+    [33mvalue[39m=[32m"sanctioned"[39m
+  [36m/>[39m
+
+  Name "Rejected":
+  [36m<option[39m
+    [33mvalue[39m=[32m"rejected"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  table:
+
+  Name "":
+  [36m<table[39m
+    [33mclass[39m=[32m"w-full text-sm min-w-max"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  rowgroup:
+
+  Name "":
+  [36m<thead />[39m
+
+  Name "":
+  [36m<tbody[39m
+    [33mclass[39m=[32m"divide-y divide-slate-100"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  row:
+
+  Name "Application Borrower Borrower type Requested Eligible Recommended Sanctioned Decision Approval authority Approvers Approval date Reasons Exception Conflict / abstention General meeting evidence":
+  [36m<tr[39m
+    [33mclass[39m=[32m"bg-slate-50 border-b border-slate-200"[39m
+  [36m/>[39m
+
+  Name "No sanction decisions match these filters.":
+  [36m<tr />[39m
+
+  --------------------------------------------------
+  columnheader:
+
+  Name "Application":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Borrower":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Borrower type":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Requested":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left text-right"[39m
+  [36m/>[39m
+
+  Name "Eligible":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left text-right"[39m
+  [36m/>[39m
+
+  Name "Recommended":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left text-right"[39m
+  [36m/>[39m
+
+  Name "Sanctioned":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left text-right"[39m
+  [36m/>[39m
+
+  Name "Decision":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Approval authority":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Approvers":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Approval date":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Reasons":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Exception":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "Conflict / abstention":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  Name "General meeting evidence":
+  [36m<th[39m
+    [33mclass[39m=[32m"table-header text-left "[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  cell:
+
+  Name "No sanction decisions match these filters.":
+  [36m<td[39m
+    [33mclass[39m=[32m"table-cell text-center text-slate-400 py-12"[39m
+    [33mcolspan[39m=[32m"15"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6 space-y-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900 flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-book-open text-green-600"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"20"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"20"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 7v14"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRegisters[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-0.5"[39m
+          [36m>[39m
+            [0mStatutory and internal registers · 8-year retention[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col flex-1 min-h-0"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"border-b border-slate-200 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-0 min-w-max pr-6"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mLoan account register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mLoan request register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-green-600 text-green-700"[39m
+            [36m>[39m
+              [0mCredit sanction register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mSecurity register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mException register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mMember register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mCompliance register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mStamp duty register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mAudit log[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mGrievance register[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+            [36m>[39m
+              [0mRecovery log[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"[39m
+    ...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/registers/RegistersHub.test.tsx:66:19
+     64| 
+     65|     await userEvent.type(screen.getByLabelText('Financial year'), '202…
+     66|     expect(screen.getByRole('button', { name: 'Apply financial year' }…
+       |                   ^
+     67|     expect(fetchCreditSanctionRegister).toHaveBeenCalledTimes(1);
+     68| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/pages/settings/SettingsHub.test.tsx > SettingsHub Approval Matrix panel > clears matrix rows when the actor loses canonical read permission
+AssertionError: expected <td …(1)></td> to be null
+
+- Expected: 
+null
+
++ Received: 
+<td
+  class="px-4 py-3 font-medium text-slate-800 num"
+>
+  AM-2026-02
+</td>
+
+ ❯ src/pages/settings/SettingsHub.test.tsx:87:46
+     85|     permissions = [];
+     86|     view.rerender(<SettingsHub />);
+     87|     expect(screen.queryByText('AM-2026-02')).toBeNull();
+       |                                              ^
+     88|     expect(screen.getByText('Approval matrix unavailable')).toBeTruthy…
+     89|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  3 failed | 1 passed (4)
+      Tests  4 failed | 27 passed (31)
+   Start at  00:29:57
+   Duration  1.47s (transform 366ms, setup 0ms, collect 873ms, tests 1.06s, environment 705ms, prepare 197ms)
+

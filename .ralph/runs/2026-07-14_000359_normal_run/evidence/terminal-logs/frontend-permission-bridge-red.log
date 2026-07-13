@@ -1,0 +1,58 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/authSession.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_000359_normal_run/sfpcl-lms
+
+ ❯ src/services/authSession.test.ts (16 tests | 1 failed) 13ms
+   ✓ auth session API flow > posts credentials, stores tokens, calls /auth/me/, and returns backend current user state 2ms
+   ✓ auth session API flow > does not store a session when login returns invalid credentials 1ms
+   ✓ auth session API flow > clears stored auth when /auth/me/ rejects an expired or invalid token 1ms
+   ✓ auth session API flow > posts the refresh token on logout and clears local auth state 1ms
+   ✓ member portal auth API flow > posts portal credentials, stores tokens, and maps borrower member scope from /auth/me/ 0ms
+   ✓ member portal auth API flow > calls portal activation and password reset endpoints using standard envelopes 1ms
+   ✓ member portal auth API flow > posts portal password changes with the stored bearer token 0ms
+   ✓ backend current-user mapping > uses roles and teams objects for display and derives compatibility codes from those arrays 0ms
+   ✓ backend current-user mapping > maps canonical backend permissions to existing prototype permission checks without granting unknown codes 0ms
+   × backend current-user mapping > maps approval register and matrix permissions to their existing navigation gates 4ms
+     → expected [] to deeply equal [ 'view_registers', …(2) ]
+   ✓ backend current-user mapping > maps only the explicit tracer permission to the tracer workspace action 0ms
+   ✓ backend current-user mapping > keeps tracer lifecycle mapping isolated from every non-tracer prototype permission 1ms
+   ✓ backend current-user mapping > keeps zero-permission roles restricted to unrestricted routes 0ms
+   ✓ backend current-user mapping > maps zero-permission IT Head to a neutral backend staff role without auditor/admin/borrower behavior 1ms
+   ✓ backend current-user mapping > maps zero-permission Management Viewer to a neutral backend staff role without prototype permissions 0ms
+   ✓ backend current-user mapping > maps unknown and empty-role current-user responses to neutral backend staff without prototype permissions 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/authSession.test.ts > backend current-user mapping > maps approval register and matrix permissions to their existing navigation gates
+AssertionError: expected [] to deeply equal [ 'view_registers', …(2) ]
+
+- Expected
++ Received
+
+- [
+-   "view_registers",
+-   "view_settings",
+-   "manage_settings",
+- ]
++ []
+
+ ❯ src/services/authSession.test.ts:273:9
+    271|       'approvals.matrix.read',
+    272|       'approvals.matrix.manage',
+    273|     ])).toEqual(['view_registers', 'view_settings', 'manage_settings']…
+       |         ^
+    274|   });
+    275| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 passed (16)
+   Start at  00:18:00
+   Duration  525ms (transform 88ms, setup 0ms, collect 88ms, tests 13ms, environment 0ms, prepare 38ms)
+

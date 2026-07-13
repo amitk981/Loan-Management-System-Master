@@ -118,6 +118,20 @@ describe('role-aware staff navigation contract', () => {
     });
   });
 
+  it('uses resource-scoped approval permissions only for their owning hubs', () => {
+    const prototypePermissions = mapCanonicalPermissions([
+      'approvals.sanction_register.read',
+      'approvals.matrix.read',
+    ]);
+    const visibleIds = visibleStaffNavItems(allNavItems, permission => prototypePermissions.includes(permission)).map(item => item.id);
+
+    expect(visibleIds).toEqual(['dashboard', 'registers', 'settings']);
+    expect(prototypePermissions).not.toContain('view_registers');
+    expect(prototypePermissions).not.toContain('view_settings');
+    expect(resolveNavigationAttempt('registers', permission => prototypePermissions.includes(permission)).allowed).toBe(true);
+    expect(resolveNavigationAttempt('settings', permission => prototypePermissions.includes(permission)).allowed).toBe(true);
+  });
+
   it('shows and guards Admin Users only through mapped manage_users permission', () => {
     const prototypePermissions = mapCanonicalPermissions(['users.user.update']);
     const visibleIds = visibleStaffNavItems(allNavItems, permission => prototypePermissions.includes(permission)).map(item => item.id);

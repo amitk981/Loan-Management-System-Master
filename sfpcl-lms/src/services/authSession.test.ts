@@ -264,6 +264,15 @@ describe('backend current-user mapping', () => {
     ])).toEqual(['view_applications', 'create_application', 'view_loan_accounts', 'export_registers']);
   });
 
+  it('maps approval register and matrix permissions to resource-scoped navigation gates', () => {
+    expect(mapCanonicalPermissions([
+      'approvals.sanction_register.read',
+      'approvals.exception_register.read',
+      'approvals.matrix.read',
+      'approvals.matrix.manage',
+    ])).toEqual(['view_approval_registers', 'view_approval_matrix']);
+  });
+
   it('maps only the explicit tracer permission to the tracer workspace action', () => {
     expect(mapCanonicalPermissions([
       'tracer.lifecycle.run',

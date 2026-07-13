@@ -16,6 +16,7 @@ export interface NavItem {
   icon: React.ReactNode;
   badge?: number;
   requiredPermission?: Permission;
+  alternativePermissions?: Permission[];
 }
 
 export interface StaffNavItem extends NavItem {
@@ -40,11 +41,11 @@ export const allNavItems: StaffNavItem[] = [
   { id: 'defaults',      label: 'Default & Recovery',    icon: <TrendingDown size={18} />,    badge: 2, requiredPermission: 'manage_defaults' },
   { id: 'closure',       label: 'Closure & Archive',     icon: <BadgeCheck size={18} />,      requiredPermission: 'manage_closure' },
   { id: 'compliance',    label: 'Compliance',            icon: <ShieldCheck size={18} />,     requiredPermission: 'view_compliance' },
-  { id: 'registers',     label: 'Registers',             icon: <Sprout size={18} />,          requiredPermission: 'view_registers' },
+  { id: 'registers',     label: 'Registers',             icon: <Sprout size={18} />,          requiredPermission: 'view_registers', alternativePermissions: ['view_approval_registers'] },
   { id: 'reports',       label: 'Reports & MIS',         icon: <BarChart3 size={18} />,       requiredPermission: 'view_reports' },
   { id: 'grievances',    label: 'Grievances',            icon: <MessageSquareWarning size={18} />, requiredPermission: 'view_compliance' },
   { id: 'audit',         label: 'Audit & Archive',       icon: <History size={18} />,         requiredPermission: 'view_audit' },
-  { id: 'settings',      label: 'Settings',              icon: <Settings size={18} />,        requiredPermission: 'view_settings' },
+  { id: 'settings',      label: 'Settings',              icon: <Settings size={18} />,        requiredPermission: 'view_settings', alternativePermissions: ['view_approval_matrix'] },
   { id: 'admin-users',   label: 'Admin Users',           icon: <Users size={18} />,           requiredPermission: 'manage_users' },
   { id: 'tracer',        label: 'Tracer',                icon: <ClipboardCheck size={18} />,  requiredPermission: 'run_tracer' },
 ];

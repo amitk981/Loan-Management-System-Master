@@ -2864,3 +2864,23 @@ The response additionally includes register/case/application/sanction/workflow i
 document values are metadata ids only, and the document module retains its own permission and
 sensitivity checks. No template/Annexure code is stored or projected because OC-002 still leaves
 the Annexure K label conflicted (A-087).
+
+# Approval registers and matrix frontend consumption (007J)
+
+`RegistersHub` consumes S23 only from `GET /api/v1/credit-sanction-register/` and S25 only from
+`GET /api/v1/exception-register/`. Each filter or page change replaces the rows and pagination
+object with that endpoint's latest actor-scoped response. The client does not combine the two
+collections, recover hidden rows from case/detail APIs, retain an earlier total, calculate approval
+authority or money, or turn case/application/document metadata ids into actions or downloads.
+
+The S71 matrix panel consumes `GET /api/v1/approval-matrix-rules/?page=1&page_size=100` and renders
+active, inactive, and retained superseded versions as returned. A holder of
+`approvals.matrix.manage` may submit a complete successor through
+`PATCH /api/v1/approval-matrix-rules/{approval_matrix_rule_id}/`; success is a pending governed
+configuration proposal, not an immediate edit. The active rule remains unchanged until a distinct
+active CFO or Company Secretary approves the proposal through the existing 007A3 boundary.
+
+Register export remains deferred to 012B/012C. The existing `Export Register` action is visible
+only with canonical `reports.export`; in 007J it displays an explicit deferred-state notice and
+makes no network request, creates no file, and does not imply broader register visibility. This
+interim behavior must be replaced, not extended, when the export-job contract lands.

@@ -1,5 +1,20 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007J Registers and Approval Matrix UI
+
+- RegistersHub S23 and S25 now use independent authenticated clients for the actor-scoped 007H and
+  007F collections. Filters reset to page one; every response replaces rows and pagination without
+  cross-endpoint repair, stale totals, live-case reads, or client authority/money calculations.
+- S23 renders all 15 frozen register facts, including distinct sanction reasons and exception
+  business reason, conflict/abstention facts, and General Meeting metadata without creating case or
+  document actions. S25 keeps description and business reason separate. Both fail closed across
+  loading, empty, denied, error, filtered, and normalized-page states.
+- SettingsHub S71 lists retained 007A rule versions. `approvals.matrix.manage` exposes a complete
+  successor form whose PATCH creates a pending maker-checker proposal; it never overwrites the
+  active rule or fabricates activation. Canonical register/matrix permissions now reach the existing
+  navigation gates. Export is visible only with `reports.export` and remains an explicit no-request
+  deferred state until 012B/012C.
+
 ## 007I Sanction Workbench UI
 
 - S21/S22/S24 now consume the authenticated approval-case queue/detail/action and sanction-decision

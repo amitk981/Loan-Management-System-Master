@@ -53,6 +53,19 @@ Admins cannot believe they changed a production policy when nothing was saved; e
 - Add a raw-source regression that rejects editable-looking inline policy/rate/threshold/retention
   fixtures after classification, while allowing explicit controlled vocabularies and inert labels.
 
+## Run-Ahead Sharpening Review (007J delivered SettingsHub boundary, 2026-07-14)
+
+- Leave `ApprovalMatrixSettingsPanel` and its `approvalRegistersApi` calls unchanged; 007J now owns
+  all S71 rule reads, successor proposals, maker-checker messaging, and matrix permissions. Do not
+  merge policy/TAT/template/user data into that service or use matrix versions as fallback settings.
+- The remaining live-looking surfaces are the Policy & Product Configuration cards/actions,
+  Workflow TAT & Escalation table, Template Management rows/actions, and User & Role matrix. Classify
+  every one before editing. S71 names only approval rules, so TAT rows are not approval-matrix truth;
+  if no cited configuration endpoint owns them, make them explicitly inert and name their owner.
+- Preserve the real Admin Users route/API rather than treating SettingsHub's illustrative user/role
+  matrix as user-management authority. A canonical permission may reveal a real resource action but
+  must not make any remaining inline button operational.
+
 ## Out of Scope
 Approval matrix panel (007J), new configuration domains not in the source, notification/communication template content (003F).
 

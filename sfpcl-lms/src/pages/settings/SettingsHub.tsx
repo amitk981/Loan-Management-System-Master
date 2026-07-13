@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Settings, Users, Shield, FileText, ChevronRight, History,
   Check, Plus, Trash2, Edit, Save, X, AlertTriangle, Key
@@ -6,15 +6,21 @@ import {
 import { useRole } from '../../contexts/RoleContext';
 import { ROLE_LABELS } from '../../contexts/RoleContext';
 import { Role } from '../../types';
+import { ApprovalMatrixSettingsPanel } from './ApprovalMatrixSettingsPanel';
 
 type SettingsTab = 'policy' | 'approval_matrix' | 'templates' | 'users';
 
 const SettingsHub: React.FC = () => {
   const { can, currentUser } = useRole();
-  const [activeTab, setActiveTab] = useState<SettingsTab>('policy');
+  const matrixOnly = can('view_approval_matrix') && !can('view_settings');
+  const [activeTab, setActiveTab] = useState<SettingsTab>(matrixOnly ? 'approval_matrix' : 'policy');
   const [saved, setSaved] = useState(false);
 
-  if (!can('view_settings')) {
+  useEffect(() => {
+    if (matrixOnly) setActiveTab('approval_matrix');
+  }, [matrixOnly]);
+
+  if (!can('view_settings') && !can('view_approval_matrix')) {
     return (
       <div className="p-6">
         <div className="flex flex-col items-center py-20 text-center">
@@ -31,12 +37,13 @@ const SettingsHub: React.FC = () => {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
+  const allTabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
     { id: 'policy',          label: 'Policy & Product Configuration', icon: <Settings size={15} /> },
     { id: 'approval_matrix', label: 'Approval Matrix',                icon: <Shield size={15} /> },
     { id: 'templates',       label: 'Template Management',            icon: <FileText size={15} /> },
     { id: 'users',           label: 'User & Role Management',         icon: <Users size={15} /> },
   ];
+  const tabs = allTabs.filter(tab => !matrixOnly || tab.id === 'approval_matrix');
 
   return (
     <div className="p-6">
@@ -238,79 +245,9 @@ const SettingsHub: React.FC = () => {
       {/* Approval Matrix */}
       {activeTab === 'approval_matrix' && (
         <div className="max-w-4xl space-y-5">
-          <div className="bg-white border border-slate-200 rounded-xl p-6 mb-4 flex justify-between items-start">
-            <div>
-              <h3 className="font-semibold text-slate-900 mb-1">Approval Authority Matrix</h3>
-              <p className="text-sm text-slate-500">Approval rules apply after activation. Existing approval cases retain the matrix version used when routed.</p>
-            </div>
-            <span className="bg-slate-100 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-slate-200">Draft</span>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-xl p-6 mb-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <span className="text-slate-500">Matrix version</span>
-                <div className="font-medium text-slate-900 mt-1">AM-2026-01</div>
-              </div>
-              <div>
-                <span className="text-slate-500">Effective from</span>
-                <div className="font-medium text-slate-900 mt-1">Pending</div>
-              </div>
-              <div>
-                <span className="text-slate-500">Board approval ref</span>
-                <div className="font-medium text-slate-900 mt-1">Required before activation</div>
-              </div>
-              <div>
-                <span className="text-slate-500">Last changed by</span>
-                <div className="font-medium text-slate-900 mt-1">Admin User (26 Jun 2026)</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Rule</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Amount / condition</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Required authority</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Minimum approvals</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Special handling</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Status</th>
-                    {can('manage_settings') && <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Action</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {[
-                    { rule: 'Standard sanction', cond: 'Up to ₹5,00,000', auth: 'CFO + 1 Director', min: '2', special: 'None', status: 'Active' },
-                    { rule: 'High-value sanction', cond: 'Above ₹5,00,000', auth: 'CFO + 2 Directors', min: '3', special: 'Higher approval required', status: 'Active' },
-                    { rule: 'Director / Relative Borrower', cond: 'Director, Sanction Committee member, or relative', auth: 'Remaining eligible committee members + GM evidence', min: 'As configured', special: 'Conflicted approver excluded', status: 'Active' },
-                    { rule: 'Above eligible limit / exception', cond: 'Requested amount exceeds eligible limit', auth: 'CFO + 2 Directors + Exception Register reason', min: '3', special: 'Exception approval required', status: 'Active' },
-                    { rule: 'Disbursement initiation', cond: 'Documentation, SAP and bank gates complete', auth: 'Senior Manager – Finance', min: '1', special: 'Cannot authorise final bank transfer', status: 'Active' },
-                    { rule: 'Final bank transfer', cond: 'Payment package ready', auth: 'Chief Financial Controller', min: '1', special: 'UTR / bank reference required', status: 'Active' },
-                    { rule: 'Security document execution', cond: 'PoA / SH-4 / security document handling', auth: 'Company Secretary under PoA', min: '1', special: 'Security custody audit required', status: 'Active' },
-                  ].map(row => (
-                    <tr key={row.rule} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 font-medium text-slate-800">{row.rule}</td>
-                      <td className="px-4 py-3 text-slate-600 text-xs">{row.cond}</td>
-                      <td className="px-4 py-3 text-slate-700">{row.auth}</td>
-                      <td className="px-4 py-3 text-slate-700 text-center">{row.min}</td>
-                      <td className="px-4 py-3 text-slate-500 text-xs">{row.special}</td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">{row.status}</span>
-                      </td>
-                      {can('manage_settings') && (
-                        <td className="px-4 py-3 text-right">
-                          <button className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors"><Edit size={14} /></button>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          {/* OWNED S71 START: API-backed by 007J. */}
+          <ApprovalMatrixSettingsPanel />
+          {/* OWNED S71 END */}
 
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mt-6">
             <div className="px-6 py-4 border-b border-slate-100">
@@ -349,45 +286,6 @@ const SettingsHub: React.FC = () => {
                 </tbody>
               </table>
             </div>
-          </div>
-          
-          {/* Rules and audit trail info */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-500 flex flex-col gap-1">
-            <p>• Conflicted approvers cannot approve their own or related cases.</p>
-            <p>• Approval rule changes must create a new version or approval cycle.</p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            {['admin', 'company_secretary', 'cfo', 'director', 'sanction_committee'].includes(currentUser.role) && (
-              <>
-                <button className="flex items-center gap-2 border border-slate-200 bg-white text-slate-700 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-slate-50">
-                  <Plus size={16} />
-                  Add Rule
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="flex items-center gap-2 border border-slate-200 bg-white text-slate-700 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-slate-50"
-                >
-                  {saved ? <Check size={16} className="text-green-600" /> : <Save size={16} />}
-                  {saved ? 'Saved' : 'Save Draft'}
-                </button>
-                <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors">
-                  Submit for Approval
-                </button>
-                {['cfo', 'director', 'sanction_committee'].includes(currentUser.role) && (
-                  <button className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors">
-                    <Check size={16} />
-                    Activate Matrix
-                  </button>
-                )}
-                <div className="flex-1"></div>
-              </>
-            )}
-            
-            <button className="flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors ml-auto">
-              <History size={16} />
-              View Change History
-            </button>
           </div>
         </div>
       )}

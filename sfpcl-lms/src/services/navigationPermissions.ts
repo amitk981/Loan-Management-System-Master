@@ -48,6 +48,11 @@ export const PAGE_PERMISSIONS: Partial<Record<Page, Permission>> = {
   borrower: 'view_own_loan',
 };
 
+export const PAGE_ALTERNATIVE_PERMISSIONS: Partial<Record<Page, Permission[]>> = {
+  registers: ['view_approval_registers'],
+  settings: ['view_approval_matrix'],
+};
+
 interface NavigationAttempt {
   page: Page;
   blockedPage: Page | null;
@@ -56,19 +61,25 @@ interface NavigationAttempt {
 
 interface PermissionGatedNavItem {
   requiredPermission?: Permission;
+  alternativePermissions?: Permission[];
 }
 
 export const visibleStaffNavItems = <NavItem extends PermissionGatedNavItem>(
   items: NavItem[],
   canUsePermission: (permission: Permission) => boolean,
-): NavItem[] => items.filter(item => !item.requiredPermission || canUsePermission(item.requiredPermission));
+): NavItem[] => items.filter(item => (
+  !item.requiredPermission
+  || canUsePermission(item.requiredPermission)
+  || item.alternativePermissions?.some(canUsePermission)
+));
 
 export const resolveNavigationAttempt = (
   target: Page,
   canUsePermission: (permission: Permission) => boolean,
 ): NavigationAttempt => {
   const requiredPermission = PAGE_PERMISSIONS[target];
-  if (requiredPermission && !canUsePermission(requiredPermission)) {
+  const alternatives = PAGE_ALTERNATIVE_PERMISSIONS[target] ?? [];
+  if (requiredPermission && !canUsePermission(requiredPermission) && !alternatives.some(canUsePermission)) {
     return {
       page: 'dashboard',
       blockedPage: target,

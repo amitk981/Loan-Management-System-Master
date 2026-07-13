@@ -5807,3 +5807,28 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_000359_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007J-registers-and-approval-matrix-frontend-wiring
+- Summary: Wired actor-scoped Credit Sanction and Exception Registers plus retained Approval Matrix
+  versions and governed successor proposals, with resource-scoped navigation/action permission
+  bridges and no owned mock fallback or client-derived approval facts.
+- Tests run: retained focused RED/GREEN cycles plus independent Standards/Spec review fixes;
+  frontend build/typecheck/lint and 245 tests;
+  backend check/migration sync and 680 tests with 19 expected SQLite skips at 93% coverage.
+- Evidence saved: `.ralph/runs/2026-07-14_000359_normal_run/evidence/`
+- Result: Success
+- Risk level: Medium
+- Next action: Independent orchestrator validation/commit/merge/push, then run 007J2.
+
+## 2026-07-14 00:40:42 - 2026-07-14_000359_normal_run
+- Agent tool used: codex
+- Slice attempted: 007J-registers-and-approval-matrix-frontend-wiring
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_000359_normal_run/.ralph/runs/2026-07-14_000359_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_000359_normal_run/.ralph/runs/2026-07-14_000359_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

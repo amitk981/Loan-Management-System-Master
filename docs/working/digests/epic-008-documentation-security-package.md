@@ -52,6 +52,15 @@ Individual and FPO variants "wherever required". Templates live on the intranet 
 must version them (SOP itself is board-approved per revision, V10 p.33). Conflict: see Annexure
 lettering in open decisions.
 
+API/data extract added while sharpening 008A (2026-07-14): API contracts §26.3 names
+`GET/POST /api/v1/document-templates/` and
+`PATCH /api/v1/document-templates/{document_template_id}/`. The create shape carries
+`template_code`, `template_name`, `document_type`, nullable/variant `borrower_type`,
+`template_version`, `template_file_id`, `merge_fields`, `approval_status`, and `effective_from`.
+Data model §16.2 additionally names nullable `effective_to` and `created_at`, makes template code
+unique, indexes document type/borrower type/approval status, and makes the template file reference
+nullable. Later generation is the separate §26.4 boundary; 008A must not generate a loan document.
+
 ### 008B Document Generation Shell
 Generate from the 008A templates with borrower/nominee/loan facts; Individual vs FPO variant
 selection (V10 p.29). Generated Term Sheet must carry all 13 §4.9 fields; Loan Agreement follows

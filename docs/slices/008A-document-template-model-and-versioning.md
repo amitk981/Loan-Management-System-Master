@@ -8,7 +8,8 @@ Epic 008: Documentation, Legal Documents, and Security Package
 Epic file: `docs/epics/008-documentation-security-package.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Create the versioned Document Template catalogue and §26.3 API used by later generation slices,
+without generating borrower documents or resolving conflicted Annexure lettering.
 
 ## User Value
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
@@ -35,25 +36,51 @@ None directly.
 None for this slice, except updating frontend documentation or fixtures if required by tests.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+1. Add `GET/POST /api/v1/document-templates/` and
+   `PATCH /api/v1/document-templates/{document_template_id}/` using the standard envelope and
+   bounded pagination.
+2. Persist source §16.2 fields: code, name, document type, nullable borrower type, version,
+   nullable template-file reference, merge-field JSON, approval status, effective dates, and
+   creation timestamp.
+3. Treat PATCH as successor-version creation: retain history and prevent an effective template
+   already referenced downstream from being silently overwritten.
+4. Support the SOP catalogue A-I and L plus Board/Sanction Committee register template metadata;
+   keep the conflicting J/K/L annexure label out of routing logic and record it as unresolved.
+5. Accept Individual/FPO variants where required. Template-file references must use the existing
+   document metadata/storage boundary; this slice does not generate a loan document.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
+Add one non-destructive `document_templates` migration following data-model §16.2, with unique
+`template_code`, indexed document/borrower type and approval status, effective-date integrity, and
+non-overlapping active/effective versions for the same template identity/borrower variant.
 
 ## API Contracts
 Create or update the API contract for this capability.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Use explicit document-template read/manage permissions. Only source-authorised configuration or
+template managers may create successors; read permission never implies mutation or file download.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+Write attributable audit and version-history evidence for every real create/successor/status
+change, including old/new version, actor, effective dates, and template-file identity. Exact replay
+must not duplicate business evidence.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+- `template_code`, name, document type, version, approval status, and effective-from are required.
+- Approval status is bounded to draft/approved/retired; effective-to cannot precede effective-from.
+- Borrower type is nullable or a supported Individual/FPO variant; merge fields are a list of
+  nonblank unique field names.
+- A referenced template file must exist, but its id grants no download authority.
+- Do not encode a definitive Annexure J/K/L mapping while the digest's conflict remains open.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Create/list/filter/page template variants and retain an earlier version after successor creation.
+- Reject duplicate code/version, overlapping effective versions, invalid dates/status/merge fields,
+  and inaccessible or missing template-file references with zero writes.
+- Prove reader/manager/unauthorised matrices, immutable historical references, audit/version-history
+  content, exact replay, and one-winner concurrent successor creation on PostgreSQL.
+- Prove the catalogue stores template metadata only and performs no generation/storage download.
 
 ## Visual Acceptance Criteria
 None.

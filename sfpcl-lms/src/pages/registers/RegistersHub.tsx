@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useRole } from '../../contexts/RoleContext';
-import { BookOpen, FileText, Scale, Gavel, AlertOctagon, RotateCcw, Archive, Stamp, Search, Download, History, Filter } from 'lucide-react';
+import { BookOpen, FileText, Scale, AlertOctagon, RotateCcw, Archive, Stamp, Search, Download, History, Filter } from 'lucide-react';
 import Tabs from '../../components/ui/Tabs';
 import StatusBadge from '../../components/ui/StatusBadge';
+import AlertBanner from '../../components/ui/AlertBanner';
 import { loanApplications, loanAccounts, securities, members, complianceRecords, auditEvents } from '../../data/mockData';
 import { getApplicationReference, getApplicationStatusLabel } from '../../utils/applicationDisplay';
+import { CreditSanctionRegisterPanel, ExceptionRegisterPanel } from './ApprovalRegisterPanels';
 
 const fmt = (n?: number) => n !== undefined && n !== null ? '₹' + n.toLocaleString('en-IN') : '—';
 
@@ -40,16 +42,47 @@ interface RegistersHubProps {
 }
 
 const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplication }) => {
-  const { can } = useRole();
+  const { can, currentUser } = useRole();
   const [activeTab, setActiveTab] = useState(0);
+  const [ownedActiveTab, setOwnedActiveTab] = useState(0);
   const [auditSearch, setAuditSearch] = useState('');
   const [auditRoleFilter, setAuditRoleFilter] = useState('all');
   const [auditEntityFilter, setAuditEntityFilter] = useState('all');
   const [auditDateFrom, setAuditDateFrom] = useState('');
   const [auditDateTo, setAuditDateTo] = useState('');
+  const [exportNotice, setExportNotice] = useState(false);
 
 
   const canExport = can('export_registers');
+  const ownedTabs = [
+    ...(currentUser.permissions.includes('approvals.sanction_register.read') ? [{ id: 'sanction_register', label: 'Credit sanction register' }] : []),
+    ...(currentUser.permissions.includes('approvals.exception_register.read') ? [{ id: 'exception_register', label: 'Exception register' }] : []),
+  ];
+  const ownedPanels = [
+    ...(currentUser.permissions.includes('approvals.sanction_register.read') ? [<CreditSanctionRegisterPanel key="sanction" />] : []),
+    ...(currentUser.permissions.includes('approvals.exception_register.read') ? [<ExceptionRegisterPanel key="exception" />] : []),
+  ];
+
+  if (currentUser.isBackendSession && !can('view_registers')) {
+    if (!can('view_approval_registers')) {
+      return <div className="p-6"><AlertBanner type="error" title="Registers unavailable" message="You do not have register read permission." /></div>;
+    }
+    return (
+      <div className="p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2"><BookOpen size={20} className="text-green-600" />Registers</h1>
+            <p className="text-sm text-slate-500 mt-0.5">Permission-scoped approval registers</p>
+          </div>
+          {canExport && <button onClick={() => setExportNotice(true)} className="btn-secondary flex items-center gap-2 text-sm"><Archive size={14} />Export Register</button>}
+        </div>
+        {exportNotice && <AlertBanner type="info" title="Export action available" message="Register export is scheduled for the reporting export slice." onDismiss={() => setExportNotice(false)} />}
+        {ownedTabs.length ? <Tabs tabs={ownedTabs} activeIndex={ownedActiveTab} onChange={setOwnedActiveTab}>{ownedPanels}</Tabs>
+          : <AlertBanner type="error" title="Registers unavailable" message="You do not have approval register read permission." />}
+      </div>
+    );
+  }
+
   const processedLoans = loanAccounts.map(l => {
     const due = new Date(l.repaymentDueDate);
     const diffDays = Math.floor((new Date().getTime() - due.getTime()) / (1000 * 3600 * 24));
@@ -70,9 +103,6 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
     
     return { ...l, calcDpd, displayStatus, outstanding };
   });
-
-  const exceptions = loanApplications.filter(a => a.isException);
-  const sanctionDecisions = loanApplications.filter(a => a.sanctionDecision === 'approved' || a.sanctionDecision === 'rejected');
 
   // Stamp duty data
   const stampDutyRecords = [
@@ -216,11 +246,22 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">Statutory and internal registers · 8-year retention</p>
         </div>
-        <button disabled={!canExport} className="btn-secondary flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-          <Archive size={14} />
-          Export Register
-        </button>
+        {canExport && (
+          <button onClick={() => setExportNotice(true)} className="btn-secondary flex items-center gap-2 text-sm">
+            <Archive size={14} />
+            Export Register
+          </button>
+        )}
       </div>
+
+      {exportNotice && (
+        <AlertBanner
+          type="info"
+          title="Export action available"
+          message="Register export is scheduled for the reporting export slice."
+          onDismiss={() => setExportNotice(false)}
+        />
+      )}
 
       <Tabs tabs={REGISTER_TABS} activeIndex={activeTab} onChange={setActiveTab}>
         {/* Tab 0: Loan Register */}
@@ -369,77 +410,9 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
           </div>
         </div>
 
-        {/* Tab 2: Credit Sanction Register */}
-        <div className="card p-0 overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200">
-            <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <Gavel size={14} className="text-green-600" /> Credit sanction register
-            </p>
-            <p className="text-xs text-slate-500 mt-0.5">All sanction decisions — {sanctionDecisions.length} records</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="table-header text-left">Application No.</th>
-                  <th className="table-header text-left">Member</th>
-                  <th className="table-header text-right">Sanctioned Amount</th>
-                  <th className="table-header text-left">Decision</th>
-                  <th className="table-header text-left">Decision date</th>
-                  <th className="table-header text-left">Approval authority</th>
-                  <th className="table-header text-left">Exception</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {sanctionDecisions.map(app => {
-                  const authority = app.requestedAmount > 500000 ? 'CFO + 2 Directors' : 'CFO + 1 Director';
-                  
-                  let exceptionDisplay = 'None';
-                  if (app.isException) {
-                     if (app.sanctionDecision === 'approved') {
-                       exceptionDisplay = 'Approved';
-                     } else if (app.sanctionDecision === 'rejected') {
-                       exceptionDisplay = 'Rejected';
-                     } else {
-                       exceptionDisplay = 'Open';
-                     }
-                  }
-                  
-                  let formattedDate = '—';
-                  if (app.sanctionedAt) {
-                    formattedDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(app.sanctionedAt));
-                  }
-
-                  const decisionBadgeColor = app.sanctionDecision === 'approved' ? 'bg-green-100 text-green-700' : app.sanctionDecision === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700';
-
-                  return (
-                  <tr key={app.id} className="hover:bg-slate-50">
-                    <td className="table-cell num font-semibold text-green-700">{getApplicationReference(app)}</td>
-                    <td className="table-cell font-medium">{app.memberName}</td>
-                    <td className="table-cell text-right num">{fmt(app.requestedAmount)}</td>
-                    <td className="table-cell">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${decisionBadgeColor}`}>
-                        {app.sanctionDecision}
-                      </span>
-                    </td>
-                    <td className="table-cell text-slate-600">{formattedDate}</td>
-                    <td className="table-cell text-slate-600">{authority}</td>
-                    <td className="table-cell">
-                      {app.isException ? (
-                        <span className={`flex items-center gap-1 text-xs font-semibold ${exceptionDisplay === 'Rejected' ? 'text-red-700' : 'text-violet-700'}`}>
-                          <AlertOctagon size={12} /> {exceptionDisplay}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-green-600 font-medium">None</span>
-                      )}
-                    </td>
-                  </tr>
-                )
-     })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {/* OWNED S23 START: API-backed by 007J. */}
+        <CreditSanctionRegisterPanel />
+        {/* OWNED S23 END */}
 
         {/* Tab 2: Security Register */}
         <div className="card p-0 overflow-hidden">
@@ -544,63 +517,9 @@ const RegistersHub: React.FC<RegistersHubProps> = ({ onOpenLoan, onOpenApplicati
           </div>
         </div>
 
-        {/* Tab 3: Exception Register */}
-        <div className="card p-0 overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200">
-            <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <AlertOctagon size={14} className="text-violet-600" /> Exception register
-            </p>
-            <p className="text-xs text-slate-500 mt-0.5">Open and approved exception records — {exceptions.length} records</p>
-          </div>
-          {exceptions.length === 0 ? (
-            <div className="p-8 text-center text-slate-400 text-sm">No exception cases on record.</div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {exceptions.map(app => {
-                let excType = 'Limit breach';
-                let excDesc = ``;
-                const authority = 'CFO + 2 Directors required';
-                
-                if (app.requestedAmount === app.eligibleAmount && app.requestedAmount > 500000) {
-                  excType = 'High-value approval';
-                  excDesc = `${excType}: ${authority}.`;
-                } else {
-                  const diff = app.requestedAmount - (app.eligibleAmount ?? 0);
-                  if (diff > 0) {
-                    excDesc = `Limit breach: requested ${fmt(app.requestedAmount)} vs eligible ${fmt(app.eligibleAmount)}; excess ${fmt(diff)}.`;
-                  } else {
-                    excDesc = `Limit breach: requested ${fmt(app.requestedAmount)} vs eligible ${fmt(app.eligibleAmount)}.`;
-                  }
-                }
-
-                const excStatus = app.sanctionDecision === 'approved' ? 'Approved' : 'Open';
-                const formattedDate = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(app.applicationDate));
-
-                return (
-                  <div key={app.id} className="p-4 bg-violet-50/50 hover:bg-violet-50/80 transition-colors">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-900 num">{getApplicationReference(app)}</span>
-                          <StatusBadge label={app.status} size="sm" />
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${excStatus === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                            Exception: {excStatus}
-                          </span>
-                        </div>
-                        <p className="text-sm font-medium text-slate-800 mt-1.5">{app.memberName}</p>
-                        <p className="text-sm text-slate-600 mt-0.5">{excDesc}</p>
-                        <p className="text-xs text-violet-700 mt-1.5 font-medium flex items-center gap-1.5 bg-violet-100/50 w-max px-2 py-1 rounded">
-                          <AlertOctagon size={12} /> {excType} ({authority})
-                        </p>
-                      </div>
-                      <div className="text-xs font-medium text-slate-500 flex-shrink-0">{formattedDate}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        {/* OWNED S25 START: API-backed by 007J. */}
+        <ExceptionRegisterPanel />
+        {/* OWNED S25 END */}
 
         {/* Tab 4: Member Register */}
         <div className="card p-0 overflow-hidden">

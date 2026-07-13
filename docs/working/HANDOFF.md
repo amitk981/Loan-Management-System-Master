@@ -2,37 +2,34 @@
 
 ## Last Run
 
-2026-07-13_232007_normal_run
+2026-07-14_000359_normal_run
 
 ## Current Status
 
-007I is complete. The S21/S22/S24 Sanction Workbench now loads the actor-scoped approval-case queue
-and frozen case detail through one typed authenticated service. It renders the ten review facts,
-required and excluded approvers, immutable decisions, exception/conflict facts, General Meeting
-scope, and terminal sanction decision without reading the live appraisal or either register.
+007J is complete. RegistersHub S23 and S25 now load only their independent actor-scoped 007H/007F
+collections through a typed authenticated client. Filter changes reset to page one and every
+response replaces rows and pagination. S23 renders all 15 frozen fields—including distinct sanction
+reasons, exception business reasons, conflicts/abstentions, and General Meeting metadata—without
+case actions or document downloads. S25 keeps description and business reason separate. No owned
+tab reads the remaining RegistersHub mock fixtures.
 
-Approval controls preserve the prototype's single decision-button/radio-modal composition. Only an
-enabled case resource action intersected with `/auth/me` permissions is usable. Reject/return reasons
-and server field errors remain in the modal; successful actions refetch the case and sanction truth.
-Loading, empty, stale, denied, nondisclosing, gate, conflict, partial, terminal, and old/new-cycle
-states have container coverage. CFO and Director assigned action behavior, Credit Manager read-only,
-and unauthorized access are explicit regressions.
-
-Evidence-required case detail now projects a backend-owned
-`record_general_meeting_approval` action. The workbench uploads three exact-application legal files
-when permitted, then submits their distinct ids through §25.11. It never treats metadata visibility
-or a global permission as document-reference authority. A-090 records the missing documents-owned
-selector for a recorder who must reuse previously uploaded referenceable files.
+SettingsHub S71 now renders retained 007A matrix versions. A caller with
+`approvals.matrix.manage` can submit a complete successor version, which the UI truthfully presents
+as a pending maker-checker proposal; it never overwrites the active rule or fabricates activation.
+Canonical register/matrix permissions now reach resource-scoped navigation gates without granting
+unrelated hub tabs; backend sessions that hold only those permissions see only their owned
+register/matrix surfaces. Register export is visible only with `reports.export` and makes no request
+until the 012B/012C job contract exists.
 
 ## Validation
 
-Focused RED/GREEN evidence is retained. Frontend build/typecheck/lint and all 227 tests pass.
-Backend check/migration sync and all 680 tests pass with 19 expected PostgreSQL-only SQLite skips;
-coverage is 93% against the 85% floor. Playwright discovers the deterministic visual contract, but
-the sandbox denies its localhost web-server process with `Operation not permitted`; the genuine
-attempt log is retained and the orchestrator's declared external browser gate remains authoritative.
+Focused RED/GREEN evidence is retained. Frontend production build, typecheck, lint, and all 245
+tests pass. Backend check/migration sync and all 680 tests pass with 19 expected PostgreSQL-only
+SQLite skips; coverage is 93% against the 85% floor. The sandbox denies Vite's localhost listener
+with `EPERM`, so no screenshot was fabricated; the genuine visual-evidence attempt log is retained.
 
 ## Next Run
 
-Run `007J-registers-and-approval-matrix-frontend-wiring`, following 007I's fail-closed resource
-action pattern and the already sharpened scoped pagination/frozen-row requirements. Then run 007J2.
+Run `007J2-settings-hub-panels-wiring-or-lockdown` using its new delivered-boundary notes. Preserve
+the 007J matrix component/service and classify the remaining policy, TAT, template, and user/role
+surfaces. Then run the now-concretely-sharpened `008A-document-template-model-and-versioning`.

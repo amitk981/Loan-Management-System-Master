@@ -1,0 +1,32 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/approvalRegistersApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_000359_normal_run/sfpcl-lms
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/approvalRegistersApi.test.ts [ src/services/approvalRegistersApi.test.ts ]
+Error: Cannot find module './approvalRegistersApi' imported from '/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_000359_normal_run/sfpcl-lms/src/services/approvalRegistersApi.test.ts'
+ ❯ src/services/approvalRegistersApi.test.ts:3:31
+      2| import { clearStoredAuthSession, storedAuthSession } from './authSessi…
+      3| import {
+      4|   fetchApprovalMatrixRules,
+       |                      ^
+      5|   fetchCreditSanctionRegister,
+      6|   fetchExceptionRegister,
+
+Caused by: Error: Failed to load url ./approvalRegistersApi (resolved id: ./approvalRegistersApi) in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_000359_normal_run/sfpcl-lms/src/services/approvalRegistersApi.test.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51969:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  00:08:09
+   Duration  426ms (transform 57ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 37ms)
+
