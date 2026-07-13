@@ -23,13 +23,10 @@ afterEach(() => {
 });
 
 describe('MemberGovernanceForm production container', () => {
-  it('routes Directory registration into canonical Profile readback before an ordinary update readback', async () => {
-    const typeSpy = vi.spyOn(userEvent, 'type');
+  it('routes Directory registration into canonical Profile readback with the exact create ledger', async () => {
     const mutationCreate = { ...profile, member_id: 'member-routed', display_name: 'Mutation create leak', pan: { masked: '******LEAK', can_view_full: false } };
     const canonicalCreate = { ...profile, member_id: 'member-routed', display_name: 'Canonical created member', mobile_number: '********3210', available_actions: [updateAction] };
-    const mutationUpdate = { ...canonicalCreate, version: 8, display_name: 'Mutation update leak' };
-    const canonicalUpdate = { ...canonicalCreate, version: 8, display_name: 'Canonical updated member' };
-    const memberResponses = [mutationCreate, canonicalCreate, mutationUpdate, canonicalUpdate];
+    const memberResponses = [mutationCreate, canonicalCreate];
     const memberRequests: Array<{ url: string; method: string; body?: unknown }> = [];
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
@@ -53,16 +50,42 @@ describe('MemberGovernanceForm production container', () => {
 
     expect(await screen.findByRole('heading', { name: 'Canonical created member' })).toBeTruthy();
     expect(screen.queryByText('Mutation create leak')).toBeNull();
+    expect(memberRequests.map(({ url, method }) => [method, new URL(url).pathname])).toEqual([
+      ['GET', '/api/v1/members/'], ['POST', '/api/v1/members/'], ['GET', '/api/v1/members/member-routed/'],
+    ]);
+    expect(memberRequests[1].body).toEqual(JSON.parse(JSON.stringify(completeBody('individual_farmer'))));
+  });
+
+  it('performs one ordinary human-like update before canonical Profile readback with the exact update ledger', async () => {
+    const typeSpy = vi.spyOn(userEvent, 'type');
+    const canonicalCreate = { ...profile, member_id: 'member-routed', display_name: 'Canonical created member', mobile_number: '********3210', available_actions: [updateAction] };
+    const mutationUpdate = { ...canonicalCreate, version: 8, display_name: 'Mutation update leak' };
+    const canonicalUpdate = { ...canonicalCreate, version: 8, display_name: 'Canonical updated member' };
+    const memberResponses = [canonicalCreate, mutationUpdate, canonicalUpdate];
+    const memberRequests: Array<{ url: string; method: string; body?: unknown }> = [];
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (url.includes('/api/v1/members/')) {
+        memberRequests.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+        return response(200, { success: true, data: memberResponses.shift() });
+      }
+      return response(200, { success: true, data: { items: [], counts: {}, pagination: { page: 1, page_size: 20, total_items: 0, total_pages: 0 } } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<MemberProfile memberId="member-routed" onBack={vi.fn()} />);
+
+    expect(await screen.findByRole('heading', { name: 'Canonical created member' })).toBeTruthy();
     await replace('Display Name', 'Requested display name');
     await userEvent.click(screen.getByRole('button', { name: 'Save member' }));
+
     expect(await screen.findByRole('heading', { name: 'Canonical updated member' })).toBeTruthy();
     expect(screen.queryByText('Mutation update leak')).toBeNull();
     expect(memberRequests.map(({ url, method }) => [method, new URL(url).pathname])).toEqual([
-      ['GET', '/api/v1/members/'], ['POST', '/api/v1/members/'], ['GET', '/api/v1/members/member-routed/'],
-      ['PATCH', '/api/v1/members/member-routed/'], ['GET', '/api/v1/members/member-routed/'],
+      ['GET', '/api/v1/members/member-routed/'], ['PATCH', '/api/v1/members/member-routed/'],
+      ['GET', '/api/v1/members/member-routed/'],
     ]);
-    expect(memberRequests[1].body).toEqual(JSON.parse(JSON.stringify(completeBody('individual_farmer'))));
-    expect(memberRequests[3].body).toEqual({
+    expect(memberRequests[1].body).toEqual({
       version: 7,
       legal_name: canonicalCreate.legal_name,
       display_name: 'Requested display name',

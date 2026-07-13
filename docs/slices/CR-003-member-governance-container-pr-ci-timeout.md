@@ -1,7 +1,7 @@
 # Slice CR-003: Member governance container remains flaky on pull-request CI
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Change request (maintenance stage), accepted 2026-07-13 from docs/change-requests/accepted/CR-003-member-governance-container-pr-ci-timeout.md.

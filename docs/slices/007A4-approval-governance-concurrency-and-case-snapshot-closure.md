@@ -88,3 +88,11 @@ High
 - Governed activation has current, authoritative PostgreSQL one-winner proof.
 - Critical configuration decisions preserve open cases and use one canonical permission contract.
 
+## Run-Ahead Sharpening Review (CR-003, 2026-07-13)
+
+- In every governed race, assert the losing pending proposal retains its original status, version,
+  reason, proposer, null decision fields, and null effective-resource linkage; prove the proposal
+  detail read returns that same projection after the winner commits.
+- The open-case immutability ledger must include the complete stored required-approver projection,
+  decision date, rule/committee ids and versions, case version, and workflow-event identity before
+  and after both rejection and winning/losing activation decisions.

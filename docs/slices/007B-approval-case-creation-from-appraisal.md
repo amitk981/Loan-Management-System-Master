@@ -107,6 +107,15 @@ Medium
   the enriched case. Include the case version and complete required-approver snapshot in the exact
   before/after equality, not only the linked rule/committee ids.
 
+## Run-Ahead Sharpening Review (CR-003, 2026-07-13)
+
+- Resolve and snapshot only an approved proposal's effective rule/committee projections. Add an
+  explicit pending-proposal and losing-proposal case proving neither is routable and the existing
+  006G shell, version, workflow event, and audit ledger remain byte-for-byte unchanged.
+- Treat the resolver projections as the complete configuration input: persist their inclusive
+  amount/condition route, roles/director count, joint/register facts, effective decision date, and
+  rule/committee ids and versions without reconstructing those facts in the case module.
+
 ## Done Checklist
 
 - [ ] Execution plan written

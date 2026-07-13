@@ -1,0 +1,8 @@
+Interpreter: /Users/amitkallapa/LMS/.ralph/venv/bin/python
+Exit code: 0
+
+- manage.py check: no issues.
+- makemigrations --check --dry-run: no changes detected.
+- coverage run --source=. manage.py test sfpcl_credit.tests: 531 tests passed in 71.695 s;
+  16 expected PostgreSQL-only tests skipped.
+- coverage report --fail-under=85: 93% total coverage (19871 statements, 1406 missed).

@@ -1,0 +1,18 @@
+Command:
+for run in $(seq 1 20); do
+  npx vitest run src/pages/members/MemberGovernanceForm.container.test.tsx \
+    -t "routes Directory registration|performs one ordinary human-like update|submits the complete" \
+    --reporter=dot || exit $?
+done
+
+Exit code: 0
+
+Observed result:
+- STRESS_RUN 1 through STRESS_RUN 20 all passed.
+- Every execution ran 5 tests: the routed create/canonical-readback test, the ordinary human-like
+  update/canonical-readback test, and the immediately following individual/FPC/Producer Institution
+  parameterized complete-body cases.
+- Total: 100 focused test executions passed; no timeout, asynchronous leak, or cleanup failure.
+- Per-run duration remained 3.45-3.63 seconds, with the five tests taking 1.72-1.80 seconds.
+
+The suite kept Vitest's normal 5000 ms timeout; no timeout configuration was raised.

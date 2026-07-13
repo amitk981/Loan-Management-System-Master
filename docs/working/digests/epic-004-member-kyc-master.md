@@ -118,6 +118,15 @@
 - The browser scenario adds a distinct Producer Institution, a persistent per-evidence-run identity
   counter, exact mutation/read counts, and the complete six-field enabled approval action assertion.
 
+## CR-003 Member Governance Container PR-CI Timeout
+
+- Mounted registration and ordinary-update coverage is split at the canonical profile boundary.
+  Routed create retains App/Directory navigation, the exact POST body/ledger, and canonical readback;
+  update retains one ordinary typed edit, the exact PATCH body/ledger, and canonical readback.
+- Deterministic labeled-control fixture entry remains for complete bodies. Twenty consecutive runs of
+  the two focused tests plus all three immediately following complete-body variants pass without a
+  timeout increase or asynchronous cleanup leak.
+
 ## Architecture Review 2026-07-12 - Witness/Member Interaction Acceptance
 
 - 006Y7 substantively closes Registry object-aware identity approval and both PostgreSQL duplicate

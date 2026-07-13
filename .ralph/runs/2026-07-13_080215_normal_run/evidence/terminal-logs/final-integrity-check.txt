@@ -1,0 +1,10 @@
+Exit code: 0
+
+- `git diff --check`: passed.
+- `.ralph/state.json` JSON validation: passed.
+- Protected-path diff scan: passed; no protected or forbidden path changed.
+- Final affected file run: 16/16 tests passed in 4.13 s (2.45 s test time).
+
+An initial attempt ran JSON validation from `sfpcl-lms/` and exited 2 because the repository-relative
+state path was unavailable there. The corrected root-scoped command produced the passing result
+above; no test or product gate failed.

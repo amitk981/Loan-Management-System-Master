@@ -5017,3 +5017,24 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_080215_normal_run
+
+- Agent tool used: codex
+- Slice attempted: CR-003-member-governance-container-pr-ci-timeout
+- Summary: Split the flaky mounted member-governance create/update journey into focused production-container tests while preserving exact request ledgers and canonical readbacks.
+- Tests run: 20 consecutive focused sequences (100 tests); frontend build/typecheck/lint and 208 tests; backend check/migration sync and 531 tests at 93% coverage.
+- Evidence saved: `.ralph/runs/2026-07-13_080215_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High classification; test-only implementation with no production or contract changes.
+- Next action: 007A4 approval governance concurrency and case snapshot closure.
+
+## 2026-07-13 08:12:43 - 2026-07-13_080215_normal_run
+- Agent tool used: codex
+- Slice attempted: CR-003-member-governance-container-pr-ci-timeout
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_080215_normal_run/.ralph/runs/2026-07-13_080215_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_080215_normal_run/.ralph/runs/2026-07-13_080215_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
