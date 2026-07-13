@@ -1,0 +1,25 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FF
+======================================================================
+FAIL: test_contradictory_frozen_exception_predicates_are_stable_zero_write_denials (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_contradictory_frozen_exception_predicates_are_stable_zero_write_denials) (amount=Decimal('500000.00'), exception_required_flag=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_202809_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 676, in test_contradictory_frozen_exception_predicates_are_stable_zero_write_denials
+    self.assertEqual(denied.status_code, 409, denied.content)
+AssertionError: 400 != 409 : b'{"success": false, "error": {"code": "NO_EFFECTIVE_SANCTION_COMMITTEE", "message": "No effective sanction committee matches the decision date.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-13T15:03:56.437122Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_contradictory_frozen_exception_predicates_are_stable_zero_write_denials (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_contradictory_frozen_exception_predicates_are_stable_zero_write_denials) (amount=Decimal('600000.00'), exception_required_flag=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_202809_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 676, in test_contradictory_frozen_exception_predicates_are_stable_zero_write_denials
+    self.assertEqual(denied.status_code, 409, denied.content)
+AssertionError: 400 != 409 : b'{"success": false, "error": {"code": "NO_EFFECTIVE_SANCTION_COMMITTEE", "message": "No effective sanction committee matches the decision date.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-13T15:03:56.445828Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.040s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

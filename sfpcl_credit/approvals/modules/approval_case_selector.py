@@ -19,7 +19,10 @@ def select_approval_case_candidates(
     persisted_scope_type = resolve_persisted_role_scope(actor)
     queryset = (
         ApprovalCase.objects.select_related(
-            "loan_application", "loan_appraisal_note", "general_meeting_approval"
+            "loan_application",
+            "loan_appraisal_note",
+            "general_meeting_approval",
+            "exception_register_entry",
         )
         .prefetch_related("actions")
         .filter(

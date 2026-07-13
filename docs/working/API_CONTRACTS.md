@@ -2471,8 +2471,9 @@ or Credit Manager ownership before the remaining JSON coherence validation runs.
 
 The selector's indexed `routing_snapshot_is_coherent` and attributable-reader projection are
 updated only through the explicit approval-owned projection interface. Case creation, workflow
-linkage, enrichment, actions/abstention, and owning-appraisal refresh invoke it atomically; an
-ordinary model save has no hidden cross-table side effect. The reader projection contains only
+linkage, enrichment, and actions/abstention invoke it atomically; an ordinary approval-case or
+appraisal save has no hidden cross-table side effect. A later live appraisal mutation cannot rewrite
+the coherence or reader index of a frozen historical cycle. The reader projection contains only
 original routed actors, current effective replacements, and actors with an immutable action. It
 permits exact database count and `LIMIT/OFFSET` before collection serialization; detail and action
 requests still execute the full canonical snapshot-coherence check and never trust the projection
@@ -2480,7 +2481,8 @@ as action authority.
 
 Detail returns stored authority/provenance (`approval_matrix_rule_id` and version,
 `sanction_committee_id` and version, `decision_date`, ordered required/excluded approvers,
-matrix/committee/loan-limit snapshots, and case `version`). Per-approver `decision`/`acted_at` are
+matrix/committee/loan-limit snapshots, distinct `reason_for_approval` and `exception_reason`, and
+case `version`). Per-approver `decision`/`acted_at` are
 read from the immutable source §15.4 `approval_actions` ledger; 007C creates no action records.
 
 The nested `review_facts` object is frozen into each enriched approval cycle (007D3). Legacy
@@ -2578,6 +2580,24 @@ conflict replacement or consult live committee membership.
 The nullable `loan_account_id` is currently a UUID reference, not a foreign key to the tracer app's
 synthetic demo account. A protected FK is deferred to the production finance loan-account owner
 (A-084); exception entries created before sanction naturally carry no loan account.
+
+## Exception predicate and coherence closure (007F2)
+
+For a non-forced route, the reviewed `recommended_amount` must exceed the frozen
+`final_eligible_loan_amount` exactly when the frozen `exception_required_flag` is true. Either
+contradiction returns `409 INVALID_STATE_TRANSITION` before matrix/committee resolution and leaves
+the existing submission shell, routing, register, audit, workflow, and communication ledgers
+unchanged. `force_exception_route = true` is the only within-limit exception path and still requires
+truthful `stage_bypass` or `waiver` type plus a non-blank business reason.
+
+`reason_for_approval` belongs to the sanction case and becomes the sanction decision reason.
+`business_reason` belongs to the generated Exception Register; the case freezes it separately as
+`exception_reason`. These independently authored reasons are not required to be equal. An
+exception-conditioned routing snapshot is coherent only when the same-case register row matches
+the case/application, `exception_reason`, truthful exception type, optional risk shape, frozen
+amount/limit predicate, the `exceeds_permissible_limit` matrix condition, two-Director authority,
+and `register_required = exception_register`. Exact replay is zero-write; changed reason, risk,
+type, amount, or frozen provenance conflicts without rewriting or hiding the original case.
 
 # Returned approval cycles and resubmission (007D3)
 

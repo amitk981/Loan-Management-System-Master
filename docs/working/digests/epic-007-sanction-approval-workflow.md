@@ -1,5 +1,25 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007F2 Exception Routing Coherence and Explicit Projection Closure
+
+- Non-forced exception routing now derives from coherent frozen facts: reviewed amount above the
+  frozen final eligible amount and `exception_required_flag = true`. Below/equal-plus-true and
+  above-plus-false snapshots return the stable 409 invalid-state contract with zero enrichment
+  writes. Explicit forced within-limit stage-bypass/waiver routing remains supported.
+- The sanction case's `reason_for_approval` and Exception Register's `business_reason` are distinct
+  source facts. The latter is frozen as case `exception_reason`; coherence requires the same-case
+  entry, matching application/reason, truthful type/risk shape, frozen amount-limit predicate,
+  exception matrix condition, two Directors, and Exception Register requirement—not reason equality.
+- A public above-limit tracer now covers submit, enrich, ordinary/assigned list, detail, CFO plus
+  two Director actions, Exception Register closure, sanction decision, and terminal Credit Sanction
+  Register without manually attaching register evidence. Replay/mismatch cases preserve the first
+  immutable snapshot.
+- Approval coherence and reader indexing have one explicit approval-owned projection interface.
+  The appraisal `post_save` receiver is removed; direct case/appraisal saves cannot mutate another
+  table, and later live appraisal changes cannot rewrite historical-cycle projection authority.
+- M05-FR-003 and M05-FR-006 are now substantive through the public workflow. M05-FR-009 generation
+  remains substantive; its read confidentiality is still owned by 007H2.
+
 ## Architecture Review 2026-07-13 20:10 - Exception and Evidence Read Corrections
 
 - 007F persists the distinct Exception Register business reason on the case, but the inherited

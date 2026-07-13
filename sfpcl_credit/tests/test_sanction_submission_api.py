@@ -23,7 +23,6 @@ from sfpcl_credit.approvals.models import (
 from sfpcl_credit.approvals.modules import approval_matrix_configuration
 from sfpcl_credit.approvals.modules import sanction_handoff as sanction_handoff_module
 from sfpcl_credit.approvals.modules import exception_register
-from sfpcl_credit.approvals.modules.sanction_handoff import SanctionHandoffModule
 from sfpcl_credit.approvals.modules.approval_matrix import resolve_approval_matrix
 from sfpcl_credit.approvals.modules.sanction_committee import resolve_sanction_committee
 from sfpcl_credit.credit.models import (
@@ -443,11 +442,13 @@ class SanctionSubmissionApiTests(TestCase):
         )
         self.assertEqual(AuditLog.objects.filter(action="approval_case.enriched").count(), 1)
 
-    def test_exception_condition_not_amount_selects_two_director_route(self):
+    def test_above_limit_exception_completes_public_three_approver_and_register_workflow(self):
         ApprovalMatrixRule.objects.all().delete()
         SanctionCommittee.objects.all().delete()
         create_permission = self._permission("approvals.case.create", "Create approval case")
         RolePermission.objects.create(role=self.reviewer.primary_role, permission=create_permission)
+        read_permission = self._permission("approvals.case.read", "Read approval cases")
+        RolePermission.objects.create(role=self.reviewer.primary_role, permission=read_permission)
         exception_permission = self._permission(
             "approvals.exception.create", "Create exception entry"
         )
@@ -461,9 +462,27 @@ class SanctionSubmissionApiTests(TestCase):
             user.approval_authority_type = authority
             user.save(update_fields=["approval_authority_type"])
             members.append(user)
+        approver_permissions = [
+            read_permission,
+            self._permission("approvals.case.approve", "Approve approval cases"),
+        ]
+        for member in members:
+            for permission in approver_permissions:
+                RolePermission.objects.create(
+                    role=member.primary_role, permission=permission
+                )
+        for code, name in (
+            ("approvals.exception_register.read", "Read Exception Register"),
+            ("approvals.sanction.read", "Read sanction decisions"),
+            ("approvals.sanction_register.read", "Read Credit Sanction Register"),
+        ):
+            RolePermission.objects.create(
+                role=members[0].primary_role,
+                permission=self._permission(code, name),
+            )
         decision_date = timezone.localdate(self.history.decided_at)
         ApprovalMatrixRule.objects.create(
-            decision_type="loan_sanction", amount_min="0.00", amount_max="500000.00",
+            decision_type="loan_sanction", amount_min="0.00", amount_max=None,
             condition_code="exceeds_permissible_limit",
             required_approver_roles_json=["cfo", "director"], required_director_count=2,
             joint_approval_required_flag=True, register_required="exception_register",
@@ -483,12 +502,13 @@ class SanctionSubmissionApiTests(TestCase):
             "policy_name": "Approved exception policy",
             "calculated_at": self.note.prepared_at.isoformat(),
         })
+        self.note.recommended_amount = Decimal("600000.00")
         self.note.loan_limit_snapshot_json = snapshot
-        self.note.save(update_fields=["loan_limit_snapshot_json"])
+        self.note.save(update_fields=["recommended_amount", "loan_limit_snapshot_json"])
         self.assertEqual(self._submit({"remarks": "Exception shell."}).status_code, 200)
 
         missing_reason = self._enrich({
-            "approval_type": "sanction", "amount": "400000.00",
+            "approval_type": "sanction", "amount": "600000.00",
             "reason_for_approval": "Stored assessment requires exception approval.",
             "force_exception_route": False,
         })
@@ -500,7 +520,7 @@ class SanctionSubmissionApiTests(TestCase):
             apps.get_model("approvals", "ExceptionRegisterEntry").objects.exists()
         )
         exception_payload = {
-            "approval_type": "sanction", "amount": "400000.00",
+            "approval_type": "sanction", "amount": "600000.00",
             "reason_for_approval": "Stored assessment requires exception approval.",
             "business_reason": "Seasonal exception is commercially justified.",
             "risk_assessment": "Seasonal cash-flow monitoring.",
@@ -526,6 +546,17 @@ class SanctionSubmissionApiTests(TestCase):
             [item["user_id"] for item in data["required_approvers"]],
             [str(user.pk) for user in members],
         )
+        case = apps.get_model("approvals", "ApprovalCase").objects.get(
+            pk=data["approval_case_id"]
+        )
+        self.assertTrue(case.routing_snapshot_is_coherent)
+        listed = self.client.get(
+            "/api/v1/approval-cases/",
+            headers={"Authorization": f"Bearer {self._login(self.reviewer)}"},
+        )
+        self.assertEqual(listed.status_code, 200, listed.content)
+        self.assertEqual(listed.json()["pagination"]["total_count"], 1)
+        self.assertEqual(listed.json()["data"][0]["approval_case_id"], str(case.pk))
         register_entry = apps.get_model(
             "approvals", "ExceptionRegisterEntry"
         ).objects.get(approval_case_id=data["approval_case_id"])
@@ -553,7 +584,7 @@ class SanctionSubmissionApiTests(TestCase):
         )
         case_before = apps.get_model("approvals", "ApprovalCase").objects.values().get()
         repeat = self._enrich({
-            "approval_type": "sanction", "amount": "400000.00",
+            "approval_type": "sanction", "amount": "600000.00",
             "reason_for_approval": "Stored assessment requires exception approval.",
             "business_reason": "Seasonal exception is commercially justified.",
             "risk_assessment": "Seasonal cash-flow monitoring.",
@@ -577,8 +608,20 @@ class SanctionSubmissionApiTests(TestCase):
         self.assertEqual(changed_risk.status_code, 409, changed_risk.content)
         register_entry.refresh_from_db()
         self.assertEqual(register_entry.risk_assessment, "Seasonal cash-flow monitoring.")
+        changed_business_reason = self._enrich(
+            exception_payload
+            | {"business_reason": "Changed immutable exception justification."}
+        )
+        self.assertEqual(
+            changed_business_reason.status_code, 409, changed_business_reason.content
+        )
+        register_entry.refresh_from_db()
+        self.assertEqual(
+            register_entry.business_reason,
+            "Seasonal exception is commercially justified.",
+        )
         conflict = self._enrich({
-            "approval_type": "sanction", "amount": "400000.00",
+            "approval_type": "sanction", "amount": "600000.00",
             "reason_for_approval": "A conflicting immutable reason.",
             "business_reason": "Seasonal exception is commercially justified.",
             "risk_assessment": "Seasonal cash-flow monitoring.",
@@ -590,6 +633,79 @@ class SanctionSubmissionApiTests(TestCase):
         )
         self.assertEqual(AuditLog.objects.filter(action="approval_case.enriched").count(), 1)
 
+        cfo_token = self._login(members[0])
+        assigned = self.client.get(
+            "/api/v1/approval-cases/?assigned_to_me=true",
+            headers={"Authorization": f"Bearer {cfo_token}"},
+        )
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{case.pk}/",
+            headers={"Authorization": f"Bearer {cfo_token}"},
+        )
+        self.assertEqual(assigned.status_code, 200, assigned.content)
+        self.assertEqual(assigned.json()["pagination"]["total_count"], 1)
+        self.assertEqual(assigned.json()["data"][0]["approval_case_id"], str(case.pk))
+        self.assertEqual(detail.status_code, 200, detail.content)
+        self.assertEqual(detail.json()["data"]["approval_case_id"], str(case.pk))
+        self.assertEqual(detail.json()["data"]["exception_reason"], register_entry.business_reason)
+
+        action_responses = []
+        for version, approver in zip((2, 3, 4), members, strict=True):
+            action_response = self.client.post(
+                f"/api/v1/approval-cases/{case.pk}/approve/",
+                data={"version": version, "comments": f"{approver.full_name} approves."},
+                content_type="application/json",
+                headers={"Authorization": f"Bearer {self._login(approver)}"},
+            )
+            self.assertEqual(action_response.status_code, 200, action_response.content)
+            action_responses.append(action_response.json()["data"])
+        self.assertEqual(
+            [item["approval_case_status"] for item in action_responses],
+            ["pending", "pending", "approved"],
+        )
+        self.assertFalse(action_responses[0]["sanction_decision_created"])
+        self.assertFalse(action_responses[1]["sanction_decision_created"])
+        self.assertTrue(action_responses[2]["sanction_decision_created"])
+
+        register_entry.refresh_from_db()
+        self.assertEqual(register_entry.status, "approved")
+        self.assertIsNotNone(register_entry.closed_at)
+        exception_rows = self.client.get(
+            "/api/v1/exception-register/?status=approved&exception_type=exceeds_loan_limit",
+            headers={"Authorization": f"Bearer {cfo_token}"},
+        )
+        decision = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/sanction-decision/",
+            headers={"Authorization": f"Bearer {cfo_token}"},
+        )
+        sanction_rows = self.client.get(
+            "/api/v1/credit-sanction-register/?decision=sanctioned",
+            headers={"Authorization": f"Bearer {cfo_token}"},
+        )
+        self.assertEqual(exception_rows.status_code, 200, exception_rows.content)
+        self.assertEqual(exception_rows.json()["pagination"]["total_count"], 1)
+        self.assertEqual(
+            exception_rows.json()["data"][0]["exception_register_entry_id"],
+            str(register_entry.pk),
+        )
+        self.assertEqual(decision.status_code, 200, decision.content)
+        self.assertEqual(
+            decision.json()["data"]["sanction_decision_id"],
+            action_responses[2]["sanction_decision_id"],
+        )
+        self.assertEqual(decision.json()["data"]["sanctioned_amount"], "600000.00")
+        self.assertEqual(sanction_rows.status_code, 200, sanction_rows.content)
+        self.assertEqual(sanction_rows.json()["pagination"]["total_count"], 1)
+        sanction_row = sanction_rows.json()["data"][0]
+        self.assertEqual(sanction_row["approval_case_id"], str(case.pk))
+        self.assertEqual(
+            sanction_row["sanction_decision_id"],
+            action_responses[2]["sanction_decision_id"],
+        )
+        self.assertEqual(
+            sanction_row["exception_reference"]["exception_register_entry_id"],
+            str(register_entry.pk),
+        )
     def test_exception_type_vocabulary_rejects_unknown_values(self):
         from django.core.exceptions import ValidationError
 
@@ -602,25 +718,78 @@ class SanctionSubmissionApiTests(TestCase):
         )
         self.assertEqual(exception_register.validate_exception_type("waiver"), "waiver")
 
-    def test_forced_within_limit_exception_requires_truthful_source_type(self):
-        from sfpcl_credit.domain_errors import DomainValidationError
-
-        base = {
-            "approval_type": "sanction",
-            "amount": "400000.00",
-            "reason_for_approval": "Governed policy exception.",
-            "business_reason": "Board policy permits a documented waiver.",
-            "force_exception_route": True,
-        }
-        with self.assertRaises(DomainValidationError) as raised:
-            SanctionHandoffModule._validate_enrichment_payload(
-                base, Decimal("400000.00"), False
-            )
-        self.assertIn("exception_type", raised.exception.field_errors)
-        normalized = SanctionHandoffModule._validate_enrichment_payload(
-            base | {"exception_type": "waiver"}, Decimal("400000.00"), False
+    def test_contradictory_frozen_exception_predicates_are_stable_zero_write_denials(self):
+        create_permission = self._permission(
+            "approvals.case.create", "Create approval case"
         )
-        self.assertEqual(normalized["exception_type"], "waiver")
+        RolePermission.objects.create(
+            role=self.reviewer.primary_role, permission=create_permission
+        )
+        snapshot = {
+            **self.note.loan_limit_snapshot_json,
+            "calculation_rule_version": "contradiction-limit-v1",
+            "policy_config_id": "30000000-0000-0000-0000-000000000003",
+            "policy_name": "Approved contradiction test policy",
+            "calculated_at": self.note.prepared_at.isoformat(),
+        }
+        self.note.loan_limit_snapshot_json = snapshot
+        self.note.save(update_fields=["loan_limit_snapshot_json"])
+        submitted = self._submit({"remarks": "Create contradiction test shell."})
+        self.assertEqual(submitted.status_code, 200, submitted.content)
+        case_model = apps.get_model("approvals", "ApprovalCase")
+        exception_model = apps.get_model("approvals", "ExceptionRegisterEntry")
+
+        for amount, flag in (
+            (Decimal("500000.00"), True),
+            (Decimal("600000.00"), False),
+        ):
+            with self.subTest(amount=amount, exception_required_flag=flag):
+                snapshot = {
+                    **self.note.loan_limit_snapshot_json,
+                    "exception_required_flag": flag,
+                }
+                self.note.recommended_amount = amount
+                self.note.loan_limit_snapshot_json = snapshot
+                self.note.save(
+                    update_fields=["recommended_amount", "loan_limit_snapshot_json"]
+                )
+                before = {
+                    "case": case_model.objects.values().get(),
+                    "exceptions": exception_model.objects.count(),
+                    "audits": AuditLog.objects.exclude(
+                        action__startswith="auth."
+                    ).count(),
+                    "workflows": WorkflowEvent.objects.count(),
+                    "communications": apps.get_model(
+                        "communications", "Communication"
+                    ).objects.count(),
+                }
+
+                denied = self._enrich(
+                    {
+                        "approval_type": "sanction",
+                        "amount": f"{amount:.2f}",
+                        "reason_for_approval": "Contradictory facts must not route.",
+                        "business_reason": "This payload cannot repair frozen facts.",
+                        "force_exception_route": False,
+                    }
+                )
+
+                self.assertEqual(denied.status_code, 409, denied.content)
+                self.assertEqual(
+                    denied.json()["error"]["code"], "INVALID_STATE_TRANSITION"
+                )
+                self.assertEqual(case_model.objects.values().get(), before["case"])
+                self.assertEqual(exception_model.objects.count(), before["exceptions"])
+                self.assertEqual(
+                    AuditLog.objects.exclude(action__startswith="auth.").count(),
+                    before["audits"],
+                )
+                self.assertEqual(WorkflowEvent.objects.count(), before["workflows"])
+                self.assertEqual(
+                    apps.get_model("communications", "Communication").objects.count(),
+                    before["communications"],
+                )
 
     def test_forced_within_limit_endpoint_routes_and_registers_truthful_waiver(self):
         ApprovalMatrixRule.objects.all().delete()
@@ -685,6 +854,16 @@ class SanctionSubmissionApiTests(TestCase):
             "exception_type": "waiver",
         }
 
+        missing_type = self._enrich(
+            {
+                key: value
+                for key, value in base_payload.items()
+                if key != "exception_type"
+            }
+            | {"business_reason": "Board policy waiver is documented."}
+        )
+        self.assertEqual(missing_type.status_code, 400, missing_type.content)
+        self.assertIn("exception_type", missing_type.json()["error"]["field_errors"])
         missing_reason = self._enrich(base_payload)
         self.assertEqual(missing_reason.status_code, 400)
         self.assertIn("business_reason", missing_reason.json()["error"]["field_errors"])
@@ -704,6 +883,16 @@ class SanctionSubmissionApiTests(TestCase):
         self.assertEqual(
             WorkflowEvent.objects.filter(workflow_name="exception_register").count(), 1
         )
+        before = self._approval_case_business_ledger()
+        changed_type = self._enrich(
+            base_payload
+            | {
+                "business_reason": "Board policy waiver is documented.",
+                "exception_type": "stage_bypass",
+            }
+        )
+        self.assertEqual(changed_type.status_code, 409, changed_type.content)
+        self.assertEqual(self._approval_case_business_ledger(), before)
 
     def test_above_threshold_snapshots_cfo_and_two_directors(self):
         ApprovalMatrixRule.objects.all().delete()
@@ -732,6 +921,7 @@ class SanctionSubmissionApiTests(TestCase):
         self.note.recommended_amount = "500000.01"
         snapshot = deepcopy(self.note.loan_limit_snapshot_json)
         snapshot.update({
+            "final_eligible_loan_amount": "600000.00",
             "calculation_rule_version": "limit-upper-v1",
             "policy_config_id": "30000000-0000-0000-0000-000000000003",
             "policy_name": "Approved upper policy",

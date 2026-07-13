@@ -49,6 +49,10 @@ accept evidence documents only through the document owner's per-file access deci
    mutation, or document-download audit. Recording evidence never grants later document download.
 5. Update `API_CONTRACTS.md`, A-085's resolution note, the Epic 007 digest, and 007I's run-ahead
    contract with the final current-versus-frozen field semantics and document access seam.
+6. Consume 007F2's canonical coherent case projection without recomputing exception truth. Adding
+   pending/rejected meeting evidence must preserve the independently authored
+   `reason_for_approval` and `exception_reason`, the same-case Exception Register linkage, and
+   ordinary/assigned visibility throughout the pending cycle.
 
 ## Test Cases
 
@@ -61,6 +65,8 @@ accept evidence documents only through the document owner's per-file access deci
   protected file exists and without writes.
 - Public upload/reference path proves valid same-application documents can be recorded; no test
   bypasses the document access interface with direct unrestricted metadata fixtures.
+- Run the current-evidence lifecycle on a real 007F2 above-limit case and prove meeting
+  supersession never hides the case or rewrites either exception reason field/register identity.
 
 ## Risk Level
 High
@@ -70,4 +76,3 @@ High
 - Pending and rejected General Meeting outcomes are visible on the case detail that must act on them.
 - Every referenced evidence document passes the document owner's object/sensitivity decision.
 - Historical cycle evidence remains immutable and all configured gates pass.
-

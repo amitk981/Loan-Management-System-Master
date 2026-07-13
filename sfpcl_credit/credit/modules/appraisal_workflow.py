@@ -960,6 +960,7 @@ class AppraisalWorkflow:
         required = (
             "loan_limit_assessment_id",
             "loan_application_id",
+            "final_eligible_loan_amount",
             "exception_required_flag",
             "calculation_rule_version",
             "policy_config_id",
@@ -978,12 +979,25 @@ class AppraisalWorkflow:
             calculated_at = timezone.datetime.fromisoformat(
                 str(snapshot.get("calculated_at", "")).replace("Z", "+00:00")
             )
-            valid = valid and calculated_at <= latest_review.decided_at
-        except (TypeError, ValueError):
+            final_eligible_amount = Decimal(
+                str(snapshot.get("final_eligible_loan_amount", ""))
+            )
+            valid = (
+                valid
+                and calculated_at <= latest_review.decided_at
+                and final_eligible_amount >= Decimal("0.00")
+            )
+        except (InvalidOperation, TypeError, ValueError):
             valid = False
         if not valid:
             raise CreditModuleInvalidStateError(
                 "The stored loan-limit assessment is missing, stale, or lacks policy provenance."
+            )
+        if snapshot["exception_required_flag"] != (
+            note.recommended_amount > final_eligible_amount
+        ):
+            raise CreditModuleInvalidStateError(
+                "The frozen loan-limit exception flag contradicts the reviewed amount."
             )
         return ApprovalCaseEnrichmentFacts(
             application=application,

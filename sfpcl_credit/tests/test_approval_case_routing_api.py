@@ -818,6 +818,31 @@ class ApprovalCaseRoutingApiTests(TestCase):
             projection_before,
         )
 
+    def test_plain_appraisal_save_does_not_mutate_frozen_case_projection(self):
+        projection_before = list(
+            ApprovalCaseRequiredApprover.objects.filter(
+                approval_case=self.case
+            ).order_by("pk").values()
+        )
+        self.case.refresh_from_db()
+        self.assertTrue(self.case.routing_snapshot_is_coherent)
+        snapshot = dict(self.note.loan_limit_snapshot_json)
+        snapshot["policy_name"] = "Later live policy must not rewrite this cycle"
+        self.note.loan_limit_snapshot_json = snapshot
+
+        self.note.save(update_fields=["loan_limit_snapshot_json"])
+
+        self.case.refresh_from_db()
+        self.assertTrue(self.case.routing_snapshot_is_coherent)
+        self.assertEqual(
+            list(
+                ApprovalCaseRequiredApprover.objects.filter(
+                    approval_case=self.case
+                ).order_by("pk").values()
+            ),
+            projection_before,
+        )
+
     def test_conflict_abstention_uses_immutable_action_and_assigns_frozen_alternate(self):
         alternate = self.committee.director_2_user
         for permission in (
@@ -3343,6 +3368,11 @@ class ApprovalCaseRoutingApiTests(TestCase):
         shell.loan_appraisal_note.save(
             update_fields=["reviewed_at", "loan_limit_snapshot_json"]
         )
+        unprojected_current_queue = self.client.get(
+            "/api/v1/approval-cases/?assigned_to_me=true",
+            **self._auth(current_cfo),
+        ).json()["data"]
+        refresh_approval_case_projection(shell)
 
         historical_queue = self.client.get(
             "/api/v1/approval-cases/?assigned_to_me=true",
@@ -3354,6 +3384,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
         ).json()["data"]
 
         self.assertEqual(historical_queue, first_queue)
+        self.assertEqual(unprojected_current_queue, [])
         self.assertEqual(
             [item["approval_case_id"] for item in current_queue],
             [str(shell.pk)],

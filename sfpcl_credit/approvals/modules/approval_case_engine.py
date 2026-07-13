@@ -6,7 +6,7 @@ from math import ceil
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-from sfpcl_credit.approvals.models import ApprovalCase
+from sfpcl_credit.approvals.models import ApprovalCase, ExceptionRegisterEntry
 from sfpcl_credit.approvals.modules.approval_case_selector import (
     select_approval_case_candidates,
 )
@@ -90,6 +90,7 @@ def get_approval_case(*, actor, case_id, actor_permissions):
             "loan_application",
             "loan_appraisal_note__risk_assessment",
             "general_meeting_approval",
+            "exception_register_entry",
         )
         .prefetch_related("actions")
         .filter(pk=case_id)
@@ -180,6 +181,7 @@ def serialize_case_snapshot(case):
         "conflict_block_reason": case.conflict_block_reason or None,
         "reason_for_approval": case.reason_for_approval,
         "exception_condition_code": case.exception_condition_code or None,
+        "exception_reason": case.exception_reason or None,
         "matrix_projection": case.matrix_projection_json,
         "committee_projection": case.committee_projection_json,
         "loan_limit_provenance": case.loan_limit_provenance_json,
@@ -402,6 +404,7 @@ def is_routable_approval_case(case):
         and matrix.get("version_number") == case.approval_matrix_rule_version
         and matrix.get("decision_date") == case.decision_date.isoformat()
         and _matrix_projection_is_coherent(case, matrix)
+        and _exception_route_is_coherent(case, matrix)
         and isinstance(committee, dict)
         and committee.get("sanction_committee_id") == str(case.sanction_committee_id)
         and committee.get("version_number") == case.sanction_committee_version
@@ -431,7 +434,6 @@ def _matrix_projection_is_coherent(case, matrix):
             or (
                 condition
                 and bool(case.exception_reason.strip())
-                and case.exception_reason == case.reason_for_approval
             )
         )
         and isinstance(roles, list)
@@ -456,6 +458,48 @@ def _matrix_projection_is_coherent(case, matrix):
                 == timezone.localdate(case.loan_appraisal_note.reviewed_at)
                 and case.amount == case.loan_appraisal_note.recommended_amount
             )
+        )
+    )
+
+
+def _exception_route_is_coherent(case, matrix):
+    condition = matrix.get("condition_code") or ""
+    if not condition:
+        return True
+    try:
+        entry = case.exception_register_entry
+    except ExceptionRegisterEntry.DoesNotExist:
+        return False
+    provenance = case.loan_limit_provenance_json
+    try:
+        final_eligible_amount = Decimal(
+            str(provenance["final_eligible_loan_amount"])
+        )
+    except (KeyError, InvalidOperation, TypeError, ValueError):
+        return False
+    amount_exceeds_limit = case.amount > final_eligible_amount
+    expected_type = (
+        ExceptionRegisterEntry.TYPE_EXCEEDS_LOAN_LIMIT
+        if case.exception_required_flag
+        else None
+    )
+    return (
+        condition == "exceeds_permissible_limit"
+        and matrix.get("register_required") == "exception_register"
+        and matrix.get("required_director_count") == 2
+        and entry.approval_case_id == case.pk
+        and entry.loan_application_id == case.loan_application_id
+        and entry.business_reason == case.exception_reason
+        and (entry.risk_assessment is None or bool(entry.risk_assessment.strip()))
+        and amount_exceeds_limit == case.exception_required_flag
+        and (
+            entry.exception_type == expected_type
+            if expected_type
+            else entry.exception_type
+            in {
+                ExceptionRegisterEntry.TYPE_STAGE_BYPASS,
+                ExceptionRegisterEntry.TYPE_WAIVER,
+            }
         )
     )
 

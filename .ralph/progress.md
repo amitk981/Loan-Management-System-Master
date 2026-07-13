@@ -5628,3 +5628,28 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_202809_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007F2-exception-routing-coherence-and-explicit-projection-closure
+- Summary: Corrected frozen exception amount/flag truth, distinct sanction/Exception Register
+  reason coherence, same-case register projection, full public three-approver lifecycle, and removed
+  the hidden appraisal-save projection receiver in favor of explicit approval-owned refreshes.
+- Tests run: retained RED/GREEN cycles; 128 affected approval tests; backend check/migration sync
+  and 670 tests with 19 expected SQLite skips at 93% coverage; frontend build/typecheck/lint and
+  208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_202809_normal_run/evidence/`
+- Result: Success
+- Risk level: High
+- Next action: Run 007G2, then 007H2 before 007I.
+
+## 2026-07-13 20:53:50 - 2026-07-13_202809_normal_run
+- Agent tool used: codex
+- Slice attempted: 007F2-exception-routing-coherence-and-explicit-projection-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_202809_normal_run/.ralph/runs/2026-07-13_202809_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_202809_normal_run/.ralph/runs/2026-07-13_202809_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

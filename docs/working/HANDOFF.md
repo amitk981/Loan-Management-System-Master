@@ -1,50 +1,44 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_200023_architecture_review
+2026-07-13_202809_normal_run
 
 ## Current Status
 
-The architecture review covered completed slices 007E2, 007F, 007G, and 007H in product commit
-range `b32559c...78d912f`. Production code was not changed. The later `ac1846c` CR-004 intake commit
-was docs-only and was excluded from product findings; its missing dependency declaration was repaired
-so the queue remains valid.
+007F2 is complete. Non-forced exception routing now rejects contradictory frozen amount/flag facts
+before matrix resolution or enrichment writes. A truthful above-limit route remains visible and
+actionable with independently authored sanction and Exception Register reasons; a retained public
+tracer covers submission, enrichment, ordinary/assigned reads, CFO plus two Director approval,
+Exception Register closure, sanction decision, and terminal Credit Sanction Register generation.
 
-The most urgent defect is a contradictory exception projection: 007F stores the Exception Register
-business reason as the case exception reason, while the coherence engine requires that value to equal
-the separately authored approval reason. A source-valid exception case can therefore disappear from
-canonical reads and become unactionable. The existing public test also marks an amount below the
-frozen eligible amount as an exception, so it does not prove the source predicate or a complete
-exception lifecycle.
+Exception coherence now binds the same case/application/register identity, business reason, type,
+risk shape, frozen amount-limit predicate, matrix condition, two-Director authority, and register
+requirement. The case detail exposes frozen `exception_reason`; `reason_for_approval` remains the
+sanction decision reason. Exact replay is zero-write and changed immutable facts conflict.
 
-The review also found that sanction-decision and Credit Sanction Register reads apply named
-permissions without the approval/application object boundary, General Meeting evidence accepts
-arbitrary existing document ids after only a global permission check, and pending/rejected meeting
-outcomes are absent from the canonical case detail. Appraisal `post_save` still hides approval
-projection mutation. Findings are recorded newest-first in `docs/working/REVIEW_FINDINGS.md` and the
-Epic 007 digest.
+The appraisal `post_save` projection receiver is removed. Approval coherence and exact reader
+indexing are invoked explicitly by approval-owned submission/linkage, enrichment, and action
+writers. Direct appraisal/case saves do not mutate cross-table projection state, and later live
+appraisal changes do not rewrite frozen historical-cycle authority. No migration or new assumption
+was required.
 
-Three High-risk corrective slices are queued in dependency order:
+The remaining architecture-review corrections are still queued in dependency order:
 
-1. `007F2-exception-routing-coherence-and-explicit-projection-closure`
-2. `007G2-general-meeting-current-evidence-and-document-scope-closure`
-3. `007H2-sanction-decision-and-register-object-scope-closure`
+1. `007G2-general-meeting-current-evidence-and-document-scope-closure`
+2. `007H2-sanction-decision-and-register-object-scope-closure`
 
-007I now depends on 007H2. Both 007I and 007J carry run-ahead requirements for the corrected scoped
-read contracts. No ADR or new assumption was needed because the cited source contracts already
-decide the required behavior; A-085 remains open for 007G2 to resolve.
+007G2 and 007H2 were sharpened with 007F2's delivered reason/projection contract. 007I remains
+blocked by those corrections. A-085 remains open for 007G2 to resolve.
 
 ## Validation
 
-Independent Standards and Spec review passes were retained. Frontend build, typecheck, lint, and all
-208 tests pass. Backend check and migration sync pass; the complete 669-test suite produced current
-coverage data with 19 expected PostgreSQL-only SQLite skips and 93% coverage. Queue/dependency lint,
-state JSON parsing, diff whitespace, and protected/production/source path inspection pass. The
-worktree-local validator was not invoked because its hard-coded worktree virtualenv path is absent;
-all backend commands used the mandated `/Users/amitkallapa/LMS/.ralph/venv/bin/python`, and the
-orchestrator will run independent validation.
+Retained RED/GREEN logs cover the contradictory reason invariant, frozen exception predicate, and
+hidden appraisal-save projection mutation. The 128 affected approval tests pass. Frontend build,
+typecheck, lint, and all 208 tests pass. Backend check and migration sync pass; the complete 670-test
+suite passes with 19 expected PostgreSQL-only SQLite skips and 93% coverage. Diff whitespace and
+protected/source path checks pass. The orchestrator will run independent validation.
 
 ## Next Run
 
-Run `007F2` first, then `007G2` and `007H2`. Resume `007I-sanction-workbench-ui` only after those
-corrective dependencies are complete. CR-004 remains an independent queued maintenance repair.
+Run `007G2`, then `007H2`. Resume `007I-sanction-workbench-ui` only after those corrective
+dependencies are complete. CR-004 remains an independent queued maintenance repair.

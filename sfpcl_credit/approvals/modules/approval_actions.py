@@ -136,6 +136,7 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
             "loan_application",
             "loan_appraisal_note__risk_assessment",
             "general_meeting_approval",
+            "exception_register_entry",
         )
         .prefetch_related("actions")
         .get(pk=case_id)

@@ -46,6 +46,10 @@ scope that governs approval history, including counts and pagination.
    sanction-decision contract, FY filters, and distinct case/exception/meeting references. Update
    `API_CONTRACTS.md`, the role-seed tests, Epic 007 digest, and frontend run-ahead contracts with
    exact row-scope semantics.
+5. Scope only through 007F2's explicit coherent-case/read-index interface. Do not treat
+   `routing_snapshot_is_coherent`, register permission, or the presence of an Exception Register
+   row as object authority; preserve distinct sanction `reason_for_approval` and exception
+   `business_reason` in the frozen decision/register projections.
 
 ## Test Cases
 
@@ -56,6 +60,8 @@ scope that governs approval history, including counts and pagination.
   across approved/rejected/returned cycles.
 - Permission-only and object-only negatives, invalid filters, empty pages, and page-boundary cases
   prove filtering occurs before count/pagination with zero writes.
+- Include a terminal above-limit 007F2 case with distinct sanction/exception reasons in the
+  two-case scope matrix and assert both frozen reason values survive scoped decision/register reads.
 
 ## Risk Level
 High
@@ -65,4 +71,3 @@ High
 - No same-permission user can read or count an unrelated sanction decision/register row.
 - Source-backed global/read-only scopes remain explicit and do not create action authority.
 - All configured gates pass with public role/object regression evidence.
-

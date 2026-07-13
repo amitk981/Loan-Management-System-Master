@@ -114,7 +114,6 @@ class SanctionHandoffModule:
             submitted_by_user=actor,
             submitted_at=now,
         )
-        refresh_approval_case_projection(case)
         application.application_status = LoanApplication.STATUS_SUBMITTED_TO_SANCTION
         application.save(update_fields=["application_status"])
         appraisal_note.appraisal_status = appraisal_note.STATUS_SUBMITTED_TO_SANCTION
@@ -323,7 +322,6 @@ class SanctionHandoffModule:
             "appraisal_facts_json", "general_meeting_evidence_required",
             "current_status", "conflict_block_reason", "closed_at", "version",
         ])
-        refresh_approval_case_projection(case)
         request_meta = request_meta or {}
         if condition_code:
             exception_register.create_for_case(
@@ -335,6 +333,7 @@ class SanctionHandoffModule:
                 actor_permissions=permissions,
                 request_meta=request_meta,
             )
+        refresh_approval_case_projection(case)
         AuditLog.objects.create(
             actor_user=actor,
             action="approval_case.enriched",
