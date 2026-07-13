@@ -1,39 +1,50 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_190107_normal_run
+2026-07-13_200023_architecture_review
 
 ## Current Status
 
-007H creates one immutable Credit Sanction Register row for each approved or rejected terminal
-case inside the locked approval-action transaction. Approved rows link the §15.5 sanction decision;
-rejected rows preserve terminal case/action facts with a null sanction link under A-088. Partial,
-returned, conflict-blocked, and General Meeting-gated outcomes create no row. The register row
-freezes the 15 source fields and references the exact terminal sanction workflow event plus an
-attributable creation audit.
+The architecture review covered completed slices 007E2, 007F, 007G, and 007H in product commit
+range `b32559c...78d912f`. Production code was not changed. The later `ac1846c` CR-004 intake commit
+was docs-only and was excluded from product findings; its missing dependency declaration was repaired
+so the queue remains valid.
 
-The projection uses only the terminal case's application/member, verified loan-limit snapshot,
-reviewed appraisal, effective action authority, one-to-one 007F exception, frozen 007E conflict/
-abstention facts, and frozen 007G General Meeting relation. It never selects latest evidence by
-application. Queryset and instance mutations are blocked; the read adapter exposes no row mutation
-route. CFO, Director, Company Secretary, and Internal Auditor receive the dedicated register grant.
+The most urgent defect is a contradictory exception projection: 007F stores the Exception Register
+business reason as the case exception reason, while the coherence engine requires that value to equal
+the separately authored approval reason. A source-valid exception case can therefore disappear from
+canonical reads and become unactionable. The existing public test also marks an amount below the
+frozen eligible amount as an exception, so it does not prove the source predicate or a complete
+exception lifecycle.
 
-The §25.8 sanction-decision GET returns 404 before approval and after rejection. The §25.9 register
-GET supports bounded pagination plus exact decision and A-086 April-March `FYyyyy-yy` filtering.
-OC-002/A-087 keeps Annexure K/template code absent. Independent review found and closed bulk
-immutability, 255-character borrower-name, and abstainer-as-approver defects.
+The review also found that sanction-decision and Credit Sanction Register reads apply named
+permissions without the approval/application object boundary, General Meeting evidence accepts
+arbitrary existing document ids after only a global permission check, and pending/rejected meeting
+outcomes are absent from the canonical case detail. Appraisal `post_save` still hides approval
+projection mutation. Findings are recorded newest-first in `docs/working/REVIEW_FINDINGS.md` and the
+Epic 007 digest.
+
+Three High-risk corrective slices are queued in dependency order:
+
+1. `007F2-exception-routing-coherence-and-explicit-projection-closure`
+2. `007G2-general-meeting-current-evidence-and-document-scope-closure`
+3. `007H2-sanction-decision-and-register-object-scope-closure`
+
+007I now depends on 007H2. Both 007I and 007J carry run-ahead requirements for the corrected scoped
+read contracts. No ADR or new assumption was needed because the cited source contracts already
+decide the required behavior; A-085 remains open for 007G2 to resolve.
 
 ## Validation
 
-Retained RED/GREEN logs cover approved/rejected generation, exact same-case related references,
-filters/pagination/permissions/read-only routes, financial-year range validation, seeded reader
-roles, and review repairs. Frontend build/typecheck/lint and all 208 tests pass. Backend check and
-migration sync pass; the full 669-test suite passes with 19 expected PostgreSQL-only SQLite skips
-and 93% coverage.
+Independent Standards and Spec review passes were retained. Frontend build, typecheck, lint, and all
+208 tests pass. Backend check and migration sync pass; the complete 669-test suite produced current
+coverage data with 19 expected PostgreSQL-only SQLite skips and 93% coverage. Queue/dependency lint,
+state JSON parsing, diff whitespace, and protected/production/source path inspection pass. The
+worktree-local validator was not invoked because its hard-coded worktree virtualenv path is absent;
+all backend commands used the mandated `/Users/amitkallapa/LMS/.ralph/venv/bin/python`, and the
+orchestrator will run independent validation.
 
 ## Next Run
 
-The four-slice architecture-review cadence is now due. After that review, run
-`007I-sanction-workbench-ui`; its run-ahead section is sharpened for the separate case, sanction,
-and register permission/read contracts. `007J-registers-and-approval-matrix-frontend-wiring` is
-also sharpened for frozen nested references, FY filters, and the borrower/internal authority seam.
+Run `007F2` first, then `007G2` and `007H2`. Resume `007I-sanction-workbench-ui` only after those
+corrective dependencies are complete. CR-004 remains an independent queued maintenance repair.

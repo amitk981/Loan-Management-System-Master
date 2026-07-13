@@ -2,6 +2,111 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-13 20:10 - Architecture Review 2026-07-13_200023_architecture_review
+
+Reviewed completed product work since architecture-review commit `b32559c`:
+- `007E2-conflict-authority-projection-and-scope-closure` (`ad2391b`)
+- `007F-exception-approval-workflow` (`910c7c3`)
+- `007G-general-meeting-evidence-for-special-cases` (`aacb9b3`)
+- `007H-credit-sanction-register` (`78d912f`)
+
+The review checked `git diff b32559c...78d912f`, production/test hunks, retained RED/GREEN and
+full-gate evidence, the Epic 007 slice files/digest, cited auth/API/data-model/functional/codebase-
+design sections, and M05-FR-003/006/009/011/012. Standards and spec fidelity ran as independent
+passes. Commit `ac1846c` only queues CR-004 and was excluded from completed product findings.
+`CONTEXT.md` remains truthful; state and slice files contain no Blocked item to reopen.
+
+### Standards
+
+#### Finding 1 - Critical - Real exception enrichment persists an unroutable case
+
+007F now stores the Exception Register's distinct `business_reason` as `case.exception_reason`,
+but `approval_case_engine` still declares an exception snapshot coherent only when that value equals
+the separately authored `reason_for_approval`. The public test uses different source-valid values,
+then stops after enrichment. The projection therefore saves `routing_snapshot_is_coherent=false`;
+selectors hide the case and all approval actions return not-found. Later action tests manually attach
+an Exception Register row to the ordinary non-exception fixture, so the required submit -> enrich ->
+read -> decide tracer bullet never runs. This breaks the approval deep-module invariant and makes
+M05-FR-006 unusable despite green coverage. `007F2` owns coherent reason provenance and the complete
+public exception workflow.
+
+#### Finding 2 - High - Sanction reads turn role permission into global object access
+
+The §25.8 sanction-decision view and §25.9 Credit Sanction Register list check only their permission
+codes, then query by application or across all rows. They never call the case/application object-
+access decision. A Director legitimately seeded with `approvals.sanction.read` can retrieve any
+known application's financial decision, and register counts/pages disclose every row to any holder
+of the register permission. Auth §§15.9/19.2/32.1 limit Directors to assigned cases and explicitly
+deny unrelated applications. Tests remove the permission from the negative actor instead of using
+a same-permission, out-of-scope actor. `007H2` applies canonical scope before direct lookup, count,
+filters, and pagination.
+
+#### Finding 3 - High - General Meeting evidence accepts arbitrary existing document ids
+
+The recorder checks the global `documents.file.download` permission and then uses unrestricted
+`DocumentFile.objects.in_bulk`. It does not prove related-application access, file sensitivity,
+category, workflow stage, or same-application attribution as auth §§19.4/32.1 and 007G requirement 1
+require. The negative matrix covers a missing UUID and loss of the global permission only; a user
+can reference a restricted or cross-application file they cannot access. `007G2` moves the decision
+to a document-owned per-file interface and fails closed when relation/sensitivity cannot be proven.
+
+#### Finding 4 - Medium architecture - The explicit projection seam still has a hidden signal
+
+007E2 removed cross-table work from `ApprovalCase.save`, but `LoanAppraisalNote.post_save` still
+calls the approval projection updater and changes case coherence/read-index rows on an ordinary
+credit model save. The only “plain save” test exercises `ApprovalCase.save`, not the remaining
+signal. This contradicts 007E2 requirement 6 and weakens locality across the credit/approval seam.
+`007F2` removes the hidden signal, proves every approval-owned production writer explicitly
+refreshes, and preserves historical cycles from later live-appraisal changes.
+
+A direct private-helper test for forced exception validation also violates codebase-design
+§§26.1-26.2; `007F2` replaces it with public interface acceptance. Repeated pagination helpers are
+a locality judgment call, not yet a corrective slice: the implementations currently share the same
+bounded contract. A dedicated idempotency header for §25.11 was not required because source §45's
+explicit idempotent endpoint list omits General Meeting recording and payload replay is zero-write.
+
+### Spec
+
+#### Finding 1 - Critical - The exception predicate trusts a contradictory flag
+
+007F requirement 1 and M05-FR-006 require the reviewed recommendation to exceed the frozen eligible
+amount unless `force_exception_route` is true. Production trusts `exception_required_flag` without
+checking the two frozen amounts. Its test changes a ₹4,00,000 recommendation's flag to true while
+leaving the frozen eligible amount at ₹5,00,000, then expects an exceeds-limit entry. This blesses
+an impossible snapshot rather than proving the business predicate. `007F2` requires amount/flag
+agreement, zero-write contradictory-snapshot denial, and a distinct explicit forced route.
+
+#### Finding 2 - High - Pending/rejected General Meeting outcomes are absent from case detail
+
+007G requirement 4 says a rejected meeting blocks sanction and is surfaced on §25.4 case detail.
+Recording creates only the application-level evidence row. The case FK is assigned only on return
+or successful final approval, while detail serializes only that FK; pending and rejected current
+outcomes therefore always appear as null until an actor attempts the final action. Tests assert the
+409 error details but never GET detail after pending/rejected recording. `007G2` defines one current-
+while-pending/frozen-when-closed projection for case, action, and error responses.
+
+#### Finding 3 - Medium - 007G's “document the actor may access” acceptance is partial
+
+The same global-permission lookup in Standards Finding 3 does not satisfy 007G requirement 1's
+per-document wording. A-085 recorded the absence of a separate source matrix, but it cannot turn an
+unrelated file into accessible evidence. `007G2` implements the conservative document-owned access
+seam without granting downloads from case/register visibility.
+
+No material scope creep was found. 007E2's distinct effective authority/history and exact reader
+projection, 007F's register lifecycle/read model, 007G's final gate/frozen terminal reference, and
+007H's immutable 15-field generation are otherwise substantive. M05-FR-011 is materially closed by
+007E2. M05-FR-003/006 remain partial until `007F2`; M05-FR-012 remains partial until `007G2`;
+M05-FR-009 generation is substantive but read confidentiality remains partial until `007H2`.
+
+No ADR was added: the slice requirements and source auth/codebase-design rules already decide
+exception truth, explicit projection ownership, current/frozen evidence, and object-level reads.
+`007I` now depends on `007H2`; `007I`/`007J` were sharpened with the corrected evidence and row-
+scope contracts.
+
+Summary: Standards found 1 Critical, 2 High, and 1 Medium architecture issue; the worst is the
+unroutable real exception workflow. Spec found 1 Critical, 1 High, and 1 Medium issue; the worst is
+the contradictory exception predicate accepted as source-valid.
+
 ## 2026-07-13 17:04 - Architecture Review 2026-07-13_164911_architecture_review
 
 Reviewed completed product work since architecture-review commit `48ef331`:

@@ -3,6 +3,9 @@
 ## Status
 Not Started
 
+## Depends On
+- None
+
 ## Origin
 Change request (maintenance stage), accepted 2026-07-13 from docs/change-requests/accepted/CR-004-member-governance-container-recurring-ci-timeout.md.
 

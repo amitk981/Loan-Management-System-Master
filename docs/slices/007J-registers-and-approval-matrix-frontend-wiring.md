@@ -62,6 +62,15 @@ The Sanction Committee, CS, and auditors read real registers generated from appr
   satisfy the screen. Preserve rejected outcome copy from the borrower-authorised source the MP12
   contract names.
 
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_200023, 2026-07-13)
+
+- Consume 007H2's already scoped register pages exactly. Never infer global register visibility
+  from the presence of `approvals.sanction_register.read`, merge pages from another case endpoint,
+  or display a client-computed total; the server count is object-scoped before pagination.
+- A Director's register can contain only attributable original/effective/acted cycles, while
+  persisted legal/audit/management readers retain their backend-defined read-only scope. Empty and
+  filtered states must not reveal that out-of-scope rows exist.
+
 ## Out of Scope
 Register file exports (012B/012C), sanction case actions (007D/007I), stamp duty register (008D/011 compliance views).
 

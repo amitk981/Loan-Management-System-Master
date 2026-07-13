@@ -14,7 +14,7 @@ Wire the Sanction Workbench (screen-spec S21 committee workbench, S22 case detai
 The Sanction Committee reviews and decides real cases — with the ten-point checklist, conflict/abstention visibility, exception flags, and mandatory reasons — in the approved prototype composition.
 
 ## Depends On
-- 007H
+- 007H2
 
 ## Source References
 - docs/source/screen-spec.md S21, S22, S24
@@ -71,6 +71,18 @@ The Sanction Committee reviews and decides real cases — with the ten-point che
 - A terminal action is atomic with the generated register row and its audit/workflow reference.
   The UI must treat action failure as no completion and re-fetch the canonical case/decision only
   after success; never optimistically fabricate a register or sanction outcome.
+
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_200023, 2026-07-13)
+
+- Depend on 007H2 so the workbench never consumes the permission-only sanction read. A case with
+  `approvals.sanction.read` still requires the server's case/application object decision; treat an
+  unrelated `OBJECT_ACCESS_DENIED` as nondisclosing and never fall back to register data.
+- Depend on 007G2's current-versus-frozen meeting projection. Pending/rejected current evidence is
+  rendered from the canonical case response; returned/terminal history renders only the cycle-
+  frozen reference. Do not fetch “latest” evidence independently.
+- The record form may submit only document ids that the document resource marked referenceable for
+  this application. A general download permission or a visible register metadata id must never
+  enable the form or a download action.
 
 ## Visual Acceptance Criteria
 Queue, case detail (pending/partially approved/approved/rejected/returned), exception-flagged case, special-case panel, conflict/abstention display, empty, loading, denied, and error states; deterministic Playwright baselines per the 006H3 harness conventions.

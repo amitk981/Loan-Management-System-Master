@@ -1,5 +1,27 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## Architecture Review 2026-07-13 20:10 - Exception and Evidence Read Corrections
+
+- 007F persists the distinct Exception Register business reason on the case, but the inherited
+  coherence predicate still requires it to equal `reason_for_approval`. A real public exception
+  enrichment is therefore saved incoherent and disappears from case reads/actions; later tests
+  bypass that route with manually attached register fixtures. `007F2` restores the full public
+  submit/enrich/read/CFO+two-Director/terminal-register tracer and removes the remaining appraisal
+  post-save projection side effect.
+- The non-forced exception path trusts a frozen boolean even when the recommended amount is below
+  the frozen eligible amount. `007F2` requires amount/flag agreement and reserves within-limit
+  routing for explicit `force_exception_route` with a truthful type/reason.
+- 007G freezes the applicable meeting on return/final approval, but pending/rejected current
+  evidence is null on case detail. It also checks only a global document permission plus existence.
+  `007G2` defines current-while-pending/frozen-when-closed projection semantics and delegates each
+  evidence reference to document-owned application/sensitivity scope.
+- 007H generates complete immutable rows, but sanction decision/register reads apply permission
+  without case/application row scope. `007H2` filters direct reads and collection counts/pagination
+  through the canonical original/effective/acted plus persisted legal/audit/management scope.
+- M05-FR-011 is substantive. M05-FR-003/006 remain partial until 007F2; M05-FR-012 remains partial
+  until 007G2; M05-FR-009 generation is substantive but confidential reads remain partial until
+  007H2. The UI slice 007I now depends on those corrections.
+
 ## 007H Credit Sanction Register
 
 - Approved and rejected terminal actions now create exactly one immutable case/cycle register row
