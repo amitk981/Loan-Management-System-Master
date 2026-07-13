@@ -1,25 +1,23 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_080215_normal_run
+2026-07-13_081756_normal_run
 
 ## Current Status
 
-CR-003 is complete. The timing-sensitive mounted member-governance journey is split into focused
-routed-create and ordinary-update tests. Together they retain production navigation, exact POST and
-PATCH bodies/ledgers, mutation-leak rejection, canonical create/update readback, deterministic bulk
-fixture entry, and one ordinary typed update, with cleanup between each mounted behavior.
+007A4 is complete. Approval configuration now has current proposal-decision concurrency proof for
+rule and committee create/supersede, canonical authority errors, a participant/checker/reader
+proposal-detail boundary, and immutable open-case configuration snapshot fields.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-13_080215_normal_run/`. RED proves the unchanged monolith
-exceeds a constrained 1000 ms budget. GREEN proves 20 consecutive executions of the two focused
-tests plus the immediately following three complete-body cases (100 tests total). Frontend build,
-typecheck, lint, and 208 tests pass. Backend check, migration sync, and 531 tests pass with 16
-expected PostgreSQL-only skips and 93% coverage.
+Evidence is under `.ralph/runs/2026-07-13_081756_normal_run/`. Proposal-detail and canonical-code
+RED/GREEN logs, case snapshot RED/GREEN, sequential matrices, migration `0005`/`0006` proof, and two
+governed PostgreSQL runs are retained. Frontend build/typecheck/lint and 208 tests pass. Backend
+check/migration sync and 535 tests pass with 16 expected PostgreSQL-only skips and 93% coverage.
 
 ## Next Run
 
-Run `007A4-approval-governance-concurrency-and-case-snapshot-closure`, then
-`007B-approval-case-creation-from-appraisal`. Both have additional digest-backed precision for
-complete losing-proposal state and immutable case configuration snapshots.
+Run `007B-approval-case-creation-from-appraisal`, then `007C-cfo-and-director-threshold-routing`.
+Both are sharpened to reuse the 007A4 snapshot columns and treat stored case projections, not live
+configuration, as routing authority.

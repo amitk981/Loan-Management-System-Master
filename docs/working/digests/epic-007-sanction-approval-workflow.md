@@ -98,3 +98,16 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - Approval revalidates retained history and committee authority under the shared lock, activates
   atomically, and writes separate author/approver history plus `config.changed` evidence. Rejection
   and stale/conflicting losers leave effective configuration and open-case snapshots unchanged.
+
+## 007A4 Governance Concurrency and Snapshot Closure
+
+- Proposal detail is readable only by its maker, an active persisted CFO/Company Secretary checker,
+  or a holder of `approvals.matrix.read`; unrelated authenticated users receive `403 FORBIDDEN`.
+- The sole ineligible-checker code is `403 APPROVAL_AUTHORITY_REQUIRED`. Approval-time authority is
+  revalidated and Critical activation remains serialized behind the configuration lock.
+- Open approval cases carry immutable rule/committee ids and versions, required approver JSON,
+  decision date, workflow-event identity, and a positive case version. Configuration decisions and
+  resolver/detail reads never mutate those stored facts.
+- Governed rule/committee create and supersede races begin with two pending proposals and race
+  distinct eligible checkers through `decide_proposal`; one activation wins and the loser proposal
+  remains byte-for-byte pending with no effective/history/audit/case writes.

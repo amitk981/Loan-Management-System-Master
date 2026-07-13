@@ -58,6 +58,16 @@ Medium
   activate later matrix/committee versions in a regression test and prove queue membership and
   actions for the historical case remain byte-for-byte unchanged.
 
+## Run-Ahead Sharpening Review (007A4, 2026-07-13)
+
+- Read assignment solely from 007A4/007B's stored `required_approvers_json` and return the stored
+  case `version` for later optimistic action writes. Never join current committee membership to
+  decide queue inclusion or action eligibility.
+- Exercise an unrelated authenticated user, a configured matrix reader who is not assigned, the
+  maker, and each snapshotted authority independently. Proposal-detail eligibility from 007A4 does
+  not grant approval-case object access; case access remains governed by `approvals.case.read` plus
+  the approval-case object boundary.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

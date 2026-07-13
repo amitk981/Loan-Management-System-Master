@@ -1,0 +1,22 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_proposal_decision_enforces_authority_version_rejection_and_immutable_evidence (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_proposal_decision_enforces_authority_version_rejection_and_immutable_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_081756_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 302, in test_proposal_decision_enforces_authority_version_rejection_and_immutable_evidence
+    self.assertEqual(denied.json()["error"]["code"], code)
+AssertionError: 'APPROVER_AUTHORITY_REQUIRED' != 'APPROVAL_AUTHORITY_REQUIRED'
+- APPROVER_AUTHORITY_REQUIRED
+?       ^^
++ APPROVAL_AUTHORITY_REQUIRED
+?       ^^
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.018s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

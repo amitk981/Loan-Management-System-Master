@@ -154,15 +154,16 @@
     "007A3-approval-matrix-maker-checker-governance",
     "006Z13-member-scope-persistence-and-action-matrix-closure",
     "CR-002-member-governance-container-ci-timeout",
-    "CR-003-member-governance-container-pr-ci-timeout"
+    "CR-003-member-governance-container-pr-ci-timeout",
+    "007A4-approval-governance-concurrency-and-case-snapshot-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "6c6a4da",
-  "last_run_id": "2026-07-13_080215_normal_run",
+  "last_run_id": "2026-07-13_081756_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 3,
-  "architecture_review_due": false,
+  "slices_completed_since_architecture_review": 4,
+  "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
   "active_worktree": null

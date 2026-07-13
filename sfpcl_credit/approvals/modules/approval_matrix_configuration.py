@@ -39,6 +39,17 @@ def can_manage(user):
     return MANAGE_PERMISSION in auth_service.effective_permission_codes(user)
 
 
+def can_read_proposal(user, proposal):
+    return (
+        proposal.made_by_user_id == user.pk
+        or can_read(user)
+        or (
+            user.status == User.ACTIVE_STATUS
+            and user.approval_authority_type in {"cfo", "company_secretary"}
+        )
+    )
+
+
 def serialize_rule(rule):
     return {
         "approval_matrix_rule_id": str(rule.pk), "decision_type": rule.decision_type,
@@ -201,7 +212,12 @@ def supersede_committee(user, request, committee_id, payload):
 
 
 def get_proposal(proposal_id, user):
-    return serialize_proposal(ApprovalConfigurationProposal.objects.get(pk=proposal_id), user)
+    proposal = ApprovalConfigurationProposal.objects.get(pk=proposal_id)
+    if not can_read_proposal(user, proposal):
+        raise ConfigurationConflict(
+            "You do not have approval configuration proposal access.", "FORBIDDEN"
+        )
+    return serialize_proposal(proposal, user)
 
 
 @transaction.atomic
@@ -240,7 +256,7 @@ def _require_business_approver(proposal, user):
     if proposal.made_by_user_id == user.pk:
         raise ConfigurationConflict("Maker cannot decide their own proposal.", "MAKER_CHECKER_VIOLATION")
     if user.status != User.ACTIVE_STATUS or user.approval_authority_type not in {"cfo", "company_secretary"}:
-        raise ConfigurationConflict("Active CFO or Company Secretary approval authority is required.", "APPROVER_AUTHORITY_REQUIRED")
+        raise ConfigurationConflict("Active CFO or Company Secretary approval authority is required.", "APPROVAL_AUTHORITY_REQUIRED")
 
 
 def _activate_proposal(proposal, approver, request):

@@ -7,6 +7,7 @@ from django.db import close_old_connections, connection
 from django.test import Client, RequestFactory, TestCase, TransactionTestCase
 
 from sfpcl_credit.approvals.models import (
+    ApprovalCase,
     ApprovalConfigurationLock,
     ApprovalConfigurationProposal,
     ApprovalMatrixRule,
@@ -262,6 +263,28 @@ class ApprovalMatrixApiTests(TestCase):
         self.assertEqual(VersionHistory.objects.count(), 0)
         self.assertEqual(AuditLog.objects.exclude(action__startswith="auth.").count(), 0)
 
+    def test_proposal_detail_is_limited_to_participants_eligible_checkers_and_matrix_readers(self):
+        proposal = self.client.post(
+            "/api/v1/approval-matrix-rules/", data=self._payload(),
+            content_type="application/json", headers=self._headers(self.manager),
+        ).json()["data"]
+        path = (
+            "/api/v1/approval-configuration-proposals/"
+            f"{proposal['approval_configuration_proposal_id']}/"
+        )
+
+        self.assertEqual(self.client.get(path).status_code, 401)
+        denied = self.client.get(path, headers=self._headers(self.plain))
+        self.assertEqual(denied.status_code, 403, denied.content)
+        self.assertEqual(denied.json()["error"]["code"], "FORBIDDEN")
+        for actor in (self.manager, self.checker, self.reader):
+            allowed = self.client.get(path, headers=self._headers(actor))
+            self.assertEqual(allowed.status_code, 200, allowed.content)
+            self.assertEqual(
+                allowed.json()["data"]["approval_configuration_proposal_id"],
+                proposal["approval_configuration_proposal_id"],
+            )
+
     def test_proposal_decision_enforces_authority_version_rejection_and_immutable_evidence(self):
         proposed = self.client.post(
             "/api/v1/approval-matrix-rules/", data=self._payload(reason="Traceable change reason"),
@@ -271,8 +294,8 @@ class ApprovalMatrixApiTests(TestCase):
         before = self._configuration_snapshot()
         for actor, code in (
             (self.manager, "MAKER_CHECKER_VIOLATION"),
-            (self.plain, "APPROVER_AUTHORITY_REQUIRED"),
-            (self.director_checker, "APPROVER_AUTHORITY_REQUIRED"),
+            (self.plain, "APPROVAL_AUTHORITY_REQUIRED"),
+            (self.director_checker, "APPROVAL_AUTHORITY_REQUIRED"),
         ):
             denied = self.client.post(f"{path}/approve/", data={"version": 1},
                                       content_type="application/json", headers=self._headers(actor))
@@ -353,8 +376,6 @@ class ApprovalMatrixApiTests(TestCase):
             headers=headers,
         )
         self._approve(supersede.json()["data"])
-        before = self._configuration_snapshot()
-
         response = self.client.post(
             "/api/v1/approval-matrix-rules/",
             data=self._payload(
@@ -367,6 +388,7 @@ class ApprovalMatrixApiTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200, response.content)
+        before = self._configuration_snapshot()
         self._approve(response.json()["data"], expected_status=409)
         self.assertEqual(self._configuration_snapshot(), before)
         resolved = resolve_approval_matrix(
@@ -452,11 +474,74 @@ class ApprovalMatrixApiTests(TestCase):
         self.assertEqual(response.status_code, 400, response.content)
         self.assertEqual(after_login, before)
 
+    def test_rule_and_committee_malformed_inputs_are_independent_zero_write_rows(self):
+        role = Role.objects.create(role_code="malformed_committee", role_name="Malformed Committee")
+        cfo = self._user("malformed-cfo@example.test", role, "cfo")
+        d1 = self._user("malformed-d1@example.test", role, "director")
+        d2 = self._user("malformed-d2@example.test", role, "director")
+        rows = (
+            ("/api/v1/approval-matrix-rules/", self._payload(amount_min="Infinity")),
+            ("/api/v1/approval-matrix-rules/", self._payload(unknown_rule_fact=True)),
+            ("/api/v1/sanction-committees/", self._committee_payload(cfo, d1, d2, cfo_user_id="not-a-uuid")),
+            ("/api/v1/sanction-committees/", self._committee_payload(cfo, d1, d2, unknown_committee_fact=True)),
+            ("/api/v1/sanction-committees/", self._committee_payload(cfo, d1, d1)),
+            ("/api/v1/sanction-committees/", self._committee_payload(d1, cfo, d2)),
+        )
+        headers = self._headers(self.manager)
+        for path, payload in rows:
+            with self.subTest(path=path, payload=payload):
+                before = self._configuration_snapshot()
+                response = self.client.post(
+                    path, data=payload, content_type="application/json", headers=headers,
+                )
+                self.assertEqual(response.status_code, 400, response.content)
+                self.assertEqual(self._configuration_snapshot(), before)
+
+    def test_inactive_configuration_never_resolves_and_checker_is_revalidated_at_decision_time(self):
+        inactive_rule = ApprovalMatrixRule.objects.create(
+            decision_type="inactive_route", amount_min="0", amount_max="10",
+            required_approver_roles_json=["cfo"], required_director_count=0,
+            effective_from=date(2026, 4, 1), status="inactive", version_number="inactive-rule",
+        )
+        role = Role.objects.create(role_code="inactive_resolution", role_name="Inactive Resolution")
+        cfo = self._user("inactive-resolution-cfo@example.test", role, "cfo")
+        d1 = self._user("inactive-resolution-d1@example.test", role, "director")
+        d2 = self._user("inactive-resolution-d2@example.test", role, "director")
+        SanctionCommittee.objects.create(
+            committee_name="Inactive Committee", cfo_user=cfo, director_1_user=d1,
+            director_2_user=d2, board_meeting_reference="INACTIVE-BOARD",
+            effective_from=date(2026, 4, 1), status="inactive", version_number="inactive-committee",
+        )
+        with self.assertRaises(NoEffectiveApprovalRule):
+            resolve_approval_matrix(
+                decision_type=inactive_rule.decision_type, amount="1", condition_code=None,
+                decision_date=date(2026, 7, 13),
+            )
+        with self.assertRaises(NoEffectiveSanctionCommittee):
+            resolve_sanction_committee(date(2026, 7, 13))
+
+        proposal = self.client.post(
+            "/api/v1/approval-matrix-rules/", data=self._payload(decision_type="fresh_route"),
+            content_type="application/json", headers=self._headers(self.manager),
+        ).json()["data"]
+        self.checker.status = "inactive"
+        self.checker.save(update_fields=["status"])
+        before = self._configuration_snapshot()
+        with self.assertRaises(approval_matrix_configuration.ConfigurationConflict) as denied:
+            approval_matrix_configuration.decide_proposal(
+                proposal["approval_configuration_proposal_id"], self.checker,
+                RequestFactory().post("/proposal/approve/"), {"version": 1}, "approve",
+            )
+        self.assertEqual(denied.exception.code, "APPROVAL_AUTHORITY_REQUIRED")
+        self.assertEqual(self._configuration_snapshot(), before)
+
     @staticmethod
     def _configuration_snapshot():
         return {
+            "proposals": list(ApprovalConfigurationProposal.objects.order_by("pk").values()),
             "rules": list(ApprovalMatrixRule.objects.order_by("pk").values()),
             "committees": list(SanctionCommittee.objects.order_by("pk").values()),
+            "cases": list(ApprovalCase.objects.order_by("pk").values()),
             "versions": list(VersionHistory.objects.order_by("pk").values()),
             "audits": list(AuditLog.objects.exclude(action__startswith="auth.").order_by("pk").values()),
         }
@@ -489,6 +574,7 @@ class ApprovalMatrixConcurrencyTests(TransactionTestCase):
         self.user.save()
         authority_role = Role.objects.create(role_code="race_authority", role_name="Race Authority")
         self.cfo = User.objects.create(full_name="Race CFO", email="race-cfo@example.test", status="active", primary_role=authority_role, approval_authority_type="cfo")
+        self.company_secretary = User.objects.create(full_name="Race CS", email="race-cs@example.test", status="active", primary_role=authority_role, approval_authority_type="company_secretary")
         self.d1 = User.objects.create(full_name="Race Director 1", email="race-d1@example.test", status="active", primary_role=authority_role, approval_authority_type="director")
         self.d2 = User.objects.create(full_name="Race Director 2", email="race-d2@example.test", status="active", primary_role=authority_role, approval_authority_type="director")
 
@@ -496,98 +582,106 @@ class ApprovalMatrixConcurrencyTests(TransactionTestCase):
     def _payload(version):
         return ApprovalMatrixApiTests._payload(version_number=version)
 
-    def _create(self, version):
+    def _propose_rule(self, version, *, target_id=None):
+        request = RequestFactory().post("/api/v1/approval-matrix-rules/")
+        if target_id is None:
+            return approval_matrix_configuration.create_rule(self.user, request, self._payload(version))
+        payload = self._payload(version)
+        payload["effective_from"] = "2027-01-01"
+        return approval_matrix_configuration.supersede_rule(self.user, request, target_id, payload)
+
+    def _decide(self, proposal_id, checker_id):
         close_old_connections()
         try:
-            user = User.objects.get(pk=self.user.pk)
-            request = RequestFactory().post("/api/v1/approval-matrix-rules/")
-            return ("won", approval_matrix_configuration.create_rule(user, request, self._payload(version)))
-        except approval_matrix_configuration.ConfigurationConflict:
-            return ("lost", None)
+            checker = User.objects.get(pk=checker_id)
+            request = RequestFactory().post(f"/api/v1/approval-configuration-proposals/{proposal_id}/approve/")
+            approval_matrix_configuration.decide_proposal(
+                proposal_id, checker, request, {"version": 1}, "approve"
+            )
+            return "won"
+        except approval_matrix_configuration.ConfigurationConflict as exc:
+            return exc.code
         finally:
             close_old_connections()
 
-    def test_competing_overlapping_creates_have_one_winner_and_zero_write_loser(self):
+    def _race(self, proposals, *, loser_code="CONFIGURATION_CONFLICT"):
+        original = {
+            row["approval_configuration_proposal_id"]: ApprovalConfigurationProposal.objects.filter(
+                pk=row["approval_configuration_proposal_id"]
+            ).values().get()
+            for row in proposals
+        }
         with ThreadPoolExecutor(max_workers=2) as pool:
-            results = list(pool.map(self._create, ("race-a", "race-b")))
+            results = list(pool.map(
+                lambda args: self._decide(*args),
+                ((proposals[0]["approval_configuration_proposal_id"], self.cfo.pk),
+                 (proposals[1]["approval_configuration_proposal_id"], self.company_secretary.pk)),
+            ))
+        self.assertEqual(sorted(results), sorted([loser_code, "won"]))
+        proposal_ids = [row["approval_configuration_proposal_id"] for row in proposals]
+        approved = ApprovalConfigurationProposal.objects.get(
+            pk__in=proposal_ids, status="approved"
+        )
+        loser = ApprovalConfigurationProposal.objects.get(pk__in=proposal_ids, status="pending")
+        self.assertEqual(
+            ApprovalConfigurationProposal.objects.filter(pk=loser.pk).values().get(),
+            original[str(loser.pk)],
+        )
+        self.assertEqual(approved.version, 2)
+        return approved, loser
 
-        self.assertEqual(sorted(result[0] for result in results), ["lost", "won"])
+    def test_competing_overlapping_creates_have_one_winner_and_zero_write_loser(self):
+        proposals = [self._propose_rule(version) for version in ("race-a", "race-b")]
+        self._race(proposals)
         self.assertEqual(ApprovalMatrixRule.objects.count(), 1)
         self.assertEqual(VersionHistory.objects.filter(versioned_entity_type="approval_matrix_rule").count(), 1)
-        self.assertEqual(AuditLog.objects.filter(action="approvals.matrix_rule.created").count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="config.changed").count(), 1)
 
     def test_competing_supersedes_have_one_winner_and_zero_write_loser(self):
-        original = self._create("original")[1]
-
-        def supersede(version):
-            close_old_connections()
-            try:
-                user = User.objects.get(pk=self.user.pk)
-                request = RequestFactory().patch("/api/v1/approval-matrix-rules/x/")
-                payload = self._payload(version)
-                payload["effective_from"] = "2027-01-01"
-                approval_matrix_configuration.supersede_rule(
-                    user, request, original["approval_matrix_rule_id"], payload
-                )
-                return "won"
-            except approval_matrix_configuration.ConfigurationConflict:
-                return "lost"
-            finally:
-                close_old_connections()
-
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            results = list(pool.map(supersede, ("replacement-a", "replacement-b")))
-
-        self.assertEqual(sorted(results), ["lost", "won"])
+        original_proposal = self._propose_rule("original")
+        self._decide(original_proposal["approval_configuration_proposal_id"], self.cfo.pk)
+        original = ApprovalMatrixRule.objects.get()
+        proposals = [
+            self._propose_rule(version, target_id=original.pk)
+            for version in ("replacement-a", "replacement-b")
+        ]
+        self._race(proposals, loser_code="PROPOSAL_STALE")
         self.assertEqual(ApprovalMatrixRule.objects.count(), 2)
         self.assertEqual(VersionHistory.objects.filter(versioned_entity_type="approval_matrix_rule").count(), 2)
-        self.assertEqual(AuditLog.objects.filter(action__startswith="approvals.matrix_rule.").count(), 2)
+        self.assertEqual(AuditLog.objects.filter(action="config.changed").count(), 2)
 
     def _committee_payload(self, version, effective_from="2026-04-01"):
         return ApprovalMatrixApiTests._committee_payload(
             self.cfo, self.d1, self.d2, version_number=version, effective_from=effective_from
         )
 
-    def _create_committee(self, version):
-        close_old_connections()
-        try:
-            user = User.objects.get(pk=self.user.pk)
-            request = RequestFactory().post("/api/v1/sanction-committees/")
-            return ("won", approval_matrix_configuration.create_committee(user, request, self._committee_payload(version)))
-        except approval_matrix_configuration.ConfigurationConflict:
-            return ("lost", None)
-        finally:
-            close_old_connections()
+    def _propose_committee(self, version, *, target_id=None):
+        request = RequestFactory().post("/api/v1/sanction-committees/")
+        payload = self._committee_payload(
+            version, effective_from="2027-01-01" if target_id else "2026-04-01"
+        )
+        if target_id is None:
+            return approval_matrix_configuration.create_committee(self.user, request, payload)
+        return approval_matrix_configuration.supersede_committee(
+            self.user, request, target_id, payload
+        )
 
     def test_competing_committee_creates_have_one_winner_and_zero_write_loser(self):
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            results = list(pool.map(self._create_committee, ("committee-a", "committee-b")))
-        self.assertEqual(sorted(result[0] for result in results), ["lost", "won"])
+        proposals = [self._propose_committee(version) for version in ("committee-a", "committee-b")]
+        self._race(proposals)
         self.assertEqual(SanctionCommittee.objects.count(), 1)
         self.assertEqual(VersionHistory.objects.filter(versioned_entity_type="sanction_committee").count(), 1)
-        self.assertEqual(AuditLog.objects.filter(action="approvals.sanction_committee.created").count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="config.changed").count(), 1)
 
     def test_competing_committee_supersedes_have_one_winner_and_zero_write_loser(self):
-        original = self._create_committee("original-committee")[1]
-
-        def supersede(version):
-            close_old_connections()
-            try:
-                user = User.objects.get(pk=self.user.pk)
-                request = RequestFactory().patch("/api/v1/sanction-committees/x/")
-                approval_matrix_configuration.supersede_committee(
-                    user, request, original["sanction_committee_id"],
-                    self._committee_payload(version, effective_from="2027-01-01"),
-                )
-                return "won"
-            except approval_matrix_configuration.ConfigurationConflict:
-                return "lost"
-            finally:
-                close_old_connections()
-
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            results = list(pool.map(supersede, ("committee-next-a", "committee-next-b")))
-        self.assertEqual(sorted(results), ["lost", "won"])
+        original_proposal = self._propose_committee("original-committee")
+        self._decide(original_proposal["approval_configuration_proposal_id"], self.cfo.pk)
+        original = SanctionCommittee.objects.get()
+        proposals = [
+            self._propose_committee(version, target_id=original.pk)
+            for version in ("committee-next-a", "committee-next-b")
+        ]
+        self._race(proposals, loser_code="PROPOSAL_STALE")
         self.assertEqual(SanctionCommittee.objects.count(), 2)
         self.assertEqual(VersionHistory.objects.filter(versioned_entity_type="sanction_committee").count(), 2)
-        self.assertEqual(AuditLog.objects.filter(action__startswith="approvals.sanction_committee.").count(), 2)
+        self.assertEqual(AuditLog.objects.filter(action="config.changed").count(), 2)

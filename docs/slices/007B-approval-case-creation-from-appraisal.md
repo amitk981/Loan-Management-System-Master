@@ -116,6 +116,15 @@ Medium
   amount/condition route, roles/director count, joint/register facts, effective decision date, and
   rule/committee ids and versions without reconstructing those facts in the case module.
 
+## Run-Ahead Sharpening Review (007A4, 2026-07-13)
+
+- Reuse the case snapshot columns introduced by 007A4 (`approval_matrix_rule`, rule version,
+  `sanction_committee`, committee version, `required_approvers_json`, `decision_date`, and case
+  `version`); do not introduce parallel configuration columns or a second snapshot representation.
+- Populate all snapshot columns in one approval-owned atomic enrichment and increment the case
+  version exactly once. A missing/ambiguous resolver projection or conflicting repeat leaves every
+  column, the original workflow-event identity, audit rows, and case version unchanged.
+
 ## Done Checklist
 
 - [ ] Execution plan written

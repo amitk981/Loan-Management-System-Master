@@ -181,6 +181,19 @@ class ApprovalCase(models.Model):
         related_name="sanction_approval_case",
         null=True,
     )
+    approval_matrix_rule = models.ForeignKey(
+        ApprovalMatrixRule, null=True, blank=True, on_delete=models.PROTECT,
+        related_name="snapshotted_approval_cases",
+    )
+    approval_matrix_rule_version = models.CharField(max_length=40, blank=True)
+    sanction_committee = models.ForeignKey(
+        SanctionCommittee, null=True, blank=True, on_delete=models.PROTECT,
+        related_name="snapshotted_approval_cases",
+    )
+    sanction_committee_version = models.CharField(max_length=40, blank=True)
+    required_approvers_json = models.JSONField(default=dict, blank=True)
+    decision_date = models.DateField(null=True, blank=True)
+    version = models.PositiveIntegerField(default=1)
 
     class Meta:
         db_table = "approval_cases"
@@ -193,4 +206,9 @@ class ApprovalCase(models.Model):
                 fields=["exception_required_flag", "current_status"],
                 name="idx_approval_exception",
             ),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(version__gte=1), name="approval_case_version_positive"
+            )
         ]

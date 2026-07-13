@@ -1,6 +1,6 @@
 from copy import deepcopy
 from concurrent.futures import ThreadPoolExecutor
-from datetime import timedelta
+from datetime import date, timedelta
 import ast
 from importlib.util import resolve_name
 from pathlib import Path
@@ -10,10 +10,14 @@ from unittest.mock import patch
 
 from django.apps import apps
 from django.db import close_old_connections, connection, connections
-from django.test import Client, TestCase, TransactionTestCase
+from django.test import Client, RequestFactory, TestCase, TransactionTestCase
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import LoanApplication, RejectionNote
+from sfpcl_credit.approvals.models import ApprovalMatrixRule, SanctionCommittee
+from sfpcl_credit.approvals.modules import approval_matrix_configuration
+from sfpcl_credit.approvals.modules.approval_matrix import resolve_approval_matrix
+from sfpcl_credit.approvals.modules.sanction_committee import resolve_sanction_committee
 from sfpcl_credit.credit.models import (
     AppraisalReviewDecision,
     LoanAppraisalNote,
@@ -673,6 +677,77 @@ from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow as 
             RejectionNote.objects.filter(pk=rejection_note.pk).values().get(), before
         )
         self._assert_no_submission_writes()
+
+    def test_open_case_configuration_snapshot_is_immutable_across_governed_decisions(self):
+        self.assertEqual(self._submit({"remarks": "Freeze configuration facts."}).status_code, 200)
+        ApprovalMatrixRule.objects.all().delete()
+        SanctionCommittee.objects.all().delete()
+        checker = self._user("snapshot_checker", "Snapshot Checker")
+        checker.approval_authority_type = "cfo"
+        checker.save(update_fields=["approval_authority_type"])
+        director_1 = self._user("snapshot_director_1", "Snapshot Director 1")
+        director_1.approval_authority_type = "director"
+        director_1.save(update_fields=["approval_authority_type"])
+        director_2 = self._user("snapshot_director_2", "Snapshot Director 2")
+        director_2.approval_authority_type = "director"
+        director_2.save(update_fields=["approval_authority_type"])
+        rule = ApprovalMatrixRule.objects.create(
+            decision_type="loan_sanction", amount_min="0", amount_max="500000",
+            required_approver_roles_json=["cfo", "director"], required_director_count=1,
+            effective_from=date(2026, 4, 1), status="active", version_number="snapshot-v1",
+        )
+        committee = SanctionCommittee.objects.create(
+            committee_name="Snapshot Committee", cfo_user=checker,
+            director_1_user=director_1, director_2_user=director_2,
+            board_meeting_reference="BOARD-SNAPSHOT-1", effective_from=date(2026, 4, 1),
+            status="active", version_number="snapshot-v1",
+        )
+        case_model = apps.get_model("approvals", "ApprovalCase")
+        case = case_model.objects.get()
+        case.approval_matrix_rule = rule
+        case.approval_matrix_rule_version = rule.version_number
+        case.sanction_committee = committee
+        case.sanction_committee_version = committee.version_number
+        case.required_approvers_json = {
+            "cfo_user_id": str(checker.pk),
+            "director_user_ids": [str(director_1.pk)],
+        }
+        case.decision_date = date(2026, 7, 13)
+        case.version = 1
+        case.save(update_fields=[
+            "approval_matrix_rule", "approval_matrix_rule_version", "sanction_committee",
+            "sanction_committee_version", "required_approvers_json", "decision_date", "version",
+        ])
+        before = case_model.objects.filter(pk=case.pk).values().get()
+        request = RequestFactory().post("/api/v1/approval-matrix-rules/")
+        replacement = {
+            "decision_type": "loan_sanction", "amount_min": "0", "amount_max": "500000",
+            "condition_code": None, "required_approver_roles": ["cfo", "director"],
+            "required_director_count": 2, "joint_approval_required_flag": True,
+            "register_required": "credit_sanction_register", "effective_from": "2027-01-01",
+            "effective_to": None, "version_number": "snapshot-v2", "reason": "Annual replacement",
+        }
+        rejected = approval_matrix_configuration.supersede_rule(
+            self.reviewer, request, rule.pk, replacement
+        )
+        approval_matrix_configuration.decide_proposal(
+            rejected["approval_configuration_proposal_id"], checker, request,
+            {"version": 1, "reason": "Evidence incomplete"}, "reject",
+        )
+        approved = approval_matrix_configuration.supersede_rule(
+            self.reviewer, request, rule.pk, replacement | {"version_number": "snapshot-v2-approved"}
+        )
+        approval_matrix_configuration.decide_proposal(
+            approved["approval_configuration_proposal_id"], checker, request,
+            {"version": 1}, "approve",
+        )
+        resolve_approval_matrix(
+            decision_type="loan_sanction", amount="100", condition_code=None,
+            decision_date=date(2026, 7, 13),
+        )
+        resolve_sanction_committee(date(2026, 7, 13))
+        approval_matrix_configuration.get_proposal(approved["approval_configuration_proposal_id"], checker)
+        self.assertEqual(case_model.objects.filter(pk=case.pk).values().get(), before)
 
     def _submit(self, payload, *, actor=None, request_id="submit-sanction-test"):
         actor = actor or self.reviewer

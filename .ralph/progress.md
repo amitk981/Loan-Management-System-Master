@@ -5038,3 +5038,24 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_081756_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007A4-approval-governance-concurrency-and-case-snapshot-closure
+- Summary: Governed approval-time races, canonical permission contract, protected proposal detail, and immutable open-case snapshot closure completed.
+- Tests run: Two PostgreSQL four-race runs; backend 535 tests at 93% coverage; frontend build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_081756_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High, mitigated by atomic lock-bound activation, exact loser ledgers, migration sync, and full gates.
+- Next action: 007B approval-case enrichment from appraisal.
+
+## 2026-07-13 08:33:58 - 2026-07-13_081756_normal_run
+- Agent tool used: codex
+- Slice attempted: 007A4-approval-governance-concurrency-and-case-snapshot-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_081756_normal_run/.ralph/runs/2026-07-13_081756_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_081756_normal_run/.ralph/runs/2026-07-13_081756_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

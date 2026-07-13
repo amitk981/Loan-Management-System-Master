@@ -2390,9 +2390,15 @@ proposal with `approval_configuration_proposal_id`, `proposal_type`, nullable `t
 - `POST /api/v1/approval-configuration-proposals/{proposal_id}/reject/` —
   `{"version": 1, "reason": "Policy evidence incomplete"}`
 
+Proposal detail returns `401 AUTH_REQUIRED` without a valid session and `403 FORBIDDEN` to an
+authenticated user who is neither the maker, an active persisted CFO/Company Secretary checker,
+nor a holder of `approvals.matrix.read`. Those participants/readers receive 200. This boundary does
+not infer access from display role names and prevents unrelated users from seeing Critical change
+reasons, actor ids, or action eligibility.
+
 The checker must be active, distinct from the maker, and carry persisted `cfo` or
 `company_secretary` authority. Self-decision and missing authority return
-`403 MAKER_CHECKER_VIOLATION` and `403 APPROVER_AUTHORITY_REQUIRED`; stale version returns
+`403 MAKER_CHECKER_VIOLATION` and `403 APPROVAL_AUTHORITY_REQUIRED`; stale version returns
 `409 STALE_VERSION`; terminal replay returns `409 TRANSITION_CONFLICT`; approval-time lifecycle
 conflicts return `409 CONFIGURATION_CONFLICT` or `409 PROPOSAL_STALE`. Validation uses the standard
 `400 VALIDATION_ERROR` field-error envelope. Approval atomically activates/supersedes and writes

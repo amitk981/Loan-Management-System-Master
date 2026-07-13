@@ -16,7 +16,9 @@ def _authorized(request, manage=False):
 
 def _failure(request, exc):
     if isinstance(exc, services.ConfigurationConflict):
-        status = 403 if exc.code in {"MAKER_CHECKER_VIOLATION", "APPROVER_AUTHORITY_REQUIRED"} else 409
+        status = 403 if exc.code in {
+            "FORBIDDEN", "MAKER_CHECKER_VIOLATION", "APPROVAL_AUTHORITY_REQUIRED"
+        } else 409
         return error_response(request, status, exc.code, str(exc))
     if isinstance(exc, ObjectDoesNotExist):
         return error_response(request, 404, "NOT_FOUND", "Configuration was not found.")
@@ -74,7 +76,7 @@ def proposal_detail(request, approval_configuration_proposal_id):
     user, response = http_auth.authenticated_user(request)
     if response is not None: return response
     try: return success_response(services.get_proposal(approval_configuration_proposal_id, user), request)
-    except ObjectDoesNotExist as exc: return _failure(request, exc)
+    except (services.ConfigurationConflict, ObjectDoesNotExist) as exc: return _failure(request, exc)
 
 
 @require_http_methods(["POST"])
