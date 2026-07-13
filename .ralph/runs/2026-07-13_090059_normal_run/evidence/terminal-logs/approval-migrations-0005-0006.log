@@ -1,0 +1,7 @@
+approvals
+ [ ] 0001_initial
+ [ ] 0002_approvalcase_workflow_event
+ [ ] 0003_approvalmatrixrule_sanctioncommittee
+ [ ] 0004_approval_configuration_history_constraints
+ [ ] 0005_approvalconfigurationproposal
+ [ ] 0006_approvalcase_configuration_snapshot

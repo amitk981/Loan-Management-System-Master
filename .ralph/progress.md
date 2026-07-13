@@ -1825,6 +1825,17 @@ Validation evidence added:
 - Risk level: See risk assessment.
 - Next action: Review packet.
 
+## 2026-07-13 - 2026-07-13_090059_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007A5-approval-governance-complete-loser-ledger
+- Summary: Closed complete governed winner/loser ledgers, public pending-loser readback, CFG-007 case immutability in all four races, and the remaining committee history matrix.
+- Tests run: two exact PostgreSQL four-race runs; focused 26 approval tests; backend 548 tests at 93% coverage; frontend build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_090059_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High; governed concurrency and Critical configuration disclosure, mitigated by public-boundary tests, exact ledgers, PostgreSQL races, and full gates.
+- Next action: 007B approval-case enrichment from appraisal.
+
 ## 2026-07-13 05:52:00 - 2026-07-13_053920_normal_run
 - Agent tool used: codex
 - Slice attempted: 007A3-approval-matrix-maker-checker-governance
@@ -5111,6 +5122,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_085050_normal_run/.ralph/runs/2026-07-13_085050_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_085050_normal_run/.ralph/runs/2026-07-13_085050_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 09:14:59 - 2026-07-13_090059_normal_run
+- Agent tool used: codex
+- Slice attempted: 007A5-approval-governance-complete-loser-ledger
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_090059_normal_run/.ralph/runs/2026-07-13_090059_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_090059_normal_run/.ralph/runs/2026-07-13_090059_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

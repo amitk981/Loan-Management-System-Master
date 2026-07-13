@@ -99,11 +99,13 @@ def serialize_proposal(proposal, user=None):
         "approval_configuration_proposal_id": str(proposal.pk),
         "proposal_type": proposal.proposal_type,
         "target_entity_id": str(proposal.target_entity_id) if proposal.target_entity_id else None,
+        "payload": proposal.payload_json,
         "reason": proposal.reason,
         "status": proposal.status,
         "version": proposal.version,
         "made_by_user_id": str(proposal.made_by_user_id),
         "decided_by_user_id": str(proposal.decided_by_user_id) if proposal.decided_by_user_id else None,
+        "decided_at": proposal.decided_at.isoformat() if proposal.decided_at else None,
         "rejection_reason": proposal.rejection_reason or None,
         "available_actions": actions,
     }

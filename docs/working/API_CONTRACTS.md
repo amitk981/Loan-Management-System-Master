@@ -2382,7 +2382,8 @@ stable `NO_EFFECTIVE_SANCTION_COMMITTEE` and `AMBIGUOUS_SANCTION_COMMITTEE` doma
 
 Rule and committee POST/PATCH payloads now require a non-blank `reason`; success returns a pending
 proposal with `approval_configuration_proposal_id`, `proposal_type`, nullable `target_entity_id`,
-`reason`, `status`, `version`, maker/checker ids, rejection reason, and §44-shaped
+immutable `payload`, `reason`, `status`, `version`, maker/checker ids, nullable `decided_at`,
+rejection reason, and §44-shaped
 `available_actions`. It does not make configuration effective.
 
 - `GET /api/v1/approval-configuration-proposals/{proposal_id}/`

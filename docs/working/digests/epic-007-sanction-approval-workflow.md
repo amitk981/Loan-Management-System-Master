@@ -126,3 +126,17 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - Governed rule/committee create and supersede races begin with two pending proposals and race
   distinct eligible checkers through `decide_proposal`; one activation wins and the loser proposal
   remains byte-for-byte pending with no effective/history/audit/case writes.
+
+## 007A5 Complete Loser Ledger
+
+- Each of the four governed PostgreSQL races now carries a discriminating open case with stored
+  rule, committee, required-approver, decision-date, workflow-event, and positive-version facts.
+  Proposal, effective configuration, retained history, business audit, and case ledgers distinguish
+  the sole winner from an unchanged pending loser; the exact four methods pass twice after approvals
+  migrations 0005 and 0006.
+- Proposal detail now returns the immutable proposal `payload` and nullable `decided_at`, allowing
+  the public boundary to prove a loser's reason, maker, target/payload, status/version, null decision
+  fields, and checker action projection without querying private implementation state.
+- Historical and current committee dates resolve independently. A conflicting historical backfill
+  returns the stable configuration conflict while the complete ledger and retained resolver output
+  remain unchanged; duplicate and swapped authority failures have independently named public rows.

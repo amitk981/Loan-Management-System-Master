@@ -145,6 +145,15 @@ Medium
   separate public facts. Derive the member/application from that persisted handoff and reject any
   client-supplied related-entity substitution with no enrichment, audit, or workflow writes.
 
+## Run-Ahead Sharpening Review (007A5, 2026-07-13)
+
+- Reuse the complete 007A5 ledger shape after real enrichment: proposals, rules, committees,
+  version history, business audit, and the entire case row. Both a conflicting pending loser and a
+  later winning activation may change only their exact configuration facts; the enriched case and
+  its public projection must remain identical.
+- Preserve the proposal payload as governance evidence only. Case enrichment must consume the
+  approved public rule/committee resolver projections, never a pending proposal payload or target.
+
 ## Done Checklist
 
 - [ ] Execution plan written

@@ -78,6 +78,15 @@ Medium
   determines queue membership; amount, current status, live configuration, and proposal-detail
   eligibility cannot infer assignment.
 
+## Run-Ahead Sharpening Review (007A5, 2026-07-13)
+
+- Independently route a case snapshotted to the retained historical committee and one to the current
+  committee on their boundary dates. A rejected/conflicting committee backfill proposal must not
+  alter either queue, detail provenance, stored case version, or action projection.
+- Proposal-detail `available_actions` describes configuration governance only and grants no case
+  assignment. Prove an eligible configuration checker absent from `required_approvers_json` sees no
+  case action and cannot enter `assigned_to_me`.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated
