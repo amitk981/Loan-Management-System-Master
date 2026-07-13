@@ -99,6 +99,18 @@ Queue, case detail (pending/partially approved/approved/rejected/returned), exce
   a source-defined sensitivity matching immutable upload provenance. Backend nondisclosing rejection remains authoritative; case
   or register metadata visibility never enables download/reference on its own.
 
+## Run-Ahead Sharpening Review (007H2 delivered contract, 2026-07-13)
+
+- A successful case detail does not by itself authorise the §25.8 decision request: call it only
+  when `/auth/me` also carries `approvals.sanction.read`, and preserve the server's independent
+  `403 FORBIDDEN`, `403 OBJECT_ACCESS_DENIED`, and `404 NOT_FOUND` states without fallback reads.
+- Original, effective, conflicted, and acted historical approvers can receive a terminal decision
+  only for their attributable cycle. Never infer decision scope from committee membership,
+  `routing_snapshot_is_coherent`, Exception Register visibility, or meeting metadata.
+- The workbench must not call the Credit Sanction Register for counts or case reconstruction. Its
+  independently scoped pages grant no action, decision, evidence-reference, or document-download
+  authority.
+
 ## Risk Level
 Medium
 

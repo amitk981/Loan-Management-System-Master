@@ -14,7 +14,12 @@ from sfpcl_credit.approvals.models import (
     SanctionDecision,
 )
 from sfpcl_credit.approvals.modules import approval_case_engine
+from sfpcl_credit.approvals.modules.approval_case_selector import (
+    select_approval_case_candidates,
+)
+from sfpcl_credit.domain_errors import DomainObjectAccessDenied
 from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.identity.modules.object_permissions import ObjectAccessResult
 
 
 REGISTER_READ_PERMISSION = "approvals.sanction_register.read"
@@ -121,8 +126,40 @@ def generate_for_terminal_case(
     return entry
 
 
-def get_sanction_decision(application_id):
-    decision = SanctionDecision.objects.get(loan_application_id=application_id)
+def get_sanction_decision(*, actor, application_id, actor_permissions):
+    cases, persisted_scope_type = select_approval_case_candidates(
+        actor=actor,
+        actor_permissions=actor_permissions,
+    )
+    application_cases = cases.filter(loan_application_id=application_id)
+    if not application_cases.exists():
+        raise DomainObjectAccessDenied(
+            ObjectAccessResult(
+                allowed=False,
+                reason="sanction_decision_not_attributable",
+                error_code="OBJECT_ACCESS_DENIED",
+                required_permission=SANCTION_READ_PERMISSION,
+            )
+        )
+    decision = SanctionDecision.objects.select_related("approval_case").get(
+        loan_application_id=application_id,
+        approval_case__in=application_cases,
+    )
+    if not approval_case_engine.can_read_approval_case(
+        actor=actor,
+        case=decision.approval_case,
+        persisted_scope_type=persisted_scope_type,
+        persisted_scope_resolved=True,
+        actor_permissions=actor_permissions,
+    ).allowed:
+        raise DomainObjectAccessDenied(
+            ObjectAccessResult(
+                allowed=False,
+                reason="sanction_decision_not_attributable",
+                error_code="OBJECT_ACCESS_DENIED",
+                required_permission=SANCTION_READ_PERMISSION,
+            )
+        )
     return serialize_sanction_decision(decision)
 
 
@@ -145,7 +182,7 @@ def serialize_sanction_decision(decision):
     }
 
 
-def list_entries(query_params):
+def list_entries(*, actor, query_params, actor_permissions):
     unknown = set(query_params.keys()) - _LIST_PARAMS
     if unknown:
         raise ValidationError(
@@ -159,7 +196,11 @@ def list_entries(query_params):
         CreditSanctionRegisterEntry.DECISION_REJECTED,
     }:
         raise ValidationError({"decision": "Unknown sanction decision."})
-    queryset = CreditSanctionRegisterEntry.objects.all()
+    cases, _ = select_approval_case_candidates(
+        actor=actor,
+        actor_permissions=actor_permissions,
+    )
+    queryset = CreditSanctionRegisterEntry.objects.filter(approval_case__in=cases)
     financial_year = query_params.get("financial_year")
     if financial_year:
         start, end = _financial_year_dates(financial_year)

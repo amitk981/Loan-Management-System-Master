@@ -1,5 +1,21 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007H2 Sanction Decision and Register Object-Scope Closure
+
+- Sanction-decision reads now require both `approvals.sanction.read` and the approval-owned
+  coherent-case/read-index decision. Same-permission unused Directors receive nondisclosing
+  `OBJECT_ACCESS_DENIED`; original, effective, conflicted, and acted historical actors retain only
+  their attributable cycle. The pre-approval/post-rejection 404 contract is unchanged.
+- Credit Sanction Register rows are joined to the canonical actor-scoped case selector before FY or
+  decision filters, ordering, counts, page normalization, and serialization. Two unrelated
+  Directors therefore receive independent one-row totals, while an active persisted legal/audit/
+  management grant can expose its defined read-only case scope only alongside the specific register
+  permission.
+- Permission, object scope, and downstream authority remain separate: case scope alone cannot read
+  the decision/register, register visibility grants no case action or document authority, and
+  coherence flags/exception rows/meeting metadata never act as authority. Frozen sanction reasons
+  remain distinct from Exception Register business reasons.
+
 ## 007G2 General-Meeting Current Evidence and Document Scope Closure
 
 - An evidence-required pending case now projects the current unsuperseded application outcome in

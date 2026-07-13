@@ -1,7 +1,7 @@
 # Slice 007H2: Sanction Decision and Register Object-Scope Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers

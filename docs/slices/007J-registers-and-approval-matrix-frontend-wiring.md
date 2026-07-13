@@ -71,6 +71,19 @@ The Sanction Committee, CS, and auditors read real registers generated from appr
   persisted legal/audit/management readers retain their backend-defined read-only scope. Empty and
   filtered states must not reveal that out-of-scope rows exist.
 
+## Run-Ahead Sharpening Review (007H2 delivered contract, 2026-07-13)
+
+- Render the server pagination object verbatim after every filter change. `total_count`,
+  `total_pages`, normalized `page`, empty results, and next/previous state are already computed
+  inside the caller's canonical case scope; never preserve or merge a total from an earlier actor,
+  filter, or page.
+- Director rows include only original/effective/conflicted/acted attributable cycles. A persisted
+  legal/audit/management scope is usable only with the separate register permission, and neither
+  kind of visibility enables case actions, sanction-decision reads, document references, or
+  downloads.
+- Keep `reasons` and `exception_reference.business_reason` as distinct frozen values. Do not
+  substitute one for the other or derive either from live application, case, or exception data.
+
 ## Out of Scope
 Register file exports (012B/012C), sanction case actions (007D/007I), stamp duty register (008D/011 compliance views).
 

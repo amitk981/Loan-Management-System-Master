@@ -270,6 +270,25 @@ class CatalogueSeedTests(TestCase):
                     ).exists()
                 )
 
+        for role_code in {"cfo", "director"}:
+            with self.subTest(role_code=role_code):
+                self.assertTrue(
+                    RolePermission.objects.filter(
+                        role__role_code=role_code,
+                        permission__permission_code="approvals.sanction.read",
+                    ).exists()
+                )
+        credit_manager = Role.objects.get(role_code="credit_manager")
+        self.assertFalse(
+            RolePermission.objects.filter(
+                role=credit_manager,
+                permission__permission_code__in={
+                    "approvals.sanction.read",
+                    "approvals.sanction_register.read",
+                },
+            ).exists()
+        )
+
     def test_seed_creates_only_source_named_approval_case_read_scope_grants(self):
         seed_catalogue()
 

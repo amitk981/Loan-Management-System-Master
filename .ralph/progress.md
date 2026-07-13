@@ -5704,3 +5704,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_215812_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007H2-sanction-decision-and-register-object-scope-closure
+- Summary: Scoped sanction decisions and Credit Sanction Register rows through the canonical
+  approval-case selector before decision lookup, filters, counts, and pagination; preserved frozen
+  cycle ownership, distinct exception reasons, and permission/action/document separation.
+- Tests run: retained RED/GREEN endpoint cycles; 116 scoped approval/seed tests; 19 review-finding
+  regressions; backend check/migration sync and 677 tests with 19 expected SQLite skips above the
+  85% coverage floor; frontend build/typecheck/lint and 208 tests; independent Standards/Spec
+  reviews with no remaining findings.
+- Evidence saved: `.ralph/runs/2026-07-13_215812_normal_run/evidence/`
+- Result: Success
+- Risk level: High
+- Next action: Independent orchestrator validation/commit/merge/push, then architecture review.
+
+## 2026-07-13 22:29:38 - 2026-07-13_215812_normal_run
+- Agent tool used: codex
+- Slice attempted: 007H2-sanction-decision-and-register-object-scope-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_215812_normal_run/.ralph/runs/2026-07-13_215812_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_215812_normal_run/.ralph/runs/2026-07-13_215812_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

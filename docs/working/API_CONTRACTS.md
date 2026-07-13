@@ -2778,6 +2778,17 @@ exists, including before terminal approval and after rejection. A-079 remains bi
 rates, repayment date, and penal rate are nullable, charges are `{}`, and the blank conditions
 snapshot is projected as `null` until an approved owner supplies those facts.
 
+Permission and row scope are independent. The endpoint first delegates to the approval-owned
+coherent-case/read-index selector and revalidates the canonical case decision, then looks up the
+immutable approved-cycle decision. Original, effective, conflicted, or acted historical approvers can read
+their attributable cycle. An actor with only `approvals.sanction.read`, including an unused
+committee Director, receives nondisclosing `403 OBJECT_ACCESS_DENIED` for an unrelated approved
+application. A caller with case object scope but without the endpoint permission receives
+`403 FORBIDDEN`. Persisted `legal_readonly`, `audit_readonly`, or `management_readonly` grants can
+provide case scope only when the caller separately holds the sanction permission; they never grant
+approval actions or document access. The deliberate `404 NOT_FOUND` contract still applies when no
+sanction decision exists, including before approval and after rejection.
+
 `GET /api/v1/credit-sanction-register/?financial_year=FY2026-27&decision=sanctioned&page=1&page_size=20`
 requires `approvals.sanction_register.read` and returns the standard list/pagination envelope.
 `decision` is exactly `sanctioned` or `rejected`; `financial_year` is canonical `FYyyyy-yy` and
@@ -2787,6 +2798,17 @@ page size defaults to 20 and is capped at 100. Unknown parameters or invalid fil
 no row detail/update/delete route. The slice's named readers—CFO and Director committee members,
 Company Secretary, and Internal Auditor—receive this read grant in the canonical role seed;
 possession of other approval/case permissions does not imply register access.
+
+The collection delegates to the same approval-owned coherent-case/read-index selector before
+financial-year or decision filters, ordering, `total_count`, page-bound normalization, and row
+serialization. Consequently an original/effective/conflicted/acted Director sees only attributable
+cycles and cannot infer unrelated decisions from empty pages, totals, total pages, or filter
+results. Persisted legal/audit/management readers see exactly the sanction cases covered by their
+active role grant, but only when they also hold `approvals.sanction_register.read`. Register
+permission does not become global object authority and grants neither case actions, sanction
+decision permission, document-reference authority, nor document download. The selector—not
+`routing_snapshot_is_coherent`, register permission, Exception Register presence, or evidence
+metadata—is the object-authority source.
 
 Every approved or rejected terminal case creates exactly one immutable
 `credit_sanction_register_entries` row in the locked approval action transaction. Approved rows
