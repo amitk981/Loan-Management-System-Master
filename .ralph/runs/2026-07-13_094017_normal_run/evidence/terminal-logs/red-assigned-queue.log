@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_assigned_to_me_returns_the_pending_snapshotted_case (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_assigned_to_me_returns_the_pending_snapshotted_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_094017_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 184, in test_assigned_to_me_returns_the_pending_snapshotted_case
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 0.012s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

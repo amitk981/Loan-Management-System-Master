@@ -1,5 +1,20 @@
 # Ralph Progress Log
 
+# Run 2026-07-13_094017_normal_run
+
+- Completed 007C with paginated approval-case list/detail APIs, strict filters,
+  `approvals.case.read`, assignment-only §44 actions, and immutable action-ledger decision reads.
+- Routed visibility requires every 007B rule/committee/policy provenance fact and version 2+;
+  ordered required approvers remain the sole assignment authority. Same-amount version-1 shells,
+  missing provenance, live configuration changes, actions, exclusions, and closed cases cannot
+  infer assignment.
+- M05-FR-002 review facts are read through from application/appraisal owners and API contract
+  documentation identifies every dynamic projection. Reads produce no business audit event.
+- TDD evidence covers absent routes, acted/closed assignment, and incomplete policy provenance.
+  Frontend build/typecheck/lint and 208 tests pass; backend check/migration sync and 566 tests pass
+  with 16 expected PostgreSQL-only skips and 93% coverage.
+- Evidence: `.ralph/runs/2026-07-13_094017_normal_run/`. Architecture review is due, then 007D.
+
 # Run 2026-07-13_083408_architecture_review
 
 - Reviewed 006Z13, CR-002, CR-003, and 007A4 independently across Standards and Spec; production
@@ -5156,6 +5171,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/.ralph/runs/2026-07-13_091510_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/.ralph/runs/2026-07-13_091510_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 10:07:17 - 2026-07-13_094017_normal_run
+- Agent tool used: codex
+- Slice attempted: 007C-cfo-and-director-threshold-routing
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_094017_normal_run/.ralph/runs/2026-07-13_094017_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_094017_normal_run/.ralph/runs/2026-07-13_094017_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

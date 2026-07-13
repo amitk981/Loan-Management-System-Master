@@ -93,6 +93,22 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - Exact repeats are zero-write reads. Conflicts/decided cases are 409; stale provenance and missing
   effective approved configuration leave the version-1 shell and all evidence unchanged.
 
+## 007C Delivered Routed Read Contract
+
+- Source API §25.3/§25.4 exposes paginated case list/detail reads under
+  `approvals.case.read`; assignment filtering additionally requires a still-pending user slot in
+  the complete stored 007B snapshot, no exclusion, and no immutable action.
+- A routed case requires matching stored rule/committee ids, versions, decision dates, complete
+  matrix/committee projections, an ordered non-empty authority list, amount/entity facts, and
+  `version >= 2`. An unrouted 006G shell remains invisible even when its amount/status resembles a
+  real case.
+- Detail authority, queue membership, and §44 actions never consult live configuration. Global
+  readers may see the case but receive no enabled assignment action unless they are also the
+  pending stored approver with the action-specific permission.
+- M05-FR-002 review facts are dynamically read through from the application/appraisal owners;
+  action decisions are read from the immutable §15.4 ledger without mutating required snapshot
+  JSON. Approval actions, conflict population, and UI remain 007D/007E/007I.
+
 ## 007A Delivered Configuration Contract
 
 - Exact ₹5,00,000 is included in the lower persisted rule; the upper rule begins at ₹5,00,000.01.

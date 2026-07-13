@@ -1,0 +1,33 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_assigned_to_me_excludes_a_case_that_is_no_longer_pending (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_assigned_to_me_excludes_a_case_that_is_no_longer_pending)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_094017_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 230, in test_assigned_to_me_excludes_a_case_that_is_no_longer_pending
+    self.assertEqual(response.json()["data"], [])
+AssertionError: Lists differ: [{'approval_case_id': '41972087-6936-4df8-[355 chars]: 2}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'approval_case_id': '41972087-6936-4df8-8c6f-9c50abd2d25f', 'approval_type': 'sanction', 'related_entity_type': 'loan_application', 'related_entity_id': '22a36a54-bb6f-4472-992b-fbef24f0ce46', 'loan_application_id': '22a36a54-bb6f-4472-992b-fbef24f0ce46', 'application_reference_number': 'LO00000701', 'amount': '500000.00', 'current_status': 'approved', 'decision_date': '2026-07-13', 'version': 2}
+
++ []
+- [{'amount': '500000.00',
+-   'application_reference_number': 'LO00000701',
+-   'approval_case_id': '41972087-6936-4df8-8c6f-9c50abd2d25f',
+-   'approval_type': 'sanction',
+-   'current_status': 'approved',
+-   'decision_date': '2026-07-13',
+-   'loan_application_id': '22a36a54-bb6f-4472-992b-fbef24f0ce46',
+-   'related_entity_id': '22a36a54-bb6f-4472-992b-fbef24f0ce46',
+-   'related_entity_type': 'loan_application',
+-   'version': 2}]
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

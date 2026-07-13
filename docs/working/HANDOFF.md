@@ -1,24 +1,29 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_091510_normal_run
+2026-07-13_094017_normal_run
 
 ## Current Status
 
-007B is complete. Source §25.2 now enriches the existing 006G shell without a second create path.
-Credit owns the locked appraisal/review/provenance projection; approvals then snapshots the dated
-approved rule and committee, ordered concrete approvers, amount, related entity, exception route,
-and policy provenance atomically while preserving the submission workflow-event identity.
+007C is complete. CFO/Director queue and detail reads expose only complete version-2-or-later 007B
+snapshots. `assigned_to_me` uses the stored ordered required list, exclusions, pending case state,
+and immutable action ledger; it never re-resolves or re-derives authority from current matrix or
+committee rows. Global readers see routed detail without assignment-scoped actions.
+
+Detail includes §44 approve/reject/return projections, stored rule/committee/policy provenance,
+per-approver decision slots, and M05-FR-002 review facts read through from application/appraisal
+owners. Version-1 shells, missing provenance, acted users, excluded users, makers without read
+permission, and unrelated users are covered. The optional action signature UUID remains an
+unenforced reference until the source signature-record aggregate lands (A-077).
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-13_091510_normal_run/`. RED/GREEN logs cover the absent
-adapter, idempotent exception repeat, no-rule atomic loser, and decided-case rejection. Exact
-₹500,000, above-threshold, and same-amount exception routes pass. Frontend build/typecheck/lint and
-208 tests pass; backend check/migration sync and 553 tests pass with 16 expected PostgreSQL-only
-skips and 93% coverage.
+Evidence is under `.ralph/runs/2026-07-13_094017_normal_run/`. RED/GREEN logs cover absent queue/
+detail routes, acted and closed assignment removal, and incomplete policy provenance. Thirteen
+focused routing tests pass. Frontend build/typecheck/lint and 208 tests pass; backend check,
+migration sync, and 566 tests pass with 16 expected PostgreSQL-only skips and 93% coverage.
 
 ## Next Run
 
-Run `007C-cfo-and-director-threshold-routing`: exclude unrouted version-1 shells and derive queue,
-detail provenance, assignment, and actions only from the complete stored 007B snapshots.
+Architecture review is due after four completed slices. Review through 007C before running the
+already-sharpened `007D-approval-action-api-approve-reject-return`.

@@ -1,0 +1,33 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_missing_loan_limit_provenance_cannot_be_inferred_from_amount (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_missing_loan_limit_provenance_cannot_be_inferred_from_amount)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_094017_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 357, in test_missing_loan_limit_provenance_cannot_be_inferred_from_amount
+    self.assertEqual(response.json()["data"], [])
+AssertionError: Lists differ: [{'approval_case_id': '88aa0775-4e02-449e-[354 chars]: 2}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'approval_case_id': '88aa0775-4e02-449e-9433-b7b66ed0850f', 'approval_type': 'sanction', 'related_entity_type': 'loan_application', 'related_entity_id': '13a4ac32-9f61-498a-9c61-10041176b376', 'loan_application_id': '13a4ac32-9f61-498a-9c61-10041176b376', 'application_reference_number': 'LO00000701', 'amount': '500000.00', 'current_status': 'pending', 'decision_date': '2026-07-13', 'version': 2}
+
++ []
+- [{'amount': '500000.00',
+-   'application_reference_number': 'LO00000701',
+-   'approval_case_id': '88aa0775-4e02-449e-9433-b7b66ed0850f',
+-   'approval_type': 'sanction',
+-   'current_status': 'pending',
+-   'decision_date': '2026-07-13',
+-   'loan_application_id': '13a4ac32-9f61-498a-9c61-10041176b376',
+-   'related_entity_id': '13a4ac32-9f61-498a-9c61-10041176b376',
+-   'related_entity_type': 'loan_application',
+-   'version': 2}]
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

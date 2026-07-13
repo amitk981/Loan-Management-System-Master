@@ -34,6 +34,15 @@ A Director, committee member, or preparer can never approve their own or a relat
 5. Director/relative cases set the general-meeting-evidence requirement flag consumed by 007G (COI-004, M05-FR-012).
 6. Conflicted users retain at most limited read where legally required (COI-005) — default to no assignment-scoped visibility; record the choice as an assumption.
 
+## Run-Ahead Sharpening Review (007C, 2026-07-13)
+
+- Store every exclusion as an object containing at least `user_id` and the source conflict reason;
+  preserve the 007B ordered required snapshot for historical truth, but make 007C's assignment
+  predicate and 007D's execution predicate consume the exclusion identically.
+- Extend the 007C public parity matrix: an excluded actor must not enter `assigned_to_me`, must see
+  no enabled action even if globally readable, and must receive the exact source denial from every
+  007D write without creating an `ApprovalAction`. Keep current committee membership irrelevant.
+
 ## Test Cases
 - Each §17.1 conflict class excludes at enrichment with recorded reason; attempted approval by each returns the exact §17.3 body and an audit row.
 - Exclusion that breaks required authority blocks the case rather than completing with fewer approvers.

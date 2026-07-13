@@ -3,7 +3,9 @@ from django.views.decorators.http import require_http_methods
 
 from sfpcl_credit.api import error_response, list_response, parse_json_body, success_response
 from sfpcl_credit.approvals.modules import approval_matrix_configuration as services
+from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.identity.modules import http_auth
+from sfpcl_credit.identity.modules.auth_service import effective_permission_codes
 
 
 def _authorized(request, manage=False):
@@ -25,6 +27,52 @@ def _failure(request, exc):
     details = exc.message_dict if hasattr(exc, "message_dict") else {"non_field_errors": [str(exc)]}
     return error_response(request, 400, "VALIDATION_ERROR", "Configuration failed validation.",
                           {key: value[0] if isinstance(value, list) else value for key, value in details.items()})
+
+
+@require_http_methods(["GET"])
+def approval_case_collection(request):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if "approvals.case.read" not in effective_permission_codes(user):
+        return error_response(
+            request, 403, "FORBIDDEN", "You do not have approval case read permission."
+        )
+    try:
+        data, pagination = approval_case_engine.list_approval_cases(
+            actor=user, query_params=request.GET
+        )
+        return list_response(data, pagination, request)
+    except ValidationError as exc:
+        details = exc.message_dict if hasattr(exc, "message_dict") else {}
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Approval case filters failed validation.",
+            {key: value[0] if isinstance(value, list) else value for key, value in details.items()},
+        )
+
+
+@require_http_methods(["GET"])
+def approval_case_detail(request, approval_case_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    permissions = effective_permission_codes(user)
+    if "approvals.case.read" not in permissions:
+        return error_response(
+            request, 403, "FORBIDDEN", "You do not have approval case read permission."
+        )
+    try:
+        data = approval_case_engine.get_approval_case(
+            actor=user,
+            case_id=approval_case_id,
+            actor_permissions=permissions,
+        )
+        return success_response(data, request)
+    except ObjectDoesNotExist:
+        return error_response(request, 404, "NOT_FOUND", "Approval case was not found.")
 
 
 @require_http_methods(["GET", "POST"])

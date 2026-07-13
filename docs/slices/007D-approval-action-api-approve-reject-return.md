@@ -53,6 +53,16 @@ Conflict determination (007E), exception register (007F), general-meeting gate (
   are additional rows. Source amount and authority come from immutable 007B projections, never
   request payload or a fresh rule/committee resolver call.
 
+## Run-Ahead Sharpening Review (007C, 2026-07-13)
+
+- Reuse the source §15.4 `ApprovalAction` model/migration introduced as 007C's read ledger; do not
+  create a parallel decision table or mutate `required_approvers_json`. After every successful
+  action, the 007C queue/detail public reads must immediately show the actor removed from
+  `assigned_to_me`, the decision/acted-at projection populated, and all actor actions disabled.
+- Execute through the same complete-routing and pending-assignment predicates that drive 007C's
+  projections. Add parity tests proving any actor/action reported disabled by detail receives the
+  matching write denial with unchanged case/action/sanction/audit/workflow ledgers.
+
 ## Risk Level
 High
 

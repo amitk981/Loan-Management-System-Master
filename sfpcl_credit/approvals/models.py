@@ -222,3 +222,41 @@ class ApprovalCase(models.Model):
                 check=models.Q(version__gte=1), name="approval_case_version_positive"
             )
         ]
+
+
+class ApprovalAction(models.Model):
+    approval_action_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    approval_case = models.ForeignKey(
+        ApprovalCase, on_delete=models.PROTECT, related_name="actions"
+    )
+    approver_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="approval_actions"
+    )
+    approver_role_code = models.CharField(max_length=100, db_index=True)
+    decision = models.CharField(max_length=60, db_index=True)
+    comments = models.TextField(null=True, blank=True)
+    acted_at = models.DateTimeField(default=timezone.now)
+    digital_signature_id = models.UUIDField(null=True, blank=True)
+    ip_address = models.CharField(max_length=80, null=True, blank=True)
+    user_agent = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = "approval_actions"
+        ordering = ["acted_at", "approval_action_id"]
+        indexes = [
+            models.Index(
+                fields=["approval_case", "decision"], name="idx_action_case_decision"
+            )
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["approval_case", "approver_user"],
+                name="unique_case_approver_action",
+            ),
+            models.CheckConstraint(
+                check=models.Q(decision__in=["approved", "rejected", "returned"]),
+                name="approval_action_valid_decision",
+            ),
+        ]

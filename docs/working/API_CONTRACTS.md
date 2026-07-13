@@ -2424,3 +2424,36 @@ rule/committee ids and versions, decision date, concrete `required_approvers`, e
 and committee projections, loan-limit provenance, and case `version`. An identical repeat returns
 the same projection without writes. A conflicting repeat or decided case returns 409. Later matrix,
 committee, pending-proposal, or losing-proposal changes never rewrite the stored projection.
+
+# Approval-case queue and detail reads (007C)
+
+`GET /api/v1/approval-cases/` requires `approvals.case.read` and accepts only `current_status`,
+`approval_type`, `assigned_to_me`, `page`, and `page_size`. It returns the standard top-level
+pagination envelope. `assigned_to_me=true` includes only complete version-2-or-later 007B routing
+snapshots where the caller remains in `required_approvers`, is absent from `excluded_approvers`,
+has no immutable `approval_actions` row, and the case is still pending. Missing/default snapshot
+facts never fall back to amount, the current matrix, or the current committee.
+
+`GET /api/v1/approval-cases/{approval_case_id}/` also requires `approvals.case.read`. Any global
+reader with that permission may read a complete routed case; only a still-pending snapshotted
+approver with the corresponding `approvals.case.approve`, `.reject`, or `.return` permission gets
+an enabled §44 action. A non-reader receives `403 FORBIDDEN`; an incomplete/unrouted shell is not a
+public case and returns `404 NOT_FOUND`. Reads write no audit event.
+
+Detail returns stored authority/provenance (`approval_matrix_rule_id` and version,
+`sanction_committee_id` and version, `decision_date`, ordered required/excluded approvers,
+matrix/committee/loan-limit snapshots, and case `version`). Per-approver `decision`/`acted_at` are
+read from the immutable source §15.4 `approval_actions` ledger; 007C creates no action records.
+
+The nested `review_facts` object is a read-through projection, not approval-case storage:
+
+- `eligibility` and eligible amount come from the appraisal-owned frozen eligibility/loan-limit
+  snapshots.
+- requested amount, purpose, and documentation/completeness status come from the owning loan
+  application.
+- borrowing history and recommendation amount come from the owning appraisal note.
+- risk ratings/mitigation come from the owning risk assessment.
+- `source_references` links the application, appraisal, eligibility, and loan-limit owner APIs.
+
+Changing current matrix/committee rows cannot change queue membership, stored provenance, or
+action assignment for an existing case.

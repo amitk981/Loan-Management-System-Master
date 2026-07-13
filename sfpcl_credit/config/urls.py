@@ -26,6 +26,8 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path("api/v1/approval-cases/", approval_views.approval_case_collection, name="approval-case-list"),
+    path("api/v1/approval-cases/<uuid:approval_case_id>/", approval_views.approval_case_detail, name="approval-case-detail"),
     path("api/v1/approval-matrix-rules/", approval_views.rule_collection, name="approval-matrix-rule-list-create"),
     path("api/v1/approval-matrix-rules/<uuid:approval_matrix_rule_id>/", approval_views.rule_detail, name="approval-matrix-rule-supersede"),
     path("api/v1/sanction-committees/", approval_views.committee_collection, name="sanction-committee-list-create"),
