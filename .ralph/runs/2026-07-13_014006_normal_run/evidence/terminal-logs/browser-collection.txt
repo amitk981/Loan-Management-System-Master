@@ -1,0 +1,6 @@
+Listing tests:
+  [chromium] › portal-application-limit-authority.e2e.spec.ts:9:5 › available projection renders only the three server amounts
+  [chromium] › portal-application-limit-authority.e2e.spec.ts:20:5 › unavailable projection has no invented zero or internal reason
+  [chromium] › portal-application-limit-authority.e2e.spec.ts:29:5 › over-limit advisory is derived only from the server flag
+  [chromium] › portal-application-limit-authority.e2e.spec.ts:36:5 › review repeats the canonical server maximum without recalculation
+Total: 4 tests in 1 file

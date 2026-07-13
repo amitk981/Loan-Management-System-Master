@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Iterable
 
+from sfpcl_credit.api import FORBIDDEN
+
 
 ACCESS_ALLOWED_OWNER = "allowed_owner"
 ACCESS_ALLOWED_TEAM = "allowed_team"
@@ -10,7 +12,6 @@ ACCESS_OWNER_MISMATCH = "owner_mismatch"
 ACCESS_TEAM_MISMATCH = "team_mismatch"
 ACCESS_SCOPE_UNKNOWN = "scope_unknown"
 
-PERMISSION_DENIED = "PERMISSION_DENIED"
 OBJECT_ACCESS_DENIED = "OBJECT_ACCESS_DENIED"
 
 
@@ -37,7 +38,7 @@ def evaluate_object_access(
     actor_teams = set(actor_team_codes)
 
     if required_permission not in actor_permissions:
-        return _deny(ACCESS_MISSING_PERMISSION, PERMISSION_DENIED, required_permission)
+        return _deny(ACCESS_MISSING_PERMISSION, FORBIDDEN, required_permission)
 
     if allow_global:
         return ObjectAccessResult(

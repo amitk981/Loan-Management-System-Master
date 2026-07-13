@@ -1,0 +1,70 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 1 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, approvals, communications, configurations, contenttypes, credit, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying documents.0001_initial... OK
+  Applying members.0007_kycprofile_kycdocument_and_more... OK
+  Applying members.0008_cancelledcheque_bankaccount_and_more... OK
+  Applying identity.0003_portal_member_auth... OK
+  Applying applications.0001_initial... OK
+  Applying applications.0002_loanapplication_submitted_by_user... OK
+  Applying applications.0003_systemsequence_loanrequestregisterentry... OK
+  Applying applications.0004_applicationdocument_and_more... OK
+  Applying applications.0005_application_deficiency... OK
+  Applying applications.0006_rejection_note... OK
+  Applying applications.0007_eligibilityassessment... OK
+  Applying applications.0008_loanlimitassessment... OK
+  Applying applications.0009_loan_limit_policy_snapshot... OK
+  Applying applications.0010_loanapplication_nominee... OK
+  Applying applications.0011_witness... OK
+  Applying credit.0001_credit_assessment_model_ownership... OK
+  Applying credit.0002_riskassessment_loanappraisalnote... OK
+  Applying credit.0003_appraisal_prerequisite_snapshots... OK
+  Applying credit.0004_appraisal_review_facts... OK
+  Applying credit.0005_appraisalreviewdecision... OK
+  Applying approvals.0001_initial... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying credit.0006_legacy_appraisal_history_remediation... OK
+  Applying scheduler.0001_initial... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_witness_list_is_scoped_to_the_requested_application (sfpcl_credit.tests.test_witness_api.WitnessApiTests.test_witness_list_is_scoped_to_the_requested_application) ... FAIL
+
+======================================================================
+FAIL: test_witness_list_is_scoped_to_the_requested_application (sfpcl_credit.tests.test_witness_api.WitnessApiTests.test_witness_list_is_scoped_to_the_requested_application)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_235256_normal_run/sfpcl_credit/tests/test_witness_api.py", line 122, in test_witness_list_is_scoped_to_the_requested_application
+    assert_pagination_shape(self, body)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_235256_normal_run/sfpcl_credit/tests/api_contracts.py", line 76, in assert_pagination_shape
+    pagination = _assert_field(test_case, payload, "pagination")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_235256_normal_run/sfpcl_credit/tests/api_contracts.py", line 33, in _assert_field
+    test_case.assertIn(
+AssertionError: 'pagination' not found in {'success': True, 'data': [{'witness_id': 'e2691f20-1043-4a3d-8dcc-4c9bdd756881', 'loan_application_id': '3b5a86ef-1a60-4a09-a40e-93a5aca8bc28', 'member_id': 'e3ee525a-4f82-474d-aa67-86490a622979', 'folio_number': 'FOL-004E', 'witness_name': 'Sita Patil', 'pan': {'masked': '******234F', 'can_view_full': False}, 'aadhaar': {'masked': '********1234', 'can_view_full': False}, 'shareholder_verified_flag': True, 'verification_status': 'verified', 'verified_by_user_id': 'a72e14bf-f168-4bd3-b927-9f58ebd128b0', 'verified_at': '2026-07-10T18:29:19.110008Z', 'created_at': '2026-07-10T18:29:19.110084Z'}], 'meta': {'request_id': None, 'timestamp': '2026-07-10T18:29:19.129540Z', 'api_version': 'v1'}} : Missing contract field: pagination
+
+----------------------------------------------------------------------
+Ran 1 test in 0.040s
+
+FAILED (failures=1)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

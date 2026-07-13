@@ -1,0 +1,10 @@
+# PostgreSQL Repair Environment
+
+- Engine: django.db.backends.postgresql
+- Database: sfpcl_credit
+- Test database: test_sfpcl_credit
+- Host: (local Unix socket)
+- Port: 5432
+- PostgreSQL maintenance database: postgres
+- PostgreSQL server version: 14.20 (Homebrew)
+- Credentials: intentionally omitted

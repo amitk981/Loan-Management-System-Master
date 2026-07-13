@@ -72,7 +72,6 @@ export interface PortalNominee {
 }
 
 export interface PortalProduceSupply {
-  member_id: string;
   records: { financial_year: string; crop_type: string | null; quantity: string | null; value_amount: string | null; verified_flag: boolean }[];
   summary: { continuous_supply_years?: string | null; total_quantity?: string | null; total_value?: string | null };
   source_status: string;
@@ -125,6 +124,19 @@ export interface PortalApplicationList {
   items: PortalApplication[];
 }
 
+export interface PortalApplicationLimitProjection {
+  status: 'available' | 'unavailable';
+  unavailable_reason: string | null;
+  shareholding_based_limit_amount: string | null;
+  land_based_limit_amount: string | null;
+  final_eligible_loan_amount: string | null;
+  requested_amount: string | null;
+  amount_within_limit_flag: boolean | null;
+  exception_required_flag: boolean | null;
+  calculated_as_of_date: string | null;
+  calculation_rule_version: string | null;
+}
+
 export interface PortalApplicationDraftPayload {
   nominee_id?: string | null;
   required_loan_amount?: string;
@@ -139,6 +151,9 @@ export interface PortalApplicationDraftPayload {
 export const fetchPortalDashboard = () => request<PortalDashboard>('/api/v1/portal/dashboard/');
 export const fetchPortalProfile = () => request<PortalProfile>('/api/v1/portal/profile/');
 export const fetchPortalProduceSupply = () => request<PortalProduceSupply>('/api/v1/portal/produce-supply/');
+export const fetchPortalApplicationLimitProjection = (requestedAmount?: string) => request<PortalApplicationLimitProjection>(
+  `/api/v1/portal/application-limit-projection/${requestedAmount ? `?requested_amount=${encodeURIComponent(requestedAmount)}` : ''}`,
+);
 export const fetchPortalApplications = () => request<PortalApplicationList>('/api/v1/portal/applications/');
 export const fetchPortalApplication = (applicationId: string) => request<PortalApplication>(`/api/v1/portal/applications/${applicationId}/`);
 export const createPortalApplicationDraft = (payload: PortalApplicationDraftPayload) => request<PortalApplication>('/api/v1/portal/applications/', { method: 'POST', body: payload });

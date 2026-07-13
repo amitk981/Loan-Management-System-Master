@@ -1,0 +1,51 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_012200_normal_run/sfpcl-lms
+
+ ✓ src/services/authSession.test.ts (15 tests) 10ms
+ ✓ src/services/creditAssessmentApi.test.ts (5 tests) 8ms
+ ✓ src/services/applicationIntakeApi.test.ts (5 tests) 8ms
+ ✓ src/pages/members/Borrower360.test.tsx (4 tests) 82ms
+ ✓ src/pages/applications/ApplicationDetail.test.tsx (9 tests) 71ms
+ ✓ src/services/portalApi.test.ts (4 tests) 6ms
+ ✓ src/services/navigationPermissions.test.ts (7 tests) 10ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.test.tsx (22 tests) 174ms
+ ✓ src/pages/members/MemberProfile.test.tsx (26 tests) 196ms
+ ✓ src/pages/applications/CompletenessWorkbench.test.tsx (5 tests) 78ms
+ ✓ src/pages/Dashboard.test.tsx (13 tests) 40ms
+ ✓ src/services/tracerApi.test.ts (2 tests) 4ms
+ ✓ src/pages/notifications/NotificationsCenter.test.tsx (6 tests) 29ms
+ ✓ src/pages/borrower/portal/PortalMemberViews.test.tsx (4 tests) 39ms
+ ✓ src/pages/members/MemberDirectory.test.tsx (5 tests) 36ms
+ ✓ src/pages/applications/ApplicationList.test.tsx (2 tests) 32ms
+ ✓ src/utils/applicationDisplay.test.ts (5 tests) 2ms
+ ✓ src/contexts/RoleContext.test.tsx (2 tests) 7ms
+ ✓ src/pages/profile/MyProfile.test.tsx (1 test) 9ms
+ ✓ src/pages/applications/NomineeSelectionViews.test.tsx (3 tests) 8ms
+ ✓ src/pages/sanction/SanctionWorkbench.test.tsx (2 tests) 16ms
+ ✓ src/pages/borrower/portal/auth/MP00_Login.test.tsx (2 tests) 17ms
+ ✓ src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx (4 tests) 152ms
+ ✓ src/pages/members/MemberProfile.container.test.tsx (4 tests) 247ms
+ ✓ src/services/demoAuthFlag.test.tsx (3 tests) 2152ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > fails closed when the flag is unset  1627ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > fails closed when the flag is explicit false  311ms
+ ✓ src/pages/applications/WitnessPanel.container.test.tsx (10 tests) 937ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.container.test.tsx (14 tests) 1160ms
+ ✓ src/pages/members/MemberGovernanceForm.test.tsx (5 tests) 1589ms
+   ✓ MemberGovernanceForm > submits the institution create variant without individual identity/profile fields  877ms
+   ✓ MemberGovernanceForm > submits every individual registration profile field  554ms
+ ✓ src/pages/members/MemberGovernanceForm.container.test.tsx (15 tests) 6843ms
+   ✓ MemberGovernanceForm production container > routes Directory registration into canonical Profile readback before an ordinary update readback  2816ms
+   ✓ MemberGovernanceForm production container > submits the complete individual_farmer body through the shared HTTP transport  1180ms
+   ✓ MemberGovernanceForm production container > submits the complete fpc body through the shared HTTP transport  966ms
+   ✓ MemberGovernanceForm production container > submits the complete producer_institution body through the shared HTTP transport  1090ms
+
+ Test Files  29 passed (29)
+      Tests  204 passed (204)
+   Start at  01:31:09
+   Duration  10.80s (transform 3.75s, setup 0ms, collect 7.47s, tests 13.96s, environment 2.35s, prepare 1.72s)
+

@@ -16,6 +16,7 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
 - Applications: `ApplicationList`, `NewApplication`, `ApplicationDetail`, `CompletenessWorkbench`
 - Members: `MemberDirectory`, `MemberProfile`, `Borrower360`
 - Appraisal and sanction: `AppraisalWorkbench`, `SanctionWorkbench`
+- `AppraisalWorkbench` and Application Detail's credit tab consume Epic 006 staff APIs (006H).
 - Documentation and disbursement: `DocumentationHub`, `DisbursementHub`, `PaymentAuthorisationHub`
 - Servicing: `LoanAccount360`, `RepaymentsHub`, `InterestManagement`, `MonitoringDashboard`
 - Default/closure/compliance: `DefaultRecoveryHub`, `LoanClosureHub`, `ComplianceDashboard`, `GrievancesHub`, `AuditArchiveHub`, `RegistersHub`
@@ -40,6 +41,7 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
 | `NotificationsCenter` | `GET /api/v1/notifications/`; `POST /api/v1/notifications/{notification_id}/mark-read/` | API-backed staff inbox | Uses backend direct/role/team notification rows. Mark-read sends the current `read_state_version`; stale writes surface the existing refresh/error pattern for `409 STALE_WRITE`. No local mock fallback should be reintroduced. |
 | `MyProfile` | `GET /api/v1/auth/me/` | API-backed read-only profile | Shows the authenticated user's backend identity, active role, teams, and permissions. Profile editing remains future scope. |
 | `TaskInbox` | None implemented yet | Prototype/mock shell | Source S03 requires actionable assigned/role tasks with filters and workflow actions. 003J added only internal `scheduled_jobs` metadata/services and did not add a task inbox endpoint, dashboard task generation, notification generation rules, or scheduler UI. |
+| `CompletenessWorkbench` | `GET /api/v1/loan-applications/`; `GET /document-checklist/`; `GET/POST /completeness-check/`; deficiency and rejection-note actions | API-backed staff workbench | 005E2 removes application/member/document mocks, seeded deficiency decisions, and client reference generation. Queue/checklist/history facts and all action outcomes are re-read from backend state; canonical `/auth/me` permission controls interim action visibility. |
 
 ## API-Backed Borrower Portal Screens
 
@@ -47,7 +49,7 @@ React 19, Vite, TypeScript, Tailwind CSS, React Router, lucide-react, Agentation
 |---|---|---|---|
 | `MP03_Dashboard` | `GET /api/v1/portal/dashboard/` | API-backed own-data shell | Uses the active portal account member scope, own application counts, open-deficiency pending count, and source-backed zero/empty placeholders for future loan, repayment, signature, KYC-update, closure, and notice modules. |
 | `MP04_MyProfile` | `GET /api/v1/portal/profile/` | API-backed masked profile | Reuses Epic 004 member subresources for profile, nominees, shareholding, land/crop, KYC, bank accounts, and cancelled cheques. PAN/Aadhaar/bank values stay masked; no portal reveal control exists. |
-| `MP05_NewApplication` | `POST/PATCH /api/v1/portal/applications/`; `POST /submit/` | API-backed draft/submit shell | Saves and submits own portal application facts through the active portal account scope. Document upload/checklist and returned-deficiency resubmission remain future portal slices. |
+| `MP05_NewApplication` | `GET /api/v1/portal/application-limit-projection/`; `POST/PATCH /api/v1/portal/applications/`; `POST /submit/` | API-backed draft/submit and limit projection | Displays only the current redacted server limit projection in the approved three-card composition, including unavailable/error/exception states; saves and submits own portal application facts through the active portal account scope. Document upload/checklist and returned-deficiency resubmission remain future portal slices. |
 | `MP09_MyApplications` | `GET /api/v1/portal/applications/` | API-backed own list | Renders own draft/submitted/returned application rows with loading, empty, error, and returned-incomplete borrower-action states. No local application mock fallback. |
 | `MP10_ApplicationStatus` | `GET /api/v1/portal/applications/{loan_application_id}/` | API-backed own status detail | Renders selected own application status, pending owner, timeline, summary, and open deficiency metadata. Deficiency response/upload controls are intentionally not implemented in 005G. |
 | `MP22_ProduceSupply` | `GET /api/v1/portal/produce-supply/` | API-backed empty shell | Prototype screen number is supply history, not spec MP22 grievance detail. Returns an empty state until `produce_supply_records` exists in the backend. |

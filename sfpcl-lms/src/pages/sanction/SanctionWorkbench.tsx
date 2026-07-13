@@ -36,6 +36,7 @@ interface SanctionWorkbenchProps {
 
 const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication, initialSelectedId, applications, onUpdateStatus }) => {
   const { can } = useRole();
+  const hasAuthoritativeInput = applications !== undefined;
   const loanApplications = applications ?? mockApplications;
   const sanctionQueue = loanApplications.filter(a =>
     ['pending_sanction_committee_approval', 'pending_sanction', 'under_sanction_review', 'clarification_requested'].includes(a.status)
@@ -150,7 +151,14 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
       {sanctionQueue.length === 0 ? (
         <div className="card text-center py-16">
           <Check size={32} className="text-green-500 mx-auto mb-3" />
-          <p className="text-slate-600 font-semibold">Sanction queue is clear</p>
+          <p className="text-slate-600 font-semibold">
+            {hasAuthoritativeInput ? 'Sanction queue data is not connected yet' : 'Sanction queue is clear'}
+          </p>
+          {hasAuthoritativeInput && (
+            <p className="text-sm text-slate-500 mt-1">
+              No application records are shown until sanction API wiring is complete.
+            </p>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

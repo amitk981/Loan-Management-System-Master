@@ -1,0 +1,12 @@
+Prior independent trusted-browser red signal (2026-07-12_174521_repair), reproduced identically in both runs:
+
+Error: locator.fill: strict mode violation: getByLabel('PAN') resolved to 2 elements:
+1) input aria-label="Signatory PAN"
+2) input aria-label="PAN"
+
+Failing seam:
+fillCommon -> page.getByLabel(label).fill(...), where label is PAN during institution registration.
+
+The individual POST, canonical GET, ordinary PATCH, second canonical GET, and first screenshot all
+completed before this failure. The institution form contained one exact PAN label and one exact
+Signatory PAN label, isolating the failure to Playwright's default substring label matching.

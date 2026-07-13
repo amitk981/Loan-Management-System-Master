@@ -1,0 +1,72 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.017s
+
+OK
+Destroying test database for alias 'default'...
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.039s
+
+OK
+Destroying test database for alias 'default'...
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.033s
+
+OK
+Destroying test database for alias 'default'...
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.033s
+
+OK
+Destroying test database for alias 'default'...
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.028s
+
+OK
+Destroying test database for alias 'default'...
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.016s
+
+OK
+Destroying test database for alias 'default'...
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.044s
+
+OK
+Destroying test database for alias 'default'...
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.036s
+
+OK
+Destroying test database for alias 'default'...

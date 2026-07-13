@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_recent_inactive_member_qualifies_with_one_year_and_distinct_relaxation_evidence (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_recent_inactive_member_qualifies_with_one_year_and_distinct_relaxation_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_012200_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 465, in test_recent_inactive_member_qualifies_with_one_year_and_distinct_relaxation_evidence
+    self.assertEqual(result.member_active_check, "relaxation")
+AssertionError: 'fail' != 'relaxation'
+- fail
++ relaxation
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

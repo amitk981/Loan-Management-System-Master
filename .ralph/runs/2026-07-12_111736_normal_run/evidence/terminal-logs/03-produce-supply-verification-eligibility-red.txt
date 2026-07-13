@@ -1,0 +1,28 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+FF
+======================================================================
+FAIL: test_separate_checker_verifies_with_optimistic_version_and_maker_is_denied (sfpcl_credit.tests.test_produce_supply_api.ProduceSupplyApiTests.test_separate_checker_verifies_with_optimistic_version_and_maker_is_denied)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_111736_normal_run/sfpcl_credit/tests/test_produce_supply_api.py", line 114, in test_separate_checker_verifies_with_optimistic_version_and_maker_is_denied
+    self.assertEqual(denied.status_code, 403)
+AssertionError: 404 != 403
+
+======================================================================
+FAIL: test_active_member_check_uses_four_continuous_verified_supply_years (sfpcl_credit.tests.test_produce_supply_api.ProduceSupplyApiTests.test_active_member_check_uses_four_continuous_verified_supply_years)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_111736_normal_run/sfpcl_credit/tests/test_produce_supply_api.py", line 148, in test_active_member_check_uses_four_continuous_verified_supply_years
+    self.assertEqual(result["member_active_check"], "pass")
+AssertionError: 'manual_evidence_required' != 'pass'
+- manual_evidence_required
++ pass
+
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.011s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

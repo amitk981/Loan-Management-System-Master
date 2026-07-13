@@ -1,0 +1,4 @@
+Listing tests:
+  [chromium] › member-governance-closure.e2e.spec.ts:17:5 › member creation, canonical update, approved identity correction, and denial use real sessions
+  [chromium] › member-governance-closure.e2e.spec.ts:97:5 › witness capture and correction refetch canonical resources and surface stale and denied states
+Total: 2 tests in 1 file

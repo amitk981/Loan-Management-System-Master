@@ -7,6 +7,7 @@ from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermiss
 from sfpcl_credit.members.models import (
     IndividualMemberProfile,
     Member,
+    MemberScopeAssignment,
     ProducerInstitutionProfile,
 )
 from sfpcl_credit.tests.api_contracts import (
@@ -64,6 +65,10 @@ class MemberProfileApiTests(TestCase):
             self.reveal_aadhaar,
         )
         self.plain = self._user("plain@sfpcl.example", "PlainPass123!")
+        for user in (self.reader, self.pan_revealer, self.aadhaar_revealer):
+            MemberScopeAssignment.objects.create(
+                user=user, permission_code=MEMBER_READ_PERMISSION, scope_type="global"
+            )
         self.member = Member.objects.create(
             member_number="MEM-00125",
             member_type="individual_farmer",
@@ -200,7 +205,11 @@ class MemberProfileApiTests(TestCase):
         )
         self.assertIsNone(data["producer_institution_profile"])
         assert_available_actions_shape(self, data["available_actions"])
-        self.assertEqual(data["available_actions"], [])
+        self.assertEqual(
+            {action["action_code"] for action in data["available_actions"]},
+            {"members.member.update", "members.member.reverify_identity", "members.member.identity_change.approve"},
+        )
+        self.assertTrue(all(not action["enabled"] for action in data["available_actions"]))
         serialized = str(data).lower()
         for forbidden in ("pan_encrypted", "aadhaar_encrypted", "pan_hash", "aadhaar_hash", "abcde1234f", "123456789012"):
             self.assertNotIn(forbidden, serialized)
@@ -241,7 +250,9 @@ class MemberProfileApiTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 data = response.json()["data"]
                 assert_available_actions_shape(self, data["available_actions"])
-                self.assertEqual(data["available_actions"], [])
+                self.assertFalse(
+                    any(action["action_code"] == "create_loan_application" for action in data["available_actions"])
+                )
 
     def test_member_profile_returns_not_found_for_unknown_or_deleted_member(self):
         for member_id in (uuid.uuid4(), self.deleted.member_id):

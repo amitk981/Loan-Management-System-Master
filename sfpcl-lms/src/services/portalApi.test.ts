@@ -35,12 +35,12 @@ describe('portal member API client', () => {
       .fn()
       .mockResolvedValueOnce(ok({ member: { display_name: 'Ganesh Thorat' }, application_counts: { total: 1 }, pending_actions: { open_deficiencies: 1 }, loan_counts: { active: 0 }, notices: [] }))
       .mockResolvedValueOnce(ok({ member: { display_name: 'Ganesh Thorat', pan: { masked: '******234F' } }, nominees: [], shareholdings: [], land_holdings: [], crop_plans: [], bank_accounts: [], cancelled_cheques: [], kyc_profile: null }))
-      .mockResolvedValueOnce(ok({ member_id: 'member-1', records: [], summary: {}, source_status: 'model_not_implemented' }));
+      .mockResolvedValueOnce(ok({ records: [], summary: {}, source_status: 'persisted_no_verified_records' }));
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(fetchPortalDashboard()).resolves.toMatchObject({ member: { display_name: 'Ganesh Thorat' } });
     await expect(fetchPortalProfile()).resolves.toMatchObject({ member: { pan: { masked: '******234F' } } });
-    await expect(fetchPortalProduceSupply()).resolves.toMatchObject({ source_status: 'model_not_implemented' });
+    await expect(fetchPortalProduceSupply()).resolves.toMatchObject({ source_status: 'persisted_no_verified_records' });
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:8000/api/v1/portal/dashboard/', request());
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://127.0.0.1:8000/api/v1/portal/profile/', request());

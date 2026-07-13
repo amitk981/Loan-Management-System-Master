@@ -37,6 +37,13 @@ Credit, CFO, CS, and Compliance manage real delinquency, closure, and statutory 
 5. Wire `AuditArchiveHub.tsx` to archive records (011J) — read-only with audited downloads.
 6. Loading, empty, error, unauthorized, and blocked states throughout; existing patterns only.
 
+## Owned Mock Removals
+This slice is the final owner of these files' mock surface — after it, none of them may import `src/data/mockData.ts` or keep inline business fixtures:
+- `src/pages/compliance/ComplianceDashboard.tsx`
+- `src/pages/compliance/GrievancesHub.tsx`
+- `src/pages/compliance/AuditArchiveHub.tsx`
+- `src/pages/defaults/DefaultRecoveryHub.tsx` and `src/pages/closure/LoanClosureHub.tsx` (whatever mock/inline fixtures remain after 011A-011O)
+
 ## Test Cases
 - Closure readiness blockers render from seeded unpaid-balance/security-pending fixtures; NOC action blocked until readiness passes.
 - Recovery execution actions remain hidden/disabled without an approved decision.

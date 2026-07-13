@@ -74,7 +74,7 @@ describe('borrower 360 API client additions', () => {
 
 describe('Borrower360View', () => {
   it('renders API-backed borrower, KYC, shareholding, land, crop, nominee, and bank metadata without mock remnants', () => {
-    const html = [0, 1, 2, 3, 5].map(activeTabIndex => renderBorrower360({ activeTabIndex })).join('\n');
+    const html = [0, 1, 2, 3, 4, 6].map(activeTabIndex => renderBorrower360({ activeTabIndex })).join('\n');
 
     expect(html).toContain('Ramesh Patil');
     expect(html).toContain('Member 360');
@@ -89,6 +89,7 @@ describe('Borrower360View', () => {
     expect(html).toContain('State Bank of India');
     expect(html).toContain('********9012');
     expect(html).toContain('No loan records are available from the backend yet.');
+    expect(html).toContain('No produce supply records are available.');
     expect(html).not.toContain('Sudha Patil');
     expect(html).not.toContain('ABCDE1234F');
     expect(html).not.toContain('123456789012');

@@ -1,0 +1,32 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+FF
+======================================================================
+FAIL: test_role_provenance_does_not_change_explicit_global_verification_scope (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_role_provenance_does_not_change_explicit_global_verification_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 209, in test_role_provenance_does_not_change_explicit_global_verification_scope
+    self.assertEqual([(result.allowed, result.reason) for result in results], [
+AssertionError: Lists differ: [(True, 'allowed_global'), (False, 'owner_mismatch')] != [(True, 'allowed_global'), (True, 'allowed_global')]
+
+First differing element 1:
+(False, 'owner_mismatch')
+(True, 'allowed_global')
+
+- [(True, 'allowed_global'), (False, 'owner_mismatch')]
++ [(True, 'allowed_global'), (True, 'allowed_global')]
+
+======================================================================
+FAIL: test_registry_authority_uses_owner_global_permission_and_object_policy_without_mocks (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_registry_authority_uses_owner_global_permission_and_object_policy_without_mocks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 184, in test_registry_authority_uses_owner_global_permission_and_object_policy_without_mocks
+    with self.assertRaisesRegex(PermissionDenied, "cannot access"):
+AssertionError: PermissionDenied not raised
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.011s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

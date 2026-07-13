@@ -131,6 +131,7 @@ export const CANONICAL_TO_PROTOTYPE_PERMISSIONS: Record<string, Permission> = {
   'applications.loan_application.update': 'edit_application',
   'applications.loan_application.complete_check': 'do_completeness_check',
   'members.member.read': 'view_members',
+  'members.member.create': 'edit_members',
   'members.member.update': 'edit_members',
   'credit.appraisal.create': 'do_appraisal',
   'credit.appraisal.update': 'do_appraisal',
@@ -259,6 +260,26 @@ export const loadStoredAuthSession = (): AuthSession | null => {
 
 export const clearStoredAuthSession = (): void => {
   localStorage.removeItem(AUTH_STORAGE_KEY);
+};
+
+export const authenticatedRequest = async <T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> => {
+  const session = loadStoredAuthSession();
+  if (!session) throw new AuthSessionError('AUTH_REQUIRED', 'Please sign in to continue.', 401);
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: options.method ?? 'GET',
+    headers: { Accept: 'application/json', Authorization: `Bearer ${session.accessToken}`, ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
+    ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
+  });
+  let envelope: ApiEnvelope<T>;
+  try { envelope = await response.json() as ApiEnvelope<T>; }
+  catch { throw new AuthSessionError('MALFORMED_RESPONSE', 'The server returned an invalid response.', response.status); }
+  if (!response.ok || !envelope.success || envelope.data === undefined) {
+    const fieldErrors = envelope.error?.field_errors
+      ? Object.fromEntries(Object.entries(envelope.error.field_errors).map(([field, value]) => [field, String(value)]))
+      : undefined;
+    throw new AuthSessionError(envelope.error?.code ?? 'REQUEST_FAILED', envelope.error?.message ?? 'Request failed.', response.status, fieldErrors);
+  }
+  return envelope.data;
 };
 
 export const loginAndLoadCurrentUser = async (credentials: { email: string; password: string }): Promise<FrontendCurrentUser> => {

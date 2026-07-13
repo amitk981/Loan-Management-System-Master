@@ -1,0 +1,6 @@
+Focused frontend: 23/23 passed across AppraisalWorkbench and creditAssessmentApi.
+Focused backend: 54/54 passed with 3 expected PostgreSQL-only skips.
+Full frontend: typecheck PASS; lint PASS; 138/138 Vitest PASS; Vite build PASS.
+Full backend: Django check PASS; migration sync PASS; 394/394 tests PASS with 5 expected skips;
+coverage 94% (required floor 85%).
+

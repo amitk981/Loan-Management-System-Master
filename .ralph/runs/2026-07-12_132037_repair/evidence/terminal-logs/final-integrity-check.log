@@ -1,0 +1,11 @@
+git diff --check: PASS
+tracked_changed_files=8 (limit 30)
+tracked_lines_changed=421 (limit 2000)
+protected_changes=none
+selected_slice_status=Complete
+required_repair_artifacts=PASS
+frontend_tests=173 PASS
+backend_tests=433 PASS (5 expected SQLite-only skips)
+coverage=94% PASS (floor 85%)
+postgresql_acceptance_run_1=5 tests PASS
+postgresql_acceptance_run_2=5 tests PASS

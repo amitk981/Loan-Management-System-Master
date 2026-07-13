@@ -178,6 +178,23 @@ class CatalogueSeedTests(TestCase):
         )
         self.assertTrue(expected.issubset(compliance_codes))
 
+    def test_deputy_manager_has_each_source_completeness_action_permission(self):
+        seed_catalogue()
+
+        deputy_manager = Role.objects.get(role_code="deputy_manager_finance")
+        codes = set(
+            RolePermission.objects.filter(role=deputy_manager).values_list(
+                "permission__permission_code", flat=True
+            )
+        )
+        self.assertTrue(
+            {
+                "applications.loan_application.complete_check",
+                "applications.loan_application.return_deficiency",
+                "applications.deficiency.resolve",
+            }.issubset(codes)
+        )
+
     def test_management_readonly_dashboard_scope_is_seeded_for_dashboard_roles(self):
         seed_catalogue()
 

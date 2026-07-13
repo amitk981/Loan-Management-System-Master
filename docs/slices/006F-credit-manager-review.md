@@ -1,7 +1,7 @@
 # Slice 006F: Credit Manager Review
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
@@ -19,10 +19,11 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - 006E2
 
 ## Prior Slice Handoff
-- 006E owns one `credit.models.LoanAppraisalNote` and linked `RiskAssessment` per application,
+- 006E2 owns one `credit.models.LoanAppraisalNote` and linked `RiskAssessment` per application,
   draft editing, immutable two-day TAT facts, and `draft -> review_pending` submission through
-  `AppraisalWorkflow`. The note stores prerequisite assessment UUID snapshots without concrete
-  assessment-model FKs.
+  `AppraisalWorkflow`. The note stores exact appraisal-owned `eligibility_snapshot_json` and
+  `loan_limit_snapshot_json`, same-UUID provenance IDs, `repayment_capacity_notes`, persisted
+  `submission_remarks`, and `prerequisite_provenance` without concrete assessment-model FKs.
 - Extend the existing `AppraisalWorkflow.review(...)` interface and existing thin application view
   pattern. Do not move review behavior into `applications.services` or query eligibility/loan-limit
   rows from the view.
@@ -34,13 +35,19 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 - 006E2 freezes the exact prerequisite projections, adds required repayment-capacity notes, and
   persists the submit-for-review reason. Review must require verified snapshot provenance and must
   not reread current assessment rows, even if they were rerun under the same UUID.
+- The 006E2 migration leaves ambiguous history `legacy_unverified`; submit already blocks it.
+  Review must independently reject any non-`verified` provenance as defense in depth and must not
+  invoke the draft-only revalidation action on the reviewer's behalf.
 
 ## Source References
-- docs/source/implementation-roadmap.md section 11
-- docs/source/api-contracts.md sections 22-24
-- docs/source/data-model.md eligibility/appraisal tables
-- docs/source/functional-spec.md
-- docs/source/test-plan.md
+- `docs/source/api-contracts.md` §3 and §24.4: compliance reason, snapshot decisions, and exact
+  `decision` / `review_comments` request boundary.
+- `docs/source/data-model.md` §14.2-§14.4 and §34: stored loan-limit/appraisal facts and atomic
+  appraisal/audit/workflow coordination.
+- `docs/source/codebase-design.md` §12.3 and §26.1-§26.3: review through `AppraisalWorkflow` and
+  transactional interface tests rather than concrete assessment helpers.
+- `docs/source/implementation-roadmap.md` §11, `docs/source/functional-spec.md` M04-FR-008 through
+  M04-FR-010, and `docs/source/test-plan.md` MOD-APPRAISAL-005/MOD-APPRAISAL-007.
 
 ## Prototype Reference
 - sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx
@@ -114,6 +121,9 @@ review success evidence.
 - Review leaves the stored 006B eligibility, 006D loan-limit snapshot, risk assessment, TAT due
   time, repayment-capacity notes, submission reason, and recommendation unchanged. The test must
   rerun a current assessment under the same UUID and prove review still uses 006E2's frozen facts.
+- Static boundary fixtures must still reject package/aliased concrete assessment imports and must
+  positively find the public `AppraisalWorkflow` route; adding `review` must not restore an exact
+  full-class method-set assertion.
 
 ## Visual Acceptance Criteria
 None.
@@ -131,16 +141,16 @@ High
 - The implementation stays within one small Ralph slice.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Database rules followed, if needed
+- [x] Permissions tested, if needed
+- [x] Audit events tested, if needed
 - [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

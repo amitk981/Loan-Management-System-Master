@@ -1,0 +1,16 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/creditAssessmentApi.test.ts src/pages/appraisal/AppraisalWorkbench.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_020739_repair/sfpcl-lms
+
+ ✓ src/services/creditAssessmentApi.test.ts (5 tests) 12ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.test.tsx (17 tests) 153ms
+
+ Test Files  2 passed (2)
+      Tests  22 passed (22)
+   Start at  02:12:10
+   Duration  704ms (transform 231ms, setup 0ms, collect 373ms, tests 165ms, environment 0ms, prepare 82ms)
+

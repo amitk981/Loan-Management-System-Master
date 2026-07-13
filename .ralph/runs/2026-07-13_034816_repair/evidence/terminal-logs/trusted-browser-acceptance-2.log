@@ -1,0 +1,46 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_033219_normal_run/.ralph/runs/2026-07-13_034816_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/portal-application-limit-authority.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/portal-application-limit-authority.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 22:25:17] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › portal-application-limit-authority.e2e.spec.ts:10:5 › available projection renders only the three server amounts (2.0s)
+  ✓  2 [chromium] › portal-application-limit-authority.e2e.spec.ts:22:5 › unavailable projection has no invented zero or internal reason (1.3s)
+  ✓  3 [chromium] › portal-application-limit-authority.e2e.spec.ts:31:5 › over-limit advisory is derived only from the server flag (1.3s)
+  ✘  4 [chromium] › portal-application-limit-authority.e2e.spec.ts:38:5 › review repeats the canonical server maximum without recalculation (30.0s)
+
+
+  1) [chromium] › portal-application-limit-authority.e2e.spec.ts:38:5 › review repeats the canonical server maximum without recalculation 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: 'Mark Uploaded' }).nth(4)[22m
+
+
+      85 |   await page.getByRole('combobox').selectOption('nominee-1');
+      86 |   await page.getByRole('button', { name: 'Documents', exact: true }).click();
+    > 87 |   for (const button of await page.getByRole('button', { name: 'Mark Uploaded' }).all()) await button.click();
+         |                                                                                                      ^
+      88 |   for (const button of await page.getByRole('button', { name: 'Self-attested?' }).all()) await button.click();
+      89 |   await page.getByRole('button', { name: 'Declarations' }).click();
+      90 |   for (const checkbox of await page.getByRole('checkbox').all()) await checkbox.check();
+        at completeApplication (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_033219_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:87:102)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_033219_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:40:3
+
+  Slow test file: [chromium] › portal-application-limit-authority.e2e.spec.ts (34.6s)
+  Consider splitting slow test files to speed up parallel execution
+  1 failed
+    [chromium] › portal-application-limit-authority.e2e.spec.ts:38:5 › review repeats the canonical server maximum without recalculation 
+  3 passed (38.6s)
+
+Exit code: 1

@@ -1,0 +1,12 @@
+Ralph workflow regression: PASS
+Frontend build: PASS (1,871 modules transformed)
+Frontend typecheck: PASS
+Frontend lint: PASS
+Frontend tests: PASS (29 files, 204 tests)
+Django check: PASS (0 issues)
+Migration sync: PASS (no changes detected)
+Backend coverage gate: PASS (494 tests, 12 expected skips, 93% coverage; floor 85%)
+Git diff check: PASS
+
+Note: a first frontend suite run under concurrent full-gate load timed out one unrelated 5-second
+demo-auth test; the isolated full-suite rerun passed all 204 tests in 10.70 seconds.

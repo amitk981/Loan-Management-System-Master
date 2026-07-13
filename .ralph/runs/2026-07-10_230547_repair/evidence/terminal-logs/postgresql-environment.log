@@ -1,0 +1,7 @@
+engine=django.db.backends.postgresql
+configured_database=sfpcl_credit
+test_database=test_sfpcl_credit
+host=(local Unix socket)
+port=5432
+postgresql_server_version=14.20 (Homebrew)
+credentials=omitted

@@ -1,0 +1,8 @@
+Source: `.ralph/runs/2026-07-12_153826_repair/evidence/terminal-logs/trusted-browser-acceptance-{1,2}.log`
+
+The same current focused scenario passed twice outside the coding sandbox after `signOut()` was
+changed to open the Header profile menu through the visible seeded finance-user name and then click
+the real Sign out button. Both runs exited 0 and all three declared screenshots were non-empty.
+
+Run 1: 1 passed (10.8s).
+Run 2: 1 passed.

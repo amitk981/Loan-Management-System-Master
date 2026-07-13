@@ -1,0 +1,99 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 44 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, approvals, communications, configurations, contenttypes, credit, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying documents.0001_initial... OK
+  Applying members.0007_kycprofile_kycdocument_and_more... OK
+  Applying members.0008_cancelledcheque_bankaccount_and_more... OK
+  Applying identity.0003_portal_member_auth... OK
+  Applying applications.0001_initial... OK
+  Applying applications.0002_loanapplication_submitted_by_user... OK
+  Applying applications.0003_systemsequence_loanrequestregisterentry... OK
+  Applying applications.0004_applicationdocument_and_more... OK
+  Applying applications.0005_application_deficiency... OK
+  Applying applications.0006_rejection_note... OK
+  Applying applications.0007_eligibilityassessment... OK
+  Applying applications.0008_loanlimitassessment... OK
+  Applying applications.0009_loan_limit_policy_snapshot... OK
+  Applying applications.0010_loanapplication_nominee... OK
+  Applying credit.0001_credit_assessment_model_ownership... OK
+  Applying credit.0002_riskassessment_loanappraisalnote... OK
+  Applying credit.0003_appraisal_prerequisite_snapshots... OK
+  Applying credit.0004_appraisal_review_facts... OK
+  Applying credit.0005_appraisalreviewdecision... OK
+  Applying approvals.0001_initial... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying credit.0006_legacy_appraisal_history_remediation... OK
+  Applying scheduler.0001_initial... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_audit_failure_rolls_back_appraisal_risk_and_workflow (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_audit_failure_rolls_back_appraisal_risk_and_workflow) ... ok
+test_create_rejects_blank_required_summary (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_create_rejects_blank_required_summary) ... ok
+test_create_rejects_non_positive_amount_and_tenure (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_create_rejects_non_positive_amount_and_tenure) ... ok
+test_create_rejects_non_text_risk_mitigation_notes (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_create_rejects_non_text_risk_mitigation_notes) ... ok
+test_create_rejects_recommendation_above_non_exception_loan_limit (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_create_rejects_recommendation_above_non_exception_loan_limit) ... ok
+test_create_rejects_unknown_fields_without_success_evidence (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_create_rejects_unknown_fields_without_success_evidence) ... ok
+test_create_rejects_unknown_nested_risk_rating (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_create_rejects_unknown_nested_risk_rating) ... ok
+test_create_rejects_unknown_recommendation (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_create_rejects_unknown_recommendation) ... ok
+test_create_requires_eligible_and_loan_limit_snapshots (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_create_requires_eligible_and_loan_limit_snapshots) ... ok
+test_create_requires_non_blank_repayment_capacity_notes_without_writes (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_create_requires_non_blank_repayment_capacity_notes_without_writes) ... ok
+test_create_requires_only_appraisal_create_and_risk_manage_permissions (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_create_requires_only_appraisal_create_and_risk_manage_permissions) ... ok
+test_create_update_and_submit_permissions_are_independent (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_create_update_and_submit_permissions_are_independent) ... ok
+test_credit_manager_rejects_appraisal_and_creates_one_unsent_rejection_note (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_credit_manager_rejects_appraisal_and_creates_one_unsent_rejection_note) ... ok
+test_credit_manager_review_permission_can_read_credit_domain_appraisal (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_credit_manager_review_permission_can_read_credit_domain_appraisal) ... ok
+test_credit_manager_reviews_submitted_appraisal_with_metadata_only_evidence (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_credit_manager_reviews_submitted_appraisal_with_metadata_only_evidence) ... ok
+test_existing_exception_flag_allows_recommendation_above_stored_limit (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_existing_exception_flag_allows_recommendation_above_stored_limit) ... ok
+test_legacy_review_pending_revalidation_pins_facts_and_stays_pending (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_legacy_review_pending_revalidation_pins_facts_and_stays_pending) ... ok
+test_legacy_reviewed_revalidation_requires_fresh_review_before_sanction (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_legacy_reviewed_revalidation_requires_fresh_review_before_sanction) ... ok
+test_legacy_unverified_draft_requires_scoped_revalidation_before_submit (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_legacy_unverified_draft_requires_scoped_revalidation_before_submit) ... ok
+test_owner_creates_and_reads_appraisal_with_linked_risk_and_tat (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_owner_creates_and_reads_appraisal_with_linked_risk_and_tat) ... ok
+test_patch_requires_risk_manage_only_when_nested_risk_changes (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_patch_requires_risk_manage_only_when_nested_risk_changes) ... ok
+test_patch_updates_only_supplied_draft_fields_and_preserves_due_time (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_patch_updates_only_supplied_draft_fields_and_preserves_due_time) ... ok
+test_permission_and_object_scope_denials_create_no_success_evidence (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_permission_and_object_scope_denials_create_no_success_evidence) ... ok
+test_rejected_review_requires_explicit_source_rejection_note_fields (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_rejected_review_requires_explicit_source_rejection_note_fields) ... ok
+test_rejection_failures_roll_back_appraisal_note_and_all_success_evidence (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_rejection_failures_roll_back_appraisal_note_and_all_success_evidence) ... ok
+test_returned_appraisal_can_be_revised_resubmitted_and_reviewed (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_returned_appraisal_can_be_revised_resubmitted_and_reviewed) ... ok
+test_revalidation_rejects_malformed_scope_and_terminal_states_without_writes (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_revalidation_rejects_malformed_scope_and_terminal_states_without_writes) ... ok
+test_revalidation_requires_both_scopes_and_rolls_back_workflow_failure (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_revalidation_requires_both_scopes_and_rolls_back_workflow_failure) ... ok
+test_review_enforces_independent_permission_object_scope_and_maker_checker (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_review_enforces_independent_permission_object_scope_and_maker_checker) ... ok
+test_review_preserves_frozen_appraisal_facts_and_rolls_back_evidence_failure (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_review_preserves_frozen_appraisal_facts_and_rolls_back_evidence_failure) ... ok
+test_review_validates_payload_provenance_and_state_without_success_evidence (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_review_validates_payload_provenance_and_state_without_success_evidence) ... ok
+test_reviewed_revalidation_rolls_back_authority_clear_on_evidence_failure (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_reviewed_revalidation_rolls_back_authority_clear_on_evidence_failure) ... ok
+test_same_uuid_prerequisite_replacement_cannot_change_frozen_appraisal (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_same_uuid_prerequisite_replacement_cannot_change_frozen_appraisal) ... ok
+test_submit_rejects_blank_remarks_without_transition_evidence (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_submit_rejects_blank_remarks_without_transition_evidence) ... ok
+test_submit_transitions_draft_once_and_locks_later_edits (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_submit_transitions_draft_once_and_locks_later_edits) ... ok
+test_tat_boundary_is_within_at_due_time_and_breached_after (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_tat_boundary_is_within_at_due_time_and_breached_after) ... ok
+test_update_revalidation_and_submit_failures_roll_back_all_writes (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_update_revalidation_and_submit_failures_roll_back_all_writes) ... ok
+test_duplicate_terminal_reviews_append_one_complete_decision_and_no_loser_evidence (sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests.test_duplicate_terminal_reviews_append_one_complete_decision_and_no_loser_evidence) ... skipped 'Authoritative appraisal concurrency proof requires PostgreSQL integration settings.'
+test_rejected_review_serializes_before_stale_draft_patch_without_deadlock (sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests.test_rejected_review_serializes_before_stale_draft_patch_without_deadlock) ... skipped 'Authoritative appraisal concurrency proof requires PostgreSQL integration settings.'
+test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only (sfpcl_credit.tests.test_appraisal_api.AppraisalHistoryHardeningMigrationTests.test_forward_repair_requires_positive_exact_chronology_and_backfills_latest_only) ... ok
+test_reverse_drops_history_without_relabeling_unproven_provenance (sfpcl_credit.tests.test_appraisal_api.AppraisalHistoryHardeningMigrationTests.test_reverse_drops_history_without_relabeling_unproven_provenance) ... ok
+test_migration_copies_only_chronologically_proven_legacy_projections (sfpcl_credit.tests.test_appraisal_api.AppraisalSnapshotMigrationTests.test_migration_copies_only_chronologically_proven_legacy_projections) ... ok
+test_forward_backfills_returned_projection_after_resubmission (sfpcl_credit.tests.test_appraisal_api.LegacyAppraisalRemediationMigrationTests.test_forward_backfills_returned_projection_after_resubmission) ... ok
+test_forward_is_selective_preserves_cycles_and_is_idempotent (sfpcl_credit.tests.test_appraisal_api.LegacyAppraisalRemediationMigrationTests.test_forward_is_selective_preserves_cycles_and_is_idempotent) ... ok
+
+----------------------------------------------------------------------
+Ran 44 tests in 2.765s
+
+OK (skipped=2)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

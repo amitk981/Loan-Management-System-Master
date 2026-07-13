@@ -1,0 +1,8 @@
+Command: npm run typecheck && npm run lint && npm test && npm run build
+Exit code: 0
+
+- TypeScript typecheck: passed.
+- ESLint src: passed.
+- Vitest: 29 files, 208 tests passed; affected container 16 tests passed in 2651 ms.
+- Vite production build: passed; 1871 modules transformed in 2.36 s.
+- Existing Vite CJS deprecation and bundle-size warnings remain non-failing.

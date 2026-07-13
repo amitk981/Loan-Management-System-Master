@@ -1,0 +1,4 @@
+Listing tests:
+  [chromium] › portal-auth-interaction.e2e.spec.ts:27:7 › portal auth rendered interaction authority (005FA4) › empty and populated portal forms have one real-session path
+  [chromium] › portal-auth-interaction.e2e.spec.ts:77:7 › portal auth rendered interaction authority (005FA4) › failed network logout clears the backend identity and every protected surface
+Total: 2 tests in 1 file

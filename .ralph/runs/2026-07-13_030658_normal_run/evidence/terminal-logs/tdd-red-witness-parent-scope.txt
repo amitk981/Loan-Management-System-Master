@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_credit_manager_parent_scope_does_not_turn_random_ids_into_an_existence_oracle (sfpcl_credit.tests.test_witness_api.WitnessApiTests.test_credit_manager_parent_scope_does_not_turn_random_ids_into_an_existence_oracle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_030658_normal_run/sfpcl_credit/tests/test_witness_api.py", line 558, in test_credit_manager_parent_scope_does_not_turn_random_ids_into_an_existence_oracle
+    self.assertEqual(random_parent.status_code, 403)
+AssertionError: 404 != 403
+
+----------------------------------------------------------------------
+Ran 1 test in 0.033s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

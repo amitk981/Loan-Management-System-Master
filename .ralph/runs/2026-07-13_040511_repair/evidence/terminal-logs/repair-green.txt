@@ -1,0 +1,11 @@
+Post-repair deterministic evidence:
+
+- The trusted spec collects exactly four tests, including the submit/refetch/reload review case.
+- TypeScript accepts all exact accessible-name locators.
+- The mounted MP05 lifecycle suite passes 7/7, including exact create/submit/refetch and 400/403/409.
+- The full frontend suite passes 207/207.
+- Source/DOM comparison confirms the helper lists exactly the five declaration labels and two
+  signature labels rendered by MP05, with no page-wide checkbox collection remaining in the spec.
+
+The original unsandboxed browser scenario must still be rerun by the orchestrator; local Chromium
+cannot launch in the coding sandbox, so this file does not claim browser execution or screenshots.

@@ -1,0 +1,10 @@
+Ranked hypotheses and result:
+
+1. Hidden switch input is clicked instead of its label: partially true, but it is not a declaration.
+2. React rerender makes indexed declarations stale: not the current failure; the first seven pass.
+3. Page-wide locator includes unrelated shell switches: confirmed. Seven declaration controls are
+   followed by an unrelated `switchInput`, exactly matching the trusted trace.
+4. Transient overlay: falsified by the stable repeated wrapping-label interception for 30 seconds.
+
+Repair: replace the page-wide checkbox collection with sequential exact accessible-name resolution
+for the five declarations and two signatures. No production code changed.

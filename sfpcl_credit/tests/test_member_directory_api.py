@@ -1,7 +1,7 @@
 from django.test import Client, TestCase
 
 from sfpcl_credit.identity.models import Permission, Role, RolePermission, User
-from sfpcl_credit.members.models import Member
+from sfpcl_credit.members.models import Member, MemberScopeAssignment
 from sfpcl_credit.tests.api_contracts import assert_error_envelope, assert_pagination_shape
 
 
@@ -33,6 +33,11 @@ class MemberDirectoryApiTests(TestCase):
             email="plain.members@sfpcl.example",
             password="PlainPass123!",
             grant_member_read=False,
+        )
+        MemberScopeAssignment.objects.create(
+            user=self.credit_manager,
+            permission_code=MEMBER_READ_PERMISSION,
+            scope_type="global",
         )
         self._create_member(
             member_number="MEM-00125",

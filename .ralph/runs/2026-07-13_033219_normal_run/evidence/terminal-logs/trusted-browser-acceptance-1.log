@@ -1,0 +1,45 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_033219_normal_run/.ralph/runs/2026-07-13_033219_normal_run/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/portal-application-limit-authority.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/portal-application-limit-authority.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 22:16:57] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › portal-application-limit-authority.e2e.spec.ts:10:5 › available projection renders only the three server amounts (2.3s)
+  ✓  2 [chromium] › portal-application-limit-authority.e2e.spec.ts:22:5 › unavailable projection has no invented zero or internal reason (1.2s)
+  ✓  3 [chromium] › portal-application-limit-authority.e2e.spec.ts:31:5 › over-limit advisory is derived only from the server flag (1.3s)
+  ✘  4 [chromium] › portal-application-limit-authority.e2e.spec.ts:38:5 › review repeats the canonical server maximum without recalculation (993ms)
+
+
+  1) [chromium] › portal-application-limit-authority.e2e.spec.ts:38:5 › review repeats the canonical server maximum without recalculation 
+
+    Error: locator.click: Error: strict mode violation: getByRole('button', { name: 'Documents' }) resolved to 2 elements:
+        1) <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors group text-slate-600 hover:bg-slate-50 hover:text-slate-900 ">…</button> aka getByRole('button', { name: 'My Documents' })
+        2) <button class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors bg-slate-50 text-slate-500 hover:bg-slate-100">…</button> aka getByRole('button', { name: 'Documents', exact: true })
+
+    Call log:
+    [2m  - waiting for getByRole('button', { name: 'Documents' })[22m
+
+
+      84 |   await page.getByRole('button', { name: 'Nominee' }).click();
+      85 |   await page.getByRole('combobox').selectOption('nominee-1');
+    > 86 |   await page.getByRole('button', { name: 'Documents' }).click();
+         |                                                         ^
+      87 |   for (const button of await page.getByRole('button', { name: 'Mark Uploaded' }).all()) await button.click();
+      88 |   for (const button of await page.getByRole('button', { name: 'Self-attested?' }).all()) await button.click();
+      89 |   await page.getByRole('button', { name: 'Declarations' }).click();
+        at completeApplication (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_033219_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:86:57)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_033219_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:40:3
+
+  1 failed
+    [chromium] › portal-application-limit-authority.e2e.spec.ts:38:5 › review repeats the canonical server maximum without recalculation 
+  3 passed (11.1s)
+
+Exit code: 1

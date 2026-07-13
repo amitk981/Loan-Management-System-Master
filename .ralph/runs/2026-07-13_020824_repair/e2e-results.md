@@ -1,0 +1,16 @@
+# e2e Results
+
+- PASS: slice-specific trusted browser contract is valid.
+- PASS: README E2E command resolves the shared venv through Git's common directory.
+- PASS: Playwright pins the dashboard baseline timezone to Asia/Kolkata.
+- FAIL: first trusted slice-specific browser run did not pass.
+- FAIL: second trusted slice-specific browser run did not pass.
+- FAIL: one or more declared browser screenshots are missing or empty.
+
+Declared specs:
+- e2e/portal-application-limit-authority.e2e.spec.ts
+Declared screenshots:
+- portal-limit-available.png
+- portal-limit-unavailable.png
+- portal-limit-over-limit-advisory.png
+- portal-limit-review-maximum.png

@@ -1,0 +1,13 @@
+Command:
+source scripts/lib/ralph-postgresql-acceptance.sh
+postgresql_acceptance_log_passes postgresql-acceptance-1.log
+postgresql_acceptance_log_passes postgresql-acceptance-2.log
+
+PASS ordinal=1
+Found 5 test(s).
+Ran 5 tests in 4.586s
+OK
+PASS ordinal=2
+Found 5 test(s).
+Ran 5 tests in 4.476s
+OK

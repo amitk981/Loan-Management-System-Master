@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006H3-appraisal-workbench-prototype-fidelity-restoration.md
+ M docs/slices/006X-mvp-end-to-end-happy-path-tracer-bullet.md
+ M docs/working/HANDOFF.md
+ M docs/working/IMPLEMENTATION_SLICE_INDEX.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-005-application-intake.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+?? .ralph/runs/2026-07-11_212738_architecture_review/
+?? docs/slices/005E4-completeness-action-authority-and-browser-proof.md
+?? docs/slices/006H7-credit-action-parity-and-container-proof.md

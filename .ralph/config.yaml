@@ -74,7 +74,11 @@ agent:
 run:
   default_iterations: 1
   max_iterations: 3
+  # A repeated unchanged failure receives at most this many repair attempts.
   max_retries: 2
+  # When validation progresses to a different failure signature, keep repairing
+  # the same quarantined worktree up to this overall safety ceiling.
+  max_progressive_repairs: 5
   require_clean_git: true
   use_worktree: true
   allow_no_worktree_override: false
@@ -88,6 +92,8 @@ run:
   # (see docs/working/RELEASE_PROMOTION.md). ralph-run.sh refuses to run on any other branch.
   integration_branch: staging
   agent_timeout_seconds: 7200  # watchdog: a hung agent fails into the repair path
+  environment_setup_timeout_seconds: 900  # dependency preparation is non-interactive and bounded
+  validation_timeout_seconds: 3600  # watchdog: gates are unattended and must never wait forever
   auto_deploy: false
   architecture_review_every_completed_slices: 4
 

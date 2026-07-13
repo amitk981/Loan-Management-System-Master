@@ -14,6 +14,7 @@ interface ApiEnvelope<T> {
     field_errors?: Record<string, string>;
   };
   pagination?: Pagination;
+  actions?: ApplicationAvailableAction[];
 }
 
 export interface Pagination {
@@ -60,12 +61,45 @@ export interface StaffApplication {
   nominee?: ApplicationNomineeSummary | null;
 }
 
+export interface ApplicationWitness {
+  witness_id: string;
+  loan_application_id: string;
+  member_id: string;
+  verification_shareholding_id: string | null;
+  folio_number: string | null;
+  witness_name: string;
+  address: string;
+  mobile: string;
+  pan: { masked: string | null; can_view_full: boolean };
+  aadhaar: { masked: string | null; can_view_full: boolean };
+  shareholder_verified_flag: boolean;
+  verification_status: string;
+  verified_at: string | null;
+  version: number;
+  actions: ApplicationAvailableAction[];
+}
+
+export interface ApplicationWitnessCollection {
+  items: ApplicationWitness[];
+  actions: ApplicationAvailableAction[];
+}
+
+export interface CreateApplicationWitnessPayload {
+  member_id: string;
+  witness_name: string;
+  pan: string;
+  aadhaar: string;
+  address: string;
+  mobile: string;
+}
+
 export interface ApplicationAvailableAction {
   action_code: string;
   label: string;
   enabled: boolean;
   disabled_reason: string | null;
   required_permission: string;
+  required_role: string | null;
 }
 
 export interface ApplicationNomineeSummary {
@@ -110,6 +144,44 @@ export interface ApplicationDocumentChecklist {
   items: ApplicationDocumentChecklistItem[];
 }
 
+export interface ApplicationCompleteness {
+  loan_application_id: string;
+  application_reference_number: string | null;
+  application_status: string;
+  current_stage: string;
+  completeness_status: string;
+  member: StaffApplicationMember;
+  nominee: ApplicationNomineeSummary | null;
+  nominee_selection_status: string;
+  required_checklist_items: ApplicationDocumentChecklistItem[];
+  blocking_document_types: string[];
+  can_generate_reference: boolean;
+  available_actions: ApplicationAvailableAction[];
+}
+
+export const joinChecklistProjections = (
+  completeness: ApplicationCompleteness,
+  documents: ApplicationDocumentChecklist,
+): ApplicationCompleteness => {
+  if (documents.loan_application_id !== completeness.loan_application_id) {
+    throw new Error('Checklist projections disagree on the loan application.');
+  }
+  const documentRows = new Map(documents.items.map(item => [item.document_type, item]));
+  if (documentRows.size !== completeness.required_checklist_items.length) {
+    throw new Error('Checklist projections disagree on required document types.');
+  }
+  const required_checklist_items = completeness.required_checklist_items.map(item => {
+    const document = documentRows.get(item.document_type);
+    const same = document
+      && document.submission_status === item.submission_status
+      && document.verification_status === item.verification_status
+      && (document.latest_application_document_id ?? null) === (item.latest_application_document_id ?? null);
+    if (!same) throw new Error(`Checklist projections disagree for ${item.document_type}.`);
+    return { ...item, ...document, complete: item.complete, reason_code: item.reason_code };
+  });
+  return { ...completeness, required_checklist_items };
+};
+
 export interface ApplicationDeficiency {
   deficiency_id: string;
   item_code: string;
@@ -126,6 +198,38 @@ export interface ApplicationDeficiency {
 export interface ApplicationDeficiencies {
   loan_application_id: string;
   items: ApplicationDeficiency[];
+  available_actions?: ApplicationAvailableAction[];
+}
+
+export interface ReturnWithDeficienciesPayload {
+  communication_mode: string;
+  message: string;
+  items: Array<{ item_code: string; remarks?: string }>;
+}
+
+export interface ReturnedApplicationDeficiencies extends ApplicationDeficiencies {
+  application_reference_number: string | null;
+  application_status: string;
+  current_stage: string;
+  completeness_status: string;
+  communication_mode: string;
+  message: string;
+}
+
+export interface ApplicationRejectionNote {
+  rejection_note_id: string;
+  loan_application_id?: string;
+  note_status: string;
+  rejection_stage?: string;
+  rejection_reason_category?: string;
+}
+
+export interface RejectionNotePayload {
+  rejection_stage: 'completeness';
+  rejection_reason_category: string;
+  detailed_reason: string;
+  reapply_allowed_flag: boolean;
+  communication_mode: string;
 }
 
 export interface LoanRequestRegisterRow {
@@ -212,6 +316,28 @@ export const fetchApplicationDetail = async (applicationId: string): Promise<Sta
   return envelope.data as StaffApplication;
 };
 
+export const fetchApplicationWitnesses = async (applicationId: string): Promise<ApplicationWitnessCollection> => {
+  const envelope = await request<ApplicationWitness[]>(`/api/v1/loan-applications/${applicationId}/witnesses/`);
+  return { items: envelope.data ?? [], actions: (envelope as ApiEnvelope<ApplicationWitness[]> & { actions?: ApplicationAvailableAction[] }).actions ?? [] };
+};
+
+export const createApplicationWitness = async (
+  applicationId: string,
+  payload: CreateApplicationWitnessPayload,
+): Promise<ApplicationWitness> => {
+  const envelope = await request<ApplicationWitness>(`/api/v1/loan-applications/${applicationId}/witnesses/`, 'POST', payload);
+  return envelope.data as ApplicationWitness;
+};
+
+export const updateApplicationWitness = async (
+  applicationId: string,
+  witnessId: string,
+  payload: { version: number; witness_name?: string; address?: string; mobile?: string; pan?: string; aadhaar?: string },
+): Promise<ApplicationWitness> => {
+  const envelope = await request<ApplicationWitness>(`/api/v1/loan-applications/${applicationId}/witnesses/${witnessId}/`, 'PATCH', payload);
+  return envelope.data as ApplicationWitness;
+};
+
 export const fetchApplicationDocumentChecklist = async (
   applicationId: string,
 ): Promise<ApplicationDocumentChecklist> => {
@@ -219,11 +345,49 @@ export const fetchApplicationDocumentChecklist = async (
   return envelope.data ?? { loan_application_id: applicationId, items: [] };
 };
 
+export const fetchApplicationCompleteness = async (
+  applicationId: string,
+): Promise<ApplicationCompleteness> => {
+  const envelope = await request<ApplicationCompleteness>(`/api/v1/loan-applications/${applicationId}/completeness-check/`);
+  return envelope.data as ApplicationCompleteness;
+};
+
 export const fetchApplicationDeficiencies = async (
   applicationId: string,
 ): Promise<ApplicationDeficiencies> => {
   const envelope = await request<ApplicationDeficiencies>(`/api/v1/loan-applications/${applicationId}/deficiencies/`);
-  return envelope.data ?? { loan_application_id: applicationId, items: [] };
+  return envelope.data ?? { loan_application_id: applicationId, items: [], available_actions: [] };
+};
+
+export const passApplicationCompleteness = async (
+  applicationId: string,
+): Promise<StaffApplication> => {
+  const envelope = await request<StaffApplication>(`/api/v1/loan-applications/${applicationId}/completeness-check/pass/`, 'POST', {});
+  return envelope.data as StaffApplication;
+};
+
+export const returnApplicationWithDeficiencies = async (
+  applicationId: string,
+  payload: ReturnWithDeficienciesPayload,
+): Promise<ReturnedApplicationDeficiencies> => {
+  const envelope = await request<ReturnedApplicationDeficiencies>(`/api/v1/loan-applications/${applicationId}/return-with-deficiencies/`, 'POST', payload);
+  return envelope.data as ReturnedApplicationDeficiencies;
+};
+
+export const resolveApplicationDeficiency = async (
+  deficiencyId: string,
+  payload: { resolution_notes: string },
+): Promise<ApplicationDeficiency> => {
+  const envelope = await request<ApplicationDeficiency>(`/api/v1/deficiencies/${deficiencyId}/resolve/`, 'POST', payload);
+  return envelope.data as ApplicationDeficiency;
+};
+
+export const createApplicationRejectionNote = async (
+  applicationId: string,
+  payload: RejectionNotePayload,
+): Promise<ApplicationRejectionNote> => {
+  const envelope = await request<ApplicationRejectionNote>(`/api/v1/loan-applications/${applicationId}/rejection-note/`, 'POST', payload);
+  return envelope.data as ApplicationRejectionNote;
 };
 
 export const createStaffApplicationDraft = async (

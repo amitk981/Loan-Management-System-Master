@@ -1,5 +1,250 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## CR-002 Member Governance Container CI Timeout
+
+- Complete registration fixture entry uses synchronous labeled-control change events, eliminating
+  avoidable per-character scheduling while retaining real navigation, submit, canonical readback,
+  exact request bodies, and one typed ordinary update.
+- A regression assertion permits exactly that one deliberate `userEvent.type` call. The affected
+  routed journey passes at 1604-1836 ms across the full suite and five repeated focused sequences,
+  leaving the following parameterized journey clean.
+
+## 006Y16 Witness Parent Scope Contract Closure
+
+- Credit Manager authority remains stage-bound: an existing Credit Assessment application is in
+  domain, but the role alone is not row-independent global scope for an unresolved identifier.
+- Witness resource authority ordering is permission, parent object scope, parent absence, then
+  child lookup. Existing out-of-domain and random parent UUIDs therefore return the identical `403
+  OBJECT_ACCESS_DENIED`; an in-domain existing parent can reach the normal missing-child `404`.
+- Denied requests preserve complete Witness, correction-history, audit, and workflow evidence. The
+  canonical ordering and envelopes are recorded in `docs/working/API_CONTRACTS.md`.
+
+## Architecture Review 2026-07-13 - Witness Parent Scope Contract
+
+- 006Y15's absent-parent resolver grants a Credit Manager global scope without the application row
+  whose Credit Assessment stage normally establishes §19.2 authority. An existing pre-credit parent
+  can therefore return `403` while a random parent returns `404`, recreating an existence oracle.
+- `006Y16` owns one authority predicate for present/absent parents, preserves `404` only for a
+  documented row-independent global scope, retains the two-kind behavioral matrix, and records the
+  final `403`/`404` ordering in `API_CONTRACTS.md`.
+
+## 006Y15 Witness Authority Matrix Behavioral Closure
+
+- Globally authorised credit managers with witness-update permission receive the normal `404
+  NOT_FOUND` for an absent parent application. Owners and other non-global actors cannot use random
+  parent identifiers as an existence oracle; existing and random out-of-scope parents retain the
+  identical `403 OBJECT_ACCESS_DENIED` contract.
+- Contact and identity unknown-field rows now execute independently through the public action
+  projection and PATCH boundary. Each asserts the exact six-field enabled action, the authoritative
+  field error, and an unchanged Witness/history/AuditLog/WorkflowEvent snapshot.
+- Behavioral coverage contains no authority-evaluator mocks or internal call-count assertions.
+
+## Architecture Review 2026-07-13 - Witness Behavioral Matrix Residual
+
+- 006Y14 closes out-of-scope parent enumeration and adds substantive contact/identity corrections,
+  but it omits unknown-field rows, does not project the exact action for scope cases, and does not
+  prove the promised normal `404` for an authorised in-scope missing parent. `006Y15` owns a fully
+  observable, independently selectable two-kind matrix without internal authority mocks.
+
+## 006Y14 Witness Parent Non-Disclosure and Matrix Closure
+
+- Witness resource PATCH now resolves parent authority through the application-owned module before
+  child lookup. Existing out-of-scope and unknown parent identifiers return the same standard `403
+  OBJECT_ACCESS_DENIED` fact and write no witness/history/audit/workflow evidence.
+- Contact and identity correction rows independently execute missing-permission projection/write
+  parity, parent/child scope denial, stale version, malformed/non-object JSON, immutable fields, and
+  success; identity also executes original-verifier maker-checker parity. Every projected action
+  retains the exact six-field API shape.
+- The internal mock-call-count seam test was removed. HTTP behavior plus complete evidence snapshots
+  now prove the application-authority and witness-correction boundaries.
+
+## Architecture Review 2026-07-12 - Witness Parent Non-Disclosure Residual
+
+- 006Y12 correctly makes existing/random witness IDs indistinguishable under one out-of-scope
+  application, but PATCH still returns `404` for a missing parent before authority and `403` for an
+  existing out-of-scope parent. `006Y14` moves parent non-disclosure ahead of child lookup.
+- The promised backend contact/identity cross-product remains example-based: object denial uses a
+  contact payload, while maker-checker, stale, malformed, immutable, and success paths are not all
+  executed for both kinds with exact action/write/zero-evidence parity. `006Y14` adds the complete
+  public matrix and removes reliance on internal seam call counts.
+- 006Y13's routed and real-session create/update/request/approval behavior is substantive; no
+  corrective finding was opened for M02-FR-001 or M02-FR-012.
+
+## 006Y13 Member Mutation Success Interaction Closure
+
+- The mounted real `App` route now proves Directory registration transitions into the production
+  Profile container and ordinary update uses one exact PATCH plus one canonical detail GET. Conflicting
+  mutation display values cannot leak because only the masked canonical response renders.
+- The trusted-browser member-governance ledger now asserts three exact creates, ordinary update,
+  identity request, checker approval, and eight canonical reads in order; it persists the exact request
+  table beside the existing five screenshots for each independent orchestrator run.
+- Repair verification established that canonical detail masks mobile numbers. An unchanged masked
+  mobile is therefore omitted from an ordinary partial PATCH; only a newly entered mobile value may
+  be sent, preventing the display mask from replacing persisted contact data.
+- Follow-up trusted-browser repair established that protected-identity requests must serialize a
+  separate delta body: optimistic `version`, changed `pan` and/or `aadhaar`, and `reason` only.
+  Ordinary profile fields hydrated in the same form must never cross the identity-request boundary.
+
+## 006Y12 Witness Authority and Non-Disclosure Closure
+
+- Generic application access and witness correction projection/write execute one lower-level
+  `application_authority` evaluator while the services compatibility function preserves existing
+  callers without a runtime cycle.
+- Witness PATCH checks update permission and application object scope before witness lookup.
+  Existing and random witness IDs outside scope return indistinguishable `403
+  OBJECT_ACCESS_DENIED` errors and create no witness/history/audit/workflow evidence.
+- The boundary regression proves behavioral seam execution through HTTP projection and PATCH. The
+  mounted two-kind error matrix and trusted-browser three-screenshot contract remain unchanged.
+
+## Architecture Review 2026-07-12 - Witness Authority and Member Success Residuals
+
+- 006Y10 removes its runtime cycle but copies application object-access policy into the witness
+  module, checks PATCH authority after resource lookup, and does not deliver its required two-kind
+  backend denial matrix. `006Y12` owns one shared authority seam, non-disclosure before lookup, and
+  complete backend/mounted/browser parity.
+- 006Y11 substantively proves three complete member creates and all named mounted failure classes.
+  Successful ordinary update, identity request, and approval are not mounted with exact mutation +
+  canonical-read assertions, and browser request instrumentation covers creates only. `006Y13` owns
+  the routed-container and real-session success ledger without changing approved UI composition.
+
+## 006Y11 Member Form Container and Error Matrix Closure
+
+- Complete individual, FPC, and Producer Institution bodies now cross the real member HTTP client and
+  transition into the production Member Profile container, which performs one canonical detail GET
+  and renders masked member identities.
+- Create/update/identity-request mounted failures cover 400/403/409 with one mutation, exact backend
+  field/reason display, and no success callback/refetch. Approval covers the same status matrix in the
+  mounted profile container and now renders the backend reason through the existing alert composition.
+- The browser scenario adds a distinct Producer Institution, a persistent per-evidence-run identity
+  counter, exact mutation/read counts, and the complete six-field enabled approval action assertion.
+
+## CR-003 Member Governance Container PR-CI Timeout
+
+- Mounted registration and ordinary-update coverage is split at the canonical profile boundary.
+  Routed create retains App/Directory navigation, the exact POST body/ledger, and canonical readback;
+  update retains one ordinary typed edit, the exact PATCH body/ledger, and canonical readback.
+- Deterministic labeled-control fixture entry remains for complete bodies. Twenty consecutive runs of
+  the two focused tests plus all three immediately following complete-body variants pass without a
+  timeout increase or asynchronous cleanup leak.
+
+## Architecture Review 2026-07-12 - Witness/Member Interaction Acceptance
+
+- 006Y7 substantively closes Registry object-aware identity approval and both PostgreSQL duplicate
+  races. The action/write evaluation is shared and the public Registry methods enforce authority.
+- 006Y8's browser successes are real, but its backend matrix omits correction-write permission/
+  object denials, mounted tests omit all `400`/`403`/`409` responses, and its authority evaluator
+  imports generic services back while serialization imports the evaluator. `006Y10` owns one acyclic
+  seam, exact negative parity, one-call mounted failures, and explicit browser PATCH/GET counts.
+- 006Y9 proves real individual/FPC creates and requester/checker approval, but its new mounted test
+  only deduplicates a GET. It does not execute full-field production containers, `400`/`403`/`409`,
+  or the separately named Producer Institution category. `006Y11` owns those closures. M02-FR-012
+  remains substantively implemented; M02-FR-001 interaction confidence remains partial.
+
+## Architecture Review 2026-07-12 - Registry/Witness Residual Closures
+
+- 006Y8 replaces the generic witness `update` action with exact `correct_contact` and
+  `correct_identity` six-field actions. Projection and PATCH share permission, application scope,
+  maker-checker, and version evaluation; the original verifier retains contact correction but sees
+  the identity action disabled with the write's verbatim reason. The routed browser contract uses
+  real finance/checker sessions and owns three canonical-reload screenshots.
+
+- 006Y7 makes identity-approval projection/write consume the Registry's one complete permission,
+  object-scope, requester-checker, request/member-version, pending-state, and KYC evaluation. The
+  serializer only translates the Registry's exact six-field action; it no longer imports back into
+  the Registry. PostgreSQL duplicate-create and competing-approval races pass twice with one winner,
+  one field-validation loser, and exact member/request/history/audit cardinality.
+
+- 006Y5 completed the §13.2 fields and public Registry facade but did not execute its required
+  PostgreSQL duplicate-create/identity-approval races. Identity approval projection also omits the
+  member object-scope check performed by the write. 006Y7 owns one full evaluation plus concurrent
+  one-winner/standard-duplicate proof.
+- 006Y5's form tests mock API wrappers and provide no real-session/screenshots for complete
+  individual/institution registration or identity approval. 006Y9 owns mounted and trusted-browser
+  canonical readback, masking, and `400`/`403`/`409` proof.
+- 006Y6 persisted S09 address/mobile and protected correction history, but its generic Update action
+  ignores the identity maker-checker check enforced by the write; the slice also omitted its required
+  real browser flow. 006Y8 owns contact/identity-specific authority parity and routed screenshots.
+
+## Architecture Review 2026-07-12 - Member Governance Correctives
+
+- Codebase design §10.1 requires member writes behind `members.modules.member_registry`, including
+  duplicate PAN rejection. 006Y placed them in generic services, did not check duplicate PAN/Aadhaar,
+  and left malformed nested-profile/integrity edges outside complete standard-envelope tests.
+- M02-FR-012 says verified identity changes require an approved change request. A-065's reason-only
+  reverification intentionally lacks that approval fact, so 006Y3 adds a persisted request and
+  separate permission-based checker approval without hard-coding an approver role.
+- 006Y change history omits nested create values and records `null` for address old values. 006Y3
+  owns complete masked field diffs, duplicate races, deep-module authority, full §13.2 forms, and
+  routed/browser mutation proof.
+
+## 006Y5 Member Registry Closure
+
+- `MemberRegistry` is the public create/update/detail/request/approve seam. It evaluates exact
+  permissions and the existing global member-object fallback internally; HTTP views only translate
+  module results to standard envelopes.
+- Proposed PAN/Aadhaar values are duplicate-checked at request and approval time. Database
+  uniqueness failures are translated to field validation inside the atomic workflow, so member,
+  request status, history, and audit evidence roll back together.
+- Identity approval actions and writes share the requester/checker, pending-state, member-version,
+  KYC-state, and permission evaluation. A requester with checker permission sees the same disabled
+  maker-checker reason returned by the write.
+- The staff registration modal now sends every API §13.2 individual and institution profile field;
+  successful mutations retain canonical server refetch behavior and protected identifiers remain
+  masked outside immediate write payloads.
+- 006Y2 requires witness edit but delivered GET/POST only under A-066. 006Y4 owns versioned audited
+  correction, immutable 004E2 evidence, resource actions, canonical refetch, and mounted/browser
+  `400`/`403`/`409` proof.
+
+## 006Y Member Identity Governance
+
+- §13.2 member create persists individual or institution profiles and protects PAN/Aadhaar and
+  institutional signatory identifiers with the existing token/hash boundary. Every create writes
+  masked change history and metadata-only audit evidence.
+- Ordinary member PATCH is optimistic (`version` required). Verified PAN/Aadhaar is locked; a
+  reasoned reverification action is the only correction route and atomically resets KYC to pending.
+- Member detail projects six-field update/reverification actions from the same permission and KYC
+  predicates used by writes. Stale/denied writes preserve member/history/KYC/audit counts, except
+  the required metadata-only locked-identity rejection audit.
+- Member creators/editors cannot verify that member's KYC documents; verifier separation is
+  enforced at the backend verification action.
+
+## 006Y2 Member and Witness UI Closure
+
+- Staff member registration supports individual and institution variants through the 006Y create
+  endpoint. Profile update and reasoned identity reverification send the current member version and
+  refetch canonical detail instead of locally merging mutation responses.
+- Verified identity values render masked and read-only. Only the resource's
+  `members.member.update` and `members.member.reverify_identity` actions expose profile controls;
+  backend validation, permission, identity-lock, and stale-write results remain authoritative.
+- Application Detail reads/captures witnesses through the 004E2 application-scoped GET/POST seam,
+  then refetches immutable verification-time shareholding and folio evidence. The delivered contract
+  has no update endpoint; A-066 records why edit is not invented client-side.
+
+## Architecture Review 2026-07-11 - 004E Witness Hardening
+
+- 004E's successful shareholder/KYC/name/masking/audit behavior is substantive, but malformed or
+  non-object JSON can escape because the adapter does not translate `parse_json_body`'s Django
+  `ValidationError`.
+- The qualifying folio is written only to the creation audit. `Witness` stores no shareholding FK
+  or folio snapshot, and GET reselects current shareholdings, so later mutations can rewrite the
+  displayed verification basis. Automatic FK/`db_index` indexes are also duplicated by explicit
+  `Meta.indexes`.
+- Corrective 004E2 owns standard malformed-body envelopes, immutable shareholding/folio evidence,
+  conservative legacy backfill, stable-read tests, a thin application-owned query seam, and
+  redundant-index cleanup. M02-FR-009/BR-010 is not fully closed until it lands.
+
+## 004E2 Witness Evidence Hardening
+
+- New witness creation snapshots the exact qualifying shareholding UUID and folio; list/create
+  responses use only that verification-time evidence and do not reselect current holdings.
+- Legacy backfill requires one creation-audit folio and exactly one matching shareholding for the
+  witness member. Missing, conflicting, or ambiguous evidence stays nullable rather than guessed.
+- Malformed JSON and non-object bodies return `400 VALIDATION_ERROR` without witness/audit/workflow
+  writes. Witness list query plus serialization composition now lives behind the application
+  service seam.
+- The named application, PAN-hash, and Aadhaar-hash indexes remain exactly once; their redundant
+  automatic FK/`db_index` companions are removed.
+
 Source extracts opened incidentally during 003K queue sharpening. `docs/source/` remains
 authoritative; the 004A run must still read the full Epic 004 file and named source references
 before implementation.
@@ -173,6 +418,21 @@ before implementation.
 - `data-model.md` §11.2 share certificates remain deferred: certificate number, optional
   distinctive range, share count, optional document FK, and active/pledged/transferred status should
   be implemented in a small follow-up slice, not folded into unrelated land/KYC work.
+
+## 004E Witness Validation Extracts
+- `data-model.md` §10.5 makes a witness application-scoped and requires protected PAN/Aadhaar,
+  persisted shareholder verification, verification metadata, and KYC. `screen-spec.md` S09 requires
+  a real SFPCL shareholder/member or folio and says documentation cannot complete before witness
+  verification.
+- `auth-permissions.md` §15.4 and §26.4 allow Compliance and Company Secretary to record witness
+  KYC, Credit Manager to read, and audit access to remain read-only. The §12.2 catalogue and §34
+  endpoint map omit exact witness permission codes; 004E records this gap and uses narrow
+  `members.witness.read/create` permissions following the source naming convention instead of
+  borrowing nominee/shareholding/KYC permissions.
+- 004E uses nested `GET/POST /api/v1/loan-applications/{id}/witnesses/`, validates application object
+  access, and qualifies only a member with matching name, verified KYC, and at least one active
+  positive shareholding. Caller verification metadata is forbidden; successful creation sets it
+  from persisted facts and writes a metadata-only audit row.
 
 ## 004G/004H Queue-Sharpening Extracts
 - `api-contracts.md` §17.1 defines land-holding endpoints:
@@ -348,3 +608,27 @@ before implementation.
 - Bank account numbers must remain masked-only with `can_view_full: false`; 004K2 must not add a
   bank-account reveal flow, duplicate-active-borrower warning, signature-mismatch workflow,
   payment initiation, or disbursement-readiness UI.
+
+## Architecture Review 2026-07-12 12:52 - Member and Witness Governance Corrections
+
+- `MemberRegistry` must be the public create/update/read/request/approve seam and enforce exact
+  permission plus member object access internally; auth §34.2 requires object access for member
+  detail/update, and views or public service helpers cannot be the only guard.
+- Proposed PAN/Aadhaar changes must be duplicate-checked again under approval locking and translate
+  database uniqueness races to standard field errors with no partial member/history/audit writes.
+- Identity approval projection must disable the requester even when that actor also has the checker
+  permission, using the same maker-checker evaluation and reason as the write.
+- API §13.2 registration still requires the full individual and institution variants listed in
+  corrective slice 006Y5; current staff forms submit only a subset.
+- S09 names witness address and mobile in addition to name/PAN/Aadhaar. 006Y6 must persist those
+  contact fields and expose disabled six-field witness actions rather than omitting denied actions.
+
+## 006Y6 Witness Contact and Action Parity Closure
+
+- S09 address is required free text (500-character storage boundary); mobile is optional and, when
+  supplied, contains 7-15 digits after spaces are removed. Both are returned by witness APIs and
+  recorded as plain old/new values in versioned correction history because they are not protected
+  identity evidence.
+- Collection and resource projections retain read/create and read/update actions when disabled,
+  with stable permission or application-object reasons. Application Detail consumes these actions,
+  shows the disabled update reason, and never infers mutation authority.

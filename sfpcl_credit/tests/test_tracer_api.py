@@ -271,6 +271,6 @@ class TracerApiTests(IdentityTestCase):
         )
 
         self.assertEqual(response.status_code, 403)
-        self.assertEqual(response.json()["error"]["code"], "PERMISSION_DENIED")
+        self.assertEqual(response.json()["error"]["code"], "FORBIDDEN")
         self.assertEqual(Member.objects.count(), 0)
         self.assertEqual(AuditLog.objects.filter(action__startswith="tracer.").count(), 0)

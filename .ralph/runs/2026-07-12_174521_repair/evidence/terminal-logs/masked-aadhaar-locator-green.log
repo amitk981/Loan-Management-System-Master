@@ -1,0 +1,8 @@
+  await registerIndividual(page, individual);
+  expect(mutations).toHaveLength(1);
+  expect(canonicalReads).toHaveLength(1);
+  expect(mutations[0].postDataJSON()).toEqual(individual.body);
+  await expect(page.getByText(maskPan(individual.pan))).toBeVisible();
+  await expect(page.getByText(maskAadhaar(individual.aadhaar), { exact: true })).toBeVisible();
+  const ordinaryUpdate = page.waitForResponse(response => response.request().method() === 'PATCH'
+    && /^\/api\/v1\/members\/[0-9a-f-]+\/$/.test(new URL(response.url()).pathname));

@@ -3,8 +3,8 @@
 ## Modes
 - `bootstrap`: create or verify Ralph scaffolding. Does not implement product features.
 - `normal`: pick one eligible vertical slice, create a worktree, run an agent, validate, save evidence, update state, and commit only passing work.
-- `repair`: repair the previous failed slice.
-- `architecture-review`: independent quality review, run automatically by the loop every `architecture_review_every_completed_slices` slices. The reviewer does NOT modify production code. It must: (1) read the diffs of slices merged since the last review; (2) critique test quality — real assertions, edge cases, not just coverage numbers; (3) spot-check doc fidelity against the slice's source references and digests; (4) check for duplication and architecture drift; (5) write findings to `docs/working/REVIEW_FINDINGS.md` (append, newest first) and create or sharpen corrective slices for anything significant; (6) record ADRs for durable decisions; (7) spot-check that the functional-spec requirement IDs (M##-FR-###) of each epic completed since the last review are implemented or explicitly deferred in ASSUMPTIONS.md. This is the independent second pair of eyes on work where the same agent wrote both code and tests.
+- `repair`: repair the previous failed slice in its existing quarantined worktree when structured repair context is available; no work is committed until full independent validation passes.
+- `architecture-review`: independent quality review, run automatically by the loop every `architecture_review_every_completed_slices` slices. The reviewer does NOT modify production code. It must: (1) read the diffs of slices merged since the last review; (2) critique test quality — real assertions, edge cases, not just coverage numbers; (3) spot-check doc fidelity against the slice's source references and digests; (4) check for duplication and architecture drift; (5) write findings to `docs/working/REVIEW_FINDINGS.md` (append, newest first) and create or sharpen corrective slices for anything significant — every new slice must follow the to-issues slice standard so it executes seamlessly: a `## Status` of `Not Started`, a `## Depends On` section listing real slice ids (`- None` when unblocked; create blockers before dependents so references always resolve), and a numeric id that slots its filename at the intended queue position (name order breaks ties among grabbable slices; avoid non-numeric prefixes like `CR-`, which sort after every numeric slice). The orchestrator executes slices in dependency order regardless of name, and validation rejects any run that leaves the queue with dangling references, malformed sections, or dependency cycles; (6) record ADRs for durable decisions; (7) spot-check that the functional-spec requirement IDs (M##-FR-###) of each epic completed since the last review are implemented or explicitly deferred in ASSUMPTIONS.md; (8) verify `docs/working/CONTEXT.md` still describes the repository truthfully (it is read first by every run) and update it when reality has moved; (9) re-check every `Blocked` slice's stated prerequisites against `completed_slices` in `.ralph/state.json` and flip stale blocks back to `Not Started`. This is the independent second pair of eyes on work where the same agent wrote both code and tests.
 
 ## Start Commands
 - Run the whole queue autonomously ("run ralph loop"): `./scripts/ralph-loop.sh`
@@ -31,17 +31,26 @@ The owner granted standing approval for autonomous runs (2026-07-02). Agents nev
 11. Commit only if gates pass and config allows it.
 12. If `auto_merge` is enabled, fast-forward merge the run branch into the `staging` integration branch and remove the worktree; on merge failure the branch is kept for manual review. The owner alone promotes staging to main (`docs/working/RELEASE_PROMOTION.md`).
 
+Validation failures publish a trusted `.ralph/repair-context.json` in the integration checkout. During the active loop, a bounded repair re-enters that registered `ralph/*` worktree, reads the exact prior `failure-summary.md`, preserves the uncommitted slice implementation, and reruns full independent validation. A repeated normalized failure signature stops early; a different downstream failure may use the remaining configured repair budget. Repaired failures do not accumulate across otherwise successful slices.
+
 Note on agent approval mode: codex runs headless (`exec` mode, approval mode `never`) because nobody is at the terminal during AFK runs. The human safety control is the orchestrator-level high-risk gate plus quality gates and this runbook — not interactive prompts.
 
 ## Slice Selection
-Use `.ralph/state.json` first. If architecture review is due, run it unless explicitly overridden. If the previous run failed, prefer repair. Otherwise choose the lowest-numbered `Not Started` slice.
+Use `.ralph/state.json` first. If architecture review is due, run it unless explicitly overridden. If the previous run failed, prefer repair. Otherwise choose the lowest-numbered `Not Started` slice whose `## Depends On` prerequisites are all `Complete` or `Superseded` (the to-issues standard: a slice is grabbable only when its blockers are done). The orchestrator (`select_slice` in `scripts/ralph-run.sh`) enforces this and skips dependency-blocked slices, so never start a slice whose prerequisites are unmet — if the orchestrator hands you one anyway, that is a defect; stop and report rather than no-op. If every remaining slice is blocked, the run exits `queue_blocked` for human review instead of claiming the queue is empty.
 
 ## Quality Gates
 Enforced by `scripts/ralph-validate.sh` on every run:
 - Frontend (`sfpcl-lms/`): `npm run build`, `npm run typecheck`, `npm test` (vitest).
 - Backend (`sfpcl_credit/`): `manage.py check`, full test suite, `makemigrations --check` (models and migrations must stay in sync), and coverage with a hard floor (`coverage_fail_under` in `.ralph/config.yaml`, currently 85%; measured 92% on 2026-07-02 — raise the floor as coverage grows, never lower it).
 - Protected-paths check: the run fails if any guardrail file was modified.
+- Slice-queue lint: the run fails if it leaves `docs/slices/` unexecutable — a slice with an unrecognized status, a pending slice without `## Depends On`, a dangling or ambiguous dependency reference, or a dependency cycle.
+- Status-transition check: only the executed slice may change its `## Status`; architecture reviews may re-park other slices (`Blocked` <-> `Not Started`, `Superseded`) but no run may flip a slice it did not execute to `Complete`.
 - Contract fidelity (checked in review, not by script): API-touching slices follow `docs/source/api-contracts.md` §3 (design principles), §6-8 (envelopes, errors, pagination) and §45 (idempotency for financial actions); model-touching slices follow `docs/source/data-model.md` §30 (indexing) and §34 (transactional integrity); backend module layout follows `docs/source/codebase-design.md`.
+
+Slices that require the authoritative PostgreSQL five-race gate declare
+`postgresql-five-race-acceptance` under an exact `## Runtime Capabilities` heading. The declaration
+drives both the scoped Codex socket permission and independent orchestrator validation; unknown
+capabilities fail closed. Ordinary and undeclared slices use the `:workspace` permission profile.
 A failing gate fails the whole run; failing work is never committed, merged, or pushed. ESLint arrives via slice 002FL, then flip `quality_gates.lint` to true.
 
 ## Stopping Conditions

@@ -1,0 +1,16 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/services/demoAuthFlag.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_205723_normal_run/sfpcl-lms
+
+ ✓ src/services/demoAuthFlag.test.tsx (3 tests) 1284ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > fails closed when the flag is unset  1172ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  21:00:09
+   Duration  1.56s (transform 970ms, setup 0ms, collect 36ms, tests 1.28s, environment 0ms, prepare 40ms)
+

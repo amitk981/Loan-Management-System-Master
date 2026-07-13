@@ -1,0 +1,3 @@
+Listing tests:
+  sfpcl-lms/e2e/completeness-workbench.e2e.spec.ts:9:5 › completeness workbench uses backend actions and captures required states
+Total: 1 test in 1 file

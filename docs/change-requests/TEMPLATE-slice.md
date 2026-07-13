@@ -19,6 +19,9 @@ HOW TO USE (delete this comment block when done):
 ## Status
 Not Started
 
+## Runtime Capabilities
+- <`postgresql-five-race-acceptance` when the exact authoritative PostgreSQL race gate is required; otherwise `none`. Unknown values fail closed.>
+
 ## Parent Epic
 Epic <NNN>: <Epic Title>
 Epic file: `docs/epics/<NNN>-<epic-slug>.md`

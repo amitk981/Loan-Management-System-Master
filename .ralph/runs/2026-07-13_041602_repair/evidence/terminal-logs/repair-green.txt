@@ -1,0 +1,16 @@
+Focused command:
+npm test -- --run src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx -t "renders the approved three-card composition"
+
+Result: PASS; 1 passed, 6 skipped.
+
+Full local gates:
+- npm run build: PASS; 1871 modules transformed.
+- npm run typecheck: PASS.
+- npm run lint: PASS.
+- npm test: PASS; 29 files, 207 tests.
+- manage.py check: PASS; no issues.
+- manage.py makemigrations --check --dry-run: PASS; no changes.
+- coverage test run: PASS; 500 tests, 12 expected skips.
+- coverage report --fail-under=85: PASS; 93% total.
+- Playwright --list: PASS; 4 tests in the declared spec.
+

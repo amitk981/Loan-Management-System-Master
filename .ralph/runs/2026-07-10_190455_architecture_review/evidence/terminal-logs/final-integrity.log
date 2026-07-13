@@ -1,0 +1,43 @@
+$ git status --short
+$ git diff --check
+$ /Users/amitkallapa/LMS/.ralph/venv/bin/python -m json.tool .ralph/state.json
+$ protected-path status scan
+$ diff-limit count
+
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006G-submit-to-sanction.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+?? .ralph/runs/2026-07-10_190455_architecture_review/
+?? docs/adr/ADR-0004-append-only-appraisal-review-decisions.md
+?? docs/slices/006E3-appraisal-history-and-review-authority-hardening.md
+?? docs/slices/006F3-appraisal-lock-order-and-postgresql-concurrency-closure.md
+docs/slices/006F3-appraisal-lock-order-and-postgresql-concurrency-closure.md:1:# Slice 006F3: Appraisal Lock Order and PostgreSQL Concurrency Closure
+docs/slices/006F3-appraisal-lock-order-and-postgresql-concurrency-closure.md:3:## Status
+docs/slices/006F3-appraisal-lock-order-and-postgresql-concurrency-closure.md:4:Not Started
+docs/slices/006F3-appraisal-lock-order-and-postgresql-concurrency-closure.md:16:## Depends On
+docs/slices/006F3-appraisal-lock-order-and-postgresql-concurrency-closure.md:17:- 006E3
+docs/slices/006G-submit-to-sanction.md:3:## Status
+docs/slices/006G-submit-to-sanction.md:4:Not Started
+docs/slices/006G-submit-to-sanction.md:17:## Depends On
+docs/slices/006G-submit-to-sanction.md:18:- 006F3
+docs/slices/006G-submit-to-sanction.md:29:- 006E3 owns positively proven legacy provenance, Credit-Manager-only review authority, and
+docs/slices/006G-submit-to-sanction.md:30:  append-only decision history. 006F3 owns the single application/appraisal/rejection lock order and
+docs/slices/006E3-appraisal-history-and-review-authority-hardening.md:1:# Slice 006E3: Appraisal History and Review Authority Hardening
+docs/slices/006E3-appraisal-history-and-review-authority-hardening.md:3:## Status
+docs/slices/006E3-appraisal-history-and-review-authority-hardening.md:4:Not Started
+docs/slices/006E3-appraisal-history-and-review-authority-hardening.md:16:## Depends On
+changed_status_entries=10
+tracked_lines_changed=208
+
+exit_code=0
+
+$ final artifact/protected-path/diff-limit pass
+listed_changed_files=24
+tracked_changed_files=6
+tracked_lines_changed=208
+protected_paths=clean
+run_artifact_manifest=exact
+exit_code=0

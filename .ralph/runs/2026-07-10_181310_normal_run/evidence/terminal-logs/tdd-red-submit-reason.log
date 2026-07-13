@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_submit_transitions_draft_once_and_locks_later_edits (sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_submit_transitions_draft_once_and_locks_later_edits)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_181310_normal_run/sfpcl_credit/tests/test_appraisal_api.py", line 379, in test_submit_transitions_draft_once_and_locks_later_edits
+    self.assertEqual(
+AssertionError: '' != 'Appraisal completed for Credit Manager review.'
++ Appraisal completed for Credit Manager review.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.027s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

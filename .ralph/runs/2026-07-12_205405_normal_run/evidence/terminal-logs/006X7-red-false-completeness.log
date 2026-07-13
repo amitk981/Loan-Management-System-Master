@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_object_scope_coverage_is_derived_only_from_executable_test_methods (sfpcl_credit.tests.test_credit_action_parity_matrix.MatrixInventoryTests.test_object_scope_coverage_is_derived_only_from_executable_test_methods)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_205405_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 94, in test_object_scope_coverage_is_derived_only_from_executable_test_methods
+    self.assertEqual(executable, PUBLIC_ACTIONS)
+AssertionError: Items in the second set but not the first:
+'credit.eligibility.run'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

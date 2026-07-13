@@ -1,0 +1,18 @@
+Focused verification:
+- npm test -- --run src/pages/members/MemberGovernanceForm.test.tsx src/pages/members/MemberProfile.container.test.tsx
+  PASS: 2 files, 5 tests.
+- E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npx playwright test e2e/member-governance-variants.e2e.spec.ts --list
+  PASS: exactly 1 test in 1 file collected.
+
+Full gates:
+- npm run build: PASS
+- npm run typecheck: PASS
+- npm run lint: PASS
+- npm test: PASS, 28 files and 177 tests
+- /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py check: PASS
+- /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py makemigrations --check --dry-run: PASS
+- coverage test run: PASS, 451 tests with 7 expected SQLite skips
+- coverage report --fail-under=85: PASS, 93% total
+
+Trusted-browser green execution and four screenshots are intentionally delegated to Ralph's two
+independent runs because Chromium cannot launch inside this coding sandbox.

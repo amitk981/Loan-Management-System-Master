@@ -123,7 +123,7 @@ class PortalAuthApiTests(IdentityTestCase):
             headers={"Authorization": f"Bearer {payload['access_token']}"},
         )
         self.assertEqual(staff_response.status_code, 403)
-        self.assertEqual(staff_response.json()["error"]["code"], "PERMISSION_DENIED")
+        self.assertEqual(staff_response.json()["error"]["code"], "FORBIDDEN")
 
     def test_failed_portal_login_audits_source_event_without_sensitive_values(self):
         self._activate_member()

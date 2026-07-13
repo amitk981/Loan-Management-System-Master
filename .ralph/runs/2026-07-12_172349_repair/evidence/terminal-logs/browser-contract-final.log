@@ -1,0 +1,8 @@
+PASS: strict trusted-browser declaration is valid
+Declared spec:
+e2e/member-governance-variants.e2e.spec.ts
+Declared screenshots:
+member-individual-complete-reloaded.png
+member-institution-complete-reloaded.png
+member-identity-requester-denied.png
+member-identity-checker-approved.png

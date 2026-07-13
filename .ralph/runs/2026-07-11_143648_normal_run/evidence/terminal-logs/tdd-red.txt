@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_dependency_import_collector_resolves_package_and_alias_forms (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_dependency_import_collector_resolves_package_and_alias_forms)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_143648_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 271, in test_dependency_import_collector_resolves_package_and_alias_forms
+    self.assertIn("sfpcl_credit.approvals", imported)
+AssertionError: 'sfpcl_credit.approvals' not found in ['sfpcl_credit.approvals.modules.sanction_handoff', 'sfpcl_credit', 'sfpcl_credit.credit', 'sfpcl_credit.credit.modules', 'sfpcl_credit.credit.modules.appraisal_workflow']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { E2E_PASSWORD, TRACER_EMAIL, staffLogin } from './helpers';
+import { E2E_PASSWORD, TRACER_EMAIL, freezeDashboardClock, staffLogin } from './helpers';
 
 // The five lifecycle rows the closed-state tracer must render (002EY req 15).
 const LIFECYCLE_ROWS = ['Member', 'Application', 'Sanction', 'Loan account', 'Repayment'];
@@ -12,12 +12,15 @@ test.describe('staff tracer lifecycle (production auth path)', () => {
   });
 
   test('logs in, walks the tracer to a closed loan, with dashboard + tracer baselines', async ({ page }) => {
+    await freezeDashboardClock(page);
     await staffLogin(page, TRACER_EMAIL, E2E_PASSWORD);
 
     // Authenticated neutral backend-staff dashboard (002EY req 12): the tracer
     // user's only affordance beyond Dashboard is the Tracer workspace. exact: true
     // because the profile button ("E2E Tracer Staff") also contains "Tracer".
     await expect(page.getByRole('button', { name: 'Tracer', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Good afternoon, E2E' })).toBeVisible();
+    await expect(page.getByText('SFPCL LMS · E2E Tracer Staff · Friday 10 July, 2026')).toBeVisible();
     await expect(page).toHaveScreenshot('dashboard.png', { fullPage: true });
 
     // Reach the tracer only through the shell nav — no direct API calls (req 15).

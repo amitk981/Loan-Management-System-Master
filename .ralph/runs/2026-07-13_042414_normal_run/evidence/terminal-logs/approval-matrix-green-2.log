@@ -1,0 +1,28 @@
+Creating test database for alias 'default'...
+Found 6 test(s).
+System check identified no issues (0 silenced).
+F.....
+======================================================================
+FAIL: test_auth_and_atomic_create_overlap_contract (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_auth_and_atomic_create_overlap_contract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_042414_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 159, in test_auth_and_atomic_create_overlap_contract
+    self.assertEqual(
+AssertionError: Tuples differ: (1, 1, 4) != (1, 1, 3)
+
+First differing element 2:
+4
+3
+
+- (1, 1, 4)
+?        ^
+
++ (1, 1, 3)
+?        ^
+
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.037s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

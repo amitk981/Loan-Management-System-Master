@@ -1,0 +1,11 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006H3-appraisal-workbench-prototype-fidelity-restoration.md
+ M docs/slices/006H5-app-shell-application-state-authority.md
+ M docs/slices/006H6-workbench-action-projection-and-interaction-proof.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M sfpcl-lms/src/App.tsx
+ M sfpcl-lms/src/pages/sanction/SanctionWorkbench.tsx
+?? .ralph/runs/2026-07-11_190759_normal_run/
+?? sfpcl-lms/src/pages/sanction/SanctionWorkbench.test.tsx

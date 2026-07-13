@@ -1,7 +1,7 @@
 # Slice 006G: Submit to Sanction
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
@@ -15,16 +15,21 @@ Committee, creating the source-backed approval case once without implementing co
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 006F2
+- 006F3
 
 ## Prior Slice Handoff
 - 006E persists one appraisal/risk package, prerequisite assessment UUID snapshots, recommendation,
   and immutable TAT facts through `credit.modules.appraisal_workflow.AppraisalWorkflow`.
 - 006F owns `review_pending -> reviewed` and maker-checker review facts. 006G must consume the
-  reviewed appraisal interface/state without importing concrete eligibility/loan-limit models or
-  recalculating stored facts.
+  reviewed appraisal interface/state with non-blank `last_review_decision = reviewed`, populated
+  `reviewed_by_user`/`reviewed_at`, and stored `review_comments`, without importing concrete
+  eligibility/loan-limit models or recalculating stored facts.
 - 006E2 owns immutable appraisal prerequisite projections and 006F2 owns the terminal rejected
   branch. Submit must use the frozen projections and must reject `appraisal_status = rejected`.
+- 006E3 owns positively proven legacy provenance, Credit-Manager-only review authority, and
+  append-only decision history. 006F3 owns the single application/appraisal/rejection lock order and
+  the mandatory PostgreSQL concurrency evidence. Sanction submission must preserve those seams and
+  must not collapse immutable decision history back into latest-state fields.
 - Approval-matrix configuration and committee decision actions remain owned by Epic 007; 006G
   creates only the pending sanction submission/case shell required to hand off the reviewed pack.
 
@@ -51,12 +56,19 @@ None for this slice, except updating frontend documentation or fixtures if requi
   through `AppraisalWorkflow.submit_to_sanction(...)`; request accepts only required non-blank
   `remarks` from source §24.5.
 - Require one stored appraisal with `appraisal_status = reviewed`, nullable review fields now
-  populated, and a complete linked risk assessment. Do not rerun eligibility/loan limit or rewrite
-  recommendation/TAT/review facts.
+  populated, `prerequisite_provenance = verified`, and a complete linked risk assessment. Do not
+  rerun eligibility/loan limit, call revalidation, or rewrite recommendation/TAT/review facts.
+- Require at least one immutable review-history row whose latest decision UUID, decision,
+  reviewer, time, comments, and `to_state = reviewed` agree with the appraisal's latest-decision
+  projection. Both `native` and migration-labelled `legacy_latest_only` are acceptable only when
+  this complete consistency check passes; missing or inconsistent history blocks submission.
 - Atomically create one pending approval-case/sanction-submission record linked to the application
   and appraisal, transition the appraisal/application to the source sanction-review state, and
   return the case/application/appraisal IDs and status. A repeated call must not create a second
   case.
+- Preserve 006F3's lock order when implementing the mutation: lock the loan application, then its
+  appraisal, then the existing immutable review-history rows, and only then read/create the pending
+  approval case. Do not introduce an appraisal-first or approval-case-first path.
 - Keep approval-matrix evaluation, approver assignment/decisions, exception approval, meeting
   scheduling, rejection-note generation, documents, and frontend wiring out of scope.
 
@@ -78,12 +90,17 @@ submission. Missing permission is `403 PERMISSION_DENIED`; out-of-scope is
 
 ## Audit Requirements
 Successful submission writes metadata-only appraisal/sanction audit and workflow evidence with
-IDs, state change, actor/time, and request ID. Never copy appraisal summaries, risk notes, review
-comments, or request remarks into audit JSON. Denied/invalid/repeated paths write none.
+application/appraisal/approval-case IDs, the latest immutable review-decision ID, state change,
+actor/time, and request ID. Never copy appraisal summaries, risk notes, review comments, detailed
+rejection text, or request remarks into audit/workflow JSON. Denied/invalid/repeated paths write
+none.
 
 ## Validation Rules
 - Only a `reviewed` appraisal can submit; missing, draft, review-pending, returned, or already
   submitted states return `409 INVALID_STATE_TRANSITION`.
+- A terminal `rejected` appraisal returns `409 INVALID_STATE_TRANSITION` without reading, sending,
+  updating, or deleting its linked 006F2 rejection-note draft and without creating an approval
+  case, sanction audit row, or sanction workflow event.
 - Credit Manager review facts are mandatory and the actor requires the separate sanction-submit
   permission. If the stored loan-limit snapshot requires an exception, flag the pending sanction
   package for later exception routing; do not create or approve the exception in 006G.
@@ -93,11 +110,17 @@ comments, or request remarks into audit JSON. Denied/invalid/repeated paths writ
 ## Test Cases
 - TDD red/green reviewed-appraisal submission creates one pending case and source response.
 - Draft/review-pending/returned/missing/repeated submission paths are blocked without side effects.
+- A rejected appraisal with its linked unsent rejection note is blocked; the note ID/status/send
+  facts and all rejection evidence remain byte-for-byte unchanged.
 - `credit.appraisal.submit_sanction` and object scope are independently enforced; review permission
   alone cannot submit.
 - Stored eligibility/loan-limit IDs, recommendation, risk, TAT, reviewer, and comments remain
-  unchanged; exception-required input is flagged without creating an exception decision.
+  unchanged; the full ordered review history remains unchanged; exception-required input is
+  flagged without creating an exception decision.
 - Forced audit/case failure rolls back every state/evidence write.
+- Two PostgreSQL transactions submitting the same reviewed appraisal serialize without deadlock;
+  one creates the pending case and complete audit/workflow set, while the loser creates no second
+  case or success evidence and leaves appraisal/history snapshots unchanged.
 
 ## Visual Acceptance Criteria
 None.
@@ -115,16 +138,16 @@ High
 - The implementation stays within one small Ralph slice.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated, if needed
-- [ ] Database rules followed, if needed
-- [ ] Permissions tested, if needed
-- [ ] Audit events tested, if needed
-- [ ] Visual evidence saved, if frontend
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated, if needed
+- [x] Database rules followed, if needed
+- [x] Permissions tested, if needed
+- [x] Audit events tested, if needed
+- [x] Visual evidence saved, if frontend (not applicable; no frontend change)
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [x] Commit delegated to the orchestrator only after passing configured gates

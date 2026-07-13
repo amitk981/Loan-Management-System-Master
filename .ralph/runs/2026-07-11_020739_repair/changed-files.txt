@@ -1,0 +1,13 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006H2-workbench-action-contract-hardening.md
+ M docs/slices/006H3-appraisal-workbench-prototype-fidelity-restoration.md
+ M docs/slices/006X-mvp-end-to-end-happy-path-tracer-bullet.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.test.tsx
+ M sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx
+ M sfpcl-lms/src/services/authSession.ts
+ M sfpcl-lms/src/services/creditAssessmentApi.test.ts
+ M sfpcl-lms/src/services/creditAssessmentApi.ts
+?? .ralph/runs/2026-07-11_020739_repair/

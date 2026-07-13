@@ -1,0 +1,10 @@
+Frontend gate summary:
+
+- `npm run build`: PASS; 1871 modules transformed.
+- `npm run typecheck`: PASS.
+- `npm run lint`: PASS.
+- `npm test`: PASS on isolated full rerun; 29 files, 207 tests.
+- Focused MP05 run: PASS; 1 file, 7 tests.
+
+An earlier full-suite attempt executed concurrently with six other heavy gates and timed out in the
+unrelated demo-auth test. The required isolated full rerun passed all 207 tests, including that test.

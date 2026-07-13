@@ -3,6 +3,10 @@ set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
+source "$repo_root/scripts/lib/ralph-postgresql-acceptance.sh"
+source "$repo_root/scripts/lib/ralph-runtime-capabilities.sh"
+source "$repo_root/scripts/lib/ralph-browser-acceptance.sh"
+source "$repo_root/scripts/lib/ralph-slice-selection.sh"
 
 run_id=""
 worktree_dir="$repo_root"
@@ -33,6 +37,23 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+slice_file="$worktree_dir/docs/slices/${slice_id}.md"
+postgres_acceptance_required=0
+localhost_e2e_required=0
+if [[ -n "$slice_id" ]]; then
+  if [[ ! -f "$slice_file" ]]; then
+    echo "Selected slice file is missing: $slice_file" >&2
+    exit 2
+  fi
+  ralph_validate_slice_capabilities "$slice_file" || exit 2
+  if ralph_slice_has_capability "$slice_file" "$RALPH_CAPABILITY_POSTGRESQL_FIVE_RACE_ACCEPTANCE"; then
+    postgres_acceptance_required=1
+  fi
+  if ralph_slice_has_capability "$slice_file" "$RALPH_CAPABILITY_LOCALHOST_E2E_SERVER"; then
+    localhost_e2e_required=1
+  fi
+fi
 
 run_id="${run_id:-$(date '+%Y-%m-%d_%H%M%S')_validate}"
 run_dir="$worktree_dir/.ralph/runs/$run_id"
@@ -72,6 +93,7 @@ run_gate() {
   } > "$file"
   if [[ ! -d "$project_path" ]]; then
     echo "Project directory not found: $project_path" >> "$file"
+    failed_gate_logs+=("${name}-results.md")
     return 1
   fi
   if [[ -n "$node_bin_dir" ]]; then
@@ -79,7 +101,10 @@ run_gate() {
     echo >> "$file"
     command="export PATH=\"$node_bin_dir:\$PATH\"; $command"
   fi
-  (cd "$project_path" && bash -lc "$command") >> "$file" 2>&1
+  if ! (cd "$project_path" && bash -lc "$command") >> "$file" 2>&1; then
+    failed_gate_logs+=("${name}-results.md")
+    return 1
+  fi
 }
 
 write_skipped() {
@@ -93,6 +118,137 @@ write_skipped() {
 }
 
 failures=0
+# Results files of gates that failed, for the compact failure-summary.md that
+# repair mode reads instead of multi-MB terminal logs.
+failed_gate_logs=()
+backend_dir="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | tr -d '"' | xargs || true)"
+postgres_acceptance_passed=0
+
+run_postgresql_acceptance_once() {
+  local ordinal="$1"
+  local log="$run_dir/evidence/terminal-logs/postgresql-acceptance-validation-${ordinal}.txt"
+  local rc=0
+  local cleanup_rc=0
+  local postgres_test_db
+  postgres_test_db="$(postgresql_test_database_name "$run_id" "$ordinal")"
+  mkdir -p "$(dirname "$log")"
+  {
+    echo "Command:"
+    echo "SFPCL_POSTGRES_TEST_DB=$postgres_test_db $venv_python manage.py test sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2"
+    echo
+    echo "Working directory: $backend_dir/"
+    echo
+  } > "$log"
+  if (
+    cd "$worktree_dir/$backend_dir"
+    SFPCL_POSTGRES_TEST_DB="$postgres_test_db" "$venv_python" manage.py test \
+      sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests \
+      sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests \
+      sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests \
+      --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2
+  ) >> "$log" 2>&1; then
+    rc=0
+  else
+    rc=$?
+  fi
+  postgresql_drop_test_database "$venv_python" "$worktree_dir" "$postgres_test_db" >> "$log" 2>&1 \
+    || cleanup_rc=$?
+  if (( cleanup_rc != 0 )); then
+    echo "FAIL: unable to remove isolated PostgreSQL test database $postgres_test_db." >> "$log"
+  fi
+  echo >> "$log"
+  echo "Exit code: $rc" >> "$log"
+  echo "Cleanup exit code: $cleanup_rc" >> "$log"
+  (( rc == 0 && cleanup_rc == 0 )) && postgresql_acceptance_log_passes "$log"
+}
+
+run_trusted_browser_acceptance_once() {
+  local ordinal="$1"
+  local log="$run_dir/evidence/terminal-logs/trusted-browser-acceptance-${ordinal}.log"
+  local specs=()
+  local spec=""
+  local rc=0
+  while IFS= read -r spec; do
+    [[ -n "$spec" ]] && specs+=("$spec")
+  done < <(ralph_trusted_e2e_specs "$slice_file")
+
+  mkdir -p "$(dirname "$log")" "$run_dir/evidence/screenshots"
+  {
+    echo "Command:"
+    printf 'RALPH_EVIDENCE_DIR=%q E2E_DJANGO_PYTHON=%q npm run e2e --' \
+      "$run_dir/evidence/screenshots" "$venv_python"
+    printf ' %q' "${specs[@]}"
+    echo
+    echo
+    echo "Working directory: $project_dir/"
+    echo
+  } > "$log"
+
+  if (
+    cd "$project_path"
+    [[ -z "$node_bin_dir" ]] || export PATH="$node_bin_dir:$PATH"
+    RALPH_EVIDENCE_DIR="$run_dir/evidence/screenshots" \
+      E2E_DJANGO_PYTHON="$venv_python" \
+      npm run e2e -- "${specs[@]}"
+  ) >> "$log" 2>&1; then
+    rc=0
+  else
+    rc=$?
+  fi
+  echo >> "$log"
+  echo "Exit code: $rc" >> "$log"
+  (( rc == 0 ))
+}
+
+write_postgresql_environment() {
+  local file="$run_dir/evidence/postgresql-environment-validation.md"
+  if postgresql_environment_probe "$venv_python" "$worktree_dir" > "$file.tmp" 2>&1; then
+    {
+      echo "# PostgreSQL Validation Environment"
+      echo
+      cat "$file.tmp"
+      echo "- Credentials: intentionally omitted"
+    } > "$file"
+    rm -f "$file.tmp"
+    return 0
+  fi
+  {
+    echo "# PostgreSQL Validation Environment"
+    echo
+    echo "FAIL: unable to query the configured PostgreSQL server without exposing credentials."
+    cat "$file.tmp"
+  } > "$file"
+  rm -f "$file.tmp"
+  return 1
+}
+
+# Any slice declaring the PostgreSQL five-race capability must execute those
+# races independently through the orchestrator. The permission selector and
+# acceptance gate consume the same declaration so future slice names cannot
+# cause them to drift apart. Run both repetitions even when the first fails.
+if [[ "$mode" =~ ^(normal_run|repair)$ && "$postgres_acceptance_required" == "1" ]]; then
+  postgres_first=0
+  postgres_second=0
+  postgres_environment=0
+  run_postgresql_acceptance_once 1 && postgres_first=1
+  run_postgresql_acceptance_once 2 && postgres_second=1
+  if (( postgres_first == 1 && postgres_second == 1 )); then
+    write_postgresql_environment && postgres_environment=1
+  fi
+  {
+    echo "# PostgreSQL Acceptance Results"
+    echo
+    (( postgres_first == 1 )) && echo "- PASS: first independent run executed all five tests successfully." || echo "- FAIL: first independent run did not satisfy all acceptance predicates."
+    (( postgres_second == 1 )) && echo "- PASS: second independent run executed all five tests successfully." || echo "- FAIL: second independent run did not satisfy all acceptance predicates."
+    (( postgres_environment == 1 )) && echo "- PASS: PostgreSQL server and non-secret connection facts were recorded." || echo "- FAIL: PostgreSQL environment evidence is missing."
+  } > "$run_dir/postgresql-acceptance-results.md"
+  if (( postgres_first == 1 && postgres_second == 1 && postgres_environment == 1 )); then
+    postgres_acceptance_passed=1
+  else
+    failures=$((failures + 1))
+    failed_gate_logs+=("postgresql-acceptance-results.md")
+  fi
+fi
 
 if [[ "$(enabled build)" == "true" ]]; then
   run_gate build "npm run build" || failures=$((failures + 1))
@@ -124,7 +280,63 @@ else
   write_skipped test "disabled in .ralph/config.yaml"
 fi
 
-backend_dir="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$config" | tr -d '"' | xargs || true)"
+# Browser processes need macOS services that are intentionally unavailable to
+# the coding-agent sandbox. A slice declaring localhost E2E capability must
+# therefore name its exact Playwright specs and expected screenshots in a
+# strict Trusted Browser Acceptance section. The orchestrator executes that
+# slice-specific contract twice outside the coding sandbox.
+if [[ "$mode" =~ ^(normal_run|repair)$ && "$localhost_e2e_required" == "1" ]]; then
+  browser_contract=0
+  browser_readme=0
+  browser_timezone=0
+  browser_first=0
+  browser_second=0
+  browser_screenshots=1
+  ralph_validate_trusted_browser_acceptance "$slice_file" "$project_path" && browser_contract=1
+  rg -q "git rev-parse .*--git-common-dir" "$project_path/e2e/README.md" && browser_readme=1
+  rg -q "timezoneId: 'Asia/Kolkata'" "$project_path/playwright.config.ts" && browser_timezone=1
+
+  if (( browser_contract == 1 && browser_readme == 1 && browser_timezone == 1 )); then
+    while IFS= read -r screenshot; do
+      [[ -n "$screenshot" ]] && rm -f "$run_dir/evidence/screenshots/$screenshot"
+    done < <(ralph_trusted_e2e_screenshots "$slice_file")
+    run_trusted_browser_acceptance_once 1 && browser_first=1
+    run_trusted_browser_acceptance_once 2 && browser_second=1
+    while IFS= read -r screenshot; do
+      [[ -z "$screenshot" ]] && continue
+      [[ -s "$run_dir/evidence/screenshots/$screenshot" ]] || browser_screenshots=0
+    done < <(ralph_trusted_e2e_screenshots "$slice_file")
+  else
+    browser_screenshots=0
+  fi
+
+  {
+    echo "# e2e Results"
+    echo
+    (( browser_contract == 1 )) && echo "- PASS: slice-specific trusted browser contract is valid." || echo "- FAIL: slice-specific trusted browser contract is missing or invalid."
+    (( browser_readme == 1 )) && echo "- PASS: README E2E command resolves the shared venv through Git's common directory." || echo "- FAIL: README E2E command does not resolve the shared venv through Git's common directory."
+    (( browser_timezone == 1 )) && echo "- PASS: Playwright pins the dashboard baseline timezone to Asia/Kolkata." || echo "- FAIL: Playwright does not pin the dashboard baseline timezone to Asia/Kolkata."
+    (( browser_first == 1 )) && echo "- PASS: first trusted slice-specific browser run passed." || echo "- FAIL: first trusted slice-specific browser run did not pass."
+    (( browser_second == 1 )) && echo "- PASS: second trusted slice-specific browser run passed." || echo "- FAIL: second trusted slice-specific browser run did not pass."
+    (( browser_screenshots == 1 )) && echo "- PASS: every declared browser screenshot exists and is non-empty." || echo "- FAIL: one or more declared browser screenshots are missing or empty."
+    echo
+    echo "Declared specs:"
+    ralph_trusted_e2e_specs "$slice_file" | sed 's/^/- /'
+    echo "Declared screenshots:"
+    ralph_trusted_e2e_screenshots "$slice_file" | sed 's/^/- /'
+  } > "$run_dir/e2e-results.md"
+
+  if (( browser_contract == 1 && browser_readme == 1 && browser_timezone == 1 \
+        && browser_first == 1 && browser_second == 1 && browser_screenshots == 1 )); then
+    :
+  else
+    failures=$((failures + 1))
+    failed_gate_logs+=("e2e-results.md")
+  fi
+else
+  write_skipped e2e "slice does not declare localhost-e2e-server"
+fi
+
 run_backend_gate() {
   local name="$1"
   local command="$2"
@@ -135,7 +347,10 @@ run_backend_gate() {
     echo "Command: $command"
     echo
   } > "$file"
-  (cd "$worktree_dir" && bash -lc "$command") >> "$file" 2>&1
+  if ! (cd "$worktree_dir" && bash -lc "$command") >> "$file" 2>&1; then
+    failed_gate_logs+=("${name}-results.md")
+    return 1
+  fi
 }
 
 if [[ -n "$backend_dir" && -f "$worktree_dir/$backend_dir/manage.py" ]]; then
@@ -186,6 +401,7 @@ protected_paths=(
   ".github/"
   ".ralph/config.yaml"
   ".ralph/permissions.json"
+  ".codex/config.toml"
   "AGENTS.md"
   "CLAUDE.md"
   ".gitignore"
@@ -218,6 +434,75 @@ else
   echo "- PASS: no protected paths were modified." >> "$guard_file"
 fi
 
+# Slice queue lint: any run may create or sharpen slices (architecture
+# reviews especially), and a new slice only executes seamlessly if the queue
+# stays parseable and its Depends On graph still drains. Reject dangling
+# references, malformed sections, and dependency cycles before they merge.
+queue_lint_file="$run_dir/slice-queue-lint.md"
+{
+  echo "# Slice Queue Lint"
+  echo
+} > "$queue_lint_file"
+queue_lint_problems="$(ralph_slice_queue_lint "$worktree_dir/docs/slices" || true)"
+if [[ -z "$queue_lint_problems" ]]; then
+  echo "- PASS: every slice parses and the pending Depends On graph drains completely." >> "$queue_lint_file"
+else
+  while IFS= read -r lint_line; do
+    if [[ -n "$lint_line" ]]; then
+      echo "- FAIL: ${lint_line#problem: }" >> "$queue_lint_file"
+    fi
+  done <<< "$queue_lint_problems"
+  echo "" >> "$queue_lint_file"
+  echo "New or edited slices must follow the to-issues slice standard (## Status, ## Depends On with real slice ids) so the queue stays executable." >> "$queue_lint_file"
+  failures=$((failures + 1))
+fi
+
+# Slice status transitions: only the selected slice may change status in a
+# normal/repair run, and no run may flip a slice it did not execute to
+# Complete — that silently removes queued work. Reviews may re-park slices
+# (Blocked <-> Not Started, Superseded) but never complete them.
+st_file="$run_dir/slice-status-transition-check.md"
+{
+  echo "# Slice Status Transition Check"
+  echo
+} > "$st_file"
+st_violations=0
+st_checked=0
+while IFS= read -r st_path; do
+  case "$st_path" in
+    docs/slices/*.md) ;;
+    *) continue ;;
+  esac
+  st_old="$( (cd "$worktree_dir" && git show "HEAD:$st_path" 2>/dev/null || true) | awk '/^## Status/ { getline; print; exit }' )"
+  if [[ -z "$st_old" ]]; then
+    continue
+  fi
+  if [[ -f "$worktree_dir/$st_path" ]]; then
+    st_new="$(ralph_slice_status "$worktree_dir/$st_path")"
+  else
+    st_new="(deleted)"
+  fi
+  st_base="$(basename "$st_path" .md)"
+  st_checked=$((st_checked + 1))
+  if ralph_slice_transition_allowed "$mode" "${slice_id:-}" "$st_base" "$st_old" "$st_new"; then
+    if [[ "$st_old" != "$st_new" ]]; then
+      echo "- PASS: $st_base status '$st_old' -> '$st_new' (allowed for this run)." >> "$st_file"
+    fi
+  else
+    echo "- FAIL: $st_base status changed '$st_old' -> '$st_new' but this run executed '${slice_id:-<none>}'." >> "$st_file"
+    st_violations=$((st_violations + 1))
+  fi
+done <<< "$changed_paths"
+if (( st_violations > 0 )); then
+  echo "" >> "$st_file"
+  echo "A run may only transition the slice it executed; reviews may re-park other slices but never mark them Complete." >> "$st_file"
+  failures=$((failures + st_violations))
+elif (( st_checked == 0 )); then
+  echo "- PASS: no existing slice files were modified." >> "$st_file"
+else
+  echo "- PASS: all slice status transitions are allowed for this run." >> "$st_file"
+fi
+
 # Impact-analysis gate: change-request slices (CR-*) must map their blast
 # radius before any code change is accepted.
 if [[ "$mode" == "normal_run" && "$slice_id" == CR-* ]]; then
@@ -247,13 +532,22 @@ if [[ "$mode" == "normal_run" ]]; then
   noop_file="$run_dir/no-op-check-results.md"
   agent_changes="$(printf '%s\n' "$changed_paths" | grep -v '^\.ralph/' | grep -v '^$' || true)"
   if [[ -z "$agent_changes" ]]; then
-    {
-      echo "# No-Op Check Results"
-      echo
-      echo "FAIL: the agent produced no changes outside .ralph/ bookkeeping."
-      echo "A normal run cannot complete a slice with zero product/doc changes."
-    } > "$noop_file"
-    failures=$((failures + 1))
+    if [[ "$slice_id" == "006F4-postgresql-credit-concurrency-acceptance" && "$postgres_acceptance_passed" == "1" ]]; then
+      {
+        echo "# No-Op Check Results"
+        echo
+        echo "PASS: verified acceptance-only slice completed through the independent PostgreSQL gate."
+        echo "No product change is required when both authoritative runs and environment evidence pass."
+      } > "$noop_file"
+    else
+      {
+        echo "# No-Op Check Results"
+        echo
+        echo "FAIL: the agent produced no changes outside .ralph/ bookkeeping."
+        echo "A normal run cannot complete a slice with zero product/doc changes."
+      } > "$noop_file"
+      failures=$((failures + 1))
+    fi
   else
     {
       echo "# No-Op Check Results"
@@ -271,7 +565,8 @@ aq_file="$run_dir/artifact-quality-check.md"
   echo "# Artifact Quality Check"
   echo
 } > "$aq_file"
-if grep -qF "must replace this template" "$run_dir/execution-plan.md" 2>/dev/null; then
+if grep -qF "must replace this template" "$run_dir/execution-plan.md" 2>/dev/null \
+   && ! grep -Eq '^[[:space:]]*[0-9]+\.[[:space:]]+' "$run_dir/execution-plan.md" 2>/dev/null; then
   echo "- FAIL: execution-plan.md is still the unfilled template." >> "$aq_file"
   failures=$((failures + 1))
 else
@@ -343,8 +638,73 @@ if command -v ruby >/dev/null 2>&1; then
   ruby -e 'require "yaml"; YAML.load_file(ARGV[0])' "$config" >/dev/null 2>&1 && echo "- PASS: config.yaml is parseable." >> "$artifact_file" || { echo "- FAIL: config.yaml invalid." >> "$artifact_file"; failures=$((failures + 1)); }
 fi
 
+# Agent-declared result: if the agent's own review packet says the run failed,
+# is blocked, or must not be committed/merged, the run must not pass validation
+# even when every mechanical gate is green. (006F3 lesson: the committed packet
+# said "Failed acceptance; do not commit or merge" while the run reported
+# Success and merged.)
+declared_file="$run_dir/agent-declared-result-check.md"
+{
+  echo "# Agent-Declared Result Check"
+  echo
+} > "$declared_file"
+review_packet="$run_dir/review-packet.md"
+if [[ "$mode" != "normal_run" && "$mode" != "repair" ]]; then
+  echo "- SKIP: mode $mode (architecture-review packets may quote failure phrases from findings)." >> "$declared_file"
+elif [[ -f "$review_packet" ]]; then
+  declared_result="$(awk '/^## Result/{while ((getline line) > 0) { if (line !~ /^[[:space:]]*$/) { print line; exit } }}' "$review_packet" | xargs || true)"
+  if printf '%s' "$declared_result" | grep -qiE 'fail|blocked' \
+     || grep -qiE 'do not (commit|merge)' "$review_packet"; then
+    echo "- FAIL: the agent's review-packet.md declares this run failed or unmergeable (Result: ${declared_result:-<none>})." >> "$declared_file"
+    echo "  Validation honours the agent's own verdict; passing gates do not override it." >> "$declared_file"
+    failures=$((failures + 1))
+    failed_gate_logs+=("review-packet.md")
+  else
+    echo "- PASS: review-packet.md declares no failed/blocked/unmergeable result (Result: ${declared_result:-In Progress})." >> "$declared_file"
+  fi
+else
+  echo "- SKIP: review-packet.md missing (reported by the artifact check)." >> "$declared_file"
+fi
+
 if (( failures > 0 )); then
-  echo "Validation failed with $failures issue(s)." >> "$artifact_file"
+  # Compact failure summary: repair mode reads this file FIRST instead of
+  # re-ingesting multi-MB gate logs (the historical cause of repair runs
+  # peaking at 93-94% of the model context window).
+  {
+    echo "# Failure Summary"
+    echo
+    echo "- Run: $run_id"
+    echo "- Mode: $mode"
+    echo "- Slice: ${slice_id:-n/a}"
+    echo "- Failed checks: $failures"
+    echo
+    echo "Repair mode: diagnose from this file first; open the full gate logs in this run"
+    echo "folder only when a tail below is insufficient."
+    echo
+    echo "## All FAIL markers"
+    echo
+    echo '```'
+    grep -H -iE '(^|- )FAIL' "$run_dir"/*.md 2>/dev/null | grep -v 'failure-summary.md' | sed "s|$run_dir/||" | head -40 || echo "(none in check files)"
+    echo '```'
+    echo
+    if (( ${#failed_gate_logs[@]} > 0 )); then
+      for gate_log in ${failed_gate_logs[@]+"${failed_gate_logs[@]}"}; do
+        [[ -f "$run_dir/$gate_log" ]] || continue
+        echo "## Last 50 lines: $gate_log"
+        echo
+        echo '```'
+        tail -n 50 "$run_dir/$gate_log"
+        echo '```'
+        echo
+      done
+    fi
+    echo "## Changed files (git status)"
+    echo
+    echo '```'
+    printf '%s\n' "${changed_paths:-<unavailable>}"
+    echo '```'
+  } > "$run_dir/failure-summary.md"
+  echo "Validation failed with $failures issue(s). See failure-summary.md." >> "$artifact_file"
   exit 1
 fi
 

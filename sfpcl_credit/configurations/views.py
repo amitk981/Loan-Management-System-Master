@@ -16,7 +16,7 @@ def loan_policy_collection(request):
             return error_response(
                 request,
                 403,
-                "PERMISSION_DENIED",
+                "FORBIDDEN",
                 "You do not have permission to read loan policy configuration.",
             )
         try:
@@ -35,7 +35,7 @@ def loan_policy_collection(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to manage loan policy configuration.",
         )
     try:
@@ -61,7 +61,7 @@ def loan_policy_detail(request, loan_policy_config_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to manage loan policy configuration.",
         )
     try:
@@ -95,7 +95,7 @@ def loan_policy_activate(request, loan_policy_config_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to manage loan policy configuration.",
         )
     try:
@@ -126,7 +126,7 @@ def version_history_list(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read version history.",
         )
     try:

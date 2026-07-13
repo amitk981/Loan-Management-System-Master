@@ -93,7 +93,7 @@ export const MP22ProduceSupplyView: React.FC<{ supply: PortalProduceSupply }> = 
         </div>
         <div>
           <span className="font-semibold block mb-1">Eligibility Note</span>
-          Supply records will display here after the documented produce-supply model is implemented and verified.
+          Eligibility uses verified supply records and continuous financial-year history shown above.
         </div>
       </div>
     </div>

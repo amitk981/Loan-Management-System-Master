@@ -1,0 +1,13 @@
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:53:OBJECT_SCOPE_CASES = ()
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:56:class ExecutedObjectScopeRow:
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:126:        action_codes = tuple(action_code for action_code, _ in OBJECT_SCOPE_CASES)
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:127:        test_cases = tuple(test_case for _, test_case in OBJECT_SCOPE_CASES)
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:247:        row = ExecutedObjectScopeRow("credit.eligibility.run")
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:306:        row = ExecutedObjectScopeRow("credit.loan_limit.calculate")
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:358:        row = ExecutedObjectScopeRow("credit.loan_limit.calculate")
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:530:        row = ExecutedObjectScopeRow(action_code)
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:611:        row = ExecutedObjectScopeRow(action_code)
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:706:        row = ExecutedObjectScopeRow("credit.appraisal.review")
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:833:        row = ExecutedObjectScopeRow("credit.appraisal.submit_sanction")
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:948:        row = ExecutedObjectScopeRow("credit.appraisal.submit_sanction")
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:1044:OBJECT_SCOPE_CASES = (

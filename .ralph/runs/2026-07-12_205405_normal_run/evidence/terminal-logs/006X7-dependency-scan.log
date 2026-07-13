@@ -1,0 +1,33 @@
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:10:    appraisal_available_actions,
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:20:    eligibility_run_action,
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:24:    loan_limit_available_actions,
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:65:def object_scope_cases(*action_codes):
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:212:    @object_scope_cases("credit.eligibility.run")
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:229:        projected = eligibility_run_action(self.application, self.actor)
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:291:    @object_scope_cases("credit.loan_limit.calculate")
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:348:            {"available_actions": loan_limit_available_actions(
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:456:    @object_scope_cases("credit.appraisal.create", "credit.appraisal.update")
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:495:            {"available_actions": loan_limit_available_actions(
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:534:            {"available_actions": appraisal_available_actions(
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:627:    @object_scope_cases(
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:652:            {"available_actions": appraisal_available_actions(
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:679:            {"available_actions": appraisal_available_actions(
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:754:    @object_scope_cases("credit.appraisal.review")
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:770:            {"available_actions": appraisal_available_actions(
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:969:    @object_scope_cases("credit.appraisal.submit_sanction")
+sfpcl_credit/tests/test_credit_action_parity_matrix.py:1007:            {"available_actions": appraisal_available_actions(
+sfpcl_credit/credit/modules/eligibility_assessment.py:172:    snapshot["available_actions"] = [eligibility_run_action(
+sfpcl_credit/credit/modules/eligibility_assessment.py:180:def eligibility_run_action(application, actor, permissions=None):
+sfpcl_credit/credit/modules/eligibility_assessment.py:181:    from sfpcl_credit.credit.modules.common import project_application_object_access
+sfpcl_credit/credit/modules/eligibility_assessment.py:194:    return project_application_object_access(
+sfpcl_credit/credit/modules/loan_limit_calculator.py:22:    project_application_object_access,
+sfpcl_credit/credit/modules/loan_limit_calculator.py:267:        return LoanLimitAssessmentResult(projection=projection, available_actions=tuple(loan_limit_available_actions(application, actor, permissions)))
+sfpcl_credit/credit/modules/loan_limit_calculator.py:271:    return LoanLimitAssessmentResult(projection=_projection(assessment), available_actions=tuple(loan_limit_available_actions(assessment.loan_application, actor, permissions)))
+sfpcl_credit/credit/modules/loan_limit_calculator.py:274:def loan_limit_available_actions(application, actor, permissions):
+sfpcl_credit/credit/modules/loan_limit_calculator.py:296:        project_application_object_access(
+sfpcl_credit/credit/modules/loan_limit_calculator.py:321:    return project_application_object_access(
+sfpcl_credit/credit/modules/common.py:64:def project_application_object_access(
+sfpcl_credit/credit/modules/appraisal_workflow.py:28:    project_application_object_access,
+sfpcl_credit/credit/modules/appraisal_workflow.py:117:def appraisal_available_actions(note, actor, permissions):
+sfpcl_credit/credit/modules/appraisal_workflow.py:162:        project_application_object_access(
+sfpcl_credit/credit/modules/appraisal_workflow.py:175:    projected["available_actions"] = appraisal_available_actions(note, actor, permissions)

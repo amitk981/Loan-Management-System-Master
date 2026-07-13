@@ -1,0 +1,73 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/.ralph/runs/2026-07-12_103847_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-governance-closure.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-governance-closure.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 05:16:05] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[2m[WebServer] [22m(node:40573) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[12/Jul/2026 05:16:08] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 05:16:08] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[12/Jul/2026 05:16:08] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 05:16:08] "GET /api/v1/auth/me/ HTTP/1.1" 200 1671
+[2m[WebServer] [22m[12/Jul/2026 05:16:08] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 05:16:08] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 05:16:08] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 05:16:08] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[12/Jul/2026 05:16:08] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 05:16:08] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 05:16:08] "GET /api/v1/members/ HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 05:16:08] "GET /api/v1/members/ HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "POST /api/v1/members/ HTTP/1.1" 200 2250
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "OPTIONS /api/v1/members/a32b96c6-a663-4ad9-84eb-6f4840027b32/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "OPTIONS /api/v1/members/a32b96c6-a663-4ad9-84eb-6f4840027b32/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "GET /api/v1/members/a32b96c6-a663-4ad9-84eb-6f4840027b32/ HTTP/1.1" 200 2250
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "GET /api/v1/members/a32b96c6-a663-4ad9-84eb-6f4840027b32/ HTTP/1.1" 200 2250
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "PATCH /api/v1/members/a32b96c6-a663-4ad9-84eb-6f4840027b32/ HTTP/1.1" 200 2250
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "GET /api/v1/members/a32b96c6-a663-4ad9-84eb-6f4840027b32/ HTTP/1.1" 200 2250
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "GET /api/v1/members/ HTTP/1.1" 200 1415
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "GET /api/v1/members/ HTTP/1.1" 200 1415
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "OPTIONS /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "GET /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "OPTIONS /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "OPTIONS /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 1766
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 1766
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "OPTIONS /api/v1/members/00000000-0000-4000-8000-000000000602/identity-change-requests/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "POST /api/v1/members/00000000-0000-4000-8000-000000000602/identity-change-requests/ HTTP/1.1" 200 287
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 1898
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "POST /api/v1/auth/login/ HTTP/1.1" 200 1288
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "GET /api/v1/auth/me/ HTTP/1.1" 200 2248
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[12/Jul/2026 05:16:09] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[12/Jul/2026 05:16:10] "GET /api/v1/members/ HTTP/1.1" 200 1415
+[2m[WebServer] [22m[12/Jul/2026 05:16:10] "GET /api/v1/members/ HTTP/1.1" 200 1415
+[2m[WebServer] [22m[12/Jul/2026 05:16:10] "GET /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 05:16:10] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 1887
+[2m[WebServer] [22m[12/Jul/2026 05:16:10] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 1887
+[2m[WebServer] [22m[12/Jul/2026 05:16:10] "OPTIONS /api/v1/member-identity-change-requests/9abde0fc-e0b4-4aa3-b769-d20f394cd207/approve/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 05:16:10] "POST /api/v1/member-identity-change-requests/9abde0fc-e0b4-4aa3-b769-d20f394cd207/approve/ HTTP/1.1" 200 1885
+[2m[WebServer] [22m[12/Jul/2026 05:16:10] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 1885
+[2m[WebServer] [22m[12/Jul/2026 05:16:10] "POST /api/v1/auth/login/ HTTP/1.1" 200 1255
+[2m[WebServer] [22m[12/Jul/2026 05:16:10] "GET /api/v1/auth/me/ HTTP/1.1" 200 454
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 05:16:10] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 05:16:10] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/members/00000000-0000-4000-8000-000000000602/identity-change-requests/
+[2m[WebServer] [22m[12/Jul/2026 05:16:11] "POST /api/v1/members/00000000-0000-4000-8000-000000000602/identity-change-requests/ HTTP/1.1" 403 240
+  ✓  1 [chromium] › member-governance-closure.e2e.spec.ts:15:5 › member creation, canonical update, approved identity correction, and denial use real sessions (4.2s)
+
+  1 passed (8.3s)
+
+Exit code: 0

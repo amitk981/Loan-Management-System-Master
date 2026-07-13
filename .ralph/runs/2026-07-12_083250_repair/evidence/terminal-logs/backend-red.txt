@@ -1,0 +1,4 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_seed_e2e_users.SeedE2eUsersTests.test_seed_creates_idempotent_epic_006_browser_fixture
+Exit: 1
+Red signal: the deterministic finance browser role lacked the member create/update and witness read/create permission subset.
+Result: 1 failed.

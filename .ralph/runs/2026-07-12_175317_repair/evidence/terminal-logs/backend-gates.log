@@ -1,0 +1,9 @@
+Backend gate summary
+
+All commands used /Users/amitkallapa/LMS/.ralph/venv/bin/python.
+
+- manage.py check: PASS, no issues
+- manage.py makemigrations --check --dry-run: PASS, no changes detected
+- coverage run --source=sfpcl_credit manage.py test sfpcl_credit.tests: PASS, 451 tests,
+  7 expected SQLite skips
+- coverage report --fail-under=85: PASS, 93% total coverage

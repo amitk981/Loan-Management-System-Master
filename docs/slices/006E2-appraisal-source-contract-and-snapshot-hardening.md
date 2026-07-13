@@ -1,7 +1,7 @@
 # Slice 006E2: Appraisal Source Contract and Snapshot Hardening
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
@@ -15,6 +15,19 @@ notes, and retain the required submit-for-review reason before Credit Manager re
 ## Depends On
 - 006E
 - 006D2C
+
+## 006D2C Handoff Contract
+- `LoanLimitCalculator.calculate_for_application(...)` serializes competing reruns through its
+  locked application boundary on PostgreSQL. Do not weaken or bypass that public seam while adding
+  appraisal-owned snapshots; the PostgreSQL valid/valid and valid/invalid transaction regressions
+  must remain green.
+- The canonical loan-limit public projection is internally consistent with the final persisted row
+  and final `loan_limit.calculated` audit projection after serialization. Copy that projection at
+  appraisal creation; do not rebuild the listed §14.2 fields from concrete models.
+- Static boundaries resolve `ast.Import` and `ast.ImportFrom` aliases/package imports, reject
+  concrete assessment/policy/private-helper access, and positively require the calculator and
+  appraisal public imports. Extend required-method checks by subset only; additional harmless
+  public workflow methods must remain allowed.
 
 ## Source / Review References
 - `docs/source/api-contracts.md` §3 and §24.1-§24.4
@@ -43,6 +56,8 @@ notes, and retain the required submit-for-review reason before Credit Manager re
   record that a reason exists and its owning record ID, not the free text itself.
 - Preserve 006D2C's strengthened static boundary regression and positively require appraisal to
   call the public eligibility and loan-limit interfaces; do not reintroduce concrete model access.
+- Keep `config.postgres_test_settings` and the PostgreSQL concurrency command documented in the
+  review packet whenever this slice changes calculator/appraisal imports or assessment snapshots.
 
 ## Database / Migration Safety
 - One additive migration may add immutable projection JSON, repayment-capacity, submission-reason,
@@ -87,12 +102,12 @@ High
 - 006F can review only a source-complete appraisal with verified frozen prerequisite projections.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Failing tests and red evidence saved first
-- [ ] Additive migration and implementation completed
-- [ ] API contracts updated
-- [ ] Legacy provenance paths tested
-- [ ] Full gates passed
-- [ ] Risk assessment and handoff updated
-- [ ] State updated
-- [ ] Commit delegated to orchestrator only after passing gates
+- [x] Execution plan written
+- [x] Failing tests and red evidence saved first
+- [x] Additive migration and implementation completed
+- [x] API contracts updated
+- [x] Legacy provenance paths tested
+- [x] Full gates passed
+- [x] Risk assessment and handoff updated
+- [x] State updated
+- [x] Commit delegated to orchestrator only after passing gates

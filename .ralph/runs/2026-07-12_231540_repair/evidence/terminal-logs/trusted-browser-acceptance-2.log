@@ -1,0 +1,70 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/.ralph/runs/2026-07-12_231540_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-governance-variants.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-governance-variants.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 17:53:53] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "GET /api/v1/members/ HTTP/1.1" 200 1394
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "GET /api/v1/members/ HTTP/1.1" 200 1394
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "POST /api/v1/members/ HTTP/1.1" 200 2326
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "OPTIONS /api/v1/members/fd067973-9254-40b4-8b34-57e7e9e0c099/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "GET /api/v1/members/fd067973-9254-40b4-8b34-57e7e9e0c099/ HTTP/1.1" 200 2326
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "PATCH /api/v1/members/fd067973-9254-40b4-8b34-57e7e9e0c099/ HTTP/1.1" 200 2336
+[2m[WebServer] [22m[12/Jul/2026 17:53:56] "GET /api/v1/members/fd067973-9254-40b4-8b34-57e7e9e0c099/ HTTP/1.1" 200 2336
+[2m[WebServer] [22m[12/Jul/2026 17:53:57] "GET /api/v1/members/ HTTP/1.1" 200 2011
+[2m[WebServer] [22m[12/Jul/2026 17:53:57] "GET /api/v1/members/ HTTP/1.1" 200 2011
+[2m[WebServer] [22m[12/Jul/2026 17:53:57] "POST /api/v1/members/ HTTP/1.1" 200 2173
+[2m[WebServer] [22m[12/Jul/2026 17:53:57] "OPTIONS /api/v1/members/fcd88b14-ba67-4f57-bf48-5212fb3ebbc7/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:53:57] "GET /api/v1/members/fcd88b14-ba67-4f57-bf48-5212fb3ebbc7/ HTTP/1.1" 200 2173
+[2m[WebServer] [22m[12/Jul/2026 17:53:57] "GET /api/v1/members/ HTTP/1.1" 200 2598
+[2m[WebServer] [22m[12/Jul/2026 17:53:57] "GET /api/v1/members/ HTTP/1.1" 200 2598
+[2m[WebServer] [22m[12/Jul/2026 17:53:57] "POST /api/v1/members/ HTTP/1.1" 200 2224
+[2m[WebServer] [22m[12/Jul/2026 17:53:57] "OPTIONS /api/v1/members/2169cdcd-61a2-4dcd-8300-d6082c71253e/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:53:57] "GET /api/v1/members/2169cdcd-61a2-4dcd-8300-d6082c71253e/ HTTP/1.1" 200 2224
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "GET /api/v1/members/ HTTP/1.1" 200 3236
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "GET /api/v1/members/ HTTP/1.1" 200 3236
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "OPTIONS /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "GET /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "OPTIONS /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 5276
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "OPTIONS /api/v1/members/00000000-0000-4000-8000-000000000602/identity-change-requests/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "POST /api/v1/members/00000000-0000-4000-8000-000000000602/identity-change-requests/ HTTP/1.1" 200 287
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 5408
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "OPTIONS /api/v1/auth/logout/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "POST /api/v1/auth/logout/ HTTP/1.1" 200 142
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "POST /api/v1/auth/login/ HTTP/1.1" 200 1288
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "GET /api/v1/auth/me/ HTTP/1.1" 200 2300
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[12/Jul/2026 17:53:58] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[12/Jul/2026 17:53:59] "GET /api/v1/members/ HTTP/1.1" 200 3236
+[2m[WebServer] [22m[12/Jul/2026 17:53:59] "GET /api/v1/members/ HTTP/1.1" 200 3236
+[2m[WebServer] [22m[12/Jul/2026 17:53:59] "GET /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 17:53:59] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 5353
+[2m[WebServer] [22m[12/Jul/2026 17:53:59] "OPTIONS /api/v1/member-identity-change-requests/99938fe2-1dc3-4ffd-800f-926946c6bb18/approve/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 17:53:59] "POST /api/v1/member-identity-change-requests/99938fe2-1dc3-4ffd-800f-926946c6bb18/approve/ HTTP/1.1" 200 5352
+[2m[WebServer] [22m[12/Jul/2026 17:53:59] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 5352
+  ✓  1 [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions (5.1s)
+
+  1 passed (9.2s)
+
+Exit code: 0

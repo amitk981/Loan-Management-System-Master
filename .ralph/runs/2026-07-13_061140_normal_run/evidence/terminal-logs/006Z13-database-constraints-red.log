@@ -1,0 +1,49 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFFFF
+======================================================================
+FAIL: test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts (sfpcl_credit.tests.test_member_scope_assignment_api.MemberScopeAssignmentApiTests.test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts) (scope_type='unsupported')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_061140_normal_run/sfpcl_credit/tests/test_member_scope_assignment_api.py", line 93, in test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts
+    with self.assertRaises(IntegrityError), transaction.atomic():
+AssertionError: IntegrityError not raised
+
+======================================================================
+FAIL: test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts (sfpcl_credit.tests.test_member_scope_assignment_api.MemberScopeAssignmentApiTests.test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts) (scope_type='global')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_061140_normal_run/sfpcl_credit/tests/test_member_scope_assignment_api.py", line 93, in test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts
+    with self.assertRaises(IntegrityError), transaction.atomic():
+AssertionError: IntegrityError not raised
+
+======================================================================
+FAIL: test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts (sfpcl_credit.tests.test_member_scope_assignment_api.MemberScopeAssignmentApiTests.test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts) (scope_type='assigned')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_061140_normal_run/sfpcl_credit/tests/test_member_scope_assignment_api.py", line 93, in test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts
+    with self.assertRaises(IntegrityError), transaction.atomic():
+AssertionError: IntegrityError not raised
+
+======================================================================
+FAIL: test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts (sfpcl_credit.tests.test_member_scope_assignment_api.MemberScopeAssignmentApiTests.test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts) (scope_type='global')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_061140_normal_run/sfpcl_credit/tests/test_member_scope_assignment_api.py", line 102, in test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts
+    with self.assertRaises(IntegrityError), transaction.atomic():
+AssertionError: IntegrityError not raised
+
+======================================================================
+FAIL: test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts (sfpcl_credit.tests.test_member_scope_assignment_api.MemberScopeAssignmentApiTests.test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts) (scope_type='created_by')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_061140_normal_run/sfpcl_credit/tests/test_member_scope_assignment_api.py", line 102, in test_database_rejects_invalid_shapes_and_nullable_duplicate_authority_facts
+    with self.assertRaises(IntegrityError), transaction.atomic():
+AssertionError: IntegrityError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=5)
+Destroying test database for alias 'default'...

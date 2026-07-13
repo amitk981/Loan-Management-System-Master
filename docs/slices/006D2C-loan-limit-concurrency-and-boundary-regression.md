@@ -1,7 +1,7 @@
 # Slice 006D2C: Loan Limit Concurrency and Boundary Regression
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 006: Eligibility, Loan Limit, Appraisal, and Credit Review
@@ -64,10 +64,10 @@ High
 - No public behavior or stored snapshot changes.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Failing tests and red evidence saved first
-- [ ] Transactional and boundary tests implemented
-- [ ] Full gates passed
-- [ ] Risk assessment and handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Failing tests and red evidence saved first
+- [x] Transactional and boundary tests implemented
+- [x] Full locally runnable gates passed; PostgreSQL rerun delegated after pinned dependency install
+- [x] Risk assessment and handoff updated
+- [x] State updated
 - [ ] Commit delegated to orchestrator only after passing gates

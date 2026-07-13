@@ -1,0 +1,65 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/.ralph/runs/2026-07-12_174521_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-governance-variants.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-governance-variants.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 12:21:59] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[2m[WebServer] [22m(node:26463) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "GET /api/v1/members/ HTTP/1.1" 200 1394
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "GET /api/v1/members/ HTTP/1.1" 200 1394
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "POST /api/v1/members/ HTTP/1.1" 200 2326
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "OPTIONS /api/v1/members/6f6d4f3d-165c-47d3-ab3e-c60d47aa4394/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:22:02] "GET /api/v1/members/6f6d4f3d-165c-47d3-ab3e-c60d47aa4394/ HTTP/1.1" 200 2326
+[2m[WebServer] [22m[12/Jul/2026 12:22:03] "PATCH /api/v1/members/6f6d4f3d-165c-47d3-ab3e-c60d47aa4394/ HTTP/1.1" 200 2328
+[2m[WebServer] [22m[12/Jul/2026 12:22:03] "GET /api/v1/members/6f6d4f3d-165c-47d3-ab3e-c60d47aa4394/ HTTP/1.1" 200 2328
+[2m[WebServer] [22m[12/Jul/2026 12:22:03] "GET /api/v1/members/ HTTP/1.1" 200 2003
+[2m[WebServer] [22m[12/Jul/2026 12:22:03] "GET /api/v1/members/ HTTP/1.1" 200 2003
+  ✘  1 [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions (3.3s)
+
+
+  1) [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions 
+
+    Error: locator.fill: Error: strict mode violation: getByLabel('PAN') resolved to 2 elements:
+        1) <input value="" type="text" class="field-input" aria-label="Signatory PAN"/> aka getByLabel('Signatory PAN')
+        2) <input value="" type="text" aria-label="PAN" class="field-input"/> aka getByLabel('PAN', { exact: true })
+
+    Call log:
+    [2m  - waiting for getByLabel('PAN')[22m
+
+
+      128 | async function fillCommon(page: Page, body: Record<string, unknown>) {
+      129 |   const address = body.registered_address as Record<string, string>;
+    > 130 |   for (const [label, key] of [['Legal Name', 'legal_name'], ['Display Name', 'display_name'], ['Folio Number', 'folio_number'], ['Membership Start Date', 'membership_start_date'], ['Mobile Number', 'mobile_number'], ['Email', 'email'], ['PAN', 'pan']] as const) await page.getByLabel(label).fill(String(body[key]));
+          |                                                                                                                                                                                                                                                                                                    ^
+      131 |   for (const [label, key] of [['Address Line 1', 'line1'], ['Address Line 2', 'line2'], ['Village / City', 'village_city'], ['District', 'district'], ['State', 'state'], ['Pincode', 'pincode']] as const) await page.getByLabel(label).fill(address[key]);
+      132 | }
+      133 | async function saveMember(page: Page, legalName: string) {
+        at fillCommon (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts:130:292)
+        at registerInstitution (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts:119:3)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts:45:3
+
+  1 failed
+    [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions 
+
+Exit code: 1

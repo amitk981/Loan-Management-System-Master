@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_credit_module_does_not_import_concrete_approval_models (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_credit_module_does_not_import_concrete_approval_models)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_014217_repair/sfpcl_credit/tests/test_sanction_submission_api.py", line 241, in test_credit_module_does_not_import_concrete_approval_models
+    self.assertNotIn("sfpcl_credit.approvals.models", imports)
+AssertionError: 'sfpcl_credit.approvals.models' unexpectedly found in ['dataclasses', 'datetime', 'decimal', 'django.db', 'django.utils', 'sfpcl_credit.approvals.models', 'sfpcl_credit.applications.modules.rejection_notes', 'sfpcl_credit.applications.models', 'sfpcl_credit.credit.models', 'sfpcl_credit.credit.modules.common', 'sfpcl_credit.credit.modules.eligibility_assessment', 'sfpcl_credit.credit.modules.loan_limit_calculator', 'sfpcl_credit.identity.models', 'sfpcl_credit.identity.modules', 'sfpcl_credit.workflows.events']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,0 +1,14 @@
+Focused red signal (from both trusted runs in 2026-07-13_035655_repair):
+
+Command:
+RALPH_EVIDENCE_DIR=<run>/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/portal-application-limit-authority.e2e.spec.ts
+
+Verdict in each run: 3 passed, 1 failed.
+Failure: review scenario timed out after 30 seconds at `locator.check()` while waiting for
+`getByRole('checkbox').nth(8)`. The locator resolved to a `switchInput` and its wrapping label
+intercepted pointer events. Source inspection proves the declarations step contains exactly seven
+ordinary labeled checkboxes, so match 8 belongs to another page surface.
+
+Local replay attempted with the same command. Chromium was denied before page creation by
+`bootstrap_check_in ... Permission denied (1100)`, the documented sandbox limitation; no test body
+ran locally and no screenshot was claimed.

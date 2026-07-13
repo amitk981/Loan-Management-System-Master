@@ -32,6 +32,13 @@ Senior Manager Finance and the CFC run the real money-release workflow — readi
 3. Amount fields use the Money type (api-contracts §9.2); initiation is blocked in the UI when readiness fails, and the backend rejection is surfaced if attempted anyway.
 4. Loading, empty, error, unauthorized, blocked, and success states throughout; existing queue/card patterns only.
 
+## Owned Mock Removals
+This slice is the final owner of these files' mock surface — after it, none of them may import `src/data/mockData.ts` or keep inline business fixtures:
+- `src/pages/disbursement/DisbursementHub.tsx`
+- `src/pages/disbursement/PaymentAuthorisationHub.tsx`
+
+(`src/pages/loan-accounts/LoanAccount360.tsx` is wired initially by 009J; its final mock removal is owned by 010M.)
+
 ## Test Cases
 - Readiness failure renders named blockers; initiation button disabled and direct API call rejected.
 - CFC-only visibility: Senior Manager Finance cannot see authorize actions (frontend) and gets 403 (backend).

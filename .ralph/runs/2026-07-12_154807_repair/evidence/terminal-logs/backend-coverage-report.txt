@@ -1,0 +1,4 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python -m coverage report --fail-under=85
+Exit code: 0
+TOTAL: 17487 statements, 1134 missed, 94% coverage.
+Required floor: 85%.

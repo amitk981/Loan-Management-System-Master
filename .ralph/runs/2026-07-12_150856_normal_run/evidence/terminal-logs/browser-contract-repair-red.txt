@@ -1,0 +1,11 @@
+Invalid trusted browser spec path 'sfpcl-lms/e2e/witness-correction-authority.e2e.spec.ts' in docs/slices/006Y8-witness-maker-checker-and-browser-closure.md; use a relative e2e/*.spec.ts path.
+Unknown trusted browser acceptance entry 'Start from the real staff login boundary and routed Application Detail; no API route interception,' in docs/slices/006Y8-witness-maker-checker-and-browser-closure.md.
+Unknown trusted browser acceptance entry 'direct local-storage token injection, or mocked witness response is allowed.' in docs/slices/006Y8-witness-maker-checker-and-browser-closure.md.
+Unknown trusted browser acceptance entry 'Correct address/mobile as an authorised actor, reload, and prove canonical persisted values.' in docs/slices/006Y8-witness-maker-checker-and-browser-closure.md.
+Unknown trusted browser acceptance entry 'As the original verifier, show the backend-projected identity-correction denial and prove no PATCH;' in docs/slices/006Y8-witness-maker-checker-and-browser-closure.md.
+Unknown trusted browser acceptance entry 'then use a separate authorised checker to correct masked identity and reload it.' in docs/slices/006Y8-witness-maker-checker-and-browser-closure.md.
+Unknown trusted browser acceptance entry 'Required screenshots:' in docs/slices/006Y8-witness-maker-checker-and-browser-closure.md.
+Unknown trusted browser acceptance entry 'evidence/screenshots/witness-contact-correction-reloaded.png' in docs/slices/006Y8-witness-maker-checker-and-browser-closure.md.
+Unknown trusted browser acceptance entry 'evidence/screenshots/witness-verifier-identity-denied.png' in docs/slices/006Y8-witness-maker-checker-and-browser-closure.md.
+Unknown trusted browser acceptance entry 'evidence/screenshots/witness-checker-identity-corrected.png' in docs/slices/006Y8-witness-maker-checker-and-browser-closure.md.
+Slice docs/slices/006Y8-witness-maker-checker-and-browser-closure.md declares localhost-e2e-server but no valid trusted browser Spec entry.

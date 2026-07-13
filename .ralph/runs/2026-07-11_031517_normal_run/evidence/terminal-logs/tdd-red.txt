@@ -1,0 +1,80 @@
+Creating test database for alias 'default'...
+Found 23 test(s).
+System check identified no issues (0 silenced).
+.F.F........F...EE.....
+======================================================================
+ERROR: test_global_override_does_not_bypass_missing_permission (sfpcl_credit.tests.test_object_permissions.ObjectPermissionHelperTests.test_global_override_does_not_bypass_missing_permission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_031517_normal_run/sfpcl_credit/tests/test_object_permissions.py", line 135, in test_global_override_does_not_bypass_missing_permission
+    self.assertEqual(result.error_code, object_permissions.FORBIDDEN)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'sfpcl_credit.identity.modules.object_permissions' has no attribute 'FORBIDDEN'
+
+======================================================================
+ERROR: test_missing_required_permission_is_denied_before_scope (sfpcl_credit.tests.test_object_permissions.ObjectPermissionHelperTests.test_missing_required_permission_is_denied_before_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_031517_normal_run/sfpcl_credit/tests/test_object_permissions.py", line 61, in test_missing_required_permission_is_denied_before_scope
+    self.assertEqual(result.error_code, object_permissions.FORBIDDEN)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'sfpcl_credit.identity.modules.object_permissions' has no attribute 'FORBIDDEN'
+
+======================================================================
+FAIL: test_admin_users_without_permission_satisfies_forbidden_contract (sfpcl_credit.tests.test_api_contract_harness.ApiContractEndpointRegressionTests.test_admin_users_without_permission_satisfies_forbidden_contract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_031517_normal_run/sfpcl_credit/tests/test_api_contract_harness.py", line 300, in test_admin_users_without_permission_satisfies_forbidden_contract
+    assert_error_envelope(self, response.json(), expected_code="FORBIDDEN")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_031517_normal_run/sfpcl_credit/tests/api_contracts.py", line 69, in assert_error_envelope
+    test_case.assertEqual(error["code"], expected_code)
+AssertionError: 'PERMISSION_DENIED' != 'FORBIDDEN'
+- PERMISSION_DENIED
++ FORBIDDEN
+
+
+======================================================================
+FAIL: test_partial_admin_denied_write_satisfies_forbidden_contract (sfpcl_credit.tests.test_api_contract_harness.ApiContractEndpointRegressionTests.test_partial_admin_denied_write_satisfies_forbidden_contract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_031517_normal_run/sfpcl_credit/tests/test_api_contract_harness.py", line 316, in test_partial_admin_denied_write_satisfies_forbidden_contract
+    assert_error_envelope(self, response.json(), expected_code="FORBIDDEN")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_031517_normal_run/sfpcl_credit/tests/api_contracts.py", line 69, in assert_error_envelope
+    test_case.assertEqual(error["code"], expected_code)
+AssertionError: 'PERMISSION_DENIED' != 'FORBIDDEN'
+- PERMISSION_DENIED
++ FORBIDDEN
+
+
+======================================================================
+FAIL: test_production_code_does_not_use_legacy_permission_denied_literal (sfpcl_credit.tests.test_api_contract_harness.ApiContractHarnessUnitTests.test_production_code_does_not_use_legacy_permission_denied_literal)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_031517_normal_run/sfpcl_credit/tests/test_api_contract_harness.py", line 31, in test_production_code_does_not_use_legacy_permission_denied_literal
+    self.assertEqual(offenders, [], f"legacy permission literals: {offenders}")
+AssertionError: Lists differ: ['configurations/views.py', 'tracer/views.[309 chars].py'] != []
+
+First list contains 13 additional elements.
+First extra element 0:
+'configurations/views.py'
+
++ []
+- ['configurations/views.py',
+-  'tracer/views.py',
+-  'identity/audit_views.py',
+-  'identity/admin_views.py',
+-  'identity/modules/object_permissions.py',
+-  'identity/modules/portal_auth_service.py',
+-  'workflows/event_views.py',
+-  'dashboard/views.py',
+-  'applications/views.py',
+-  'members/portal_views.py',
+-  'members/views.py',
+-  'documents/views.py',
+-  'communications/views.py'] : legacy permission literals: ['configurations/views.py', 'tracer/views.py', 'identity/audit_views.py', 'identity/admin_views.py', 'identity/modules/object_permissions.py', 'identity/modules/portal_auth_service.py', 'workflows/event_views.py', 'dashboard/views.py', 'applications/views.py', 'members/portal_views.py', 'members/views.py', 'documents/views.py', 'communications/views.py']
+
+----------------------------------------------------------------------
+Ran 23 tests in 0.178s
+
+FAILED (failures=3, errors=2)
+Destroying test database for alias 'default'...

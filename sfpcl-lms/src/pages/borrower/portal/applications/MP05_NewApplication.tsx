@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ClipboardList, Save, CheckCircle2, AlertTriangle, ChevronLeft, ChevronRight, UserRound, Shield, IndianRupee, Signature, Upload, FileCheck } from 'lucide-react';
 import { useRole } from '../../../../contexts/RoleContext';
 import { AuthSessionError } from '../../../../services/authSession';
 import {
   createPortalApplicationDraft,
+  fetchPortalApplicationLimitProjection,
   fetchPortalProfile,
   submitPortalApplication,
   updatePortalApplicationDraft,
   type PortalApplication,
+  type PortalApplicationLimitProjection,
   type PortalNominee,
 } from '../../../../services/portalApi';
 
@@ -16,6 +18,8 @@ type ApplicationStep = 'applicant' | 'shareholding' | 'loan' | 'nominee' | 'docu
 interface MP05_NewApplicationProps {
   onNavigateToApplication: (id: string) => void;
 }
+
+const formatCurrency = (value: number) => `₹${value.toLocaleString('en-IN')}`;
 
 const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToApplication }) => {
   const { currentUser } = useRole();
@@ -29,6 +33,10 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
   const [selectedNomineeId, setSelectedNomineeId] = useState('');
   const [nomineesLoading, setNomineesLoading] = useState(true);
   const [nomineesError, setNomineesError] = useState(false);
+  const [limitProjection, setLimitProjection] = useState<PortalApplicationLimitProjection | null>(null);
+  const [limitLoading, setLimitLoading] = useState(true);
+  const [limitError, setLimitError] = useState<string | null>(null);
+  const [loanAmountError, setLoanAmountError] = useState<string | null>(null);
   
   const [borrowerApplication, setBorrowerApplication] = useState({
     applicantType: 'individual_farmer',
@@ -62,6 +70,8 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
       sanctionTerms: false,
     },
   });
+  const initialRequestedAmount = useRef(borrowerApplication.requestedAmount);
+  const initialProjectionRequested = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,6 +92,25 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
         if (!cancelled) setNomineesLoading(false);
       });
     return () => { cancelled = true; };
+  }, []);
+
+  const loadLimitProjection = async (requestedAmount: number) => {
+    setLimitLoading(true);
+    setLimitError(null);
+    try {
+      setLimitProjection(await fetchPortalApplicationLimitProjection(String(requestedAmount)));
+    } catch (error) {
+      setLimitProjection(null);
+      setLimitError(error instanceof AuthSessionError ? error.message : 'Eligible limit could not be loaded.');
+    } finally {
+      setLimitLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (initialProjectionRequested.current) return;
+    initialProjectionRequested.current = true;
+    void loadLimitProjection(initialRequestedAmount.current);
   }, []);
 
   const requiredApplicationDocuments = [
@@ -110,20 +139,17 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
   ];
 
   const currentStepIndex = applicationSteps.findIndex(step => step.id === applicationStep);
-  const shareholdingLimit = borrowerApplication.sharesHeld * borrowerApplication.valuationPerShare;
-  const landBasedLimit = 675000;
-  const maximumPermissibleLimit = Math.min(shareholdingLimit, landBasedLimit);
   const uploadedRequiredDocs = requiredApplicationDocuments.filter(doc => applicationDocs[doc.id]?.uploaded && applicationDocs[doc.id]?.selfAttested).length;
   const allDocsComplete = uploadedRequiredDocs === requiredApplicationDocuments.length;
   const allDeclarationsAccepted = Object.values(borrowerApplication.declarations).every(Boolean);
 
   const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
-  const formatCurrency = (value: number) => `₹${value.toLocaleString('en-IN')}`;
   const selectedNominee = nomineeOptions.find(item => item.nominee_id === selectedNomineeId);
 
   const updateApplication = (field: string, value: string | number | boolean) => {
     setApplicationDraftSaved(false);
     setApiMessage(null);
+    if (field === 'requestedAmount') setLoanAmountError(null);
     setBorrowerApplication(prev => ({ ...prev, [field]: value }));
   };
 
@@ -155,8 +181,8 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
       message: 'Shares held and shareholding mode are mandatory; Demat BO ID is required for demat shares.',
     },
     loan: {
-      ok: borrowerApplication.requestedAmount > 0 && borrowerApplication.requestedAmount <= maximumPermissibleLimit && borrowerApplication.loanPurpose.includes('crop') && Boolean(borrowerApplication.crop && borrowerApplication.expectedRepaymentDate),
-      message: 'Loan amount must be within eligible limit and purpose must be crop production or agriculture related.',
+      ok: borrowerApplication.requestedAmount > 0 && borrowerApplication.loanPurpose.includes('crop') && Boolean(borrowerApplication.crop && borrowerApplication.expectedRepaymentDate),
+      message: 'Loan amount, crop purpose, crop details, and expected repayment date are mandatory. Your eligible limit is verified during credit assessment.',
     },
     nominee: {
       ok: Boolean(selectedNomineeId),
@@ -220,8 +246,9 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
       setSavedApplication(draft);
       setApplicationDraftSaved(true);
     } catch (error) {
+      setLoanAmountError(error instanceof AuthSessionError ? error.fieldErrors?.required_loan_amount ?? null : null);
       setApiMessage(error instanceof AuthSessionError
-        ? error.fieldErrors?.nominee_id ?? error.message
+        ? error.fieldErrors?.required_loan_amount ?? error.fieldErrors?.nominee_id ?? error.message
         : 'Draft could not be saved.');
     } finally {
       setSaving(false);
@@ -236,11 +263,13 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
         ? await updatePortalApplicationDraft(savedApplication.loan_application_id, portalDraftPayload())
         : await createPortalApplicationDraft(portalDraftPayload());
       const submitted = await submitPortalApplication(draft.loan_application_id);
+      await loadLimitProjection(Number(submitted.required_loan_amount ?? borrowerApplication.requestedAmount));
       setSavedApplication(submitted);
       setApplicationSubmitted(true);
     } catch (error) {
+      setLoanAmountError(error instanceof AuthSessionError ? error.fieldErrors?.required_loan_amount ?? null : null);
       setApiMessage(error instanceof AuthSessionError
-        ? error.fieldErrors?.nominee_id ?? error.message
+        ? error.fieldErrors?.required_loan_amount ?? error.fieldErrors?.nominee_id ?? error.message
         : 'Application could not be submitted.');
     } finally {
       setSaving(false);
@@ -402,18 +431,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  ['Shareholding Limit', shareholdingLimit],
-                  ['Land-Based Limit', landBasedLimit],
-                  ['Maximum Permissible Limit', maximumPermissibleLimit],
-                ].map(([label, amount]) => (
-                  <div key={label} className="rounded-lg border border-green-100 bg-green-50 p-3">
-                    <div className="text-xs text-green-700">{label}</div>
-                    <div className="mt-1 text-lg font-bold text-green-900">{formatCurrency(Number(amount))}</div>
-                  </div>
-                ))}
-              </div>
+              <PortalApplicationLimitView projection={limitProjection} loading={limitLoading} error={limitError} />
             </div>
           )}
 
@@ -426,7 +444,8 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Required Loan Amount</label>
-                  <input type="number" min={1} value={borrowerApplication.requestedAmount} onChange={e => updateApplication('requestedAmount', Number(e.target.value))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+                  <input type="number" min={1} value={borrowerApplication.requestedAmount} onChange={e => updateApplication('requestedAmount', Number(e.target.value))} onBlur={() => void loadLimitProjection(borrowerApplication.requestedAmount)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+                  {loanAmountError && <p className="text-xs text-red-600 mt-1">{loanAmountError}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Loan Purpose</label>
@@ -459,10 +478,10 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
                   </select>
                 </div>
               </div>
-              {borrowerApplication.requestedAmount > maximumPermissibleLimit && (
+              {limitProjection?.exception_required_flag && (
                 <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
                   <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
-                  Requested amount exceeds maximum permissible limit of {formatCurrency(maximumPermissibleLimit)}.
+                  This request exceeds the current server projection and is subject to the configured exception/credit workflow.
                 </div>
               )}
             </div>
@@ -566,7 +585,7 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
                       ['Applicant', borrowerApplication.borrowerName],
                       ['Folio / Shares', `${borrowerApplication.folioNumber} / ${borrowerApplication.sharesHeld}`],
                       ['Requested Amount', formatCurrency(borrowerApplication.requestedAmount)],
-                      ['Maximum Limit', formatCurrency(maximumPermissibleLimit)],
+                      ['Maximum Limit', limitProjection?.final_eligible_loan_amount ? formatCurrency(Number(limitProjection.final_eligible_loan_amount)) : 'Not yet available'],
                       ['Purpose', borrowerApplication.loanPurpose.replace(/_/g, ' ')],
                       ['Nominee', selectedNominee ? `${selectedNominee.nominee_name}, age ${selectedNominee.age_at_application ?? 'not recorded'}` : 'Not selected'],
                     ].map(([label, value]) => (
@@ -635,6 +654,55 @@ const MP05_NewApplication: React.FC<MP05_NewApplicationProps> = ({ onNavigateToA
               </button>
             )}
           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const PortalApplicationLimitView: React.FC<{
+  projection: PortalApplicationLimitProjection | null;
+  loading: boolean;
+  error: string | null;
+}> = ({ projection, loading, error }) => {
+  if (loading) {
+    return <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">Loading eligible limit...</div>;
+  }
+  if (error) {
+    return <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>;
+  }
+  if (!projection || projection.status === 'unavailable') {
+    return (
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+        <div className="font-semibold text-slate-900">Limit not yet available</div>
+        <div className="mt-1">SFPCL needs current verified member, shareholding, and land facts before displaying a limit.</div>
+      </div>
+    );
+  }
+  const cards = [
+    ['Shareholding Limit', projection.shareholding_based_limit_amount],
+    ['Land-Based Limit', projection.land_based_limit_amount],
+    ['Maximum Permissible Limit', projection.final_eligible_loan_amount],
+  ];
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {cards.map(([label, amount]) => (
+          <div key={label} className="rounded-lg border border-green-200 bg-green-50 p-3">
+            <div className="text-xs font-medium text-green-700">{label}</div>
+            <div className="mt-1 font-semibold text-green-900">{amount ? formatCurrency(Number(amount)) : 'Not available'}</div>
+          </div>
+        ))}
+      </div>
+      {projection.calculated_as_of_date && projection.calculation_rule_version && (
+        <div className="text-xs text-slate-500">
+          As of {projection.calculated_as_of_date} · Rule {projection.calculation_rule_version}
+        </div>
+      )}
+      {projection.exception_required_flag && (
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+          This request exceeds the current server projection and is subject to the configured exception/credit workflow.
         </div>
       )}
     </div>

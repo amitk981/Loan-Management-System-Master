@@ -1,0 +1,2 @@
+sfpcl_credit/members/portal_services.py:1:from sfpcl_credit.applications import services as application_services
+sfpcl_credit/members/portal_services.py:2:from sfpcl_credit.applications.models import ApplicationDeficiency, LoanApplication

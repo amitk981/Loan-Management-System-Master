@@ -6,6 +6,12 @@ import { expect, type Page } from '@playwright/test';
 export const TRACER_EMAIL = 'e2e.tracer@sfpcl.example';
 export const ZERO_EMAIL = 'e2e.zero@sfpcl.example';
 export const E2E_PASSWORD = 'E2eTracer123!';
+const DASHBOARD_BASELINE_INSTANT = new Date('2026-07-10T14:00:00+05:30');
+
+/** Freeze only dashboard screenshot scenarios at the instant committed in their baselines. */
+export async function freezeDashboardClock(page: Page): Promise<void> {
+  await page.clock.setFixedTime(DASHBOARD_BASELINE_INSTANT);
+}
 
 /**
  * Logs in through the real staff auth path — POST /api/v1/auth/login/ followed by

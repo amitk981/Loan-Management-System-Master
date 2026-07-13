@@ -1,0 +1,81 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/applications/CompletenessWorkbench.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_140734_normal_run/sfpcl-lms
+
+ ❯ src/pages/applications/CompletenessWorkbench.test.tsx (3 tests | 3 failed) 7ms
+   × CompletenessWorkbenchView > renders backend queue, checklist, and complete deficiency history without mock authority 6ms
+     → Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+   × CompletenessWorkbenchView > renders backend-issued reference and hides mutation actions without canonical permission 1ms
+     → Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+   × CompletenessWorkbenchView > renders loading, empty, unauthorized, validation, and stale conflict states 0ms
+     → Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/applications/CompletenessWorkbench.test.tsx > CompletenessWorkbenchView > renders backend queue, checklist, and complete deficiency history without mock authority
+Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+ ❯ renderElement node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6119:15
+ ❯ retryNode node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6428:21
+ ❯ performWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:7435:17
+ ❯ startWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8270:7
+ ❯ renderToStringImpl node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8380:7
+ ❯ Proxy.process.env.NODE_ENV.exports.renderToStaticMarkup node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:9861:14
+ ❯ render src/pages/applications/CompletenessWorkbench.test.tsx:56:6
+     54|   canAct: boolean,
+     55|   selectedCompleteness: ApplicationCompleteness | null = completeness,
+     56| ) => renderToStaticMarkup(
+       |      ^
+     57|   <CompletenessWorkbenchView
+     58|     status={status}
+ ❯ src/pages/applications/CompletenessWorkbench.test.tsx:14:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/pages/applications/CompletenessWorkbench.test.tsx > CompletenessWorkbenchView > renders backend-issued reference and hides mutation actions without canonical permission
+Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+ ❯ renderElement node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6119:15
+ ❯ retryNode node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6428:21
+ ❯ performWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:7435:17
+ ❯ startWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8270:7
+ ❯ renderToStringImpl node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8380:7
+ ❯ Proxy.process.env.NODE_ENV.exports.renderToStaticMarkup node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:9861:14
+ ❯ render src/pages/applications/CompletenessWorkbench.test.tsx:56:6
+     54|   canAct: boolean,
+     55|   selectedCompleteness: ApplicationCompleteness | null = completeness,
+     56| ) => renderToStaticMarkup(
+       |      ^
+     57|   <CompletenessWorkbenchView
+     58|     status={status}
+ ❯ src/pages/applications/CompletenessWorkbench.test.tsx:28:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/pages/applications/CompletenessWorkbench.test.tsx > CompletenessWorkbenchView > renders loading, empty, unauthorized, validation, and stale conflict states
+Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+ ❯ renderElement node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6119:15
+ ❯ retryNode node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6428:21
+ ❯ performWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:7435:17
+ ❯ startWork node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8270:7
+ ❯ renderToStringImpl node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:8380:7
+ ❯ Proxy.process.env.NODE_ENV.exports.renderToStaticMarkup node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:9861:14
+ ❯ render src/pages/applications/CompletenessWorkbench.test.tsx:56:6
+     54|   canAct: boolean,
+     55|   selectedCompleteness: ApplicationCompleteness | null = completeness,
+     56| ) => renderToStaticMarkup(
+       |      ^
+     57|   <CompletenessWorkbenchView
+     58|     status={status}
+ ❯ src/pages/applications/CompletenessWorkbench.test.tsx:44:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed (3)
+   Start at  14:11:48
+   Duration  830ms (transform 181ms, setup 0ms, collect 266ms, tests 7ms, environment 0ms, prepare 51ms)
+

@@ -1,0 +1,16 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/applications/CompletenessWorkbench.test.tsx src/services/applicationIntakeApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_140734_normal_run/sfpcl-lms
+
+ ✓ src/services/applicationIntakeApi.test.ts (4 tests) 8ms
+ ✓ src/pages/applications/CompletenessWorkbench.test.tsx (3 tests) 79ms
+
+ Test Files  2 passed (2)
+      Tests  7 passed (7)
+   Start at  14:14:42
+   Duration  627ms (transform 211ms, setup 0ms, collect 360ms, tests 87ms, environment 0ms, prepare 183ms)
+

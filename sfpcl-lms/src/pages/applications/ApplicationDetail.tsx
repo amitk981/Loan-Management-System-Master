@@ -4,12 +4,17 @@ import AlertBanner from '../../components/ui/AlertBanner';
 import StageStepper from '../../components/ui/StageStepper';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Tabs from '../../components/ui/Tabs';
+import EligibilityChecklist from '../../components/loan/EligibilityChecklist';
+import LoanLimitCalculator from '../../components/loan/LoanLimitCalculator';
 import type {
+  ApplicationWitness,
+  ApplicationAvailableAction,
   ApplicationDeficiency,
   ApplicationDocumentChecklistItem,
   StaffApplication,
 } from '../../services/applicationIntakeApi';
-import { submitStaffApplication } from '../../services/applicationIntakeApi';
+import { createApplicationWitness, fetchApplicationWitnesses, submitStaffApplication, updateApplicationWitness } from '../../services/applicationIntakeApi';
+import { AuthSessionError } from '../../services/authSession';
 import { isActionEnabled } from '../../shared/lib/availableActions';
 import { loadApplicationDetail, type ApplicationDetailData } from './applicationDetailLoader';
 
@@ -23,6 +28,7 @@ interface ApplicationDetailProps {
   applicationId: string;
   onBack: () => void;
   onNavigateMember: (memberId: string) => void;
+  onNavigateAppraisal?: (applicationId: string) => void;
 }
 
 interface ApplicationDetailViewProps extends ApplicationDetailProps {
@@ -139,6 +145,58 @@ const NomineePanel: React.FC<{ application: StaffApplication }> = ({ application
   );
 };
 
+export const WitnessPanel: React.FC<{ applicationId: string }> = ({ applicationId }) => {
+  const [items, setItems] = useState<ApplicationWitness[]>([]);
+  const [actions, setActions] = useState<ApplicationAvailableAction[]>([]);
+  const [status, setStatus] = useState<'loading' | 'success' | 'forbidden' | 'error'>('loading');
+  const [message, setMessage] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [values, setValues] = useState({ member_id: '', witness_name: '', pan: '', aadhaar: '', address: '', mobile: '' });
+  const [editing, setEditing] = useState<ApplicationWitness | null>(null);
+  const [correctionKind, setCorrectionKind] = useState<'contact' | 'identity' | null>(null);
+  const refresh = async () => { const canonical = await fetchApplicationWitnesses(applicationId); setItems(canonical.items); setActions(canonical.actions); setStatus('success'); };
+  useEffect(() => {
+    let cancelled = false;
+    fetchApplicationWitnesses(applicationId).then(canonical => { if (!cancelled) { setItems(canonical.items); setActions(canonical.actions); setStatus('success'); } }).catch(error => {
+      if (cancelled) return;
+      setMessage(error instanceof Error ? error.message : 'Unable to load witnesses.');
+      setStatus(error instanceof AuthSessionError && error.status === 403 ? 'forbidden' : 'error');
+    });
+    return () => { cancelled = true; };
+  }, [applicationId]);
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault(); setErrors({}); setMessage('');
+    try {
+      await createApplicationWitness(applicationId, values);
+      await refresh();
+      setValues({ member_id: '', witness_name: '', pan: '', aadhaar: '', address: '', mobile: '' });
+    } catch (error) {
+      if (error instanceof AuthSessionError) { setErrors(error.fieldErrors ?? {}); setMessage(error.message); }
+      else setMessage('Witness could not be saved.');
+    }
+  };
+  const correct = async (event: React.FormEvent) => {
+    event.preventDefault(); if (!editing) return; setErrors({}); setMessage('');
+    const payload = correctionKind === 'contact'
+      ? { version: editing.version, address: values.address, mobile: values.mobile }
+      : { version: editing.version, witness_name: values.witness_name, ...(values.pan ? { pan: values.pan } : {}), ...(values.aadhaar ? { aadhaar: values.aadhaar } : {}) };
+    try { await updateApplicationWitness(applicationId, editing.witness_id, payload); await refresh(); setEditing(null); setCorrectionKind(null); setValues({ member_id: '', witness_name: '', pan: '', aadhaar: '', address: '', mobile: '' }); }
+    catch (error) { if (error instanceof AuthSessionError) { setErrors(error.fieldErrors ?? {}); setMessage(error.message); } else setMessage('Witness could not be corrected.'); }
+  };
+  if (status === 'loading') return unavailablePanel('Witness Details', 'Loading witness details from the application API.');
+  if (status === 'forbidden') return <div className="card"><AlertBanner type="warning" title="Witness access unavailable" message={message || 'You do not have permission to access witnesses.'} /></div>;
+  return <div className="card space-y-4">
+    <h3 className="font-semibold text-slate-800 flex items-center gap-2"><Users size={16} className="text-blue-600" /> Witness Details</h3>
+    {message && <AlertBanner type="warning" title={status === 'error' ? 'Witnesses unavailable' : 'Witness could not be saved'} message={message} />}
+    {items.length === 0 ? <p className="text-sm text-slate-500">No witnesses have been captured for this application.</p> : items.map(item => { const contact = item.actions.find(action => action.action_code === 'correct_contact'); const identity = item.actions.find(action => action.action_code === 'correct_identity'); const begin = (kind: 'contact' | 'identity') => { setEditing(item); setCorrectionKind(kind); setValues({ member_id: '', witness_name: item.witness_name, pan: '', aadhaar: '', address: item.address, mobile: item.mobile }); }; return <div key={item.witness_id} className="bg-slate-50 rounded-lg p-3 space-y-2">{factGrid([{ label: 'Witness name', value: item.witness_name }, { label: 'Address', value: item.address || 'Unavailable' }, { label: 'Mobile', value: item.mobile || 'Unavailable' }, { label: 'Folio', value: item.folio_number ?? 'Unavailable' }, { label: 'PAN', value: item.pan.masked ?? 'Unavailable' }, { label: 'Aadhaar', value: item.aadhaar.masked ?? 'Unavailable' }, { label: 'Shareholder', value: item.shareholder_verified_flag ? 'Verified' : 'Pending' }, { label: 'Verification', value: item.verification_status }])}<div className="flex gap-2">{contact?.enabled && <button className="btn-secondary text-sm" onClick={() => begin('contact')}>Correct Witness Contact</button>}{identity?.enabled && <button className="btn-secondary text-sm" onClick={() => begin('identity')}>Correct Witness Identity</button>}</div>{contact && !contact.enabled && contact.disabled_reason && <p className="text-xs text-slate-500">{contact.disabled_reason}</p>}{identity && !identity.enabled && identity.disabled_reason && <p className="text-xs text-slate-500">{identity.disabled_reason}</p>}</div>; })}
+    {editing && correctionKind && <form onSubmit={correct} className="grid grid-cols-1 md:grid-cols-2 gap-3">{(correctionKind === 'contact' ? ['address', 'mobile'] as const : ['witness_name', 'pan', 'aadhaar'] as const).map(name => <label key={name} className="space-y-1 text-sm"><span className="text-slate-600 capitalize">{documentLabel(name)}</span><input aria-label={`Correction ${documentLabel(name)}`} className="field-input" value={values[name]} onChange={event => setValues(current => ({ ...current, [name]: event.target.value }))} />{errors[name] && <span className="text-xs text-red-600">{errors[name]}</span>}</label>)}<button className="btn-primary text-sm md:col-span-2">Save {correctionKind === 'contact' ? 'Contact' : 'Identity'} Correction</button></form>}
+    {actions.some(action => action.action_code === 'create' && action.enabled) && !editing && <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {(['member_id', 'witness_name', 'address', 'mobile', 'pan', 'aadhaar'] as const).map(name => <label key={name} className="space-y-1 text-sm"><span className="text-slate-600 capitalize">{documentLabel(name)}</span><input aria-label={documentLabel(name)} className="field-input" value={values[name]} onChange={event => setValues(current => ({ ...current, [name]: event.target.value }))} />{errors[name] && <span className="text-xs text-red-600">{errors[name]}</span>}</label>)}
+      <button className="btn-primary text-sm md:col-span-2">Capture Witness</button>
+    </form>}
+  </div>;
+};
+
 const MemberPanel: React.FC<{
   application: StaffApplication;
   onNavigateMember: (memberId: string) => void;
@@ -185,6 +243,7 @@ const RejectionNotePanel: React.FC<{ application: StaffApplication }> = ({ appli
 export const ApplicationDetailView: React.FC<ApplicationDetailViewProps> = ({
   onBack,
   onNavigateMember,
+  onNavigateAppraisal,
   status,
   message,
   data,
@@ -311,13 +370,15 @@ export const ApplicationDetailView: React.FC<ApplicationDetailViewProps> = ({
         </div>
         <MemberPanel application={application} onNavigateMember={onNavigateMember} />
         <NomineePanel application={application} />
-        <div className="card space-y-4">
-          <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-            <Users size={16} className="text-blue-600" /> Witness Details
-          </h3>
-          <p className="text-sm text-slate-500">No API-backed witness details are available for this application yet.</p>
+        <WitnessPanel applicationId={application.loan_application_id} />
+        <div className="space-y-4">
+          {data.eligibility ? <div className="card"><EligibilityChecklist assessment={data.eligibility} /></div> : unavailablePanel('Eligibility Assessment', 'No stored eligibility assessment is available.')}
+          {data.loanLimit ? <div className="card"><LoanLimitCalculator assessment={data.loanLimit} /></div> : unavailablePanel('Loan Limit', 'No stored loan-limit assessment is available.')}
+          <div className="card flex items-center justify-between gap-3">
+            <div><h3 className="text-sm font-semibold text-slate-700">Appraisal</h3><p className="text-sm text-slate-500 mt-1">{data.appraisal ? `Stored status: ${documentLabel(data.appraisal.appraisal_status)}` : 'No stored appraisal note is available.'}</p></div>
+            {onNavigateAppraisal && <button className="btn-secondary text-sm" onClick={() => onNavigateAppraisal(application.loan_application_id)}>Open Appraisal Workbench</button>}
+          </div>
         </div>
-        {unavailablePanel('Eligibility & Limit', 'No backend eligibility or loan-limit facts are available in this detail response.')}
         {unavailablePanel('Sanction & Approvals', 'No backend sanction or approval facts are available in this detail response.')}
         <ChecklistRows items={checklistItems} />
         {unavailablePanel('Security Instruments', 'No backend security facts are available in this detail response.')}

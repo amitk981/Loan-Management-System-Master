@@ -41,12 +41,18 @@ PERMISSIONS = [
     ("members.member.read", "View member list / details", "medium"),
     ("members.member.create", "Create member", "high"),
     ("members.member.update", "Update member", "high"),
+    ("members.member.identity_change.approve", "Approve member identity change", "high"),
     ("members.member.deactivate", "Deactivate member", "critical"),
     ("members.sensitive.reveal_pan", "Reveal full PAN", "critical"),
     ("members.sensitive.reveal_aadhaar", "Reveal full Aadhaar", "critical"),
     ("members.nominee.read", "View nominees", "medium"),
     ("members.nominee.create", "Create nominee", "high"),
     ("members.nominee.update", "Update nominee", "high"),
+    # A-062: source stage matrix names witness read/capture roles while the
+    # canonical catalogue omits the atomic codes.
+    ("members.witness.read", "View witnesses", "medium"),
+    ("members.witness.create", "Create witnesses", "high"),
+    ("members.witness.update", "Update witnesses", "high"),
     ("members.shareholding.read", "View shareholding", "medium"),
     ("members.shareholding.create", "Create shareholding", "high"),
     ("members.shareholding.update", "Update shareholding", "high"),
@@ -315,6 +321,7 @@ ROLE_PERMISSIONS = {
     "deputy_manager_finance": [
         "applications.loan_application.read",
         "applications.loan_application.complete_check",
+        "applications.loan_application.return_deficiency",
         "applications.deficiency.create",
         "applications.deficiency.resolve",
         "credit.eligibility.run",
@@ -325,6 +332,7 @@ ROLE_PERMISSIONS = {
         "credit.risk_assessment.manage",
     ],
     "credit_manager": [
+        "members.witness.read",
         "applications.loan_application.read",
         "applications.loan_application.create",
         "applications.loan_application.complete_check",
@@ -352,6 +360,9 @@ ROLE_PERMISSIONS = {
         "management_readonly",
     ],
     "compliance_team_member": [
+        "members.witness.read",
+        "members.witness.create",
+        "members.witness.update",
         "documents.loan_document.generate",
         "documents.loan_document.read",
         "documents.loan_document.verify",
@@ -369,6 +380,9 @@ ROLE_PERMISSIONS = {
         "management_readonly",
     ],
     "company_secretary": [
+        "members.witness.read",
+        "members.witness.create",
+        "members.witness.update",
         "documents.checklist.approve_cs",
         "documents.loan_document.verify",
         "documents.signature.resolve_mismatch",
@@ -448,6 +462,7 @@ ROLE_PERMISSIONS = {
         "management_readonly",
     ],
     "internal_auditor": [
+        "members.witness.read",
         "audit.audit_log.read",
         "audit.workflow_event.read",
         "audit.version_history.read",

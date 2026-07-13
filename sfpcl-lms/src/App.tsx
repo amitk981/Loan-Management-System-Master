@@ -1,8 +1,7 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Agentation } from 'agentation';
 import { RoleProvider, useRole } from './contexts/RoleContext';
-import { Role, LoanApplication } from './types';
-import { loanApplications as initialApplications } from './data/mockData';
+import { Role } from './types';
 import {
   AuthSessionError,
   DEMO_AUTH_ENABLED,
@@ -57,7 +56,7 @@ type AuthView = 'staff' | 'memberLogin' | 'memberActivation' | 'memberForgot';
 
 // Inner component so it can use useRole hook (inside RoleProvider)
 const AppInner: React.FC = () => {
-  const { currentUser, setRole, setBackendUser, can } = useRole();
+  const { currentUser, setRole, setBackendUser, clearUser, can } = useRole();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
@@ -69,10 +68,6 @@ const AppInner: React.FC = () => {
   const [authView, setAuthView] = useState<AuthView>('staff');
   const [blockedPage, setBlockedPage] = useState<Page | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [applications, setApplications] = useState<LoanApplication[]>(initialApplications);
-  const updateApplicationStatus = useCallback((id: string, newStatus: string) => {
-    setApplications(prev => prev.map(a => a.id === id ? { ...a, status: newStatus as LoanApplication['status'] } : a));
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -151,6 +146,7 @@ const AppInner: React.FC = () => {
         // Local session is cleared even if the network logout fails.
       }
     }
+    clearUser();
     setIsLoggedIn(false);
     setPage('dashboard');
     setAuthView('staff');
@@ -161,7 +157,6 @@ const AppInner: React.FC = () => {
     if (authView === 'memberLogin') {
       return (
         <MP00_Login
-          onLogin={() => handleDemoLogin('borrower')}
           onSubmitLogin={handleMemberLogin}
           onNavigateToActivation={() => setAuthView('memberActivation')}
           onNavigateToForgot={() => setAuthView('memberForgot')}
@@ -253,6 +248,7 @@ const AppInner: React.FC = () => {
             applicationId={selectedApplicationId || 'app001'}
             onBack={() => navigate('applications')}
             onNavigateMember={id => navigate('members/profile', id)}
+            onNavigateAppraisal={id => navigate('appraisal', id)}
           />
         );
       case 'completeness':
@@ -282,9 +278,9 @@ const AppInner: React.FC = () => {
           />
         );
       case 'appraisal':
-        return <AppraisalWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} applications={applications} onUpdateStatus={updateApplicationStatus} />;
+        return <AppraisalWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} />;
       case 'sanction':
-        return <SanctionWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} applications={applications} onUpdateStatus={updateApplicationStatus} />;
+        return <SanctionWorkbench onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} applications={[]} />;
       case 'documentation':
         return <DocumentationHub onOpenApplication={id => navigate('applications/detail', id)} initialSelectedId={selectedApplicationId || undefined} />;
       case 'disbursement':

@@ -1,0 +1,10 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006G-submit-to-sanction.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+?? .ralph/runs/2026-07-10_190455_architecture_review/
+?? docs/adr/ADR-0004-append-only-appraisal-review-decisions.md
+?? docs/slices/006E3-appraisal-history-and-review-authority-hardening.md
+?? docs/slices/006F3-appraisal-lock-order-and-postgresql-concurrency-closure.md

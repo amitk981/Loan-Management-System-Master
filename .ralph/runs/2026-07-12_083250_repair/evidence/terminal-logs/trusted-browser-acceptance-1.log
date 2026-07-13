@@ -1,0 +1,82 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_083250_repair/.ralph/runs/2026-07-12_083250_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-governance-closure.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-governance-closure.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 03:25:40] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[12/Jul/2026 03:25:43] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:43] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[12/Jul/2026 03:25:43] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:43] "GET /api/v1/auth/me/ HTTP/1.1" 200 1671
+[2m[WebServer] [22m[12/Jul/2026 03:25:43] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:43] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 03:25:43] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 03:25:43] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[12/Jul/2026 03:25:44] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:44] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:44] "GET /api/v1/members/ HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 03:25:44] "GET /api/v1/members/ HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 03:25:44] "OPTIONS /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:44] "GET /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 03:25:44] "OPTIONS /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:44] "OPTIONS /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:44] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 1465
+[2m[WebServer] [22m[12/Jul/2026 03:25:44] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 1465
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "OPTIONS /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "OPTIONS /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/?ordering=-application_date&page=1&page_size=20 HTTP/1.1" 200 1038
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "OPTIONS /api/v1/loan-request-register/?ordering=-reference_generated_date&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-request-register/?ordering=-reference_generated_date&page_size=20 HTTP/1.1" 200 246
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 2030
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 2305
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 1443
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/ HTTP/1.1" 200 2030
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 0
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 404 224
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 404 231
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/document-checklist/ HTTP/1.1" 200 2305
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 1143
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/deficiencies/ HTTP/1.1" 200 1443
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/
+[2m[WebServer] [22mNot Found: /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/loan-limit-assessment/ HTTP/1.1" 404 231
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/appraisal-note/ HTTP/1.1" 404 224
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/eligibility-assessment/ HTTP/1.1" 200 1143
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "OPTIONS /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 246
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 246
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "POST /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 782
+[2m[WebServer] [22m[12/Jul/2026 03:25:45] "GET /api/v1/loan-applications/00000000-0000-4000-8000-000000000601/witnesses/ HTTP/1.1" 200 905
+[2m[WebServer] [22m[12/Jul/2026 03:25:46] "POST /api/v1/auth/login/ HTTP/1.1" 200 1255
+[2m[WebServer] [22m[12/Jul/2026 03:25:46] "GET /api/v1/auth/me/ HTTP/1.1" 200 454
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 03:25:46] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 03:25:46] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+  ✓  1 [chromium] › member-governance-closure.e2e.spec.ts:11:5 › real member governance and witness capture remain reachable and permission-bound (5.0s)
+
+  1 passed (9.3s)
+
+Exit code: 0

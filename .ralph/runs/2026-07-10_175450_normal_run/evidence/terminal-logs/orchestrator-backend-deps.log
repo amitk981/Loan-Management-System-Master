@@ -1,0 +1,2 @@
+Backend dependencies were pre-provisioned by the orchestrator before the agent run.
+The newly pinned psycopg[binary] dependency was not installed inside the offline agent sandbox.

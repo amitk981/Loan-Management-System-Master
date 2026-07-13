@@ -1,0 +1,15 @@
+Command: /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_appraisal_api.AppraisalApiTests.test_credit_manager_reviews_submitted_appraisal_with_metadata_only_evidence -v 2
+
+Result: FAIL (expected RED)
+
+AssertionError: 404 != 200
+
+The public API tracer reached Django routing and proved that
+POST /api/v1/appraisal-notes/{id}/review/ did not exist before implementation.
+
+Incremental permission/maker-checker cycle: ERROR (expected RED while extending coverage)
+
+`NameError: CreditModulePermissionDenied is not defined`
+
+The public API test reached the maker-checker denial branch and exposed the missing exception
+import; the minimal import fix made the same test pass.

@@ -1,0 +1,63 @@
+
+> sfpcl-lms@1.0.0 lint
+> eslint src
+
+
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+
+> sfpcl-lms@1.0.0 test
+> vitest run
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_140734_normal_run/sfpcl-lms
+
+ ✓ src/pages/applications/ApplicationList.test.tsx (2 tests) 35ms
+ ✓ src/pages/Dashboard.test.tsx (13 tests) 46ms
+ ✓ src/pages/applications/CompletenessWorkbench.test.tsx (3 tests) 49ms
+ ✓ src/pages/members/Borrower360.test.tsx (4 tests) 79ms
+ ✓ src/pages/applications/ApplicationDetail.test.tsx (9 tests) 82ms
+ ✓ src/pages/members/MemberProfile.test.tsx (25 tests) 187ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.test.tsx (18 tests) 177ms
+ ✓ src/services/authSession.test.ts (15 tests) 15ms
+ ✓ src/contexts/RoleContext.test.tsx (2 tests) 9ms
+ ✓ src/pages/members/MemberDirectory.test.tsx (5 tests) 36ms
+ ✓ src/pages/notifications/NotificationsCenter.test.tsx (6 tests) 39ms
+ ✓ src/pages/borrower/portal/PortalMemberViews.test.tsx (4 tests) 42ms
+ ✓ src/services/navigationPermissions.test.ts (7 tests) 6ms
+ ✓ src/pages/profile/MyProfile.test.tsx (1 test) 12ms
+ ✓ src/services/creditAssessmentApi.test.ts (5 tests) 9ms
+ ✓ src/services/tracerApi.test.ts (2 tests) 3ms
+ ✓ src/pages/borrower/portal/auth/MP00_Login.test.tsx (3 tests) 11ms
+ ✓ src/services/applicationIntakeApi.test.ts (4 tests) 13ms
+ ✓ src/services/portalApi.test.ts (4 tests) 7ms
+ ✓ src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx (2 tests) 2ms
+ ✓ src/pages/applications/NomineeSelectionViews.test.tsx (3 tests) 8ms
+ ✓ src/utils/applicationDisplay.test.ts (5 tests) 2ms
+
+ Test Files  22 passed (22)
+      Tests  142 passed (142)
+   Start at  14:25:59
+   Duration  1.72s (transform 1.27s, setup 0ms, collect 3.84s, tests 872ms, environment 3ms, prepare 1.24s)
+
+
+> sfpcl-lms@1.0.0 build
+> vite build
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+vite v5.4.21 building for production...
+transforming...
+✓ 1870 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.75 kB │ gzip:   0.43 kB
+dist/assets/index-BDEKD1Jg.css     51.35 kB │ gzip:   8.89 kB
+dist/assets/index-C9uwS6XB.js   1,122.42 kB │ gzip: 240.11 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.07s

@@ -1,0 +1,105 @@
+Creating test database for alias 'default'...
+Found 497 test(s).
+System check identified no issues (0 silenced).
+.................................................................................................................................Catalogue seeded: 181 permissions, 20 roles, 8 teams, 170 role-permission links.
+Catalogue seeded: 181 permissions, 20 roles, 8 teams, 170 role-permission links.
+......................................................................................................................................................................................................FFFFFF..FF.F..........................................................Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+...Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.Demo users seeded: demo.system_admin@sfpcl.example, demo.credit_manager@sfpcl.example, demo.compliance@sfpcl.example, demo.treasury@sfpcl.example, demo.internal_auditor@sfpcl.example, demo.tracer@sfpcl.example, demo.zero@sfpcl.example (predictable local/dev password set; do not use in production).
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.Catalogue seeded: 181 permissions, 20 roles, 8 teams, 170 role-permission links.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+..Catalogue seeded: 181 permissions, 20 roles, 8 teams, 170 role-permission links.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.Catalogue seeded: 181 permissions, 20 roles, 8 teams, 170 role-permission links.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+......................................sssssss............ss.....ss........s..........
+======================================================================
+FAIL: test_authenticated_user_can_retrieve_masked_member_profile_detail (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_authenticated_user_can_retrieve_masked_member_profile_detail)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 172, in test_authenticated_user_can_retrieve_masked_member_profile_detail
+    self.assertEqual(response.status_code, 200)
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_masked_profile_read_does_not_create_audit_or_workflow_events (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_masked_profile_read_does_not_create_audit_or_workflow_events)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 353, in test_masked_profile_read_does_not_create_audit_or_workflow_events
+    self.assertEqual(response.status_code, 200)
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_member_profile_does_not_derive_loan_start_actions_from_member_statuses (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_does_not_derive_loan_start_actions_from_member_statuses) (membership_status='active', kyc_status='verified', default_status='no_default')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 245, in test_member_profile_does_not_derive_loan_start_actions_from_member_statuses
+    self.assertEqual(response.status_code, 200)
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_member_profile_does_not_derive_loan_start_actions_from_member_statuses (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_does_not_derive_loan_start_actions_from_member_statuses) (membership_status='inactive', kyc_status='verified', default_status='no_default')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 245, in test_member_profile_does_not_derive_loan_start_actions_from_member_statuses
+    self.assertEqual(response.status_code, 200)
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_member_profile_does_not_derive_loan_start_actions_from_member_statuses (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_does_not_derive_loan_start_actions_from_member_statuses) (membership_status='active', kyc_status='missing', default_status='no_default')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 245, in test_member_profile_does_not_derive_loan_start_actions_from_member_statuses
+    self.assertEqual(response.status_code, 200)
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_member_profile_does_not_derive_loan_start_actions_from_member_statuses (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_does_not_derive_loan_start_actions_from_member_statuses) (membership_status='active', kyc_status='verified', default_status='in_default')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 245, in test_member_profile_does_not_derive_loan_start_actions_from_member_statuses
+    self.assertEqual(response.status_code, 200)
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_member_profile_sets_can_view_full_by_field_specific_permissions_without_full_values (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_profile_sets_can_view_full_by_field_specific_permissions_without_full_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 215, in test_member_profile_sets_can_view_full_by_field_specific_permissions_without_full_values
+    self.assertEqual(response.status_code, 200)
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_member_without_type_specific_profile_returns_null_profile_objects (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_member_without_type_specific_profile_returns_null_profile_objects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 307, in test_member_without_type_specific_profile_returns_null_profile_objects
+    self.assertEqual(response.status_code, 200)
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_producer_institution_profile_serializes_non_sensitive_fields_only (sfpcl_credit.tests.test_member_profile_api.MemberProfileApiTests.test_producer_institution_profile_serializes_non_sensitive_fields_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_member_profile_api.py", line 278, in test_producer_institution_profile_serializes_non_sensitive_fields_only
+    self.assertEqual(response.status_code, 200)
+AssertionError: 403 != 200
+
+----------------------------------------------------------------------
+Ran 497 tests in 27.975s
+
+FAILED (failures=9, skipped=12)
+Destroying test database for alias 'default'...

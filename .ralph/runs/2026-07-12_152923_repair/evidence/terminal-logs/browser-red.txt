@@ -1,0 +1,18 @@
+Command:
+RALPH_EVIDENCE_DIR=<run>/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/witness-correction-authority.e2e.spec.ts
+
+Result: browser launch blocked before scenario execution by the coding sandbox.
+
+browserType.launch: Target page, context or browser has been closed
+[chromium] FATAL mach_port_rendezvous.cc(399): bootstrap_check_in ... Permission denied (1100)
+
+The prior outside-sandbox trusted runs are the red-capable feedback loop and failed twice at the
+same exact assertion after the successful contact PATCH and canonical GET:
+
+Locator: getByText('Canonical Contact Road')
+Expected: visible
+Received: <element(s) not found>
+witness-correction-authority.e2e.spec.ts:34:58
+
+Server trace after `page.reload()` contained `/auth/me/` and `/dashboard/` only, with no application
+detail or witnesses request. This confirms the in-memory route reset, rather than persistence loss.

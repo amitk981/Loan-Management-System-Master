@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006Z-produce-supply-history-persistence.md
+ M docs/working/HANDOFF.md
+ M docs/working/IMPLEMENTATION_SLICE_INDEX.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-004-member-kyc-master.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+?? .ralph/runs/2026-07-12_092009_architecture_review/
+?? docs/slices/006X4-credit-action-parity-regression-matrix.md
+?? docs/slices/006Y3-member-registry-and-identity-change-approval-closure.md
+?? docs/slices/006Y4-witness-correction-and-resource-action-closure.md

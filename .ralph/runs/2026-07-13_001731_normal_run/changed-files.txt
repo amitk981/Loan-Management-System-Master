@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006Z2-portal-application-limit-display-authority.md
+ M docs/slices/006Z6-active-member-evidence-atomicity-and-history-closure.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M sfpcl_credit/members/modules/active_member_status.py
+ M sfpcl_credit/members/modules/member_registry.py
+ M sfpcl_credit/tests/test_active_member_status_module.py
+ M sfpcl_credit/tests/test_member_governance_api.py
+?? .ralph/runs/2026-07-13_001731_normal_run/
+?? sfpcl_credit/members/modules/member_authority.py

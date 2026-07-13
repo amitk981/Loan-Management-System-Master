@@ -1,0 +1,28 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_witness_correction_actions_distinguish_verifier_from_checker_authority (sfpcl_credit.tests.test_witness_api.WitnessApiTests.test_witness_correction_actions_distinguish_verifier_from_checker_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_150856_normal_run/sfpcl_credit/tests/test_witness_api.py", line 174, in test_witness_correction_actions_distinguish_verifier_from_checker_authority
+    self.assertEqual(
+AssertionError: Lists differ: ['read', 'update'] != ['read', 'correct_contact', 'correct_identity']
+
+First differing element 1:
+'update'
+'correct_contact'
+
+Second list contains 1 additional elements.
+First extra element 2:
+'correct_identity'
+
+- ['read', 'update']
++ ['read', 'correct_contact', 'correct_identity']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.028s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

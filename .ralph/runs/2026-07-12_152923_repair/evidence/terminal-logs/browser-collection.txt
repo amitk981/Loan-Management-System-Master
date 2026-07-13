@@ -1,0 +1,7 @@
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test --list e2e/witness-correction-authority.e2e.spec.ts
+
+Listing tests:
+  [chromium] › witness-correction-authority.e2e.spec.ts:15:5 › contact and maker-checker identity corrections persist through routed real sessions
+Total: 1 test in 1 file

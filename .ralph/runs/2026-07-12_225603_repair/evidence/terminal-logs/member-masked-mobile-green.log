@@ -1,0 +1,9 @@
+Command: npm test -- --run src/pages/members/MemberGovernanceForm.container.test.tsx -t "routes Directory registration"
+
+Result: PASS (1 passed, 13 skipped)
+Duration: 4.59s
+
+Follow-up matrix:
+  MemberGovernanceForm.container.test.tsx: 14 passed (14)
+
+The exact ordinary PATCH omitted the unchanged masked mobile and retained one canonical detail GET.

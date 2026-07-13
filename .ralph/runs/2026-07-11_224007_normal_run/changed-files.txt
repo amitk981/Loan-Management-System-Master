@@ -1,0 +1,9 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006H3-appraisal-workbench-prototype-fidelity-restoration.md
+ M docs/working/HANDOFF.md
+ M sfpcl-lms/src/components/loan/EligibilityChecklist.tsx
+ M sfpcl-lms/src/components/loan/LoanLimitCalculator.tsx
+ M sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx
+?? .ralph/runs/2026-07-11_224007_normal_run/
+?? sfpcl-lms/e2e/appraisal-workbench-fidelity.e2e.spec.ts

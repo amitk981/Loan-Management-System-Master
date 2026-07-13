@@ -1,0 +1,90 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/.ralph/runs/2026-07-12_094433_normal_run/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-governance-closure.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-governance-closure.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 04:24:25] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[12/Jul/2026 04:24:28] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:24:28] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[12/Jul/2026 04:24:28] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:24:28] "GET /api/v1/auth/me/ HTTP/1.1" 200 1671
+[2m[WebServer] [22m[12/Jul/2026 04:24:28] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:24:28] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 04:24:28] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 04:24:28] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[12/Jul/2026 04:24:28] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:24:28] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:24:28] "GET /api/v1/members/ HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 04:24:28] "GET /api/v1/members/ HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 04:24:29] "OPTIONS /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:24:29] "GET /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 04:24:29] "OPTIONS /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:24:29] "OPTIONS /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 04:24:29] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 1766
+[2m[WebServer] [22m[12/Jul/2026 04:24:29] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 1766
+  ✘  1 [chromium] › member-governance-closure.e2e.spec.ts:11:5 › real member governance and witness capture remain reachable and permission-bound (3.0s)
+
+
+  1) [chromium] › member-governance-closure.e2e.spec.ts:11:5 › real member governance and witness capture remain reachable and permission-bound 
+
+    Error: [2mexpect([22m[31mpage[39m[2m).[22mtoHaveScreenshot[2m([22m[32mexpected[39m[2m)[22m
+
+      12246 pixels (ratio 0.02 of all image pixels) are different.
+
+    Expected: [33m/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms/e2e/member-governance-closure.e2e.spec.ts-snapshots/member-reverification-chromium-darwin.png[39m
+    Received: [33m/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms/test-results/member-governance-closure.-995e0-chable-and-permission-bound-chromium/member-reverification-actual.png[39m
+        Diff: [33m/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms/test-results/member-governance-closure.-995e0-chable-and-permission-bound-chromium/member-reverification-diff.png[39m
+
+    Call log:
+    [2m  - expect.toHaveScreenshot(member-reverification.png) with timeout 5000ms[22m
+    [2m    - verifying given screenshot expectation[22m
+    [2m  - taking page screenshot[22m
+    [2m    - disabled all CSS animations[22m
+    [2m  - waiting for fonts to load...[22m
+    [2m  - fonts loaded[22m
+    [2m  - 12246 pixels (ratio 0.02 of all image pixels) are different.[22m
+    [2m  - waiting 100ms before taking screenshot[22m
+    [2m  - taking page screenshot[22m
+    [2m    - disabled all CSS animations[22m
+    [2m  - waiting for fonts to load...[22m
+    [2m  - fonts loaded[22m
+    [2m  - captured a stable screenshot[22m
+    [2m  - 12246 pixels (ratio 0.02 of all image pixels) are different.[22m
+
+
+      54 |   }
+      55 |   await page.screenshot({ path: path.join(evidenceDir, `${name}.png`), fullPage: true, animations: 'disabled' });
+    > 56 |   await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, animations: 'disabled' });
+         |                      ^
+      57 |   fs.rmSync(png);
+      58 | }
+      59 |
+        at capture (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms/e2e/member-governance-closure.e2e.spec.ts:56:22)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl-lms/e2e/member-governance-closure.e2e.spec.ts:26:3
+
+    attachment #1: member-reverification-expected.png (image/png) ──────────────────────────────────
+    e2e/member-governance-closure.e2e.spec.ts-snapshots/member-reverification-chromium-darwin.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: member-reverification-actual.png (image/png) ────────────────────────────────────
+    test-results/member-governance-closure.-995e0-chable-and-permission-bound-chromium/member-reverification-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: member-reverification-diff.png (image/png) ──────────────────────────────────────
+    test-results/member-governance-closure.-995e0-chable-and-permission-bound-chromium/member-reverification-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › member-governance-closure.e2e.spec.ts:11:5 › real member governance and witness capture remain reachable and permission-bound 
+
+Exit code: 1

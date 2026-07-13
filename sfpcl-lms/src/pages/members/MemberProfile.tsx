@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
   Building2,
@@ -19,6 +19,7 @@ import StatusBadge from '../../components/ui/StatusBadge';
 import Tabs from '../../components/ui/Tabs';
 import { AuthSessionError } from '../../services/authSession';
 import {
+  approveMemberIdentityChange,
   createMemberCropPlan,
   createMemberKycProfile,
   createMemberLandHolding,
@@ -50,6 +51,7 @@ import {
   type MemberProfileDetail,
   type MemberShareholdingDetail,
 } from '../../services/memberProfileApi';
+import MemberGovernanceForm from './MemberGovernanceForm';
 
 type ProfileStatus = 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
 type NomineeStatus = 'idle' | 'loading' | 'success' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
@@ -63,6 +65,7 @@ interface MemberProfileProps {
 }
 
 const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
+  const profileRequestRef = useRef<{ memberId: string; request: Promise<MemberProfileDetail> } | null>(null);
   const [status, setStatus] = useState<ProfileStatus>('loading');
   const [message, setMessage] = useState('');
   const [profile, setProfile] = useState<MemberProfileDetail | null>(null);
@@ -101,6 +104,8 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
   const [kycVerifyFieldErrors, setKycVerifyFieldErrors] = useState<Record<string, string>>({});
   const [kycVerifyMessage, setKycVerifyMessage] = useState('');
   const [kycVerifySubmitting, setKycVerifySubmitting] = useState(false);
+  const [identityApprovalMessage, setIdentityApprovalMessage] = useState('');
+  const [identityApprovalSubmitting, setIdentityApprovalSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -134,7 +139,10 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
     setKycDocumentMessage('');
     setKycVerifyFieldErrors({});
     setKycVerifyMessage('');
-    fetchMemberProfile(memberId)
+    if (profileRequestRef.current?.memberId !== memberId) {
+      profileRequestRef.current = { memberId, request: fetchMemberProfile(memberId) };
+    }
+    profileRequestRef.current.request
       .then(result => {
         if (!cancelled) {
           setProfile(result);
@@ -424,7 +432,32 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
     }
   };
 
-  return (
+  const updateAction = profile?.available_actions.find(action => action.action_code === 'members.member.update');
+  const reverifyAction = profile?.available_actions.find(action => action.action_code === 'members.member.reverify_identity');
+  const approveIdentityAction = profile?.available_actions.find(action => action.action_code === 'members.member.identity_change.approve');
+  const refreshProfile = async () => {
+    const canonical = await fetchMemberProfile(memberId);
+    setProfile(canonical);
+    setStatus('success');
+  };
+  const handleApproveIdentityChange = async () => {
+    if (!profile?.pending_identity_change) return;
+    setIdentityApprovalSubmitting(true);
+    setIdentityApprovalMessage('');
+    try {
+      await approveMemberIdentityChange(profile.pending_identity_change.identity_change_request_id);
+      await refreshProfile();
+    } catch (error) {
+      setIdentityApprovalMessage(error instanceof Error ? error.message : 'Identity change could not be approved.');
+    } finally {
+      setIdentityApprovalSubmitting(false);
+    }
+  };
+
+  return <>
+    {identityApprovalMessage && <div className="p-6 pb-0"><AlertBanner type="warning" title="Identity change could not be approved" message={identityApprovalMessage} /></div>}
+    {profile?.pending_identity_change && approveIdentityAction?.enabled && <div className="p-6 pb-0"><button className="btn-primary text-sm" disabled={identityApprovalSubmitting} onClick={handleApproveIdentityChange}>{identityApprovalSubmitting ? 'Approving…' : 'Approve identity change'}</button></div>}
+    {profile && updateAction?.enabled && <div className="p-6 pb-0"><MemberGovernanceForm profile={profile} canReverify={Boolean(reverifyAction?.enabled)} onSaved={refreshProfile} /></div>}
     <MemberProfileView
       status={status}
       message={message}
@@ -475,7 +508,7 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ memberId, onBack }) => {
       onUploadKycDocument={handleUploadKycDocument}
       onVerifyKycDocument={handleVerifyKycDocument}
     />
-  );
+  </>;
 };
 
 interface MemberProfileViewProps {
@@ -662,7 +695,7 @@ export const MemberProfileView: React.FC<MemberProfileViewProps> = ({
           createSubmitting={shareholdingCreateSubmitting}
           onCreateShareholding={onCreateShareholding}
         />
-        <DeferredTab title="Produce Supply History" message="No produce supply records are available from the backend yet." />
+        <SupplyHistory records={profile.produce_supply_records ?? []} />
         <ServicesTab profile={profile} />
         <LandTab
           status={landCropStatus}
@@ -1667,6 +1700,20 @@ const Field: React.FC<{ label: string; error?: string; children: React.ReactNode
     {children}
     {error && <span className="text-xs text-red-600 mt-1 block">{error}</span>}
   </label>
+);
+
+const SupplyHistory: React.FC<{ records: NonNullable<MemberProfileDetail['produce_supply_records']> }> = ({ records }) => (
+  <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+    <div className="px-5 py-4 border-b border-slate-100"><h3 className="font-semibold text-slate-900">Produce Supply History</h3></div>
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-slate-500"><tr><th className="px-5 py-3 text-left">Financial Year</th><th className="px-5 py-3 text-left">Crop</th><th className="px-5 py-3 text-right">Quantity</th><th className="px-5 py-3 text-right">Value</th><th className="px-5 py-3 text-center">Status</th></tr></thead>
+        <tbody className="divide-y divide-slate-50">
+          {records.length ? records.map(record => <tr key={record.produce_supply_record_id}><td className="px-5 py-3 font-medium">{record.financial_year}</td><td className="px-5 py-3">{record.crop_type || 'Not recorded'}</td><td className="px-5 py-3 text-right">{record.quantity || 'Not recorded'}</td><td className="px-5 py-3 text-right">{record.value_amount || 'Not recorded'}</td><td className="px-5 py-3 text-center"><StatusBadge label={record.verified_flag ? 'verified' : 'pending'} size="sm" /></td></tr>) : <tr><td colSpan={5} className="px-5 py-6 text-slate-500">No produce supply records are available.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  </div>
 );
 
 const DeferredTab: React.FC<{ title: string; message: string }> = ({ title, message }) => (

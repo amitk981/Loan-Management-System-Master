@@ -1,0 +1,10 @@
+Quality-gate summary
+
+- Django system check: no issues.
+- Migration sync: no changes detected.
+- Backend coverage run: 358 tests passed, 2 PostgreSQL-only skips, TOTAL 95%, required floor 85%.
+- Frontend ESLint: passed.
+- Frontend TypeScript no-emit check: passed.
+- Frontend Vitest: 16 files, 107 tests passed.
+- Frontend Vite production build: passed (existing chunk-size advisory only).
+- Git diff whitespace check: passed.

@@ -1,0 +1,2023 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/applications/WitnessPanel.container.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_150856_normal_run/sfpcl-lms
+
+ ❯ src/pages/applications/WitnessPanel.container.test.tsx (4 tests | 3 failed) 3348ms
+   ✓ mounted witness resource actions > captures with the exact body and refetches the canonical collection once  302ms
+   × mounted witness resource actions > corrects contact with the exact current-version body and one canonical refetch 1022ms
+     → Unable to find role="button" and name "Correct Witness Contact"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card space-y-4"[39m
+    [36m>[39m
+      [36m<h3[39m
+        [33mclass[39m=[32m"font-semibold text-slate-800 flex items-center gap-2"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-users text-blue-600"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+          [36m/>[39m
+          [36m<circle[39m
+            [33mcx[39m=[32m"9"[39m
+            [33mcy[39m=[32m"7"[39m
+            [33mr[39m=[32m"4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Witness Details[0m
+      [36m</h3>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3 space-y-2"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mWitness name[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mWitness One[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAddress[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVillage Road[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mMobile[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m9876543210[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mFolio[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mFOL-1[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mPAN[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m******234F[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAadhaar[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m********1234[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mShareholder[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVerified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mVerification[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mverified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card space-y-4"[39m
+    [36m>[39m
+      [36m<h3[39m
+        [33mclass[39m=[32m"font-semibold text-slate-800 flex items-center gap-2"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-users text-blue-600"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+          [36m/>[39m
+          [36m<circle[39m
+            [33mcx[39m=[32m"9"[39m
+            [33mcy[39m=[32m"7"[39m
+            [33mr[39m=[32m"4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Witness Details[0m
+      [36m</h3>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3 space-y-2"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mWitness name[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mWitness One[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAddress[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVillage Road[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mMobile[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m9876543210[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mFolio[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mFOL-1[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mPAN[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m******234F[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAadhaar[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m********1234[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mShareholder[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVerified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mVerification[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mverified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × mounted witness resource actions > corrects protected identity with an identity-only body 1012ms
+     → Unable to find role="button" and name "Correct Witness Identity"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card space-y-4"[39m
+    [36m>[39m
+      [36m<h3[39m
+        [33mclass[39m=[32m"font-semibold text-slate-800 flex items-center gap-2"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-users text-blue-600"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+          [36m/>[39m
+          [36m<circle[39m
+            [33mcx[39m=[32m"9"[39m
+            [33mcy[39m=[32m"7"[39m
+            [33mr[39m=[32m"4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Witness Details[0m
+      [36m</h3>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3 space-y-2"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mWitness name[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mWitness One[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAddress[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVillage Road[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mMobile[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m9876543210[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mFolio[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mFOL-1[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mPAN[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m******234F[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAadhaar[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m********1234[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mShareholder[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVerified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mVerification[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mverified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card space-y-4"[39m
+    [36m>[39m
+      [36m<h3[39m
+        [33mclass[39m=[32m"font-semibold text-slate-800 flex items-center gap-2"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-users text-blue-600"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+          [36m/>[39m
+          [36m<circle[39m
+            [33mcx[39m=[32m"9"[39m
+            [33mcy[39m=[32m"7"[39m
+            [33mr[39m=[32m"4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Witness Details[0m
+      [36m</h3>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3 space-y-2"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mWitness name[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mWitness One[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAddress[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVillage Road[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mMobile[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m9876543210[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mFolio[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mFOL-1[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mPAN[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m******234F[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAadhaar[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m********1234[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mShareholder[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVerified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mVerification[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mverified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × mounted witness resource actions > shows the authoritative disabled reason and cannot invoke a correction 1011ms
+     → Unable to find an element with the text: A different authorised user must correct verified witness identity.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card space-y-4"[39m
+    [36m>[39m
+      [36m<h3[39m
+        [33mclass[39m=[32m"font-semibold text-slate-800 flex items-center gap-2"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-users text-blue-600"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+          [36m/>[39m
+          [36m<circle[39m
+            [33mcx[39m=[32m"9"[39m
+            [33mcy[39m=[32m"7"[39m
+            [33mr[39m=[32m"4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Witness Details[0m
+      [36m</h3>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3 space-y-2"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mWitness name[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mWitness One[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAddress[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVillage Road[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mMobile[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m9876543210[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mFolio[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mFOL-1[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mPAN[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m******234F[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAadhaar[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m********1234[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mShareholder[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVerified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mVerification[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mverified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card space-y-4"[39m
+    [36m>[39m
+      [36m<h3[39m
+        [33mclass[39m=[32m"font-semibold text-slate-800 flex items-center gap-2"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-users text-blue-600"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+          [36m/>[39m
+          [36m<circle[39m
+            [33mcx[39m=[32m"9"[39m
+            [33mcy[39m=[32m"7"[39m
+            [33mr[39m=[32m"4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Witness Details[0m
+      [36m</h3>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3 space-y-2"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mWitness name[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mWitness One[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAddress[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVillage Road[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mMobile[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m9876543210[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mFolio[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mFOL-1[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mPAN[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m******234F[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAadhaar[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m********1234[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mShareholder[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVerified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mVerification[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mverified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/applications/WitnessPanel.container.test.tsx > mounted witness resource actions > corrects contact with the exact current-version body and one canonical refetch
+TestingLibraryElementError: Unable to find role="button" and name "Correct Witness Contact"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card space-y-4"[39m
+    [36m>[39m
+      [36m<h3[39m
+        [33mclass[39m=[32m"font-semibold text-slate-800 flex items-center gap-2"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-users text-blue-600"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+          [36m/>[39m
+          [36m<circle[39m
+            [33mcx[39m=[32m"9"[39m
+            [33mcy[39m=[32m"7"[39m
+            [33mr[39m=[32m"4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Witness Details[0m
+      [36m</h3>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3 space-y-2"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mWitness name[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mWitness One[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAddress[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVillage Road[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mMobile[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m9876543210[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mFolio[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mFOL-1[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mPAN[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m******234F[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAadhaar[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m********1234[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mShareholder[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVerified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mVerification[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mverified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card space-y-4"[39m
+    [36m>[39m
+      [36m<h3[39m
+        [33mclass[39m=[32m"font-semibold text-slate-800 flex items-center gap-2"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-users text-blue-600"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+          [36m/>[39m
+          [36m<circle[39m
+            [33mcx[39m=[32m"9"[39m
+            [33mcy[39m=[32m"7"[39m
+            [33mr[39m=[32m"4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Witness Details[0m
+      [36m</h3>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3 space-y-2"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mWitness name[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mWitness One[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAddress[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVillage Road[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mMobile[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m9876543210[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mFolio[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mFOL-1[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mPAN[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m******234F[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAadhaar[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m********1234[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mShareholder[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVerified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mVerification[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mverified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/applications/WitnessPanel.container.test.tsx:45:40
+     43|     const update = vi.spyOn(api, 'updateApplicationWitness').mockResol…
+     44|     const view = render(<WitnessPanel applicationId="application-1" />…
+     45|     await userEvent.click(await screen.findByRole('button', { name: 'C…
+       |                                        ^
+     46|     const address = screen.getByLabelText(/correction address/i);
+     47|     await userEvent.clear(address);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/pages/applications/WitnessPanel.container.test.tsx > mounted witness resource actions > corrects protected identity with an identity-only body
+TestingLibraryElementError: Unable to find role="button" and name "Correct Witness Identity"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card space-y-4"[39m
+    [36m>[39m
+      [36m<h3[39m
+        [33mclass[39m=[32m"font-semibold text-slate-800 flex items-center gap-2"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-users text-blue-600"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+          [36m/>[39m
+          [36m<circle[39m
+            [33mcx[39m=[32m"9"[39m
+            [33mcy[39m=[32m"7"[39m
+            [33mr[39m=[32m"4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Witness Details[0m
+      [36m</h3>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3 space-y-2"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mWitness name[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mWitness One[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAddress[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVillage Road[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mMobile[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m9876543210[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mFolio[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mFOL-1[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mPAN[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m******234F[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAadhaar[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m********1234[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mShareholder[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVerified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mVerification[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mverified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card space-y-4"[39m
+    [36m>[39m
+      [36m<h3[39m
+        [33mclass[39m=[32m"font-semibold text-slate-800 flex items-center gap-2"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-users text-blue-600"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+          [36m/>[39m
+          [36m<circle[39m
+            [33mcx[39m=[32m"9"[39m
+            [33mcy[39m=[32m"7"[39m
+            [33mr[39m=[32m"4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Witness Details[0m
+      [36m</h3>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3 space-y-2"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mWitness name[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mWitness One[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAddress[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVillage Road[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mMobile[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m9876543210[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mFolio[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mFOL-1[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mPAN[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m******234F[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAadhaar[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m********1234[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mShareholder[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVerified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mVerification[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mverified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/applications/WitnessPanel.container.test.tsx:65:40
+     63|     const update = vi.spyOn(api, 'updateApplicationWitness').mockResol…
+     64|     render(<WitnessPanel applicationId="application-1" />);
+     65|     await userEvent.click(await screen.findByRole('button', { name: 'C…
+       |                                        ^
+     66|     await userEvent.clear(screen.getByLabelText(/correction witness na…
+     67|     await userEvent.type(screen.getByLabelText(/correction witness nam…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/pages/applications/WitnessPanel.container.test.tsx > mounted witness resource actions > shows the authoritative disabled reason and cannot invoke a correction
+TestingLibraryElementError: Unable to find an element with the text: A different authorised user must correct verified witness identity.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card space-y-4"[39m
+    [36m>[39m
+      [36m<h3[39m
+        [33mclass[39m=[32m"font-semibold text-slate-800 flex items-center gap-2"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-users text-blue-600"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+          [36m/>[39m
+          [36m<circle[39m
+            [33mcx[39m=[32m"9"[39m
+            [33mcy[39m=[32m"7"[39m
+            [33mr[39m=[32m"4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Witness Details[0m
+      [36m</h3>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3 space-y-2"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mWitness name[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mWitness One[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAddress[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVillage Road[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mMobile[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m9876543210[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mFolio[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mFOL-1[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mPAN[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m******234F[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAadhaar[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m********1234[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mShareholder[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVerified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mVerification[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mverified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card space-y-4"[39m
+    [36m>[39m
+      [36m<h3[39m
+        [33mclass[39m=[32m"font-semibold text-slate-800 flex items-center gap-2"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-users text-blue-600"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"16"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"16"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M16 3.128a4 4 0 0 1 0 7.744"[39m
+          [36m/>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M22 21v-2a4 4 0 0 0-3-3.87"[39m
+          [36m/>[39m
+          [36m<circle[39m
+            [33mcx[39m=[32m"9"[39m
+            [33mcy[39m=[32m"7"[39m
+            [33mr[39m=[32m"4"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Witness Details[0m
+      [36m</h3>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3 space-y-2"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 sm:grid-cols-4 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mWitness name[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mWitness One[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAddress[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVillage Road[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mMobile[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m9876543210[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mFolio[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mFOL-1[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mPAN[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m******234F[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mAadhaar[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0m********1234[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mShareholder[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mVerified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-slate-50 rounded-lg p-3"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 font-medium uppercase tracking-wide"[39m
+            [36m>[39m
+              [0mVerification[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm font-semibold text-slate-900 mt-0.5 capitalize"[39m
+            [36m>[39m
+              [0mverified[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/applications/WitnessPanel.container.test.tsx:78:25
+     76|     vi.spyOn(api, 'fetchApplicationWitnesses').mockResolvedValue({ ite…
+     77|     render(<WitnessPanel applicationId="application-1" />);
+     78|     expect(await screen.findByText('A different authorised user must c…
+       |                         ^
+     79|     expect(screen.queryByRole('button', { name: 'Correct Witness Ident…
+     80|     expect(update).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 1 passed (4)
+   Start at  15:12:56
+   Duration  4.20s (transform 135ms, setup 0ms, collect 294ms, tests 3.35s, environment 300ms, prepare 40ms)
+

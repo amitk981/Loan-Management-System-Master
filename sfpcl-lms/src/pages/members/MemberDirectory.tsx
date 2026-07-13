@@ -7,6 +7,7 @@ import {
   fetchMemberDirectory,
   type MemberDirectoryItem,
 } from '../../services/memberDirectoryApi';
+import MemberGovernanceForm from './MemberGovernanceForm';
 
 type DirectoryStatus = 'loading' | 'success' | 'forbidden' | 'unauthorized' | 'error';
 type KycFilter = 'all' | 'verified' | 'rekyc_due' | 'missing' | 'pending';
@@ -18,7 +19,8 @@ interface MemberDirectoryProps {
 }
 
 const MemberDirectory: React.FC<MemberDirectoryProps> = ({ onSelect }) => {
-  const { can } = useRole();
+  const { can, currentUser } = useRole();
+  const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState('');
   const [kycFilter, setKycFilter] = useState<KycFilter>('all');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
@@ -54,7 +56,8 @@ const MemberDirectory: React.FC<MemberDirectoryProps> = ({ onSelect }) => {
     };
   }, [search, kycFilter, typeFilter]);
 
-  return (
+  return <>
+    {showCreate && <div className="p-6 pb-0"><MemberGovernanceForm onSaved={member => onSelect(member.member_id)} onCancel={() => setShowCreate(false)} /></div>}
     <MemberDirectoryView
       status={status}
       message={message}
@@ -67,8 +70,10 @@ const MemberDirectory: React.FC<MemberDirectoryProps> = ({ onSelect }) => {
       onTypeFilterChange={setTypeFilter}
       onSelect={onSelect}
       canViewMembers={can('view_members')}
+      canCreateMember={currentUser.permissions.includes('members.member.create')}
+      onCreate={() => setShowCreate(true)}
     />
-  );
+  </>;
 };
 
 interface MemberDirectoryViewProps {
@@ -83,6 +88,8 @@ interface MemberDirectoryViewProps {
   onTypeFilterChange: (value: TypeFilter) => void;
   onSelect: (memberId: string) => void;
   canViewMembers: boolean;
+  canCreateMember?: boolean;
+  onCreate?: () => void;
 }
 
 export const MemberDirectoryView: React.FC<MemberDirectoryViewProps> = ({
@@ -97,6 +104,8 @@ export const MemberDirectoryView: React.FC<MemberDirectoryViewProps> = ({
   onTypeFilterChange,
   onSelect,
   canViewMembers,
+  canCreateMember,
+  onCreate,
 }) => {
   const reKycCount = members.filter(m => m.kyc_status === 'rekyc_due').length;
 
@@ -107,12 +116,15 @@ export const MemberDirectoryView: React.FC<MemberDirectoryViewProps> = ({
           <h1 className="text-xl font-bold text-slate-900">Member Directory</h1>
           <p className="text-sm text-slate-500 mt-0.5">{members.length} members</p>
         </div>
+        <div className="flex items-center gap-2">
+        {canCreateMember && <button className="btn-primary text-sm" onClick={onCreate}>Register Member</button>}
         {reKycCount > 0 && (
           <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
             <RefreshCw size={14} />
             {reKycCount} member{reKycCount > 1 ? 's' : ''} have Re-KYC blockers
           </div>
         )}
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-3">

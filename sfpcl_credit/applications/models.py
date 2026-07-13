@@ -10,6 +10,7 @@ class LoanApplication(models.Model):
     STATUS_SUBMITTED = "submitted"
     STATUS_INCOMPLETE_RETURNED = "incomplete_returned"
     STATUS_REFERENCE_GENERATED = "reference_generated"
+    STATUS_SUBMITTED_TO_SANCTION = "submitted_to_sanction_committee"
     STAGE_INITIAL = "initial_loan_request"
     STAGE_CREDIT_ASSESSMENT = "credit_assessment"
     COMPLETENESS_NOT_STARTED = "not_started"
@@ -134,6 +135,7 @@ class LoanApplication(models.Model):
             self.STATUS_SUBMITTED,
             self.STATUS_INCOMPLETE_RETURNED,
             self.STATUS_REFERENCE_GENERATED,
+            self.STATUS_SUBMITTED_TO_SANCTION,
         }:
             raise ValidationError({"application_status": "Unsupported application status."})
         if self.current_stage not in {self.STAGE_INITIAL, self.STAGE_CREDIT_ASSESSMENT}:
@@ -163,6 +165,99 @@ class LoanApplication(models.Model):
             self.borrower_type = self.member.member_type
         self.full_clean()
         return super().save(*args, **kwargs)
+
+
+class Witness(models.Model):
+    VERIFICATION_STATUSES = {"pending", "verified", "rejected"}
+
+    witness_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    loan_application = models.ForeignKey(
+        LoanApplication,
+        on_delete=models.PROTECT,
+        related_name="witnesses",
+        db_index=False,
+    )
+    member = models.ForeignKey(
+        "members.Member",
+        on_delete=models.PROTECT,
+        related_name="application_witnesses",
+    )
+    witness_name = models.CharField(max_length=255)
+    address = models.CharField(max_length=500, blank=True, default="")
+    mobile = models.CharField(max_length=20, blank=True, default="")
+    pan_encrypted = models.TextField()
+    pan_hash = models.CharField(max_length=128)
+    aadhaar_encrypted = models.TextField()
+    aadhaar_hash = models.CharField(max_length=128)
+    verification_shareholding = models.ForeignKey(
+        "members.Shareholding",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="verified_witnesses",
+    )
+    verification_folio_number = models.CharField(max_length=100, blank=True, null=True)
+    shareholder_verified_flag = models.BooleanField(default=False)
+    verification_status = models.CharField(max_length=60, default="pending", db_index=True)
+    verified_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="verified_witnesses",
+    )
+    verified_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(blank=True, null=True)
+    updated_by_user = models.ForeignKey(
+        "identity.User", blank=True, null=True, on_delete=models.PROTECT,
+        related_name="updated_witnesses",
+    )
+    version = models.PositiveIntegerField(default=1, db_default=1)
+
+    class Meta:
+        db_table = "witnesses"
+        indexes = [
+            models.Index(fields=["loan_application"], name="idx_witnesses_application"),
+            models.Index(fields=["pan_hash"], name="idx_witnesses_pan_hash"),
+            models.Index(fields=["aadhaar_hash"], name="idx_witnesses_aadhaar_hash"),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.verification_status not in self.VERIFICATION_STATUSES:
+            raise ValidationError({"verification_status": "Unsupported verification status."})
+        if self.shareholder_verified_flag and self.verification_status != "verified":
+            raise ValidationError(
+                {"verification_status": "Verified shareholders require verified status."}
+            )
+        if self.verification_status == "verified" and (
+            not self.shareholder_verified_flag
+            or self.verified_by_user_id is None
+            or self.verified_at is None
+        ):
+            raise ValidationError(
+                {"verification_status": "Verified status requires complete verification metadata."}
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
+class WitnessChangeHistory(models.Model):
+    witness_change_history_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    witness = models.ForeignKey(Witness, on_delete=models.PROTECT, related_name="change_history")
+    actor_user = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="witness_changes")
+    witness_version = models.PositiveIntegerField()
+    changed_fields = models.JSONField(default=list)
+    old_value_json = models.JSONField(default=dict)
+    new_value_json = models.JSONField(default=dict)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "witness_change_history"
+        ordering = ["created_at", "witness_change_history_id"]
 
 
 class SystemSequence(models.Model):

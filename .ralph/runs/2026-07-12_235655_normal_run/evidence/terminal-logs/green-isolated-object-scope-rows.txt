@@ -1,0 +1,42 @@
+Creating test database for alias 'default'...
+Found 8 test(s).
+System check identified no issues (0 silenced).
+.EEE......
+======================================================================
+ERROR: test_incomplete_row_reports_each_missing_executed_phase (tests.test_credit_action_parity_matrix.ExecutedObjectScopeContractTests.test_incomplete_row_reports_each_missing_executed_phase) (omitted='projection')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_235655_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 154, in test_incomplete_row_reports_each_missing_executed_phase
+    row.assert_denial_category(self, denied)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_235655_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 85, in assert_denial_category
+    case.assertEqual(exception.object_access.error_code, "OBJECT_ACCESS_DENIED")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'error_code'
+
+======================================================================
+ERROR: test_incomplete_row_reports_each_missing_executed_phase (tests.test_credit_action_parity_matrix.ExecutedObjectScopeContractTests.test_incomplete_row_reports_each_missing_executed_phase) (omitted='write')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_235655_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 154, in test_incomplete_row_reports_each_missing_executed_phase
+    row.assert_denial_category(self, denied)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_235655_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 85, in assert_denial_category
+    case.assertEqual(exception.object_access.error_code, "OBJECT_ACCESS_DENIED")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'error_code'
+
+======================================================================
+ERROR: test_incomplete_row_reports_each_missing_executed_phase (tests.test_credit_action_parity_matrix.ExecutedObjectScopeContractTests.test_incomplete_row_reports_each_missing_executed_phase) (omitted='evidence')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_235655_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 154, in test_incomplete_row_reports_each_missing_executed_phase
+    row.assert_denial_category(self, denied)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_235655_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 85, in assert_denial_category
+    case.assertEqual(exception.object_access.error_code, "OBJECT_ACCESS_DENIED")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'error_code'
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.305s
+
+FAILED (errors=3)
+Destroying test database for alias 'default'...

@@ -1,0 +1,22 @@
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+test_active_member_status_module (unittest.loader._FailedTest.test_active_member_status_module) ... ERROR
+
+======================================================================
+ERROR: test_active_member_status_module (unittest.loader._FailedTest.test_active_member_status_module)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_active_member_status_module
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_214611_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 12, in <module>
+    from sfpcl_credit.members.modules.active_member_status import (
+ImportError: cannot import name 'ActiveMemberStatusConflict' from 'sfpcl_credit.members.modules.active_member_status' (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_214611_normal_run/sfpcl_credit/members/modules/active_member_status.py)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

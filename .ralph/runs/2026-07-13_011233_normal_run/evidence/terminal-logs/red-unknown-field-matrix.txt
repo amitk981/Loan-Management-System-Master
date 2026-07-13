@@ -1,0 +1,27 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+EE
+======================================================================
+ERROR: test_contact_correction_matrix_unknown_field_projection_matches_write (sfpcl_credit.tests.test_witness_api.WitnessApiTests.test_contact_correction_matrix_unknown_field_projection_matches_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_011233_normal_run/sfpcl_credit/tests/test_witness_api.py", line 545, in test_contact_correction_matrix_unknown_field_projection_matches_write
+    self._assert_unknown_field_parity("contact")
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'WitnessApiTests' object has no attribute '_assert_unknown_field_parity'
+
+======================================================================
+ERROR: test_identity_correction_matrix_unknown_field_projection_matches_write (sfpcl_credit.tests.test_witness_api.WitnessApiTests.test_identity_correction_matrix_unknown_field_projection_matches_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_011233_normal_run/sfpcl_credit/tests/test_witness_api.py", line 548, in test_identity_correction_matrix_unknown_field_projection_matches_write
+    self._assert_unknown_field_parity("identity")
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'WitnessApiTests' object has no attribute '_assert_unknown_field_parity'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.009s
+
+FAILED (errors=2)
+Destroying test database for alias 'default'...

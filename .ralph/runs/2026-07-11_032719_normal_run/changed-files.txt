@@ -1,0 +1,15 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/004E2-witness-evidence-snapshot-and-input-hardening.md
+ M docs/slices/006G3-sanction-handoff-dependency-and-evidence-ownership.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-004-member-kyc-master.md
+ M sfpcl_credit/applications/models.py
+ M sfpcl_credit/applications/services.py
+ M sfpcl_credit/applications/views.py
+ M sfpcl_credit/tests/test_witness_api.py
+?? .ralph/runs/2026-07-11_032719_normal_run/
+?? sfpcl_credit/applications/migrations/0012_witness_verification_evidence.py
+?? sfpcl_credit/tests/test_witness_evidence_migration.py

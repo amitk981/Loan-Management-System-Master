@@ -1,0 +1,6 @@
+Command:
+source scripts/lib/ralph-browser-acceptance.sh
+ralph_validate_trusted_browser_acceptance docs/slices/006Z8-portal-limit-provenance-module-and-interaction-closure.md sfpcl-lms
+
+Unknown trusted browser acceptance entry 'Two independent real-login runs must pass with collision-safe data and identical response redaction.' in docs/slices/006Z8-portal-limit-provenance-module-and-interaction-closure.md.
+Exit code: 1

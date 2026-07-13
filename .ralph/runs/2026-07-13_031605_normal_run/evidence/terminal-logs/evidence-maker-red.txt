@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_service_or_relaxation_evidence_maker_cannot_verify_derived_result (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberGovernanceTests.test_service_or_relaxation_evidence_maker_cannot_verify_derived_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_031605_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 616, in test_service_or_relaxation_evidence_maker_cannot_verify_derived_result
+    with self.assertRaisesRegex(PermissionError, "evidence maker"):
+AssertionError: PermissionError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

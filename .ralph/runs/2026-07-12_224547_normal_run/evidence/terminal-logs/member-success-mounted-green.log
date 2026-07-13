@@ -1,0 +1,19 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/members/MemberGovernanceForm.container.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_224547_normal_run/sfpcl-lms
+
+ ✓ src/pages/members/MemberGovernanceForm.container.test.tsx (14 tests) 6656ms
+   ✓ MemberGovernanceForm production container > routes Directory registration into canonical Profile readback before an ordinary update readback  2794ms
+   ✓ MemberGovernanceForm production container > submits the complete individual_farmer body through the shared HTTP transport  1174ms
+   ✓ MemberGovernanceForm production container > submits the complete fpc body through the shared HTTP transport  974ms
+   ✓ MemberGovernanceForm production container > submits the complete producer_institution body through the shared HTTP transport  1077ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  22:49:17
+   Duration  8.44s (transform 913ms, setup 0ms, collect 1.25s, tests 6.66s, environment 199ms, prepare 33ms)
+

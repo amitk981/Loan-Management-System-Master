@@ -1,0 +1,8 @@
+
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+
+
+> sfpcl-lms@1.0.0 lint
+> eslint src
+

@@ -1,0 +1,38 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_190759_normal_run/sfpcl-lms
+
+ ✓ src/pages/Dashboard.test.tsx (13 tests) 60ms
+ ✓ src/pages/applications/CompletenessWorkbench.test.tsx (3 tests) 61ms
+ ✓ src/pages/borrower/portal/PortalMemberViews.test.tsx (4 tests) 49ms
+ ✓ src/pages/members/Borrower360.test.tsx (4 tests) 90ms
+ ✓ src/pages/applications/ApplicationDetail.test.tsx (9 tests) 97ms
+ ✓ src/pages/members/MemberProfile.test.tsx (25 tests) 231ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.test.tsx (18 tests) 253ms
+ ✓ src/services/authSession.test.ts (15 tests) 15ms
+ ✓ src/pages/applications/ApplicationList.test.tsx (2 tests) 36ms
+ ✓ src/pages/members/MemberDirectory.test.tsx (5 tests) 30ms
+ ✓ src/pages/notifications/NotificationsCenter.test.tsx (6 tests) 29ms
+ ✓ src/services/demoAuthFlag.test.tsx (3 tests) 21ms
+ ✓ src/services/applicationIntakeApi.test.ts (4 tests) 8ms
+ ✓ src/services/navigationPermissions.test.ts (7 tests) 6ms
+ ✓ src/services/portalApi.test.ts (4 tests) 8ms
+ ✓ src/services/creditAssessmentApi.test.ts (5 tests) 7ms
+ ✓ src/pages/profile/MyProfile.test.tsx (1 test) 9ms
+ ✓ src/pages/borrower/portal/auth/MP00_Login.test.tsx (2 tests) 9ms
+ ✓ src/services/tracerApi.test.ts (2 tests) 6ms
+ ✓ src/pages/applications/NomineeSelectionViews.test.tsx (3 tests) 15ms
+ ✓ src/contexts/RoleContext.test.tsx (2 tests) 8ms
+ ✓ src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx (2 tests) 2ms
+ ✓ src/pages/sanction/SanctionWorkbench.test.tsx (2 tests) 8ms
+ ✓ src/utils/applicationDisplay.test.ts (5 tests) 2ms
+
+ Test Files  24 passed (24)
+      Tests  146 passed (146)
+   Start at  19:12:31
+   Duration  1.99s (transform 1.71s, setup 0ms, collect 4.82s, tests 1.06s, environment 7ms, prepare 1.52s)
+

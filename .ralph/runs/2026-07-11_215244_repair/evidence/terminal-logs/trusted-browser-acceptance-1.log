@@ -1,0 +1,21 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_215244_repair/.ralph/runs/2026-07-11_215244_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/completeness-workbench.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/completeness-workbench.e2e.spec.ts
+
+[2m[WebServer] [22m[11/Jul/2026 16:56:45] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[2m[WebServer] [22m(node:81620) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+  ✓  1 [chromium] › completeness-workbench.e2e.spec.ts:9:5 › completeness workbench uses backend actions and captures required states (3.7s)
+
+  1 passed (8.0s)
+
+Exit code: 0

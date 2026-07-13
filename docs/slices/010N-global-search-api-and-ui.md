@@ -30,6 +30,11 @@ Staff reach any member, application, or account in seconds without navigating mo
 2. Database: add indexes for the searched columns per data-model §30 if not already present (non-destructive migration).
 3. Frontend: wire `GlobalSearchResults.tsx` and the header search box to the API; empty-query, no-results, error, and unauthorized states with existing patterns.
 4. No sensitive values (PAN, Aadhaar, bank numbers) in search results or as searchable inputs.
+5. Privacy hardening (PRODUCTION_COMPLETION_BLUEPRINT.md §6.3 header-search row): all matching happens server-side — remove `Header.tsx`'s client-side search over mock member/application/account data (which today includes sensitive fields); no local search index of business or sensitive data may remain anywhere in the frontend.
+
+## Owned Mock Removals
+- `src/pages/search/GlobalSearchResults.tsx` — no `mockData` import or inline fixtures remain.
+- `src/components/layout/Header.tsx` — search paths only; the notification dropdown rows and the final removal of the file's `mockData` import are owned by 010O.
 
 ## Test Cases
 - Search by member name, application reference, and account number returns the seeded records.

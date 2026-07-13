@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_staff_calculation_requires_permission_and_matching_member_scope (sfpcl_credit.tests.test_active_member_status_module.ActiveMemberStatusModuleTests.test_staff_calculation_requires_permission_and_matching_member_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_061140_normal_run/sfpcl_credit/tests/test_active_member_status_module.py", line 121, in test_staff_calculation_requires_permission_and_matching_member_scope
+    ActiveMemberStatusModule().calculate_for_actor(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'ActiveMemberStatusModule' object has no attribute 'calculate_for_actor'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

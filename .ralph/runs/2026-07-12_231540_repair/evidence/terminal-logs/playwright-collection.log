@@ -1,0 +1,7 @@
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test --list e2e/member-governance-variants.e2e.spec.ts
+
+Listing tests:
+  [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions
+Total: 1 test in 1 file

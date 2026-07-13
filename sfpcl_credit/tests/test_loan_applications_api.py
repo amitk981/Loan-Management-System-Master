@@ -16,6 +16,7 @@ from sfpcl_credit.members.models import (
     LandHolding,
     Member,
     Nominee,
+    ProduceSupplyRecord,
     Shareholding,
 )
 from sfpcl_credit.tests.api_contracts import (
@@ -31,6 +32,9 @@ APPLICATION_CREATE_PERMISSION = "applications.loan_application.create"
 APPLICATION_UPDATE_PERMISSION = "applications.loan_application.update"
 APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
 APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_check"
+APPLICATION_RETURN_DEFICIENCY_PERMISSION = "applications.loan_application.return_deficiency"
+APPLICATION_DEFICIENCY_RESOLVE_PERMISSION = "applications.deficiency.resolve"
+APPLICATION_REJECTION_NOTE_CREATE_PERMISSION = "applications.rejection_note.create"
 APPLICATION_DOCUMENT_UPLOAD_PERMISSION = "applications.document.upload"
 APPLICATION_DOCUMENT_VERIFY_PERMISSION = "applications.document.verify"
 ELIGIBILITY_RUN_PERMISSION = "credit.eligibility.run"
@@ -61,6 +65,18 @@ class LoanApplicationDraftApiTests(TestCase):
             APPLICATION_COMPLETE_CHECK_PERMISSION,
             "Mark completeness result",
         )
+        self.return_deficiency_permission = self._permission(
+            APPLICATION_RETURN_DEFICIENCY_PERMISSION,
+            "Return application with deficiencies",
+        )
+        self.deficiency_resolve_permission = self._permission(
+            APPLICATION_DEFICIENCY_RESOLVE_PERMISSION,
+            "Resolve application deficiencies",
+        )
+        self.rejection_note_create_permission = self._permission(
+            APPLICATION_REJECTION_NOTE_CREATE_PERMISSION,
+            "Create application rejection note",
+        )
         self.document_upload_permission = self._permission(
             APPLICATION_DOCUMENT_UPLOAD_PERMISSION,
             "Upload application documents",
@@ -85,6 +101,9 @@ class LoanApplicationDraftApiTests(TestCase):
             self.update_permission,
             self.submit_permission,
             self.complete_check_permission,
+            self.return_deficiency_permission,
+            self.deficiency_resolve_permission,
+            self.rejection_note_create_permission,
             self.document_upload_permission,
             self.document_verify_permission,
             self.eligibility_run_permission,
@@ -97,6 +116,9 @@ class LoanApplicationDraftApiTests(TestCase):
             self.update_permission,
             self.submit_permission,
             self.complete_check_permission,
+            self.return_deficiency_permission,
+            self.deficiency_resolve_permission,
+            self.rejection_note_create_permission,
             self.document_upload_permission,
             self.eligibility_run_permission,
             self.loan_limit_calculate_permission,
@@ -109,6 +131,18 @@ class LoanApplicationDraftApiTests(TestCase):
         self.plain = self._user("applications.plain@sfpcl.example", "PlainPass123!")
         self.member = self._member("005A", "Ramesh Patil")
         self.other_member = self._member("005A-OTHER", "Sita Farms")
+        IndividualMemberProfile.objects.create(
+            member=self.member, first_name="Ramesh", last_name="Patil",
+            services_availed_flag=True,
+        )
+        for year in ("2022-23", "2023-24", "2024-25", "2025-26"):
+            ProduceSupplyRecord.objects.create(
+                member=self.member, financial_year=year,
+                supplied_to_entity_type="sfpcl", supply_route="direct",
+                evidence_reference=f"ERP-APPLICATION-{year}",
+                captured_by_user=self.creator, verified_flag=True,
+                verified_by_user=self.creator, verified_at=timezone.now(),
+            )
         self.nominee = self._create_nominee(None)
         self.land = LandHolding.objects.create(
             member=self.member,
@@ -253,6 +287,7 @@ class LoanApplicationDraftApiTests(TestCase):
                     "enabled": True,
                     "disabled_reason": None,
                     "required_permission": APPLICATION_SUBMIT_PERMISSION,
+                    "required_role": None,
                 }
             ],
         )
@@ -567,6 +602,8 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(row["register_status"], "reference_generated")
 
     def test_eligibility_assessment_run_and_read_persists_manual_evidence_active_member_result(self):
+        self.member.individual_profile.services_availed_flag = False
+        self.member.individual_profile.save(update_fields=["services_availed_flag"])
         application_id = self._reference_generated_application(terms_acceptance_flag=True)
 
         run_response = self.client.post(
@@ -645,10 +682,26 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(body["data"]["purpose_check"], "agriculture_aligned")
         self.assertEqual(body["data"]["nominee_check"], "pending")
         self.assertEqual(body["data"]["overall_result"], "pending_manual_evidence")
+        active_snapshot = body["data"]["active_member_snapshot"]
+        self.assertEqual(active_snapshot["member_type"], "individual_farmer")
+        self.assertEqual(active_snapshot["member_active_check"], "pass")
+        self.assertEqual(active_snapshot["continuous_supply_years"], 4)
+        self.assertEqual(len(active_snapshot["supply_rows"]), 4)
+        self.assertTrue(all(row["qualifying"] for row in active_snapshot["supply_rows"]))
+        self.assertIsNotNone(active_snapshot["result_id"])
+        self.assertIsNotNone(active_snapshot["calculated_as_of_date"])
         self.assertIn(
             "Application-specific nominee selection is pending",
             body["data"]["assessment_notes"],
         )
+
+        ProduceSupplyRecord.objects.all().delete()
+        read_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(read_response.status_code, 200)
+        self.assertEqual(read_response.json()["data"]["active_member_snapshot"], active_snapshot)
 
     def test_eligibility_assessment_marks_application_eligible_when_all_source_checks_pass(self):
         self.member.active_member_status = "active"
@@ -962,12 +1015,9 @@ class LoanApplicationDraftApiTests(TestCase):
         self.crop.verified_by_user = self.creator
         self.crop.verified_at = timezone.now()
         self.crop.save()
-        IndividualMemberProfile.objects.create(
+        IndividualMemberProfile.objects.update_or_create(
             member=self.member,
-            first_name="Ramesh",
-            last_name="Patil",
-            land_area_under_cultivation_acres="5.00",
-            services_availed_flag=True,
+            defaults={"first_name": "Ramesh", "last_name": "Patil", "land_area_under_cultivation_acres": "5.00", "services_availed_flag": True},
         )
         shareholding = Shareholding.objects.create(
             member=self.member,
@@ -1019,12 +1069,9 @@ class LoanApplicationDraftApiTests(TestCase):
         self.land.save()
         self.crop.planned_area_acres = "5.0"
         self.crop.save()
-        IndividualMemberProfile.objects.create(
+        IndividualMemberProfile.objects.update_or_create(
             member=self.member,
-            first_name="Ramesh",
-            last_name="Patil",
-            land_area_under_cultivation_acres="5.00",
-            services_availed_flag=True,
+            defaults={"first_name": "Ramesh", "last_name": "Patil", "land_area_under_cultivation_acres": "5.00", "services_availed_flag": True},
         )
         shareholding = Shareholding.objects.create(
             member=self.member,
@@ -1063,12 +1110,9 @@ class LoanApplicationDraftApiTests(TestCase):
 
     def test_loan_limit_uses_selected_land_and_crop_plan_when_profile_acreage_is_null(self):
         application_id = self._eligible_application(required_loan_amount="400000.00")
-        IndividualMemberProfile.objects.create(
+        IndividualMemberProfile.objects.update_or_create(
             member=self.member,
-            first_name="Ramesh",
-            last_name="Patil",
-            land_area_under_cultivation_acres=None,
-            services_availed_flag=True,
+            defaults={"first_name": "Ramesh", "last_name": "Patil", "land_area_under_cultivation_acres": None, "services_availed_flag": True},
         )
         shareholding = Shareholding.objects.create(
             member=self.member,
@@ -1620,6 +1664,8 @@ class LoanApplicationDraftApiTests(TestCase):
         self.assertEqual(AuditLog.objects.filter(action="loan_limit.calculated").count(), 2)
 
     def test_loan_limit_blocks_pending_ineligible_and_missing_policy_without_success_evidence(self):
+        self.member.individual_profile.services_availed_flag = False
+        self.member.individual_profile.save(update_fields=["services_availed_flag"])
         application_id = self._reference_generated_application(terms_acceptance_flag=True)
         shareholding = Shareholding.objects.create(
             member=self.member,
@@ -1700,6 +1746,8 @@ class LoanApplicationDraftApiTests(TestCase):
                 "default_status",
             ]
         )
+        self.member.individual_profile.services_availed_flag = True
+        self.member.individual_profile.save(update_fields=["services_availed_flag"])
         self._create_nominee(application_id)
         eligible = self.client.post(
             eligibility_endpoint,
@@ -2565,6 +2613,310 @@ class LoanApplicationDraftApiTests(TestCase):
             ).count(),
             0,
         )
+
+    def test_completeness_read_projects_resource_actions_from_write_validators(self):
+        application_id = self._create_and_submit_application()
+
+        blocked_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/completeness-check/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+
+        self.assertEqual(blocked_response.status_code, 200)
+        blocked_actions = {
+            action["action_code"]: action
+            for action in blocked_response.json()["data"]["available_actions"]
+        }
+        self.assertEqual(
+            set(blocked_actions),
+            {"pass_completeness", "return_with_deficiencies", "resolve_deficiency", "create_rejection_note"},
+        )
+        assert_available_actions_shape(self, list(blocked_actions.values()))
+        self.assertFalse(blocked_actions["pass_completeness"]["enabled"])
+        self.assertIn("document", blocked_actions["pass_completeness"]["disabled_reason"].lower())
+        self.assertTrue(blocked_actions["return_with_deficiencies"]["enabled"])
+        self.assertFalse(blocked_actions["resolve_deficiency"]["enabled"])
+        self.assertTrue(blocked_actions["create_rejection_note"]["enabled"])
+
+        apps.get_model("applications", "LoanApplication").objects.filter(
+            loan_application_id=application_id
+        ).update(received_by_user=self.reader)
+        reader_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/completeness-check/",
+            headers=self._headers("applications.reader@sfpcl.example", "ReaderPass123!"),
+        )
+        self.assertTrue(all(
+            not action["enabled"]
+            for action in reader_response.json()["data"]["available_actions"]
+        ))
+
+        self._verify_required_application_documents(application_id)
+        ready_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/completeness-check/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        ready_actions = {
+            action["action_code"]: action
+            for action in ready_response.json()["data"]["available_actions"]
+        }
+        self.assertTrue(ready_actions["pass_completeness"]["enabled"])
+        self.assertFalse(ready_actions["return_with_deficiencies"]["enabled"])
+
+        deficiencies_response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/deficiencies/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        deficiency_actions = {
+            action["action_code"]: action
+            for action in deficiencies_response.json()["data"]["available_actions"]
+        }
+        self.assertFalse(deficiency_actions["resolve_deficiency"]["enabled"])
+
+        returned_id = self._create_and_submit_application(declared_purpose="Action projection return")
+        returned = self.client.post(
+            f"/api/v1/loan-applications/{returned_id}/return-with-deficiencies/",
+            data={
+                "communication_mode": "email",
+                "message": "Please correct the missing document.",
+                "items": [{"item_code": "borrower_pan"}],
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(returned.status_code, 200)
+        returned_read = self.client.get(
+            f"/api/v1/loan-applications/{returned_id}/deficiencies/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        returned_actions = {
+            action["action_code"]: action
+            for action in returned_read.json()["data"]["available_actions"]
+        }
+        self.assertTrue(returned_actions["resolve_deficiency"]["enabled"])
+        self.assertFalse(returned_actions["return_with_deficiencies"]["enabled"])
+
+        rejected_id = self._create_and_submit_application(declared_purpose="Action projection rejection")
+        rejected = self.client.post(
+            f"/api/v1/loan-applications/{rejected_id}/rejection-note/",
+            data=self._rejection_note_payload(rejection_stage="completeness"),
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(rejected.status_code, 200)
+        rejected_read = self.client.get(
+            f"/api/v1/loan-applications/{rejected_id}/completeness-check/",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        rejected_actions = {
+            action["action_code"]: action
+            for action in rejected_read.json()["data"]["available_actions"]
+        }
+        self.assertFalse(rejected_actions["create_rejection_note"]["enabled"])
+        self.assertIn("already has", rejected_actions["create_rejection_note"]["disabled_reason"])
+
+    def test_completeness_actions_use_distinct_six_field_authority_contract(self):
+        return_only_actor = self._user(
+            "applications.return-only@sfpcl.example",
+            "ReturnOnlyPass123!",
+            self.read_permission,
+            self.return_deficiency_permission,
+            role_code="deputy_manager_finance",
+        )
+        application_id = self._create_and_submit_application(
+            declared_purpose="Distinct completeness authority projection"
+        )
+        apps.get_model("applications", "LoanApplication").objects.filter(
+            loan_application_id=application_id
+        ).update(received_by_user=return_only_actor)
+
+        response = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/completeness-check/",
+            headers=self._headers(
+                "applications.return-only@sfpcl.example",
+                "ReturnOnlyPass123!",
+            ),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        actions = {
+            action["action_code"]: action
+            for action in response.json()["data"]["available_actions"]
+        }
+        self.assertEqual(
+            {code: action["required_permission"] for code, action in actions.items()},
+            {
+                "pass_completeness": APPLICATION_COMPLETE_CHECK_PERMISSION,
+                "return_with_deficiencies": APPLICATION_RETURN_DEFICIENCY_PERMISSION,
+                "resolve_deficiency": APPLICATION_DEFICIENCY_RESOLVE_PERMISSION,
+                "create_rejection_note": APPLICATION_REJECTION_NOTE_CREATE_PERMISSION,
+            },
+        )
+        self.assertEqual(
+            {code: action["required_role"] for code, action in actions.items()},
+            {
+                "pass_completeness": "deputy_manager_finance",
+                "return_with_deficiencies": "deputy_manager_finance",
+                "resolve_deficiency": "deputy_manager_finance",
+                "create_rejection_note": "credit_manager",
+            },
+        )
+        self.assertEqual(
+            {code for code, action in actions.items() if action["enabled"]},
+            {"return_with_deficiencies"},
+        )
+
+    def test_each_completeness_permission_projects_and_invokes_only_its_own_action(self):
+        actors = {
+            "pass_completeness": self._user(
+                "applications.pass-only@sfpcl.example",
+                "PassOnlyPass123!",
+                self.read_permission,
+                self.complete_check_permission,
+            ),
+            "return_with_deficiencies": self._user(
+                "applications.return-matrix@sfpcl.example",
+                "ReturnMatrixPass123!",
+                self.read_permission,
+                self.return_deficiency_permission,
+            ),
+            "resolve_deficiency": self._user(
+                "applications.resolve-only@sfpcl.example",
+                "ResolveOnlyPass123!",
+                self.read_permission,
+                self.deficiency_resolve_permission,
+            ),
+            "create_rejection_note": self._user(
+                "applications.reject-only@sfpcl.example",
+                "RejectOnlyPass123!",
+                self.read_permission,
+                self.rejection_note_create_permission,
+            ),
+        }
+        passwords = {
+            "pass_completeness": "PassOnlyPass123!",
+            "return_with_deficiencies": "ReturnMatrixPass123!",
+            "resolve_deficiency": "ResolveOnlyPass123!",
+            "create_rejection_note": "RejectOnlyPass123!",
+        }
+
+        applications_by_action = {}
+        pass_id = self._create_and_submit_application(declared_purpose="Pass-only authority")
+        self._verify_required_application_documents(pass_id)
+        applications_by_action["pass_completeness"] = (pass_id, None)
+
+        return_id = self._create_and_submit_application(declared_purpose="Return-only authority")
+        applications_by_action["return_with_deficiencies"] = (return_id, None)
+
+        resolve_id = self._create_and_submit_application(declared_purpose="Resolve-only authority")
+        returned = self.client.post(
+            f"/api/v1/loan-applications/{resolve_id}/return-with-deficiencies/",
+            data={
+                "communication_mode": "email",
+                "message": "Please replace the missing PAN copy.",
+                "items": [{"item_code": "borrower_pan"}],
+            },
+            content_type="application/json",
+            headers=self._headers("applications.creator@sfpcl.example", "CreatorPass123!"),
+        )
+        self.assertEqual(returned.status_code, 200)
+        resolve_deficiency_id = returned.json()["data"]["items"][0]["deficiency_id"]
+        applications_by_action["resolve_deficiency"] = (resolve_id, resolve_deficiency_id)
+
+        reject_id = self._create_and_submit_application(declared_purpose="Reject-only authority")
+        applications_by_action["create_rejection_note"] = (reject_id, None)
+
+        loan_application_model = apps.get_model("applications", "LoanApplication")
+        deficiency_model = apps.get_model("applications", "ApplicationDeficiency")
+        rejection_note_model = apps.get_model("applications", "RejectionNote")
+        register_model = apps.get_model("applications", "LoanRequestRegisterEntry")
+
+        for action_code, actor in actors.items():
+            with self.subTest(action_code=action_code):
+                application_id, deficiency_id = applications_by_action[action_code]
+                loan_application_model.objects.filter(
+                    loan_application_id=application_id
+                ).update(received_by_user=actor)
+                headers = self._headers(actor.email, passwords[action_code])
+                read = self.client.get(
+                    f"/api/v1/loan-applications/{application_id}/completeness-check/",
+                    headers=headers,
+                )
+                self.assertEqual(read.status_code, 200)
+                enabled = {
+                    action["action_code"]
+                    for action in read.json()["data"]["available_actions"]
+                    if action["enabled"]
+                }
+                self.assertEqual(enabled, {action_code})
+
+                action_requests = {
+                    "pass_completeness": (
+                        f"/api/v1/loan-applications/{application_id}/completeness-check/pass/",
+                        {},
+                    ),
+                    "return_with_deficiencies": (
+                        f"/api/v1/loan-applications/{application_id}/return-with-deficiencies/",
+                        {
+                            "communication_mode": "email",
+                            "message": "Please supply the missing PAN copy.",
+                            "items": [{"item_code": "borrower_pan"}],
+                        },
+                    ),
+                    "resolve_deficiency": (
+                        f"/api/v1/deficiencies/{deficiency_id or uuid4()}/resolve/",
+                        {"resolution_notes": "Replacement PAN verified."},
+                    ),
+                    "create_rejection_note": (
+                        f"/api/v1/loan-applications/{application_id}/rejection-note/",
+                        self._rejection_note_payload(rejection_stage="completeness"),
+                    ),
+                }
+                own_path, own_payload = action_requests[action_code]
+                own_response = self.client.post(
+                    own_path,
+                    data=own_payload,
+                    content_type="application/json",
+                    headers=headers,
+                )
+                self.assertEqual(own_response.status_code, 200)
+
+                application = loan_application_model.objects.get(
+                    loan_application_id=application_id
+                )
+                evidence_before_denials = (
+                    application.application_status,
+                    application.application_reference_number,
+                    AuditLog.objects.count(),
+                    WorkflowEvent.objects.count(),
+                    deficiency_model.objects.count(),
+                    rejection_note_model.objects.count(),
+                    register_model.objects.count(),
+                )
+                for denied_code, (path, payload) in action_requests.items():
+                    if denied_code == action_code:
+                        continue
+                    denied = self.client.post(
+                        path,
+                        data=payload,
+                        content_type="application/json",
+                        headers=headers,
+                    )
+                    self.assertEqual(denied.status_code, 403)
+                    assert_error_envelope(self, denied.json(), "PERMISSION_DENIED")
+
+                application.refresh_from_db()
+                self.assertEqual(
+                    (
+                        application.application_status,
+                        application.application_reference_number,
+                        AuditLog.objects.count(),
+                        WorkflowEvent.objects.count(),
+                        deficiency_model.objects.count(),
+                        rejection_note_model.objects.count(),
+                        register_model.objects.count(),
+                    ),
+                    evidence_before_denials,
+                )
 
     def test_completeness_pass_requires_verified_checklist_then_generates_reference(self):
         application_id = self._create_and_submit_application()
@@ -3714,6 +4066,226 @@ class LoanApplicationDraftApiTests(TestCase):
                 body = response.json()
                 assert_error_envelope(self, body, "VALIDATION_ERROR")
                 self.assertIn(field, body["error"]["field_errors"])
+
+    def test_epic_006_cross_role_happy_path_reaches_one_pending_sanction_case(self):
+        appraisal_permissions = [
+            self._permission("credit.appraisal.create", "Create appraisal"),
+            self._permission("credit.appraisal.update", "Update appraisal"),
+            self._permission("credit.appraisal.submit_review", "Submit appraisal review"),
+            self._permission("credit.risk_assessment.manage", "Manage risk assessment"),
+        ]
+        self.creator.primary_role.role_code = "deputy_manager_finance"
+        self.creator.primary_role.role_name = "Deputy Manager Finance"
+        self.creator.primary_role.save(update_fields=["role_code", "role_name"])
+        for permission in appraisal_permissions:
+            RolePermission.objects.create(role=self.creator.primary_role, permission=permission)
+        review_permission = self._permission("credit.appraisal.review", "Review appraisal")
+        sanction_permission = self._permission(
+            "credit.appraisal.submit_sanction", "Submit appraisal to sanction"
+        )
+        reviewer = self._user(
+            "credit.manager.tracer@sfpcl.example",
+            "CreditManagerTracer123!",
+            self.read_permission,
+            review_permission,
+            role_code="credit_manager",
+        )
+
+        self.member.active_member_status = "active"
+        self.member.active_member_verified_at = timezone.now()
+        self.member.save(update_fields=["active_member_status", "active_member_verified_at"])
+        application_id = self._reference_generated_application(
+            terms_acceptance_flag=True,
+            required_loan_amount="15000.00",
+        )
+        self._create_nominee(application_id)
+        preparer_headers = self._headers(
+            "applications.creator@sfpcl.example", "CreatorPass123!"
+        )
+        eligibility_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/eligibility-assessment/run/",
+            data={}, content_type="application/json", headers=preparer_headers,
+        )
+        self.assertEqual(eligibility_response.status_code, 200)
+        eligibility = eligibility_response.json()["data"]
+        self.assertEqual(eligibility["overall_result"], "eligible")
+
+        shareholding = Shareholding.objects.create(
+            member=self.member,
+            folio_number=self.member.folio_number,
+            number_of_shares=100,
+            holding_mode="physical",
+            valuation_per_share="2000.00",
+            valuation_effective_date=timezone.localdate(),
+            pledged_share_count=0,
+            available_share_count=100,
+            status="active",
+        )
+        self._active_loan_policy(
+            share_limit_percentage="10.0000", per_share_cap_amount="200.00"
+        )
+        limit_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/loan-limit-assessment/calculate/",
+            data={
+                "shareholding_id": str(shareholding.shareholding_id),
+                "land_holding_ids": [str(self.land.land_holding_id)],
+                "crop_plan_id": str(self.crop.crop_plan_id),
+                "requested_amount": "15000.00",
+                "calculation_date": timezone.localdate().isoformat(),
+            },
+            content_type="application/json",
+            headers=preparer_headers,
+        )
+        self.assertEqual(limit_response.status_code, 200)
+        loan_limit = limit_response.json()["data"]
+        self.assertTrue(loan_limit["amount_within_limit_flag"])
+        self.assertFalse(loan_limit["exception_required_flag"])
+
+        writable = {
+            "borrower_summary": "Verified member and complete application.",
+            "eligibility_summary": "All stored eligibility checks passed.",
+            "loan_limit_summary": "Requested amount is within the frozen limit.",
+            "recommended_amount": "15000.00",
+            "recommended_tenure_months": 12,
+            "recommended_interest_type": "floating",
+            "recommended_security_summary": "Existing verified security facts reviewed.",
+            "repayment_capacity_notes": "Seasonal crop proceeds cover repayment.",
+            "risk_assessment": {
+                "market_risk_rating": "low",
+                "operational_risk_rating": "low",
+                "borrower_risk_rating": "low",
+                "overall_risk_rating": "low",
+                "risk_mitigation_notes": "Monitor the stored crop cycle.",
+            },
+            "recommendation": "approve",
+        }
+        create_response = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/appraisal-note/",
+            data=writable, content_type="application/json", headers=preparer_headers,
+        )
+        self.assertEqual(create_response.status_code, 200)
+        appraisal = create_response.json()["data"]
+        self.assertEqual(appraisal["eligibility_assessment_id"], eligibility["eligibility_assessment_id"])
+        self.assertEqual(appraisal["loan_limit_assessment_id"], loan_limit["loan_limit_assessment_id"])
+        appraisal_id = appraisal["loan_appraisal_note_id"]
+
+        patch_response = self.client.patch(
+            f"/api/v1/loan-applications/{application_id}/appraisal-note/",
+            data=writable, content_type="application/json", headers=preparer_headers,
+        )
+        self.assertEqual(patch_response.status_code, 200)
+        submit_review = self.client.post(
+            f"/api/v1/appraisal-notes/{appraisal_id}/submit-for-review/",
+            data={"remarks": "Ready for independent review."},
+            content_type="application/json", headers=preparer_headers,
+        )
+        self.assertEqual(submit_review.status_code, 200)
+
+        RolePermission.objects.create(role=reviewer.primary_role, permission=sanction_permission)
+        reviewer_headers = self._headers(
+            "credit.manager.tracer@sfpcl.example", "CreditManagerTracer123!"
+        )
+        premature_sanction = self.client.post(
+            f"/api/v1/loan-applications/{application_id}/submit-to-sanction-committee/",
+            data={"remarks": "Reviewed state must not be bypassed."},
+            content_type="application/json", headers=reviewer_headers,
+        )
+        self.assertEqual(premature_sanction.status_code, 409)
+        self.assertEqual(
+            premature_sanction.json()["error"]["code"], "INVALID_STATE_TRANSITION"
+        )
+        RolePermission.objects.filter(
+            role=reviewer.primary_role, permission=sanction_permission
+        ).delete()
+
+        preparer_review = self.client.post(
+            f"/api/v1/appraisal-notes/{appraisal_id}/review/",
+            data={"decision": "reviewed", "review_comments": "Must be denied."},
+            content_type="application/json", headers=preparer_headers,
+        )
+        self.assertEqual(preparer_review.status_code, 403)
+        reviewer_headers = self._headers(
+            "credit.manager.tracer@sfpcl.example", "CreditManagerTracer123!"
+        )
+        reviewed_response = self.client.post(
+            f"/api/v1/appraisal-notes/{appraisal_id}/review/",
+            data={"decision": "reviewed", "review_comments": "Independent review complete."},
+            content_type="application/json", headers=reviewer_headers,
+        )
+        self.assertEqual(reviewed_response.status_code, 200)
+        reviewed = reviewed_response.json()["data"]
+        decision_id = reviewed["review_history"][-1]["appraisal_review_decision_id"]
+
+        sanction_url = f"/api/v1/loan-applications/{application_id}/submit-to-sanction-committee/"
+        review_only_denied = self.client.post(
+            sanction_url,
+            data={"remarks": "Permission boundary proof."},
+            content_type="application/json", headers=reviewer_headers,
+        )
+        self.assertEqual(review_only_denied.status_code, 403)
+        RolePermission.objects.create(role=reviewer.primary_role, permission=sanction_permission)
+        reviewer_headers = self._headers(
+            "credit.manager.tracer@sfpcl.example", "CreditManagerTracer123!"
+        )
+        sanction_response = self.client.post(
+            sanction_url,
+            data={"remarks": "Reviewed package ready for committee."},
+            content_type="application/json", headers=reviewer_headers,
+        )
+        self.assertEqual(sanction_response.status_code, 200)
+        sanction = sanction_response.json()["data"]
+        self.assertEqual(sanction["loan_application_id"], str(application_id))
+        self.assertEqual(sanction["loan_appraisal_note_id"], appraisal_id)
+        self.assertEqual(sanction["appraisal_review_decision_id"], decision_id)
+        self.assertEqual(sanction["submission_status"], "pending")
+        self.assertFalse(sanction["exception_required_flag"])
+        self.assertEqual(sanction["application_status"], "submitted_to_sanction_committee")
+        self.assertEqual(sanction["appraisal_status"], "submitted_to_sanction_committee")
+
+        readback = self.client.get(
+            f"/api/v1/loan-applications/{application_id}/sanction-case/",
+            headers=reviewer_headers,
+        )
+        self.assertEqual(readback.status_code, 200)
+        self.assertEqual(readback.json()["data"], sanction)
+        approval_case_model = apps.get_model("approvals", "ApprovalCase")
+        counts = (
+            approval_case_model.objects.count(),
+            AuditLog.objects.filter(action="appraisal.submitted_to_sanction").count(),
+            WorkflowEvent.objects.filter(workflow_name="sanction_submission").count(),
+        )
+        repeated = self.client.post(
+            sanction_url,
+            data={"remarks": "Must remain idempotent."},
+            content_type="application/json", headers=reviewer_headers,
+        )
+        self.assertEqual(repeated.status_code, 409)
+        self.assertEqual(repeated.json()["error"]["code"], "INVALID_STATE_TRANSITION")
+        self.assertEqual(
+            counts,
+            (
+                approval_case_model.objects.count(),
+                AuditLog.objects.filter(action="appraisal.submitted_to_sanction").count(),
+                WorkflowEvent.objects.filter(workflow_name="sanction_submission").count(),
+            ),
+        )
+        evidence = " ".join(
+            str(value)
+            for audit in AuditLog.objects.filter(
+                action__in=[
+                    "eligibility.assessed", "loan_limit.calculated",
+                    "appraisal.submitted_for_review", "appraisal.reviewed",
+                    "appraisal.submitted_to_sanction",
+                ]
+            )
+            for value in (audit.old_value_json, audit.new_value_json)
+        )
+        for free_text in (
+            writable["borrower_summary"], writable["risk_assessment"]["risk_mitigation_notes"],
+            "Ready for independent review.", "Independent review complete.",
+            "Reviewed package ready for committee.",
+        ):
+            self.assertNotIn(free_text, evidence)
 
     def _draft_payload(self, **overrides):
         payload = {

@@ -119,7 +119,7 @@ class AdminUsersApiTests(IdentityTestCase):
         )
 
         self.assertEqual(forbidden.status_code, 403)
-        self.assertEqual(forbidden.json()["error"]["code"], "PERMISSION_DENIED")
+        self.assertEqual(forbidden.json()["error"]["code"], "FORBIDDEN")
 
     def test_admin_user_list_and_detail_return_auth_me_role_team_shape_with_pagination(self):
         UserTeamMembership.objects.create(user=self.target, team=self.team, status="active")
@@ -277,7 +277,7 @@ class AdminUsersApiTests(IdentityTestCase):
             headers=headers,
         )
         self.assertEqual(assign.status_code, 403)
-        self.assertEqual(assign.json()["error"]["code"], "PERMISSION_DENIED")
+        self.assertEqual(assign.json()["error"]["code"], "FORBIDDEN")
 
         add_team = self.client.post(
             f"/api/v1/admin/users/{self.target.user_id}/teams/",
@@ -300,7 +300,7 @@ class AdminUsersApiTests(IdentityTestCase):
             headers=headers,
         )
         self.assertEqual(suspend.status_code, 403)
-        self.assertEqual(suspend.json()["error"]["code"], "PERMISSION_DENIED")
+        self.assertEqual(suspend.json()["error"]["code"], "FORBIDDEN")
 
         # A create-only user still holds a user-admin permission, so read is allowed.
         listed = self.client.get("/api/v1/admin/users/", headers=headers)
@@ -355,7 +355,7 @@ class AdminUsersApiTests(IdentityTestCase):
             headers=headers,
         )
         self.assertEqual(suspend.status_code, 403)
-        self.assertEqual(suspend.json()["error"]["code"], "PERMISSION_DENIED")
+        self.assertEqual(suspend.json()["error"]["code"], "FORBIDDEN")
 
         # The forbidden suspend left the target active and its session intact; only the
         # earlier legitimate restore-to-active wrote a status_changed audit.
@@ -382,7 +382,7 @@ class AdminUsersApiTests(IdentityTestCase):
             headers=headers,
         )
         self.assertEqual(assign.status_code, 403)
-        self.assertEqual(assign.json()["error"]["code"], "PERMISSION_DENIED")
+        self.assertEqual(assign.json()["error"]["code"], "FORBIDDEN")
 
         add_team = self.client.post(
             f"/api/v1/admin/users/{self.target.user_id}/teams/",
@@ -439,5 +439,5 @@ class AdminUsersApiTests(IdentityTestCase):
             headers=headers,
         )
         self.assertEqual(assign.status_code, 403)
-        self.assertEqual(assign.json()["error"]["code"], "PERMISSION_DENIED")
+        self.assertEqual(assign.json()["error"]["code"], "FORBIDDEN")
         self._assert_no_write_side_effects()

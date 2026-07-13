@@ -1,0 +1,4 @@
+Command: npx playwright screenshot portal-limit-states.html portal-limit-states.png
+Result: sandbox-blocked before page launch.
+Chromium fatal error: MachPortRendezvousServer bootstrap_check_in permission denied (1100).
+No screenshot was fabricated. See ../portal-limit-states.html and mounted jsdom visual assertions.

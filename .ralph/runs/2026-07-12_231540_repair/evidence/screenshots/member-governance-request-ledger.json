@@ -1,0 +1,134 @@
+[
+  {
+    "method": "POST",
+    "pathname": "/api/v1/members/",
+    "body": {
+      "member_type": "individual_farmer",
+      "legal_name": "Complete Synthetic Farmer",
+      "display_name": "Complete Synthetic Farmer",
+      "folio_number": "IND-1783878834544-0002",
+      "membership_start_date": "2024-04-01",
+      "pan": "ABCDE0002F",
+      "aadhaar": "123456780002",
+      "registered_address": {
+        "line1": "Synthetic Registry Road",
+        "line2": "Evidence Block",
+        "village_city": "Nashik",
+        "district": "Nashik",
+        "state": "Maharashtra",
+        "pincode": "422001"
+      },
+      "mobile_number": "+919100000002",
+      "email": "ind.1783878834544@example.test",
+      "individual_profile": {
+        "first_name": "Complete",
+        "middle_name": "Synthetic",
+        "last_name": "Farmer",
+        "gender": "female",
+        "date_of_birth": "1980-01-15",
+        "occupation": "Farmer",
+        "land_area_under_cultivation_acres": "5.25",
+        "primary_crop": "grapes",
+        "services_availed_flag": true,
+        "employment_or_service_years": "7"
+      }
+    }
+  },
+  {
+    "method": "PATCH",
+    "pathname": "/api/v1/members/fd067973-9254-40b4-8b34-57e7e9e0c099/",
+    "body": {
+      "version": 1,
+      "legal_name": "Complete Synthetic Farmer",
+      "display_name": "Complete Synthetic Farmer Corrected",
+      "membership_start_date": "2024-04-01",
+      "registered_address": {
+        "line1": "Synthetic Registry Road",
+        "line2": "Evidence Block",
+        "village_city": "Nashik",
+        "district": "Nashik",
+        "state": "Maharashtra",
+        "pincode": "422001"
+      },
+      "email": "ind.1783878834544@example.test"
+    }
+  },
+  {
+    "method": "POST",
+    "pathname": "/api/v1/members/",
+    "body": {
+      "member_type": "fpc",
+      "legal_name": "Complete Synthetic FPC",
+      "display_name": "Complete Synthetic FPC",
+      "folio_number": "INS-1783878834544-0002",
+      "membership_start_date": "2024-04-01",
+      "pan": "BBCDE0002F",
+      "registered_address": {
+        "line1": "Synthetic Registry Road",
+        "line2": "Evidence Block",
+        "village_city": "Nashik",
+        "district": "Nashik",
+        "state": "Maharashtra",
+        "pincode": "422001"
+      },
+      "mobile_number": "+919100000002",
+      "email": "ins.1783878834544@example.test",
+      "producer_institution_profile": {
+        "institution_type": "farmer_producer_company",
+        "registration_number": "REG-0002",
+        "authorised_signatory_name": "Synthetic Signatory",
+        "authorised_signatory_pan": "ZBCDE0002Y",
+        "authorised_signatory_aadhaar": "876543210002",
+        "board_resolution_required_flag": true,
+        "services_availed_flag": true,
+        "produce_supply_years": "6"
+      }
+    }
+  },
+  {
+    "method": "POST",
+    "pathname": "/api/v1/members/",
+    "body": {
+      "member_type": "producer_institution",
+      "legal_name": "Complete Synthetic Producer Institution",
+      "display_name": "Complete Synthetic Producer Institution",
+      "folio_number": "PRO-1783878834544-0002",
+      "membership_start_date": "2024-04-01",
+      "pan": "CBCDE0002F",
+      "registered_address": {
+        "line1": "Synthetic Registry Road",
+        "line2": "Evidence Block",
+        "village_city": "Nashik",
+        "district": "Nashik",
+        "state": "Maharashtra",
+        "pincode": "422001"
+      },
+      "mobile_number": "+919100000002",
+      "email": "pro.1783878834544@example.test",
+      "producer_institution_profile": {
+        "institution_type": "farmer_producer_company",
+        "registration_number": "REG-0002",
+        "authorised_signatory_name": "Synthetic Signatory",
+        "authorised_signatory_pan": "ZBCDE0002Y",
+        "authorised_signatory_aadhaar": "876543210002",
+        "board_resolution_required_flag": true,
+        "services_availed_flag": true,
+        "produce_supply_years": "6"
+      }
+    }
+  },
+  {
+    "method": "POST",
+    "pathname": "/api/v1/members/00000000-0000-4000-8000-000000000602/identity-change-requests/",
+    "body": {
+      "version": 1,
+      "pan": "CDEFG0002H",
+      "reason": "Synthetic source-backed protected identity correction"
+    }
+  },
+  {
+    "method": "POST",
+    "pathname": "/api/v1/member-identity-change-requests/99938fe2-1dc3-4ffd-800f-926946c6bb18/approve/",
+    "body": {}
+  }
+]

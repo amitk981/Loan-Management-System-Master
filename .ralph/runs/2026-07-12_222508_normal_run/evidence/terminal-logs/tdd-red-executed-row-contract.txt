@@ -1,0 +1,45 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+EEEE
+======================================================================
+ERROR: test_incomplete_row_reports_each_missing_executed_phase (sfpcl_credit.tests.test_credit_action_parity_matrix.ExecutedObjectScopeRowContractTests.test_incomplete_row_reports_each_missing_executed_phase) (omitted='projection')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_222508_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 99, in test_incomplete_row_reports_each_missing_executed_phase
+    row = ExecutedObjectScopeRow("credit.eligibility.run")
+          ^^^^^^^^^^^^^^^^^^^^^^
+NameError: name 'ExecutedObjectScopeRow' is not defined
+
+======================================================================
+ERROR: test_incomplete_row_reports_each_missing_executed_phase (sfpcl_credit.tests.test_credit_action_parity_matrix.ExecutedObjectScopeRowContractTests.test_incomplete_row_reports_each_missing_executed_phase) (omitted='write')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_222508_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 99, in test_incomplete_row_reports_each_missing_executed_phase
+    row = ExecutedObjectScopeRow("credit.eligibility.run")
+          ^^^^^^^^^^^^^^^^^^^^^^
+NameError: name 'ExecutedObjectScopeRow' is not defined
+
+======================================================================
+ERROR: test_incomplete_row_reports_each_missing_executed_phase (sfpcl_credit.tests.test_credit_action_parity_matrix.ExecutedObjectScopeRowContractTests.test_incomplete_row_reports_each_missing_executed_phase) (omitted='category')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_222508_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 99, in test_incomplete_row_reports_each_missing_executed_phase
+    row = ExecutedObjectScopeRow("credit.eligibility.run")
+          ^^^^^^^^^^^^^^^^^^^^^^
+NameError: name 'ExecutedObjectScopeRow' is not defined
+
+======================================================================
+ERROR: test_incomplete_row_reports_each_missing_executed_phase (sfpcl_credit.tests.test_credit_action_parity_matrix.ExecutedObjectScopeRowContractTests.test_incomplete_row_reports_each_missing_executed_phase) (omitted='evidence')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_222508_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 99, in test_incomplete_row_reports_each_missing_executed_phase
+    row = ExecutedObjectScopeRow("credit.eligibility.run")
+          ^^^^^^^^^^^^^^^^^^^^^^
+NameError: name 'ExecutedObjectScopeRow' is not defined
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (errors=4)
+Destroying test database for alias 'default'...

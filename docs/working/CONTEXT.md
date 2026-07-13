@@ -1,16 +1,43 @@
 # Project Context
 
+Refreshed by the owner 2026-07-10. This file describes the stable shape of the project; live
+queue/progress truth lives in `.ralph/state.json` and `docs/working/HANDOFF.md` — never record
+per-run facts here. The architecture review keeps this file current.
+
 ## Product
-SFPCL Member Credit Administration and Loan Disbursement Platform. The product supports member/borrower onboarding, loan application intake, credit appraisal, sanction approvals, legal documentation, security tracking, SAP/customer-code setup, disbursement, repayments, interest, monitoring, default/recovery, closure, compliance, reporting, and a member portal.
+SFPCL Member Credit Administration and Loan Disbursement Platform. The product supports
+member/borrower onboarding, loan application intake, credit appraisal, sanction approvals, legal
+documentation, security tracking, SAP/customer-code setup, disbursement, repayments, interest,
+monitoring, default/recovery, closure, compliance, reporting, and a member portal.
 
 ## Current Repository State
-- Frontend prototype: `sfpcl-lms/`, built with React, Vite, TypeScript, Tailwind, React Router, and lucide-react.
-- Source-of-truth documents: `docs/source/`.
-- Backend/database implementation is not present yet; backend architecture and contracts are described in source docs.
-- Demo data currently lives in `sfpcl-lms/src/data/mockData.ts`.
+- Frontend: `sfpcl-lms/` — React, Vite, TypeScript, Tailwind, React Router, lucide-react. It
+  began as the approved visual prototype and is being wired to the real backend one vertical
+  slice at a time. Auth shell, navigation, dashboard, notifications, admin, member/KYC,
+  Borrower 360, application intake, member portal (auth/dashboard/profile/applications), and the
+  Epic 006 credit screens are API-backed. The routed sanction screen deliberately shows an empty
+  not-connected state until 007I; its component-level mock fallback remains isolated from the app
+  route. Other later module screens (documentation, disbursement, servicing, compliance, reports,
+  task inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
+  `docs/working/PROTOTYPE_GAP_REPORT.md` and
+  `PROTOTYPE_INVENTORY.md` are the authoritative ledger.
+- Backend: `sfpcl_credit/` — Django modular monolith (identity, members, applications, credit,
+  approvals, documents, workflows, communications, dashboard, configurations, scheduler, tracer)
+  with JWT auth, role and object-level permissions, audit/workflow events, versioned
+  configuration, document storage adapter, and seeded demo users.
+- Quality gates run on every slice: frontend build, typecheck, ESLint, vitest; backend Django
+  check, migration sync, and the full test suite under coverage with a hard floor
+  (`coverage_fail_under` in `.ralph/config.yaml`). Playwright e2e + visual regression harness
+  lives in `sfpcl-lms/e2e/`. Concurrency-critical credit paths have an authoritative PostgreSQL
+  acceptance harness (`sfpcl_credit.config.postgres_test_settings`); the routine gate suite runs
+  SQLite until the planned PostgreSQL flip at the Epic 009 boundary.
+- Source-of-truth documents: `docs/source/` (read-only). Distilled extracts live in
+  `docs/working/digests/`; owner-curated section maps in `docs/working/maps/`.
 
 ## Target Users and Roles
-Borrower/member, Field Officer, Deputy Manager Finance, Credit Manager, Company Secretary, Compliance Team, Sanction Committee, CFO, Senior Manager Finance, Chief Financial Controller, Accounts, Sales Team, Admin/IT, and Auditor.
+Borrower/member, Field Officer, Deputy Manager Finance, Credit Manager, Company Secretary,
+Compliance Team, Sanction Committee, CFO, Senior Manager Finance, Chief Financial Controller,
+Accounts, Sales Team, Admin/IT, and Auditor.
 
 ## Core Workflows
 1. Member and KYC verification.
@@ -24,16 +51,23 @@ Borrower/member, Field Officer, Deputy Manager Finance, Credit Manager, Company 
 9. Compliance dashboards, statutory registers, audit logs, reports, and member portal self-service.
 
 ## Technical Direction
-Source docs recommend a modular-monolith backend, Django/Python, PostgreSQL, JWT auth, service-layer business logic, REST APIs, audit events, and external adapters for SAP, bank/payment, email/SMS, CDSL, and file storage. The current codebase is only the frontend prototype.
+Implemented as the source docs direct: modular-monolith Django/Python backend, REST APIs with the
+standard envelope (`api-contracts.md` §6-8), service-layer business logic behind deep-module
+seams, JWT auth, audit events on critical actions, and adapter shells for SAP, bank/payment,
+email/SMS, CDSL, and file storage (real transports arrive with their epics or at integration
+cutover). PostgreSQL is the production database target.
 
 ## Security and Permission Rules
-Role-based access and object-level access are central. Sensitive values must be masked except for authorised users. Financial, security, document, disbursement, recovery, and compliance actions require auditability and appropriate maker-checker controls.
-
-## Current Development Status
-Ralph has been set up to drive future one-slice AFK implementation. No product feature implementation has been started by Ralph yet.
+Role-based access and object-level access are central. Sensitive values must be masked except for
+authorised users, with reveals audited. Financial, security, document, disbursement, recovery, and
+compliance actions require auditability and appropriate maker-checker controls.
 
 ## Known Constraints
-- `docs/source/` is read-only.
-- Current app has no real backend/API integration.
-- Current package has a build script, but no dedicated lint, typecheck, or real test script yet.
-- Future slices that add backend, auth, permissions, database, or financial logic are at least Medium risk and may be High risk.
+- `docs/source/` is read-only; on any conflict, source docs win over prototype and digests.
+- Frontend changes are bound by `docs/working/FRONTEND_DESIGN_RULES.md` — the prototype's visual
+  system is fixed; screens the documents require but the prototype lacks are composed from
+  existing components.
+- Slices touching auth, permissions, money, or compliance are at least Medium risk and often High
+  risk; all run under the owner's standing approval with the veto model.
+- Agent sandboxes have no network: the orchestrator pre-installs pinned dependencies; agents never
+  run pip/npm install for new packages beyond pinning them.

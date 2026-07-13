@@ -1,0 +1,6 @@
+vendor=postgresql
+server_version=140020
+database_name=sfpcl_credit
+database_host=local_socket
+database_port=5432
+test_database_name=test_sfpcl_credit

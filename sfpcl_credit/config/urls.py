@@ -1,6 +1,7 @@
 from django.urls import path
 
 from sfpcl_credit.applications import views as application_views
+from sfpcl_credit.approvals import views as approval_views
 from sfpcl_credit.communications import views as communication_views
 from sfpcl_credit.configurations import views as configuration_views
 from sfpcl_credit.dashboard import views as dashboard_views
@@ -25,6 +26,13 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path("api/v1/approval-matrix-rules/", approval_views.rule_collection, name="approval-matrix-rule-list-create"),
+    path("api/v1/approval-matrix-rules/<uuid:approval_matrix_rule_id>/", approval_views.rule_detail, name="approval-matrix-rule-supersede"),
+    path("api/v1/sanction-committees/", approval_views.committee_collection, name="sanction-committee-list-create"),
+    path("api/v1/sanction-committees/<uuid:sanction_committee_id>/", approval_views.committee_detail, name="sanction-committee-supersede"),
+    path("api/v1/approval-configuration-proposals/<uuid:approval_configuration_proposal_id>/", approval_views.proposal_detail, name="approval-configuration-proposal-detail"),
+    path("api/v1/approval-configuration-proposals/<uuid:approval_configuration_proposal_id>/approve/", approval_views.proposal_approve, name="approval-configuration-proposal-approve"),
+    path("api/v1/approval-configuration-proposals/<uuid:approval_configuration_proposal_id>/reject/", approval_views.proposal_reject, name="approval-configuration-proposal-reject"),
     path("api/v1/auth/login/", login, name="auth-login"),
     path("api/v1/auth/refresh/", refresh, name="auth-refresh"),
     path("api/v1/auth/logout/", logout, name="auth-logout"),
@@ -61,6 +69,11 @@ urlpatterns = [
         "api/v1/portal/produce-supply/",
         portal_views.portal_produce_supply,
         name="portal-produce-supply",
+    ),
+    path(
+        "api/v1/portal/application-limit-projection/",
+        portal_views.portal_application_limit_projection,
+        name="portal-application-limit-projection",
     ),
     path(
         "api/v1/portal/applications/",
@@ -153,9 +166,29 @@ urlpatterns = [
         name="loan-application-appraisal-note",
     ),
     path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/submit-to-sanction-committee/",
+        application_views.loan_application_submit_to_sanction,
+        name="loan-application-submit-to-sanction",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/sanction-case/",
+        application_views.loan_application_sanction_case,
+        name="loan-application-sanction-case",
+    ),
+    path(
         "api/v1/appraisal-notes/<uuid:loan_appraisal_note_id>/submit-for-review/",
         application_views.appraisal_note_submit_for_review,
         name="appraisal-note-submit-for-review",
+    ),
+    path(
+        "api/v1/appraisal-notes/<uuid:loan_appraisal_note_id>/review/",
+        application_views.appraisal_note_review,
+        name="appraisal-note-review",
+    ),
+    path(
+        "api/v1/appraisal-notes/<uuid:loan_appraisal_note_id>/revalidate-prerequisites/",
+        application_views.appraisal_note_revalidate_prerequisites,
+        name="appraisal-note-revalidate-prerequisites",
     ),
     path(
         "api/v1/loan-applications/<uuid:loan_application_id>/return-with-deficiencies/",
@@ -272,6 +305,13 @@ urlpatterns = [
     ),
     path("api/v1/members/", member_views.member_collection, name="member-list"),
     path(
+        "api/v1/members/<uuid:member_id>/reverification/",
+        member_views.member_reverification,
+        name="member-reverification",
+    ),
+    path("api/v1/members/<uuid:member_id>/identity-change-requests/", member_views.member_identity_change_requests, name="member-identity-change-request"),
+    path("api/v1/member-identity-change-requests/<uuid:request_id>/approve/", member_views.approve_member_identity_change, name="member-identity-change-approve"),
+    path(
         "api/v1/members/<uuid:member_id>/reveal-sensitive-field/",
         member_views.reveal_sensitive_field,
         name="member-reveal-sensitive-field",
@@ -282,6 +322,16 @@ urlpatterns = [
         name="member-detail",
     ),
     path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/witnesses/",
+        application_views.loan_application_witnesses,
+        name="loan-application-witnesses",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/witnesses/<uuid:witness_id>/",
+        application_views.loan_application_witness_detail,
+        name="loan-application-witness-detail",
+    ),
+    path(
         "api/v1/members/<uuid:member_id>/nominees/",
         member_views.member_nominees,
         name="member-nominees",
@@ -290,6 +340,21 @@ urlpatterns = [
         "api/v1/members/<uuid:member_id>/shareholdings/",
         member_views.member_shareholdings,
         name="member-shareholdings",
+    ),
+    path(
+        "api/v1/members/<uuid:member_id>/produce-supply-records/",
+        member_views.member_produce_supply_records,
+        name="member-produce-supply-records",
+    ),
+    path(
+        "api/v1/produce-supply-records/<uuid:record_id>/verify/",
+        member_views.produce_supply_record_verify,
+        name="produce-supply-record-verify",
+    ),
+    path(
+        "api/v1/members/<uuid:member_id>/active-status/verify/",
+        member_views.active_member_status_verify,
+        name="active-member-status-verify",
     ),
     path(
         "api/v1/members/<uuid:member_id>/land-holdings/",

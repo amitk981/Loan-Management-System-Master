@@ -1,12 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearStoredAuthSession, storedAuthSession } from './authSession';
 import {
+  createApplicationWitness,
+  createApplicationRejectionNote,
   createStaffApplicationDraft,
   fetchApplicationDeficiencies,
+  fetchApplicationCompleteness,
   fetchApplicationDetail,
   fetchApplicationDocumentChecklist,
+  fetchApplicationWitnesses,
   fetchLoanRequestRegister,
   fetchStaffApplications,
+  passApplicationCompleteness,
+  resolveApplicationDeficiency,
+  returnApplicationWithDeficiencies,
   submitStaffApplication,
   updateStaffApplicationDraft,
 } from './applicationIntakeApi';
@@ -30,6 +37,18 @@ afterEach(() => {
 });
 
 describe('application intake API client', () => {
+  it('reads and creates witnesses through the application-scoped contract', async () => {
+    const witness = { witness_id: 'witness-1', witness_name: 'Test Witness' };
+    const payload = { member_id: 'member-1', witness_name: 'Test Witness', address: 'Village Road', mobile: '', pan: 'ABCDE1234F', aadhaar: '123412341234' };
+    const fetchMock = vi.fn().mockResolvedValueOnce(ok([witness])).mockResolvedValueOnce(ok(witness));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchApplicationWitnesses('app-1')).resolves.toEqual({ items: [witness], actions: [] });
+    await expect(createApplicationWitness('app-1', payload)).resolves.toEqual(witness);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:8000/api/v1/loan-applications/app-1/witnesses/', request());
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://127.0.0.1:8000/api/v1/loan-applications/app-1/witnesses/', request('POST', payload));
+  });
   it('loads staff applications and register rows from staff endpoints with pagination', async () => {
     const fetchMock = vi
       .fn()
@@ -97,6 +116,49 @@ describe('application intake API client', () => {
       status: 403,
     });
   });
+
+  it('uses the existing completeness, deficiency, resolution, and rejection contracts exactly', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(ok(completeness))
+      .mockResolvedValueOnce(ok({ ...application, application_reference_number: 'LO00000042' }))
+      .mockResolvedValueOnce(ok({ ...application, application_status: 'incomplete_returned', items: [deficiency] }))
+      .mockResolvedValueOnce(ok({ ...deficiency, resolution_status: 'resolved' }))
+      .mockResolvedValueOnce(ok({ rejection_note_id: 'note-1', note_status: 'draft' }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchApplicationCompleteness('app-1')).resolves.toMatchObject({ blocking_document_types: ['borrower_pan'] });
+    await expect(passApplicationCompleteness('app-1')).resolves.toMatchObject({ application_reference_number: 'LO00000042' });
+    await expect(returnApplicationWithDeficiencies('app-1', {
+      communication_mode: 'email',
+      message: 'Please submit the missing document.',
+      items: [{ item_code: 'borrower_pan', remarks: 'Current PAN copy is missing.' }],
+    })).resolves.toMatchObject({ application_status: 'incomplete_returned' });
+    await expect(resolveApplicationDeficiency('def-1', { resolution_notes: 'Verified replacement.' })).resolves.toMatchObject({ resolution_status: 'resolved' });
+    await expect(createApplicationRejectionNote('app-1', {
+      rejection_stage: 'completeness',
+      rejection_reason_category: 'missing_document',
+      detailed_reason: 'Mandatory documents were not supplied.',
+      reapply_allowed_flag: true,
+      communication_mode: 'email',
+    })).resolves.toMatchObject({ rejection_note_id: 'note-1' });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:8000/api/v1/loan-applications/app-1/completeness-check/', request());
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://127.0.0.1:8000/api/v1/loan-applications/app-1/completeness-check/pass/', request('POST', {}));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://127.0.0.1:8000/api/v1/loan-applications/app-1/return-with-deficiencies/', request('POST', {
+      communication_mode: 'email',
+      message: 'Please submit the missing document.',
+      items: [{ item_code: 'borrower_pan', remarks: 'Current PAN copy is missing.' }],
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(4, 'http://127.0.0.1:8000/api/v1/deficiencies/def-1/resolve/', request('POST', { resolution_notes: 'Verified replacement.' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(5, 'http://127.0.0.1:8000/api/v1/loan-applications/app-1/rejection-note/', request('POST', {
+      rejection_stage: 'completeness',
+      rejection_reason_category: 'missing_document',
+      detailed_reason: 'Mandatory documents were not supplied.',
+      reapply_allowed_flag: true,
+      communication_mode: 'email',
+    }));
+  });
 });
 
 const application = {
@@ -144,6 +206,20 @@ const deficiency = {
   item_code: 'borrower_pan',
   resolution_status: 'open',
   description: 'Borrower PAN is missing.',
+};
+
+const completeness = {
+  loan_application_id: 'app-1',
+  application_reference_number: null,
+  application_status: 'submitted',
+  current_stage: 'initial_loan_request',
+  completeness_status: 'not_started',
+  member: application.member,
+  nominee: null,
+  nominee_selection_status: 'valid',
+  required_checklist_items: [checklistItem],
+  blocking_document_types: ['borrower_pan'],
+  can_generate_reference: false,
 };
 
 const pagination = {

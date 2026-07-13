@@ -1,0 +1,46 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/members/MemberGovernanceForm.container.test.tsx -t routes Directory registration
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_073549_normal_run/sfpcl-lms
+
+ ❯ src/pages/members/MemberGovernanceForm.container.test.tsx (15 tests | 1 failed | 14 skipped) 2847ms
+   × MemberGovernanceForm production container > routes Directory registration into canonical Profile readback before an ordinary update readback 2846ms
+     → expected "type" to be called 1 times, but got 25 times
+   ↓ MemberGovernanceForm production container > submits the complete individual_farmer body through the shared HTTP transport
+   ↓ MemberGovernanceForm production container > submits the complete fpc body through the shared HTTP transport
+   ↓ MemberGovernanceForm production container > submits the complete producer_institution body through the shared HTTP transport
+   ↓ MemberGovernanceForm production container > posts only the protected identity delta through the shared HTTP transport
+   ↓ MemberGovernanceForm production container > renders the backend stale-conflict reason verbatim after one PATCH and no refetch
+   ↓ MemberGovernanceForm production container > create preserves the backend 400 VALIDATION_ERROR facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > create preserves the backend 403 PERMISSION_DENIED facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > create preserves the backend 409 CONFLICT facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > update preserves the backend 400 VALIDATION_ERROR facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > update preserves the backend 403 OBJECT_ACCESS_DENIED facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > update preserves the backend 409 STALE_WRITE facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > request preserves the backend 400 VALIDATION_ERROR facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > request preserves the backend 403 PERMISSION_DENIED facts after one mutation and no GET
+   ↓ MemberGovernanceForm production container > request preserves the backend 409 STALE_WRITE facts after one mutation and no GET
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/members/MemberGovernanceForm.container.test.tsx > MemberGovernanceForm production container > routes Directory registration into canonical Profile readback before an ordinary update readback
+AssertionError: expected "type" to be called 1 times, but got 25 times
+ ❯ src/pages/members/MemberGovernanceForm.container.test.tsx:73:21
+     71|       email: canonicalCreate.email,
+     72|     });
+     73|     expect(typeSpy).toHaveBeenCalledTimes(1);
+       |                     ^
+     74|   });
+     75| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  07:38:28
+   Duration  4.94s (transform 946ms, setup 0ms, collect 1.33s, tests 2.85s, environment 327ms, prepare 40ms)
+

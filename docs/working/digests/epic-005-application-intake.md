@@ -1,5 +1,110 @@
 # Epic 005 Digest: Application Intake, Completeness, and Deficiencies
 
+## Architecture Review 2026-07-11 23:02 - 005E4 Verified Closure
+
+- 005E4 uses the four source-defined completeness permissions for pass, return, resolve, and
+  rejection-note creation in both projection and write boundaries. Permission-only, object/state,
+  and zero-write denial assertions are substantive rather than coverage-only.
+- The trusted routed-browser contract passed twice and produced all nine declared screenshots from
+  the current run directory. M03-FR-010 through M03-FR-012 retain implemented confidence; this
+  review found no new Epic 005 corrective work.
+
+## 005E4 Completeness Action Authority and Browser Proof
+
+- Completeness actions now use distinct source permissions end to end: pass uses
+  `applications.loan_application.complete_check`, return uses
+  `applications.loan_application.return_deficiency`, resolution uses
+  `applications.deficiency.resolve`, and rejection-note creation uses
+  `applications.rejection_note.create`. Each six-field projection evaluates object scope and the
+  same state/resource functions as its public write boundary.
+- Permission-only matrix coverage proves each action independently and proves all three ungranted
+  mutations return the standard permission denial without state, reference, audit, workflow,
+  register, deficiency, or rejection-note writes. Deputy Manager – Finance now receives the
+  source-backed return permission in the canonical seed.
+- The focused routed-container Playwright contract requires `RALPH_EVIDENCE_DIR`, asserts exact
+  pass/return/resolve/reject bodies and one-call behavior plus canonical checklist/completeness/
+  deficiency reloads, and captures queue-detail, pass, deficiency, returned, resolved, rejected,
+  denied, stale, and API-error states. Local collection passes; trusted execution is an independent
+  orchestrator gate because Chromium cannot acquire macOS services inside the agent sandbox.
+
+## Architecture Review 2026-07-11 21:34 - Completeness Authority and Browser Closure
+
+- 005E3 correctly joins authoritative document/completeness projections and restores S12's
+  approved composition, but it assigns `applications.loan_application.complete_check` to pass,
+  return, resolve, and rejection-note actions and endpoints. Source auth §§12.4/25.2/34.3 instead
+  requires distinct `complete_check`, `return_deficiency`, `deficiency.resolve`, and
+  `rejection_note.create` authority. Corrective 005E4 aligns projection and write gates and restores
+  the full six-field action shape.
+- 005E3's focused Playwright controller hard-codes its prior run path, never produced screenshots,
+  and lacks promised denied/API-error states. 005E4 declares the trusted contract and all nine
+  portable `RALPH_EVIDENCE_DIR` captures.
+- 005FA4 is verified closed: the real App boundary covers unset/false/true flags, the staff demo
+  selector no longer exposes borrower entry, and trusted login/logout acceptance passed twice.
+- M03-FR-010 through M03-FR-012 remain backend-present, but completeness UI/authority confidence
+  stays High risk until 005E4. Member deficiency resubmission remains owned by 008L2.
+
+## 005FA4 Portal Auth Real-Boundary Flag Proof
+
+- Unset, explicit-false, and true demo flags are now proven through module-isolated renders of the
+  actual `App`/`RoleProvider` boundary, not a manually reconstructed `LoginScreen` projection.
+- The true-flag red case found that the staff demo selector still offered a synthetic borrower and
+  routed it into the portal. The selector now contains staff roles only; portal entry always uses
+  the real credential/session path.
+- The trusted Playwright contract derives both screenshot paths from `RALPH_EVIDENCE_DIR`, covers
+  empty/populated login with one exact request, and captures the fail-closed post-logout state.
+
+## 005E3 Completeness Authority and Fidelity Closure
+
+- Completeness and deficiency reads now expose four §44-shaped resource actions: pass, return,
+  resolve, and rejection-note creation. Their enabled states reuse the write services' permission,
+  object-access, application-state, blocker, open-deficiency, duplicate-note, reference, and
+  register gates; the React screen never builds a second action matrix.
+- The workbench joins the document-checklist projection (submission/verification metadata) to the
+  completeness projection (application/nominee/blocker/reference/workflow facts) by document type
+  and fails closed on any ID, row-set, status, verification, or latest-document disagreement.
+- Successful actions reload both status-filtered queues plus canonical checklist, completeness,
+  and complete deficiency history. A 409 remains a one-shot mutation and refreshes only after the
+  operator chooses Refresh.
+- S12's category cards, progress bar, item rows, document chips, density, and action placement were
+  restored with the existing visual vocabulary and real API facts only.
+
+## Architecture Review 2026-07-11 19:23 - Completeness and Portal Proof Corrections
+
+- 005E2 removed mock/reference/state authority and its API wrappers assert exact existing request
+  contracts. However, the screen discards the `document-checklist` result, uses one global
+  completeness permission plus local status facts for every mutation, and replaced the approved
+  S12 category/item/document composition. 005E3 owns explicit two-projection authority, backend
+  resource actions/service parity, restored prototype composition, and real-container proof for
+  pass/return/resolve/reject/denial/validation/stale paths.
+- 005FA3's default browser controller proves real empty/populated portal login and fail-closed
+  network-error logout, but its unset/false/true flag unit test manually projects the flag into
+  `LoginScreen`. 005FA4 must mount the real App/RoleProvider boundary in isolated flag states and
+  successfully run/capture the browser acceptance evidence.
+- Epic 005 is not complete. No M03 functional ID is newly closed by this review; completeness UI
+  confidence awaits 005E3 and member deficiency resubmission remains 008L2.
+
+## Architecture Review 2026-07-11 - Corrective UI/Auth Anchors
+
+- 005E2 must consume the implemented 005D/005E/005F/005F2 APIs: the nine-document blocker list,
+  backend-only reference generation, `incomplete_returned` status, no register/sequence advancement
+  on deficiency return, and append-only deficiency history. M03-FR-010/S12 assign the review to
+  Deputy Manager – Finance; the UI must not infer assignment from creator/receiver fields.
+- The owner-applied 005FA2 code removes the portal demo fallback and defaults RoleContext to an
+  unauthenticated user, but its static tests do not execute empty submission, demo-flag variants,
+  or logout clearing. Corrective 005FA3 owns real DOM/session-boundary proof without visual changes.
+
+## 005E2 Real-Data Workbench Closure
+
+- The staff completeness queue requests only `submitted` and `incomplete_returned` rows from the
+  staff list API. Selection loads the backend completeness projection and the complete deficiency
+  history; no application/member/document mock or seeded deficiency remains.
+- Completeness pass, return, resolution, and rejection-note creation use the exact existing 005E,
+  005F/005F2, and 005H payloads, then re-read server state. The UI never generates a reference or
+  advances a state locally.
+- Until a future backend projection adds completeness resource `available_actions`, the UI uses
+  the canonical `/auth/me` `applications.loan_application.complete_check` code only for action
+  visibility. Object access and all business/state decisions remain backend-enforced.
+
 Sources distilled during slice `005A-loan-application-draft-create-update`:
 - `docs/source/implementation-roadmap.md` §11
 - `docs/source/api-contracts.md` §19.1-§19.4

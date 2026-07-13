@@ -1,5 +1,16 @@
 # API Contracts
 
+## Shared authenticated permission denial (002J2)
+
+Authenticated users who lack a required global permission receive HTTP `403` with error code
+`FORBIDDEN`, matching `docs/source/api-contracts.md` §7.1. The shared envelope boundary also
+normalizes the retired `PERMISSION_DENIED` code for compatibility, while production callers and the
+typed object-access seam emit `FORBIDDEN` directly. Authentication/token errors and the specialized
+`OBJECT_ACCESS_DENIED`, `SENSITIVE_FIELD_ACCESS_DENIED`, and `APPROVAL_AUTHORITY_REQUIRED` codes are
+unchanged. This is a response-contract alignment only: permission grants, role assignments, object
+scope, status codes, messages, successful payloads, audit behavior, and workflow behavior did not
+change.
+
 Source contract baseline: `docs/source/api-contracts.md`.
 
 This working file tracks implementation status and slice-level decisions. It must be updated whenever a slice changes frontend/backend assumptions.
@@ -36,14 +47,14 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 |---|---|---|---|---|
 | Backend health endpoints | Implemented in slice 002A; envelope unified in 002C2 | None | `technical-architecture.md` R1 health checks; standard response envelope from `api-contracts.md` §6.1 | `GET /api/v1/health/live/`, `/ready/`, and `/deep/` return `{ success, data, meta }` via the shared envelope helper; `meta` now includes `request_id`, `timestamp`, and `api_version: "v1"`. Ready/deep include database connectivity status. |
 | Authentication and current user | Current-user implemented through slice 002D; frontend shell wired in 002E; member portal auth implemented in 005FA | Login, dashboards, MP00, MP01, MP02, MP25 | `docs/source/api-contracts.md`, `auth-permissions.md`, `screen-spec-member-portal.md` | Implemented `POST /api/v1/auth/login/`, `/refresh/`, `/logout/`, and `GET /api/v1/auth/me/` with standard envelopes, active-user-only access, refresh rotation, session revocation, role/team token claims, effective role permissions, current action availability, and auth audit logs for login/refresh/logout. 005FA adds portal activation/login/password-reset/password-change endpoints under `/api/v1/portal/auth/`; borrower access tokens and `/auth/me` include `member_id`, `portal_account_id`, and `portal_role = borrower_member` while exposing only portal own-data permissions, not staff completeness/deficiency permissions. The React shell now logs in staff through `/auth/login/`, member portal users through `/portal/auth/login/`, stores bearer/refresh tokens in local browser storage, loads `/auth/me/` before rendering protected navigation, clears local state on `TOKEN_EXPIRED`/`INVALID_TOKEN`, and posts the refresh token to `/auth/logout/`. Admin session controls remain future slices. |
-| Admin user management | Implemented in slice 002G; action-specific permission gating added in 002G2 | Admin User Management | `api-contracts.md` §6-7, §11.4, §12; `auth-permissions.md` §12.1, §15.12, §19 | `GET /api/v1/admin/users/`, `GET /api/v1/admin/users/{user_id}/`, and assignment action endpoints bind existing `Role`/`Team` catalogue rows only. All routes require session-bound bearer auth. Since 002G2 each action requires the specific canonical user-admin permission (`auth-permissions.md` §12.1), not just any user-admin grant: list/detail read requires `users.user.read` OR any write user-admin permission (read fallback per A-015 because seeded `system_admin` lacks `users.user.read`); role assignment and team add/remove require `users.user.update`; suspending a user requires `users.user.disable`; restoring a user to active requires `users.user.update`. A partial-permission actor receives `403 PERMISSION_DENIED` with no `AuditLog` write and no session revocation. Order of checks: `401` (auth) → `403` (permission) → `400`/`404`. Successful role/team/status changes write `AuditLog`; suspending a user revokes active sessions; changing/suspending the last active `system_admin` is blocked per A-014. The frontend continues to map the write user-admin permissions to prototype `manage_users` for nav/route visibility. |
+| Admin user management | Implemented in slice 002G; action-specific permission gating added in 002G2 | Admin User Management | `api-contracts.md` §6-7, §11.4, §12; `auth-permissions.md` §12.1, §15.12, §19 | `GET /api/v1/admin/users/`, `GET /api/v1/admin/users/{user_id}/`, and assignment action endpoints bind existing `Role`/`Team` catalogue rows only. All routes require session-bound bearer auth. Since 002G2 each action requires the specific canonical user-admin permission (`auth-permissions.md` §12.1), not just any user-admin grant: list/detail read requires `users.user.read` OR any write user-admin permission (read fallback per A-015 because seeded `system_admin` lacks `users.user.read`); role assignment and team add/remove require `users.user.update`; suspending a user requires `users.user.disable`; restoring a user to active requires `users.user.update`. A partial-permission actor receives `403 FORBIDDEN` with no `AuditLog` write and no session revocation. Order of checks: `401` (auth) → `403` (permission) → `400`/`404`. Successful role/team/status changes write `AuditLog`; suspending a user revokes active sessions; changing/suspending the last active `system_admin` is blocked per A-014. The frontend continues to map the write user-admin permissions to prototype `manage_users` for nav/route visibility. |
 | Early end-to-end tracer | Implemented in slice 002EX | Staff Tracer screen | `docs/source/api-contracts.md` §3-6; `docs/source/data-model.md` §26.1-26.2 | Thin dev proof only. Protected by session-bound bearer auth and explicit `tracer.lifecycle.run` permission. Endpoints: `POST /api/v1/tracer/members/`, `POST /api/v1/tracer/members/{member_id}/loan-applications/`, `POST /api/v1/tracer/loan-applications/{loan_application_id}/sanction/`, `POST /api/v1/tracer/loan-applications/{loan_application_id}/loan-account/`, `POST /api/v1/tracer/loan-accounts/{loan_account_id}/disburse/`, `POST /api/v1/tracer/loan-accounts/{loan_account_id}/repayments/`, `POST /api/v1/tracer/loan-accounts/{loan_account_id}/close/`. Minimal models only; every transition writes `audit_logs` and `workflow_events`; invalid state transitions return `409 INVALID_STATE_TRANSITION`; missing/revoked auth returns the standard `401` envelope before domain writes. |
-| API contract test harness | Implemented in slice 002J | None | `api-contracts.md` §6.1-6.4, §7.1-7.3, §44 | Test-only assertions live in `sfpcl_credit/tests/api_contracts.py`. Future endpoint slices should use them to prove standard success envelopes, error envelopes, top-level list pagination, and target §44 `available_actions` item shapes without importing test utilities from production code. The harness regression tests cover `/auth/me/`, admin users pagination, `401 AUTH_REQUIRED`, revoked-session `401 INVALID_TOKEN`, `403 PERMISSION_DENIED`, partial-admin write denial, and tracer `409 INVALID_STATE_TRANSITION`. A-016 records that current `/auth/me/` still returns flat permission-code strings for `available_actions`; the object shape is asserted against an internal sample for future detail endpoints. |
+| API contract test harness | Implemented in slice 002J | None | `api-contracts.md` §6.1-6.4, §7.1-7.3, §44 | Test-only assertions live in `sfpcl_credit/tests/api_contracts.py`. Future endpoint slices should use them to prove standard success envelopes, error envelopes, top-level list pagination, and target §44 `available_actions` item shapes without importing test utilities from production code. The harness regression tests cover `/auth/me/`, admin users pagination, `401 AUTH_REQUIRED`, revoked-session `401 INVALID_TOKEN`, `403 FORBIDDEN`, partial-admin write denial, and tracer `409 INVALID_STATE_TRANSITION`. A-016 records that current `/auth/me/` still returns flat permission-code strings for `available_actions`; the object shape is asserted against an internal sample for future detail endpoints. |
 | Local demo staff seed | Implemented in slice 002K; corrected in 002K2 | Login, dashboard smoke, admin/tracer permission smoke | `implementation-roadmap.md` §10, §20-22; `technical-architecture.md` §8-12, §17-18; `auth-permissions.md`; `api-contracts.md` §11-12, §43-44 | `python manage.py seed_demo_users` is a guarded local/dev seed path. It refuses unless `SFPCL_DEBUG=true` and `SFPCL_ALLOW_DEMO_SEED=true`, calls `seed_catalogue()`, creates or updates deterministic `demo.*@sfpcl.example` staff users with active primary roles and memberships, and does not alter `e2e.*` users. Demo users authenticate through the real `/auth/login/` and `/auth/me/` endpoints; there is no demo auth bypass. The zero-permission user returns `permissions: []` and `available_actions: []`; the tracer-only user uses the guarded local/dev-only `local_demo_tracer_user` role and returns only `tracer.lifecycle.run`; the shared source-catalogue `sales_team_user` role remains permission-neutral until source documents define grants; system admin preserves canonical action-specific user-admin permissions without broad `manage_users` aliases. |
 | Role/permission/team catalogue | Seeded in slice 002C; exposed for current user in 002D | None directly | `auth-permissions.md` §12-15, §38 | Canonical `Permission`, `Role`, `Team`, `RolePermission` catalogue seeded idempotently via `python manage.py seed_role_catalogue` (`sfpcl_credit/identity/catalogue.py`). `/api/v1/auth/me/` exposes the authenticated user's effective permission codes from this data. |
 | Members and KYC | Member directory list implemented in 004A; masked member profile detail implemented in 004B; nominee list/create implemented in 004D; shareholding list/create implemented in 004F; land/crop list/create implemented in 004G; KYC profile/document upload/verify implemented in 004H; member bank-account/cancelled-cheque metadata implemented in 004J; Borrower 360 Epic 004 UI wiring implemented in 004K with corrective DTO hardening queued in 004K2 | Member Directory, Member Profile, borrower profile, application intake | `api-contracts.md` §13.1/§13.3/§13.5/§14.1-§14.3/§15.1-§15.2/§17.1-§18.4; `data-model.md` §10.1-§10.4/§11.1/§11.7-§12.4; `auth-permissions.md` §12.2-§12.3/endpoint map | `GET /api/v1/members/` is API-backed with standard list pagination, `members.member.read`, masked mobile numbers, no PAN/Aadhaar fields, and strict §13.1 query validation. `GET /api/v1/members/{member_id}/` returns masked PAN/Aadhaar objects, address, profile shell fields, share/active-member shell fields, and object-shaped `available_actions[]`. `GET/POST /api/v1/members/{member_id}/nominees/`, `/shareholdings/`, `/land-holdings/`, `/crop-plans/`, `/bank-accounts/`, and `/cancelled-cheques/` are API-backed with their documented validations and metadata-only create audits. `GET/POST/PATCH /api/v1/kyc-profiles/`, KYC document upload, and KYC document verify are implemented for member parties only with KYC permissions. Sensitive bank-account reveal, re-KYC task management, share certificate/demat, bank verification letters, disbursement bank gates, and loan-application/loan-account/repayment/risk/audit Borrower 360 data remain future scope. |
 | Loan applications | Draft create/read/update implemented in 005A; submit in 005B; reference generation/register persistence in 005C; object access hardened in 005C2; application document/checklist metadata implemented in 005D; completeness workbench/pass implemented in 005E; deficiency return/list/resolve implemented in 005F; rejection-note create/send shell implemented in 005H; staff list/register UI wiring reads implemented in 005I; staff detail rejection-note summary hardening implemented in 005I2; eligibility assessment through default/document/terms/purpose/nominee checks implemented in 006A-006B; loan-limit calculation and snapshots implemented in 006C-006D; cultivated-acreage source hardening implemented in 006C2 | Applications, completeness, rejection note shell, Loan Request Register, eligibility assessment, loan-limit assessment | `api-contracts.md` §8, §19.1-§23; `screen-spec.md` S13/S15; `data-model.md` §13.1, application-document/deficiency/rejection-note/register tables, and §14.1-§14.2; `auth-permissions.md` §12.4, §19.2, §34.3, §37.3 | Existing loan-application, register, document, checklist, completeness, deficiency, rejection-note, and eligibility endpoints retain their documented contracts. `POST /api/v1/loan-applications/{id}/loan-limit-assessment/calculate/` requires a stored normally eligible assessment, same-member verified source facts, an application-linked verified crop plan, agreement among applicable cultivated-acreage evidence, an active Board-referenced policy version, `credit.loan_limit.calculate`, and existing application object access; it atomically snapshots the lower of shareholding/land limits with audit and workflow evidence. Staff detail reads include nullable `rejection_note` summary metadata when a staff rejection note exists; `application_status` remains backend-owned and unchanged by the summary. Staff list reads support standard `search`, `application_status`/`status`, `current_stage`, `member_id`, `ordering`, `page`, and `page_size` with `page_size` capped at 100. Register reads support `search`, `register_status`/`status`, `current_stage`, `member_type`, `ordering`, `page`, and `page_size`. Appraisal, sanction, document generation, real communication delivery, and disbursement remain future slices. |
-| Appraisal and loan limit | Draft from source | Appraisal workbench | `functional-spec.md`, `api-contracts.md` | Financial rules require tests before implementation. |
+| Appraisal and loan limit | Eligibility/loan limit implemented through 006D2C; appraisal preparation, frozen provenance, Credit Manager review/return/rejection, immutable review history, and legacy remediation implemented through 006E4 | Appraisal workbench | `functional-spec.md` §9.8/M04; `api-contracts.md` §22-§24 | Appraisals freeze canonical redacted eligibility and loan-limit projections, block unproven legacy provenance until explicit scoped revalidation, enforce both `credit.appraisal.review` and active `credit_manager` role authority, retain every review reason in appraisal-owned append-only history, and create the existing rejection-note draft for terminal rejection. Legacy draft and review-pending rows can pin current projections without inheriting review authority; a legacy reviewed row reopens to draft and requires maker resubmission plus fresh Credit Manager review. Rejected/submitted terminal rows remain quarantined for governed repair. |
 | Sanction and approvals | Draft from source | Sanction workbench | `auth-permissions.md`, `api-contracts.md` | Approval matrix is high-control. |
 | Documentation and securities | Document-file upload foundation implemented in 003C; secure download descriptor implemented in 003D; broader loan document workflows remain draft | Documentation hub | SOP PDFs, `api-contracts.md` §26; `data-model.md` §16.1 | `POST /api/v1/document-files/` stores file bytes outside the database through the local adapter and stores metadata in `document_files`. `GET /api/v1/document-files/{document_id}/download/` returns a permissioned, time-limited local download descriptor and writes document-access audit. Checklist, template, signature, stamp, notarisation, and loan-document flows remain future slices. |
 | Versioned configuration | Loan-policy shell implemented in 003E; calculations and broader config types remain draft | Settings/config shell | `api-contracts.md` §41.1, §42.3; `data-model.md` §25.1, §26.3; `functional-spec.md` M01-FR-001/M01-FR-002/M01-FR-015 | `loan_policy_configs` and `version_histories` are persisted. `GET/POST/PATCH/activate` loan-policy APIs and filtered version-history reads are protected, audited where mutating, and versioned on activation. M01-FR-003 through M01-FR-014 calculations/rules are explicitly deferred; only neutral source model fields are stored. |
@@ -89,7 +100,7 @@ The 002EX tracer is a deliberately thin integration proof, not the final member/
 Rules:
 - All endpoints require `Authorization: Bearer <access_token>`.
 - The access token must validate through the session-bound auth path used by `/auth/me/`; logout/revocation returns `401 INVALID_TOKEN`.
-- The authenticated user's effective permission list must include `tracer.lifecycle.run`; otherwise the API returns `403 PERMISSION_DENIED`.
+- The authenticated user's effective permission list must include `tracer.lifecycle.run`; otherwise the API returns `403 FORBIDDEN`.
 - Amounts must be positive decimal strings and are serialized as strings.
 - Allowed status path: member `active`; application `draft -> sanctioned`; account `pending_disbursement -> active -> closed`; repayment `posted`.
 - Every successful transition writes one `audit_logs` row whose action starts with `tracer.` and one `workflow_events` row.
@@ -111,7 +122,7 @@ Implemented endpoints:
 
 Rules:
 - Missing bearer token returns `401 AUTH_REQUIRED`; malformed or revoked session-bound access tokens return the existing `401 INVALID_TOKEN`/`TOKEN_EXPIRED` envelope.
-- Authenticated users without canonical user-admin permission return `403 PERMISSION_DENIED`.
+- Authenticated users without canonical user-admin permission return `403 FORBIDDEN`.
 - Unknown role/team codes and unsupported statuses return `400 VALIDATION_ERROR` with `field_errors`.
 - A-014 lock-out guard: any role or status change that would leave zero active users whose primary role is `system_admin` returns `400 VALIDATION_ERROR`.
 - Role-permission catalogue entries are not edited by this API; this slice binds existing `Role`/`Team` rows only.
@@ -167,7 +178,7 @@ Success data uses the standard top-level list envelope from source §6.2. Each i
 ```
 
 Rules:
-- Missing bearer token returns `401 AUTH_REQUIRED`; users without `members.member.read` return `403 PERMISSION_DENIED`.
+- Missing bearer token returns `401 AUTH_REQUIRED`; users without `members.member.read` return `403 FORBIDDEN`.
 - Unknown query parameters or unsupported enum values return `400 VALIDATION_ERROR` with `field_errors`.
 - The directory response never includes PAN or Aadhaar fields. `mobile_number` is masked to last four digits.
 - Read-only list access writes no audit/workflow event. Exports, create/update, nominee, witness, KYC verification, share certificate, demat, land/crop, loan application, and Borrower 360 behavior are explicitly deferred.
@@ -178,7 +189,7 @@ Rules:
 
 Rules:
 - Requires a session-bound bearer token and `members.member.read`; missing auth returns
-  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and a valid UUID that is
+  `401 AUTH_REQUIRED`, missing permission returns `403 FORBIDDEN`, and a valid UUID that is
   unknown or soft-deleted returns `404 NOT_FOUND`.
 - Returns the standard success envelope with member identifiers, status fields, masked mobile,
   registered address, share and active-member shell fields, `pan`/`aadhaar` as
@@ -240,7 +251,7 @@ Rules:
   `members.sensitive.reveal_aadhaar` for `aadhaar`. Broad member read, KYC, document, admin, or
   export permissions do not grant reveal.
 - Missing auth returns `401 AUTH_REQUIRED` without a reveal audit because no actor is known. Missing
-  base read returns `403 PERMISSION_DENIED`; missing field-specific permission returns
+  base read returns `403 FORBIDDEN`; missing field-specific permission returns
   `403 SENSITIVE_FIELD_ACCESS_DENIED`; unsupported/missing `field_name`, blank `reason`, or an
   unavailable source value return `400 VALIDATION_ERROR`; unknown or soft-deleted members return
   `404 NOT_FOUND`.
@@ -364,7 +375,17 @@ Returns the derived completeness workbench for a submitted application:
     }
   ],
   "blocking_document_types": ["borrower_pan", "crop_plan"],
-  "can_generate_reference": false
+  "can_generate_reference": false,
+  "available_actions": [
+    {
+      "action_code": "pass_completeness",
+      "label": "Generate reference number",
+      "enabled": false,
+      "disabled_reason": "Required nominee and document checks must be complete.",
+      "required_permission": "applications.loan_application.complete_check",
+      "required_role": "deputy_manager_finance"
+    }
+  ]
 }
 ```
 
@@ -428,7 +449,9 @@ Success data:
 
 `GET /api/v1/loan-applications/{loan_application_id}/deficiencies/`
 
-Returns `{ "loan_application_id": "uuid", "items": [...] }` using the deficiency item shape above.
+Returns `{ "loan_application_id": "uuid", "items": [...], "available_actions": [...] }` using
+the deficiency item shape above and the same completeness resource-action projection as the
+completeness read.
 
 `POST /api/v1/deficiencies/{deficiency_id}/resolve/`
 
@@ -468,6 +491,7 @@ Success data:
   "detailed_reason": "Borrower does not meet active member criteria.",
   "reapply_allowed_flag": true,
   "note_status": "draft",
+  "communication_status": "not_sent",
   "prepared_by_user_id": "uuid",
   "approved_by_user_id": null,
   "communication_mode": "email",
@@ -491,9 +515,11 @@ Request:
 }
 ```
 
-Success returns the rejection note shape above with `note_status = sent`, `sent_by_user_id`, and
-`sent_at` populated. The send endpoint is a metadata/status transition only in 005H; it does not
-call a real email/SMS/courier provider and does not create a `communications` row.
+Success returns the rejection note shape above with `note_status = sent`,
+`communication_status = sent`, `sent_by_user_id`, and `sent_at` populated. The derived
+`communication_status` is `not_sent` while `sent_at` is null. The send endpoint is a
+metadata/status transition only in 005H; it does not call a real email/SMS/courier provider and
+does not create a `communications` row.
 
 Rules:
 - All endpoints require session-bound bearer authentication.
@@ -519,6 +545,21 @@ Rules:
   `applications.loan_application.read`; pass requires
   `applications.loan_application.complete_check`. Both endpoints reuse the application object-access
   boundary after global permission and `404` checks.
+- 005E2 wires the staff Completeness Workbench to the list, document-checklist,
+  completeness-check, deficiency, and rejection-note APIs with no mock fallback. Submitted and
+  `incomplete_returned` queue rows are requested as separate status-filtered list reads. 005E4
+  completes the six-field §44 `available_actions` on completeness and deficiency reads. Pass,
+  return, resolve, and rejection-note creation respectively require
+  `applications.loan_application.complete_check`,
+  `applications.loan_application.return_deficiency`, `applications.deficiency.resolve`, and
+  `applications.rejection_note.create`; each projection and write boundary uses the same
+  application object scope and state/resource predicate. The UI intersects that projection with
+  `/auth/me` only for usability and never infers resource authority. Pass sends `{}`; return sends only
+  `communication_mode`, `message`, and current blocker `items[{item_code, remarks?}]`; deficiency
+  resolution sends only `resolution_notes`; rejection-note creation sends the exact 005H draft
+  fields. Every successful action re-reads the canonical queue, document checklist, completeness,
+  and full deficiency history. A `409` is not retried and refresh occurs only after an explicit
+  user choice.
 - The pass endpoint first enforces submitted/non-duplicate state and returns
   `409 INVALID_STATE_TRANSITION` for draft, already-reference-generated, or register-existing
   applications. It then evaluates the latest 005D metadata row for each mandatory application-stage
@@ -527,15 +568,15 @@ Rules:
   missing_metadata`; submitted but pending/rejected latest metadata returns `reason_code =
   not_verified`. Validation failures return `400 VALIDATION_ERROR` with item-level
   `required_checklist_items` and create no sequence/register/audit/workflow side effects.
-- 005F return-with-deficiencies requires `applications.loan_application.complete_check`; deficiency
+- Return-with-deficiencies requires `applications.loan_application.return_deficiency`; deficiency
   list requires `applications.loan_application.read`; deficiency resolve requires
-  `applications.loan_application.complete_check`. All reuse
+  `applications.deficiency.resolve`. All reuse
   `applications.services.evaluate_application_object_access(...)` after global permission and
   `404` checks.
-- 005H rejection-note create/send requires `applications.loan_application.complete_check` because
-  no narrower source-backed rejection-note permission exists yet. Both endpoints reuse the same
+- Rejection-note creation requires `applications.rejection_note.create`; the separate send shell
+  retains its existing send boundary pending its owning workflow work. Both endpoints reuse the
   application object-access boundary after global permission and `404` checks. Borrower portal
-  tokens have only portal own-data permissions and receive `403 PERMISSION_DENIED` on staff
+  tokens have only portal own-data permissions and receive `403 FORBIDDEN` on staff
   rejection-note routes; suspended portal sessions receive `401 INVALID_TOKEN` before any
   rejection-note side effect.
 - Return-with-deficiencies is limited to submitted applications that do not yet have an
@@ -614,7 +655,7 @@ Rules:
   `applications.loan_application.reference_generated` audit metadata plus one
   `loan_application` workflow event from `submitted` to `reference_generated`.
 - Unknown applications return `404 NOT_FOUND`; missing global permissions return
-  `403 PERMISSION_DENIED`; object-scope mismatches return `403 OBJECT_ACCESS_DENIED`; invalid submit
+  `403 FORBIDDEN`; object-scope mismatches return `403 OBJECT_ACCESS_DENIED`; invalid submit
   facts return `400 VALIDATION_ERROR`; re-submit, other non-draft submit, draft reference generation,
   or duplicate reference attempts return `409 INVALID_STATE_TRANSITION`. Object-access denials do
   not write success audit rows, workflow events, register rows, application references, or visible
@@ -705,7 +746,7 @@ Rules:
 - Application-scoped endpoints return `404 NOT_FOUND` for unknown applications before object-scope
   checks, then use `applications.services.evaluate_application_object_access(...)`. Same-permission
   actors outside the application scope receive `403 OBJECT_ACCESS_DENIED`; missing global permission
-  returns `403 PERMISSION_DENIED`.
+  returns `403 FORBIDDEN`.
 - Upload links metadata to an existing `documents.DocumentFile` by `document_file_id`; 005D does not
   upload or duplicate file bytes. Upload is accepted only after application submit and creates a new
   version row for duplicate document type/party combinations instead of overwriting prior history.
@@ -725,7 +766,7 @@ Rules:
 
 Rules:
 - Requires a session-bound bearer token and `members.member.read` under A-034; missing auth returns
-  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and an unknown or
+  `401 AUTH_REQUIRED`, missing permission returns `403 FORBIDDEN`, and an unknown or
   soft-deleted member returns `404 NOT_FOUND`.
 - Returns the standard top-level list envelope. Each item contains `bank_account_id`,
   `owner_party_type`, `owner_party_id`, `account_holder_name`, masked `account_number` as
@@ -812,7 +853,7 @@ Rules:
 
 Rules:
 - Requires a session-bound bearer token and `members.nominee.read`; missing auth returns
-  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and an unknown or
+  `401 AUTH_REQUIRED`, missing permission returns `403 FORBIDDEN`, and an unknown or
   soft-deleted member returns `404 NOT_FOUND`.
 - Returns the standard top-level list envelope. Each nominee item contains `nominee_id`,
   `nominee_name`, nullable `date_of_birth`, `age_at_application`, `gender`, nullable
@@ -856,7 +897,7 @@ Rules:
 
 Rules:
 - Requires a session-bound bearer token and `members.shareholding.read`; missing auth returns
-  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and an unknown or
+  `401 AUTH_REQUIRED`, missing permission returns `403 FORBIDDEN`, and an unknown or
   soft-deleted member returns `404 NOT_FOUND`.
 - Returns the standard top-level list envelope. Each item contains `shareholding_id`,
   `folio_number`, `number_of_shares`, `holding_mode`, nullable `valuation_per_share`, nullable
@@ -901,7 +942,7 @@ Rules:
 
 Rules:
 - Requires a session-bound bearer token and `members.member.read` per A-032; missing auth returns
-  `401 AUTH_REQUIRED`, missing permission returns `403 PERMISSION_DENIED`, and an unknown or
+  `401 AUTH_REQUIRED`, missing permission returns `403 FORBIDDEN`, and an unknown or
   soft-deleted member returns `404 NOT_FOUND`.
 - Returns the standard top-level list envelope. Each item contains `land_holding_id`,
   `document_type`, nullable location/survey fields, `area_acres`, `document_id`,
@@ -1128,7 +1169,7 @@ Rules:
 - `old_value`/`new_value` surface the stored `old_value_json`/`new_value_json` values; `user_agent`
   is intentionally not exposed (not part of §42.1).
 - Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session → `401 INVALID_TOKEN`;
-  authenticated user without the audit-read permission → `403 PERMISSION_DENIED`.
+  authenticated user without the audit-read permission → `403 FORBIDDEN`.
 
 ## Workflow event foundation (003B)
 
@@ -1193,7 +1234,7 @@ Rules:
 - Permission: `audit.workflow_event.read` (002C catalogue). No new workflow-event permission code is invented.
 - `triggered_by_user` is `null` for system/no-actor rows.
 - Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session → `401 INVALID_TOKEN`;
-  authenticated user without `audit.workflow_event.read` → `403 PERMISSION_DENIED`.
+  authenticated user without `audit.workflow_event.read` → `403 FORBIDDEN`.
 - Response examples are saved in `.ralph/runs/2026-07-05_083910_normal_run/evidence/api-responses/workflow-events-api-response.txt`.
 
 ## Versioned loan-policy configuration (003E)
@@ -1245,7 +1286,7 @@ Permissions:
 - list/read requires `config.loan_policy.read`;
 - create/update/activate require `config.loan_policy.manage`;
 - missing bearer token returns `401 AUTH_REQUIRED`; authenticated users without the required
-  permission return `403 PERMISSION_DENIED` with no config/audit/version write.
+  permission return `403 FORBIDDEN` with no config/audit/version write.
 
 `GET /api/v1/version-histories/`
 
@@ -1321,7 +1362,7 @@ Rules:
 - Permission: `documents.file.upload` from the seeded source catalogue.
 - Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session →
   `401 INVALID_TOKEN`; authenticated user without `documents.file.upload` →
-  `403 PERMISSION_DENIED`.
+  `403 FORBIDDEN`.
 - Missing `file`, `document_category`, or `sensitivity_level` returns `400 VALIDATION_ERROR` with
   field-level errors and no file, metadata, or audit write.
 - Invalid `sensitivity_level` or `related_entity_id` returns `400 VALIDATION_ERROR`.
@@ -1369,7 +1410,7 @@ Rules:
   create a true external signed URL. Default expiry is 15 minutes from issuance.
 - Missing bearer token → `401 AUTH_REQUIRED`; malformed/revoked/expired session →
   `401 INVALID_TOKEN`; authenticated user without `documents.file.download` →
-  `403 PERMISSION_DENIED`.
+  `403 FORBIDDEN`.
 - Unknown `document_id` returns `404 NOT_FOUND` without file name, storage key, provider details, or
   checksum information.
 - The response body contains only `download_url` and `expires_at`; it never exposes `storage_key`,
@@ -1436,7 +1477,7 @@ Rules:
 - List responses use the standard top-level pagination envelope with `page` and `page_size`
   query parameters only; unknown query parameters return `400 VALIDATION_ERROR`.
 - Missing bearer token returns `401 AUTH_REQUIRED`; revoked/invalid token returns the existing
-  auth `401`; authenticated users without content-template permission return `403 PERMISSION_DENIED`
+  auth `401`; authenticated users without content-template permission return `403 FORBIDDEN`
   before any database write.
 - Permission assumption A-022: read requires `communications.content_template.read` or
   `communications.content_template.manage`; writes require `communications.content_template.manage`.
@@ -1503,7 +1544,7 @@ List query parameters:
 Rules:
 - Missing bearer token returns `401 AUTH_REQUIRED`; revoked/invalid token returns the existing auth
   `401`; authenticated users without the relevant communication permission return
-  `403 PERMISSION_DENIED` before any write.
+  `403 FORBIDDEN` before any write.
 - Permission assumption A-025: list/read requires `communications.communication.read` or
   `communications.communication.send`; send requires `communications.communication.send`. These
   narrow codes are used instead of broad report, document-template, or config permissions.
@@ -1556,7 +1597,7 @@ Request:
 Rules:
 - Missing bearer token returns `401 AUTH_REQUIRED`; revoked/invalid token returns the existing auth
   `401`; authenticated users without `communications.notification.read` return
-  `403 PERMISSION_DENIED`.
+  `403 FORBIDDEN`.
 - List and mark-read are scoped to notifications addressed directly to the current user, to the
   current user's active primary role code, or to one of the current user's active team codes.
   Other users' notifications are excluded from list results and return `404 NOT_FOUND` on mark-read.
@@ -1609,7 +1650,7 @@ Rules:
 - No query parameters are supported. Any query parameter returns `400 VALIDATION_ERROR` with the
   unknown parameter in `field_errors`.
 - Missing bearer token returns `401 AUTH_REQUIRED`; revoked/invalid token returns `401`; an
-  authenticated user without the dashboard scope returns `403 PERMISSION_DENIED`.
+  authenticated user without the dashboard scope returns `403 FORBIDDEN`.
 - Permission assumption A-023: dashboard read requires `management_readonly`, the source §19.1
   dashboard/summary scope. This is used instead of broad report/export permissions or an invented
   `dashboard.read` code.
@@ -1646,7 +1687,7 @@ Rules:
 - If the linked `PortalAccount` becomes suspended/inactive after token issuance, the shared
   session-bound auth validator revokes the active session with reason
   `portal_account_status_changed` and these endpoints return `401 INVALID_TOKEN`.
-- Staff or non-portal tokens return `403 PERMISSION_DENIED`; missing/invalid bearer tokens return
+- Staff or non-portal tokens return `403 FORBIDDEN`; missing/invalid bearer tokens return
   the standard auth errors.
 - Dashboard returns own member snapshot, own application counts from implemented
   `loan_applications`, active loan placeholder counts of zero until loan accounts exist, open
@@ -1655,12 +1696,63 @@ Rules:
 - Profile returns the existing masked member profile plus own nominees, shareholdings, land
   holdings, crop plans, KYC profile, bank accounts, and cancelled cheques. Portal profile responses
   force PAN/Aadhaar `can_view_full = false` and expose no full bank account values.
-- Produce supply returns an empty read-only shell with `source_status = model_not_implemented`
+- Produce supply returns portal-account-scoped persisted records with no member identifier or
+  staff actions. Every record includes the member module's `qualifying` boolean and stable nullable
+  `non_qualifying_reason`; summary includes the immutable `result_id` and
+  `calculated_as_of_date`. `source_status` is `persisted_qualifying_verified_records` when source-eligible
+  verified history exists and `persisted_no_qualifying_verified_records` otherwise. Summary totals
+  and continuity derive only from canonical-year, eligible-entity/route, evidence-referenced,
+  verified rows; pending and malformed legacy rows remain visible but do not contribute.
   because `data-model.md` defines `produce_supply_records` but no backend model exists yet.
 
 Frontend wiring:
 - MP03, MP04, and prototype `MP22_ProduceSupply.tsx` call these endpoints through
   `sfpcl-lms/src/services/portalApi.ts` with the stored portal bearer session.
+
+### Staff produce-supply capture and verification (006Z/006Z3)
+
+- `POST /api/v1/members/{member_id}/produce-supply-records/` requires
+  `members.active_status.calculate` and an object body containing the current integer member
+  `version`, canonical `financial_year` (`YYYY-YY`), eligible `supplied_to_entity_type`, consistent
+  `supply_route`, and non-blank `evidence_reference`. Unknown fields, invalid UUID relationships,
+  and negative/over-precision quantity or value facts return `400 VALIDATION_ERROR`; stale member
+  versions return `409 STALE_WRITE` without record, history, or audit evidence.
+- Direct supply forbids `producer_institution_member_id`; the Producer Institution route requires
+  an active, non-self FPC/Producer Institution member UUID. Subsidiary and step-down subsidiary
+  destinations require `supplied_to_entity_id`.
+- `POST /api/v1/produce-supply-records/{record_id}/verify/` retains maker-checker separation and
+  the current supply-record `version`; stale verification returns `409 STALE_WRITE`.
+- `POST /api/v1/members/{member_id}/active-status/verify/` requires
+  `members.active_status.verify` plus `result_id`, current member `version`, ISO `as_of_date`,
+  `decision` (`active`, `inactive`, or `relaxation`), and a non-blank `reason`; missing/future dates
+  and unknown fields return `400 VALIDATION_ERROR`. The permission authorizes only the named action;
+  object access additionally requires the same persisted, action-specific member-scope assignment
+  used by member list/detail (`global`, actor-team/member, actor/member assignment, or created-by).
+  Role provenance, action permission alone, caller flags, and unowned records never create scope.
+  A missing or existing out-of-scope member returns the same `403 OBJECT_ACCESS_DENIED`. The
+  calculated route and decision must
+  agree exactly (`pass`/`active`, `relaxation`/`relaxation`, otherwise `inactive`); mismatches return
+  `409 INVALID_DECISION`. It rejects actors who captured or verified any qualifying supply/service/
+  relaxation evidence, stale/changed results, stale versions, unsupported decisions,
+  and repeated decisions without audit/history evidence. A winner returns the exact complete dated
+  result snapshot and atomically creates an effective-dated `active_member_statuses` record, closes
+  the prior current record, points the Member projection at the new record primary key, and records
+  the same projection in member history and audit. Internal snapshots retain row/evidence/verifier
+  facts; borrower portal supply rows deliberately omit those internal fields.
+
+### Staff member list/detail scope and nondisclosure (006Z11)
+
+- `GET /api/v1/members/` first requires `members.member.read`, then applies the authenticated
+  actor's persisted action-specific member scope before search, filtering, count, and pagination.
+  `pagination.total_count`, pages, and rows therefore contain no fact about excluded members.
+- `GET /api/v1/members/{member_id}/` applies the identical predicate. An existing excluded member
+  returns `403 OBJECT_ACCESS_DENIED`; an in-scope unknown identifier returns `404 NOT_FOUND`.
+- Scope and action are independent. A global assignment for read does not authorize verify,
+  identity approval, update, calculation, or evidence maintenance; each write requires its own
+  action permission and assignment/creator fact. No default global assignment is seeded.
+- Service/relaxation evidence retains every creator and material updater as immutable maker
+  provenance. Any maker is denied verification of a derived active-member result with zero status,
+  history, audit, or workflow writes, even after another actor updates the evidence.
 
 ## Member portal application APIs (005G)
 
@@ -1679,7 +1771,7 @@ Rules:
   `portal_account_status_changed`; old-token portal application calls return
   `401 INVALID_TOKEN` before creating applications, audit rows, workflow events, register rows,
   references, or visible sequence side effects.
-- Staff or non-portal tokens return `403 PERMISSION_DENIED`; cross-member create/read/update/submit
+- Staff or non-portal tokens return `403 FORBIDDEN`; cross-member create/read/update/submit
   returns `403 OBJECT_ACCESS_DENIED` and creates no application, audit row, workflow event, register
   row, reference, or visible sequence side effect.
 - Create/update/submit reuse the existing 005A/005B application service behavior and workflow
@@ -1735,6 +1827,18 @@ Frontend wiring:
 - MP10 renders selected application status/detail from
   `GET /api/v1/portal/applications/{loan_application_id}/`.
 
+### Portal application limit projection (006Z2)
+
+- `GET /api/v1/portal/application-limit-projection/?requested_amount={money}` derives member scope
+  only from the active `PortalAccount` and is read-only.
+- `status = available` returns the server-calculated shareholding, land, and effective lower limit,
+  the effective policy version/date, and the server-owned requested-amount advisory flags.
+- Missing, stale, future, closed, manual, or provenance-mismatched active-member authority—and
+  incomplete or contradictory verified share/land facts—returns `status = unavailable` with null
+  amounts and no guessed zero.
+- The response deliberately omits member/effective-record/result IDs, evidence rows/references,
+  verifier and decision facts, configuration IDs, and staff actions.
+
 ## Eligibility assessment APIs (006A-006B)
 
 Protected staff endpoints:
@@ -1743,7 +1847,7 @@ Protected staff endpoints:
 
 Rules:
 - Run requires `credit.eligibility.run` and the existing loan-application object-access boundary.
-  A user missing the global run permission receives `403 PERMISSION_DENIED`; a user with the
+  A user missing the global run permission receives `403 FORBIDDEN`; a user with the
   permission but outside the application scope receives `403 OBJECT_ACCESS_DENIED`.
 - Read requires the existing `applications.loan_application.read` permission and object-access
   boundary used by application detail.
@@ -1752,14 +1856,17 @@ Rules:
 - Run is allowed only after formal reference generation: `application_reference_number` starts
   with `LO`, `application_status = reference_generated`, `completeness_status = complete`, and
   `current_stage = credit_assessment`. Other states return `409 INVALID_STATE_TRANSITION`.
-- `member_active_check` is:
-  - `pass` only when existing member facts include `active_member_status = active` and an
-    `active_member_verified_at` timestamp.
-  - `relaxation` when existing member facts include `active_member_status = relaxation` and an
-    `active_member_verified_at` timestamp.
+- `member_active_check` is calculated through `members.modules.active_member_status`:
+  - `pass` when an active individual/FPC/Producer Institution has recorded service usage and four
+    uninterrupted, completed financial years of qualifying verified produce-supply evidence.
+  - `relaxation` for an individual with three recorded continuous employment/service years, or for
+    a recorded relaxation backed by at least one completed qualifying supply year.
   - `fail` when the member's `membership_status` is not `active`.
   - `manual_evidence_required` when BR-004 through BR-007 require produce/service history but the
     current persistence has no source-backed history rows to calculate it.
+- Responses persist and expose `active_member_snapshot`, including `result_id`,
+  `calculated_as_of_date`, member/rule route facts, continuity, and every classified supply row.
+  Later member/supply changes never rewrite an application's stored eligibility snapshot.
 - 006B computes these additional source-backed checks:
   - `default_check = no_default` only when `Member.default_status = no_default`; other existing
     default-like values return `default_found`.
@@ -1888,28 +1995,32 @@ Response data fields:
 }
 ```
 
-## Appraisal-note draft and submit APIs (006E)
+## Appraisal-note preparation and Credit Manager review APIs (006E/006E2/006F/006F2/006E3/006E4)
 
 Protected staff endpoints:
 - `POST /api/v1/loan-applications/{loan_application_id}/appraisal-note/`
 - `GET /api/v1/loan-applications/{loan_application_id}/appraisal-note/`
 - `PATCH /api/v1/loan-applications/{loan_application_id}/appraisal-note/`
 - `POST /api/v1/appraisal-notes/{loan_appraisal_note_id}/submit-for-review/`
+- `POST /api/v1/appraisal-notes/{loan_appraisal_note_id}/revalidate-prerequisites/`
+- `POST /api/v1/appraisal-notes/{loan_appraisal_note_id}/review/`
 
 Rules:
 - Create requires `credit.appraisal.create`, `credit.risk_assessment.manage`, and the existing
   application object-access boundary. It requires a stored eligibility projection with
   `overall_result = eligible` and a stored loan-limit projection; missing or non-eligible facts
   return `409 INVALID_STATE_TRANSITION` without appraisal, risk, audit, or workflow rows.
-- One appraisal and one linked risk assessment are stored per loan application. The note snapshots
-  the prerequisite assessment UUIDs and user-provided summaries; it never recalculates eligibility,
-  loan limits, policy, or cultivated acreage.
-- Required summaries are non-blank. Recommended amount is positive; optional tenure is a positive
+- One appraisal and one linked risk assessment are stored per loan application. Create copies the
+  exact canonical redacted projections returned by `EligibilityAssessmentModule` and
+  `LoanLimitCalculator`, plus their UUID provenance. GET, PATCH amount/exception validation,
+  submit, review, and sanction consumers use those appraisal-owned frozen projections; a later
+  successful same-UUID assessment rerun cannot reinterpret the appraisal.
+- Required summaries and `repayment_capacity_notes` are non-blank. Recommended amount is positive; optional tenure is a positive
   integer; supplied interest type is `floating`; recommendation is `approve`, `reject`, or
   `conditions`; all four risk ratings are `low`, `medium`, or `high`. Unknown top-level or nested
   fields return `400 VALIDATION_ERROR`.
-- A recommendation above the stored final eligible amount is rejected unless that stored
-  loan-limit projection already has `exception_required_flag = true`; 006E does not create an
+- A recommendation above the frozen final eligible amount is rejected unless that frozen
+  loan-limit projection already has `exception_required_flag = true`; this contract does not create an
   exception approval.
 - PATCH is draft-only and changes supplied fields only. It requires `credit.appraisal.update`;
   changing nested risk fields additionally requires `credit.risk_assessment.manage`.
@@ -1918,12 +2029,371 @@ Rules:
 - `tat_due_at` is application `created_at + 2 days` and never resets. At the exact due instant TAT
   is `within_tat`; later preparation/submission is `breached`.
 - Submit requires `credit.appraisal.submit_review`, object scope, and non-blank `remarks`; it
-  atomically transitions `draft -> review_pending` once. Repeated submit and later PATCH return
-  `409 INVALID_STATE_TRANSITION`.
+  persists trimmed remarks on the appraisal and atomically transitions `draft -> review_pending`
+  once. Submit additionally requires `prerequisite_provenance = verified`; repeated submit and
+  later PATCH return `409 INVALID_STATE_TRANSITION`.
+- The revalidation action accepts only `{}`, requires `credit.appraisal.update` plus
+  `credit.risk_assessment.manage` and object scope, and replaces prerequisite IDs/projections/
+  provenance with the current public eligible projections. Malformed JSON and unknown fields
+  return `400 VALIDATION_ERROR` without writes. A legacy `draft` stays draft; a legacy
+  `review_pending` stays pending for an independent Credit Manager decision. A legacy `reviewed`
+  row returns to `draft` and clears only its mutable latest-review projection (decision, comments,
+  reviewer, and decision time), while immutable `review_history[]` remains unchanged. It then
+  requires maker resubmission and a fresh review before sanction. Legacy `rejected` and
+  `submitted_to_sanction_committee` rows return `409 INVALID_STATE_TRANSITION` and remain visibly
+  quarantined for governed manual repair. Revalidation never changes recommendation, repayment,
+  risk, summary, TAT, preparer, or prior-history facts.
 - Create/update/submit write `appraisal.created`, `appraisal.updated`, or
   `appraisal.submitted_for_review` metadata-only audit/workflow evidence. Free-text summaries,
-  mitigation notes, and submit remarks are never copied into evidence JSON.
+  mitigation notes, repayment-capacity notes, and submit remarks are never copied into evidence
+  JSON. Submit audit metadata records only `submission_reason_exists` and its appraisal owner ID;
+  revalidation metadata records projection UUIDs, provenance, prior/new appraisal state, and a
+  boolean review-authority-invalidated flag only; it does not copy review comments, appraisal
+  summaries, financial values, or risk text.
+- Review always requires `decision` and non-blank `review_comments`; `decision` is `reviewed`,
+  `returned`, or `rejected`. `reviewed` and `returned` continue to accept exactly those two fields.
+  `rejected` additionally requires the existing 005H rejection-note fields
+  `rejection_reason_category`, non-blank `detailed_reason`, boolean `reapply_allowed_flag`, and
+  `communication_mode`; the workflow fixes `rejection_stage = credit_assessment`. Missing, invalid,
+  blank, or unknown fields return `400 VALIDATION_ERROR` without success evidence.
+- Every review decision requires `credit.appraisal.review`, active primary-role membership as
+  `credit_manager`, Credit Manager credit-domain object access, `review_pending` state,
+  `prerequisite_provenance = verified`, and a reviewer other than the preparer. Permission granted
+  to another role and owner/receiver scope do not confer review authority. Missing role/permission
+  returns `403 FORBIDDEN`; an actual Credit Manager outside the domain returns the distinct
+  `403 OBJECT_ACCESS_DENIED`.
+- `reviewed` transitions to terminal appraisal state `reviewed`. `returned` records the same
+  reviewer/time/comment/decision facts and transitions to `draft`, where the maker must revise and
+  resubmit before another review. Draft, reviewed, repeated, and other non-pending review attempts
+  return `409 INVALID_STATE_TRANSITION`.
+- `rejected` atomically transitions to terminal appraisal state `rejected` and creates exactly one
+  linked existing 005H rejection-note draft. Its response nests the serialized `rejection_note`,
+  including `note_status = draft`, derived `communication_status = not_sent`, null send facts, and
+  the appraisal/application/note IDs. It does not send communication or create a sanction/approval
+  case. Repeated rejection returns `409` and cannot create a duplicate note.
+- Every successful `reviewed`, `returned`, or `rejected` action appends one immutable
+  `review_history[]` item with `appraisal_review_decision_id`, decision, non-blank comments,
+  reviewer summary, decision time, from/to states, and `history_provenance`. New decisions use
+  `native`; migration backfill uses `legacy_latest_only` and represents only the latest known
+  legacy decision. The appraisal's top-level decision/comments/reviewer/time remain the latest
+  projection and may be replaced by a later review cycle without changing history.
+- Review never reads current eligibility or loan-limit rows. It preserves the appraisal-owned
+  projections, recommendation/terms, repayment-capacity and submission reasons, linked risk, and
+  TAT facts. Successful decisions atomically write `appraisal.reviewed` or `appraisal.returned`
+  audit/workflow evidence containing the immutable decision ID plus appraisal/application IDs,
+  state, decision, actor/time, and request ID; free-text review comments and appraisal/risk
+  projections are excluded.
+- Rejected review uses the same outer transaction for appraisal state, rejection-note persistence,
+  both metadata evidence streams, and both workflow events. Any note/audit/workflow failure rolls
+  back all writes. `appraisal.rejected` evidence may contain the note ID, category, state, actor,
+  time, and request ID, but excludes `review_comments` and `detailed_reason`.
 
-Response data includes appraisal/application/prerequisite IDs, prepared-user summary/time,
-immutable TAT due/status, all stored appraisal fields, linked risk assessment, recommendation, and
-`appraisal_status = draft|review_pending`.
+Rejected review request:
+
+```json
+{
+  "decision": "rejected",
+  "review_comments": "Independent credit review completed.",
+  "rejection_reason_category": "eligibility",
+  "detailed_reason": "Verified appraisal facts do not meet credit criteria.",
+  "reapply_allowed_flag": true,
+  "communication_mode": "email"
+}
+```
+
+Response data includes appraisal/application/prerequisite IDs, exact `eligibility_snapshot` and
+`loan_limit_snapshot`, `prerequisite_provenance = verified|legacy_unverified`, prepared-user
+summary/time, immutable TAT due/status, `repayment_capacity_notes`, all stored recommendation-term
+facts, linked risk assessment, recommendation, latest review decision/comments/reviewer/time,
+ordered immutable `review_history[]`, and
+`appraisal_status = draft|review_pending|reviewed|rejected`. A successful rejected-review response
+also includes the nested existing rejection-note representation and links its UUID to the appraisal
+audit metadata.
+
+## Submit appraisal to Sanction Committee API (006G/006G2/006G3)
+
+Protected Credit Manager endpoint:
+
+- `POST /api/v1/loan-applications/{loan_application_id}/submit-to-sanction-committee/`
+- `GET /api/v1/loan-applications/{loan_application_id}/sanction-case/`
+
+The submit response and every later case read return the exact workflow-event UUID durably linked
+to that approval case. The read path never substitutes a newer application workflow event.
+
+POST request is exactly `{ "remarks": "non-blank reason" }`. Malformed JSON, a non-object body,
+missing/blank remarks, or any unknown field returns `400 VALIDATION_ERROR`. The action requires active `credit_manager` role authority,
+`credit.appraisal.submit_sanction`, and the existing Credit Manager credit-domain object boundary;
+permission/role failures return `403 FORBIDDEN` and out-of-domain applications return
+`403 OBJECT_ACCESS_DENIED`.
+
+Submission requires one `reviewed` appraisal with verified frozen prerequisite projections, a
+complete linked risk assessment, populated latest review facts, and at least one immutable review
+row. The latest ordered row must be `native|legacy_latest_only` and exactly match the appraisal's
+`reviewed` decision, reviewer, time, comments, and `to_state`. Missing, draft, review-pending,
+returned, rejected, inconsistent, or repeated paths return `409 INVALID_STATE_TRANSITION` without
+case, state, audit, workflow, history, or rejection-note side effects.
+
+The mutation locks application, appraisal, immutable review history, then the case namespace. It
+atomically creates one unique pending sanction case, copies only the frozen loan-limit exception
+flag, and changes both application and appraisal status to
+`submitted_to_sanction_committee`. It does not evaluate the approval matrix, assign approvers,
+create an exception decision, or perform a committee action.
+
+Response data:
+
+```json
+{
+  "approval_case_id": "uuid",
+  "loan_application_id": "uuid",
+  "loan_appraisal_note_id": "uuid",
+  "appraisal_review_decision_id": "uuid",
+  "workflow_event_id": "uuid",
+  "application_status": "submitted_to_sanction_committee",
+  "appraisal_status": "submitted_to_sanction_committee",
+  "submission_status": "pending",
+  "exception_required_flag": false,
+  "submitted_by": {
+    "user_id": "uuid",
+    "full_name": "Credit Manager"
+  },
+  "submitted_at": "2026-07-10T20:30:00+00:00",
+  "available_actions": []
+}
+```
+
+GET is authenticated and applies the same application object-access boundary. It returns the exact
+same backend-owned projection as the successful POST, including case, latest-review, and workflow
+event UUIDs; it never returns submission remarks or other frozen free text. A real application
+without a sanction case returns `404 NOT_FOUND`; denied scope returns `403 OBJECT_ACCESS_DENIED`.
+
+Successful submission writes one `appraisal.submitted_to_sanction` audit record and one
+`sanction_submission` workflow event with application/appraisal/case/latest-review IDs, states,
+actor/time, exception flag, and request ID. Generic evidence excludes request remarks, review
+comments, appraisal summaries, risk notes, and rejection text. Approval-case storage retains the
+trimmed request remarks as the action reason.
+
+## Application Witness API (004E, hardened by 004E2)
+
+Application-scoped endpoints:
+
+- `GET /api/v1/loan-applications/{loan_application_id}/witnesses/`
+- `POST /api/v1/loan-applications/{loan_application_id}/witnesses/`
+
+GET requires `members.witness.read` plus application object access and returns the standard list
+envelope in deterministic created order. POST requires `members.witness.create` plus application
+object access and accepts exactly `member_id`, `witness_name`, `address`, optional `mobile`, `pan`,
+and `aadhaar`. Address is required free text up to 500 characters; a supplied mobile contains 7-15
+digits after spaces are removed.
+
+The selected member must exist, the trimmed/case-normalized witness name must match its legal or
+display name, member KYC must be `verified`, and persisted shareholding evidence must include an
+`active` row with `number_of_shares > 0`. Missing records return `404 NOT_FOUND`; non-shareholders
+return `400 WITNESS_NOT_SHAREHOLDER`; missing/invalid identity, KYC, name, unknown, or
+caller-supplied verification fields return the applicable standard 400 envelope. Malformed JSON,
+arrays/scalars, missing fields, and unknown fields never escape the adapter: they return a standard
+`400 VALIDATION_ERROR` envelope and write no witness, audit, or workflow row.
+
+Successful response data contains `witness_id`, application/member IDs,
+`verification_shareholding_id`, immutable verification-time `folio_number`, name, masked
+PAN/Aadhaar objects, `shareholder_verified_flag: true`,
+`verification_status: verified`, verifier/time, and creation time. Plaintext identities, protected
+tokens, and keyed hashes are never returned or audited. Creation writes one metadata-only
+`applications.witness.created` audit row and no workflow event or application-state transition.
+Later shareholding folio/status/count changes or newly created holdings do not change witness read
+evidence. Legacy rows whose creation audit folio does not resolve to exactly one member
+shareholding expose both evidence fields as `null` rather than selecting current facts.
+### Witness correction and resource actions (006Y4, closed by 006Y8)
+
+- The collection GET additionally returns top-level six-field `actions` for `read` and `create`;
+  each witness returns `version` plus six-field `actions` for `read`, `correct_contact`, and
+  `correct_identity`. Contact and identity entries separately project the authority for the exact
+  fields they govern; clients do not infer correction authority from field names.
+- `GET/PATCH /api/v1/loan-applications/{loan_application_id}/witnesses/{witness_id}/` requires
+  `members.witness.read/update` respectively and exact application object access.
+- PATCH requires current positive-integer `version` and accepts only `witness_name`, `address`,
+  optional `mobile`, `pan`, and
+  `aadhaar`. Verification evidence/provenance fields are immutable. Invalid fields return 400;
+  stale version returns `409 VERSION_CONFLICT`, both with zero domain/evidence writes.
+- Verified identity correction requires a different authorised actor from the verification actor.
+  Success increments version, stores protected identity, returns masked values, writes masked
+  history, and emits metadata-only `applications.witness.corrected` audit evidence.
+- Collection/resource action arrays always contain their entries in the standard six-field shape.
+  Denied actions remain present with the exact permission, application-object, or maker-checker
+  reason; projection and PATCH consume the same correction evaluation, including current version.
+
+#### Parent authority and non-disclosure ordering (006Y16)
+
+Witness resource GET/PATCH applies response-decision precedence in this order: required witness
+permission, parent application object scope, parent absence, then child lookup. Credit Manager scope is all existing
+applications whose persisted `current_stage` is `credit_assessment`; the role does not confer a
+row-independent global scope for an unresolved application identifier.
+
+Consequently, a Credit Manager with the required witness permission receives normal child lookup
+semantics for an existing Credit Assessment parent, including `404 NOT_FOUND` with message
+`Witness was not found.` when the child is absent. An existing application outside that domain and
+a random parent UUID both stop before witness lookup with the same HTTP 403 error fact:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "OBJECT_ACCESS_DENIED",
+    "message": "You do not have access to this loan application.",
+    "details": {},
+    "field_errors": {}
+  },
+  "meta": {
+    "request_id": "<request-id>",
+    "timestamp": "<timestamp>",
+    "api_version": "v1"
+  }
+}
+```
+
+Only an actor with a separately documented application-wide scope that is independent of facts on
+the unresolved row may pass parent authority and receive `404 NOT_FOUND` with message
+`Loan application was not found.` for a missing parent. No current witness-correction role has that
+scope. Every denied parent/child path leaves Witness, WitnessChangeHistory, AuditLog, and
+WorkflowEvent unchanged.
+
+The normal missing-child envelope after successful parent authority is:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Witness was not found.",
+    "details": {},
+    "field_errors": {}
+  },
+  "meta": {
+    "request_id": "<request-id>",
+    "timestamp": "<timestamp>",
+    "api_version": "v1"
+  }
+}
+```
+
+If a future row-independent application-wide scope is documented, the corresponding missing-parent
+envelope is:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Loan application was not found.",
+    "details": {},
+    "field_errors": {}
+  },
+  "meta": {
+    "request_id": "<request-id>",
+    "timestamp": "<timestamp>",
+    "api_version": "v1"
+  }
+}
+```
+
+# Epic 006 authoritative workbench actions (006H4)
+
+Eligibility, loan-limit, appraisal-note, appraisal transition, and sanction submit/read success
+responses now include `data.available_actions[]` in the source §44 shape: `action_code`, `label`,
+`enabled`, `disabled_reason`, `required_permission`, and nullable `required_role`. The projection is
+object-, state-, permission-, and role-aware. Appraisal actions are `credit.appraisal.update`,
+`revalidate_appraisal_prerequisites`, `credit.appraisal.submit_review`, `credit.appraisal.review`,
+and `credit.appraisal.submit_sanction`; disabled actions remain present with a reason. Clients must
+not supplement this resource projection from `/auth/me.available_actions`.
+# Member create/update and identity governance (006Y)
+
+- `POST /api/v1/members/` requires `members.member.create` and accepts the §13.2 individual-farmer
+  or FPC/producer-institution payload. New members start with `membership_status =
+  pending_verification`, `kyc_status = pending`, `default_status = no_default`, and `version = 1`.
+- `PATCH /api/v1/members/{member_id}/` requires `members.member.update`, accepts the §13.4 contact,
+  address, and name fields plus mandatory current `version`, and returns `409 STALE_WRITE` without
+  writes when the version is stale.
+- Verified `pan`/`aadhaar` changes through PATCH return `409 VERIFIED_IDENTITY_LOCKED`; the rejected
+  attempt changes no member/history state and writes a metadata-only rejection audit.
+- `POST /api/v1/members/{member_id}/reverification/` requires the same update permission, current
+  `version`, at least one valid `pan`/`aadhaar`, and `reason`. Success masks history values, resets
+  member KYC to `pending`, clears `rekyc_due_date`, increments `version`, and records audit/history.
+- Member detail now returns `version` and exact six-field resource actions for
+  `members.member.update` and `members.member.reverify_identity`. Resource actions, not `/auth/me`
+  permissions alone, are authoritative for mutation UI.
+
+## Member governance and witness UI closure (006Y2)
+
+- Staff UI calls the 006Y member POST/PATCH/reverification endpoints and performs a canonical
+  member-detail GET after successful update/reverification. It preserves backend 400/403/409
+  errors and uses only the resource's update/reverification actions for profile mutation controls.
+- Application Detail calls the 004E2 witness GET/POST endpoint and performs a canonical witness
+  GET after successful capture. Immutable verification-time shareholding/folio evidence is rendered
+  from that read response; identity values remain masked after capture.
+- The former witness-correction mismatch is closed by 006Y4's versioned resource contract.
+
+## Member Registry and approved identity change (006Y3)
+
+- `POST /api/v1/members/{member_id}/identity-change-requests/` requires
+  `members.member.update`, current `version`, a reason, and at least one valid PAN/Aadhaar. It
+  persists protected proposed values and returns only request metadata; the member remains verified
+  and unchanged until approval. The legacy `/reverification/` route is a compatibility adapter to
+  this request operation.
+- `POST /api/v1/member-identity-change-requests/{request_id}/approve/` requires the dedicated
+  `members.member.identity_change.approve` permission and a different actor. It applies a pending,
+  current-version request once, resets KYC to pending, clears the re-KYC due date, increments member
+  version, and writes masked history/audit. Stale or repeated approval returns `409`.
+- Member detail includes nullable `pending_identity_change` metadata and six-field request/approval
+  actions. Duplicate PAN/Aadhaar create attempts return `400 VALIDATION_ERROR` field errors and the
+  database also enforces nonblank hash uniqueness.
+
+# Approval matrix and sanction committee configuration (007A)
+
+- `GET/POST /api/v1/approval-matrix-rules/` and
+  `PATCH /api/v1/approval-matrix-rules/{approval_matrix_rule_id}/` implement source §25.1.
+  Reads require `approvals.matrix.read`; POST/PATCH require the Critical
+  `approvals.matrix.manage` permission. PATCH is a supersede operation: it closes the prior row
+  the day before the replacement's `effective_from` and returns a new rule id/version.
+- Rule responses expose `approval_matrix_rule_id`, decision/condition, nullable inclusive amount
+  bounds, `required_approver_roles`, `required_director_count`, joint-approval and register facts,
+  effective range, status, and `version_number`. Overlapping amount plus effective ranges for the
+  same decision/condition return `409 CONFIGURATION_CONFLICT` with no configuration, version, or
+  audit writes. Invalid/non-finite amounts return `400 VALIDATION_ERROR`.
+- `GET/POST /api/v1/sanction-committees/` and
+  `PATCH /api/v1/sanction-committees/{sanction_committee_id}/` are the exact committee management
+  paths selected for data-model §15.1. They use the same permissions and immutable supersession
+  convention and return CFO/director user ids, Board meeting reference, effective range, status,
+  and version.
+- The approval-owned resolver interface accepts typed `decision_type`, canonical nullable
+  `condition_code`, finite non-negative amount, and authoritative `decision_date`; it returns one
+  immutable rule-id/version projection or stable no-effective/ambiguous/invalid-facts domain errors.
+# Approval Configuration Collections and Committee Resolution (007A2)
+
+`GET /api/v1/approval-matrix-rules/` and `GET /api/v1/sanction-committees/` use the standard
+top-level paginated list envelope. They accept only positive `page` and `page_size`; `page_size` is
+capped at 100 and unknown parameters return `400 VALIDATION_ERROR`. Ordering is deterministic.
+
+Committee POST/PATCH payloads retain the 007A fields, but the three referenced active users must
+carry persisted authority types `cfo`, `director`, and `director` respectively and must be distinct.
+Approval-owned `resolve_sanction_committee(decision_date)` returns the immutable committee id,
+version, decision date, CFO user id, and both Director user ids. No match and multiple matches have
+stable `NO_EFFECTIVE_SANCTION_COMMITTEE` and `AMBIGUOUS_SANCTION_COMMITTEE` domain codes.
+
+# Approval Configuration Maker-Checker Governance (007A3)
+
+Rule and committee POST/PATCH payloads now require a non-blank `reason`; success returns a pending
+proposal with `approval_configuration_proposal_id`, `proposal_type`, nullable `target_entity_id`,
+`reason`, `status`, `version`, maker/checker ids, rejection reason, and §44-shaped
+`available_actions`. It does not make configuration effective.
+
+- `GET /api/v1/approval-configuration-proposals/{proposal_id}/`
+- `POST /api/v1/approval-configuration-proposals/{proposal_id}/approve/` — `{"version": 1}`
+- `POST /api/v1/approval-configuration-proposals/{proposal_id}/reject/` —
+  `{"version": 1, "reason": "Policy evidence incomplete"}`
+
+The checker must be active, distinct from the maker, and carry persisted `cfo` or
+`company_secretary` authority. Self-decision and missing authority return
+`403 MAKER_CHECKER_VIOLATION` and `403 APPROVER_AUTHORITY_REQUIRED`; stale version returns
+`409 STALE_VERSION`; terminal replay returns `409 TRANSITION_CONFLICT`; approval-time lifecycle
+conflicts return `409 CONFIGURATION_CONFLICT` or `409 PROPOSAL_STALE`. Validation uses the standard
+`400 VALIDATION_ERROR` field-error envelope. Approval atomically activates/supersedes and writes
+separate author/approver VersionHistory plus `config.changed`; rejection changes no effective row.

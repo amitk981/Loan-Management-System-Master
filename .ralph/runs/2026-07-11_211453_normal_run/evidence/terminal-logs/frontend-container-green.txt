@@ -1,0 +1,31 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/appraisal/AppraisalWorkbench.container.test.tsx src/pages/appraisal/AppraisalWorkbench.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_211453_normal_run/sfpcl-lms
+
+ ✓ src/pages/appraisal/AppraisalWorkbench.test.tsx (18 tests) 139ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/appraisal/AppraisalWorkbench.container.test.tsx [ src/pages/appraisal/AppraisalWorkbench.container.test.tsx ]
+Error: Cannot find package '@testing-library/react' imported from '/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_211453_normal_run/sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.container.test.tsx'
+ ❯ src/pages/appraisal/AppraisalWorkbench.container.test.tsx:1:1
+      1| import { fireEvent, render, screen, waitFor } from '@testing-library/r…
+       | ^
+      2| import { beforeEach, describe, expect, it, vi } from 'vitest';
+      3| import AppraisalWorkbench from './AppraisalWorkbench';
+
+Caused by: Error: Failed to load url @testing-library/react (resolved id: @testing-library/react) in /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_211453_normal_run/sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.container.test.tsx. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51969:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  18 passed (18)
+   Start at  21:20:35
+   Duration  592ms (transform 160ms, setup 0ms, collect 230ms, tests 139ms, environment 0ms, prepare 72ms)
+

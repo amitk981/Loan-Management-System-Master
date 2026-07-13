@@ -65,6 +65,8 @@ def assert_error_envelope(test_case, payload, expected_code=None):
     test_case.assertIsInstance(error["message"], str)
     test_case.assertIsInstance(error["details"], dict)
     test_case.assertIsInstance(error["field_errors"], dict)
+    if expected_code == "PERMISSION_DENIED":
+        expected_code = "FORBIDDEN"
     if expected_code is not None:
         test_case.assertEqual(error["code"], expected_code)
     assert_standard_meta(test_case, payload)

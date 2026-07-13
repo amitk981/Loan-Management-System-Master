@@ -1,0 +1,13 @@
+Creating test database for alias 'default'...
+Found 6 test(s).
+System check identified no issues (0 silenced).
+..database_backend=postgresql ordering=valid_locked_application -> invalid_attempting_application_lock -> valid_released -> invalid_locked_application
+.database_backend=postgresql ordering=first_locked_application -> second_attempting_application_lock -> first_released -> second_locked_application
+.database_backend=postgresql ordering=winner_locked_application_appraisal_and_history -> loser_attempting_application_lock -> winner_released
+.database_backend=postgresql ordering=review_locked_application_and_appraisal -> patch_attempting_application_lock -> review_released -> patch_locked_application
+.
+----------------------------------------------------------------------
+Ran 6 tests in 4.832s
+
+OK
+Destroying test database for alias 'default'...

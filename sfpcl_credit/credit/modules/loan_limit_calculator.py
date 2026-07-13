@@ -19,10 +19,11 @@ from sfpcl_credit.credit.modules.common import (
     CreditModuleValidationError,
     get_application_or_raise,
     normalize_request_meta,
+    project_application_object_access,
     require_application_access,
     require_permission,
 )
-from sfpcl_credit.credit.models import EligibilityAssessment, LoanLimitAssessment
+from sfpcl_credit.credit.models import EligibilityAssessment, LoanAppraisalNote, LoanLimitAssessment
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.members.models import (
     CropPlan,
@@ -34,6 +35,19 @@ from sfpcl_credit.workflows.events import record_workflow_event
 
 
 LOAN_LIMIT_CALCULATED_AUDIT_ACTION = "loan_limit.calculated"
+
+
+def calculate_limit_amounts(*, number_of_shares, valuation_per_share, land_area, policy):
+    per_share_limits = []
+    if policy.share_limit_percentage is not None:
+        per_share_limits.append(
+            valuation_per_share * policy.share_limit_percentage / Decimal("100")
+        )
+    if policy.per_share_cap_amount is not None:
+        per_share_limits.append(policy.per_share_cap_amount)
+    share_limit = (Decimal(number_of_shares) * min(per_share_limits)).quantize(Decimal("0.01"))
+    land_limit = (land_area * policy.default_scale_of_finance_per_acre_amount).quantize(Decimal("0.01"))
+    return share_limit, land_limit, min(share_limit, land_limit)
 
 
 @dataclass(frozen=True)
@@ -75,12 +89,32 @@ class LoanLimitSnapshot:
 @dataclass(frozen=True)
 class LoanLimitAssessmentResult:
     projection: LoanLimitSnapshot
+    available_actions: tuple = ()
 
     @property
     def snapshot(self):
         snapshot = self.projection.as_dict()
         snapshot["warnings"] = _warnings(self.projection.exception_required_flag)
+        snapshot["available_actions"] = list(self.available_actions)
         return snapshot
+
+
+@dataclass(frozen=True)
+class LoanLimitTransitionEvaluation:
+    allowed: bool
+    reason: str | None
+
+
+def evaluate_loan_limit_calculation(application):
+    """Single predicate consumed by both the write and its resource action."""
+    if LoanAppraisalNote.objects.filter(loan_application=application).exists():
+        return LoanLimitTransitionEvaluation(False, "Loan-limit calculation cannot be rerun after appraisal has started.")
+    eligibility = EligibilityAssessment.objects.filter(loan_application=application).first()
+    if eligibility is None:
+        return LoanLimitTransitionEvaluation(False, "An eligible eligibility assessment is required before loan-limit calculation.")
+    if eligibility.overall_result != EligibilityAssessment.OVERALL_ELIGIBLE:
+        return LoanLimitTransitionEvaluation(False, "Loan-limit calculation requires eligibility overall_result eligible.")
+    return LoanLimitTransitionEvaluation(True, None)
 
 
 class LoanLimitCalculator:
@@ -110,7 +144,7 @@ class LoanLimitCalculator:
         )
         if assessment is None:
             raise CreditModuleNotFound("Loan-limit assessment was not found.")
-        return _result(assessment)
+        return _result(assessment, actor, permissions)
 
     @transaction.atomic
     def calculate_for_application(
@@ -130,7 +164,7 @@ class LoanLimitCalculator:
         )
         request_meta = normalize_request_meta(request_meta)
         application = (
-            LoanApplication.objects.select_for_update()
+            LoanApplication.objects.select_for_update(of=("self",))
             .select_related("member", "created_by_user", "received_by_user")
             .filter(loan_application_id=application_id)
             .first()
@@ -143,6 +177,9 @@ class LoanLimitCalculator:
             LOAN_LIMIT_CALCULATE_PERMISSION,
             permissions,
         )
+        transition = evaluate_loan_limit_calculation(application)
+        if not transition.allowed:
+            raise CreditModuleInvalidStateError(transition.reason)
         if callable(payload):
             payload = payload()
         eligibility = (
@@ -150,14 +187,9 @@ class LoanLimitCalculator:
             .filter(loan_application=application)
             .first()
         )
-        if eligibility is None:
-            raise CreditModuleInvalidStateError(
-                "An eligible eligibility assessment is required before loan-limit calculation."
-            )
-        if eligibility.overall_result != EligibilityAssessment.OVERALL_ELIGIBLE:
-            raise CreditModuleInvalidStateError(
-                "Loan-limit calculation requires eligibility overall_result eligible."
-            )
+        # The shared transition predicate guarantees this locked row exists and is eligible.
+        if eligibility is None or eligibility.overall_result != EligibilityAssessment.OVERALL_ELIGIBLE:
+            raise CreditModuleInvalidStateError(transition.reason or "Eligibility changed during loan-limit calculation.")
 
         current_assessment = (
             LoanLimitAssessment.objects.select_for_update()
@@ -177,19 +209,13 @@ class LoanLimitCalculator:
         valuation_per_share = shareholding.valuation_per_share
         percentage = policy.share_limit_percentage
         cap_amount = policy.per_share_cap_amount
-        per_share_limits = []
-        if percentage is not None:
-            per_share_limits.append(valuation_per_share * percentage / Decimal("100"))
-        if cap_amount is not None:
-            per_share_limits.append(cap_amount)
-        shareholding_limit = (
-            Decimal(shareholding.number_of_shares) * min(per_share_limits)
-        ).quantize(Decimal("0.01"))
         land_area = cleaned["cultivated_acreage"]
-        land_limit = (
-            land_area * policy.default_scale_of_finance_per_acre_amount
-        ).quantize(Decimal("0.01"))
-        final_eligible_amount = min(shareholding_limit, land_limit)
+        shareholding_limit, land_limit, final_eligible_amount = calculate_limit_amounts(
+            number_of_shares=shareholding.number_of_shares,
+            valuation_per_share=valuation_per_share,
+            land_area=land_area,
+            policy=policy,
+        )
         requested_amount = cleaned["requested_amount"].quantize(Decimal("0.01"))
         amount_within_limit = requested_amount <= final_eligible_amount
 
@@ -245,11 +271,65 @@ class LoanLimitCalculator:
             trigger_reason="Source-backed loan limit calculated.",
             action_code=LOAN_LIMIT_CALCULATED_AUDIT_ACTION,
         )
-        return LoanLimitAssessmentResult(projection=projection)
+        return LoanLimitAssessmentResult(projection=projection, available_actions=tuple(loan_limit_available_actions(application, actor, permissions)))
 
 
-def _result(assessment):
-    return LoanLimitAssessmentResult(projection=_projection(assessment))
+def _result(assessment, actor, permissions):
+    return LoanLimitAssessmentResult(projection=_projection(assessment), available_actions=tuple(loan_limit_available_actions(assessment.loan_application, actor, permissions)))
+
+
+def loan_limit_available_actions(application, actor, permissions):
+    permissions = set(permissions)
+    transition = evaluate_loan_limit_calculation(application)
+    calculate_enabled = transition.allowed and LOAN_LIMIT_CALCULATE_PERMISSION in permissions
+    create_enabled = transition.allowed and "credit.appraisal.create" in permissions and "credit.risk_assessment.manage" in permissions
+    def item(code, label, permission, enabled, reason):
+        return {"action_code": code, "label": label, "enabled": enabled, "disabled_reason": None if enabled else reason, "required_permission": permission, "required_role": None}
+    reason = transition.reason or "Required permission is missing."
+    if transition.allowed and "credit.appraisal.create" not in permissions:
+        create_reason = "You do not have permission to create appraisal notes."
+    elif transition.allowed and "credit.risk_assessment.manage" not in permissions:
+        create_reason = "You do not have permission to manage risk assessments."
+    elif (
+        (eligibility := EligibilityAssessment.objects.filter(loan_application=application).first())
+        is not None
+        and eligibility.overall_result != EligibilityAssessment.OVERALL_ELIGIBLE
+    ):
+        create_reason = "Appraisal creation requires eligibility overall_result eligible."
+    else:
+        create_reason = reason
+    return [
+        loan_limit_calculate_action(application, permissions, actor),
+        project_application_object_access(
+            item("credit.appraisal.create", "Create Appraisal Draft", "credit.appraisal.create", create_enabled, create_reason),
+            application=application,
+            actor=actor,
+            permission_code="credit.appraisal.create",
+            actor_permissions=permissions,
+        ),
+    ]
+
+
+def loan_limit_calculate_action(application, permissions, actor):
+    """Public six-field projection shared by every container that can start calculation."""
+    permissions = set(permissions)
+    transition = evaluate_loan_limit_calculation(application)
+    enabled = transition.allowed and LOAN_LIMIT_CALCULATE_PERMISSION in permissions
+    projected = {
+        "action_code": LOAN_LIMIT_CALCULATE_PERMISSION,
+        "label": "Calculate Loan Limit",
+        "enabled": enabled,
+        "disabled_reason": None if enabled else transition.reason or "You do not have permission to calculate loan limits.",
+        "required_permission": LOAN_LIMIT_CALCULATE_PERMISSION,
+        "required_role": None,
+    }
+    return project_application_object_access(
+        projected,
+        application=application,
+        actor=actor,
+        permission_code=LOAN_LIMIT_CALCULATE_PERMISSION,
+        actor_permissions=permissions,
+    )
 
 
 def _projection(assessment):

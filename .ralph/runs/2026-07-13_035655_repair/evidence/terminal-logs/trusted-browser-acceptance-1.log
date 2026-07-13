@@ -1,0 +1,69 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_033219_normal_run/.ralph/runs/2026-07-13_035655_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/portal-application-limit-authority.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/portal-application-limit-authority.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 22:32:54] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › portal-application-limit-authority.e2e.spec.ts:10:5 › available projection renders only the three server amounts (2.1s)
+  ✓  2 [chromium] › portal-application-limit-authority.e2e.spec.ts:22:5 › unavailable projection has no invented zero or internal reason (1.2s)
+  ✓  3 [chromium] › portal-application-limit-authority.e2e.spec.ts:31:5 › over-limit advisory is derived only from the server flag (1.3s)
+  ✘  4 [chromium] › portal-application-limit-authority.e2e.spec.ts:38:5 › review repeats the canonical server maximum without recalculation (30.0s)
+
+
+  1) [chromium] › portal-application-limit-authority.e2e.spec.ts:38:5 › review repeats the canonical server maximum without recalculation 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.check: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('checkbox').nth(8)[22m
+    [2m    - locator resolved to <input type="checkbox" class="styles-module__switchInput___kYDSD"/>[22m
+    [2m  - attempting click action[22m
+    [2m    2 × waiting for element to be visible, enabled and stable[22m
+    [2m      - element is visible, enabled and stable[22m
+    [2m      - scrolling into view if needed[22m
+    [2m      - done scrolling[22m
+    [2m      - <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm cursor-pointer hover:bg-slate-50 transition-colors">…</label> from <div id="root">…</div> subtree intercepts pointer events[22m
+    [2m    - retrying click action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and stable[22m
+    [2m      - element is visible, enabled and stable[22m
+    [2m      - scrolling into view if needed[22m
+    [2m      - done scrolling[22m
+    [2m      - <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm cursor-pointer hover:bg-slate-50 transition-colors">…</label> from <div id="root">…</div> subtree intercepts pointer events[22m
+    [2m    - retrying click action[22m
+    [2m      - waiting 100ms[22m
+    [2m    52 × waiting for element to be visible, enabled and stable[22m
+    [2m       - element is visible, enabled and stable[22m
+    [2m       - scrolling into view if needed[22m
+    [2m       - done scrolling[22m
+    [2m       - <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm cursor-pointer hover:bg-slate-50 transition-colors">…</label> from <div id="root">…</div> subtree intercepts pointer events[22m
+    [2m     - retrying click action[22m
+    [2m       - waiting 500ms[22m
+
+
+      88 |   while (await page.getByRole('button', { name: 'Self-attested?' }).count()) await page.getByRole('button', { name: 'Self-attested?' }).first().click();
+      89 |   await page.getByRole('button', { name: 'Declarations' }).click();
+    > 90 |   for (const checkbox of await page.getByRole('checkbox').all()) await checkbox.check();
+         |                                                                                 ^
+      91 |   await page.getByRole('button', { name: 'Review' }).click();
+      92 | }
+      93 |
+        at completeApplication (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_033219_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:90:81)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_033219_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:40:3
+
+  Slow test file: [chromium] › portal-application-limit-authority.e2e.spec.ts (34.7s)
+  Consider splitting slow test files to speed up parallel execution
+  1 failed
+    [chromium] › portal-application-limit-authority.e2e.spec.ts:38:5 › review repeats the canonical server maximum without recalculation 
+  3 passed (38.9s)
+
+Exit code: 1

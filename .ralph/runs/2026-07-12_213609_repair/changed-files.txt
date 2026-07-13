@@ -1,0 +1,15 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006Y11-member-form-container-and-error-matrix-closure.md
+ M docs/slices/006Z2-portal-application-limit-display-authority.md
+ M docs/slices/006Z4-active-member-rule-and-snapshot-closure.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-004-member-kyc-master.md
+ M sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts
+ M sfpcl-lms/src/pages/members/MemberGovernanceForm.tsx
+ M sfpcl-lms/src/pages/members/MemberProfile.container.test.tsx
+ M sfpcl-lms/src/pages/members/MemberProfile.tsx
+ M sfpcl-lms/src/services/memberProfileApi.ts
+?? .ralph/runs/2026-07-12_211948_normal_run/
+?? .ralph/runs/2026-07-12_213609_repair/
+?? sfpcl-lms/src/pages/members/MemberGovernanceForm.container.test.tsx

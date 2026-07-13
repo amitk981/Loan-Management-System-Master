@@ -2,7 +2,13 @@ from sfpcl_credit.applications import services as application_services
 from sfpcl_credit.applications.models import ApplicationDeficiency, LoanApplication
 from sfpcl_credit.identity.models import PortalAccount
 from sfpcl_credit.members import services as member_services
-from sfpcl_credit.members.models import BankAccount, KycProfile
+from decimal import Decimal
+
+from django.db.models import Sum
+
+from sfpcl_credit.members.models import BankAccount, KycProfile, ProduceSupplyRecord
+from sfpcl_credit.members.modules.active_member_status import ActiveMemberStatusModule
+from sfpcl_credit.credit.modules.borrower_limit_projection import project_borrower_limit
 
 
 PORTAL_PERMISSION_ERROR = "Borrower portal data is available only to active member portal users."
@@ -77,12 +83,40 @@ def profile(member, user):
 
 
 def produce_supply(member):
-    return {
-        "member_id": str(member.member_id),
-        "records": [],
-        "summary": {"continuous_supply_years": None, "total_quantity": None, "total_value": None},
-        "source_status": "model_not_implemented",
+    records = list(
+        ProduceSupplyRecord.objects.filter(member=member).order_by("-financial_year", "produce_supply_record_id")
+    )
+    status = ActiveMemberStatusModule().calculate(member_id=member.member_id)
+    classified_rows = {
+        row.produce_supply_record_id: row for row in status.supply_rows
     }
+    qualifying_ids = {row.produce_supply_record_id for row in status.supply_rows if row.qualifying}
+    qualifying_records = [row for row in records if str(row.produce_supply_record_id) in qualifying_ids]
+    totals = ProduceSupplyRecord.objects.filter(
+        produce_supply_record_id__in=[row.produce_supply_record_id for row in qualifying_records]
+    ).aggregate(total_quantity=Sum("quantity"), total_value=Sum("value_amount"))
+    return {
+        "records": [
+            {
+                **member_services.serialize_produce_supply_record(row, portal=True),
+                "qualifying": classified_rows[str(row.produce_supply_record_id)].qualifying,
+                "non_qualifying_reason": classified_rows[str(row.produce_supply_record_id)].non_qualifying_reason,
+            }
+            for row in records
+        ],
+        "summary": {
+            "continuous_supply_years": str(status.continuous_supply_years),
+            "calculated_as_of_date": status.calculated_as_of_date,
+            "result_id": status.result_id,
+            "total_quantity": f"{totals['total_quantity']:.3f}" if totals["total_quantity"] is not None else None,
+            "total_value": f"{totals['total_value']:.2f}" if totals["total_value"] is not None else None,
+        },
+        "source_status": "persisted_qualifying_verified_records" if qualifying_records else "persisted_no_qualifying_verified_records",
+    }
+
+
+def application_limit_projection(member, *, requested_amount=None):
+    return project_borrower_limit(member=member, requested_amount=requested_amount)
 
 
 class PortalObjectAccessError(Exception):

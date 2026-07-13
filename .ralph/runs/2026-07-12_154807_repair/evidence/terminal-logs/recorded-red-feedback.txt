@@ -1,0 +1,11 @@
+Source: `.ralph/runs/2026-07-12_152923_repair/evidence/terminal-logs/trusted-browser-acceptance-{1,2}.log`
+
+Both independent runs reached witness creation, contact correction, canonical reload, and the
+verifier-denial screenshot. Each then deterministically failed after 30 seconds:
+
+Error: locator.click: Test timeout of 30000ms exceeded.
+waiting for getByText('e2e.credit.finance@sfpcl.example')
+at signOut (e2e/witness-correction-authority.e2e.spec.ts:65)
+
+This is the exact recorded symptom and the red-capable focused command is:
+RALPH_EVIDENCE_DIR=<run>/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/witness-correction-authority.e2e.spec.ts

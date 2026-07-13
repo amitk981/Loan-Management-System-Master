@@ -6,7 +6,7 @@ from django.utils import timezone
 from sfpcl_credit.applications.modules.nominee_validation import evaluate_nominee_selection
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.applications.services import build_completeness_workbench
-from sfpcl_credit.credit.models import EligibilityAssessment
+from sfpcl_credit.credit.models import EligibilityAssessment, LoanAppraisalNote
 from sfpcl_credit.credit.modules.common import (
     APPLICATION_READ_PERMISSION,
     ELIGIBILITY_RUN_PERMISSION,
@@ -18,6 +18,8 @@ from sfpcl_credit.credit.modules.common import (
     require_permission,
 )
 from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.members.modules.active_member_status import ActiveMemberStatusModule
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
@@ -28,6 +30,12 @@ ELIGIBILITY_ASSESSED_AUDIT_ACTION = "eligibility.assessed"
 class EligibilityAssessmentResult:
     assessment: EligibilityAssessment
     snapshot: dict
+
+
+@dataclass(frozen=True)
+class EligibilityRunEvaluation:
+    allowed: bool
+    reason: str | None
 
 
 class EligibilityAssessmentModule:
@@ -54,7 +62,7 @@ class EligibilityAssessmentModule:
             raise CreditModuleNotFound("Eligibility assessment was not found.")
         return EligibilityAssessmentResult(
             assessment=assessment,
-            snapshot=eligibility_assessment_snapshot(assessment),
+            snapshot=_snapshot_with_actions(assessment, application, actor, permissions),
         )
 
     @transaction.atomic
@@ -67,7 +75,7 @@ class EligibilityAssessmentModule:
         )
         request_meta = normalize_request_meta(request_meta)
         application = (
-            LoanApplication.objects.select_for_update()
+            LoanApplication.objects.select_for_update(of=("self",))
             .select_related("member", "nominee", "created_by_user", "received_by_user")
             .filter(loan_application_id=application_id)
             .first()
@@ -80,11 +88,17 @@ class EligibilityAssessmentModule:
             ELIGIBILITY_RUN_PERMISSION,
             permissions,
         )
-        invalid_state_message = eligibility_run_invalid_state_message(application)
-        if invalid_state_message:
-            raise CreditModuleInvalidStateError(invalid_state_message)
+        transition = evaluate_eligibility_run(application)
+        if not transition.allowed:
+            raise CreditModuleInvalidStateError(transition.reason)
 
-        active_result = _active_member_check(application.member)
+        member_result = ActiveMemberStatusModule().calculate(member_id=application.member_id)
+        active_member_snapshot = member_result.to_snapshot()
+        active_result = {
+            "member_active_check": member_result.member_active_check,
+            "overall_result": member_result.overall_result,
+            "assessment_notes": member_result.assessment_notes,
+        }
         source_checks = _source_backed_eligibility_checks(application)
         assessment = (
             EligibilityAssessment.objects.select_for_update()
@@ -108,6 +122,7 @@ class EligibilityAssessmentModule:
             source_checks,
             assessment.overall_result,
         )
+        assessment.active_member_snapshot = active_member_snapshot
         assessment.assessed_by_user = actor
         assessment.assessed_at = timezone.now()
         assessment.save()
@@ -124,23 +139,66 @@ class EligibilityAssessmentModule:
         )
         return EligibilityAssessmentResult(
             assessment=assessment,
-            snapshot=eligibility_assessment_snapshot(assessment),
+            snapshot=_snapshot_with_actions(assessment, application, actor, permissions),
         )
+
+
+def evaluate_eligibility_run(application):
+    if LoanAppraisalNote.objects.filter(loan_application=application).exists():
+        return EligibilityRunEvaluation(False, "Eligibility assessment cannot be rerun after appraisal has started.")
+    if not (application.application_reference_number or "").startswith("LO"):
+        return EligibilityRunEvaluation(False, "Eligibility assessment requires a formal LO application reference.")
+    if application.application_status != LoanApplication.STATUS_REFERENCE_GENERATED:
+        return EligibilityRunEvaluation(False, (
+            "Invalid state transition for loan_application: eligibility_assessment.run "
+            f"is not allowed from {application.application_status}."
+        ))
+    if application.completeness_status != LoanApplication.COMPLETENESS_COMPLETE:
+        return EligibilityRunEvaluation(False, "Eligibility assessment requires complete application documentation.")
+    if application.current_stage != LoanApplication.STAGE_CREDIT_ASSESSMENT:
+        return EligibilityRunEvaluation(False, "Eligibility assessment is allowed only in credit assessment stage.")
+    return EligibilityRunEvaluation(True, None)
 
 
 def eligibility_run_invalid_state_message(application):
-    if not (application.application_reference_number or "").startswith("LO"):
-        return "Eligibility assessment requires a formal LO application reference."
-    if application.application_status != LoanApplication.STATUS_REFERENCE_GENERATED:
-        return (
-            "Invalid state transition for loan_application: eligibility_assessment.run "
-            f"is not allowed from {application.application_status}."
-        )
-    if application.completeness_status != LoanApplication.COMPLETENESS_COMPLETE:
-        return "Eligibility assessment requires complete application documentation."
-    if application.current_stage != LoanApplication.STAGE_CREDIT_ASSESSMENT:
-        return "Eligibility assessment is allowed only in credit assessment stage."
-    return None
+    """Compatibility wrapper; transition authority lives in evaluate_eligibility_run."""
+    return evaluate_eligibility_run(application).reason
+
+
+def _snapshot_with_actions(assessment, application, actor, permissions):
+    from sfpcl_credit.credit.modules.loan_limit_calculator import loan_limit_calculate_action
+
+    snapshot = eligibility_assessment_snapshot(assessment)
+    snapshot["available_actions"] = [eligibility_run_action(
+        application,
+        actor,
+        permissions,
+    ), loan_limit_calculate_action(application, permissions, actor)]
+    return snapshot
+
+
+def eligibility_run_action(application, actor, permissions=None):
+    from sfpcl_credit.credit.modules.common import project_application_object_access
+
+    if permissions is None:
+        permissions = auth_service.effective_permission_codes(actor)
+    transition = evaluate_eligibility_run(application)
+    enabled = transition.allowed and ELIGIBILITY_RUN_PERMISSION in permissions
+    projected = {
+        "action_code": ELIGIBILITY_RUN_PERMISSION,
+        "label": "Run Eligibility Assessment",
+        "enabled": enabled,
+        "disabled_reason": None if enabled else transition.reason or "You do not have permission to run eligibility assessments.",
+        "required_permission": ELIGIBILITY_RUN_PERMISSION,
+        "required_role": None,
+    }
+    return project_application_object_access(
+        projected,
+        application=application,
+        actor=actor,
+        permission_code=ELIGIBILITY_RUN_PERMISSION,
+        actor_permissions=permissions,
+    )
 
 
 def eligibility_assessment_snapshot(assessment):
@@ -155,6 +213,7 @@ def eligibility_assessment_snapshot(assessment):
         "nominee_check": assessment.nominee_check,
         "overall_result": assessment.overall_result,
         "assessment_notes": assessment.assessment_notes,
+        "active_member_snapshot": assessment.active_member_snapshot,
         "assessed_by_user_id": str(assessment.assessed_by_user_id),
         "assessed_at": timezone.localtime(assessment.assessed_at).isoformat(),
     }
@@ -173,45 +232,6 @@ def _audit_eligibility_assessment(assessment, actor, old_value_json, request_met
         ip_address=request_meta.ip_address,
         user_agent=request_meta.user_agent,
     )
-
-
-def _active_member_check(member):
-    if member.membership_status != "active":
-        return {
-            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_FAIL,
-            "overall_result": EligibilityAssessment.OVERALL_INELIGIBLE,
-            "assessment_notes": (
-                "BR-003 requires active member status or relaxation evidence; "
-                f"member status is {member.membership_status}."
-            ),
-        }
-    if member.active_member_status == "active" and member.active_member_verified_at:
-        return {
-            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_PASS,
-            "overall_result": EligibilityAssessment.OVERALL_PENDING,
-            "assessment_notes": (
-                "Active-member status was verified from existing member facts. "
-                "Default, document, terms, purpose, and nominee checks are pending."
-            ),
-        }
-    if member.active_member_status == "relaxation" and member.active_member_verified_at:
-        return {
-            "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_RELAXATION,
-            "overall_result": EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE,
-            "assessment_notes": (
-                "Active-member relaxation is recorded on the member profile. "
-                "Manual evidence remains reviewable for BR-004 through BR-007."
-            ),
-        }
-    return {
-        "member_active_check": EligibilityAssessment.MEMBER_ACTIVE_MANUAL_EVIDENCE_REQUIRED,
-        "overall_result": EligibilityAssessment.OVERALL_PENDING_MANUAL_EVIDENCE,
-        "assessment_notes": (
-            "BR-004 through BR-007 require continuous produce/service history or "
-            "relaxation evidence. Current persistence has no source history rows "
-            "for this application, so manual evidence is required."
-        ),
-    }
 
 
 def _source_backed_eligibility_checks(application):

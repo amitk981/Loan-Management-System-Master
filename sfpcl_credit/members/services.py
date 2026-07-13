@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import re
 import uuid
 from datetime import date
@@ -8,7 +6,6 @@ from decimal import Decimal, InvalidOperation
 from math import ceil
 from pathlib import Path
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q, Sum
@@ -26,14 +23,30 @@ from sfpcl_credit.members.models import (
     CropPlan,
     KycDocument,
     KycProfile,
+    IndividualMemberProfile,
     LandHolding,
     Member,
+    MemberChangeHistory,
     Nominee,
+    ProducerInstitutionProfile,
+    ProduceSupplyRecord,
     Shareholding,
+)
+from sfpcl_credit.members.protected_identity import (
+    identity_hash,
+    mask_protected_identity,
+    protected_identity_token,
+)
+from sfpcl_credit.members.modules.active_member_status import (
+    QUALIFYING_ENTITY_TYPES,
+    QUALIFYING_ROUTES,
+    canonical_financial_year_start,
 )
 
 
 MEMBER_READ_PERMISSION = "members.member.read"
+MEMBER_CREATE_PERMISSION = "members.member.create"
+MEMBER_UPDATE_PERMISSION = "members.member.update"
 NOMINEE_READ_PERMISSION = "members.nominee.read"
 NOMINEE_CREATE_PERMISSION = "members.nominee.create"
 SHAREHOLDING_READ_PERMISSION = "members.shareholding.read"
@@ -47,6 +60,8 @@ KYC_PROFILE_CREATE_PERMISSION = "kyc.profile.create"
 KYC_PROFILE_UPDATE_PERMISSION = "kyc.profile.update"
 KYC_DOCUMENT_UPLOAD_PERMISSION = "kyc.document.upload"
 KYC_DOCUMENT_VERIFY_PERMISSION = "kyc.document.verify"
+PRODUCE_SUPPLY_CAPTURE_PERMISSION = "members.active_status.calculate"
+PRODUCE_SUPPLY_VERIFY_PERMISSION = "members.active_status.verify"
 REVEAL_FIELD_PERMISSIONS = {
     "pan": "members.sensitive.reveal_pan",
     "aadhaar": "members.sensitive.reveal_aadhaar",
@@ -70,6 +85,252 @@ _ALLOWED_PARAMS = {
 
 def user_can_read_members(user):
     return MEMBER_READ_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_capture_produce_supply(user):
+    return PRODUCE_SUPPLY_CAPTURE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_verify_produce_supply(user):
+    return PRODUCE_SUPPLY_VERIFY_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_create_members(user):
+    return MEMBER_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_update_members(user):
+    return MEMBER_UPDATE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def _required(payload, field, errors):
+    value = payload.get(field)
+    if value is None or value == "":
+        errors[field] = "This field is required."
+    return value
+
+
+def _masked_change(field, value):
+    if field in {"pan", "aadhaar", "authorised_signatory_pan", "authorised_signatory_aadhaar"}:
+        return mask_protected_identity(protected_identity_token(value, len(value)), len(value))
+    return value
+
+
+def _masked_payload(value, key=""):
+    if isinstance(value, dict):
+        return {child: _masked_payload(item, child) for child, item in value.items()}
+    return _masked_change(key, value)
+
+
+@transaction.atomic
+def _create_member(payload, actor_user, request_ip_value="", request_user_agent_value=""):
+    allowed = {
+        "member_type", "legal_name", "display_name", "folio_number",
+        "membership_start_date", "pan", "aadhaar", "registered_address",
+        "mobile_number", "email", "individual_profile", "producer_institution_profile",
+    }
+    errors = {key: "Unknown field." for key in payload if key not in allowed}
+    member_type = _required(payload, "member_type", errors)
+    legal_name = _required(payload, "legal_name", errors)
+    display_name = _required(payload, "display_name", errors)
+    folio = _required(payload, "folio_number", errors)
+    pan = _required(payload, "pan", errors)
+    aadhaar = payload.get("aadhaar", "")
+    address = payload.get("registered_address")
+    if not isinstance(address, dict):
+        errors["registered_address"] = "This field must be an object."
+        address = {}
+    if member_type not in Member.MEMBER_TYPES:
+        errors["member_type"] = "Unsupported member type."
+    if pan and not _PAN_RE.fullmatch(pan):
+        errors["pan"] = "Invalid PAN format."
+    if member_type == "individual_farmer" and not aadhaar:
+        errors["aadhaar"] = "This field is required for an individual farmer."
+    if aadhaar and not _AADHAAR_RE.fullmatch(aadhaar):
+        errors["aadhaar"] = "Invalid Aadhaar format."
+    if pan and Member.objects.filter(pan_hash=identity_hash(pan), is_deleted=False).exists():
+        errors["pan"] = "A member with this PAN already exists."
+    if aadhaar and Member.objects.filter(aadhaar_hash=identity_hash(aadhaar), is_deleted=False).exists():
+        errors["aadhaar"] = "A member with this Aadhaar already exists."
+    profile_payload = (
+        payload.get("individual_profile") if member_type == "individual_farmer"
+        else payload.get("producer_institution_profile")
+    )
+    if not isinstance(profile_payload, dict):
+        errors[
+            "individual_profile" if member_type == "individual_farmer"
+            else "producer_institution_profile"
+        ] = "This field must be an object."
+        profile_payload = {}
+    if errors:
+        raise ValidationError(errors)
+    member = Member.objects.create(
+        member_type=member_type, legal_name=legal_name, display_name=display_name,
+        folio_number=folio,
+        membership_start_date=(
+            parse_date(payload["membership_start_date"])
+            if payload.get("membership_start_date") else None
+        ),
+        membership_status="pending_verification",
+        pan_encrypted=protected_identity_token(pan, 10), pan_hash=identity_hash(pan),
+        aadhaar_encrypted=protected_identity_token(aadhaar, 12) if aadhaar else "",
+        aadhaar_hash=identity_hash(aadhaar) if aadhaar else "",
+        registered_address_line1=address.get("line1", ""),
+        registered_address_line2=address.get("line2", ""),
+        registered_village_city=address.get("village_city", ""),
+        registered_district=address.get("district", ""),
+        registered_state=address.get("state", ""),
+        registered_pincode=address.get("pincode", ""),
+        mobile_number=payload.get("mobile_number", ""), email=payload.get("email", ""),
+        kyc_status="pending", default_status="no_default", created_by_user=actor_user,
+    )
+    if member_type == "individual_farmer":
+        IndividualMemberProfile.objects.create(member=member, **profile_payload)
+    else:
+        signatory_pan = profile_payload.get("authorised_signatory_pan", "")
+        signatory_aadhaar = profile_payload.get("authorised_signatory_aadhaar", "")
+        clean_profile = {k: v for k, v in profile_payload.items() if k not in {
+            "authorised_signatory_pan", "authorised_signatory_aadhaar"
+        }}
+        clean_profile.update({
+            "authorised_signatory_pan_encrypted": protected_identity_token(signatory_pan, 10) if signatory_pan else "",
+            "authorised_signatory_pan_hash": identity_hash(signatory_pan) if signatory_pan else "",
+            "authorised_signatory_aadhaar_encrypted": protected_identity_token(signatory_aadhaar, 12) if signatory_aadhaar else "",
+            "authorised_signatory_aadhaar_hash": identity_hash(signatory_aadhaar) if signatory_aadhaar else "",
+        })
+        ProducerInstitutionProfile.objects.create(member=member, **clean_profile)
+    changed = sorted(payload.keys())
+    safe_new = {key: _masked_payload(value, key) for key, value in payload.items()}
+    safe_new["pan"] = _masked_change("pan", pan)
+    if aadhaar:
+        safe_new["aadhaar"] = _masked_change("aadhaar", aadhaar)
+    MemberChangeHistory.objects.create(
+        member=member, actor_user=actor_user, change_type="create",
+        changed_fields=changed, new_value_json=safe_new,
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user, action="members.member.created", entity_type="member",
+        entity_id=member.member_id,
+        new_value_json={"member_id": str(member.member_id), "changed_fields": changed},
+        ip_address=request_ip_value, user_agent=request_user_agent_value,
+    )
+    return member
+
+
+class MemberWriteConflict(Exception):
+    def __init__(self, code, message, field_errors=None, audit_rejection=False):
+        self.code = code
+        self.message = message
+        self.field_errors = field_errors or {}
+        self.audit_rejection = audit_rejection
+
+
+_PATCH_FIELDS = {"legal_name", "display_name", "membership_start_date", "registered_address", "mobile_number", "email", "version"}
+_IDENTITY_FIELDS = {"pan", "aadhaar"}
+
+
+def _safe_member_values(member, fields):
+    result = {}
+    for field in fields:
+        if field in _IDENTITY_FIELDS:
+            result[field] = mask_protected_identity(getattr(member, f"{field}_encrypted"), 10 if field == "pan" else 12)
+        elif field == "registered_address":
+            result[field] = {
+                "line1": member.registered_address_line1, "line2": member.registered_address_line2,
+                "village_city": member.registered_village_city, "district": member.registered_district,
+                "state": member.registered_state, "pincode": member.registered_pincode,
+            }
+        elif field == "membership_start_date":
+            value = member.membership_start_date
+            result[field] = value.isoformat() if value else None
+        else:
+            result[field] = getattr(member, field, None)
+    return result
+
+
+@transaction.atomic
+def _update_member(member_id, payload, actor_user, *, reverification=False, request_ip_value="", request_user_agent_value=""):
+    member = Member.objects.select_for_update().filter(member_id=member_id, is_deleted=False).first()
+    if member is None:
+        return None
+    version = payload.get("version")
+    if not isinstance(version, int):
+        raise ValidationError({"version": "Current integer version is required."})
+    if version != member.version:
+        raise MemberWriteConflict("STALE_WRITE", "Member has changed; refresh and retry.", {"version": "Version is stale."})
+    allowed = (_PATCH_FIELDS | _IDENTITY_FIELDS | {"reason"}) if reverification else (_PATCH_FIELDS | _IDENTITY_FIELDS)
+    errors = {key: "Unknown field." for key in payload if key not in allowed}
+    identity_changes = sorted(field for field in _IDENTITY_FIELDS if field in payload)
+    if identity_changes and member.kyc_status == "verified" and not reverification:
+        raise MemberWriteConflict(
+            "VERIFIED_IDENTITY_LOCKED", "Verified identity fields require reverification.",
+            {field: "Verified identity field is locked." for field in identity_changes}, True,
+        )
+    reason = payload.get("reason", "")
+    if reverification and (not identity_changes or not isinstance(reason, str) or not reason.strip()):
+        errors["reason" if identity_changes else "pan"] = "A reason and at least one identity field are required."
+    for field in identity_changes:
+        value = payload[field]
+        regex = _PAN_RE if field == "pan" else _AADHAAR_RE
+        if not isinstance(value, str) or not regex.fullmatch(value):
+            errors[field] = f"Invalid {field.upper()} format."
+    if errors:
+        raise ValidationError(errors)
+    changed = sorted(key for key in payload if key not in {"version", "reason"})
+    old_values = _safe_member_values(member, changed)
+    address = payload.get("registered_address")
+    if address is not None:
+        if not isinstance(address, dict):
+            raise ValidationError({"registered_address": "This field must be an object."})
+        for key, model_field in {
+            "line1": "registered_address_line1", "line2": "registered_address_line2",
+            "village_city": "registered_village_city", "district": "registered_district",
+            "state": "registered_state", "pincode": "registered_pincode",
+        }.items():
+            if key in address:
+                setattr(member, model_field, address[key])
+    for field in changed:
+        if field == "registered_address":
+            continue
+        if field in _IDENTITY_FIELDS:
+            setattr(member, f"{field}_encrypted", protected_identity_token(payload[field], 10 if field == "pan" else 12))
+            setattr(member, f"{field}_hash", identity_hash(payload[field]))
+        elif field == "membership_start_date":
+            member.membership_start_date = parse_date(payload[field]) if payload[field] else None
+        else:
+            setattr(member, field, payload[field])
+    if reverification:
+        member.kyc_status = "pending"
+        member.rekyc_due_date = None
+    member.version += 1
+    member.updated_by_user = actor_user
+    member.updated_at = timezone.now()
+    member.save()
+    new_values = _safe_member_values(member, changed)
+    change_type = "reverification" if reverification else "update"
+    MemberChangeHistory.objects.create(
+        member=member, actor_user=actor_user, change_type=change_type,
+        changed_fields=changed, old_value_json=old_values, new_value_json=new_values,
+        reason=reason.strip() if reverification else "",
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user,
+        action="members.member.reverification_triggered" if reverification else "members.member.updated",
+        entity_type="member", entity_id=member.member_id,
+        old_value_json={"changed_fields": changed},
+        new_value_json={"member_id": str(member.member_id), "changed_fields": changed, "kyc_status": member.kyc_status},
+        ip_address=request_ip_value, user_agent=request_user_agent_value,
+    )
+    return member
+
+
+def audit_identity_change_rejected(actor_user, member_id, fields, request_ip_value="", request_user_agent_value=""):
+    AuditLog.objects.create(
+        actor_user=actor_user, action="members.member.identity_change_rejected",
+        entity_type="member", entity_id=member_id,
+        new_value_json={"member_id": str(member_id), "fields": fields, "reason": "verified_identity_locked"},
+        ip_address=request_ip_value, user_agent=request_user_agent_value,
+    )
 
 
 def user_can_read_nominees(user):
@@ -142,9 +403,13 @@ def validate_sensitive_reveal_payload(payload):
     return field_name, reason.strip()
 
 
-def paginated_members(query_params):
+def paginated_members(query_params, actor_user):
+    from sfpcl_credit.members.modules.member_authority import member_scope_predicate
+
     filters = _validate_query(query_params)
-    queryset = Member.objects.filter(is_deleted=False).order_by("display_name", "member_id")
+    queryset = Member.objects.filter(is_deleted=False).filter(
+        member_scope_predicate(actor_user=actor_user, permission=MEMBER_READ_PERMISSION)
+    ).order_by("display_name", "member_id")
     if filters["search"]:
         search = filters["search"]
         queryset = queryset.filter(
@@ -207,7 +472,7 @@ def serialize_member(member):
     }
 
 
-def get_member_profile(member_id):
+def _get_member_profile(member_id):
     try:
         return (
             Member.objects.select_related("individual_profile", "producer_institution_profile")
@@ -292,7 +557,8 @@ def reveal_member_sensitive_field(
     }
 
 
-def serialize_member_profile(member, user):
+def serialize_member_profile(member, user, identity_approval_action=None):
+    pending_change = member.identity_change_requests.filter(status="pending").order_by("created_at").first()
     return {
         **serialize_member(member),
         "membership_start_date": (
@@ -318,7 +584,13 @@ def serialize_member_profile(member, user):
         },
         "individual_profile": _individual_profile(member),
         "producer_institution_profile": _producer_profile(member),
-        "available_actions": _available_actions(member, user),
+        "produce_supply_records": [
+            serialize_produce_supply_record(row, user)
+            for row in member.produce_supply_records.all()
+        ],
+        "available_actions": _available_actions(member, user, identity_approval_action),
+        "pending_identity_change": ({"identity_change_request_id": str(pending_change.identity_change_request_id), "status": pending_change.status} if pending_change else None),
+        "version": member.version,
     }
 
 
@@ -329,6 +601,14 @@ def validation_field_errors(exc):
 
 
 class NomineeValidationError(Exception):
+    def __init__(self, code, message, field_errors=None):
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.field_errors = field_errors or {}
+
+
+class ProduceSupplyConflict(Exception):
     def __init__(self, code, message, field_errors=None):
         super().__init__(message)
         self.code = code
@@ -367,10 +647,10 @@ def create_nominee(member, payload, actor_user, request_ip="", request_user_agen
         age_at_application=values["age_at_application"],
         gender=values["gender"],
         relationship_to_borrower=values["relationship_to_borrower"],
-        pan_encrypted=_protected_identity_token(values["pan"], 10),
-        pan_hash=_identity_hash(values["pan"]),
-        aadhaar_encrypted=_protected_identity_token(values["aadhaar"], 12),
-        aadhaar_hash=_identity_hash(values["aadhaar"]),
+        pan_encrypted=protected_identity_token(values["pan"], 10),
+        pan_hash=identity_hash(values["pan"]),
+        aadhaar_encrypted=protected_identity_token(values["aadhaar"], 12),
+        aadhaar_hash=identity_hash(values["aadhaar"]),
         kyc_status="pending",
         minor_flag=False,
         signature_required_flag=values["signature_required_flag"],
@@ -404,11 +684,11 @@ def serialize_nominee(nominee):
         "gender": nominee.gender,
         "relationship_to_borrower": nominee.relationship_to_borrower or None,
         "pan": {
-            "masked": _mask_protected_identity(nominee.pan_encrypted, 10),
+            "masked": mask_protected_identity(nominee.pan_encrypted, 10),
             "can_view_full": False,
         },
         "aadhaar": {
-            "masked": _mask_protected_identity(nominee.aadhaar_encrypted, 12),
+            "masked": mask_protected_identity(nominee.aadhaar_encrypted, 12),
             "can_view_full": False,
         },
         "kyc_status": nominee.kyc_status,
@@ -477,6 +757,216 @@ def create_shareholding(member, payload, actor_user, request_ip="", request_user
         user_agent=request_user_agent,
     )
     return shareholding
+
+
+_SUPPLY_CAPTURE_FIELDS = {
+    "financial_year", "supplied_to_entity_type", "supplied_to_entity_id", "supply_route",
+    "producer_institution_member_id", "crop_type", "quantity", "value_amount",
+    "evidence_reference", "version",
+}
+
+
+def _validated_supply_payload(payload):
+    if not isinstance(payload, dict):
+        raise ValidationError({"non_field_errors": "Request body must be an object."})
+    required = ("financial_year", "supplied_to_entity_type", "supply_route", "evidence_reference", "version")
+    errors = {field: "This field is required." for field in required if payload.get(field) in (None, "")}
+    errors.update({field: "Unknown field." for field in payload if field not in _SUPPLY_CAPTURE_FIELDS})
+    if payload.get("financial_year") and canonical_financial_year_start(payload["financial_year"]) is None:
+        errors["financial_year"] = "Use canonical YYYY-YY financial year format."
+    entity_type = payload.get("supplied_to_entity_type")
+    route = payload.get("supply_route")
+    if entity_type and entity_type not in QUALIFYING_ENTITY_TYPES:
+        errors["supplied_to_entity_type"] = "Entity type is not eligible supply evidence."
+    if route and route not in QUALIFYING_ROUTES:
+        errors["supply_route"] = "Supply route is not eligible supply evidence."
+    routed_id = payload.get("producer_institution_member_id")
+    if route == "direct" and routed_id:
+        errors["producer_institution_member_id"] = "Direct supply cannot name a Producer Institution route."
+    if route == "producer_institution" and not routed_id:
+        errors["producer_institution_member_id"] = "Producer Institution member is required for this route."
+    entity_id = payload.get("supplied_to_entity_id")
+    if entity_type in {"subsidiary", "step_down_subsidiary"} and not entity_id:
+        errors["supplied_to_entity_id"] = "Referenced entity UUID is required."
+    for field, places in (("quantity", 3), ("value_amount", 2)):
+        value = payload.get(field)
+        if value not in (None, ""):
+            try:
+                decimal_value = Decimal(str(value))
+                if not decimal_value.is_finite() or decimal_value < 0 or abs(decimal_value.as_tuple().exponent) > places:
+                    raise InvalidOperation
+            except (InvalidOperation, ValueError):
+                errors[field] = f"Enter a non-negative decimal with at most {places} decimal places."
+    if not isinstance(payload.get("evidence_reference"), str) or not payload.get("evidence_reference", "").strip():
+        errors["evidence_reference"] = "Evidence reference is required."
+    if not isinstance(payload.get("version"), int):
+        errors["version"] = "Current integer member version is required."
+    if errors:
+        raise ValidationError(errors)
+    return payload
+
+
+@transaction.atomic
+def create_produce_supply_record(member, payload, actor_user, request_ip="", request_user_agent=""):
+    from sfpcl_credit.members.modules.member_authority import evaluate_member_authority
+
+    payload = _validated_supply_payload(payload)
+    member = Member.objects.select_for_update().get(member_id=member.member_id)
+    if not evaluate_member_authority(
+        actor_user=actor_user, member=member, permission=PRODUCE_SUPPLY_CAPTURE_PERMISSION
+    ).allowed:
+        raise PermissionError("You cannot access this member.")
+    if payload["version"] != member.version:
+        raise ProduceSupplyConflict("STALE_WRITE", "Member has changed; refresh and retry.", {"version": "Version is stale."})
+    routed_member = None
+    if payload.get("producer_institution_member_id"):
+        try:
+            routed_member = Member.objects.get(member_id=payload["producer_institution_member_id"], is_deleted=False)
+        except (Member.DoesNotExist, ValueError, TypeError):
+            raise ValidationError({"producer_institution_member_id": "Referenced Producer Institution member was not found."})
+        if routed_member.member_id == member.member_id or routed_member.member_type not in {"fpc", "producer_institution"} or routed_member.membership_status != "active":
+            raise ValidationError({"producer_institution_member_id": "Referenced member is not an eligible Producer Institution route."})
+    for field in ("supplied_to_entity_id",):
+        if payload.get(field):
+            try:
+                uuid.UUID(str(payload[field]))
+            except (ValueError, TypeError, AttributeError):
+                raise ValidationError({field: "Enter a valid UUID."})
+    record = ProduceSupplyRecord.objects.create(
+        member=member,
+        financial_year=payload["financial_year"],
+        supplied_to_entity_type=payload["supplied_to_entity_type"],
+        supplied_to_entity_id=payload.get("supplied_to_entity_id") or None,
+        supply_route=payload["supply_route"],
+        producer_institution_member=routed_member,
+        crop_type=payload.get("crop_type", ""),
+        quantity=payload.get("quantity") or None,
+        value_amount=payload.get("value_amount") or None,
+        evidence_reference=payload["evidence_reference"].strip(),
+        captured_by_user=actor_user,
+    )
+    member.version += 1
+    member.updated_at = timezone.now()
+    member.updated_by_user = actor_user
+    member.save(update_fields=["version", "updated_at", "updated_by_user"])
+    record.refresh_from_db()
+    projection = {
+        "member_id": str(member.member_id),
+        "financial_year": record.financial_year,
+        "verification_status": "pending",
+        "captured_by_user_id": str(actor_user.user_id),
+        "verified_by_user_id": None,
+    }
+    MemberChangeHistory.objects.create(
+        member=member, actor_user=actor_user, change_type="produce_supply_captured",
+        changed_fields=["produce_supply"], new_value_json=projection,
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user, action="members.produce_supply.created",
+        entity_type="produce_supply_record", entity_id=record.produce_supply_record_id,
+        new_value_json=projection, ip_address=request_ip, user_agent=request_user_agent,
+    )
+    return record
+
+
+def serialize_produce_supply_record(record, user=None, portal=False):
+    can_verify = bool(user and user_can_verify_produce_supply(user))
+    maker = bool(user and record.captured_by_user_id == user.user_id)
+    action = {
+        "action_code": PRODUCE_SUPPLY_VERIFY_PERMISSION,
+        "label": "Verify supply record",
+        "enabled": can_verify and not maker and not record.verified_flag,
+        "disabled_reason": None,
+        "required_permission": PRODUCE_SUPPLY_VERIFY_PERMISSION,
+        "required_role": None,
+    }
+    if maker:
+        action["disabled_reason"] = "The record maker cannot verify this supply record."
+    elif record.verified_flag:
+        action["disabled_reason"] = "This supply record is already verified."
+    elif not can_verify:
+        action["disabled_reason"] = "Missing supply verification permission."
+    data = {
+        "produce_supply_record_id": str(record.produce_supply_record_id),
+        "member_id": str(record.member_id),
+        "financial_year": record.financial_year,
+        "supplied_to_entity_type": record.supplied_to_entity_type,
+        "supplied_to_entity_id": str(record.supplied_to_entity_id) if record.supplied_to_entity_id else None,
+        "supply_route": record.supply_route,
+        "producer_institution_member_id": str(record.producer_institution_member_id) if record.producer_institution_member_id else None,
+        "crop_type": record.crop_type or None,
+        "quantity": f"{record.quantity:.3f}" if record.quantity is not None else None,
+        "value_amount": f"{record.value_amount:.2f}" if record.value_amount is not None else None,
+        "evidence_reference": record.evidence_reference or None,
+        "verified_flag": record.verified_flag,
+        "verified_by_user_id": str(record.verified_by_user_id) if record.verified_by_user_id else None,
+        "verified_at": record.verified_at.isoformat().replace("+00:00", "Z") if record.verified_at else None,
+        "version": record.version,
+    }
+    if not portal:
+        data["available_actions"] = [action]
+    else:
+        for internal_field in (
+            "produce_supply_record_id", "member_id", "producer_institution_member_id",
+            "evidence_reference", "verified_by_user_id", "verified_at",
+        ):
+            data.pop(internal_field, None)
+    return data
+
+
+@transaction.atomic
+def verify_produce_supply_record(record_id, version, actor_user, request_ip="", request_user_agent="", member_version=None):
+    from sfpcl_credit.members.modules.member_authority import evaluate_member_authority
+
+    boundary = ProduceSupplyRecord.objects.filter(
+        produce_supply_record_id=record_id
+    ).values_list("member_id", flat=True).first()
+    if boundary is None:
+        return None
+    member = Member.objects.select_for_update().get(member_id=boundary)
+    record = ProduceSupplyRecord.objects.select_for_update().get(produce_supply_record_id=record_id)
+    if not evaluate_member_authority(
+        actor_user=actor_user, member=member, permission=PRODUCE_SUPPLY_VERIFY_PERMISSION
+    ).allowed:
+        raise PermissionError("You cannot access this member.")
+    if member_version is not None and member_version != member.version:
+        raise ProduceSupplyConflict("STALE_WRITE", "Member has changed; refresh and retry.", {"member_version": "Version is stale."})
+    if record.captured_by_user_id == actor_user.user_id:
+        raise PermissionError("The record maker cannot verify this supply record.")
+    try:
+        supplied_version = int(version)
+    except (TypeError, ValueError):
+        raise ValidationError({"version": "A valid version is required."})
+    if supplied_version != record.version:
+        raise ProduceSupplyConflict("STALE_WRITE", "Supply record has changed; refresh and retry.", {"version": "Version is stale."})
+    if record.verified_flag:
+        raise ProduceSupplyConflict("INVALID_STATE_TRANSITION", "Supply record is already verified.")
+    instant = timezone.now()
+    record.verified_flag = True
+    record.verified_by_user = actor_user
+    record.verified_at = instant
+    record.version += 1
+    record.save(update_fields=["verified_flag", "verified_by_user", "verified_at", "version"])
+    member.version += 1
+    member.updated_at = instant
+    member.updated_by_user = actor_user
+    member.save(update_fields=["version", "updated_at", "updated_by_user"])
+    projection = {
+        "member_id": str(record.member_id), "financial_year": record.financial_year,
+        "verification_status": "verified",
+        "captured_by_user_id": str(record.captured_by_user_id),
+        "verified_by_user_id": str(actor_user.user_id),
+    }
+    MemberChangeHistory.objects.create(
+        member=record.member, actor_user=actor_user, change_type="produce_supply_verified",
+        changed_fields=["produce_supply_verification"], new_value_json=projection,
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user, action="members.produce_supply.verified",
+        entity_type="produce_supply_record", entity_id=record.produce_supply_record_id,
+        new_value_json=projection, ip_address=request_ip, user_agent=request_user_agent,
+    )
+    return record
 
 
 def serialize_shareholding(shareholding):
@@ -715,7 +1205,7 @@ def create_bank_account(member, payload, actor_user, request_ip="", request_user
         owner_party_id=member.member_id,
         account_holder_name=values["account_holder_name"],
         account_number_encrypted=_protected_account_number_token(values["account_number"]),
-        account_number_hash=_identity_hash(values["account_number"]),
+        account_number_hash=identity_hash(values["account_number"]),
         account_number_last4=values["account_number"][-4:],
         ifsc=values["ifsc"],
         bank_name=values["bank_name"],
@@ -804,7 +1294,7 @@ def create_cancelled_cheque(member, payload, actor_user, request_ip="", request_
         member=member,
         document_id=values["document_id"],
         account_number_encrypted=_protected_account_number_token(values["account_number"]),
-        account_number_hash=_identity_hash(values["account_number"]),
+        account_number_hash=identity_hash(values["account_number"]),
         account_number_last4=values["account_number"][-4:],
         ifsc=values["ifsc"],
         branch_name=values["branch_name"],
@@ -998,6 +1488,25 @@ def verify_kyc_document(document_id, payload, actor_user, request_ip="", request
     ).first()
     if kyc_document is None:
         return None
+    profile = kyc_document.kyc_profile
+    if profile.party_type == "member":
+        member = Member.objects.filter(member_id=profile.party_id).first()
+        if member and actor_user.pk in {member.created_by_user_id, member.updated_by_user_id}:
+            AuditLog.objects.create(
+                actor_user=actor_user,
+                action="kyc.document.verification_denied",
+                entity_type="kyc_document",
+                entity_id=kyc_document.kyc_document_id,
+                new_value_json={
+                    "member_id": str(member.member_id),
+                    "reason": "maker_checker_separation",
+                },
+                ip_address=request_ip,
+                user_agent=request_user_agent,
+            )
+            raise ValidationError(
+                {"verification_status": "Member maker cannot verify this member's KYC."}
+            )
     status = str(payload.get("verification_status") or "").strip()
     if status not in {"verified", "rejected"}:
         raise ValidationError(
@@ -1615,19 +2124,6 @@ def _age_on(born, today):
     return today.year - born.year - int(before_birthday)
 
 
-def _identity_hash(value):
-    return hmac.new(
-        settings.SECRET_KEY.encode("utf-8"),
-        value.encode("utf-8"),
-        hashlib.sha256,
-    ).hexdigest()
-
-
-def _protected_identity_token(value, expected_length):
-    digest = _identity_hash(f"enc:{value}")
-    return f"enc:v1:{expected_length}:{digest}:{value[-4:]}"
-
-
 def _required_account_number(value):
     digits = "".join(char for char in str(value or "").strip() if char.isdigit())
     if not digits:
@@ -1638,7 +2134,7 @@ def _required_account_number(value):
 
 
 def _protected_account_number_token(value):
-    digest = _identity_hash(f"bank-account:{value}")
+    digest = identity_hash(f"bank-account:{value}")
     return f"enc:v1:{len(value)}:{digest}:{value[-4:]}"
 
 
@@ -1656,17 +2152,6 @@ def _mask_account_last4(last4, total_length):
     if not last4:
         return None
     return f"{'*' * max(int(total_length or 4) - 4, 0)}{last4}"
-
-
-def _mask_protected_identity(token, default_length):
-    parts = str(token or "").split(":")
-    if len(parts) == 5 and parts[0] == "enc" and parts[1] == "v1":
-        try:
-            length = int(parts[2])
-        except ValueError:
-            length = default_length
-        return f"{'*' * max(length - 4, 0)}{parts[4]}"
-    return _mask_last_four(token)
 
 
 def _individual_profile(member):
@@ -1708,8 +2193,33 @@ def _producer_profile(member):
     }
 
 
-def _available_actions(member, user):
-    return []
+def _available_actions(member, user, identity_approval_action=None):
+    can_update = user_can_update_members(user)
+    locked = member.kyc_status == "verified"
+    request_pending = member.identity_change_requests.filter(status="pending").exists()
+    pending_change = member.identity_change_requests.filter(status="pending").first()
+    approval = identity_approval_action or {
+        "action_code": "members.member.identity_change.approve",
+        "label": "Approve identity change",
+        "enabled": False,
+        "disabled_reason": "Approval authority was not evaluated.",
+        "required_permission": "members.member.identity_change.approve",
+        "required_role": None,
+    }
+    return [
+        {
+            "action_code": "members.member.update", "label": "Update member",
+            "enabled": can_update, "disabled_reason": None if can_update else "Missing member update permission.",
+            "required_permission": MEMBER_UPDATE_PERMISSION, "required_role": None,
+        },
+        {
+            "action_code": "members.member.reverify_identity", "label": "Reverify identity",
+            "enabled": can_update and locked and not request_pending,
+            "disabled_reason": None if can_update and locked and not request_pending else ("An identity change request is already pending." if request_pending else ("Identity is not verified." if can_update else "Missing member update permission.")),
+            "required_permission": MEMBER_UPDATE_PERMISSION, "required_role": None,
+        },
+        approval,
+    ]
 
 
 __all__ = [

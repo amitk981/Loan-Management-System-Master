@@ -1,0 +1,22 @@
+Command:
+npx vitest run src/pages/members/MemberGovernanceForm.container.test.tsx -t "routes Directory registration" --testTimeout=1000 --reporter=verbose
+
+Exit code: 1
+
+Observed result:
+MemberGovernanceForm production container > routes Directory registration into canonical Profile
+readback before an ordinary update readback timed out at 1000 ms (reported test duration 1270 ms).
+
+Vitest summary:
+Test Files  1 failed (1)
+Tests       1 failed | 14 skipped (15)
+Duration    3.21s (collect 1.21s, tests 1.27s)
+
+Failure location:
+sfpcl-lms/src/pages/members/MemberGovernanceForm.container.test.tsx:26
+
+Interpretation:
+The unchanged test executes the exact production App -> Directory -> registration -> canonical
+Profile -> ordinary update -> canonical Profile journey. Constraining only its per-test budget makes
+the monolithic timing dependency fail before any refactor, establishing RED without changing or
+weakening an assertion and without raising a global timeout.

@@ -25,7 +25,7 @@ def _service_error(request, exc):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "Tracer lifecycle permission is required.",
         )
     if isinstance(

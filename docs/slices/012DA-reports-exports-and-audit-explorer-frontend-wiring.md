@@ -33,6 +33,11 @@ CFO, auditors, and management read real reports, run permission-checked masked e
 3. Wire the Audit Log Explorer (S74) to the 012D APIs: filter by entity/action/actor/date, paginated, strictly read-only, restricted fields never rendered.
 4. Long-running export states (queued/running/failed/ready) use existing status patterns; loading, empty, error, unauthorized states throughout.
 
+## Owned Mock Removals
+This slice is the final owner of these files' mock surface — after it, none of them may import `src/data/mockData.ts` or keep inline business fixtures:
+- `src/pages/reports/ReportsMIS.tsx`
+- `src/pages/registers/RegistersHub.tsx` (S23/S25 views wired by 007J; remaining register views and the final import removal happen here)
+
 ## Test Cases
 - Report filters round-trip and results match seeded fixtures.
 - Export by non-permitted role is rejected and surfaced; permitted export shows masked sensitive columns.

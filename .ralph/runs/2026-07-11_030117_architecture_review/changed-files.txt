@@ -1,0 +1,13 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006H3-appraisal-workbench-prototype-fidelity-restoration.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-002-platform-auth.md
+ M docs/working/digests/epic-004-member-kyc-master.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+?? .ralph/runs/2026-07-11_030117_architecture_review/
+?? docs/slices/002J2-forbidden-permission-error-contract-alignment.md
+?? docs/slices/004E2-witness-evidence-snapshot-and-input-hardening.md
+?? docs/slices/006G3-sanction-handoff-dependency-and-evidence-ownership.md
+?? docs/slices/006H4-workbench-authoritative-actions-and-container-tests.md

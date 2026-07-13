@@ -1,0 +1,88 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/.ralph/runs/2026-07-12_175317_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/member-governance-variants.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/member-governance-variants.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 12:30:38] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[2m[WebServer] [22m(node:32715) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "POST /api/v1/auth/login/ HTTP/1.1" 200 1314
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "GET /api/v1/auth/me/ HTTP/1.1" 200 1723
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "OPTIONS /api/v1/members/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "GET /api/v1/members/ HTTP/1.1" 200 1394
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "GET /api/v1/members/ HTTP/1.1" 200 1394
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "POST /api/v1/members/ HTTP/1.1" 200 2326
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "OPTIONS /api/v1/members/c8fbc064-053b-4fcd-8dac-9a2920490c9f/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:30:42] "GET /api/v1/members/c8fbc064-053b-4fcd-8dac-9a2920490c9f/ HTTP/1.1" 200 2326
+[2m[WebServer] [22m[12/Jul/2026 12:30:43] "PATCH /api/v1/members/c8fbc064-053b-4fcd-8dac-9a2920490c9f/ HTTP/1.1" 200 2328
+[2m[WebServer] [22m[12/Jul/2026 12:30:43] "GET /api/v1/members/c8fbc064-053b-4fcd-8dac-9a2920490c9f/ HTTP/1.1" 200 2328
+[2m[WebServer] [22m[12/Jul/2026 12:30:43] "GET /api/v1/members/ HTTP/1.1" 200 2003
+[2m[WebServer] [22m[12/Jul/2026 12:30:43] "GET /api/v1/members/ HTTP/1.1" 200 2003
+[2m[WebServer] [22m[12/Jul/2026 12:30:43] "POST /api/v1/members/ HTTP/1.1" 200 2183
+[2m[WebServer] [22m[12/Jul/2026 12:30:43] "OPTIONS /api/v1/members/c30bdb26-258d-4414-bffb-8d0a533787d4/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:30:43] "GET /api/v1/members/c30bdb26-258d-4414-bffb-8d0a533787d4/ HTTP/1.1" 200 2183
+[2m[WebServer] [22m[12/Jul/2026 12:30:43] "GET /api/v1/members/ HTTP/1.1" 200 2600
+[2m[WebServer] [22m[12/Jul/2026 12:30:43] "GET /api/v1/members/ HTTP/1.1" 200 2600
+[2m[WebServer] [22m[12/Jul/2026 12:30:43] "OPTIONS /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:30:43] "GET /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 12:30:43] "OPTIONS /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:30:43] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 5276
+[2m[WebServer] [22m[12/Jul/2026 12:30:44] "OPTIONS /api/v1/members/00000000-0000-4000-8000-000000000602/identity-change-requests/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:30:44] "POST /api/v1/members/00000000-0000-4000-8000-000000000602/identity-change-requests/ HTTP/1.1" 200 287
+[2m[WebServer] [22m[12/Jul/2026 12:30:44] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 5408
+[2m[WebServer] [22m[12/Jul/2026 12:30:44] "OPTIONS /api/v1/auth/logout/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[12/Jul/2026 12:30:44] "POST /api/v1/auth/logout/ HTTP/1.1" 200 142
+[2m[WebServer] [22m[12/Jul/2026 12:30:44] "POST /api/v1/auth/login/ HTTP/1.1" 200 1288
+[2m[WebServer] [22m[12/Jul/2026 12:30:44] "GET /api/v1/auth/me/ HTTP/1.1" 200 2300
+[2m[WebServer] [22m[12/Jul/2026 12:30:44] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[12/Jul/2026 12:30:44] "GET /api/v1/dashboard/ HTTP/1.1" 200 1454
+[2m[WebServer] [22m[12/Jul/2026 12:30:44] "GET /api/v1/members/ HTTP/1.1" 200 2600
+[2m[WebServer] [22m[12/Jul/2026 12:30:44] "GET /api/v1/members/ HTTP/1.1" 200 2600
+[2m[WebServer] [22m[12/Jul/2026 12:30:44] "GET /api/v1/members/?search=Epic+006+Browser+Member HTTP/1.1" 200 816
+[2m[WebServer] [22m[12/Jul/2026 12:30:45] "GET /api/v1/members/00000000-0000-4000-8000-000000000602/ HTTP/1.1" 200 5353
+  ✘  1 [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions (10.0s)
+
+
+  1) [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions 
+
+    Error: [31mTimed out 5000ms waiting for [39m[2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m
+
+    Locator: getByText('Verified identity locked')
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+    [2m  - expect.toBeVisible with timeout 5000ms[22m
+    [2m  - waiting for getByText('Verified identity locked')[22m
+
+
+      145 |   await page.getByPlaceholder('Search by name or folio...').fill('Epic 006 Browser Member');
+      146 |   await page.getByRole('row').filter({ hasText: 'Epic 006 Browser Member' }).getByRole('button', { name: 'Profile' }).click();
+    > 147 |   await expect(page.getByText('Verified identity locked')).toBeVisible();
+          |                                                            ^
+      148 | }
+      149 | async function signOut(page: Page) {
+      150 |   await page.getByRole('button', { name: new RegExp(`^${FINANCE_NAME}`) }).click();
+        at openSeededVerifiedMember (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts:147:60)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_171448_normal_run/sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts:67:3
+
+  1 failed
+    [chromium] › member-governance-variants.e2e.spec.ts:15:5 › complete member variants and protected identity approval cross real staff sessions 
+
+Exit code: 1

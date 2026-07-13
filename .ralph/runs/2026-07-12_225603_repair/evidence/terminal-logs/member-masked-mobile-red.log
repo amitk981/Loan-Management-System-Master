@@ -1,0 +1,9 @@
+Command: npm test -- --run src/pages/members/MemberGovernanceForm.container.test.tsx -t "routes Directory registration"
+
+Result: FAIL (1 failed, 13 skipped)
+
+Exact assertion difference:
+  Unexpected PATCH field: "mobile_number": "********3210"
+
+The mounted real-App Directory-to-Profile interaction reproduced the trusted-browser defect at the
+production request boundary.

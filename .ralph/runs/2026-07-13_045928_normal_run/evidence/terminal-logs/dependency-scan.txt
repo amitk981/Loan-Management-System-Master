@@ -1,0 +1,7 @@
+Command: rg -n "GLOBAL_MEMBER_AUTHORITY|allow_global|is_system_role|caller.*global|permission.*global" sfpcl_credit/members
+Result: no matches
+
+Protected-path diff command returned no paths.
+Backend check: System check identified no issues.
+Migration sync: No changes detected.
+Coverage: 93% (threshold 85%).

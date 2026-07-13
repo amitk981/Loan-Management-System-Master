@@ -1,0 +1,3 @@
+Removed identical untracked merge collision: .ralph/runs/failed-run/evidence.md
+Archived differing generated merge collision: .ralph/runs/failed-run/execution-plan.md -> /private/var/folders/zq/3s8051dx39q0tk8whcqx44y00000gn/T/tmp.FOBwo9iV5m/merge-repo/.git/ralph-merge-collision-backups/regression-backup/.ralph/runs/failed-run/execution-plan.md
+PASS: Ralph workflow regressions

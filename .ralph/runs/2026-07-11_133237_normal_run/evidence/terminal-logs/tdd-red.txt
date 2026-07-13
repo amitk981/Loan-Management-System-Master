@@ -1,0 +1,6 @@
+Command: npm test -- --run src/pages/appraisal/AppraisalWorkbench.test.tsx
+Result: RED as required.
+18 tests ran; 17 passed and 1 failed.
+Failure: "does not union globally granted auth actions into selected-resource authority" detected
+`availableActions = [...currentUser.availableActions, ...resource actions]` in the real container.
+

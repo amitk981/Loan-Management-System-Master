@@ -2,6 +2,1800 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-13 06:01 - Architecture Review 2026-07-13_055322_architecture_review
+
+Reviewed completed product work since architecture-review commit `23331d5`:
+- `006Z11-member-scope-assignment-and-list-nondisclosure-closure` (`6afd173`)
+- `006Z12-portal-limit-denial-matrix-evidence-closure` (`46b47c0`)
+- `007A2-approval-configuration-history-and-committee-authority-closure` (`7359389`)
+- `007A3-approval-matrix-maker-checker-governance` (`955cfc1`)
+
+The review checked `git diff 23331d5...955cfc1`, production/test hunks, retained red/green and
+PostgreSQL evidence, Epic 006/007 digests, cited source sections, BR-003..007, M02-FR-004..006,
+M04-FR-005..007, and M05-FR-003..006. Standards and spec fidelity were reviewed independently.
+Production code was not changed. `CONTEXT.md` remains truthful, and state/files contain no Blocked
+slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - PostgreSQL races still exercise the pre-governance activation interface
+
+`ApprovalMatrixConcurrencyTests` still calls `create_rule`/`create_committee` and expects those calls
+to activate one row, reject one contender, and return effective entity ids. After 007A3 those calls
+only create pending proposals, so both contenders can create proposals and the supersede tests index
+ids that are no longer returned. The retained 007A2 PostgreSQL logs genuinely ran all four tests
+twice, but they predate migration 0005 and the governed activation seam; 007A3 declared no
+PostgreSQL capability. This violates DECISION_POLICY §2 and codebase-design §§22.3/26.1-26.3's
+current-interface concurrency proof. `007A4` replaces them with approval-time proposal races and
+requires two post-007A3 PostgreSQL runs.
+
+#### Finding 2 - Medium - Persisted member scope is valid only when callers invoke model validation
+
+`MemberScopeAssignment.clean()` rejects invalid scope/member/team shapes, but migration 0013 adds no
+database checks. Its nullable five-column unique constraint also permits duplicate `global` and
+`created_by` rows under PostgreSQL null semantics. Public writers do not yet expose this directly,
+and duplicates are currently behaviorally harmless, but a security authority seam must remain valid
+through bulk/import/admin paths that bypass `save()`. This conflicts with codebase-design §27.1's
+deep Object Access boundary. `006Z13` adds conditional constraints/uniqueness and migration proof.
+
+#### Finding 3 - Medium - Any authenticated user can read Critical configuration proposals
+
+Rule and committee reads use `approvals.matrix.read`, while `proposal_detail` calls only
+`authenticated_user` and returns the change reason, maker/checker ids, and action eligibility. This
+drifts from API design §3's permission-aware boundary and auth §31.1's Critical Approval Matrix
+governance. `007A4` defines and tests a source-backed reader/participant/checker contract without
+role-name inference.
+
+No frontend files changed. 006Z12's redacted public denial ledger is complete and uses real state
+assertions. 006Z11 genuinely removes permission/role provenance as global member scope and preserves
+all service-evidence makers; the remaining persistence/action-matrix items above are closure quality,
+not evidence that the prior unsafe behavior remains in production.
+
+### Spec
+
+#### Finding 1 - High - 007A3's governed activation race is missing and its inherited race suite is broken
+
+007A3 requirements 5-6 and its test matrix require approval-time revalidation plus a competing
+activation with a complete zero-write loser. The implementation plausibly serializes approval via
+the shared lock, but no test races `decide_proposal`; the only PostgreSQL suite calls the obsolete
+immediate-activation interface. The prior missing-PostgreSQL finding was closed at the 007A2 commit
+and reopened by 007A3. `007A4` owns governed create/supersede races for rules and committees.
+
+#### Finding 2 - Medium - Approval authority denial uses a noncanonical public error code
+
+Source API contracts §7.1 defines `APPROVAL_AUTHORITY_REQUIRED`. The module, view, tests, and working
+contract instead introduced `APPROVER_AUTHORITY_REQUIRED`. `007A4` aligns production and evidence
+to the existing canonical code.
+
+#### Finding 3 - Medium - Open-case immutability and complete proposal loser state are unproved
+
+007A3 requires existing approval-case snapshots to remain unchanged across proposal, rejection,
+activation, and later reads. No 007A3 test creates an `ApprovalCase`; `_configuration_snapshot()`
+omits both cases and proposals, so its claimed complete loser checks could miss partial proposal or
+case mutation. `007A4` adds a real open-case fixture and exact full-state equality across decisions
+and races, satisfying auth CFG-007.
+
+#### Finding 4 - Medium - Required committee/lifecycle and malformed-input matrices are partial
+
+007A2 asks for inactive/duplicate/swapped committee authority, historical/current committee
+resolution and backfill conflict, separate malformed/unknown/non-finite zero-write matrices for both
+resources, and both collection contracts. Tests cover ordinary-as-CFO, one current/absent resolver,
+one rule non-finite row, rule pagination, and committee unknown parameters; the implementation is
+plausible but the stated acceptance matrix is not complete. `007A4` finishes these public rows
+alongside the governed activation matrix.
+
+#### Finding 5 - Medium - 006Z11's calculation/action acceptance matrix remains partial
+
+006Z11 requires the common scope across calculation and independently selected public module/HTTP
+rows for every member action. The production call paths now enforce scope around mutations and the
+portal derives its own member, but `ActiveMemberStatusModule.calculate` is actorless and the new
+slice test covers only list/detail/count. Existing tests distribute happy paths across fixtures and
+some patch the evaluator; they do not prove permission-without-scope denial then assignment-enabled
+behavior for every action. `006Z13` maps every calculation caller and adds the real public matrix.
+
+No material scope creep was found. 006Z12 fully closes the prior portal denial matrix and retains
+M04-FR-005..007. 007A2 closes sequential lifecycle/committee authority/pagination behavior and 007A3
+closes unilateral activation sequentially. M05-FR-003..006 remain partial until governed concurrency
+passes in 007A4 and real case routing lands in 007B. BR-003..007 and M02-FR-004..006 behavior is
+substantive, with the remaining public authority proof assigned to 006Z13.
+
+No ADR was added because existing auth, API, data-model, and codebase-design sources already decide
+object-scope persistence, canonical error vocabulary, Critical configuration access, CFG-007, and
+approval-time concurrency.
+
+Summary: Standards found 1 High and 2 Medium issues; the worst is obsolete PostgreSQL concurrency
+evidence. Spec found 1 High and 4 Medium issues; the worst is missing/broken governed activation
+race proof.
+
+## 2026-07-13 04:49 - Architecture Review 2026-07-13_044409_architecture_review
+
+Reviewed completed product work since architecture-review commit `190eb5c`:
+- `006Y16-witness-parent-scope-and-contract-closure` (`c1cc2e6`)
+- `006Z9-active-member-authority-and-decision-contract-closure` (`fa89d4f`)
+- `006Z10-portal-limit-interaction-and-boundary-proof` (`a6dd3cd`, including repairs)
+- `007A-approval-matrix-configuration` (`a614f05`)
+
+The review checked `git diff 190eb5c...HEAD`, production/test hunks, retained red/green,
+PostgreSQL, and two-run trusted-browser evidence, Epic 004/006/007 digests, cited source sections,
+and BR-003..007, M02-FR-004..006, M04-FR-005..007, and M05-FR-003..006. Standards and spec
+fidelity were reviewed independently. Production code was not changed. `CONTEXT.md` remains
+truthful, and `.ralph/state.json` contains no Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - Critical approval configuration activates without business approval or reason
+
+`approval_matrix_configuration.py` immediately activates rule/committee creates and supersessions,
+stores the initiating user as both VersionHistory author and approver, and accepts no change reason.
+This violates auth §§31.1-31.2: Approval Matrix requires Admin + CFO/CS approval, CFG-001 requires a
+reason, and CFG-005 requires activation audit. The tests positively encode unilateral activation.
+`007A3` adds a pending proposal plus distinct CFO/CS approve/reject boundary and coherent reason,
+version, audit, and open-case snapshot evidence.
+
+#### Finding 2 - High - Committee fields accept users without CFO/Director authority
+
+`_validate_committee` checks only that three user ids exist and differ. It accepts inactive ordinary
+users in the CFO/two-Director positions; its test succeeds with arbitrary `cfo_test` and
+`director_test` roles. This violates auth §16.2's backend authority rule. `007A2` validates active,
+persisted CFO/Director authority and adds a dated committee resolver.
+
+#### Finding 3 - High - The declared PostgreSQL gate never executed 007A's races
+
+007A added two `ApprovalMatrixConcurrencyTests`, skipped them under SQLite, and declared
+`postgresql-five-race-acceptance`. Both retained PostgreSQL logs ran only the five older credit,
+appraisal, and sanction tests, while `postgresql-acceptance-results.md` reported PASS. The required
+overlap/supersede one-winner proof therefore has no PostgreSQL execution evidence. `007A2` requires
+two direct PostgreSQL executions with exact test names. The independent validator's fixed command
+lives in protected `scripts/ralph-validate.sh`; this review records that owner/orchestrator follow-up
+is still required because an architecture run may not edit protected scripts.
+
+#### Finding 4 - Medium - Configuration collections are unbounded and unpaginated
+
+Both list functions materialize the complete table and return a plain success envelope. API
+contracts §§6.2/8 require the standard paginated list envelope, and codebase-design §§7.2/25 require
+bounded selectors and consistent HTTP interfaces. `007A2` adds deterministic pagination,
+unknown-parameter rejection, and public boundary tests.
+
+No material standards violation was found in 006Y16, 006Z9's route/decision logic, or 006Z10's
+mounted/browser implementation beyond the spec-completeness issues below.
+
+### Spec
+
+#### Finding 1 - High - 007A's mandatory PostgreSQL acceptance is missing
+
+007A explicitly requires competing create/supersede one-winner proof and discriminating date/amount
+fixtures. The new tests are skipped in the ordinary suite, and the retained PostgreSQL command does
+not select them. Sequential seeded resolution passes, but authoritative configuration concurrency
+remains unproved. `007A2` owns direct two-run PostgreSQL evidence and the complete historical race
+matrix. M05-FR-003..006 remain partial until it passes.
+
+#### Finding 2 - High - 006Z9 turns action permissions into global member scope
+
+006Z9 required a documented/configurable scope and forbade permission/role provenance as a global
+substitute. `member_authority.py` instead makes `members.member.read`, active-status verify, and
+identity approval globally valid for every permission holder. Its test now gives an arbitrary
+outsider all-member detail access, contradicting auth §25.1's “scope-limited unless management
+role” rule. `006Z11` separates action permission from persisted/configured global/team/assigned/
+created-by scope and makes list/detail/actions share it. BR-003..007 and M02-FR-004..006 remain
+partial on authority until closure.
+
+#### Finding 3 - Medium - Service-evidence maker history can be erased
+
+006Z9 says an evidence creator or material updater cannot verify the derived decision. Service
+evidence update overwrites `verified_by_user`, and verification checks only that current field.
+Actor A can create, actor B can update, then A is no longer detected as a maker. `006Z11` preserves
+immutable creator/updater provenance and adds the public three-actor zero-write test.
+
+#### Finding 4 - Medium - 006Z10's denial matrix and zero-write ledger remain partial
+
+The retained backend matrix covers future/closed/manual/mismatched authority, changed service
+evidence, duplicate shares, contradictory acreage, no policy, and invalid amounts. It omits the
+slice's stale-authority, changed-supply, missing-profile, and missing-land rows, and its evidence
+snapshot omits LoanLimitAssessment. `006Z12` completes independently selected public cases and the
+full member/assessment/application/audit/workflow/configuration before/after ledger. M04-FR-005..007
+calculations and the real submit/browser lifecycle pass; blocked-boundary proof remains partial.
+
+#### Finding 5 - Medium - 007A lifecycle/history fidelity is incomplete
+
+The source calls for active/inactive effective-dated rules and protection of already-referenced
+history. The resolver currently queries every status, while create overlap checks only active rows;
+a later backfill can overlap a superseded historical row and make a previously unique decision date
+ambiguous. Tests construct no referenced case and cover only selected create losers. `007A2`
+defines lifecycle resolution, full-history non-overlap, committee parity, and referenced-snapshot
+proof; `007A3` covers governed activation.
+
+No material scope creep was found. 006Y16 satisfies its authority-first witness 403/404 contract.
+006Z9's decision-route agreement and core active-member business facts pass subject to 006Z11's
+authority/maker closure. 006Z10's lower-of-two calculations and routed submit/refetch/reload proof
+pass subject to 006Z12's denial ledger. 007A's seeded exact/above/exception facts pass sequentially,
+but M05-FR-003..006 remain partial until 007A2/007A3.
+
+No ADR was added because the cited auth, API, data-model, functional, and codebase-design sources
+already decide permission/scope separation, maker-checker governance, effective history,
+pagination, and interface-level concurrency proof.
+
+Summary: Standards found 3 High and 1 Medium issues; worst are unilateral Critical configuration
+activation, unvalidated committee authority, and falsely incomplete PostgreSQL acceptance. Spec
+found 2 High and 3 Medium issues; worst are the missing PostgreSQL proof and permission-implied
+global member scope.
+
+## 2026-07-13 03:00 - Architecture Review 2026-07-13_025409_architecture_review
+
+Reviewed completed product work since architecture-review commit `c31ac79`:
+- `006X10-credit-object-scope-executable-row-closure` (`40cea5e`)
+- `006Y15-witness-authority-matrix-behavioral-closure` (`81884ed`)
+- `006Z7-active-member-relaxation-authority-and-evidence-race-closure` (`a2c857c`)
+- `006Z8-portal-limit-provenance-module-and-interaction-closure` (`53420e7`, including repairs)
+
+The review checked `git diff c31ac79...HEAD`, production/test hunks, retained red/green,
+PostgreSQL, and two-run trusted-browser evidence, Epic 004/006 digests, cited source sections, and
+BR-003..007, M02-FR-004..006, and M04-FR-005..007. Standards and spec fidelity were reviewed
+independently. Production code was not changed. `CONTEXT.md` remains truthful, and state/files
+contain no Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - Member global authority is inferred from role metadata
+
+`members/modules/member_authority.py` treats `Role.is_system_role` plus either verify/identity-
+approval permission as global authority over every owned member, while member read/update has no
+explicit management-global path and unowned rows silently become global. System-role provenance is
+not an object-scope assignment and does not implement auth §§3/19's explicit global/team/assigned/
+created-by vocabulary. The new test calls an unowned-row fallback “global” while expecting a
+permissioned manager to be denied an owned row. `006Z9` owns one source-reviewable member scope
+projection and behavioral parity across Registry and active verification.
+
+#### Finding 2 - High - Portal financial boundary lacks blocked-path tests
+
+The credit-owned borrower-limit projection has a happy next-day endpoint case and unavailable-no-
+authority case, but no direct observable matrix for future/closed/manual/stale/mismatched authority,
+changed evidence, multiple shareholdings, contradictory land/profile facts, missing policy, or
+invalid amounts. This falls below codebase-design §§26/42's success-and-blocked testing rule for a
+financial deep module. `006Z10` owns the redacted public boundary matrix.
+
+#### Finding 3 - High - Portal submit and error code is unverified
+
+`MP05_NewApplication.tsx` contains new submit-time amount-error and canonical-refetch behavior, but
+the mounted tests execute only initial GET/rendering. Neither mounted nor trusted-browser coverage
+executes submit, exact draft/submit calls, `required_loan_amount`, 400/403/409 no-retry behavior, or
+one post-submit refetch. `006Z10` replaces rendering-only closure with observable lifecycle tests.
+
+#### Finding 4 - Medium - Browser advisory fixture is not discriminating
+
+The over-limit fixture sets both an above-limit amount and `exception_required_flag = true`; no test
+uses contradictory amount/flag facts. Client-side amount recomputation could therefore return while
+the claimed “server flag only” test remains green. `006Z10` adds inverse fixtures plus submit/reload.
+
+#### Finding 5 - Medium - Witness absence behavior changed without a durable contract
+
+006Y15 introduced a new absent-parent `404` branch but did not update `API_CONTRACTS.md` as
+DECISION_POLICY §2 requires. More importantly, the absent branch grants every Credit Manager global
+scope without the existing application's §19.2 stage fact, so an existing pre-credit parent can be
+`403` while a random parent is `404`. `006Y16` removes that cross-stage oracle and documents the
+final authority-first `403`/`404` contract.
+
+Judgment call: several new raw-source substring assertions test private names and fixture text.
+006Z8 explicitly requested a narrow static regression, but the browser-fixture inspection adds no
+behavioral confidence. `006Z10` retains only checks that cannot be expressed through the public UI.
+
+### Spec
+
+#### Finding 1 - High - Relaxation results can be persisted as ordinary active decisions
+
+BR-003/BR-005 require a recent member to qualify under relaxation. `verify()` accepts
+`decision = active` when `member_active_check = relaxation`, then stores status `active`; the
+promised unsupported/mismatched decision matrix does not cover this. `006Z9` enforces exact route-
+to-decision agreement and complete zero evidence for both mismatch directions.
+
+#### Finding 2 - High - 006Z7's public verification matrix remains partial
+
+The source slice requires complete module/API rows for active, inactive, relaxation, stale,
+maker-checker, unsupported decision, chronology, and malformed inputs. The HTTP suite proves one
+active success, date/unknown validation, and object non-disclosure; inactive/relaxation successes,
+stale result/member/evidence, mismatched decision, chronology, and evidence-maker denial remain only
+module-level or absent. It also allows the same actor to create/update verified relaxation evidence
+and verify the resulting status. `006Z9` owns paired module/HTTP behavior and evidence ownership.
+
+#### Finding 3 - High - 006Z8 did not deliver its interaction acceptance matrix
+
+Requirement 5 calls for the routed container to prove exact request body, successful submit/refetch,
+400/403/409, conflicting server values, reload provenance, and loading/error/redaction. The four
+trusted cases mock projection reads and never submit, error, or reload; retained two-run logs only
+repeat those four renders. `006Z10` owns the missing mounted and trusted-browser acceptance.
+
+No material scope creep was found. 006X10's eight executable object-scope rows and 006Y15's two-kind
+payload behavior are substantive subject to `006Y16`'s parent-policy correction. BR-004/006/007 and
+M02-FR-004/006 pass; BR-003/005 and M02-FR-005 remain partial until `006Z9`. M04-FR-005/006/007
+backend behavior passes, but portal acceptance remains partial until `006Z10`.
+
+No ADR was added because the existing auth, functional, and codebase-design sources already decide
+explicit scope, route fidelity, maker-checker separation, and interface-level testing.
+
+Summary: Standards found 3 High and 2 Medium issues; worst are inferred member-global authority and
+the untested financial submit/boundary paths. Spec found 3 High issues; worst are relaxation status
+mislabelling, incomplete verification parity, and absent portal lifecycle proof.
+
+## 2026-07-13 00:49 - Architecture Review 2026-07-13_004501_architecture_review
+
+Reviewed completed product work since architecture-review commit `540eef4`:
+- `006X9-credit-object-scope-isolated-execution-matrix` (`8bb60b6`)
+- `006Y14-witness-parent-nondisclosure-and-matrix-closure` (`47c2cc4`)
+- `006Z6-active-member-evidence-atomicity-and-history-closure` (`0f13c65`)
+- `006Z2-portal-application-limit-display-authority` (`63136ff`)
+
+The review checked `git diff 540eef4...HEAD`, production/test hunks, retained run packets, trusted
+browser/PostgreSQL evidence, Epic 004/006 digests, cited source sections, assumptions, and
+M02-FR-004..006, M04-FR-001..011, and BR-003..007. Standards and spec fidelity were reviewed
+independently. Production code was not changed. `CONTEXT.md` remains truthful, and state/files contain
+no Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - Portal adapter duplicates the credit limit workflow
+
+`members/portal_services.py` selects active authority, shareholding, land, and effective policy,
+then calculates both limits and exception authority. That is a second orchestration path outside the
+credit loan-limit module, contrary to codebase-design §§22.1/42.1-42.3 locality and deep-module
+rules. `006Z8` moves one borrower projection behind the credit boundary; the portal adapter keeps
+only PortalAccount scoping/redaction/transport.
+
+#### Finding 2 - High - Member authority remains caller-controlled and behaviorally divergent
+
+`member_authority.evaluate_member_authority()` exposes `globally_authorized` and embeds concrete
+roles. `MemberRegistry` always passes the bypass while active verification does not, so equivalent
+permissioned non-owners receive different results. Registry tests patch the internal evaluator and
+cannot detect the divergence. This conflicts with codebase-design §§27.1/42.1 and 006Z6's one-policy
+requirement. `006Z7` owns a behavioral public matrix and one hidden policy.
+
+#### Finding 3 - Medium - New UI/module residue violates reuse and dead-code rules
+
+006Z2 added an exported `PortalApplicationLimitView` even though the existing inline card/alert/empty
+compositions express the screen, recorded no required assumption, and duplicated the page's currency
+formatter. 006Z6 also left `_qualifying_service_evidence()` unreachable. These conflict with
+FRONTEND_DESIGN_RULES reuse and DECISION_POLICY's no-dead-code rule. `006Z7` removes the backend
+residue; `006Z8` restores inline/existing frontend composition and one formatter.
+
+#### Finding 4 - Medium - Credit completeness still trusts static names and sibling execution
+
+`OBJECT_SCOPE_CASES` proves only eight unique action/test-name strings and never resolves or executes
+them. The create and update identifiers both run one helper containing both rows; revalidate and
+submit-review do the same. A stale mapping can pass, and a selected row is not independent as
+required by codebase-design §26. `006X10` owns eight executable, one-row selections.
+
+### Spec
+
+#### Finding 1 - High - Recent-member relaxation is rejected before its evidence is evaluated
+
+BR-003 permits active status or recent-member relaxation, and BR-005 permits one-year relaxation with
+evidence. `ActiveMemberStatusModule.calculate()` returns ineligible immediately when
+`membership_status != active`, before reading qualifying supply/relaxation evidence. No inactive or
+recent-member success test exists. M02-FR-006 and BR-003/005 therefore remain partial. `006Z7` makes
+the source-backed route reachable without accepting reason text alone.
+
+#### Finding 2 - High - Required evidence-mutation races were not implemented
+
+006Z6 promised verifier-vs-supply/service create/update/verify PostgreSQL races and coherent current
+record/pointer cardinality. Its only PostgreSQL case remains the earlier two-verifier race; the six
+reported tests are that case plus the five credit races. Select-for-update calls alone do not prove
+the mutation boundary or zero loser evidence. `006Z7` adds the real evidence races and aligns all
+mutation lock/version paths.
+
+#### Finding 3 - High - Portal authority expires because the calendar date changes
+
+The stored active result includes `calculated_as_of_date` in `result_id`. The portal recalculates
+with today's date and compares the entire hash/snapshot, so yesterday's unchanged, still-effective
+verification becomes unavailable today. The only availability test creates and consumes authority
+on the same date. `006Z8` validates the effective record from its stored date plus current evidence
+provenance, retaining future/stale/closed rejection.
+
+#### Finding 4 - Medium - Portal submit, error, canonical-refetch, and browser proof is partial
+
+The routed screen maps only `nominee_id` from submit field errors, so an authoritative
+`required_loan_amount` error is discarded. Tests cover an initial unavailable GET and a detached
+card render, not conflicting submit/projection values, 400/403/409 no-retry behavior, one canonical
+refetch, reload provenance, or the required real screenshots; the slice declared no browser runtime
+and retained only sandbox-blocked capture plus HTML/jsdom evidence. `006Z8` owns the mounted and
+trusted-browser contract.
+
+#### Finding 5 - Medium - Witness and credit matrices remain incomplete
+
+006Y14 omits unknown-field rows, does not project exact actions for scope cases, and does not test
+the promised normal `404` for an authorised in-scope missing parent; its scope cases assert only
+PATCH/category/evidence. 006X9's paired helpers violate its independently selectable row requirement.
+`006Y15` and `006X10` own the two behavioral matrices.
+
+No material scope creep was accepted. M04-FR-001/002 remain explicitly deferred to 012EA under
+A-053 and M04-FR-003 retains A-054's receipt-time proxy; M04-FR-004..011 retain substantive behavior
+subject to `006X10`/`006Z8` proof. M02-FR-004..006 and BR-003..007 remain partial until `006Z7`.
+No ADR was added because existing source and codebase-design documents already decide module
+locality, authority policy, evidence atomicity, and effective-dating direction.
+
+Summary: Standards found 2 High and 2 Medium issues; worst are duplicated credit orchestration and
+divergent caller-controlled member authority. Spec found 3 High and 2 Medium issues; worst are the
+unreachable documented relaxation, absent evidence races, and next-day authority expiry.
+
+## 2026-07-12 23:42 - Architecture Review 2026-07-12_234227_architecture_review
+
+Reviewed completed product work since architecture-review commit `099e2a6`:
+- `006X8-credit-executed-object-scope-regression-closure` (`b9f5d9b`)
+- `006Y12-witness-authority-matrix-and-nondisclosure-closure` (`c6ae9bf`)
+- `006Y13-member-mutation-success-interaction-closure` (`7daaa61`, including repair evidence)
+- `006Z5-active-member-evidence-and-verification-governance-closure` (`b76936f`)
+
+The review checked `git diff 099e2a6...HEAD`, production/test changes, slice/run packets, trusted
+browser and PostgreSQL evidence, Epic 004/006 digests, cited source sections, assumptions, and
+M02-FR-001/004/005/006/012 plus BR-003..007. Standards and spec fidelity were reviewed
+independently. Production code was not changed. `CONTEXT.md` remains truthful, and state has no
+Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - Active verification can commit evidence that changed concurrently
+
+`ActiveMemberStatusModule.verify()` locks the Member, then recalculates from unlocked supply and
+service-evidence rows. Those evidence writes do not advance the Member version, so a concurrent
+evidence mutation can land between calculation and commit while the verifier still makes the stale
+snapshot current. The PostgreSQL test races only two verifiers, not verification against evidence
+mutation. This conflicts with codebase-design §§22.1/42.2 transactional evidence rules. `006Z6`
+locks or versions the exact evidence set and adds the missing race.
+
+#### Finding 2 - High - Witness PATCH still reveals parent application existence
+
+`applications/views.py` returns `404` for a missing parent application before object authority, but
+returns `403 OBJECT_ACCESS_DENIED` for an existing out-of-scope parent. 006Y12 varies only child
+witness IDs beneath one existing application, so it closes witness enumeration but leaves the parent
+oracle open. This violates auth §§3-3.1 and codebase-design §27.1. `006Y14` makes missing/existing
+out-of-scope parent IDs indistinguishable before child lookup.
+
+#### Finding 3 - Medium - Member object authority was copied with a different role policy
+
+Active-status verification calls the low-level evaluator directly and hard-codes global access for
+`system_admin`/`credit_manager`, while `MemberRegistry` already owns a different member-access rule.
+This contradicts 006Z5's explicit reuse requirement and codebase-design §§27.1/42.1 single-policy
+direction. `006Z6` extracts one public member-authority result consumed by both callers.
+
+#### Finding 4 - Medium - Credit completeness depends on global state and test order
+
+006X8 appends results to `EXECUTED_OBJECT_SCOPE_RESULTS`; a later `Z...` test assumes every row test
+already ran in the same worker. The aggregate fails when selected alone and can break under sharding,
+random order, or retries, contrary to codebase-design §§26.1-26.2. `006X9` replaces it with eight
+self-contained parameter rows that each execute all four phases independently.
+
+Judgment call: the application-authority compatibility wrapper adds little leverage and the new seam
+test asserts internal mock call counts. `006Y14` may remove or deepen the wrapper while retaining
+behavioral parity. No frontend visual-system drift was found.
+
+### Spec
+
+#### Finding 1 - High - BR-005/006 evidence is used but omitted from the immutable result
+
+The BR-006 calculator uses `MemberServiceEvidence` only as an existence predicate. Its dates,
+recipient, evidence reference, verifier, and ID do not enter the result/hash or effective record's
+snapshot, so qualifying evidence can change without staling the result and the decision is not
+reviewable from stored facts. One-year relaxation can likewise be created from one supply year plus
+free-text reason copied into `evidence_summary`, rather than persisted relaxation evidence. This is
+partial against BR-005/006 and M02-FR-004/006. `006Z6` snapshots the full service/relaxation evidence
+and makes all review facts part of result provenance.
+
+#### Finding 2 - High - Effective history accepts invalid backdated intervals
+
+Every later verification closes the current record at `as_of_date - 1` without requiring the new
+date to follow the current record's `effective_from`. A backdated or same-date result can therefore
+write `effective_to < effective_from`; tests cover only the first record despite the slice claiming
+immutable later decisions. `006Z6` defines and tests chronological, non-overlapping history.
+
+#### Finding 3 - High - 006Z5's verification matrix remains incomplete
+
+The tests do not execute separate stale-member, stale-result/evidence, unsupported-decision,
+inactive, relaxation, and later-decision rows with complete zero-evidence assertions; the PostgreSQL
+test also omits current-record/pointer cardinality. `006Z6` owns the complete module/API matrix and
+coherent current-record race evidence.
+
+#### Finding 4 - Medium - 006Y12 did not deliver its two-kind backend matrix
+
+Contact and identity corrections remain isolated examples: parent/child non-disclosure exercises a
+contact payload, while malformed/immutable/stale and maker-checker paths are not executed as the
+promised cross-product with exact six-field projection/write/evidence parity. `006Y14` adds the
+parameterized contact/identity matrix while retaining mounted and browser acceptance.
+
+#### Finding 5 - Medium - 006X8's false-completeness proof is not isolated
+
+The aggregate proof requires prior tests in the same process, and its mutation test marks phase flags
+directly instead of executing the production assertion phases. `006X9` makes omission fail inside the
+row that owns the public projection/write.
+
+No material scope creep was found. M02-FR-001 and M02-FR-012 are substantively covered by routed and
+real-session create/update/request/approval behavior; M02-FR-005 and BR-003/004/007 remain
+substantive. M02-FR-004/006 and BR-005/006 remain partial until `006Z6`. No ADR was added because the
+source documents already establish the authority, evidence, and effective-dating direction.
+
+Summary: Standards found 2 High and 2 Medium issues; worst are the evidence race and parent-resource
+enumeration. Spec found 3 High and 2 Medium issues; worst are incomplete immutable relaxation/service
+evidence and corruptible effective history.
+
+## 2026-07-12 22:14 - Architecture Review 2026-07-12_220748_architecture_review
+
+Reviewed completed product work since architecture-review commit `e9c7217`:
+- `006X7-credit-object-scope-action-parity-closure` (`a58515b`)
+- `006Y10-witness-correction-matrix-and-module-boundary-closure` (`2664e8b`)
+- `006Y11-member-form-container-and-error-matrix-closure` (`93870ed`, including repair evidence)
+- `006Z4-active-member-rule-and-snapshot-closure` (`fe8b464`)
+
+The review checked `git diff e9c7217...HEAD`, production/test changes, all four slice/run packets,
+trusted browser and PostgreSQL evidence, Epic 004/006 digests, cited source sections, assumptions,
+and M02/M04 functional IDs. Standards and spec fidelity were reviewed independently. Production code
+was not changed. `CONTEXT.md` remains truthful, and `.ralph/state.json` has no Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - Credit completeness still trusts static metadata
+
+`test_credit_action_parity_matrix.py` replaces `EXECUTED_CASES` with
+`@object_scope_cases(...)`, but the inventory still scans metadata rather than results emitted after
+projection, write, category, and evidence assertions execute. A test can keep its decorator while
+deleting its body and remain advertised, contrary to codebase-design §26.1 and 006X7's stated
+closure. High-risk `006X8` replaces metadata discovery with an executed-row ledger whose entries
+exist only after all required phases pass.
+
+#### Finding 2 - High - Witness authority was de-cycled by copying it
+
+`applications.modules.witness_corrections` duplicates the creator/receiver/Credit Manager object-
+access algorithm in `applications.services`. The source-text regression proves only that one import
+string disappeared; it cannot prevent the two policy copies drifting. This violates codebase-design
+§§26.2/36.1-36.2 and the slice's single-owner requirement. `006Y12` extracts/reuses one lower-level
+application authority seam and verifies behavioral consumption from projection and write callers.
+
+#### Finding 3 - High - Witness PATCH leaks resource existence before authority
+
+`applications/views.py` skips permission/object checks for PATCH until after application and witness
+lookup. An unauthorised caller can distinguish an existing out-of-scope witness (`403`) from a random
+ID (`404`), conflicting with auth §§19/24 and backend review §42.2. `006Y12` moves non-disclosing
+authority ahead of witness lookup and adds indistinguishable existing/missing object-denial tests.
+
+#### Finding 4 - High - Active-member verification drifted from the source persistence model
+
+006Z4 writes current fields on `Member` plus generic change/audit JSON; it creates no effective-dated
+`active_member_statuses` record containing status, route/evidence, verifier, and effective dates as
+required by data-model §11.5 and M02-FR-006. `006Z5` adds the source-shaped verification record and
+keeps the Member projection as a referenced compatibility view, not a substitute for evidence.
+
+Judgment calls: `members/views.py` owns dense validation/error translation that belongs behind a thin
+adapter, and the new stale/result/decision codes are not reconciled with source API §7. The 006Z4
+test named for version/current-result never executes distinct stale-version or stale-result rows.
+Frontend changes otherwise reuse the approved components/classes and backend-authored actions/errors;
+no styling or client-owned business-rule drift was found. `006Z5` owns the validation/error matrix.
+
+### Spec
+
+#### Finding 1 - High - 006Z4 verification has no object scope
+
+The slice explicitly requires authority/object scope and a verify matrix containing object denial,
+but `ActiveMemberStatusModule.verify()` accepts any `member_id` once the caller has the permission.
+`006Z5` reuses the public member/Registry object evaluator and proves non-disclosure before result
+verification.
+
+#### Finding 2 - High - 006Z4's stored “complete” evidence omits classification inputs
+
+`SupplyRowProjection` stores only row ID, financial year, verified/qualifying, and reason. Entity,
+route, producer-institution, evidence-reference, and verifier facts are omitted even though those
+facts decide qualification. The immutability test therefore freezes a reduced projection while the
+review packet claims completeness. `006Z5` stores the full internal row/result evidence and tests
+deliberate portal redaction separately.
+
+#### Finding 3 - High - BR-006 passes from an unsupported scalar
+
+BR-006 requires three continuous service years to SFPCL/subsidiary/step-down entities, while 006Z4
+accepts `employment_or_service_years >= 3` without dates, recipient, or evidence and even tests the
+route with `services_availed_flag = false`. `006Z5` returns manual-evidence-required until persisted
+facts prove the documented route; it must not invent continuity from the scalar.
+
+#### Finding 4 - High - 006Y10 did not execute its backend correction matrix
+
+The commit adds a dependency substring test and changes one maker-checker code. Missing-permission
+and object-denied correction writes are not executed; stale/malformed/immutable cases are not tested
+for both contact and identity; exact parity/zero-evidence assertions are absent. `006Y12` owns the
+complete backend, mounted, non-disclosure, and trusted-browser matrix.
+
+#### Finding 5 - High - 006X7's false-completeness acceptance remains open
+
+The decorator inventory can advertise combined action codes even when the test body never executes
+one of them. This does not meet the requirement that deleting a projection/write assertion removes
+the row. `006X8` owns result-derived completeness without production behavior changes.
+
+#### Finding 6 - Medium - 006Y11 success proof covers creation only
+
+Mounted tests prove successful create/readback and failures for create/update/request/approval, but
+not successful ordinary update, identity request, or approval with one canonical GET. Browser exact
+request assertions likewise cover creates, not all named mutations. `006Y13` mounts the routed
+Directory/Profile path and completes exact success bodies/counts/readbacks in both test layers.
+
+No material scope creep was found. M02-FR-001's three create variants remain substantive, and
+M02-FR-012's requester/checker behavior exists, but full interaction confidence remains partial until
+`006Y13`. M02-FR-004..006 and BR-003..007 remain partial until `006Z5`; M04-FR-004..011 production
+behavior is unchanged, while the advertised exhaustive matrix remains partial until `006X8`. No ADR
+was added because the source documents and existing deep-module direction already settle the target.
+
+Summary: Standards found 4 High issues plus validation/test-quality judgments; worst are duplicated
+witness authority/resource enumeration and missing source-shaped active-status persistence. Spec
+found 5 High and 1 Medium issue; worst are unscoped, incomplete, source-inaccurate active-member
+verification and the still-metadata-driven credit/witness acceptance claims.
+
+## 2026-07-12 20:43 - Architecture Review 2026-07-12_203645_architecture_review
+
+Reviewed completed product work since architecture-review commit `c87586d`:
+- `006X6-credit-authority-state-parity-matrix-closure` (`7294500`)
+- `006Y7-member-registry-race-and-action-scope-closure` (`3843194`)
+- `006Y8-witness-maker-checker-and-browser-closure` (`0f97eb5`, repaired through `55f7651`)
+- `006Y9-member-form-real-session-closure` (`6411bd1`, including its repair chain)
+
+The review checked `git diff c87586d...HEAD`, the four slice/run packets, production/test changes,
+authoritative PostgreSQL/browser evidence, Epic 004/006 digests, cited source sections, assumptions,
+and M02/M04 functional IDs. Protected orchestrator-only commit `2af4399` was excluded from product
+findings. Standards and spec fidelity were reviewed independently. Production code was not changed;
+`CONTEXT.md` remains truthful, and `.ralph/state.json` contains no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - Witness correction authority remains cyclic and its negative matrix is absent
+
+`applications.services.witness_resource_actions` imports `witness_corrections`, calculates object
+access that correction actions discard, and calls an evaluator that imports generic services back to
+calculate the same access. This leaves two coupled owners and a runtime dependency cycle, contrary to
+codebase-design §§36.1-36.2/42.2. The mounted suite covers success and an already-disabled control,
+but never drives the required `400`/`403`/`409` failures or one-call/no-refetch assertions required by
+§§26.3/42.3. High-risk `006Y10` owns one acyclic authority seam plus the complete backend/mounted/
+browser request matrix.
+
+#### Finding 2 - High - Member container tests do not cross the production interaction boundary
+
+`MemberProfile.container.test.tsx` adds only a StrictMode single-GET assertion. Full-field tests still
+mock `createMember`/`updateMember`, while the browser proves successes but no validation, object
+denial, or stale conflict. This falls short of codebase-design §§26.3/42.3 and 006Y9's explicit real-
+container `400`/`403`/`409` contract. High-risk `006Y11` owns transport-boundary mounted tests and the
+complete real-session variant matrix.
+
+#### Finding 3 - Medium - Trusted-browser logs are not self-contained
+
+The final 006Y8 and 006Y9 trusted logs record `RALPH_EVIDENCE_DIR` under absolute, deleted-run
+`.ralph/worktrees/...` paths. The screenshots are archived and the scenarios passed twice, but the
+command provenance violates AFK_RUNBOOK's rule that evidence must not reference deleted worktrees.
+Historical packets remain immutable; this review's evidence uses run-relative descriptions, and
+future packets must record stable run-folder-relative paths.
+
+Judgment call: 006Y7's Registry action/write object evaluation and both real PostgreSQL races are
+substantive closures. Its HTTP/masking evidence says object denial is `FORBIDDEN` although production
+now returns `OBJECT_ACCESS_DENIED`; the executable tests/code are authoritative, but packet prose
+should not diverge from them in future runs.
+
+### Spec
+
+#### Finding 1 - High - 006X6's object-scope rows are labelled rather than proven
+
+006X6 requires each case to project a real six-field action and invoke the exact write on the same
+resource with reason/category parity. Eligibility, loan-limit, appraisal, review, and sanction tests
+instead capture an enabled action, mutate ownership, and assert only that the write raises. Static
+`EXECUTED_CASES` labels still mark every object-scope variant complete. High-risk `006X7` replaces
+the labels with derived executable cases and real disabled evaluation/write parity without leaking
+object-denied resources through HTTP.
+
+#### Finding 2 - High - 006Y9 omits the declared mounted and error-path acceptance
+
+The slice requires mounted production containers to submit every §13.2 field and prove one-call
+`400`/`403`/`409` behavior. Its only new mounted test loads detail once; Playwright covers individual/
+FPC success and requester/checker approval but none of the three error classes. It also does not
+execute the separately named Producer Institution member category in M02-FR-001. `006Y11` owns the
+full transport-boundary matrix, Producer Institution flow, collision-proof identities, and masked
+canonical readback.
+
+#### Finding 3 - High - 006Y8 omits named backend and mounted denial cases
+
+006Y8 requires missing-permission/object-denied PATCH parity and mounted `400`/`403`/`409` one-call
+behavior. Backend tests assert missing-permission projection but never its correction write, and the
+only object-denial write test targets witness create. Mounted tests simulate no rejected mutation;
+the browser checks the verifier button is absent but does not assert zero PATCH requests. `006Y10`
+owns all omitted cases and exact browser request counts.
+
+No material scope creep was found. M04-FR-004..011 retain substantive production behavior, but
+006X6's advertised exhaustive action matrix remains partial until `006X7`. M02-FR-012's persisted
+requester/checker flow is substantive; M02-FR-001 and the member/witness interaction confidence stay
+partial until `006Y11`/`006Y10`. No ADR was added because API §44 and codebase-design §§26/36/42
+already settle the durable direction.
+
+Summary: Standards found 2 High and 1 Medium issue plus one packet judgment; worst are the cyclic,
+under-tested witness seam and missing member container error matrix. Spec found 3 High issues; worst
+are the falsely complete credit object-scope matrix and the repeated omitted witness/member denial
+acceptance.
+
+## 2026-07-12 14:17 - Architecture Review 2026-07-12_141135_architecture_review
+
+Reviewed completed product work since architecture-review commit `b6d86cd`:
+- `006X5-credit-public-action-write-matrix-closure` (`654a92b`)
+- `006Y5-member-registry-governance-and-form-contract-closure` (`45c267d`)
+- `006Y6-witness-contact-and-action-parity-closure` (`8dc46e8`)
+- `006Z3-active-member-supply-evidence-boundary-hardening` (`5cbbc5d`)
+
+The review checked `git diff b6d86cd...HEAD`, all four slice/run packets, implementation/tests,
+Epic 004/006 digests, cited source sections, assumptions, and M02/M04 functional IDs. Standards and
+spec fidelity were reviewed independently. Production code was not changed; `CONTEXT.md` remains
+truthful, and `.ralph/state.json` has no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - The active-member public seam is incomplete and governance remains split
+
+`ActiveMemberStatusModule` exposes only `calculate`; capture and verification remain in generic
+member services/views. The caller copies only three strings and does not retain the dated row/result
+snapshot, while `as_of_date` does not exclude future supply facts. This violates codebase-design
+§10.2's calculate/verify interface, dated-result/application-snapshot invariants, and §§26.1-26.2's
+deep-module test surface. High-risk `006Z4` owns the calculate/verify seam, dated immutable snapshot,
+and shared capture/verification governance.
+
+#### Finding 2 - High - Documented active-member routes and interface tests are absent
+
+The module reduces service evidence to a boolean and ignores the BR-006 three-year employment/
+service route and institutional supply-year route. Its only direct test covers an individual/direct
+four-year path and service false; FPC/institution, relaxation, as-of, future, malformed/wrong route,
+and Producer Institution cases are missing. This conflicts with codebase-design §10.2 and §26.3.
+`006Z4` owns the complete public-module table without inventing an approval authority.
+
+#### Finding 3 - High - Witness update actions omit the maker-checker rule enforced by writes
+
+`witness_resource_actions` evaluates permission and application scope only, but protected-identity
+correction rejects the original verifier. That actor can therefore see Update enabled and receive
+`MAKER_CHECKER_REQUIRED` from the write, contrary to API §44 and codebase-design §42.2. High-risk
+`006Y8` centralises field-specific correction evaluation and adds routed/browser authority proof.
+
+#### Finding 4 - High - 006X5's advertised matrix remains an inventory plus permission samples
+
+The static inventory assertion includes synthetic review-decision suffixes that are not projected
+action codes. Executed cases cover permission denials and one sanction state denial, not the required
+role, object, maker-checker, provenance, immutable-review, malformed-rejection, and stale variants.
+This fails codebase-design §26.3's observable interface matrix. High-risk `006X6` owns the generated
+real-action/state/authority matrix and preserves the PostgreSQL race gate.
+
+Judgment call: `MemberRegistry` is still a facade over private generic service functions, with its
+action serializer importing back into the Registry. Public bypasses are substantially reduced, but
+the circular ownership weakens codebase-design §10.1. `006Y7` removes that action-evaluation cycle
+while closing the concrete object/race defects.
+
+### Spec
+
+#### Finding 1 - High - 006X5 omits most of its named exhaustive cases
+
+006X5 requires success/denial execution for state, role, exact permission, object scope,
+maker-checker, frozen provenance, immutable review consistency, rejection payload, and stale state.
+The new tests exercise permission-only denials for most writes, a sanction state denial, and review
+success variants. `006X6` owns the missing executable cases; no M04 requirement is newly deferred.
+
+#### Finding 2 - High - 006Y5 did not run either mandatory PostgreSQL duplicate race
+
+The slice requires competing duplicate create and identity-approval races. Its tests are sequential
+`TestCase` requests with no concurrent transactions, and the slice declares no PostgreSQL runtime
+capability. `006Y7` adds twice-run duplicate races with one success, one standard field error, and
+exact zero-partial-evidence assertions.
+
+#### Finding 3 - High - Member approval projection omits object scope used by the write
+
+`approve_identity_change` performs Registry member-object access before its shared approval check,
+but `_available_actions` calls an evaluation containing only permission, pending status,
+requester-checker, version, and KYC state. An out-of-scope checker can see approval enabled and then
+be denied. `006Y7` makes projection/write consume one complete evaluation.
+
+#### Finding 4 - High - 006Y5's required real-session form proof is absent
+
+The complete §13.2 fields are present, but tests mock API wrapper functions and the run has no
+browser capability or screenshots. It does not prove real authenticated POST/PATCH/request/approval,
+canonical readback, or one-call `400`/`403`/`409` behavior required by the slice. `006Y9` supplies the
+mounted and trusted-browser individual/institution/identity workflow.
+
+#### Finding 5 - High - 006Y6 omitted both maker-checker parity and required browser acceptance
+
+The backend tests cover missing permission but not verifier identity denial, and the run packet
+explicitly treats the absence of a browser capability/contract as permission to omit the real flow
+even though the slice requires it. `006Y8` owns verifier/contact/identity parity plus the real routed
+three-state screenshot contract.
+
+#### Finding 6 - High - Active-member continuity can add years across gaps
+
+`longest_continuous_financial_years` counts every matching offset across the size of the set rather
+than stopping at the first gap. For `2020-21, 2022-23, 2023-24, 2025-26, 2026-27, 2027-28`, it reports
+five although the longest uninterrupted run is three, allowing BR-004/BR-007 to pass incorrectly.
+`006Z4` adds this regression and exact uninterrupted/as-of boundaries.
+
+#### Finding 7 - High - BR-006 and the dated verified active-status contract remain incomplete
+
+The module never consumes `employment_or_service_years`, exposes no `verify`, persists no complete
+dated evidence snapshot with the application, and does not exclude future rows. M02-FR-004 through
+M02-FR-006 therefore remain partial. `006Z4` owns the source-backed routes, dated verification, and
+immutable credit snapshot.
+
+#### Finding 8 - Medium - Portal supply rows hide their computed qualification result
+
+The module computes `qualifying` and `non_qualifying_reason`, but the portal serializes generic rows
+without either field. Pending/malformed/wrong-route rows are visible yet indistinguishable from
+accepted evidence, contrary to 006Z3's sharpened contract. `006Z4` projects stable row explanations
+and keeps totals/continuity qualification-only.
+
+No material scope creep was found. M04-FR-001/002 remain explicitly deferred to 012EA under A-053;
+M04-FR-003 retains A-054's receipt-time proxy. M04-FR-004..011 behavior remains substantive but its
+exhaustive parity acceptance is partial until 006X6. M02-FR-001/012 remain partial until 006Y7/006Y9
+close races, object parity, and reachability; M02-FR-009 remains partial until 006Y8; M02-FR-004..006
+remain partial until 006Z4. No ADR was added because API §44 and codebase-design §§10.1-10.2/26/42
+already settle the durable direction.
+
+Summary: Standards found 4 High issues plus 1 architecture judgment; worst are the incomplete dated
+active-member seam, missing rule routes, witness parity, and non-exhaustive credit matrix. Spec found
+7 High and 1 Medium issue; worst are the repeated credit/member/witness acceptance gaps and active-
+member continuity/rule errors.
+
+## 2026-07-12 12:52 - Architecture Review 2026-07-12_125256_architecture_review
+
+Reviewed completed product work since architecture-review commit `cea56b2`:
+- `006X4-credit-action-parity-regression-matrix` (`a75010c`)
+- `006Y3-member-registry-and-identity-change-approval-closure` (`7668c72`)
+- `006Y4-witness-correction-and-resource-action-closure` (`f2ea8d1`)
+- `006Z-produce-supply-history-persistence` (`cd6822f`)
+
+The review checked `git diff cea56b2...HEAD`, slice contracts and run/repair packets, implementation,
+tests, browser/PostgreSQL evidence, Epic 004/006 digests, cited source sections, assumptions, and
+functional IDs. Orchestrator-only commits `62f8d89` and `8cd5f45` were excluded from product
+findings. Standards and spec fidelity were reviewed independently. Production code was not changed;
+`CONTEXT.md` remains truthful, and `.ralph/state.json` contains no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - 006X4's advertised matrix executes only one denied write
+
+`test_credit_action_parity_matrix.py` projects five appraisal actions, then invokes only appraisal
+update and only for a missing-permission denial. It has no enabled/write-success pairs, eligibility,
+loan-limit, appraisal-create, separate review outcomes, authority/provenance matrix, or new stale-
+projection race. The trace table points to disparate older tests but does not execute the paired
+matrix required by codebase-design §26.3 and 006X4. High-risk `006X5` owns the actual enumerated
+public action/write matrix and authoritative race proof.
+
+#### Finding 2 - High - Member Registry remains bypassable and duplicate identity approval can 500
+
+`MemberRegistry` lacks the documented read interface, delegates create/update to still-public
+service functions, and does not enforce member object access internally. Proposed identity hashes
+are not duplicate-checked at request/approval; approval can hit the new unique constraint and neither
+the module nor approval view translates `IntegrityError`. Existing duplicate proof is sequential
+HTTP create only, not module or identity-approval concurrency. This violates codebase-design
+§10.1/§26.1-§26.2/§42.2 and auth §34.2. High-risk `006Y5` owns the deep public seam, object authority,
+and duplicate-safe approval races.
+
+#### Finding 3 - High - Witness action projections omit disabled authority facts
+
+`witness_collection_actions` and `witness_resource_actions` omit actions entirely when permission or
+application scope fails. Tests assert all-enabled action codes and do not pair denied update
+projection with update write. This fails 006Y4's six-field resource-action contract and codebase-
+design §42.2. High-risk `006Y6` owns stable disabled reasons, shared evaluations, and mounted/public
+denial proof.
+
+#### Finding 4 - High - Credit now owns and privately tests a member-domain active-status rule
+
+`credit.modules.eligibility_assessment` directly imports `ProduceSupplyRecord`, implements financial-
+year continuity, and is tested through private `_active_member_check`. The documented
+`members.modules.active_member_status` boundary remains absent, contrary to codebase-design §10.2/
+§26.1 and 006Z requirement 3. High-risk `006Z3` moves calculation/verification behind the member-
+owned public seam and makes credit consume its projection.
+
+Judgment call, High risk: supply capture validates only three required fields. Unknown fields,
+financial-year format, eligible entity/route combinations, UUID relationships, decimal validity,
+and non-negative amounts are unchecked, so malformed ORM inputs or ineligible rows can reach
+eligibility. `006Z3` owns strict boundary validation and standard errors.
+
+### Spec
+
+#### Finding 1 - High - 006X4 did not deliver its named acceptance matrix
+
+006X4 requires every eligibility, limit, appraisal, review-decision, and sanction action to have an
+enabled/write-success and disabled/write-denial pair. Its new test enumerates only five appraisal
+projections and executes one update denial. `006X5` owns the missing acceptance contract.
+
+#### Finding 2 - High - 006Y3 approval projection diverges from maker-checker write authority
+
+`_available_actions` enables approval for any permission holder when a request is pending, including
+the requester, while `approve_identity_change` rejects that actor. The test requester lacks approval
+permission, so its 403 proves only permission denial. 006Y3 also still omits most API §13.2 form
+fields: individual middle name/gender/DOB/occupation/cultivation/crop/services/years and institution
+registration/signatory identities/board-resolution/services/supply years. `006Y5` owns shared
+requester-checker evaluation and both complete registration variants.
+
+#### Finding 3 - High - 006Y4 omits S09 witness address and mobile corrections
+
+The correction allowlist/model/UI contain name, PAN, and Aadhaar only, although the slice promises
+all S09-confirmed contact/identity/display fields and S09 names address and mobile. `006Y6` owns the
+missing persisted contact fields and governed correction flow.
+
+#### Finding 4 - High - 006Z can pass BR-004 without persisted service evidence
+
+For an individual, `_active_member_check` treats a legacy `active_member_status=active` plus timestamp
+as equivalent to `services_availed_flag=true`. Four supply rows can therefore pass while the actual
+service flag is false, contradicting BR-004 and the run packet's service-evidence claim. Capture also
+lacks the sharpened member/resource version and does not restrict rows to S16-eligible entity/route
+facts. `006Z3` owns actual service evidence, qualifying supply validation, optimistic capture, and
+one shared continuity projection before `006Z2` can expose portal limits.
+
+### Functional IDs, Context, and Queue
+
+M04-FR-004..011 retain substantive production behavior, but 006X4 did not add its promised exhaustive
+regression proof; M04-FR-001/002 remain deferred under A-053 and M04-FR-003 under A-054. M02-FR-012
+has a persisted approval workflow but is not accepted until 006Y5 closes action parity, object
+authority, duplicate races, and full reachability. M02-FR-009's shareholder validation remains
+implemented, while S09 correction is partial pending 006Y6. M02-FR-004/BR-004/BR-007 are not accepted
+until 006Z3 prevents legacy/no-service and ineligible-route evidence from passing. No ADR was added:
+the cited module, action, identity, and eligibility standards already settle the durable direction.
+
+Summary: Standards found 4 High issues plus 1 High-risk judgment call; worst are the absent credit
+matrix, bypassable/duplicate-unsafe Member Registry, and misplaced eligibility rule. Spec found 4
+High issues; worst are the incomplete 006X4 acceptance, Member Registry action/form gaps, missing
+witness contact fields, and service-evidence bypass.
+
+## 2026-07-12 09:25 - Architecture Review 2026-07-12_092009_architecture_review
+
+Reviewed completed product work since architecture-review commit `1f047f5`:
+- `006X2-credit-action-predicate-and-container-closure` (`0d2168c`)
+- `006X3-credit-visual-and-real-browser-closure` (`559b31f`)
+- `006Y-member-create-update-and-identity-governance` (`d64b262`)
+- `006Y2-member-form-and-witness-capture-ui-wiring` (`09b6b53`, repaired by `6c6a4da`)
+
+The review checked `git diff 1f047f5...HEAD`, all four slice contracts/run packets, implementation
+and tests, trusted-browser evidence, Epic 004/006 digests, cited source sections, assumptions, and
+functional IDs. The script/runbook portion of `6c6a4da` is protected Ralph-orchestrator work and was
+excluded from product findings. Standards and spec fidelity were reviewed independently. Production
+code was not changed; `CONTEXT.md` remains truthful, and `.ralph/state.json` has no Blocked slices.
+
+### Standards
+
+#### Finding 1 - High - Member governance bypasses the documented deep module and duplicate invariant
+
+006Y adds create/update/reverification to the already broad `members/services.py`; callable writes
+accept an actor but depend on views for permission enforcement. This contradicts codebase-design
+§6.3 and §10.1's `members.modules.member_registry.MemberRegistry`, which must hide permission-safe
+profile creation, identity protection, duplicate detection, masking, and audit. The named
+“Duplicate PAN rejected” test/invariant is absent: hashes are stored but never checked or uniquely
+constrained. Nested profile dictionaries also reach model creation without a complete API-shape
+validator, leaving malformed/duplicate integrity failures capable of escaping the standard error
+contract. High-risk `006Y3` owns the deep seam, exact validation, concurrency-safe duplicate
+rejection, and permission/object enforcement through the public interface.
+
+#### Finding 2 - High - Member/witness UI proof and authority remain shallower than the production path
+
+The 006Y2 form tests mock API wrapper functions and the browser merely opens the create and
+reverification forms; its only mutation is witness capture. No routed test proves member POST,
+PATCH, identity correction, canonical refetch, or one-call `400`/`403`/`409`, contrary to
+codebase-design §26.3. Witness visibility and member-create visibility are derived from cached
+`/auth/me` permissions because the witness API exposes no resource actions, contrary to API §44
+and codebase-design §§23.3-23.4. `006Y3` owns the routed member matrix; `006Y4` adds witness resource
+actions and mounted/real-browser capture/correction proof.
+
+#### Finding 3 - Medium - Member forms alter the approved page composition instead of using an action surface
+
+`MemberDirectory` inserts the registration card above the directory and `MemberProfile` permanently
+prepends the edit card whenever update is enabled. A-067 justifies a shared component boundary, but
+not a standing layout change. This is a judgment call under the binding Frontend Design Rules: the
+source-required form should use an existing modal/action composition and preserve the established
+directory/profile layout. `006Y3` restores that composition while completing the source fields.
+
+### Spec
+
+#### Finding 1 - High - M02-FR-012 has a reason, not an approved change request
+
+Functional M02-FR-012 permits verified identity changes only when a change request is approved.
+006Y's endpoint accepts a proposed identity value, free-text reason, and version, then immediately
+applies it and resets KYC. A-065 explicitly acknowledges that no approval fact or authority exists.
+The conservative deferral avoided inventing an approver, but the requirement is not complete.
+`006Y3` adds a persisted request, separate permission-based checker approval, optimistic locking,
+masked evidence, and no hard-coded approver role.
+
+#### Finding 2 - High - 006Y's change history and create validation are incomplete
+
+006Y requires field-level old/new values for every create/update. Create history lists individual or
+institution profile objects as changed but omits their values; address updates read a nonexistent
+aggregate model attribute and record `null` instead of the real old address. Tests check actor and
+absence of plaintext but not substantive diffs. The cited M02 acceptance criterion also requires
+duplicate PAN/Aadhaar detection, which is absent. `006Y3` owns complete masked nested/address history,
+duplicate races, malformed variants, standard errors, and zero-write denial assertions.
+
+#### Finding 3 - High - 006Y2 is complete without its named edit and end-to-end member paths
+
+006Y2 explicitly requires witness capture/read/edit and an edit round trip, but only GET/POST exists;
+A-066 sensibly defers PATCH rather than inventing governance. It also requires a member to be created
+and corrected end to end, while trusted Chromium only screenshots unopened forms. High-risk `006Y4`
+defines versioned audited witness correction with immutable 004E2 evidence; `006Y3` submits the real
+member create/update/approved-identity path through two browser actors.
+
+#### Finding 4 - Medium - Registration exposes truncated §13.2 variants
+
+The individual form omits gender, date of birth, occupation, cultivated area, crop, services, and
+employment/service years. The institution form omits registration number, signatory PAN/Aadhaar,
+board-resolution flag, services, and produce-supply years. The backend accepts those source fields,
+but staff cannot submit them through the delivered UI. `006Y3` completes both variants using the
+existing form/modal patterns.
+
+#### Finding 5 - High - 006X2 did not deliver its named backend parity matrix
+
+006X2 required every eligibility, limit, appraisal, review, and sanction action/write pair across
+state, role, permission, object, maker-checker, provenance, immutable-history, rejection, and
+concurrent-change cases. It adds one new eligibility denial test; existing tests cover many writes
+individually but do not form the promised enumerated action/write matrix or prove matching denial
+reasons and zero success evidence for every pair. High-risk `006X4` supplies that public-interface
+matrix and the authoritative PostgreSQL race check without changing business rules unless a failing
+test exposes divergence.
+
+### Verified Closures, Functional IDs, Context, and Queue
+
+006X3 genuinely replaces the zero-test/mocked browser evidence: collection finds two tests, the real
+Django/two-role path reaches one pending sanction case, both trusted runs pass, and all twenty
+screenshots exist. M04-FR-004 through M04-FR-011 therefore retain substantive API/module/browser
+confidence, subject to 006X4's missing exhaustive regression matrix. M04-FR-001/002 remain deferred
+to 012EA under A-053 and M04-FR-003 retains A-054. M02-FR-009 storage/shareholder validation remains
+substantive through 004E/004E2, but witness correction reachability is partial. M02-FR-012 remains
+open until 006Y3. No ADR was added because the Member Registry seam, approved-change requirement,
+API §44, and frontend test/layout rules already settle the durable direction.
+
+Summary: Standards found 2 High and 1 Medium issue; worst are the bypassed Member Registry/duplicate
+invariant and shallow member/witness authority tests. Spec found 4 High and 1 Medium issue; worst are
+the missing approved identity-change workflow, incomplete history/duplicate safety, missing witness
+edit/member E2E path, and absent 006X2 parity matrix.
+
+## 2026-07-11 23:02 - Architecture Review 2026-07-11_230238_architecture_review
+
+Reviewed completed product work since architecture-review commit `1ff6cb8`:
+- `005E4-completeness-action-authority-and-browser-proof` (`b9c8442`)
+- `006H7-credit-action-parity-and-container-proof` (`0ed9b32`)
+- `006H3-appraisal-workbench-prototype-fidelity-restoration` (`dc5de3a`)
+- `006X-mvp-end-to-end-happy-path-tracer-bullet` (`045f5d2`)
+
+The review checked `git diff 1ff6cb8...HEAD`, the four run packets, actual implementation/tests,
+trusted-browser evidence, Epic 005/006 digests, ADR-0005, cited source sections, and functional IDs.
+Intervening `b2e8ac2` is Ralph-orchestrator-only and was excluded from product findings. Standards
+and spec fidelity were reviewed independently. Production code was not changed; `CONTEXT.md`
+remains truthful, and `.ralph/state.json` has no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - 006H7 repeats the proxy-test architecture it was created to remove
+
+The contract requires mounted default-container behavior through mocked authenticated HTTP, but
+`AppraisalWorkbench.test.tsx` still imports only `AppraisalWorkbenchView`, uses
+`renderToStaticMarkup`, and checks raw source strings/regular expressions. It never exercises the
+production controller, requests, refresh, or errors. This violates codebase-design §26.3's UI-
+behavior seam and already missed the remaining local `serverStage` projection. High-risk `006X2`
+owns the full mounted matrix plus observable assertions rather than source-text proxies.
+
+#### Finding 2 - High - Action/write rules remain duplicated across the credit workflow
+
+006H7 adds one shared loan-limit transition evaluation, but eligibility and appraisal projections
+still use independent state/role/permission heuristics. Appraisal writes additionally enforce
+provenance, maker-checker, object scope, locked history, rejection facts, frozen prerequisites, and
+sanction handoff consistency. An enabled action can therefore fail deterministically at its public
+write, contrary to API §44 and codebase-design §§12.3/23.4/42.2. `006X2` requires one reusable
+evaluation per mutation while preserving ADR-0005's approvals-owned handoff.
+
+#### Finding 3 - Medium - Restored presentation includes locally derived summary/stage facts
+
+`EligibilityChecklist` counts result codes into a pass fraction/progress width, and
+`AppraisalWorkbench` derives a visible stage from status/action combinations. The colours, cards,
+stepper, and formula disclosure are recoveries of the cited pre-006H prototype—not new visual
+design—but the derived facts need proof that they remain display-only and never become workflow or
+eligibility authority under the mock-surface ratchet and codebase-design §§23.3/42.3. `006X2`
+removes action authority from React; `006X3` preserves the prototype composition using stored facts
+and real-browser action-denial proof.
+
+Judgment call: the 219-line real API tracer is strong (success, denials, exact IDs, cardinality, and
+audit redaction) but duplicates narrower setup and will be costly to maintain. It is not a hard
+standard breach. Backend dependency direction and ADR-0005 ownership remain intact.
+
+### Spec
+
+#### Finding 1 - High - 006H7 implements only a fraction of its named closure
+
+006H7 requires shared write predicates and a state/role/object parity matrix for eligibility,
+loan-limit, and every appraisal mutation, plus mounted clicks for all mutations and 400/403/409
+paths. Commit `0ed9b32` adds a shared predicate only for loan-limit, ten lines of static view tests,
+and no eligibility/appraisal parity matrix. Its run packet traces only loan-limit while describing
+the rest as preserved. `006X2` owns the unimplemented contract without broadening business scope.
+
+#### Finding 2 - High - 006H3's required browser contract collects zero tests
+
+The slice requires the full visual state matrix, committed baselines/screenshots, and explicitly
+says browser execution/screenshot failure is not a deferral. Its collection log throws
+`ReferenceError: Cannot access 'title' before initialization` before discovery, reports zero tests,
+omits the loading capture, and has no screenshots or baselines. The slice also lacks the runtime
+capability that would trigger independent browser acceptance. High-risk `006X3` declares the exact
+contract and twenty outputs, including all eighteen visual states.
+
+#### Finding 3 - High - 006X's browser tracer is fully mocked rather than real end to end
+
+The slice requires a real backend, real role sessions, eligibility/limit/appraisal/review/sanction
+controls, exact action facts/PATCH/readback IDs, denied resource actions, and reviewed/pending-case
+screenshots. `epic-006-happy-path.e2e.spec.ts` intercepts every API with `page.route`, begins at a
+draft appraisal, does not click eligibility/limit/create, incompletely checks the PATCH/readback,
+and produced no screenshots. The real backend integration test is substantive but cannot prove the
+UI path. `006X3` keeps that backend test and adds one real-server, two-role browser tracer.
+
+No material scope creep was found. 005E4 is verified closed with distinct permission/write parity,
+two green trusted-browser runs, and all nine screenshots. M03-FR-010 through M03-FR-012 retain
+implemented confidence. M04-FR-001/002 remain explicitly deferred to 012EA under A-053;
+M04-FR-003 retains A-054's `created_at` proxy. M04-FR-004 through M04-FR-011 have substantive
+backend behavior, but action/container/visual reachability remains High risk until 006X2 and 006X3.
+
+No ADR was added because API §44, codebase-design §26.3, ADR-0005, and the existing frontend rules
+already settle the durable decisions. Summary: Standards found 2 High and 1 Medium issue; worst are
+the repeated proxy-test seam and action/write divergence. Spec found 3 High issues; worst are 006H7's
+missing core matrix, zero-test visual acceptance, and a mocked substitute for the real browser path.
+
+## 2026-07-11 21:34 - Architecture Review 2026-07-11_212738_architecture_review
+
+Reviewed completed work since architecture-review commit `7a3d1c9`:
+- `005E3-completeness-authority-fidelity-and-interaction-closure` (`debc496`)
+- `005FA4-portal-auth-real-boundary-flag-proof` (`c63194f`)
+- `006G5-relative-import-dependency-guard` (`36bcd6d`)
+- `006H6-workbench-action-projection-and-interaction-proof` (`4e5d5d2`)
+
+The review checked `git diff 7a3d1c9...HEAD`, the four slice/run packets, implementation and tests,
+Epic 005/006 digests, ADR-0005, cited source sections, and functional IDs. Intervening commit
+`0d235e5` changes only the protected Ralph browser orchestrator and was not treated as a product
+slice. Standards and spec fidelity were reviewed independently. Production code was not changed,
+`CONTEXT.md` remains truthful, and `.ralph/state.json` has no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - Credit actions still do not share their write predicates
+
+`appraisal_available_actions()` enables sanction from status, role, and permission, while the public
+handoff additionally enforces verified provenance, complete frozen appraisal/risk facts, and exact
+immutable-review consistency. Loan-limit availability likewise omits the write's stored-eligible-
+assessment predicate. An enabled action can therefore be rejected by the same owning module,
+contrary to API §44 and codebase-design §§12.3/23.4/42.2. Corrective High-risk `006H7` requires one
+transition evaluation per public mutation, consumed by both projection and execution.
+
+#### Finding 2 - High - 006H6 again completed without its named real-container proof
+
+The committed frontend test server-renders the injected `AppraisalWorkbenchView` and checks raw
+source text. It never mounts the default container, clicks mutations, or observes mocked HTTP,
+four-read refresh, field errors, denial, or one-call stale behavior. The attempted Testing Library
+suite failed because the package was absent and was then not committed; the passing wrapper tests
+cannot detect broken controller wiring. `006H7` pins the standard test package and makes the full
+mounted interaction matrix an acceptance condition under codebase-design §26.3.
+
+#### Finding 3 - Medium - React still owns a parallel appraisal action matrix
+
+Although 006H6 now retains six-field action objects and disabled reasons, `canEdit`, `canSubmit`,
+`canRevalidate`, `canReview`, and `canSanction` independently combine status, provenance, role, and
+permission rules. This remains a second workflow matrix under codebase-design §§23.3-23.4/42.3.
+`006H7` makes backend `enabled` authoritative and limits `/auth/me` intersection to usability.
+
+### Spec
+
+#### Finding 1 - High - 005E3 still applies one permission to four distinct actions
+
+The slice explicitly required the exact pass, return, resolve, and rejection-note validators and
+removal of the global `complete_check` switch. Instead, `completeness_available_actions()` derives
+one completeness-check authority and assigns it to every action; the write endpoints do the same.
+Source auth §§12.4/25.2/34.3 assigns distinct `complete_check`, `return_deficiency`,
+`deficiency.resolve`, and `rejection_note.create` permissions. The action also omits
+`required_role`, so it is not the promised six-field projection. High-risk `005E4` aligns every
+endpoint and projection with its source-defined permission/object/state/resource gate.
+
+#### Finding 2 - High - 006H6 action projections contradict named service gates
+
+The slice requires parity across reference, completeness, stage, prerequisite, appraisal, role,
+permission, object, maker-checker, provenance, history, and rejection conditions. Loan-limit
+projection checks only appraisal existence/permissions, and appraisal review/sanction projection
+omits maker-checker and handoff integrity predicates. `006H7` owns the exhaustive public-boundary
+parity matrix and zero-success-evidence denial assertions.
+
+#### Finding 3 - High - 006H6's mandatory interaction matrix is unimplemented
+
+The slice required the default export to exercise every workbench mutation through mocked HTTP
+with exact bodies/counts, canonical reads, validation, `403`, and `409`. Static child rendering and
+source-string checks implement none of that contract. `006H7` restores the same acceptance without
+allowing another proxy test.
+
+#### Finding 4 - Medium - 005E3 browser evidence is incomplete and tied to a deleted worktree
+
+The Playwright spec hard-codes run `2026-07-11_194100`, produced no screenshots, and omits its
+required denied and API-error captures; the independent E2E gate ran unrelated tracer/auth specs.
+`005E4` declares the focused trusted-browser contract, derives paths from `RALPH_EVIDENCE_DIR`, and
+requires all nine named screenshots twice.
+
+### Verified Closures, Functional IDs, Context, and Queue
+
+005E3 genuinely joins the document and completeness projections and restores S12 category/item/
+document composition. 005FA4 genuinely tests unset/false/true through real App imports, removes the
+borrower from staff demo roles, and its trusted portal login/logout contract passed twice with both
+screenshots. 006G5 genuinely classifies relative, aliased, wildcard, and package-context imports
+while retaining ADR-0005's non-vacuous public edge. 006H6 removes the HTTP-owned action matrix,
+retains full action objects/reasons, and implements the four-read refresh shape, but parity and
+interaction acceptance remain open.
+
+No epic becomes complete. M03-FR-010 through M03-FR-012 have backend behavior, but completeness
+authority/browser confidence remains High risk until 005E4. M04-FR-004 through M04-FR-011 remain
+backend-present, but frontend/action confidence remains High risk until 006H7 -> 006H3 -> 006X;
+M04-FR-001/002 remain deferred to 012EA under A-053 and M04-FR-003 retains A-054's proxy. No ADR is
+needed because the cited source permissions, API §44, codebase-design rules, and ADR-0005 already
+settle the durable decisions. The next sequence is 005E4 -> 006H7 -> 006H3 -> 006X.
+
+Summary: Standards found 2 High and 1 Medium issue; worst are false-positive credit actions and the
+missing real-container proof. Spec found 3 High and 1 Medium issue; worst are wrong completeness
+authority and credit projections/tests that still do not meet 006H6's explicit contract.
+
+## 2026-07-11 19:23 - Architecture Review 2026-07-11_191720_architecture_review
+
+Reviewed completed product/corrective work since architecture-review commit `d5632d2`:
+- `005E2-completeness-workbench-real-data-corrective` (`b4496eb`)
+- `005FA3-portal-auth-interaction-and-demo-flag-proof` (`f147886`)
+- `006G4-sanction-dependency-boundary-regression` (`bad2049`)
+- `006H5-app-shell-application-state-authority` (`4d1351f`)
+
+The review checked `git diff d5632d2...HEAD`, the four slice/run packets, implementation and tests,
+Epic 005/006 digests, ADR-0005, the cited source sections, and the previous review findings.
+Intervening commits `05d0793`, `d4c804d`, and `a4941b2` are Ralph-orchestrator-only and were not
+treated as product slices. Standards and spec fidelity were reviewed independently. Production code
+was not changed. `.ralph/state.json` has no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - Completeness action authority remains global and frontend-owned
+
+`CompletenessWorkbench.tsx` uses one global `applications.loan_application.complete_check` flag
+for pass, return, deficiency resolution, and rejection, then combines it with local blocker/status
+conditions. The completeness APIs expose no resource `available_actions`, so object/state denial
+cannot remove or explain an individual control before the backend rejects it. The 005E2 slice
+documented this as an interim fallback, but it remains architecture drift from codebase-design
+§23.3-§23.4 and api-contracts §44. Corrective High-risk `005E3` adds action/service parity behind
+the applications module and makes React consume the full projection.
+
+#### Finding 2 - High - 005E2 redesigned the approved S12 composition
+
+The real-data rewrite flattened the prototype's category groups, item detail/document-chip rows,
+and established deficiency/action composition into a new checklist/card layout. That exceeds the
+binding Frontend Design Rules' data/label/visibility/action allowance and repeats the visual drift
+pattern already found in 006H. `005E3` restores the pre-005E2 composition without restoring mock
+facts or local decisions.
+
+#### Finding 3 - Medium - Most completeness mutations are not tested through the container
+
+The API wrapper tests have exact requests and the Playwright controller substantively exercises
+pass and return, but resolve/reject, per-action denial, validation, canonical reload, and one-call
+stale behavior are not clicked through the production container. Static markup/source assertions
+cannot catch broken controller wiring. `005E3` owns the full mocked-HTTP and deterministic
+Playwright matrix required by codebase-design §26.3.
+
+#### Finding 4 - High - 006G4's guard ignores relative imports
+
+`resolved_import_references` ignores `ast.ImportFrom.level`. A production import such as
+`from ..approvals import modules` is reduced to `approvals.modules`, never matches the absolute
+`sfpcl_credit.approvals` prefix, and silently passes. This leaves the exact ADR-0005 cycle 006G4
+promised to prevent. Corrective Medium-risk `006G5` resolves every import against the scanned
+module's package and keeps the non-vacuous public-edge assertion; 006H6 now depends on it.
+
+### Spec
+
+#### Finding 1 - High - 005E2 performs a decorative checklist request
+
+005E2 requires checklist state from both `document-checklist` and `completeness-check`, while S12
+separates application, document, nominee, and deficiency facts. `loadSelected` awaits the document
+checklist but discards its result and renders only `completeness.required_checklist_items`. A
+divergence therefore fails neither closed nor visibly. `005E3` assigns each projection explicit
+authority, joins them by document type, and tests mismatches.
+
+#### Finding 2 - Medium - 005FA3 does not prove all flag states through the real boundary
+
+The default Playwright path exercises the real App, login, and logout, but
+`demoAuthFlag.test.tsx` manually passes the imported flag into a static `LoginScreen`. It does not
+mount the promised real App/RoleProvider boundary for explicit false and true, and its no-bypass
+check is only an absent literal. Corrective High-risk `005FA4` supplies module-isolated real-boundary
+proof plus successful browser evidence for unset/false/true and failed-network logout.
+
+#### Finding 3 - High - 006G4 does not reject every promised import form
+
+The slice explicitly requires every credit-to-approvals dependency form to fail. Relative imports
+bypass the implemented absolute-prefix classifier, and no synthetic relative fixture exists.
+`006G5` owns failing-first relative/package/alias fixtures and a context-aware repository scan.
+
+#### Finding 4 - Low - 006H5 lacks its required screenshot
+
+006H5 correctly removes App's mock seed and local status mutation, and its real component render
+proves the sole SanctionWorkbench consumer shows honest not-connected copy. The sandbox prevented
+the acceptance-criteria screenshot, leaving only `visual-state.md`; no production correction is
+needed because 007I owns final sanction wiring and future visual evidence.
+
+### Verified Closures, Functional IDs, Context, and Queue
+
+005E2 removes mock/reference/state authority and uses exact existing endpoints; 005FA3's real
+default browser spec proves empty/populated login and fail-closed logout; 006G4 handles absolute
+aliases/package exposure and prevents vacuous scans; 006H5 removes App-owned mock workflow state.
+No epic became fully complete in this window, so no new M03/M04 functional-ID closure is claimed.
+M03 completeness confidence awaits 005E3; the existing M04 deferrals and 006H6/006H3 chain remain.
+
+`CONTEXT.md` was corrected because the routed sanction screen now intentionally shows an empty
+not-connected state rather than rendering its file-level mock fallback. There were no Blocked
+slices. No new ADR was needed: ADR-0005 and existing frontend/action-authority standards already
+settle the durable decisions. The next corrective sequence is 005E3 -> 005FA4 -> 006G5 -> 006H6 ->
+006H3 -> 006X.
+
+Summary: Standards found 3 High and 1 Medium issues; worst are completeness action/visual drift and
+the relative-import escape. Spec found 2 High, 1 Medium, and 1 Low issue; worst are discarded
+checklist authority and a dependency guard that misses a promised import class.
+
+## 2026-07-11 14:00 - Architecture Review 2026-07-11_135129_architecture_review
+
+Reviewed completed product/corrective work since architecture-review commit `1f1d500`:
+- `002J2-forbidden-permission-error-contract-alignment` (`9e226e2`)
+- `004E2-witness-evidence-snapshot-and-input-hardening` (`b3a688b`)
+- `006G3-sanction-handoff-dependency-and-evidence-ownership` (`4d1dafe`)
+- owner-applied `005FA2` portal-auth and `006Z2` interim loan-limit cleanup (`9195ab9`)
+- `CR-001-e2e-visual-baselines-nondeterministic` (`0d284fb`)
+- `006H4-workbench-authoritative-actions-and-container-tests` (`e7f3f3b`)
+
+The review checked `git diff 1f1d500...HEAD`, the five Ralph run packets, the owner-applied
+corrective commit, migrations, implementation/tests, Epic 002/004/005/006 digests, and cited source
+sections. Standards and spec fidelity were reviewed independently. Production code was not changed.
+`CONTEXT.md` remains truthful, and `.ralph/state.json` has no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - Credit action authority is duplicated in the HTTP view and disagrees with service gates
+
+`applications.views._credit_action_snapshot` decides workflow state, legacy repair, role, and
+permission availability from response-key heuristics. That violates codebase-design §6.3/§36.1/
+§42.2's thin-view boundary. It also enables eligibility and loan-limit actions whenever their
+snapshots and global permissions exist, without checking the formal reference, completeness,
+application stage, later appraisal, or sanction conditions enforced by the underlying modules.
+An advertised action can therefore be rejected by the supposedly matching authoritative service.
+Corrective action: created High-risk `006H6-workbench-action-projection-and-interaction-proof` to
+move projection behind the public module seam and prove action/service parity.
+
+#### Finding 2 - High - 006H4 again omits the required real-container HTTP/action tests
+
+The slice requires mounting the default workbench, selecting an application, clicking every action,
+and asserting exact requests, one-call stale behavior, canonical reload, and visible state. The
+committed test still imports only `AppraisalWorkbenchView`, server-renders static markup, and adds a
+raw-source regex. This repeats the prior review finding and violates codebase-design §26.3's mocked-
+HTTP frontend test seam. `006H6` now owns the full interaction matrix before visual restoration.
+
+#### Finding 3 - Medium - The workbench discards most of the standard action contract
+
+`AppraisalWorkbench.tsx` flattens four typed §44 action collections into enabled code strings,
+discarding disabled reasons, labels, roles, and required permissions, then reinterprets status/
+permission rules locally. This is safer than the former global-action union but still drifts from
+api-contracts §44 and codebase-design §23.3-§23.4. `006H6` preserves full action objects and renders
+the backend's denial facts without a parallel React workflow matrix.
+
+#### Finding 4 - Medium - The interim portal limit cleanup changed the approved visual system
+
+Removing client-owned money arithmetic was necessary, but `MP05_NewApplication.tsx` replaced the
+approved three-column green limit-card composition with a one-column slate notice and changed the
+red over-limit alert to slate. That violates the binding Frontend Design Rules' colour, layout, and
+card constraints. Existing `006Z2` is sharpened to restore the original composition with server
+projections and source-safe advisory copy.
+
+### Spec
+
+#### Finding 1 - High - 006H4's named acceptance proof is essentially unimplemented
+
+The slice's Test Cases require exact default-container URL/body/request-count/refresh/output proof
+for eligibility, limit, appraisal create/update/revalidate/submit/review/return/reject/sanction,
+roles, object denial, stale writes, and sanction identity. None is exercised through the container.
+The static tests can pass while the real effects and action handler are broken. Corrective action:
+`006H6`, and `006H3` now depends on it.
+
+#### Finding 2 - High - The owner-applied 005FA2 auth fix lacks its required interaction/flag proof
+
+The production fallback was removed, but `005FA2` is marked Complete outside Ralph while absent
+from `completed_slices`; its checklist/evidence is empty. Tests inspect source strings and static
+context markup rather than submitting an empty form, proving false/true demo-flag behavior, or
+exercising logout identity clearing. Created High-risk
+`005FA3-portal-auth-interaction-and-demo-flag-proof`. The state ledger now records the owner-applied
+005FA2 work while 005FA3 owns independent closure.
+
+#### Finding 3 - Medium - 006G3's import guard does not cover every promised alias/package form
+
+The production dependency direction and exact event ownership are correct, but the AST collector
+records only `ImportFrom.module`. It misses forms such as `from sfpcl_credit import approvals as a`,
+and its approvals-side private-boundary check rejects only one exact `credit.modules.common`
+literal. This is narrower than 006G3's explicit aliased/package/private-module test contract.
+Created Medium-risk `006G4-sanction-dependency-boundary-regression` with positive and negative
+synthetic fixtures plus a non-vacuous repository scan.
+
+#### Finding 4 - Medium - Interim portal copy invents an unstated over-limit outcome
+
+The interim panel says an above-limit request “may be reduced or returned.” Source Epic 006
+contracts say it sets an exception-required flag/warning and enters the configured exception
+workflow; they do not promise reduction or return. `006Z2` is sharpened to display only the server
+projection/warning and configured exception status while restoring prototype fidelity.
+
+### Verified Closures, Test Quality, and Functional IDs
+
+002J2 externally emits `FORBIDDEN` and preserves specialized denial codes; its compatibility
+adapter intentionally remains while older test expectations are migrated. 004E2's current writes,
+conservative A-063 legacy backfill, immutable reads, malformed-body zero-write cases, and exact
+index/migration assertions close M02-FR-009/BR-010. 006G3 removes the app cycle and durably binds the
+exact workflow event with substantive rollback and PostgreSQL race assertions. CR-001 freezes only
+the two dashboard baselines, pins `Asia/Kolkata`, resolves the shared venv from Git common-dir, and
+its independent log runs both scenarios twice successfully.
+
+No epic became fully complete in this window. M04-FR-004 through M04-FR-011 remain backend-present;
+FR-010/FR-011 UI confidence remains High risk until 006H6 and 006H3. M04-FR-001/M04-FR-002 remain
+explicitly deferred to 012EA under A-053, and M04-FR-003 retains A-054's receipt-time proxy.
+
+Summary: Standards found 2 High and 2 Medium issues; worst is a view-owned action projection that
+can contradict backend transition gates. Spec found 2 High and 2 Medium issues; worst is 006H4
+being marked complete for a real-container contract it did not test.
+
+## 2026-07-11 03:08 - Architecture Review 2026-07-11_030117_architecture_review
+
+Reviewed completed product slices since architecture-review commit `6efe1a8`:
+- `006E4-legacy-appraisal-remediation-and-history-backfill` (`69d5af0`)
+- `006F4-postgresql-credit-concurrency-acceptance` (`1b5b24a`)
+- `004E-witness-shareholder-validation` (`c25950f`)
+- `006G2-sanction-handoff-module-and-read-contract` (`d7f98c9`)
+- `006H2-workbench-action-contract-hardening` (`55a9074`)
+
+The review checked `git diff 6efe1a8...HEAD`, the five slice/run packets, migrations,
+implementation/tests, Epic 004/006 digests, ADR-0005, and cited source sections. Standards and spec
+fidelity were reviewed independently. Production code was not changed. `CONTEXT.md` still describes
+the repository truthfully, and `.ralph/state.json` contains no Blocked slices to reopen.
+
+### Standards
+
+#### Finding 1 - High - Global permissions still override resource action authority
+
+`AppraisalWorkbench.tsx` unions `/auth/me.available_actions` with appraisal/case actions before
+checking controls. `/auth/me.available_actions` is the user's complete permission list, while the
+appraisal serializer returns no resource actions. Therefore an empty resource action list cannot
+deny a globally permissioned user, React still owns the state/role matrix, and the dedicated legacy
+revalidation action never reaches the real container. This violates codebase-design §23.3-§23.4
+and the central 006H2 requirement. Corrective action: created High-risk
+`006H4-workbench-authoritative-actions-and-container-tests` and made 006H3 depend on it.
+
+#### Finding 2 - High - Required real-container action tests are still absent
+
+`AppraisalWorkbench.test.tsx` server-renders only `AppraisalWorkbenchView` with injected props and
+mock callbacks. The API tests invoke wrappers directly. No test mounts the default container,
+selects an application, clicks an action, observes HTTP/state refresh, or proves a resource denial
+beats `/auth/me`. This repeats the prior review's explicit test-quality finding and violates
+codebase-design §26.3 plus 006H2's Test Cases/Acceptance Criteria. 006H4 owns failing-first container
+coverage for every action, denial, stale write, returned draft, legacy repair, and sanction reload.
+
+#### Finding 3 - High - The sanction seam introduced the dependency cycle ADR-0005 forbids
+
+`credit.modules.appraisal_workflow` imports the approvals handoff while that handoff imports
+credit-owned errors/object-access logic. Codebase-design §36.2 permits `approvals -> credit`, not
+the reverse, and explicitly says a circular dependency means the seam is misplaced. The narrow
+static test rejects only `credit -> approvals.models`, so it certifies an interface import while
+missing the package cycle. Corrective action: created High-risk
+`006G3-sanction-handoff-dependency-and-evidence-ownership`.
+
+#### Finding 4 - Medium - New permission denials preserve a source-contract error code drift
+
+The witness endpoint returns `403 PERMISSION_DENIED`; source API §7.1 defines missing permission as
+`403 FORBIDDEN` and reserves distinct codes for object, sensitive-field, and approval-authority
+denials. This is inherited by many earlier adapters and the local contract harness, but 004E added
+another endpoint that cements the divergence. Corrective action: created Medium-risk
+`002J2-forbidden-permission-error-contract-alignment` to migrate the shared contract without
+changing authorization decisions.
+
+#### Finding 5 - Medium - 006F4 altered authoritative assertions despite its no-change rule
+
+006F4 correctly ran all five PostgreSQL races twice with zero skips and fixed invalid fixture
+binding. However, it replaced structured workflow action/metadata assertions with decision-ID
+substring checks even though the slice required the five tests to execute without changing or
+weakening assertions. The old fields were retired, so a canonical assertion update was necessary,
+but substring matching is weaker than exact state/reason/identity proof. 006G3 owns exact canonical
+workflow evidence assertions while rerunning the same five-race acceptance.
+
+### Spec
+
+#### Finding 1 - High - 006H2 implemented action authority incorrectly
+
+006H2 requires controls from backend resource `available_actions` intersected with `/auth/me`
+usability and says controls disappear when the server denies them. The global-permission union and
+missing appraisal action projection implement the opposite precedence. The real legacy-repair
+button is unreachable, while other controls can remain visible from permission plus local state.
+Corrective action: 006H4 adds the object/state-aware backend projection and makes React intersect,
+never union, resource actions.
+
+#### Finding 2 - High - 006H2's mandated behavior proof is partial
+
+The slice explicitly requires mounting the real container, mocked HTTP, clicking every action, and
+asserting exact bodies plus refresh/error/role/object/stale behavior. Static markup and direct API
+wrapper tests do not meet that requirement and concealed Spec Finding 1. Corrective action: 006H4.
+
+#### Finding 3 - Medium - Malformed witness JSON can escape the standard 400 envelope
+
+004E requires malformed input to return a standard validation envelope. `parse_json_body` raises
+Django `ValidationError` for malformed or non-object JSON, but the witness adapter catches only its
+domain `WitnessValidationError`. Corrective action: created Medium-risk
+`004E2-witness-evidence-snapshot-and-input-hardening` with failing-first malformed-body/no-write
+coverage.
+
+#### Finding 4 - Medium - Witness verification-time folio evidence is not persisted
+
+004E says the qualifying shareholding folio is persisted evidence. `Witness` stores neither the
+shareholding nor a folio snapshot; every GET reselects the currently first active positive holding
+and otherwise falls back to the mutable member folio. Later shareholding changes can therefore
+rewrite the returned basis for an old verification. The same model also creates redundant automatic
+and explicit application/hash indexes. 004E2 owns an unambiguous legacy backfill, immutable
+shareholding/folio evidence, stable read regression, and index cleanup.
+
+#### Finding 5 - Medium - Approval handoff does not own the workflow event promised by 006G2
+
+006G2 says the approvals module returns the created workflow-event UUID. Credit still creates the
+event and passes it to approvals serialization; reload then queries the newest matching application
+event instead of a durable case-linked creation result. 006G3 moves the event into the atomic
+approvals handoff and proves exact create/reload identity and rollback.
+
+### Test Quality and Functional IDs
+
+006E4's state-specific remediation, append-only migration, negative paths, and rollback assertions
+are substantive. 006F4's two real PostgreSQL runs execute all five races and close the prior
+critical acceptance gap, subject to the exact-evidence assertion correction above. 004E's core
+permission/KYC/name/shareholder/masking/audit matrix is useful but misses malformed bodies and
+historical evidence stability. 006G2's rollback/read cases are meaningful but its dependency test
+is too narrow. 006H2's projection/client assertions are useful but do not substitute for container
+behavior.
+
+M02-FR-009/BR-010 is behaviorally present but remains Medium risk until 004E2 makes its evidence
+durable. M04-FR-004 through M04-FR-011 remain implemented at the backend; confidence in FR-010/
+FR-011's reachable UI path remains High risk until 006H4. M04-FR-001/M04-FR-002 remain explicitly
+deferred to 012EA under A-053, and M04-FR-003 retains the explicit A-054 receipt-time proxy. No new
+M03 requirement was claimed by 004E, and no material scope creep was found.
+
+Summary: Standards found 3 High and 2 Medium issues; worst is resource authorization remaining
+client/global-permission driven and untested. Spec found 2 High and 3 Medium issues; worst is the
+same broken 006H2 authority/interaction contract. Corrective order is 002J2 -> 004E2 -> 006G3 ->
+006H4 -> 006H3 -> 006X.
+
+## 2026-07-10 21:39 - Architecture Review 2026-07-10_213352_architecture_review
+
+Reviewed completed product slices since architecture-review commit `46442fe`:
+- `006E3-appraisal-history-and-review-authority-hardening` (`cd3aca6`)
+- `006F3-appraisal-lock-order-and-postgresql-concurrency-closure` (`b022c83`)
+- `006G-submit-to-sanction` (`b1b8889`)
+- `006H-eligibility-appraisal-frontend-integration` (`b7cf63f`)
+
+The review checked `git diff 46442fe...HEAD`, the four slice/run packets, migrations, backend and
+frontend implementation/tests, Epic 006 and both Epic 006/007 digests, and the cited primary-source
+sections. Standards and spec fidelity were reviewed independently. Production code was not changed.
+
+### Standards
+
+#### Finding 1 - Critical - Required PostgreSQL acceptance failed but the slices merged
+
+006F3 explicitly says a connection failure or collected-but-unexecuted test is failed acceptance
+and that the slice must not be marked Complete or merged. Its committed review packet says “Failed
+acceptance; do not commit or merge”: four PostgreSQL tests were found, zero executed. The next
+artifact nevertheless says Success, state marks 006F3 Complete, and 006G ran. 006G then added a
+fifth PostgreSQL-only duplicate-submission race; that command also found the test and executed zero
+while the run reported success.
+
+This repeats the prior architecture review's highest-risk finding and violates 006F3/006G plus
+Decision Policy §2. Corrective action: created High-risk
+`006F4-postgresql-credit-concurrency-acceptance`. It must execute all five loan-limit, appraisal,
+and sanction races twice on real PostgreSQL with zero skips; unavailable execution is failure.
+
+#### Finding 2 - High - Frontend recreates backend workflow state and loses action authority
+
+The workbench derives action availability from a locally maintained role/permission/status matrix
+instead of backend `available_actions`. After sanction POST, the response does not contain the new
+application/appraisal statuses, so React hard-codes both strings. Revalidation is shown under
+submit-review permission even though the backend requires update plus risk-management authority and
+legacy-unverified state. This violates codebase-design §23.3-§23.4 and 006H's no-synthesis rule.
+
+Corrective action: 006G2 returns canonical states/actions and a reload-safe case read; 006H2 consumes
+them and deletes the local workflow matrix/status synthesis.
+
+#### Finding 3 - High - The approved Appraisal Workbench was redesigned without visual proof
+
+006H replaced the approved 1,186-line staged queue/detail workbench with a 226-line condensed form
+and rewrote the eligibility and calculator compositions. These are layout/card/density changes, not
+only labels, data, visibility, and actions. That violates the binding Frontend Design Rules and the
+slice's preserve/reuse requirement. No screenshot or visual-regression result exists; the packet
+defers visual proof to 006X despite the 006H visual acceptance requirement.
+
+Corrective action: created Medium-risk `006H3-appraisal-workbench-prototype-fidelity-restoration`.
+It restores the pre-006H composition with real data and requires host screenshots/visual regression.
+
+#### Finding 4 - High - Frontend tests do not exercise the implemented action path
+
+`AppraisalWorkbench.test.tsx` renders only the presentational view to static markup. It never mounts
+the container, runs effects, clicks a control, mocks HTTP at the UI interface, verifies mutation
+refresh, or proves one-call stale behavior through the page. This fails codebase-design §26.3 and
+006H's explicit render/action-test requirement. The missing interaction path concealed the broken
+PATCH and revalidation gates described below.
+
+Corrective action: created High-risk `006H2-workbench-action-contract-hardening`, with real container
+tests for every action and exact request/response/state assertions.
+
+#### Finding 5 - Medium - Sanction handoff crosses the module seam in the wrong direction
+
+`credit.modules.appraisal_workflow` imports and persists the concrete `approvals.ApprovalCase`
+model. The documented direction is `approvals -> credit`, and the source names
+`approvals.modules.approval_case_engine` as the case seam. Keeping creation in credit would spread
+case uniqueness, reads, matrix enrichment, and later action invariants across two apps.
+
+Corrective action: accepted ADR-0005 and created High-risk 006G2. Approval-case creation/read/
+serialization move behind one approvals-owned module interface; credit retains frozen appraisal,
+review consistency, and lock-order behavior without importing the concrete approvals model.
+
+#### Finding 6 - Medium - Malformed sanction JSON can escape the standard envelope
+
+The new sanction view does not catch `ValidationError` from malformed or non-object JSON, unlike
+established application adapters. That input can escape the standard `400 VALIDATION_ERROR`
+contract. Corrective action: 006G2 owns the malformed-body envelope regression.
+
+#### Finding 7 - Medium - New transport code duplicates and weakens existing client behavior
+
+`creditAssessmentApi.ts` implements another authenticated `fetch` path that discards envelope
+metadata and has no shared refresh/401/request-ID behavior. This violates codebase-design §23.5
+and increases transport duplication.
+
+Corrective action: 006H2 must reuse the shared authenticated request/envelope implementation
+instead of layering another shallow client.
+
+### Spec
+
+#### Finding 1 - Critical - PostgreSQL outcomes required by 006F3/006G are absent
+
+Same acceptance evidence as Standards Finding 1. The tests themselves assert meaningful competing
+outcomes, but none ran on the database whose row locks they are meant to prove. 006F4 owns closure.
+
+#### Finding 2 - High - Existing and returned appraisals cannot be saved from the workbench
+
+On load, the full appraisal GET response becomes the edit form. Save PATCH sends that object back,
+while the adapter removes only a null tenure. Response-only IDs, frozen snapshots, provenance,
+review history, status, reviewers, TAT, and rejection facts therefore hit the backend's strict
+unknown-field validation. The client test avoids the defect by PATCHing only a hand-built amount.
+This breaks 006H's required update and returned-draft revise/resubmit flows.
+
+Corrective action: 006H2 adds an exact response-to-writable-draft projection and interaction tests
+that save both ordinary and returned drafts.
+
+#### Finding 3 - High - Migration 0005 can permanently strand legacy appraisals
+
+Migration 0005 downgrades unproven appraisals in every state to `legacy_unverified`, but explicit
+revalidation is draft-only while review and sanction require verified provenance. A
+`review_pending` or `reviewed` legacy row therefore has no repair path. The migration also skips the
+latest known returned decision when the appraisal was resubmitted and is now `review_pending`, so a
+reason that is still present in the latest projection is not backfilled. Fixtures cover neither
+case, contrary to 006E3's “blocked until revalidation succeeds” and latest-known-backfill contract.
+
+Corrective action: created High-risk `006E4-legacy-appraisal-remediation-and-history-backfill` and
+recorded conservative remediation assumption A-061. New evidence never inherits an old review;
+immutable history remains, and reviewed rows require maker resubmission plus fresh review.
+
+#### Finding 4 - Medium - Pending case identity is not recoverable after reload
+
+006H requires API-loaded sanction state and retention of the case UUID for Epic 007. The loader
+fetches only eligibility, limit, and appraisal, then clears `sanctionSubmission`; no subsequent read
+returns the case. A reload shows only a generic submitted label and loses the UUID. The same POST
+response also omits canonical application/appraisal statuses, causing the client synthesis above.
+
+Corrective action: ADR-0005/006G2 add one case-summary read and complete state response; 006H2 loads
+and retains them.
+
+#### Finding 5 - Medium - Revalidation uses the wrong UI authority and state
+
+The revalidation button is controlled by draft state plus submit-review permission, although the
+backend requires update plus risk-management permissions and the action is meaningful only for
+legacy-unverified provenance. Authorized repair users can be blocked while submit-only users see an
+action guaranteed to fail. Corrective action: 006H2 consumes the backend action contract.
+
+### Test Quality and Functional IDs
+
+006E3's authority, positive chronology, append-only history, rollback, and migration tests are
+otherwise substantive. 006G's SQLite functional suite meaningfully covers strict payloads,
+permissions/scope, invalid/rejected/repeated states, history consistency, redaction, and rollback.
+The test gaps are specific: non-draft migration remediation, real PostgreSQL execution, and actual
+frontend container actions/visual regression.
+
+M04-FR-004 through M04-FR-009 have implemented backend behavior and substantive assertions.
+M04-FR-010/M04-FR-011 behavior exists but remains High-risk until 006E4/006F4/006G2 close legacy,
+concurrency, and sanction-handoff defects. M04-FR-001/M04-FR-002 remain explicitly deferred to
+012EA under A-053; M04-FR-003 retains the explicit A-054 receipt-time proxy. Epic 006 is not
+complete and 006X now depends on 006H3.
+
+Summary: Standards found 1 Critical, 3 High, and 3 Medium issues; worst is merging explicitly failed
+PostgreSQL acceptance. Spec found 1 Critical, 2 High, and 2 Medium issues; worst is the same absent
+database proof, followed by permanently stranded legacy rows and an unusable update path.
+
+## 2026-07-10 19:15 - Architecture Review 2026-07-10_190455_architecture_review
+
+Reviewed completed product slices since architecture-review commit `d29f697`:
+- `006D2C-loan-limit-concurrency-and-boundary-regression` (`9dd5386`)
+- `006E2-appraisal-source-contract-and-snapshot-hardening` (`d5753d1`)
+- `006F-credit-manager-review` (`2684996`)
+- `006F2-credit-manager-appraisal-rejection` (`3f7f386`)
+
+The review checked `git diff d29f697...HEAD`, all four slice/run packets, implementation, migrations,
+tests, Epic 006 and its digest, and the cited source sections. Standards and spec fidelity were
+reviewed independently. No material scope creep was found.
+
+### Finding 1 - High - Legacy appraisals are labelled verified without positive audit proof
+
+006E2 permits a legacy projection copy only when audit chronology proves the current assessment was
+the appraisal's original input. Migration 0003 instead treats absence of a later audit as proof: if
+the source timestamps predate preparation and no later success row is found, it copies the current
+rows and writes `prerequisite_provenance = verified`. Its “safe” migration fixture creates no
+eligibility or loan-limit success audit at all, so the test enshrines missing evidence as proof.
+
+That can silently bless manually imported, partially audited, or historically incomplete current
+assessment rows as the decision basis, contrary to ADR-0003 and the slice's conservative legacy
+contract. Corrective action: accepted ADR-0004 for the related review-history design and created
+High-risk `006E3-appraisal-history-and-review-authority-hardening`. Its forward repair requires
+positive pre-appraisal success evidence for both exact prerequisite IDs, downgrades every
+unproven/later-rerun row to `legacy_unverified`, and keeps explicit revalidation as the only repair.
+
+### Finding 2 - High - Review authority is permissioned but not Credit-Manager-only
+
+Source auth §25.3 says appraisal review requires `credit.appraisal.review` and “User must be Credit
+Manager”; 006F likewise requires the Credit Manager credit-domain boundary. `review()` checks the
+permission and then the generic application object-access helper. That helper grants owner access,
+so a non-Credit-Manager application creator/receiver who is granted the permission can review their
+in-scope application. Existing tests cover maker-checker, no permission, and an out-of-scope user,
+but not an in-scope non-Credit-Manager permission holder.
+
+Corrective action: 006E3 requires both the exact permission and `credit_manager` role membership,
+with a negative owner/receiver regression and no-success-evidence assertions. Role is not inferred
+from a permission grant.
+
+### Finding 3 - High - A returned review reason is overwritten by the next review
+
+006F requires a non-blank returned reason and explicitly says not to lose it and to retain prior
+return history. The implementation stores only latest `review_comments`/`last_review_decision` on
+the appraisal. When the maker revises/resubmits and the Credit Manager reviews again, the second
+decision overwrites the original return reason. Generic audit correctly omits comments, so neither
+audit nor workflow can recover it. The return/resubmit/re-review test asserts state and event counts
+but never asserts that the first reason survives.
+
+Corrective action: ADR-0004 makes an immutable appraisal-owned decision record the historical
+source while the existing fields remain a latest projection. 006E3 adds/backfills that record,
+keeps reason text outside generic audit JSON, and proves returned and final decisions both survive.
+
+### Finding 4 - High - Mandatory PostgreSQL concurrency evidence was skipped before merge
+
+006D2C says its competing-calculation proof is authoritative only on PostgreSQL and explicitly says
+not to commit/merge if the command does not pass. The committed evidence contains a missing-driver
+failure and two SQLite skips; its own review packet says “Success pending required PostgreSQL
+independent validation.” Nevertheless the slice is Complete and was merged. This review confirmed
+`psycopg 3.3.4` is now installed, but no PostgreSQL server is reachable and sandboxed `initdb`
+cannot allocate the required shared-memory segment, so there is still no green transaction outcome.
+
+The new 006F2 rejection path also exposes an inverse lock order: draft creation/update locks
+application then appraisal, while rejected review locks appraisal and then the rejection-note seam
+locks application. Concurrent stale PATCH/reject requests can deadlock rather than cleanly serialize.
+
+Corrective action: created High-risk `006F3-appraisal-lock-order-and-postgresql-concurrency-closure`.
+It normalizes application → appraisal → rejection/history lock order, adds public-interface
+competing-review regressions, and must execute both the new cases and the existing 006D2C cases on
+real PostgreSQL with zero skips. 006G now depends on 006F3.
+
+### Finding 5 - Medium - Contract summaries contradict the detailed implemented section
+
+`docs/working/API_CONTRACTS.md`'s top-level appraisal row still says Credit Manager review is queued,
+while its detailed 006F/006F2 section correctly documents reviewed/returned/rejected behavior. The
+Epic 006 digest likewise retains an older requirement-status paragraph alongside newer implemented
+sections. Corrective action: 006E3 must reconcile both summaries while updating the history contract.
+
+### Finding 6 - Pass - Most tests have substantive outcome and rollback assertions
+
+006D2C's PostgreSQL test design checks row/UUID cardinality, complete projections, deterministic
+ordering, and matching audit/workflow outcomes; the failure is that it never executed on PostgreSQL.
+006E2 covers frozen same-UUID projections, strict required fields, safe/ambiguous migration shapes,
+revalidation scope, and rollback. 006F/006F2 cover state, maker-checker, permission/object denial,
+rejection-note uniqueness, redaction, frozen facts, and forced cross-domain rollback. The findings
+above are precise missing cases, not coverage-number complaints.
+
+Functional-ID spot check: Epic 006 is not Complete. M04-FR-008/M04-FR-009 facts are implemented;
+M04-FR-010 has review behavior but sanction gating remains 006G; M04-FR-011 rejection is reachable
+but awaits 006E3 authority/history and 006F3 concurrency correction. M04-FR-001/M04-FR-002 remain
+explicitly deferred to 012EA under A-053, and M04-FR-003 retains the explicit A-054 TAT-anchor
+assumption. No completed epic is being falsely marked complete.
+
 ## 2026-07-10 17:33 - Architecture Review 2026-07-10_173305_architecture_review
 
 Reviewed completed product slices since architecture-review commit `18d403e`:

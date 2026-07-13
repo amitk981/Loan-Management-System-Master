@@ -1,0 +1,11 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006Y15-witness-authority-matrix-behavioral-closure.md
+ M docs/slices/006Z7-active-member-relaxation-authority-and-evidence-race-closure.md
+ M docs/slices/006Z8-portal-limit-provenance-module-and-interaction-closure.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-004-member-kyc-master.md
+ M sfpcl_credit/applications/modules/application_authority.py
+ M sfpcl_credit/applications/views.py
+ M sfpcl_credit/tests/test_witness_api.py
+?? .ralph/runs/2026-07-13_011233_normal_run/

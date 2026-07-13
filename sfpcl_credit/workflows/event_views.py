@@ -15,7 +15,7 @@ def workflow_event_list(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read workflow events.",
         )
     try:

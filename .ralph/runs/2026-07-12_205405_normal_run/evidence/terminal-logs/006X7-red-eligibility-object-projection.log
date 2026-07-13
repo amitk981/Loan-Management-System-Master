@@ -1,0 +1,20 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_credit_action_parity_matrix (unittest.loader._FailedTest.test_credit_action_parity_matrix)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_credit_action_parity_matrix
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_205405_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 15, in <module>
+    from sfpcl_credit.credit.modules.eligibility_assessment import (
+ImportError: cannot import name 'eligibility_run_action' from 'sfpcl_credit.credit.modules.eligibility_assessment' (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_205405_normal_run/sfpcl_credit/credit/modules/eligibility_assessment.py)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

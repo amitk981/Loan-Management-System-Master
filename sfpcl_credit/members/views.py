@@ -1,5 +1,6 @@
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.views.decorators.http import require_GET, require_http_methods
+from django.utils.dateparse import parse_date
 
 from sfpcl_credit.api import (
     error_response,
@@ -11,22 +12,51 @@ from sfpcl_credit.api import (
 )
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.members import services
+from sfpcl_credit.members.modules import MemberRegistry
+from sfpcl_credit.members.modules.active_member_status import (
+    ActiveMemberObjectAccessDenied,
+    ActiveMemberStatusConflict,
+    ActiveMemberStatusModule,
+)
 
 
-@require_GET
+def _serialize_member(member, user):
+    pending_change = (
+        member.identity_change_requests.filter(status="pending")
+        .order_by("created_at")
+        .first()
+    )
+    return services.serialize_member_profile(
+        member,
+        user,
+        MemberRegistry.identity_approval_action(member, pending_change, user),
+    )
+
+
+@require_http_methods(["GET", "POST"])
 def member_collection(request):
     user, response = http_auth.authenticated_user(request)
     if response is not None:
         return response
+    if request.method == "POST":
+        try:
+            member = MemberRegistry.create(
+                parse_json_body(request), user, request_ip(request), request_user_agent(request)
+            )
+        except PermissionDenied as exc:
+            return error_response(request, 403, "FORBIDDEN", str(exc))
+        except ValidationError as exc:
+            return error_response(request, 400, "VALIDATION_ERROR", "Member payload failed validation.", services.validation_field_errors(exc))
+        return success_response(_serialize_member(member, user), request)
     if not services.user_can_read_members(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read members.",
         )
     try:
-        data, pagination = services.paginated_members(request.GET)
+        data, pagination = services.paginated_members(request.GET, user)
     except ValidationError as exc:
         return error_response(
             request,
@@ -38,22 +68,81 @@ def member_collection(request):
     return list_response(data, pagination, request)
 
 
-@require_GET
+@require_http_methods(["GET", "PATCH"])
 def member_detail(request, member_id):
     user, response = http_auth.authenticated_user(request)
     if response is not None:
         return response
-    if not services.user_can_read_members(user):
-        return error_response(
-            request,
-            403,
-            "PERMISSION_DENIED",
-            "You do not have permission to read members.",
-        )
-    member = services.get_member_profile(member_id)
+    if request.method == "PATCH":
+        return _member_update_response(request, member_id, user, reverification=False)
+    try:
+        member = MemberRegistry.get(member_id, user)
+    except PermissionDenied as exc:
+        code = "FORBIDDEN" if str(exc).startswith("Missing required permission:") else "OBJECT_ACCESS_DENIED"
+        return error_response(request, 403, code, str(exc))
     if member is None:
         return error_response(request, 404, "NOT_FOUND", "Member was not found.")
-    return success_response(services.serialize_member_profile(member, user), request)
+    return success_response(_serialize_member(member, user), request)
+
+
+@require_http_methods(["POST"])
+def member_reverification(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if not services.user_can_update_members(user):
+        return error_response(request, 403, "FORBIDDEN", "You do not have permission to update members.")
+    return member_identity_change_requests(request, member_id)
+
+
+@require_http_methods(["POST"])
+def member_identity_change_requests(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None: return response
+    try:
+        change = MemberRegistry.request_identity_change(member_id, parse_json_body(request), user)
+    except PermissionDenied as exc:
+        return error_response(request, 403, "FORBIDDEN", str(exc))
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Identity change request failed validation.", services.validation_field_errors(exc))
+    if change is None: return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+    return success_response({"identity_change_request_id": str(change.identity_change_request_id), "member_id": str(change.member_id), "status": change.status, "member_version": change.member_version}, request)
+
+
+@require_http_methods(["POST"])
+def approve_member_identity_change(request, request_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None: return response
+    try:
+        parse_json_body(request)
+        member = MemberRegistry.approve_identity_change(request_id, user)
+    except PermissionDenied as exc:
+        code = "OBJECT_ACCESS_DENIED" if str(exc) == "You cannot access this member." else "FORBIDDEN"
+        return error_response(request, 403, code, str(exc))
+    except services.MemberWriteConflict as exc:
+        return error_response(request, 409, exc.code, exc.message, exc.field_errors)
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Approval payload failed validation.", services.validation_field_errors(exc))
+    if member is None: return error_response(request, 404, "NOT_FOUND", "Identity change request was not found.")
+    return success_response(_serialize_member(member, user), request)
+
+
+def _member_update_response(request, member_id, user, reverification):
+    try:
+        member = MemberRegistry.update(member_id, parse_json_body(request), user, request_ip(request), request_user_agent(request))
+    except PermissionDenied as exc:
+        return error_response(request, 403, "FORBIDDEN", str(exc))
+    except services.MemberWriteConflict as exc:
+        if exc.audit_rejection:
+            services.audit_identity_change_rejected(
+                user, member_id, sorted(exc.field_errors), request_ip(request), request_user_agent(request)
+            )
+        return error_response(request, 409, exc.code, exc.message, exc.field_errors)
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Member payload failed validation.", services.validation_field_errors(exc))
+    if member is None:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+    return success_response(_serialize_member(member, user), request)
 
 
 @require_http_methods(["POST"])
@@ -100,7 +189,7 @@ def reveal_sensitive_field(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read members.",
         )
 
@@ -179,14 +268,14 @@ def member_nominees(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read nominees.",
         )
     if request.method == "POST" and not services.user_can_create_nominees(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create nominees.",
         )
 
@@ -238,14 +327,14 @@ def member_shareholdings(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read shareholdings.",
         )
     if request.method == "POST" and not services.user_can_create_shareholdings(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create shareholdings.",
         )
 
@@ -287,6 +376,103 @@ def member_shareholdings(request, member_id):
 
 
 @require_http_methods(["GET", "POST"])
+def member_produce_supply_records(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if request.method == "GET" and not services.user_can_read_members(user):
+        return error_response(request, 403, "FORBIDDEN", "You do not have permission to read produce supply records.")
+    if request.method == "POST" and not services.user_can_capture_produce_supply(user):
+        return error_response(request, 403, "FORBIDDEN", "You do not have permission to capture produce supply records.")
+    member = services.get_accessible_member(member_id)
+    if member is None:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+    if request.method == "GET":
+        return success_response(
+            [services.serialize_produce_supply_record(row, user) for row in member.produce_supply_records.all()],
+            request,
+        )
+    try:
+        record = services.create_produce_supply_record(
+            member, parse_json_body(request), user, request_ip(request), request_user_agent(request)
+        )
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Produce supply payload failed validation.", services.validation_field_errors(exc))
+    except services.ProduceSupplyConflict as exc:
+        return error_response(request, 409, exc.code, exc.message, exc.field_errors)
+    return success_response(services.serialize_produce_supply_record(record, user), request)
+
+
+@require_http_methods(["POST"])
+def produce_supply_record_verify(request, record_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        body = parse_json_body(request)
+        record = services.verify_produce_supply_record(
+            record_id, body.get("version"), user, request_ip(request), request_user_agent(request)
+        )
+    except PermissionError as exc:
+        return error_response(request, 403, "FORBIDDEN", str(exc))
+    except ValidationError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Supply verification payload failed validation.", services.validation_field_errors(exc))
+    except services.ProduceSupplyConflict as exc:
+        return error_response(request, 409, exc.code, exc.message, exc.field_errors)
+    if record is None:
+        return error_response(request, 404, "NOT_FOUND", "Produce supply record was not found.")
+    return success_response(services.serialize_produce_supply_record(record, user), request)
+
+
+@require_http_methods(["POST"])
+def active_member_status_verify(request, member_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    body = parse_json_body(request)
+    if not isinstance(body, dict):
+        return error_response(request, 400, "VALIDATION_ERROR", "Active-member verification payload failed validation.", {"non_field_errors": "This field must be an object."})
+    allowed_fields = {"result_id", "as_of_date", "decision", "reason", "version"}
+    unknown_fields = sorted(set(body) - allowed_fields)
+    if unknown_fields:
+        return error_response(
+            request, 400, "VALIDATION_ERROR",
+            "Active-member verification payload failed validation.",
+            {field: "Unknown field." for field in unknown_fields},
+        )
+    if not body.get("as_of_date"):
+        return error_response(
+            request, 400, "VALIDATION_ERROR",
+            "Active-member verification payload failed validation.",
+            {"as_of_date": "This field is required."},
+        )
+    as_of_date = parse_date(body.get("as_of_date", "")) if body.get("as_of_date") else None
+    if body.get("as_of_date") and as_of_date is None:
+        return error_response(request, 400, "VALIDATION_ERROR", "Active-member verification payload failed validation.", {"as_of_date": "Enter a valid ISO date."})
+    try:
+        result = ActiveMemberStatusModule().verify(
+            actor=user,
+            member_id=member_id,
+            result_id=body.get("result_id"),
+            decision=body.get("decision"),
+            reason=body.get("reason"),
+            version=body.get("version"),
+            as_of_date=as_of_date,
+        )
+    except PermissionError as exc:
+        return error_response(request, 403, "FORBIDDEN", str(exc))
+    except ActiveMemberObjectAccessDenied as exc:
+        return error_response(request, 403, "OBJECT_ACCESS_DENIED", str(exc))
+    except ValueError as exc:
+        return error_response(request, 400, "VALIDATION_ERROR", "Active-member verification payload failed validation.", {"non_field_errors": str(exc)})
+    except ActiveMemberStatusConflict as exc:
+        return error_response(request, 409, exc.code, exc.message)
+    except services.Member.DoesNotExist:
+        return error_response(request, 404, "NOT_FOUND", "Member was not found.")
+    return success_response(result, request)
+
+
+@require_http_methods(["GET", "POST"])
 def member_land_holdings(request, member_id):
     user, response = http_auth.authenticated_user(request)
     if response is not None:
@@ -295,14 +481,14 @@ def member_land_holdings(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read member land and crop records.",
         )
     if request.method == "POST" and not services.user_can_create_land_crop(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create member land and crop records.",
         )
 
@@ -352,14 +538,14 @@ def member_crop_plans(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read member land and crop records.",
         )
     if request.method == "POST" and not services.user_can_create_land_crop(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create member land and crop records.",
         )
 
@@ -409,14 +595,14 @@ def member_bank_accounts(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read member bank account metadata.",
         )
     if request.method == "POST" and not services.user_can_create_bank_metadata(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create member bank account metadata.",
         )
 
@@ -466,14 +652,14 @@ def member_cancelled_cheques(request, member_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read member cancelled cheque metadata.",
         )
     if request.method == "POST" and not services.user_can_create_bank_metadata(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create member cancelled cheque metadata.",
         )
 
@@ -523,14 +709,14 @@ def kyc_profiles(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to read KYC profiles.",
         )
     if request.method == "POST" and not services.user_can_create_kyc_profiles(user):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to create KYC profiles.",
         )
 
@@ -590,7 +776,7 @@ def kyc_profile_detail(request, kyc_profile_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to update KYC profiles.",
         )
     try:
@@ -624,7 +810,7 @@ def kyc_profile_documents(request, kyc_profile_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to upload KYC documents.",
         )
     try:
@@ -651,7 +837,7 @@ def kyc_document_verify(request, kyc_document_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to verify KYC documents.",
         )
     try:

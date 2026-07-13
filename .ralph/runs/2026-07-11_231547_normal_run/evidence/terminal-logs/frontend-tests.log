@@ -1,0 +1,41 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-11_231547_normal_run/sfpcl-lms
+
+ ✓ src/services/authSession.test.ts (15 tests) 12ms
+ ✓ src/services/applicationIntakeApi.test.ts (4 tests) 6ms
+ ✓ src/services/creditAssessmentApi.test.ts (5 tests) 8ms
+ ✓ src/services/portalApi.test.ts (4 tests) 9ms
+ ✓ src/pages/members/Borrower360.test.tsx (4 tests) 106ms
+ ✓ src/services/navigationPermissions.test.ts (7 tests) 8ms
+ ✓ src/pages/applications/ApplicationDetail.test.tsx (9 tests) 132ms
+ ✓ src/pages/applications/CompletenessWorkbench.test.tsx (5 tests) 138ms
+ ✓ src/pages/members/MemberProfile.test.tsx (25 tests) 335ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.test.tsx (21 tests) 414ms
+ ✓ src/services/tracerApi.test.ts (2 tests) 3ms
+ ✓ src/pages/Dashboard.test.tsx (13 tests) 87ms
+ ✓ src/pages/members/MemberDirectory.test.tsx (5 tests) 49ms
+ ✓ src/pages/borrower/portal/PortalMemberViews.test.tsx (4 tests) 91ms
+ ✓ src/pages/notifications/NotificationsCenter.test.tsx (6 tests) 102ms
+ ✓ src/pages/applications/ApplicationList.test.tsx (2 tests) 127ms
+ ✓ src/utils/applicationDisplay.test.ts (5 tests) 5ms
+ ✓ src/contexts/RoleContext.test.tsx (2 tests) 7ms
+ ✓ src/pages/profile/MyProfile.test.tsx (1 test) 24ms
+ ✓ src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx (2 tests) 2ms
+ ✓ src/pages/applications/NomineeSelectionViews.test.tsx (3 tests) 9ms
+ ✓ src/pages/borrower/portal/auth/MP00_Login.test.tsx (2 tests) 8ms
+ ✓ src/pages/sanction/SanctionWorkbench.test.tsx (2 tests) 7ms
+ ✓ src/services/demoAuthFlag.test.tsx (3 tests) 2507ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > fails closed when the flag is unset  2003ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.container.test.tsx (11 tests) 1469ms
+   ✓ default AppraisalWorkbench authenticated HTTP container > calculates a limit from entered source IDs and refreshes four reads  406ms
+
+ Test Files  25 passed (25)
+      Tests  162 passed (162)
+   Start at  23:27:52
+   Duration  5.04s (transform 3.26s, setup 0ms, collect 7.26s, tests 5.67s, environment 421ms, prepare 2.12s)
+

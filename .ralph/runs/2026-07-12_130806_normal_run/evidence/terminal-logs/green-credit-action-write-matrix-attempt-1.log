@@ -1,0 +1,83 @@
+Creating test database for alias 'default'...
+Found 11 test(s).
+System check identified no issues (0 silenced).
+.FEEEE.....
+======================================================================
+ERROR: test_rejected_action_write_pair_and_exact_note_cardinality (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_rejected_action_write_pair_and_exact_note_cardinality)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 223, in test_rejected_action_write_pair_and_exact_note_cardinality
+    self._assert_review_pair("rejected")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 205, in _assert_review_pair
+    projected = workflow.get(actor=reviewer, application_id=self.application.pk).snapshot
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/credit/modules/appraisal_workflow.py", line 424, in get
+    require_application_access(application, actor, permission, permissions)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/credit/modules/common.py", line 61, in require_application_access
+    raise CreditModuleObjectAccessDenied(object_access)
+sfpcl_credit.domain_errors.DomainObjectAccessDenied: Object access denied.
+
+======================================================================
+ERROR: test_returned_action_write_pair (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_returned_action_write_pair)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 220, in test_returned_action_write_pair
+    self._assert_review_pair("returned")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 205, in _assert_review_pair
+    projected = workflow.get(actor=reviewer, application_id=self.application.pk).snapshot
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/credit/modules/appraisal_workflow.py", line 424, in get
+    require_application_access(application, actor, permission, permissions)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/credit/modules/common.py", line 61, in require_application_access
+    raise CreditModuleObjectAccessDenied(object_access)
+sfpcl_credit.domain_errors.DomainObjectAccessDenied: Object access denied.
+
+======================================================================
+ERROR: test_review_denial_matches_projection_for_all_payloads_with_no_history_note_or_evidence (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_review_denial_matches_projection_for_all_payloads_with_no_history_note_or_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 227, in test_review_denial_matches_projection_for_all_payloads_with_no_history_note_or_evidence
+    projected = AppraisalWorkflow().get(actor=reviewer, application_id=self.application.pk, actor_permissions={"credit.appraisal.create"}).snapshot
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/credit/modules/appraisal_workflow.py", line 424, in get
+    require_application_access(application, actor, permission, permissions)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/credit/modules/common.py", line 61, in require_application_access
+    raise CreditModuleObjectAccessDenied(object_access)
+sfpcl_credit.domain_errors.DomainObjectAccessDenied: Object access denied.
+
+======================================================================
+ERROR: test_reviewed_action_write_pair (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_reviewed_action_write_pair)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 217, in test_reviewed_action_write_pair
+    self._assert_review_pair("reviewed")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 205, in _assert_review_pair
+    projected = workflow.get(actor=reviewer, application_id=self.application.pk).snapshot
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/credit/modules/appraisal_workflow.py", line 424, in get
+    require_application_access(application, actor, permission, permissions)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/credit/modules/common.py", line 61, in require_application_access
+    raise CreditModuleObjectAccessDenied(object_access)
+sfpcl_credit.domain_errors.DomainObjectAccessDenied: Object access denied.
+
+======================================================================
+FAIL: test_each_appraisal_permission_denial_matches_projection_and_writes_no_evidence (sfpcl_credit.tests.test_credit_action_parity_matrix.AppraisalActionWriteMatrixTests.test_each_appraisal_permission_denial_matches_projection_and_writes_no_evidence)
+----------------------------------------------------------------------
+sfpcl_credit.domain_errors.DomainPermissionDenied: You do not have permission to create appraisal notes.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_130806_normal_run/sfpcl_credit/tests/test_credit_action_parity_matrix.py", line 176, in test_each_appraisal_permission_denial_matches_projection_and_writes_no_evidence
+    with self.assertRaisesMessage(CreditModulePermissionDenied, create_disabled["disabled_reason"]):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 742, in _assert_raises_or_warns_cm
+    self.assertIn(expected_message, str(getattr(cm, cm_attr)))
+AssertionError: 'Required permission is missing.' not found in 'You do not have permission to create appraisal notes.'
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.200s
+
+FAILED (failures=1, errors=4)
+Destroying test database for alias 'default'...

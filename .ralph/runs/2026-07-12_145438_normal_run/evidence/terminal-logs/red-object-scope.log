@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_registry_identity_approval_projection_matches_object_denied_write (tests.test_member_governance_api.MemberGovernanceApiTests.test_registry_identity_approval_projection_matches_object_denied_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_145438_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 362, in test_registry_identity_approval_projection_matches_object_denied_write
+    action = MemberRegistry.identity_approval_action(member, change, checker)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'MemberRegistry' has no attribute 'identity_approval_action'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

@@ -15,7 +15,7 @@ def upload_document_file(request):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to upload document files.",
         )
     try:
@@ -40,7 +40,7 @@ def download_document_file(request, document_id):
         return error_response(
             request,
             403,
-            "PERMISSION_DENIED",
+            "FORBIDDEN",
             "You do not have permission to download document files.",
         )
     try:

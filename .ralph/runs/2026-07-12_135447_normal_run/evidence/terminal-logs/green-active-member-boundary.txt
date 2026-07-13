@@ -1,0 +1,21 @@
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+.F...
+======================================================================
+FAIL: test_portal_supply_is_read_only_and_scoped_from_portal_account (sfpcl_credit.tests.test_produce_supply_api.ProduceSupplyApiTests.test_portal_supply_is_read_only_and_scoped_from_portal_account)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_135447_normal_run/sfpcl_credit/tests/test_produce_supply_api.py", line 261, in test_portal_supply_is_read_only_and_scoped_from_portal_account
+    self.assertEqual(data["source_status"], "persisted_verified_records")
+AssertionError: 'persisted_qualifying_verified_records' != 'persisted_verified_records'
+- persisted_qualifying_verified_records
+?          -----------
++ persisted_verified_records
+
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.061s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

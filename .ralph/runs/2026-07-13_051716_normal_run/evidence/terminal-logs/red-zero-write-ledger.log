@@ -1,0 +1,23 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_portal_limit_zero_write_ledger_covers_every_required_state_category (sfpcl_credit.tests.test_portal_member_api.PortalMemberApiTests.test_portal_limit_zero_write_ledger_covers_every_required_state_category)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_051716_normal_run/sfpcl_credit/tests/test_portal_member_api.py", line 751, in test_portal_limit_zero_write_ledger_covers_every_required_state_category
+    self.assertEqual(
+AssertionError: Items in the second set but not the first:
+'service_evidence'
+'shareholdings'
+'assessments'
+'individual_profile'
+'landholdings'
+'supply'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

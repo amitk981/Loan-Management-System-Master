@@ -1,0 +1,16 @@
+Architecture review local gates (2026-07-12)
+
+PASS frontend npm run build
+PASS frontend npm run typecheck
+PASS frontend npm run lint
+PASS frontend vitest: 27 files, 175 tests
+PASS backend manage.py check
+PASS backend makemigrations --check --dry-run: no changes detected
+PASS backend coverage test suite: 437 tests, 5 skipped
+PASS backend coverage report: 94% (85% floor)
+PASS slice queue lint
+PASS Ralph workflow regressions
+PASS git diff --check
+
+Warnings retained: Vite CJS deprecation and existing bundle-size/dynamic-import warnings. No gate
+failed and no production file was changed by the architecture review.

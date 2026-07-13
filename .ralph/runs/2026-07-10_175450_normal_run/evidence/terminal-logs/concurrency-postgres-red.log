@@ -1,0 +1,37 @@
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_175450_normal_run/sfpcl_credit/manage.py", line 17, in <module>
+    main()
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_175450_normal_run/sfpcl_credit/manage.py", line 13, in main
+    execute_from_command_line(sys.argv)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 442, in execute_from_command_line
+    utility.execute()
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 436, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/commands/test.py", line 24, in run_from_argv
+    super().run_from_argv(argv)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 405, in run_from_argv
+    parser = self.create_parser(argv[0], argv[1])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 368, in create_parser
+    self.add_arguments(parser)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/commands/test.py", line 54, in add_arguments
+    test_runner_class = get_runner(settings, self.test_runner)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/utils.py", line 370, in get_runner
+    test_runner_class = test_runner_class or settings.TEST_RUNNER
+                                             ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/conf/__init__.py", line 89, in __getattr__
+    self._setup(name)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/conf/__init__.py", line 76, in _setup
+    self._wrapped = Settings(settings_module)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/conf/__init__.py", line 190, in __init__
+    mod = importlib.import_module(self.SETTINGS_MODULE)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1142, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'sfpcl_credit.config.postgres_test_settings'

@@ -1,5 +1,14 @@
 # Digest — Epic 002: Platform Auth and Role Shell
 
+## Architecture Review 2026-07-11 - Permission Error Contract
+
+- Source `api-contracts.md` §7.1 names `FORBIDDEN` for an authenticated user who lacks a global
+  permission. The implemented contract harness and many adapters instead use
+  `PERMISSION_DENIED`; 004E added another instance.
+- Corrective 002J2 migrates the shared staff API contract to `403 FORBIDDEN` while preserving the
+  distinct `OBJECT_ACCESS_DENIED`, `SENSITIVE_FIELD_ACCESS_DENIED`, and
+  `APPROVAL_AUTHORITY_REQUIRED` codes and changing no grants or authorization decisions.
+
 Source of truth: `docs/source/auth-permissions.md` (section numbers below), `docs/source/api-contracts.md` §11–12, 43–44, `docs/source/data-model.md` identity/access tables.
 
 ## Already implemented (002A, 002B — merged to main 2026-07-02; 002B2 completed 2026-07-03)

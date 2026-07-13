@@ -34,6 +34,10 @@ The Sanction Committee, CS, and auditors read real registers generated from appr
 4. Wire the member portal Sanction Outcome view (spec MP12, `MP12_SanctionOutcome.tsx`) to the sanction decision API: borrower sees own outcome, sanctioned amount, and borrower-facing terms only — no internal approval history.
 5. Loading, empty, error, unauthorized states throughout; reuse existing table/queue patterns only.
 
+## Owned Mock Removals
+- `src/pages/registers/RegistersHub.tsx` — the S23 (Credit Sanction Register) and S25 (Exception Register) views must run with no mock reads after this slice; the file's remaining register views and final `mockData` import removal are owned by 012DA.
+- `src/pages/settings/SettingsHub.tsx` — approval matrix panel only; the remaining panels are owned by 007J2.
+
 ## Test Cases
 - Register rows match seeded approval/sanction fixtures (generated, not hand-entered).
 - Non-permitted role sees no matrix edit action and receives 403 on direct API call.

@@ -1,0 +1,8 @@
+Focused repair verification
+
+Command:
+rg -n "getByLabel\\(label, \\{ exact: true \\}\\)" sfpcl-lms/e2e/member-governance-variants.e2e.spec.ts
+
+Result:
+The shared common-field helper uses page.getByLabel(label, { exact: true }). The exact `PAN` input
+therefore cannot resolve to the distinct `Signatory PAN` input reported by both trusted red runs.

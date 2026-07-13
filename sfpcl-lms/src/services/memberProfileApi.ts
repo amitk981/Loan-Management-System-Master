@@ -17,6 +17,7 @@ interface Pagination {
 }
 
 export interface MemberProfileDetail {
+  version?: number;
   member_id: string;
   member_number: string | null;
   member_type: string;
@@ -66,14 +67,60 @@ export interface MemberProfileDetail {
     services_availed_flag: boolean;
     produce_supply_years: string | null;
   } | null;
+  produce_supply_records?: ProduceSupplyRecordDetail[];
   available_actions: {
     action_code: string;
     label: string;
     enabled: boolean;
     disabled_reason: string | null;
     required_permission: string;
+    required_role?: string | null;
   }[];
+  pending_identity_change?: { identity_change_request_id: string; status: string } | null;
 }
+
+export interface ProduceSupplyRecordDetail {
+  produce_supply_record_id: string;
+  member_id: string;
+  financial_year: string;
+  supplied_to_entity_type: string;
+  supply_route: string;
+  crop_type: string | null;
+  quantity: string | null;
+  value_amount: string | null;
+  evidence_reference: string | null;
+  verified_flag: boolean;
+  verified_by_user_id: string | null;
+  verified_at: string | null;
+  version: number;
+  available_actions: MemberProfileDetail['available_actions'];
+}
+
+export type MemberMutationPayload = Record<string, unknown>;
+
+export const createMember = async (payload: MemberMutationPayload): Promise<MemberProfileDetail> => {
+  const envelope = await request<MemberProfileDetail>('/api/v1/members/', 'POST', payload);
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalize(envelope.data);
+};
+
+export const updateMember = async (memberId: string, payload: MemberMutationPayload): Promise<MemberProfileDetail> => {
+  const envelope = await request<MemberProfileDetail>(`/api/v1/members/${memberId}/`, 'PATCH', payload);
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalize(envelope.data);
+};
+
+export const reverifyMemberIdentity = async (memberId: string, payload: MemberMutationPayload): Promise<{ identity_change_request_id: string; member_id: string; status: string; member_version: number }> => {
+  const envelope = await request<{ identity_change_request_id: string; member_id: string; status: string; member_version: number }>(`/api/v1/members/${memberId}/identity-change-requests/`, 'POST', payload);
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return envelope.data;
+};
+
+export const approveMemberIdentityChange = async (requestId: string): Promise<MemberProfileDetail> => {
+  const envelope = await request<MemberProfileDetail>(`/api/v1/member-identity-change-requests/${requestId}/approve/`, 'POST', {});
+  if (!envelope.data) throw new AuthSessionError('REQUEST_FAILED', 'Request failed.');
+  return normalize(envelope.data);
+};
 
 export interface MemberNomineeDetail {
   nominee_id: string;
@@ -518,6 +565,7 @@ const request = async <T>(
 
 const normalize = (profile: MemberProfileDetail): MemberProfileDetail => ({
   ...profile,
+  version: Number(profile.version ?? 0),
   member_id: String(profile.member_id ?? ''),
   member_number: textOrNull(profile.member_number),
   display_name: String(profile.display_name || profile.legal_name || ''),

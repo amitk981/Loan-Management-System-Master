@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_historical_backfill_cannot_ambiguate_a_superseded_rule (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_historical_backfill_cannot_ambiguate_a_superseded_rule)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_052556_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 257, in test_historical_backfill_cannot_ambiguate_a_superseded_rule
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"approval_matrix_rule_id": "639dc8ee-1407-4507-ad2d-c915e4d4cd54", "decision_type": "loan_sanction", "amount_min": "0.00", "amount_max": "500000.00", "condition_code": null, "required_approver_roles": ["cfo", "director"], "required_director_count": 1, "joint_approval_required_flag": true, "register_required": "credit_sanction_register", "effective_from": "2026-06-01", "effective_to": "2026-06-30", "status": "active", "version_number": "historical-backfill"}, "meta": {"request_id": null, "timestamp": "2026-07-12T23:57:31.097428Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.017s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

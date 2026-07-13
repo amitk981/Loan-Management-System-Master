@@ -1,0 +1,9 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006H7-credit-action-parity-and-container-proof.md
+ M docs/working/HANDOFF.md
+ M sfpcl-lms/package.json
+ M sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.test.tsx
+ M sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx
+ M sfpcl_credit/credit/modules/loan_limit_calculator.py
+?? .ralph/runs/2026-07-11_223208_normal_run/

@@ -3,6 +3,11 @@ set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
+source "$repo_root/scripts/lib/ralph-exit-protocol.sh"
+source "$repo_root/scripts/lib/ralph-postgresql-acceptance.sh"
+source "$repo_root/scripts/lib/ralph-slice-selection.sh"
+source "$repo_root/scripts/lib/ralph-repair-context.sh"
+source "$repo_root/scripts/lib/ralph-merge-guard.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -17,6 +22,8 @@ selected_slice=""
 no_commit=0
 no_worktree=0
 continue_failed=0
+resume_worktree=""
+failed_run_id=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -27,9 +34,18 @@ while [[ $# -gt 0 ]]; do
     --no-commit) no_commit=1; shift ;;
     --no-worktree) no_worktree=1; shift ;;
     --continue-failed) continue_failed=1; shift ;;
+    --resume-worktree) resume_worktree="${2:?--resume-worktree requires a value}"; shift 2 ;;
+    --failed-run-id) failed_run_id="${2:?--failed-run-id requires a value}"; shift 2 ;;
     *) echo "Unknown run argument: $1" >&2; exit 2 ;;
   esac
 done
+
+if [[ -n "$resume_worktree" || -n "$failed_run_id" ]]; then
+  if [[ "$mode" != "repair" || -z "$resume_worktree" || -z "$failed_run_id" || "$no_worktree" == 1 || "$no_commit" == 1 ]]; then
+    echo "Same-worktree resume requires repair mode, commit/validation enabled, --resume-worktree, and --failed-run-id." >&2
+    exit 2
+  fi
+fi
 
 integration_branch="$(awk -F': *' '/^[[:space:]]*integration_branch:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
 integration_branch="${integration_branch:-staging}"
@@ -54,13 +70,14 @@ select_slice() {
     found="$(find docs/slices -maxdepth 1 -type f -name "${selected_slice}*.md" | sort | head -n 1)"
     [[ -n "$found" ]] && basename "$found" && return
   fi
-  local file status
+  local file unmet
   for file in $(find docs/slices -maxdepth 1 -type f -name '*.md' | sort); do
-    status="$(awk '/^## Status/ { getline; print; exit }' "$file")"
-    if [[ "$status" == "Not Started" ]]; then
+    [[ "$(ralph_slice_status "$file")" == "Not Started" ]] || continue
+    if unmet="$(ralph_slice_unmet_dependencies "$file")"; then
       basename "$file"
       return
     fi
+    echo "Skipping $(basename "$file" .md): waiting on $(printf '%s' "$unmet" | tr '\n' ' ' | sed 's/ $//')" >&2
   done
 }
 
@@ -70,7 +87,26 @@ if [[ "$mode" == "architecture_review" ]]; then
 else
   slice_file="$(select_slice || true)"
   if [[ -z "$slice_file" ]]; then
+    remaining_slices="$(ralph_remaining_slices)"
     mkdir -p "$run_dir"
+    if [[ -n "$remaining_slices" ]]; then
+      {
+        echo "# Final Summary"
+        echo
+        echo "Result: Blocked — Dependency-Blocked Queue"
+        echo
+        echo "Unfinished slices remain, but none is grabbable: each is waiting on an unmet"
+        echo "Depends On prerequisite (missing slice or dependency cycle) or parked as Blocked:"
+        echo
+        while IFS= read -r remaining_line; do
+          if [[ -n "$remaining_line" ]]; then
+            echo "- $remaining_line"
+          fi
+        done <<< "$remaining_slices"
+      } > "$run_dir/final-summary.md"
+      echo "Queue blocked: unfinished slices remain but none is grabbable." >&2
+      exit "$RALPH_EXIT_QUEUE_BLOCKED"
+    fi
     cat > "$run_dir/final-summary.md" <<'EOF'
 # Final Summary
 
@@ -79,7 +115,7 @@ Result: Success
 No eligible slice was found.
 EOF
     echo "No eligible slice found."
-    exit 0
+    exit "$RALPH_EXIT_QUEUE_EMPTY"
   fi
   slice_id="${slice_file%.md}"
 fi
@@ -89,7 +125,7 @@ if [[ "$mode" != "architecture_review" ]]; then
   approvals_file="docs/working/HIGH_RISK_APPROVALS.md"
   if grep -qF -- "[revoked] $slice_id" "$approvals_file" 2>/dev/null; then
     echo "Slice $slice_id has been vetoed by the owner in $approvals_file; refusing to run it." >&2
-    exit 3
+    exit "$RALPH_EXIT_OWNER_VETO"
   fi
   if [[ "$risk_level" == "High" ]]; then
     echo "High-risk slice $slice_id proceeding under the owner's standing approval (see $approvals_file)."
@@ -113,9 +149,42 @@ trap on_exit EXIT
 
 worktree_dir="$repo_root"
 if (( no_worktree == 0 )); then
-  branch_name="ralph/${run_id}_${slice_id}"
-  worktree_dir="$repo_root/.ralph/worktrees/$run_id"
-  git worktree add -b "$branch_name" "$worktree_dir" HEAD
+  if [[ -n "$resume_worktree" ]]; then
+    expected_worktree_root="$(cd "$repo_root/.ralph/worktrees" && pwd -P)"
+    worktree_dir="$(cd "$resume_worktree" 2>/dev/null && pwd -P)" || {
+      echo "Refusing repair: failed worktree does not exist: $resume_worktree" >&2
+      exit 1
+    }
+    if [[ "$worktree_dir" != "$expected_worktree_root/"* ]] \
+        || ! git -C "$repo_root" worktree list --porcelain | awk '$1 == "worktree" {print substr($0, 10)}' | grep -Fxq "$worktree_dir"; then
+      echo "Refusing repair: resume path is not a registered Ralph worktree: $worktree_dir" >&2
+      exit 1
+    fi
+    branch_name="$(git -C "$worktree_dir" symbolic-ref --short HEAD 2>/dev/null || true)"
+    if [[ "$branch_name" != ralph/* ]]; then
+      echo "Refusing repair: resume worktree is not on a Ralph branch: $branch_name" >&2
+      exit 1
+    fi
+    repair_context="$repo_root/.ralph/repair-context.json"
+    if ! ralph_repair_context_is_resumable "$repo_root" "$repair_context" \
+        || [[ "$(ralph_repair_context_value "$repair_context" worktree)" != "$worktree_dir" ]] \
+        || [[ "$(ralph_repair_context_value "$repair_context" run_id)" != "$failed_run_id" ]] \
+        || [[ "$(ralph_repair_context_value "$repair_context" slice_id)" != "$slice_id" ]] \
+        || [[ "$(ralph_repair_context_value "$repair_context" branch)" != "$branch_name" ]]; then
+      echo "Refusing repair: resume arguments do not match the trusted repair context." >&2
+      exit 1
+    fi
+    previous_failure_summary="$worktree_dir/.ralph/runs/$failed_run_id/failure-summary.md"
+    if [[ ! -s "$previous_failure_summary" ]]; then
+      echo "Refusing repair: previous failure summary is missing: $previous_failure_summary" >&2
+      exit 1
+    fi
+    echo "Resuming quarantined worktree $worktree_dir from failed run $failed_run_id."
+  else
+    branch_name="ralph/${run_id}_${slice_id}"
+    worktree_dir="$repo_root/.ralph/worktrees/$run_id"
+    git worktree add -b "$branch_name" "$worktree_dir" HEAD
+  fi
   run_dir="$worktree_dir/.ralph/runs/$run_id"
   mkdir -p "$run_dir"
   if [[ -d "$main_run_dir" ]]; then
@@ -130,15 +199,76 @@ backend_python="$(awk -F': *' '/^[[:space:]]*backend_python:/ {sub(/[[:space:]]*
 backend_python="${backend_python:-python3}"
 backend_dir_cfg="$(awk -F': *' '/^[[:space:]]*backend_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | tr -d '"' | xargs || true)"
 venv_dir="$repo_root/.ralph/venv"
+environment_setup_timeout="$(awk -F': *' '/^[[:space:]]*environment_setup_timeout_seconds:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+run_environment_command() {
+  local label="${1:?environment command label is required}"
+  shift
+  python3 "$repo_root/scripts/lib/ralph-run-with-timeout.py" \
+    --timeout "${environment_setup_timeout:-900}" \
+    --label "$label" \
+    -- "$@"
+}
+run_postgresql_timeout_cleanup() {
+  local python_bin="${1:?cleanup Python executable is required}"
+  local database_name="${2:?cleanup database name is required}"
+  python3 "$repo_root/scripts/lib/ralph-run-with-timeout.py" \
+    --timeout 60 \
+    --grace 5 \
+    --label "PostgreSQL timeout cleanup for $database_name" \
+    -- \
+    /bin/bash -c \
+      'source "$1"; postgresql_drop_test_database "$2" "$3" "$4"' \
+      ralph-postgresql-cleanup \
+      "$repo_root/scripts/lib/ralph-postgresql-acceptance.sh" \
+      "$python_bin" \
+      "$worktree_dir" \
+      "$database_name"
+}
+# On Apple Silicon the x86_64 codex CLI spawns x86_64 children, so a plain
+# venv python loads no arm64 native wheels (coverage C tracer, cffi) and the
+# coverage gate silently degrades. Keep bin/python an arm64-forcing wrapper;
+# a venv rebuild restores plain symlinks, so re-install it on every run.
+ensure_backend_python_arch_wrapper() {
+  [[ "$(uname -s)" == "Darwin" ]] || return 0
+  [[ "$(sysctl -n hw.optional.arm64 2>/dev/null || true)" == "1" ]] || return 0
+  [[ -x /usr/bin/arch ]] || return 0
+  local py="$venv_dir/bin/python" real
+  [[ -e "$py" ]] || return 0
+  if [[ -f "$py" ]] && grep -q "arch -arm64" "$py" 2>/dev/null; then
+    return 0
+  fi
+  real="$(cd "$venv_dir/bin" && ls python3.[0-9]* 2>/dev/null | sort | head -n 1 || true)"
+  if [[ -z "$real" ]]; then
+    echo "WARN: no versioned interpreter in $venv_dir/bin; cannot install the arm64 python wrapper." >&2
+    return 0
+  fi
+  rm -f "$py"
+  cat > "$py" <<WRAP
+#!/bin/sh
+# Orchestrator-maintained (ralph-run.sh): force the arm64 slice of the
+# universal CPython so native arm64 wheels (coverage C tracer, cffi) load
+# even when the caller runs under Rosetta (the x86_64 codex CLI spawns
+# x86_64 children). Recreated automatically after any venv rebuild.
+exec /usr/bin/arch -arm64 "\$(dirname "\$0")/$real" "\$@"
+WRAP
+  chmod +x "$py"
+  echo "Installed the arm64-forcing python wrapper at $py (real interpreter: $real)."
+}
 ensure_backend_env() {
   local req="$worktree_dir/${backend_dir_cfg}/requirements-dev.txt"
   [[ -n "$backend_dir_cfg" && -f "$req" ]] || return 0
   if [[ ! -x "$venv_dir/bin/python" ]]; then
-    "$backend_python" -m venv "$venv_dir"
+    if ! run_environment_command "backend virtual environment creation" \
+        "$backend_python" -m venv "$venv_dir"; then
+      echo "WARN: backend virtual environment creation failed or timed out; gates will surface it." >&2
+      return 0
+    fi
   fi
-  if ! "$venv_dir/bin/python" -m pip install --quiet --disable-pip-version-check -r "$req" \
+  ensure_backend_python_arch_wrapper
+  if ! run_environment_command "backend dependency installation" \
+      "$venv_dir/bin/python" -m pip install --quiet --disable-pip-version-check -r "$req" \
       >> "$run_dir/evidence/terminal-logs/orchestrator-backend-deps.log" 2>&1; then
-    echo "WARN: backend dependency install failed (offline with new pins?); gates will surface any missing module." >&2
+    echo "WARN: backend dependency install failed or timed out; gates will surface any missing module." >&2
   fi
 }
 project_dir_cfg="$(awk -F': *' '/^[[:space:]]*project_dir:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | tr -d '"' | xargs || true)"
@@ -146,19 +276,27 @@ ensure_frontend_env() {
   local fe_dir="$worktree_dir/${project_dir_cfg}"
   [[ -n "$project_dir_cfg" && -f "$fe_dir/package-lock.json" ]] || return 0
   if [[ ! -d "$fe_dir/node_modules" ]]; then
-    if ! (cd "$fe_dir" && npm ci --prefer-offline --no-audit --no-fund) \
+    if ! (cd "$fe_dir" && run_environment_command "frontend dependency installation" \
+        npm ci --prefer-offline --no-audit --no-fund) \
         >> "$run_dir/evidence/terminal-logs/orchestrator-frontend-deps.log" 2>&1; then
-      echo "WARN: frontend dependency install failed; gates will surface it." >&2
+      echo "WARN: frontend dependency install failed or timed out; gates will surface it." >&2
     fi
   else
-    if ! (cd "$fe_dir" && npm install --prefer-offline --no-audit --no-fund) \
+    if ! (cd "$fe_dir" && run_environment_command "frontend dependency synchronization" \
+        npm install --prefer-offline --no-audit --no-fund) \
         >> "$run_dir/evidence/terminal-logs/orchestrator-frontend-deps.log" 2>&1; then
-      echo "WARN: frontend dependency sync failed; gates will surface it." >&2
+      echo "WARN: frontend dependency sync failed or timed out; gates will surface it." >&2
     fi
   fi
 }
 ensure_backend_env
 ensure_frontend_env
+
+if [[ -n "$resume_worktree" ]]; then
+  repair_instruction="- In repair mode: work in this existing quarantined worktree. Diagnose $previous_failure_summary first, preserve the slice's current uncommitted implementation, fix only the demonstrated failure, and rely on full independent revalidation before any commit."
+else
+  repair_instruction="- In repair mode: first diagnose the most recent failure — read failure-summary.md in the newest failed .ralph/runs/*/ folder (failed checks, last log lines, changed files); open the full gate logs only if that summary is insufficient, and inspect any leftover .ralph/worktrees/ from the failed attempt before starting fresh."
+fi
 
 cat > "$run_dir/prompt.md" <<EOF
 You are running Ralph AFK mode.
@@ -183,7 +321,7 @@ Core requirements:
 - Implement only the selected vertical slice.
 - Read only the required context files first.
 - Do not modify docs/source.
-- Never modify protected files: scripts/, .ralph/config.yaml, .ralph/permissions.json, AGENTS.md, CLAUDE.md, .gitignore, docs/working/HIGH_RISK_APPROVALS.md, docs/working/DECISION_POLICY.md. Validation fails the run if you do.
+- Never modify protected files: scripts/, .ralph/config.yaml, .ralph/permissions.json, .codex/config.toml, AGENTS.md, CLAUDE.md, .gitignore, docs/working/HIGH_RISK_APPROVALS.md, docs/working/DECISION_POLICY.md. Validation fails the run if you do.
 - Write execution-plan.md before coding.
 - Check permissions before editing files.
 - TDD is mandatory for backend and business logic: write the failing test first, then implement, and save red/green output to evidence/terminal-logs/.
@@ -192,6 +330,7 @@ Core requirements:
 - Your sandbox has no network access: never run pip install. If a dependency you just pinned in requirements is not importable yet, still write the code, tests, and pin; note the missing module in final-summary.md and finish — the orchestrator installs pinned requirements before independent validation. That situation is expected, not a failure.
 - Frontend changes must follow docs/working/FRONTEND_DESIGN_RULES.md exactly: reuse existing components and patterns; never introduce new styling, colours, typography, layouts, or components. If the documents require a screen the prototype lacks, building it from existing patterns and wiring it to the backend is part of the slice.
 - Run required quality gates.
+- For a slice declaring 'localhost-e2e-server', implement the exact specs and screenshot outputs in its '## Trusted Browser Acceptance' section. Your coding sandbox may deny Chromium's macOS services: use Playwright collection or non-browser tests for your local feedback, do not fabricate screenshots, and do not declare the run failed solely because Chromium cannot launch. The orchestrator runs the declared browser contract twice outside your sandbox after you finish; that independent gate decides browser acceptance.
 - Save evidence.
 - Save changed-files.txt.
 - Save risk-assessment.md.
@@ -200,10 +339,11 @@ Core requirements:
 - Never run git commit, git add, or git push: your sandbox cannot write the worktree's git metadata and the attempt will fail your run. The orchestrator independently validates and commits passing work after you finish.
 - High-risk slices proceed under the owner's standing approval (docs/working/HIGH_RISK_APPROVALS.md); record risk honestly in risk-assessment.md. Never implement a slice marked [revoked] there.
 - When requirements are ambiguous, follow docs/working/DECISION_POLICY.md: choose the source-doc-compliant option, or the industry-standard default, record it in docs/working/ASSUMPTIONS.md, and continue. Do not stop to ask. Never invent business rules the documents do not state — stub them, record the open question, and continue.
+- If the selected slice file is still an unsharpened template stub (its Goal reads "Deliver this narrow capability as a small, testable Ralph implementation slice" or its scope sections say only "Implement the named backend/API capability only"), your FIRST deliverable is sharpening that slice file with concrete requirements from the epic digest, docs/working/maps/, and the slice's cited source sections — before writing execution-plan.md. Never implement directly from an unsharpened stub.
 - Before finishing, sharpen the next 1-2 'Not Started' slice files with concrete requirements (fields, endpoints, validation rules, role rules) from the source documents you already opened.
 - Prefer docs/working/digests/ over re-reading large docs/source files; if you extract requirements from a large source file, save the distilled version into the matching digest.
 - Stop only for the never-do list in DECISION_POLICY.md, forbidden/protected file edits, repeated gate failure, or diff limit violations.
-- In repair mode: first diagnose the most recent failure — read the newest .ralph/runs/*/ folder containing FAIL results, and inspect any leftover .ralph/worktrees/ from the failed attempt before starting fresh.
+$repair_instruction
 - In architecture-review mode: do NOT modify production code. Review the diffs of slices merged since the last review as an independent critic: test quality (real assertions, edge cases), doc fidelity against source references, duplication, architecture drift. Append findings to docs/working/REVIEW_FINDINGS.md and create or sharpen corrective slices for significant issues.
 - If you are Claude Code, use skills at the stages defined in docs/working/SKILL_REGISTRY.md (tdd during implementation, diagnosing-bugs in repair, code-review with the slice file as spec during architecture review). If a skill is unavailable, follow the baked-in rules; never stall on a missing skill.
 - If the selected slice is a change request (CR-*): write impact-analysis.md in the run folder BEFORE editing any code — affected backend/frontend pieces, blast radius across modules, and the regression tests to add in each affected module. Validation fails the run without it. Then add those regression tests as part of the fix.
@@ -265,6 +405,7 @@ Ralph run started for $slice_id.
 EOF
 
 agent_timeout="$(awk -F': *' '/^[[:space:]]*agent_timeout_seconds:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
+validation_timeout="$(awk -F': *' '/^[[:space:]]*validation_timeout_seconds:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
 
 # The orchestrator is the single owner of the review-cadence counter. Capture
 # the pre-run value now, from the integration checkout the agent never touches:
@@ -282,6 +423,10 @@ agent_rc=0
   MODE="$mode" \
   AGENT_TIMEOUT_SECONDS="${agent_timeout:-7200}" || agent_rc=$?
 if (( agent_rc != 0 )); then
+  if (( agent_rc == RALPH_EXIT_AGENT_LIMIT )); then
+    echo "Agent usage limit exhausted; returning the structured limit outcome to the outer loop." >&2
+    exit "$RALPH_EXIT_AGENT_LIMIT"
+  fi
   echo "WARN: agent adapter exited $agent_rc; proceeding to independent validation — the gates decide pass or fail." >&2
 fi
 
@@ -290,7 +435,58 @@ fi
 ensure_backend_env
 ensure_frontend_env
 
-"$repo_root/scripts/ralph-validate.sh" --run-id "$run_id" --worktree "$worktree_dir" --mode "$mode" --slice "$slice_id"
+validation_rc=0
+python3 "$repo_root/scripts/lib/ralph-run-with-timeout.py" \
+  --timeout "${validation_timeout:-3600}" \
+  --label "Ralph independent validation for $slice_id" \
+  -- \
+  "$repo_root/scripts/ralph-validate.sh" \
+  --run-id "$run_id" \
+  --worktree "$worktree_dir" \
+  --mode "$mode" \
+  --slice "$slice_id" || validation_rc=$?
+
+if (( validation_rc != 0 )); then
+  if (( validation_rc == 124 )); then
+    cleanup_python="$venv_dir/bin/python"
+    [[ -x "$cleanup_python" ]] || cleanup_python="$backend_python"
+    cleanup_log="$run_dir/evidence/terminal-logs/postgresql-timeout-cleanup.log"
+    for ordinal in 1 2; do
+      postgres_test_db="$(postgresql_test_database_name "$run_id" "$ordinal")"
+      run_postgresql_timeout_cleanup "$cleanup_python" "$postgres_test_db" \
+        >> "$cleanup_log" 2>&1 || true
+    done
+    cat > "$run_dir/validation-timeout-results.md" <<EOF
+# Validation Timeout Results
+
+FAIL: independent validation exceeded ${validation_timeout:-3600} seconds.
+The watchdog terminated the validator and its child process group so the outer
+loop can enter the bounded repair path instead of waiting indefinitely.
+EOF
+    cat > "$run_dir/failure-summary.md" <<EOF
+# Validation Failure Summary
+
+## validation-timeout-results.md
+
+Independent validation for $slice_id exceeded ${validation_timeout:-3600} seconds.
+Inspect the most recently updated gate result and terminal log for the blocked command.
+EOF
+  elif [[ ! -s "$run_dir/failure-summary.md" ]]; then
+    cat > "$run_dir/failure-summary.md" <<EOF
+# Validation Failure Summary
+
+The independent validation runner exited with status $validation_rc before it
+could write a detailed failure summary. Inspect the run's gate result files.
+EOF
+  fi
+  if [[ "$mode" != "architecture_review" ]]; then
+    ralph_write_repair_context \
+      "$repo_root/.ralph/repair-context.json" \
+      "$run_id" "$worktree_dir" "$slice_id" "$branch_name" \
+      "$run_dir/failure-summary.md"
+  fi
+  exit "$validation_rc"
+fi
 
 cat > "$run_dir/final-summary.md" <<EOF
 # Final Summary
@@ -384,7 +580,7 @@ EOF
 
 committed=0
 if (( no_commit == 0 )); then
-  (
+  if (
     cd "$worktree_dir"
     git add .
     if git diff --cached --quiet; then
@@ -393,25 +589,50 @@ if (( no_commit == 0 )); then
     else
       git commit -m "chore(${slice_id}): complete Ralph AFK run"
     fi
-  ) && committed=1 || true
+  ); then
+    committed=1
+  else
+    commit_rc=$?
+    cat > "$run_dir/commit-results.md" <<EOF
+# Commit Results
+
+FAIL: validated work could not be committed (exit $commit_rc).
+The work remains isolated in $worktree_dir and must not be merged or pushed.
+EOF
+    cat > "$run_dir/failure-summary.md" <<EOF
+# Commit Failure Summary
+
+commit-results.md:- FAIL: validated work could not be committed.
+Inspect the staged diff and commit hooks in $worktree_dir.
+EOF
+    if [[ "$mode" != "architecture_review" && "$no_worktree" == 0 ]]; then
+      ralph_write_repair_context \
+        "$repo_root/.ralph/repair-context.json" \
+        "$run_id" "$worktree_dir" "$slice_id" "$branch_name" \
+        "$run_dir/failure-summary.md"
+    fi
+    echo "COMMIT_FAILED: validated work for $slice_id remains quarantined in $worktree_dir." >&2
+    exit "$commit_rc"
+  fi
 fi
 
 merged=0
 if (( committed == 1 )) && (( no_worktree == 0 )); then
   auto_merge="$(awk -F': *' '/^[[:space:]]*auto_merge:/ {sub(/[[:space:]]*#.*$/, "", $2); print $2; exit}' "$repo_root/.ralph/config.yaml" | xargs || true)"
   if [[ "$auto_merge" == "true" ]]; then
-    if git -C "$repo_root" merge --ff-only "$branch_name"; then
+    if ralph_prepare_worktree_for_ff_merge "$repo_root" "$branch_name" \
+        && git -C "$repo_root" merge --ff-only "$branch_name"; then
       git -C "$repo_root" worktree remove --force "$worktree_dir"
       git -C "$repo_root" branch -d "$branch_name"
       run_dir="$repo_root/.ralph/runs/$run_id"
       merged=1
       echo "Merged $branch_name into $integration_branch and removed the worktree."
     else
-      # A failed ff-only merge means staging moved during the run. Exiting 0 here
-      # made the loop rerun the slice from scratch (silent duplicate work) while
-      # the finished branch sat stranded. Fail loudly instead; the loop stops.
+      # A failed preparation/ff-only merge means staging moved or an unsafe
+      # non-generated collision exists. Exiting 0 here made the loop rerun the
+      # slice while the finished branch sat stranded. Fail loudly instead.
       echo "MERGE_FAILED: auto-merge into $integration_branch failed; branch $branch_name kept with the completed work." >&2
-      exit 4
+      exit "$RALPH_EXIT_MERGE_FAILED"
     fi
   else
     echo "auto_merge is disabled; review and merge branch $branch_name manually." >&2
@@ -428,6 +649,10 @@ if (( merged == 1 )); then
       echo "WARN: push to $push_remote failed (non-fatal); push manually later." >&2
     fi
   fi
+fi
+
+if [[ -n "$resume_worktree" && "$committed" == 1 ]]; then
+  ralph_clear_repair_context "$repo_root/.ralph/repair-context.json"
 fi
 
 rm -f "$lock_file"

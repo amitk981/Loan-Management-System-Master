@@ -35,6 +35,13 @@ Compliance and CS staff work the real legal/security package — blockers, check
 5. Generation actions (008B) wired: generate from template, show version, download evidence.
 6. Loading, empty, error, unauthorized, and blocked states throughout.
 
+## Owned Mock Removals
+This slice is the final owner of these files' mock surface — after it, none of them may import `src/data/mockData.ts` or keep inline business fixtures:
+- `src/pages/documentation/DocumentationHub.tsx`
+- `src/components/loan/DocumentChecklist.tsx`
+- `src/components/loan/DocumentPackModal.tsx`
+- `src/components/loan/AuditTimeline.tsx` (ApplicationDetail usage was wired by 005I; this slice removes the remaining mock reads and the import itself)
+
 ## Test Cases
 - Checklist blockers render from seeded mismatch/stamp-pending fixtures and clear when backend state resolves.
 - Unauthorized role cannot see restricted document contents or actions (frontend + 403 backend assertion).

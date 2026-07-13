@@ -57,6 +57,7 @@ class Member(models.Model):
         on_delete=models.PROTECT,
         related_name="updated_members",
     )
+    version = models.PositiveIntegerField(default=1, db_default=1)
     is_deleted = models.BooleanField(default=False)
 
     class Meta:
@@ -70,9 +71,121 @@ class Member(models.Model):
             models.Index(fields=["kyc_status"], name="idx_members_kyc_status"),
             models.Index(fields=["default_status"], name="idx_members_default_status"),
         ]
+        constraints = [
+            models.UniqueConstraint(fields=["pan_hash"], condition=~models.Q(pan_hash=""), name="uniq_member_pan_hash"),
+            models.UniqueConstraint(fields=["aadhaar_hash"], condition=~models.Q(aadhaar_hash=""), name="uniq_member_aadhaar_hash"),
+        ]
 
     def __str__(self):
         return self.member_number or str(self.member_id)
+
+
+class MemberScopeAssignment(models.Model):
+    SCOPE_TYPES = {"global", "team", "assigned", "created_by"}
+
+    member_scope_assignment_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    user = models.ForeignKey(
+        "identity.User", on_delete=models.CASCADE, related_name="member_scope_assignments"
+    )
+    permission_code = models.CharField(max_length=120, db_index=True)
+    scope_type = models.CharField(max_length=20, db_index=True)
+    member = models.ForeignKey(
+        Member, blank=True, null=True, on_delete=models.CASCADE, related_name="scope_assignments"
+    )
+    team = models.ForeignKey(
+        "identity.Team", blank=True, null=True, on_delete=models.PROTECT,
+        related_name="member_scope_assignments",
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "member_scope_assignments"
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(scope_type__in=("global", "created_by"), member__isnull=True, team__isnull=True)
+                    | models.Q(scope_type="assigned", member__isnull=False, team__isnull=True)
+                    | models.Q(scope_type="team", member__isnull=False, team__isnull=False)
+                ),
+                name="member_scope_valid_shape",
+            ),
+            models.UniqueConstraint(
+                fields=["user", "permission_code", "scope_type"],
+                condition=models.Q(scope_type__in=("global", "created_by")),
+                name="uniq_member_scope_unbound",
+            ),
+            models.UniqueConstraint(
+                fields=["user", "permission_code", "member"],
+                condition=models.Q(scope_type="assigned"),
+                name="uniq_member_scope_assigned",
+            ),
+            models.UniqueConstraint(
+                fields=["user", "permission_code", "member", "team"],
+                condition=models.Q(scope_type="team"),
+                name="uniq_member_scope_team",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["user", "permission_code"], name="idx_member_scope_user_perm"),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.scope_type not in self.SCOPE_TYPES:
+            raise ValidationError({"scope_type": "Unsupported member scope type."})
+        if self.scope_type == "global" and (self.member_id or self.team_id):
+            raise ValidationError({"scope_type": "Global scope cannot name a member or team."})
+        if self.scope_type in {"assigned", "team"} and not self.member_id:
+            raise ValidationError({"member": "This scope requires a member."})
+        if self.scope_type == "team" and not self.team_id:
+            raise ValidationError({"team": "Team scope requires a team."})
+        if self.scope_type == "created_by" and (self.member_id or self.team_id):
+            raise ValidationError({"scope_type": "Created-by scope cannot name a member or team."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
+class MemberChangeHistory(models.Model):
+    member_change_history_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="change_history")
+    actor_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="member_changes"
+    )
+    change_type = models.CharField(max_length=40)
+    changed_fields = models.JSONField(default=list)
+    old_value_json = models.JSONField(default=dict)
+    new_value_json = models.JSONField(default=dict)
+    reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "member_change_history"
+        ordering = ["created_at", "member_change_history_id"]
+
+
+class MemberIdentityChangeRequest(models.Model):
+    identity_change_request_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="identity_change_requests")
+    requester_user = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="requested_member_identity_changes")
+    approver_user = models.ForeignKey("identity.User", blank=True, null=True, on_delete=models.PROTECT, related_name="approved_member_identity_changes")
+    proposed_pan_encrypted = models.TextField(blank=True)
+    proposed_pan_hash = models.CharField(max_length=128, blank=True)
+    proposed_aadhaar_encrypted = models.TextField(blank=True)
+    proposed_aadhaar_hash = models.CharField(max_length=128, blank=True)
+    reason = models.TextField()
+    member_version = models.PositiveIntegerField()
+    status = models.CharField(max_length=20, default="pending", db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    approved_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = "member_identity_change_requests"
 
 
 class IndividualMemberProfile(models.Model):
@@ -124,6 +237,10 @@ class ProducerInstitutionProfile(models.Model):
     institution_type = models.CharField(max_length=80)
     registration_number = models.CharField(max_length=120, blank=True, db_index=True)
     authorised_signatory_name = models.CharField(max_length=200)
+    authorised_signatory_pan_encrypted = models.TextField(blank=True)
+    authorised_signatory_pan_hash = models.CharField(max_length=128, blank=True, db_index=True)
+    authorised_signatory_aadhaar_encrypted = models.TextField(blank=True)
+    authorised_signatory_aadhaar_hash = models.CharField(max_length=128, blank=True, db_index=True)
     board_resolution_required_flag = models.BooleanField(default=False)
     services_availed_flag = models.BooleanField(default=False)
     produce_supply_years = models.DecimalField(
@@ -153,6 +270,102 @@ class ProducerInstitutionProfile(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
+
+
+class ProduceSupplyRecord(models.Model):
+    produce_supply_record_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="produce_supply_records")
+    financial_year = models.CharField(max_length=20, db_index=True)
+    supplied_to_entity_type = models.CharField(max_length=60)
+    supplied_to_entity_id = models.UUIDField(blank=True, null=True)
+    supply_route = models.CharField(max_length=60)
+    producer_institution_member = models.ForeignKey(
+        Member, blank=True, null=True, on_delete=models.PROTECT, related_name="routed_produce_supply_records"
+    )
+    crop_type = models.CharField(max_length=100, blank=True, db_index=True)
+    quantity = models.DecimalField(max_digits=18, decimal_places=3, blank=True, null=True)
+    value_amount = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
+    evidence_reference = models.CharField(max_length=255, blank=True)
+    verified_flag = models.BooleanField(default=False, db_index=True)
+    captured_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="captured_produce_supply_records"
+    )
+    verified_by_user = models.ForeignKey(
+        "identity.User", blank=True, null=True, on_delete=models.PROTECT,
+        related_name="verified_produce_supply_records",
+    )
+    verified_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    version = models.PositiveIntegerField(default=1, db_default=1)
+
+    class Meta:
+        db_table = "produce_supply_records"
+        ordering = ["-financial_year", "produce_supply_record_id"]
+        indexes = [
+            models.Index(fields=["member", "financial_year"], name="idx_supply_member_year"),
+            models.Index(fields=["member", "verified_flag"], name="idx_supply_member_verified"),
+        ]
+
+
+class MemberServiceEvidence(models.Model):
+    member_service_evidence_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="service_evidence")
+    service_type = models.CharField(max_length=60)
+    recipient_entity_type = models.CharField(max_length=60)
+    recipient_entity_id = models.UUIDField(blank=True, null=True)
+    service_from = models.DateField()
+    service_to = models.DateField()
+    evidence_reference = models.CharField(max_length=255)
+    verified_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="verified_member_service_evidence"
+    )
+    verified_at = models.DateTimeField()
+    maker_users = models.ManyToManyField(
+        "identity.User", related_name="made_member_service_evidence"
+    )
+
+    class Meta:
+        db_table = "member_service_evidence"
+        indexes = [
+            models.Index(fields=["member", "service_from", "service_to"], name="idx_service_evidence_dates"),
+        ]
+
+
+class ActiveMemberStatus(models.Model):
+    active_member_status_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="active_status_records")
+    result_id = models.UUIDField(db_index=True)
+    status = models.CharField(max_length=60, db_index=True)
+    member_type = models.CharField(max_length=60)
+    services_availed_flag = models.BooleanField()
+    continuous_supply_years = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    supplied_to_company_flag = models.BooleanField(default=False)
+    supplied_to_subsidiary_flag = models.BooleanField(default=False)
+    supplied_to_stepdown_flag = models.BooleanField(default=False)
+    supplied_through_producer_institution_flag = models.BooleanField(default=False)
+    employment_service_years = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    relaxation_reason = models.TextField(blank=True)
+    evidence_summary = models.TextField(blank=True)
+    evidence_snapshot = models.JSONField(default=dict)
+    verified_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="verified_active_member_statuses"
+    )
+    verified_at = models.DateTimeField()
+    effective_from = models.DateField()
+    effective_to = models.DateField(blank=True, null=True)
+
+    class Meta:
+        db_table = "active_member_statuses"
+        indexes = [
+            models.Index(fields=["member", "status"], name="idx_active_member_status"),
+            models.Index(fields=["member", "effective_from", "effective_to"], name="idx_active_status_effective"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["member"], condition=models.Q(effective_to__isnull=True),
+                name="uniq_current_active_member_status",
+            ),
+        ]
 
 
 class Nominee(models.Model):

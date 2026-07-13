@@ -1,0 +1,6 @@
+Frontend gate results:
+
+- `npm run build`: PASS; Vite transformed 1872 modules and built successfully.
+- `npm run typecheck`: PASS; `tsc --noEmit` exited 0.
+- `npm run lint`: PASS; `eslint src` exited 0.
+- `npm test -- --run`: PASS; 26 files, 171 tests, duration 6.66s.

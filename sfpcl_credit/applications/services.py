@@ -1,4 +1,5 @@
 import uuid
+import re
 from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
@@ -7,6 +8,8 @@ from django.db.models import Max, Q
 from django.utils import timezone
 
 from sfpcl_credit.applications.modules.nominee_validation import evaluate_nominee_selection
+from sfpcl_credit.applications.modules import application_authority
+from sfpcl_credit.applications.modules.witness_corrections import witness_correction_actions
 from sfpcl_credit.applications.models import (
     ApplicationDeficiency,
     ApplicationDocument,
@@ -14,11 +17,12 @@ from sfpcl_credit.applications.models import (
     LoanRequestRegisterEntry,
     RejectionNote,
     SystemSequence,
+    Witness,
+    WitnessChangeHistory,
 )
 from sfpcl_credit.documents.models import DocumentFile
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.identity.modules.object_permissions import evaluate_object_access
 from sfpcl_credit.members.models import (
     BankAccount,
     CancelledCheque,
@@ -26,6 +30,11 @@ from sfpcl_credit.members.models import (
     LandHolding,
     Member,
     Nominee,
+)
+from sfpcl_credit.members.protected_identity import (
+    identity_hash,
+    mask_protected_identity,
+    protected_identity_token,
 )
 from sfpcl_credit.workflows.events import record_workflow_event
 from sfpcl_credit.workflows.guard import (
@@ -40,8 +49,14 @@ APPLICATION_CREATE_PERMISSION = "applications.loan_application.create"
 APPLICATION_UPDATE_PERMISSION = "applications.loan_application.update"
 APPLICATION_SUBMIT_PERMISSION = "applications.loan_application.submit"
 APPLICATION_COMPLETE_CHECK_PERMISSION = "applications.loan_application.complete_check"
+APPLICATION_RETURN_DEFICIENCY_PERMISSION = "applications.loan_application.return_deficiency"
+APPLICATION_DEFICIENCY_RESOLVE_PERMISSION = "applications.deficiency.resolve"
+APPLICATION_REJECTION_NOTE_CREATE_PERMISSION = "applications.rejection_note.create"
 APPLICATION_DOCUMENT_UPLOAD_PERMISSION = "applications.document.upload"
 APPLICATION_DOCUMENT_VERIFY_PERMISSION = "applications.document.verify"
+WITNESS_READ_PERMISSION = "members.witness.read"
+WITNESS_CREATE_PERMISSION = "members.witness.create"
+WITNESS_UPDATE_PERMISSION = "members.witness.update"
 LOAN_APPLICATION_REFERENCE_SEQUENCE_CODE = "loan_application_reference"
 APPLICATION_DOCUMENT_ATTACH_AUDIT_ACTION = "applications.application_document.attached"
 APPLICATION_DOCUMENT_VERIFY_AUDIT_ACTION = "applications.application_document.verified"
@@ -126,6 +141,14 @@ class LoanApplicationInvalidStateError(Exception):
     pass
 
 
+class WitnessValidationError(Exception):
+    def __init__(self, code, message, field_errors=None):
+        self.code = code
+        self.message = message
+        self.field_errors = field_errors or {}
+        super().__init__(message)
+
+
 def user_can_read_applications(user):
     return APPLICATION_READ_PERMISSION in auth_service.effective_permission_codes(user)
 
@@ -146,6 +169,186 @@ def user_can_complete_check_applications(user):
     return APPLICATION_COMPLETE_CHECK_PERMISSION in auth_service.effective_permission_codes(user)
 
 
+def user_can_perform_completeness_action(user, action_code):
+    action = COMPLETENESS_ACTIONS[action_code]
+    return action["required_permission"] in auth_service.effective_permission_codes(user)
+
+
+def user_can_read_witnesses(user):
+    return WITNESS_READ_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_create_witnesses(user):
+    return WITNESS_CREATE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def user_can_update_witnesses(user):
+    return WITNESS_UPDATE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def witness_collection_actions(application, actor, permissions=None):
+    permissions = permissions or auth_service.effective_permission_codes(actor)
+    actions = []
+    for code, label, required in (
+        ("read", "View Witnesses", WITNESS_READ_PERMISSION),
+        ("create", "Capture Witness", WITNESS_CREATE_PERMISSION),
+    ):
+        access = evaluate_application_object_access(application, actor, required, permissions)
+        enabled = required in permissions and access.allowed
+        reason = None if enabled else (f"Missing witness {code} permission." if required not in permissions else "Witness is outside your application access scope.")
+        actions.append({"action_code": code, "label": label, "enabled": enabled, "disabled_reason": reason, "required_permission": required, "required_role": None})
+    return actions
+
+
+def witness_resource_actions(witness, actor, permissions=None):
+    permissions = permissions or auth_service.effective_permission_codes(actor)
+    access = evaluate_application_object_access(witness.loan_application, actor, WITNESS_READ_PERMISSION, permissions)
+    read = {"action_code": "read", "label": "View Witness", "enabled": WITNESS_READ_PERMISSION in permissions and access.allowed, "disabled_reason": None if WITNESS_READ_PERMISSION in permissions and access.allowed else ("Missing witness read permission." if WITNESS_READ_PERMISSION not in permissions else "Witness is outside your application access scope."), "required_permission": WITNESS_READ_PERMISSION, "required_role": None}
+    return [read, *witness_correction_actions(witness=witness, actor_user=actor)]
+
+
+@transaction.atomic
+def create_witness(application, payload, actor_user, request_ip="", request_user_agent=""):
+    allowed_fields = {"member_id", "witness_name", "pan", "aadhaar", "address", "mobile"}
+    unknown_fields = sorted(set(payload) - allowed_fields)
+    if unknown_fields:
+        raise WitnessValidationError(
+            "VALIDATION_ERROR",
+            "Witness payload failed validation.",
+            {field: "Unknown field." for field in unknown_fields},
+        )
+    try:
+        member_id = uuid.UUID(str(payload.get("member_id") or ""))
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise WitnessValidationError(
+            "MISSING_REQUIRED_FIELD" if not payload.get("member_id") else "VALIDATION_ERROR",
+            "Witness member is required.",
+            {"member_id": "A valid member UUID is required."},
+        ) from exc
+    member = Member.objects.filter(member_id=member_id, is_deleted=False).first()
+    if member is None:
+        raise WitnessValidationError("NOT_FOUND", "Witness member was not found.")
+    witness_name = str(payload.get("witness_name") or "").strip()
+    if not witness_name:
+        raise WitnessValidationError(
+            "MISSING_REQUIRED_FIELD",
+            "Witness name is required.",
+            {"witness_name": "This field is required."},
+        )
+    if witness_name.casefold() not in {member.legal_name.strip().casefold(), member.display_name.strip().casefold()}:
+        raise WitnessValidationError(
+            "VALIDATION_ERROR",
+            "Witness name does not match the selected member.",
+            {"witness_name": "Must match the selected member name."},
+        )
+    shareholding = (
+        member.shareholdings.filter(status="active", number_of_shares__gt=0)
+        .order_by("created_at", "shareholding_id")
+        .first()
+    )
+    if shareholding is None:
+        raise WitnessValidationError(
+            "WITNESS_NOT_SHAREHOLDER",
+            "Witness is not an existing shareholder.",
+            {"member_id": "Member has no active positive shareholding."},
+        )
+    if member.kyc_status != "verified":
+        raise WitnessValidationError(
+            "VALIDATION_ERROR",
+            "Witness KYC must be verified.",
+            {"member_id": "Selected member does not have verified KYC."},
+        )
+    pan = str(payload.get("pan") or "").strip().upper()
+    aadhaar = str(payload.get("aadhaar") or "").replace(" ", "").strip()
+    address = str(payload.get("address") or "").strip()
+    mobile = str(payload.get("mobile") or "").replace(" ", "").strip()
+    if not address:
+        raise WitnessValidationError("MISSING_REQUIRED_FIELD", "Witness address is required.", {"address": "This field is required."})
+    if len(address) > 500:
+        raise WitnessValidationError("VALIDATION_ERROR", "Witness payload failed validation.", {"address": "Address must be 500 characters or fewer."})
+    if mobile and not re.fullmatch(r"[0-9]{7,15}", mobile):
+        raise WitnessValidationError("VALIDATION_ERROR", "Witness payload failed validation.", {"mobile": "Mobile must contain 7 to 15 digits."})
+    if not pan:
+        raise WitnessValidationError("MISSING_REQUIRED_FIELD", "PAN is required.", {"pan": "This field is required."})
+    if not re.fullmatch(r"[A-Z]{5}[0-9]{4}[A-Z]", pan):
+        raise WitnessValidationError("INVALID_PAN_FORMAT", "PAN format is invalid.", {"pan": "PAN must match the source-defined format."})
+    if not aadhaar:
+        raise WitnessValidationError("MISSING_REQUIRED_FIELD", "Aadhaar is required.", {"aadhaar": "This field is required."})
+    if not re.fullmatch(r"[0-9]{12}", aadhaar):
+        raise WitnessValidationError("INVALID_AADHAAR_FORMAT", "Aadhaar format is invalid.", {"aadhaar": "Aadhaar must be a 12 digit number."})
+    verified_at = timezone.now()
+    witness = Witness.objects.create(
+        loan_application=application,
+        member=member,
+        witness_name=witness_name,
+        address=address,
+        mobile=mobile,
+        pan_encrypted=protected_identity_token(pan, 10),
+        pan_hash=identity_hash(pan),
+        aadhaar_encrypted=protected_identity_token(aadhaar, 12),
+        aadhaar_hash=identity_hash(aadhaar),
+        verification_shareholding=shareholding,
+        verification_folio_number=shareholding.folio_number,
+        shareholder_verified_flag=True,
+        verification_status="verified",
+        verified_by_user=actor_user,
+        verified_at=verified_at,
+    )
+    AuditLog.objects.create(
+        actor_user=actor_user,
+        action="applications.witness.created",
+        entity_type="witness",
+        entity_id=witness.witness_id,
+        new_value_json={
+            "loan_application_id": str(application.loan_application_id),
+            "witness_id": str(witness.witness_id),
+            "member_id": str(member.member_id),
+            "verification_shareholding_id": str(shareholding.shareholding_id),
+            "folio_number": shareholding.folio_number,
+            "witness_name": witness.witness_name,
+            "shareholder_verified_flag": True,
+            "verification_status": "verified",
+        },
+        ip_address=request_ip,
+        user_agent=request_user_agent,
+    )
+    return witness
+
+
+def serialize_witness(witness, actor=None, permissions=None):
+    return {
+        "witness_id": str(witness.witness_id),
+        "loan_application_id": str(witness.loan_application_id),
+        "member_id": str(witness.member_id),
+        "verification_shareholding_id": (
+            str(witness.verification_shareholding_id)
+            if witness.verification_shareholding_id
+            else None
+        ),
+        "folio_number": witness.verification_folio_number,
+        "witness_name": witness.witness_name,
+        "address": witness.address,
+        "mobile": witness.mobile,
+        "pan": {"masked": mask_protected_identity(witness.pan_encrypted, 10), "can_view_full": False},
+        "aadhaar": {"masked": mask_protected_identity(witness.aadhaar_encrypted, 12), "can_view_full": False},
+        "shareholder_verified_flag": witness.shareholder_verified_flag,
+        "verification_status": witness.verification_status,
+        "verified_by_user_id": str(witness.verified_by_user_id) if witness.verified_by_user_id else None,
+        "verified_at": witness.verified_at.isoformat().replace("+00:00", "Z") if witness.verified_at else None,
+        "created_at": witness.created_at.isoformat().replace("+00:00", "Z"),
+        "updated_at": witness.updated_at.isoformat().replace("+00:00", "Z") if witness.updated_at else None,
+        "version": witness.version,
+        "actions": witness_resource_actions(witness, actor, permissions) if actor else [],
+    }
+
+
+def list_witnesses(application, actor=None, permissions=None):
+    rows = application.witnesses.select_related(
+        "member", "verified_by_user", "verification_shareholding"
+    ).order_by("created_at", "witness_id")
+    return [serialize_witness(row, actor, permissions) for row in rows]
+
+
 def user_can_upload_application_documents(user):
     return APPLICATION_DOCUMENT_UPLOAD_PERMISSION in auth_service.effective_permission_codes(user)
 
@@ -155,31 +358,12 @@ def user_can_verify_application_documents(user):
 
 
 def evaluate_application_object_access(application, actor, required_permission, actor_permissions=None):
-    permissions = actor_permissions or auth_service.effective_permission_codes(actor)
-    allow_global = _has_credit_manager_domain_access(application, actor)
-    result = evaluate_object_access(
-        actor_user_id=actor.user_id,
-        actor_team_codes=actor.team_codes(),
-        actor_permission_codes=permissions,
+    return application_authority.evaluate_application_object_access(
+        application=application,
+        actor=actor,
         required_permission=required_permission,
-        object_owner_user_id=application.created_by_user_id,
-        allow_global=allow_global,
+        actor_permissions=actor_permissions,
     )
-    if result.allowed or result.error_code != "OBJECT_ACCESS_DENIED":
-        return result
-    if (
-        application.received_by_user_id
-        and application.received_by_user_id != application.created_by_user_id
-    ):
-        return evaluate_object_access(
-            actor_user_id=actor.user_id,
-            actor_team_codes=actor.team_codes(),
-            actor_permission_codes=permissions,
-            required_permission=required_permission,
-            object_owner_user_id=application.received_by_user_id,
-            allow_global=allow_global,
-        )
-    return result
 
 
 def get_application(application_id):
@@ -707,7 +891,7 @@ def build_document_checklist(application):
     }
 
 
-def build_completeness_workbench(application):
+def build_completeness_workbench(application, actor=None):
     checklist = build_document_checklist(application)
     required_items = [_completeness_checklist_item(item) for item in checklist["items"]]
     blocking_document_types = [
@@ -716,7 +900,7 @@ def build_completeness_workbench(application):
     nominee_error = evaluate_nominee_selection(
         application.nominee, application.member
     ).field_error
-    return {
+    snapshot = {
         "loan_application_id": str(application.loan_application_id),
         "application_reference_number": application.application_reference_number,
         "application_status": application.application_status,
@@ -735,6 +919,98 @@ def build_completeness_workbench(application):
             and nominee_error is None
         ),
     }
+    if actor is not None:
+        snapshot["available_actions"] = completeness_available_actions(
+            application, actor, snapshot
+        )
+    return snapshot
+
+
+def completeness_available_actions(application, actor, workbench=None):
+    """Project completeness actions from the same gates used by their write services."""
+    permissions = auth_service.effective_permission_codes(actor)
+    snapshot = workbench or build_completeness_workbench(application)
+    pass_reason = _completeness_authority_reason(
+        application, actor, "pass_completeness", permissions
+    ) or completeness_pass_invalid_state_message(application)
+    if pass_reason is None:
+        try:
+            validate_completeness_ready_for_reference(application)
+        except LoanApplicationValidationError:
+            pass_reason = "Required nominee and document checks must be complete."
+
+    return_reason = _completeness_authority_reason(
+        application, actor, "return_with_deficiencies", permissions
+    ) or return_deficiencies_invalid_state_message(application)
+    if return_reason is None and not snapshot["blocking_document_types"]:
+        return_reason = "No blocking document deficiencies are available to return."
+
+    open_deficiency = ApplicationDeficiency.objects.filter(
+        loan_application=application,
+        resolution_status=ApplicationDeficiency.STATUS_OPEN,
+    ).exists()
+    resolve_reason = _completeness_authority_reason(
+        application, actor, "resolve_deficiency", permissions
+    )
+    if resolve_reason is None and not open_deficiency:
+        resolve_reason = "No open deficiency is available to resolve."
+
+    reject_reason = _completeness_authority_reason(
+        application, actor, "create_rejection_note", permissions
+    ) or rejection_note_create_invalid_state_message(application)
+    return [
+        _completeness_action("pass_completeness", "Generate reference number", pass_reason),
+        _completeness_action("return_with_deficiencies", "Return for deficiency", return_reason),
+        _completeness_action("resolve_deficiency", "Resolve deficiency", resolve_reason),
+        _completeness_action("create_rejection_note", "Recommend rejection", reject_reason),
+    ]
+
+
+def _completeness_action(action_code, label, disabled_reason):
+    authority = COMPLETENESS_ACTIONS[action_code]
+    return {
+        "action_code": action_code,
+        "label": label,
+        "enabled": disabled_reason is None,
+        "disabled_reason": disabled_reason,
+        "required_permission": authority["required_permission"],
+        "required_role": authority["required_role"],
+    }
+
+
+COMPLETENESS_ACTIONS = {
+    "pass_completeness": {
+        "required_permission": APPLICATION_COMPLETE_CHECK_PERMISSION,
+        "required_role": "deputy_manager_finance",
+    },
+    "return_with_deficiencies": {
+        "required_permission": APPLICATION_RETURN_DEFICIENCY_PERMISSION,
+        "required_role": "deputy_manager_finance",
+    },
+    "resolve_deficiency": {
+        "required_permission": APPLICATION_DEFICIENCY_RESOLVE_PERMISSION,
+        "required_role": "deputy_manager_finance",
+    },
+    "create_rejection_note": {
+        "required_permission": APPLICATION_REJECTION_NOTE_CREATE_PERMISSION,
+        "required_role": "credit_manager",
+    },
+}
+
+
+def _completeness_authority_reason(application, actor, action_code, permissions):
+    required_permission = COMPLETENESS_ACTIONS[action_code]["required_permission"]
+    if required_permission not in permissions:
+        return f"Required permission {required_permission} is not granted."
+    object_access = evaluate_application_object_access(
+        application,
+        actor,
+        required_permission,
+        permissions,
+    )
+    if not object_access.allowed:
+        return object_access.reason
+    return None
 
 
 def validate_completeness_ready_for_reference(application):
@@ -949,6 +1225,57 @@ def create_rejection_note(
     invalid_state_message = rejection_note_create_invalid_state_message(application)
     if invalid_state_message:
         raise LoanApplicationInvalidStateError(invalid_state_message)
+    return _create_rejection_note_draft(
+        application,
+        payload,
+        actor,
+        request_ip,
+        request_user_agent,
+        request_id,
+    )
+
+
+@transaction.atomic
+def create_credit_rejection_note(
+    application,
+    payload,
+    actor,
+    request_ip="",
+    request_user_agent="",
+    request_id=None,
+):
+    """Create the 005H draft for a terminal credit-stage rejection."""
+    if "reapply_allowed_flag" not in payload:
+        raise LoanApplicationValidationError(
+            {"reapply_allowed_flag": "This field is required."}
+        )
+    application = (
+        LoanApplication.objects.select_for_update()
+        .select_related("member", "received_by_user")
+        .get(loan_application_id=application.loan_application_id)
+    )
+    if RejectionNote.objects.filter(loan_application=application).exists():
+        raise LoanApplicationInvalidStateError(
+            "Application already has a rejection note."
+        )
+    return _create_rejection_note_draft(
+        application,
+        {**payload, "rejection_stage": "credit_assessment"},
+        actor,
+        request_ip,
+        request_user_agent,
+        request_id,
+    )
+
+
+def _create_rejection_note_draft(
+    application,
+    payload,
+    actor,
+    request_ip,
+    request_user_agent,
+    request_id,
+):
     cleaned = _clean_rejection_note_payload(payload)
     now = timezone.now()
     rejection_note = RejectionNote.objects.create(
@@ -1111,6 +1438,7 @@ def _application_available_actions(application, actor):
             "enabled": enabled,
             "disabled_reason": disabled_reason,
             "required_permission": APPLICATION_SUBMIT_PERMISSION,
+            "required_role": None,
         }
     ]
 
@@ -1214,6 +1542,9 @@ def serialize_rejection_note(rejection_note):
         "detailed_reason": rejection_note.detailed_reason,
         "reapply_allowed_flag": rejection_note.reapply_allowed_flag,
         "note_status": rejection_note.note_status,
+        "communication_status": (
+            "sent" if rejection_note.sent_at is not None else "not_sent"
+        ),
         "prepared_by_user_id": str(rejection_note.prepared_by_user_id),
         "approved_by_user_id": str(rejection_note.approved_by_user_id)
         if rejection_note.approved_by_user_id

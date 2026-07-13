@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_duplicate_pan_and_aadhaar_are_field_errors_with_zero_writes (sfpcl_credit.tests.test_member_governance_api.MemberGovernanceApiTests.test_duplicate_pan_and_aadhaar_are_field_errors_with_zero_writes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-12_094433_normal_run/sfpcl_credit/tests/test_member_governance_api.py", line 148, in test_duplicate_pan_and_aadhaar_are_field_errors_with_zero_writes
+    self.assertEqual(duplicate.status_code, 400)
+AssertionError: 200 != 400
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

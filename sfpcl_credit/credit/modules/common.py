@@ -1,6 +1,13 @@
 from dataclasses import dataclass
 
 from sfpcl_credit.applications.models import LoanApplication
+from sfpcl_credit.domain_errors import (
+    DomainInvalidStateError,
+    DomainNotFound,
+    DomainObjectAccessDenied,
+    DomainPermissionDenied,
+    DomainValidationError,
+)
 from sfpcl_credit.identity.modules import auth_service
 
 
@@ -16,32 +23,11 @@ class RequestMeta:
     user_agent: str = ""
 
 
-class CreditModuleValidationError(Exception):
-    def __init__(self, field_errors):
-        self.field_errors = field_errors
-        super().__init__("Credit module payload failed validation.")
-
-
-class CreditModuleInvalidStateError(Exception):
-    pass
-
-
-class CreditModulePermissionDenied(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(message)
-
-
-class CreditModuleObjectAccessDenied(Exception):
-    def __init__(self, object_access):
-        self.object_access = object_access
-        super().__init__("Object access denied.")
-
-
-class CreditModuleNotFound(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(message)
+CreditModuleValidationError = DomainValidationError
+CreditModuleInvalidStateError = DomainInvalidStateError
+CreditModulePermissionDenied = DomainPermissionDenied
+CreditModuleObjectAccessDenied = DomainObjectAccessDenied
+CreditModuleNotFound = DomainNotFound
 
 
 def normalize_request_meta(request_meta=None):
@@ -73,6 +59,32 @@ def require_application_access(application, actor, permission_code, actor_permis
     )
     if not object_access.allowed:
         raise CreditModuleObjectAccessDenied(object_access)
+
+
+def project_application_object_access(
+    action,
+    *,
+    application,
+    actor,
+    permission_code,
+    actor_permissions=None,
+):
+    """Overlay object authority on a six-field action without serializing the resource."""
+    from sfpcl_credit.applications.services import evaluate_application_object_access
+
+    object_access = evaluate_application_object_access(
+        application,
+        actor,
+        permission_code,
+        actor_permissions,
+    )
+    if object_access.allowed or object_access.error_code != "OBJECT_ACCESS_DENIED":
+        return action
+    return {
+        **action,
+        "enabled": False,
+        "disabled_reason": "You do not have access to this loan application.",
+    }
 
 
 def get_application_or_raise(application_id):

@@ -1,0 +1,6 @@
+Command:
+E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python RALPH_EVIDENCE_DIR=../.ralph/runs/2026-07-12_175317_repair/evidence/screenshots npm run e2e -- e2e/member-governance-variants.e2e.spec.ts --list
+
+Result: PASS
+Total: 1 test in 1 file
+[chromium] member-governance-variants.e2e.spec.ts: complete member variants and protected identity approval cross real staff sessions

@@ -1,0 +1,65 @@
+.ralph/runs/2026-07-10_195330_normal_run/review-packet.md:3:## Result
+.ralph/runs/2026-07-10_195330_normal_run/review-packet.md:4:Failed acceptance; do not commit or merge.
+.ralph/runs/2026-07-10_195330_normal_run/review-packet.md:15:- PostgreSQL `FOR UPDATE OF self` avoids accidentally locking nullable joined user rows. The same
+.ralph/runs/2026-07-10_195330_normal_run/review-packet.md:17:- New PostgreSQL transaction tests cover rejected review versus stale PATCH and competing terminal
+.ralph/runs/2026-07-10_195330_normal_run/review-packet.md:33:  rejection/history order and real PostgreSQL outcome proof. The implementation candidate addresses
+.ralph/runs/2026-07-10_195330_normal_run/review-packet.md:34:  the order; the proof remains unmet because zero PostgreSQL tests executed.
+.ralph/runs/2026-07-10_195330_normal_run/review-packet.md:38:- Focused credit/appraisal: 52 passed, 2 PostgreSQL-only skipped under SQLite.
+.ralph/runs/2026-07-10_195330_normal_run/review-packet.md:39:- Full backend: 365 passed, 4 PostgreSQL-only skipped; coverage 94% (floor 85%).
+.ralph/runs/2026-07-10_195330_normal_run/review-packet.md:42:- Combined PostgreSQL acceptance: failed before execution with sandbox socket `Operation not
+.ralph/runs/2026-07-10_195330_normal_run/review-packet.md:43:  permitted`; four tests found, zero executed.
+.ralph/runs/2026-07-10_195330_normal_run/review-packet.md:47:Run Ralph repair in an environment allowed to connect to PostgreSQL. Re-run the exact combined
+.ralph/runs/2026-07-10_195330_normal_run/review-packet.md:49:Do not promote 006G until 006F3 is green and Complete.
+.ralph/runs/2026-07-10_195330_normal_run/final-summary.md:3:Result: Success
+.ralph/runs/2026-07-10_210638_repair/final-summary.md:3:Result: Success
+.ralph/runs/2026-07-10_201119_normal_run/final-summary.md:3:Result: Success
+.ralph/runs/2026-07-10_201119_normal_run/review-packet.md:3:## Result
+.ralph/runs/2026-07-10_201119_normal_run/review-packet.md:4:Complete on all configured gates; PostgreSQL concurrency execution remains explicit residual
+.ralph/runs/2026-07-10_201119_normal_run/review-packet.md:46:- Focused sanction tests: 6 functional tests passed; PostgreSQL-only race skipped under SQLite.
+.ralph/runs/2026-07-10_201119_normal_run/review-packet.md:47:- Final focused sanction/migration: 8 passed, one PostgreSQL-only skip.
+.ralph/runs/2026-07-10_201119_normal_run/review-packet.md:48:- Full backend: 372 passed, five PostgreSQL-only skips; coverage 93% (floor 85%).
+.ralph/runs/2026-07-10_201119_normal_run/review-packet.md:52:- PostgreSQL command: one test found, zero executed because socket access failed before database
+.ralph/runs/2026-07-10_201119_normal_run/review-packet.md:56:Proceed to sharpened 006H frontend integration. Independently execute the PostgreSQL-only sanction
+.ralph/runs/2026-07-10_201119_normal_run/risk-assessment.md:8:- Result: all configured quality gates passed.
+.ralph/runs/2026-07-10_201119_normal_run/risk-assessment.md:21:- The PostgreSQL-only competing-transaction test did not execute in this sandbox because the live
+.ralph/runs/2026-07-10_195330_normal_run/evidence/postgresql-environment.md:1:# PostgreSQL Environment Evidence
+.ralph/runs/2026-07-10_195330_normal_run/evidence/postgresql-environment.md:3:- Installed server binary: PostgreSQL 14.20 (Homebrew).
+.ralph/runs/2026-07-10_195330_normal_run/evidence/postgresql-environment.md:12:- An isolated `/tmp` cluster was also attempted. PostgreSQL bootstrap failed because the sandbox
+.ralph/runs/2026-07-10_195330_normal_run/risk-assessment.md:7:- Result: Failed / not eligible for commit or merge.
+.ralph/runs/2026-07-10_195330_normal_run/risk-assessment.md:11:- Concurrency risk remains open because the authoritative PostgreSQL tests did not execute. SQLite
+.ralph/runs/2026-07-10_195330_normal_run/risk-assessment.md:14:  PostgreSQL locks to the intended row with `FOR UPDATE OF self`. A defect could deadlock appraisal
+.ralph/runs/2026-07-10_195330_normal_run/risk-assessment.md:18:  a reachable PostgreSQL run can close the risk.
+.ralph/runs/2026-07-10_195330_normal_run/risk-assessment.md:25:- Two PostgreSQL-only `TransactionTestCase` races added through public interfaces.
+.ralph/runs/2026-07-10_210638_repair/review-packet.md:3:## Result
+.ralph/runs/2026-07-10_210638_repair/review-packet.md:4:Complete — all configured gates pass; host screenshot proof remains explicit 006X evidence.
+sfpcl_credit/tests/test_sanction_submission_api.py:5:from unittest import skipUnless
+sfpcl_credit/tests/test_sanction_submission_api.py:457:@skipUnless(
+sfpcl_credit/tests/test_sanction_submission_api.py:459:    "Authoritative sanction-submission concurrency proof requires PostgreSQL.",
+sfpcl_credit/tests/test_sanction_submission_api.py:461:class SanctionSubmissionConcurrencyTests(TransactionTestCase):
+sfpcl_credit/tests/test_credit_modules.py:6:from unittest import skipUnless
+sfpcl_credit/tests/test_credit_modules.py:887:@skipUnless(
+sfpcl_credit/tests/test_credit_modules.py:889:    "Authoritative loan-limit concurrency proof requires the PostgreSQL integration settings.",
+sfpcl_credit/tests/test_credit_modules.py:891:class LoanLimitConcurrencyTests(TransactionTestCase):
+sfpcl_credit/tests/test_appraisal_api.py:6:from unittest import skipUnless
+sfpcl_credit/tests/test_appraisal_api.py:1894:@skipUnless(
+sfpcl_credit/tests/test_appraisal_api.py:1896:    "Authoritative appraisal concurrency proof requires PostgreSQL integration settings.",
+sfpcl_credit/tests/test_appraisal_api.py:1898:class AppraisalConcurrencyTests(TransactionTestCase):
+sfpcl_credit/credit/modules/appraisal_workflow.py:792:                "approval_case_id": str(approval_case.pk),
+sfpcl_credit/credit/modules/appraisal_workflow.py:822:                "approval_case_id": str(approval_case.pk),
+sfpcl-lms/src/services/creditAssessmentApi.ts:57:export interface SanctionSubmission { approval_case_id: string; loan_application_id: string; loan_appraisal_note_id: string; submission_status: string; exception_required_flag: boolean; submitted_by: { user_id: string; full_name: string }; submitted_at: string }
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:30:  sanctionSubmission: SanctionSubmission | null; permissions: string[]; roleCodes: string[];
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:50:  const submitted = note?.appraisal_status === 'submitted_to_sanction_committee' || Boolean(props.sanctionSubmission);
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:61:      {props.message && <AlertBanner type={props.sanctionSubmission || props.messageType === 'success' ? 'success' : 'error'} title={props.sanctionSubmission ? 'Submitted to Sanction Committee' : props.messageType === 'success' ? 'Action updated' : 'Action failed'} message={props.message} />}
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:62:      {props.sanctionSubmission && <AlertBanner type="success" title="Pending sanction case created" message={`Case ${props.sanctionSubmission.approval_case_id} · ${props.sanctionSubmission.submission_status}.`} />}
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:145:          {submitted && <AlertBanner type="success" title="Submitted to Sanction Committee" message={props.sanctionSubmission ? `Pending case ${props.sanctionSubmission.approval_case_id} retained for Epic 007 navigation.` : 'The server reports this appraisal as submitted.'} />}
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:162:  const [applications, setApplications] = useState<StaffApplication[]>([]); const [selectedId, setSelectedId] = useState(initialSelectedId ?? '');
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:164:  const [appraisal, setAppraisal] = useState<AppraisalNote | null>(null); const [sanction, setSanction] = useState<SanctionSubmission | null>(null);
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:177:    setEligibility(nextEligibility); setLoanLimit(nextLimit); setAppraisal(nextAppraisal); setSanction(null);
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:187:      const queue = result.items.filter(item => ['reference_generated', 'submitted_to_sanction_committee'].includes(item.application_status));
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:188:      setApplications(queue); const id = queue.some(item => item.loan_application_id === initialSelectedId) ? initialSelectedId! : queue[0]?.loan_application_id ?? '';
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:210:      if (name === 'save') setAppraisal(appraisal ? await updateAppraisal(selectedId, form) : await createAppraisal(selectedId, form));
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:211:      if (name === 'revalidate' && appraisal) setAppraisal(await revalidateAppraisalPrerequisites(appraisal.loan_appraisal_note_id));
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:212:      if (name === 'submit-review' && appraisal) setAppraisal(await submitAppraisalForReview(appraisal.loan_appraisal_note_id, { remarks }));
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:213:      if (name === 'review' && appraisal) setAppraisal(await reviewAppraisal(appraisal.loan_appraisal_note_id, { decision: reviewDecision, review_comments: remarks, ...(reviewDecision === 'rejected' ? { rejection_reason_category: rejectionCategory, detailed_reason: detailedReason, reapply_allowed_flag: reapplyAllowed, communication_mode: rejectionMode } : {}) }));
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:214:      if (name === 'sanction') { const result = await submitAppraisalToSanction(selectedId, { remarks }); setSanction(result); setAppraisal(current => current ? { ...current, appraisal_status: 'submitted_to_sanction_committee' } : current); setApplications(current => current.map(item => item.loan_application_id === selectedId ? { ...item, application_status: 'submitted_to_sanction_committee' } : item)); }
+sfpcl-lms/src/pages/appraisal/AppraisalWorkbench.tsx:219:  return <AppraisalWorkbenchView status={status} message={message} messageType={messageType} applications={applications} selectedApplication={applications.find(item => item.loan_application_id === selectedId) ?? null} eligibility={eligibility} loanLimit={loanLimit} appraisal={appraisal} sanctionSubmission={sanction} permissions={currentUser.permissions} roleCodes={currentUser.roleCodes} form={form} limitForm={limitForm} remarks={remarks} reviewDecision={reviewDecision} rejectionCategory={rejectionCategory} rejectionMode={rejectionMode} detailedReason={detailedReason} reapplyAllowed={reapplyAllowed} onSelect={select} onField={field} onAction={action} onOpenApplication={onOpenApplication} />;

@@ -1,0 +1,181 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 5 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, communications, configurations, contenttypes, credit, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying documents.0001_initial... OK
+  Applying members.0007_kycprofile_kycdocument_and_more... OK
+  Applying members.0008_cancelledcheque_bankaccount_and_more... OK
+  Applying identity.0003_portal_member_auth... OK
+  Applying applications.0001_initial... OK
+  Applying applications.0002_loanapplication_submitted_by_user... OK
+  Applying applications.0003_systemsequence_loanrequestregisterentry... OK
+  Applying applications.0004_applicationdocument_and_more... OK
+  Applying applications.0005_application_deficiency... OK
+  Applying applications.0006_rejection_note... OK
+  Applying applications.0007_eligibilityassessment... OK
+  Applying applications.0008_loanlimitassessment... OK
+  Applying applications.0009_loan_limit_policy_snapshot... OK
+  Applying applications.0010_loanapplication_nominee... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying credit.0001_credit_assessment_model_ownership... OK
+  Applying credit.0002_riskassessment_loanappraisalnote... OK
+  Applying credit.0003_appraisal_prerequisite_snapshots... OK
+  Applying credit.0004_appraisal_review_facts... OK
+  Applying credit.0005_appraisalreviewdecision... OK
+  Applying scheduler.0001_initial... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_exception_flag_is_frozen_and_audit_failure_rolls_back_every_write (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_exception_flag_is_frozen_and_audit_failure_rolls_back_every_write) ... FAIL
+test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects) ... 
+  test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects) (status='draft', mutation=None) ... FAIL
+  test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects) (status='review_pending', mutation=None) ... FAIL
+  test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects) (status='rejected', mutation=None) ... FAIL
+  test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects) (status='reviewed', mutation='history_comments') ... FAIL
+  test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects) (status='reviewed', mutation='legacy_unverified') ... FAIL
+test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects) ... FAIL
+test_payload_permission_role_and_object_scope_are_independent (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_payload_permission_role_and_object_scope_are_independent) ... 
+  test_payload_permission_role_and_object_scope_are_independent (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_payload_permission_role_and_object_scope_are_independent) (field='remarks') ... FAIL
+  test_payload_permission_role_and_object_scope_are_independent (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_payload_permission_role_and_object_scope_are_independent) (field='remarks') ... FAIL
+  test_payload_permission_role_and_object_scope_are_independent (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_payload_permission_role_and_object_scope_are_independent) (field='committee_id') ... FAIL
+test_payload_permission_role_and_object_scope_are_independent (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_payload_permission_role_and_object_scope_are_independent) ... FAIL
+test_rejected_appraisal_preserves_unsent_rejection_note_byte_for_byte (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_rejected_appraisal_preserves_unsent_rejection_note_byte_for_byte) ... ERROR
+test_reviewed_appraisal_creates_one_pending_case_and_metadata_only_evidence (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_reviewed_appraisal_creates_one_pending_case_and_metadata_only_evidence) ... FAIL
+
+======================================================================
+ERROR: test_rejected_appraisal_preserves_unsent_rejection_note_byte_for_byte (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_rejected_appraisal_preserves_unsent_rejection_note_byte_for_byte)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 301, in test_rejected_appraisal_preserves_unsent_rejection_note_byte_for_byte
+    rejection_note = RejectionNote.objects.create(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 677, in create
+    obj = self.model(**kwargs)
+          ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 567, in __init__
+    raise TypeError(
+TypeError: RejectionNote() got unexpected keyword arguments: 'communication_status'
+
+======================================================================
+FAIL: test_exception_flag_is_frozen_and_audit_failure_rolls_back_every_write (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_exception_flag_is_frozen_and_audit_failure_rolls_back_every_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 295, in test_exception_flag_is_frozen_and_audit_failure_rolls_back_every_write
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+======================================================================
+FAIL: test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects) (status='draft', mutation=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 243, in test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects
+    self.assertEqual(response.status_code, 409)
+AssertionError: 404 != 409
+
+======================================================================
+FAIL: test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects) (status='review_pending', mutation=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 243, in test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects
+    self.assertEqual(response.status_code, 409)
+AssertionError: 404 != 409
+
+======================================================================
+FAIL: test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects) (status='rejected', mutation=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 243, in test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects
+    self.assertEqual(response.status_code, 409)
+AssertionError: 404 != 409
+
+======================================================================
+FAIL: test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects) (status='reviewed', mutation='history_comments')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 243, in test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects
+    self.assertEqual(response.status_code, 409)
+AssertionError: 404 != 409
+
+======================================================================
+FAIL: test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects) (status='reviewed', mutation='legacy_unverified')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 243, in test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects
+    self.assertEqual(response.status_code, 409)
+AssertionError: 404 != 409
+
+======================================================================
+FAIL: test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 263, in test_invalid_or_inconsistent_appraisal_states_and_repeat_have_no_side_effects
+    self.assertEqual(first.status_code, 200)
+AssertionError: 404 != 200
+
+======================================================================
+FAIL: test_payload_permission_role_and_object_scope_are_independent (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_payload_permission_role_and_object_scope_are_independent) (field='remarks')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 188, in test_payload_permission_role_and_object_scope_are_independent
+    self.assertEqual(response.status_code, 400)
+AssertionError: 404 != 400
+
+======================================================================
+FAIL: test_payload_permission_role_and_object_scope_are_independent (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_payload_permission_role_and_object_scope_are_independent) (field='remarks')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 188, in test_payload_permission_role_and_object_scope_are_independent
+    self.assertEqual(response.status_code, 400)
+AssertionError: 404 != 400
+
+======================================================================
+FAIL: test_payload_permission_role_and_object_scope_are_independent (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_payload_permission_role_and_object_scope_are_independent) (field='committee_id')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 188, in test_payload_permission_role_and_object_scope_are_independent
+    self.assertEqual(response.status_code, 400)
+AssertionError: 404 != 400
+
+======================================================================
+FAIL: test_payload_permission_role_and_object_scope_are_independent (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_payload_permission_role_and_object_scope_are_independent)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 198, in test_payload_permission_role_and_object_scope_are_independent
+    self.assertEqual(role_denied.status_code, 403)
+AssertionError: 404 != 403
+
+======================================================================
+FAIL: test_reviewed_appraisal_creates_one_pending_case_and_metadata_only_evidence (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_reviewed_appraisal_creates_one_pending_case_and_metadata_only_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-10_201119_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 127, in test_reviewed_appraisal_creates_one_pending_case_and_metadata_only_evidence
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.073s
+
+FAILED (failures=12, errors=1)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

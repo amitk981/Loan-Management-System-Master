@@ -1,0 +1,103 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_014006_normal_run/.ralph/runs/2026-07-13_015523_repair/evidence/screenshots E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/portal-application-limit-authority.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/portal-application-limit-authority.e2e.spec.ts
+
+[2m[WebServer] [22m[12/Jul/2026 20:35:19] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 4 tests using 1 worker
+
+  ✘  1 [chromium] › portal-application-limit-authority.e2e.spec.ts:9:5 › available projection renders only the three server amounts (30.0s)
+  ✘  2 [chromium] › portal-application-limit-authority.e2e.spec.ts:20:5 › unavailable projection has no invented zero or internal reason (30.0s)
+  ✘  3 [chromium] › portal-application-limit-authority.e2e.spec.ts:29:5 › over-limit advisory is derived only from the server flag (30.0s)
+  ✘  4 [chromium] › portal-application-limit-authority.e2e.spec.ts:36:5 › review repeats the canonical server maximum without recalculation (30.0s)
+
+
+  1) [chromium] › portal-application-limit-authority.e2e.spec.ts:9:5 › available projection renders only the three server amounts 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: 'New Application' })[22m
+
+
+      53 |   });
+      54 |   await page.goto('/');
+    > 55 |   await page.getByRole('button', { name: 'New Application' }).click();
+         |                                                               ^
+      56 |   await expect(page.getByText('New Loan Application')).toBeVisible();
+      57 |   return requests;
+      58 | }
+        at mountPortal (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_014006_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:55:63)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_014006_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:10:20
+
+  2) [chromium] › portal-application-limit-authority.e2e.spec.ts:20:5 › unavailable projection has no invented zero or internal reason 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: 'New Application' })[22m
+
+
+      53 |   });
+      54 |   await page.goto('/');
+    > 55 |   await page.getByRole('button', { name: 'New Application' }).click();
+         |                                                               ^
+      56 |   await expect(page.getByText('New Loan Application')).toBeVisible();
+      57 |   return requests;
+      58 | }
+        at mountPortal (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_014006_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:55:63)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_014006_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:21:3
+
+  3) [chromium] › portal-application-limit-authority.e2e.spec.ts:29:5 › over-limit advisory is derived only from the server flag 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: 'New Application' })[22m
+
+
+      53 |   });
+      54 |   await page.goto('/');
+    > 55 |   await page.getByRole('button', { name: 'New Application' }).click();
+         |                                                               ^
+      56 |   await expect(page.getByText('New Loan Application')).toBeVisible();
+      57 |   return requests;
+      58 | }
+        at mountPortal (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_014006_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:55:63)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_014006_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:30:3
+
+  4) [chromium] › portal-application-limit-authority.e2e.spec.ts:36:5 › review repeats the canonical server maximum without recalculation 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: 'New Application' })[22m
+
+
+      53 |   });
+      54 |   await page.goto('/');
+    > 55 |   await page.getByRole('button', { name: 'New Application' }).click();
+         |                                                               ^
+      56 |   await expect(page.getByText('New Loan Application')).toBeVisible();
+      57 |   return requests;
+      58 | }
+        at mountPortal (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_014006_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:55:63)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_014006_normal_run/sfpcl-lms/e2e/portal-application-limit-authority.e2e.spec.ts:37:3
+
+  4 failed
+    [chromium] › portal-application-limit-authority.e2e.spec.ts:9:5 › available projection renders only the three server amounts 
+    [chromium] › portal-application-limit-authority.e2e.spec.ts:20:5 › unavailable projection has no invented zero or internal reason 
+    [chromium] › portal-application-limit-authority.e2e.spec.ts:29:5 › over-limit advisory is derived only from the server flag 
+    [chromium] › portal-application-limit-authority.e2e.spec.ts:36:5 › review repeats the canonical server maximum without recalculation 
+
+Exit code: 1

@@ -13,6 +13,7 @@ Options:
   --no-commit
   --no-worktree
   --continue-failed
+  --resume-failed
   --help
 
 Examples:
@@ -25,6 +26,7 @@ EOF
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
+source "$repo_root/scripts/lib/ralph-repair-context.sh"
 
 if [[ "$repo_root" == *"/.ralph/worktrees/"* ]]; then
   echo "Refusing to run: current directory is inside a Ralph worktree ($repo_root)." >&2
@@ -40,6 +42,9 @@ dry_run=0
 no_commit=0
 no_worktree=0
 continue_failed=0
+resume_failed=0
+resume_worktree=""
+failed_run_id=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -71,6 +76,10 @@ while [[ $# -gt 0 ]]; do
       continue_failed=1
       shift
       ;;
+    --resume-failed)
+      resume_failed=1
+      shift
+      ;;
     --help|-h)
       usage
       exit 0
@@ -98,6 +107,21 @@ case "$mode" in
     exit 2
     ;;
 esac
+
+if (( resume_failed == 1 )); then
+  repair_context="$repo_root/.ralph/repair-context.json"
+  if [[ "$normalized_mode" != "repair" ]]; then
+    echo "--resume-failed is valid only in repair mode." >&2
+    exit 2
+  fi
+  if ! ralph_repair_context_is_resumable "$repo_root" "$repair_context"; then
+    echo "Refusing same-worktree repair: structured repair context is missing, stale, or unsafe." >&2
+    exit 1
+  fi
+  selected_slice="$(ralph_repair_context_value "$repair_context" slice_id)"
+  resume_worktree="$(ralph_repair_context_value "$repair_context" worktree)"
+  failed_run_id="$(ralph_repair_context_value "$repair_context" run_id)"
+fi
 
 config=".ralph/config.yaml"
 if [[ ! -f "$config" ]]; then
@@ -157,6 +181,9 @@ run_once() {
       [[ "$no_commit" == 1 ]] && run_args+=(--no-commit)
       [[ "$no_worktree" == 1 ]] && run_args+=(--no-worktree)
       [[ "$continue_failed" == 1 ]] && run_args+=(--continue-failed)
+      if (( resume_failed == 1 )); then
+        run_args+=(--resume-worktree "$resume_worktree" --failed-run-id "$failed_run_id")
+      fi
       ./scripts/ralph-preflight.sh "${preflight_args[@]}"
       ./scripts/ralph-run.sh "${run_args[@]}"
       ;;

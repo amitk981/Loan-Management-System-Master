@@ -1,0 +1,39 @@
+tracked_diff_files:
+.ralph/progress.md
+.ralph/state.json
+docs/slices/006D2C-loan-limit-concurrency-and-boundary-regression.md
+docs/slices/006E2-appraisal-source-contract-and-snapshot-hardening.md
+docs/slices/006F-credit-manager-review.md
+docs/working/ASSUMPTIONS.md
+docs/working/HANDOFF.md
+docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+sfpcl_credit/requirements.txt
+sfpcl_credit/tests/test_credit_modules.py
+worktree_status:
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/006D2C-loan-limit-concurrency-and-boundary-regression.md
+ M docs/slices/006E2-appraisal-source-contract-and-snapshot-hardening.md
+ M docs/slices/006F-credit-manager-review.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M sfpcl_credit/requirements.txt
+ M sfpcl_credit/tests/test_credit_modules.py
+?? .ralph/runs/2026-07-10_175450_normal_run/
+?? sfpcl_credit/config/postgres_test_settings.py
+diff_stat:
+ .ralph/progress.md                                 |  16 +
+ .ralph/state.json                                  |   7 +-
+ ...an-limit-concurrency-and-boundary-regression.md |  14 +-
+ ...aisal-source-contract-and-snapshot-hardening.md |  15 +
+ docs/slices/006F-credit-manager-review.md          |  16 +-
+ docs/working/ASSUMPTIONS.md                        |   1 +
+ docs/working/HANDOFF.md                            |  45 +-
+ .../epic-006-eligibility-loan-limit-appraisal.md   |  19 +
+ sfpcl_credit/requirements.txt                      |   1 +
+ sfpcl_credit/tests/test_credit_modules.py          | 486 +++++++++++++++++++--
+ 10 files changed, 557 insertions(+), 63 deletions(-)
+diff_numstat_total:
+added=557 deleted=63 total=620
+protected_or_forbidden_changes:

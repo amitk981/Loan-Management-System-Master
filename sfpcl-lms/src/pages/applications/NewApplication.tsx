@@ -4,7 +4,6 @@ import {
   FileCheck, FileText, IndianRupee, Save, Shield, Signature, Upload, User
 } from 'lucide-react';
 import { useRole } from '../../contexts/RoleContext';
-import LoanLimitCalculator from '../../components/loan/LoanLimitCalculator';
 import { AuthSessionError } from '../../services/authSession';
 import { fetchMemberDirectory, type MemberDirectoryItem } from '../../services/memberDirectoryApi';
 import { fetchMemberNominees, type MemberNomineeDetail } from '../../services/memberProfileApi';
@@ -201,9 +200,6 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
   }, [selectedMemberId]);
 
   const stepIndex = STEP_ORDER.indexOf(step);
-  const shareholdingLimit = applicationForm.sharesHeld * applicationForm.valuationPerShare;
-  const landBasedLimit = applicationForm.landAreaAcres * 20000;
-  const maximumPermissibleLimit = Math.min(shareholdingLimit, landBasedLimit || shareholdingLimit);
   
   const applicableDocuments = REQUIRED_DOCUMENTS.filter(doc => {
     if (doc.id === 'borrowerAadhaar' && applicationForm.applicantType !== 'individual') return false;
@@ -317,8 +313,8 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
       message: 'Shares held and shareholding mode are mandatory; Demat BO ID is required for demat shares.',
     },
     loan: {
-      ok: applicationForm.requestedAmount > 0 && applicationForm.requestedAmount <= maximumPermissibleLimit && ['crop_production', 'agriculture_activity'].includes(applicationForm.purpose) && Boolean(applicationForm.crop && applicationForm.expectedRepaymentDate),
-      message: 'Requested amount must be within the permissible limit and purpose must be crop/agriculture related.',
+      ok: applicationForm.requestedAmount > 0 && ['crop_production', 'agriculture_activity'].includes(applicationForm.purpose) && Boolean(applicationForm.crop && applicationForm.expectedRepaymentDate),
+      message: 'Requested amount is required and purpose must be crop/agriculture related.',
     },
     nominee: {
       ok: Boolean(selectedNomineeId),
@@ -554,14 +550,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
                 <TextField label="Demat BO ID" value={applicationForm.dematBoId} onChange={v => updateField('dematBoId', v)} />
               )}
             </div>
-            {applicationForm.sharesHeld === 0 && (
-              <Warning>Enter shares held to calculate the shareholding limit.</Warning>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <LimitCard label="Shareholding Limit" value={applicationForm.sharesHeld === 0 ? 0 : shareholdingLimit} />
-              <LimitCard label="Land-Based Limit" value={landBasedLimit} />
-              <LimitCard label="Maximum Permissible Limit" value={applicationForm.sharesHeld === 0 ? 0 : maximumPermissibleLimit} />
-            </div>
+            <Warning>Loan eligibility and limits are calculated from verified source records after completeness, not in this intake form.</Warning>
           </>
         )}
 
@@ -599,17 +588,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
                 </select>
               </Field>
             </div>
-            {selectedMember && applicationForm.requestedAmount > 0 && (
-              <LoanLimitCalculator
-                sharesHeld={applicationForm.sharesHeld || selectedMember.sharesHeld}
-                shareMode={selectedMember.shareMode as 'physical' | 'demat'}
-                landAreaAcres={applicationForm.landAreaAcres}
-                requestedAmount={applicationForm.requestedAmount}
-              />
-            )}
-            {applicationForm.requestedAmount > maximumPermissibleLimit && (
-              <Warning>{`Requested amount exceeds maximum permissible limit of ${fmt(maximumPermissibleLimit)}.`}</Warning>
-            )}
+            <Warning>The backend Appraisal Workbench will display the stored policy version, source inputs, boundary result, and exception flag.</Warning>
           </>
         )}
 
@@ -705,7 +684,7 @@ const NewApplication: React.FC<NewApplicationProps> = ({ onBack, onNavigateTasks
                 <SummaryRow label="Applicant" value={applicationForm.borrowerName || '—'} />
                 <SummaryRow label="Folio / Shares" value={`${applicationForm.folioNumber || '—'} / ${applicationForm.sharesHeld || '—'}`} />
                 <SummaryRow label="Requested Amount" value={applicationForm.requestedAmount ? fmt(applicationForm.requestedAmount) : '—'} />
-                <SummaryRow label="Eligible Limit" value={maximumPermissibleLimit ? fmt(maximumPermissibleLimit) : '—'} />
+                <SummaryRow label="Eligible Limit" value="Calculated after completeness" />
                 <SummaryRow label="Purpose" value={applicationForm.purpose.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} />
                 <SummaryRow label="Nominee" value={selectedNominee ? `${selectedNominee.nominee_name} · Age ${selectedNominee.age_at_application ?? '—'}` : 'Not selected'} />
               </div>
@@ -781,13 +760,6 @@ const NumberField: React.FC<{ label: string; value: number; onChange?: (value: n
       readOnly={readOnly}
     />
   </Field>
-);
-
-const LimitCard: React.FC<{ label: string; value: number }> = ({ label, value }) => (
-  <div className="rounded-lg border border-green-100 bg-green-50 p-3">
-    <div className="text-xs text-green-700">{label}</div>
-    <div className="mt-1 text-lg font-bold text-green-900">{fmt(value)}</div>
-  </div>
 );
 
 const SummaryRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (

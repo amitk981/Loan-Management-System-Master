@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { E2E_PASSWORD, TRACER_EMAIL, ZERO_EMAIL, staffLogin } from './helpers';
+import { E2E_PASSWORD, TRACER_EMAIL, ZERO_EMAIL, freezeDashboardClock, staffLogin } from './helpers';
 
 const STAFF_NAV_LABELS = [
   'Task Inbox',
@@ -51,6 +51,7 @@ test.describe('auth negatives and restricted staff UI', () => {
   });
 
   test('zero-permission staff sees the neutral dashboard, no tracer nav, no settings', async ({ page }) => {
+    await freezeDashboardClock(page);
     await staffLogin(page, ZERO_EMAIL, E2E_PASSWORD);
 
     // Neutral backend-staff shell: Dashboard only, no tracer/auditor/admin/borrower
@@ -59,6 +60,8 @@ test.describe('auth negatives and restricted staff UI', () => {
     for (const label of STAFF_NAV_LABELS) {
       await expect(page.getByRole('button', { name: label })).toHaveCount(0);
     }
+    await expect(page.getByRole('heading', { name: 'Good afternoon, E2E' })).toBeVisible();
+    await expect(page.getByText('SFPCL LMS · IT Head · Friday 10 July, 2026')).toBeVisible();
 
     // Baseline the resting neutral dashboard before opening any menu.
     await expect(page).toHaveScreenshot('dashboard-zero-permission.png', { fullPage: true });

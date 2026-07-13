@@ -1,0 +1,19 @@
+Red-capable command (run twice by trusted validation in 2026-07-12_100436_repair):
+
+RALPH_EVIDENCE_DIR=.ralph/runs/2026-07-12_100436_repair/evidence/screenshots \
+E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python \
+npm run e2e -- e2e/member-governance-closure.e2e.spec.ts
+
+Deterministic failure from both runs:
+
+Error: expect.toBeVisible: strict mode violation:
+getByRole('button', { name: 'Approve identity change' }) resolved to 2 elements:
+1) button.btn-primary (the real approval mutation control)
+2) button.btn-secondary (the resource-action projection in the profile header)
+
+The test stopped at member-governance-closure.e2e.spec.ts:73 before approval and therefore did not
+emit member-identity-change-approved.png or member-governance-denied.png.
+
+Full original logs:
+- .ralph/runs/2026-07-12_100436_repair/evidence/terminal-logs/trusted-browser-acceptance-1.log
+- .ralph/runs/2026-07-12_100436_repair/evidence/terminal-logs/trusted-browser-acceptance-2.log

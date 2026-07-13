@@ -33,6 +33,7 @@ class EligibilityAssessment(models.Model):
     nominee_check = models.CharField(max_length=60, default=CHECK_PENDING)
     overall_result = models.CharField(max_length=60, db_index=True)
     assessment_notes = models.TextField(blank=True)
+    active_member_snapshot = models.JSONField(default=dict)
     assessed_by_user = models.ForeignKey(
         "identity.User",
         on_delete=models.PROTECT,
@@ -150,6 +151,9 @@ class RiskAssessment(models.Model):
 class LoanAppraisalNote(models.Model):
     STATUS_DRAFT = "draft"
     STATUS_REVIEW_PENDING = "review_pending"
+    STATUS_REVIEWED = "reviewed"
+    STATUS_REJECTED = "rejected"
+    STATUS_SUBMITTED_TO_SANCTION = "submitted_to_sanction_committee"
     TAT_WITHIN = "within_tat"
     TAT_BREACHED = "breached"
 
@@ -177,10 +181,19 @@ class LoanAppraisalNote(models.Model):
     )
     prepared_at = models.DateTimeField(default=timezone.now)
     reviewed_at = models.DateTimeField(blank=True, null=True)
+    review_comments = models.TextField(blank=True)
+    last_review_decision = models.CharField(max_length=60, blank=True)
     tat_due_at = models.DateTimeField(db_index=True)
     tat_status = models.CharField(max_length=60, db_index=True)
     eligibility_assessment_id_snapshot = models.UUIDField()
     loan_limit_assessment_id_snapshot = models.UUIDField()
+    eligibility_snapshot_json = models.JSONField(default=dict)
+    loan_limit_snapshot_json = models.JSONField(default=dict)
+    prerequisite_provenance = models.CharField(
+        max_length=60,
+        default="legacy_unverified",
+        db_index=True,
+    )
     borrower_summary = models.TextField()
     eligibility_summary = models.TextField()
     loan_limit_summary = models.TextField()
@@ -188,6 +201,8 @@ class LoanAppraisalNote(models.Model):
     recommended_tenure_months = models.PositiveIntegerField(blank=True, null=True)
     recommended_interest_type = models.CharField(max_length=60, blank=True)
     recommended_security_summary = models.TextField()
+    repayment_capacity_notes = models.TextField()
+    submission_remarks = models.TextField(blank=True)
     risk_assessment = models.OneToOneField(
         RiskAssessment,
         on_delete=models.PROTECT,
@@ -203,3 +218,48 @@ class LoanAppraisalNote(models.Model):
             models.Index(fields=["recommendation"], name="idx_appraisal_recommend"),
             models.Index(fields=["appraisal_status"], name="idx_appraisal_status"),
         ]
+
+
+class AppraisalReviewDecision(models.Model):
+    PROVENANCE_NATIVE = "native"
+    PROVENANCE_LEGACY_LATEST_ONLY = "legacy_latest_only"
+
+    appraisal_review_decision_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    loan_appraisal_note = models.ForeignKey(
+        LoanAppraisalNote,
+        on_delete=models.PROTECT,
+        related_name="review_decisions",
+    )
+    decision = models.CharField(max_length=60)
+    review_comments = models.TextField()
+    reviewer_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="appraisal_review_decisions",
+    )
+    decided_at = models.DateTimeField(default=timezone.now)
+    from_state = models.CharField(max_length=60)
+    to_state = models.CharField(max_length=60)
+    history_provenance = models.CharField(
+        max_length=60,
+        default=PROVENANCE_NATIVE,
+    )
+
+    class Meta:
+        db_table = "appraisal_review_decisions"
+        ordering = ["decided_at", "appraisal_review_decision_id"]
+        indexes = [
+            models.Index(
+                fields=["loan_appraisal_note", "decided_at"],
+                name="idx_appraisal_review_time",
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValueError("Appraisal review decisions are immutable.")
+        return super().save(*args, **kwargs)

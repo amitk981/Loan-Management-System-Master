@@ -1,0 +1,17 @@
+$ /Users/amitkallapa/LMS/.ralph/venv/bin/python -c "import psycopg; print(psycopg.__version__)"
+3.3.4
+exit_code=0
+
+$ pg_isready -h 127.0.0.1 -p 5432
+127.0.0.1:5432 - no response
+exit_code=2
+
+$ initdb -D /private/tmp/ralph-arch-review-pgdata-190455 --auth=trust --no-locale
+creating configuration files ... ok
+running bootstrap script ... FATAL: could not create shared memory segment: Operation not permitted
+DETAIL: Failed system call was shmget(...)
+initdb removed the incomplete data directory.
+exit_code=1
+
+Conclusion: PostgreSQL acceptance tests did not execute in this review. This log is a diagnostic,
+not a pass; corrective slice 006F3 requires a provisioned server and zero skipped tests.
