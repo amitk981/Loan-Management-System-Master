@@ -396,7 +396,13 @@ class ApprovalCaseRoutingApiTests(TestCase):
                 "reason": reason,
             }
         ]
-        self.case.save(update_fields=["excluded_approvers_json"])
+        self.case.general_meeting_evidence_required = True
+        self.case.save(
+            update_fields=[
+                "excluded_approvers_json",
+                "general_meeting_evidence_required",
+            ]
+        )
         case_before = ApprovalCase.objects.filter(pk=self.case.pk).values().get()
 
         response = self.client.post(
@@ -1240,6 +1246,450 @@ class ApprovalCaseRoutingApiTests(TestCase):
         entry.refresh_from_db()
         self.assertEqual(entry.status, "pending")
         self.assertIsNone(entry.closed_at)
+
+    def test_authorized_recorder_creates_approved_general_meeting_evidence(self):
+        recorder, payload = self._general_meeting_recorder_and_payload()
+
+        response = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/general-meeting-approval/",
+            payload,
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="req-general-meeting-approved",
+            HTTP_USER_AGENT="General Meeting Contract Test",
+            REMOTE_ADDR="203.0.113.71",
+            **self._auth(recorder),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        assert_success_envelope(self, response.json())
+        data = response.json()["data"]
+        self.assertEqual(data["loan_application_id"], str(self.application.pk))
+        self.assertEqual(data["related_party_type"], "director_relative")
+        self.assertEqual(data["related_party_user_id"], str(self.director.pk))
+        self.assertEqual(data["relationship_description"], "Borrower is a relative of a Director.")
+        self.assertEqual(data["meeting_date"], timezone.localdate().isoformat())
+        self.assertEqual(data["notice_document_id"], payload["notice_document_id"])
+        self.assertEqual(data["minutes_document_id"], payload["minutes_document_id"])
+        self.assertEqual(data["resolution_document_id"], payload["resolution_document_id"])
+        self.assertEqual(data["approval_status"], "approved")
+        self.assertEqual(data["recorded_by_user_id"], str(recorder.pk))
+        self.assertIsNone(data["supersedes_general_meeting_approval_id"])
+        meeting_model = apps.get_model("approvals", "GeneralMeetingApproval")
+        meeting = meeting_model.objects.get(pk=data["general_meeting_approval_id"])
+        self.assertEqual(meeting.loan_application_id, self.application.pk)
+        audit = AuditLog.objects.get(action="general_meeting_approval.recorded")
+        self.assertEqual(audit.actor_user, recorder)
+        self.assertEqual(audit.entity_id, meeting.pk)
+        self.assertEqual(audit.new_value_json["approval_status"], "approved")
+        self.assertEqual(audit.new_value_json["request_id"], "req-general-meeting-approved")
+        workflow = WorkflowEvent.objects.get(
+            workflow_name="general_meeting_approval",
+            entity_id=meeting.pk,
+        )
+        self.assertEqual(workflow.from_state, None)
+        self.assertEqual(workflow.to_state, "approved")
+        self.assertEqual(workflow.triggered_by_user, recorder)
+
+    def test_general_meeting_exact_replay_is_zero_write_and_changed_status_supersedes(self):
+        recorder, payload = self._general_meeting_recorder_and_payload()
+        url = (
+            f"/api/v1/loan-applications/{self.application.pk}/"
+            "general-meeting-approval/"
+        )
+
+        first = self.client.post(
+            url,
+            payload,
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="req-general-meeting-first",
+            **self._auth(recorder),
+        )
+        replay = self.client.post(
+            url,
+            payload,
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="req-general-meeting-replay",
+            **self._auth(recorder),
+        )
+        rejected = self.client.post(
+            url,
+            {**payload, "approval_status": "rejected"},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="req-general-meeting-rejected",
+            **self._auth(recorder),
+        )
+
+        self.assertEqual(first.status_code, 200, first.content)
+        self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(rejected.status_code, 200, rejected.content)
+        first_id = first.json()["data"]["general_meeting_approval_id"]
+        self.assertEqual(
+            replay.json()["data"]["general_meeting_approval_id"], first_id
+        )
+        rejected_data = rejected.json()["data"]
+        self.assertNotEqual(rejected_data["general_meeting_approval_id"], first_id)
+        self.assertEqual(
+            rejected_data["supersedes_general_meeting_approval_id"], first_id
+        )
+        meeting_model = apps.get_model("approvals", "GeneralMeetingApproval")
+        self.assertEqual(meeting_model.objects.count(), 2)
+        self.assertEqual(meeting_model.objects.get(pk=first_id).approval_status, "approved")
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="general_meeting_approval.recorded"
+            ).count(),
+            1,
+        )
+        status_audit = AuditLog.objects.get(
+            action="general_meeting_approval.status_changed"
+        )
+        self.assertEqual(status_audit.old_value_json["approval_status"], "approved")
+        self.assertEqual(status_audit.new_value_json["approval_status"], "rejected")
+        self.assertEqual(
+            status_audit.new_value_json["request_id"],
+            "req-general-meeting-rejected",
+        )
+        workflows = WorkflowEvent.objects.filter(
+            workflow_name="general_meeting_approval"
+        ).order_by("created_at")
+        self.assertEqual(workflows.count(), 2)
+        self.assertEqual(workflows[1].from_state, "approved")
+        self.assertEqual(workflows[1].to_state, "rejected")
+
+    def test_related_party_final_approval_requires_general_meeting_evidence(self):
+        self.case.general_meeting_evidence_required = True
+        self.case.save(update_fields=["general_meeting_evidence_required"])
+        exception_entry = ExceptionRegisterEntry.objects.create(
+            loan_application=self.application,
+            exception_type="waiver",
+            description="Related-party case requires exceptional governance.",
+            business_reason="Preserve pending exception evidence on denied sanction.",
+            approval_case=self.case,
+        )
+        partial = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2, "comments": "CFO approval is not yet final."},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        self.assertEqual(partial.status_code, 200, partial.content)
+        director_headers = self._auth(self.director)
+        before = self._action_ledgers()
+
+        denied = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3, "comments": "Director attempts final approval."},
+            content_type="application/json",
+            **director_headers,
+        )
+
+        self.assertEqual(denied.status_code, 409, denied.content)
+        assert_error_envelope(self, denied.json(), "GENERAL_MEETING_EVIDENCE_REQUIRED")
+        self.assertEqual(
+            denied.json()["error"]["details"],
+            {
+                "approval_case_id": str(self.case.pk),
+                "cycle_number": 1,
+                "general_meeting_approval_id": None,
+                "approval_status": None,
+            },
+        )
+        self.assertEqual(self._action_ledgers(), before)
+        self.assertFalse(
+            apps.get_model("approvals", "SanctionDecision").objects.filter(
+                approval_case=self.case
+            ).exists()
+        )
+        exception_entry.refresh_from_db()
+        self.assertEqual(exception_entry.status, "pending")
+        self.assertIsNone(exception_entry.closed_at)
+
+    def test_latest_general_meeting_outcome_gates_and_is_frozen_on_the_case_cycle(self):
+        recorder, payload = self._general_meeting_recorder_and_payload()
+        meeting_url = (
+            f"/api/v1/loan-applications/{self.application.pk}/"
+            "general-meeting-approval/"
+        )
+        rejected = self.client.post(
+            meeting_url,
+            {**payload, "approval_status": "rejected"},
+            content_type="application/json",
+            **self._auth(recorder),
+        )
+        self.assertEqual(rejected.status_code, 200, rejected.content)
+        rejected_id = rejected.json()["data"]["general_meeting_approval_id"]
+        partial = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        self.assertEqual(partial.status_code, 200, partial.content)
+        director_headers = self._auth(self.director)
+        before = self._action_ledgers()
+
+        denied = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3},
+            content_type="application/json",
+            **director_headers,
+        )
+
+        self.assertEqual(denied.status_code, 409, denied.content)
+        assert_error_envelope(self, denied.json(), "GENERAL_MEETING_APPROVAL_REJECTED")
+        self.assertEqual(
+            denied.json()["error"]["details"]["general_meeting_approval_id"],
+            rejected_id,
+        )
+        self.assertEqual(denied.json()["error"]["details"]["approval_status"], "rejected")
+        self.assertEqual(self._action_ledgers(), before)
+
+        approved = self.client.post(
+            meeting_url,
+            payload,
+            content_type="application/json",
+            **self._auth(recorder),
+        )
+        self.assertEqual(approved.status_code, 200, approved.content)
+        approved_data = approved.json()["data"]
+        self.assertEqual(
+            approved_data["supersedes_general_meeting_approval_id"], rejected_id
+        )
+        completed = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3},
+            content_type="application/json",
+            **director_headers,
+        )
+
+        self.assertEqual(completed.status_code, 200, completed.content)
+        completed_data = completed.json()["data"]
+        self.assertEqual(completed_data["current_status"], "approved")
+        self.assertTrue(completed_data["sanction_decision_created"])
+        self.assertEqual(
+            completed_data["general_meeting_approval"], approved_data
+        )
+        self.case.refresh_from_db()
+        self.assertEqual(
+            str(self.case.general_meeting_approval_id),
+            approved_data["general_meeting_approval_id"],
+        )
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **director_headers
+        )
+        self.assertEqual(detail.status_code, 200, detail.content)
+        self.assertEqual(
+            detail.json()["data"]["general_meeting_approval"], approved_data
+        )
+
+    def test_pending_general_meeting_outcome_blocks_final_sanction(self):
+        recorder, payload = self._general_meeting_recorder_and_payload()
+        meeting = self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/general-meeting-approval/",
+            {**payload, "approval_status": "pending"},
+            content_type="application/json",
+            **self._auth(recorder),
+        )
+        self.assertEqual(meeting.status_code, 200, meeting.content)
+        partial = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        self.assertEqual(partial.status_code, 200, partial.content)
+        denied = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3},
+            content_type="application/json",
+            **self._auth(self.director),
+        )
+        self.assertEqual(denied.status_code, 409, denied.content)
+        assert_error_envelope(self, denied.json(), "GENERAL_MEETING_APPROVAL_PENDING")
+        self.assertEqual(denied.json()["error"]["details"]["approval_status"], "pending")
+        self.assertFalse(
+            ApprovalAction.objects.filter(
+                approval_case=self.case, approver_user=self.director
+            ).exists()
+        )
+
+    def test_general_meeting_document_and_permission_denials_are_zero_write(self):
+        recorder, payload = self._general_meeting_recorder_and_payload()
+        url = (
+            f"/api/v1/loan-applications/{self.application.pk}/"
+            "general-meeting-approval/"
+        )
+        auth = self._auth(recorder)
+        meeting_model = apps.get_model("approvals", "GeneralMeetingApproval")
+
+        missing = self.client.post(
+            url,
+            {**payload, "resolution_document_id": "70000000-0000-0000-0000-000000000007"},
+            content_type="application/json",
+            **auth,
+        )
+
+        self.assertEqual(missing.status_code, 400, missing.content)
+        assert_error_envelope(self, missing.json(), "VALIDATION_ERROR")
+        self.assertEqual(
+            missing.json()["error"]["field_errors"]["resolution_document_id"],
+            "Document file was not found or is inaccessible.",
+        )
+        self.assertEqual(meeting_model.objects.count(), 0)
+        self.assertFalse(
+            AuditLog.objects.filter(
+                action__startswith="general_meeting_approval."
+            ).exists()
+        )
+        self.assertFalse(
+            WorkflowEvent.objects.filter(
+                workflow_name="general_meeting_approval"
+            ).exists()
+        )
+
+        RolePermission.objects.filter(
+            role=recorder.primary_role,
+            permission__permission_code="documents.file.download",
+        ).delete()
+        no_document_access = self.client.post(
+            url, payload, content_type="application/json", **auth
+        )
+        self.assertEqual(no_document_access.status_code, 403, no_document_access.content)
+        assert_error_envelope(self, no_document_access.json(), "FORBIDDEN")
+        self.assertEqual(meeting_model.objects.count(), 0)
+
+        document_permission = Permission.objects.get(
+            permission_code="documents.file.download"
+        )
+        RolePermission.objects.create(
+            role=recorder.primary_role, permission=document_permission
+        )
+        RolePermission.objects.filter(
+            role=recorder.primary_role,
+            permission__permission_code="approvals.general_meeting.record",
+        ).delete()
+        no_record_authority = self.client.post(
+            url, payload, content_type="application/json", **auth
+        )
+        self.assertEqual(no_record_authority.status_code, 403, no_record_authority.content)
+        assert_error_envelope(self, no_record_authority.json(), "FORBIDDEN")
+        self.assertEqual(meeting_model.objects.count(), 0)
+
+        unscoped = self._user(
+            "unscoped_general_meeting_recorder",
+            "Unscoped General Meeting Recorder",
+            self.read_permission,
+            Permission.objects.get(
+                permission_code="approvals.general_meeting.record"
+            ),
+            document_permission,
+        )
+        no_case_scope = self.client.post(
+            url,
+            payload,
+            content_type="application/json",
+            **self._auth(unscoped),
+        )
+        self.assertEqual(no_case_scope.status_code, 403, no_case_scope.content)
+        assert_error_envelope(self, no_case_scope.json(), "OBJECT_ACCESS_DENIED")
+        self.assertEqual(meeting_model.objects.count(), 0)
+
+    def test_general_meeting_payload_and_related_case_scope_are_bounded(self):
+        recorder, payload = self._general_meeting_recorder_and_payload()
+        url = (
+            f"/api/v1/loan-applications/{self.application.pk}/"
+            "general-meeting-approval/"
+        )
+        invalid = self.client.post(
+            url,
+            {
+                **payload,
+                "related_party_type": "material_interest",
+                "relationship_description": "   ",
+                "meeting_date": "13/07/2026",
+                "notice_document_id": "not-a-uuid",
+                "approval_status": "waived",
+                "unexpected": True,
+            },
+            content_type="application/json",
+            **self._auth(recorder),
+        )
+
+        self.assertEqual(invalid.status_code, 400, invalid.content)
+        assert_error_envelope(self, invalid.json(), "VALIDATION_ERROR")
+        self.assertEqual(
+            set(invalid.json()["error"]["field_errors"]),
+            {
+                "approval_status",
+                "meeting_date",
+                "notice_document_id",
+                "related_party_type",
+                "relationship_description",
+                "unexpected",
+            },
+        )
+        self.assertEqual(
+            apps.get_model("approvals", "GeneralMeetingApproval").objects.count(),
+            0,
+        )
+        self.case.general_meeting_evidence_required = False
+        self.case.save(update_fields=["general_meeting_evidence_required"])
+        unrelated = self.client.post(
+            url, payload, content_type="application/json", **self._auth(recorder)
+        )
+        self.assertEqual(unrelated.status_code, 409, unrelated.content)
+        assert_error_envelope(self, unrelated.json(), "INVALID_STATE")
+        self.assertEqual(
+            apps.get_model("approvals", "GeneralMeetingApproval").objects.count(),
+            0,
+        )
+
+    def test_returned_cycle_keeps_its_applicable_general_meeting_reference(self):
+        recorder, payload = self._general_meeting_recorder_and_payload()
+        meeting_url = (
+            f"/api/v1/loan-applications/{self.application.pk}/"
+            "general-meeting-approval/"
+        )
+        approved = self.client.post(
+            meeting_url,
+            payload,
+            content_type="application/json",
+            **self._auth(recorder),
+        )
+        self.assertEqual(approved.status_code, 200, approved.content)
+        approved_data = approved.json()["data"]
+
+        returned = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/return-for-clarification/",
+            {"version": 2, "comments": "Correct the appraisal before a new cycle."},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+
+        self.assertEqual(returned.status_code, 200, returned.content)
+        self.assertEqual(returned.json()["data"]["current_status"], "returned_for_clarification")
+        self.assertEqual(
+            returned.json()["data"]["general_meeting_approval"], approved_data
+        )
+        rejected = self.client.post(
+            meeting_url,
+            {**payload, "approval_status": "rejected"},
+            content_type="application/json",
+            **self._auth(recorder),
+        )
+        self.assertEqual(rejected.status_code, 200, rejected.content)
+        self.assertNotEqual(
+            rejected.json()["data"]["general_meeting_approval_id"],
+            approved_data["general_meeting_approval_id"],
+        )
+
+        historical = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **self._auth(self.cfo)
+        )
+        self.assertEqual(historical.status_code, 200, historical.content)
+        self.assertEqual(
+            historical.json()["data"]["general_meeting_approval"], approved_data
+        )
 
     def test_exception_register_is_read_only_filtered_paginated_and_object_scoped(self):
         read_permission = self._permission("approvals.exception_register.read")
@@ -2645,6 +3095,44 @@ class ApprovalCaseRoutingApiTests(TestCase):
             module_name="approvals",
             risk_level="high",
         )
+
+    def _general_meeting_recorder_and_payload(self):
+        record_permission = self._permission("approvals.general_meeting.record")
+        document_permission = self._permission("documents.file.download")
+        recorder = self._user(
+            "general_meeting_recorder",
+            "General Meeting Recorder",
+            self.read_permission,
+            record_permission,
+            document_permission,
+        )
+        ApprovalCaseReadScopeGrant.objects.create(
+            role=recorder.primary_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_LEGAL_READONLY,
+        )
+        document_model = apps.get_model("documents", "DocumentFile")
+        documents = [
+            document_model.objects.create(
+                file_name=file_name,
+                storage_provider="local",
+                storage_key=f"general-meeting/{file_name}",
+                uploaded_by_user=recorder,
+                sensitivity_level="restricted",
+            )
+            for file_name in ("notice.pdf", "minutes.pdf", "resolution.pdf")
+        ]
+        self.case.general_meeting_evidence_required = True
+        self.case.save(update_fields=["general_meeting_evidence_required"])
+        return recorder, {
+            "related_party_type": "director_relative",
+            "related_party_user_id": str(self.director.pk),
+            "relationship_description": "Borrower is a relative of a Director.",
+            "meeting_date": timezone.localdate().isoformat(),
+            "notice_document_id": str(documents[0].pk),
+            "minutes_document_id": str(documents[1].pk),
+            "resolution_document_id": str(documents[2].pk),
+            "approval_status": "approved",
+        }
 
     def _action_ledgers(self):
         return {

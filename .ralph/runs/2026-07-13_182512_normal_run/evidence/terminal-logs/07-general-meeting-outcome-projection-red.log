@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_latest_general_meeting_outcome_gates_and_is_frozen_on_the_case_cycle (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_latest_general_meeting_outcome_gates_and_is_frozen_on_the_case_cycle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_182512_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1464, in test_latest_general_meeting_outcome_gates_and_is_frozen_on_the_case_cycle
+    completed_data["general_meeting_approval"], approved_data
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'general_meeting_approval'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.053s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

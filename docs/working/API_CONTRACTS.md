@@ -2677,3 +2677,57 @@ Active borrower and Director-relative declarations set
 assigned to this case. Material-interest and maker-checker facts alone do not set the flag.
 Exclusions remain limited to frozen authority candidates, and database validation rejects empty or
 whitespace-only declaration reasons.
+
+# General-meeting evidence and final-sanction gate (007G)
+
+`POST /api/v1/loan-applications/{loan_application_id}/general-meeting-approval/` requires
+`approvals.general_meeting.record`, `approvals.case.read`, canonical object scope to the latest
+routed approval cycle, and `documents.file.download`. The case's immutable
+`general_meeting_evidence_required` flag must be true. The request accepts only:
+
+```json
+{
+  "related_party_type": "director_relative",
+  "related_party_user_id": "uuid-or-null",
+  "relationship_description": "Borrower is a relative of a Director.",
+  "meeting_date": "2026-07-15",
+  "notice_document_id": "uuid",
+  "minutes_document_id": "uuid",
+  "resolution_document_id": "uuid",
+  "approval_status": "pending | approved | rejected"
+}
+```
+
+`related_party_type` is exactly `director`, `director_relative`, or `committee_member`.
+Description and ISO date are mandatory. Notice, minutes, and resolution must be three distinct,
+existing document files accessible under the recorder's document authority. Missing files return
+`400 VALIDATION_ERROR` on their exact request fields; missing record/document permission returns
+`403 FORBIDDEN`; missing case scope returns `403 OBJECT_ACCESS_DENIED`; a non-related-party cycle
+returns `409 INVALID_STATE`.
+
+Success returns the standard envelope with the request fields plus
+`general_meeting_approval_id`, `recorded_by_user_id`, `recorded_at`, and nullable
+`supersedes_general_meeting_approval_id`. Exact replay returns the existing id with no audit,
+workflow, or row write. A changed payload creates a new immutable row whose `supersedes` link
+names the prior unsuperseded application record; it never updates the prior row. Creation writes
+`general_meeting_approval.recorded`; a changed outcome writes
+`general_meeting_approval.status_changed`; other changed evidence writes
+`general_meeting_approval.superseded`. Each real write has matching
+`general_meeting_approval` workflow evidence.
+
+The locked approval action transaction evaluates this gate only after object scope, version,
+conflict, assignment/action permission, and distinct effective authority establish that an
+`approve` action would be final. Missing, pending, and rejected current evidence return 409 with
+codes `GENERAL_MEETING_EVIDENCE_REQUIRED`, `GENERAL_MEETING_APPROVAL_PENDING`, and
+`GENERAL_MEETING_APPROVAL_REJECTED`. Details contain `approval_case_id`, `cycle_number`, nullable
+`general_meeting_approval_id`, and nullable `approval_status`. These denials insert no action or
+sanction and do not close/project an Exception Register entry. A conflict still returns the earlier
+canonical `CONFLICTED_APPROVER_NOT_ALLOWED` contract.
+
+Successful final approval freezes the current approved record on that case cycle. Return for
+clarification also freezes whichever current record exists without requiring it to be approved;
+no evidence is needed to return. Collection, detail, and action success expose that immutable
+record as nullable `general_meeting_approval`, beside unchanged `route_approvers`,
+`required_approvers`, and `approval_actions`. Later application-level supersession cannot change a
+returned or completed cycle's reference. A later cycle resolves the then-current unsuperseded
+application record independently.

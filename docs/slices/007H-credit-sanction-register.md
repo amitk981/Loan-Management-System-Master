@@ -39,6 +39,18 @@ The committee, CS, and auditors read a complete, generated register of every san
 - Register projection matches the 15 fields against a seeded exception + related-party + abstention case.
 - Filters/pagination/permission negatives on both read APIs; mutation attempts have no route.
 
+## Run-Ahead Sharpening Review (007G delivered contract, 2026-07-13)
+
+- The register's general-meeting reference comes only from the terminal case's frozen nullable
+  `general_meeting_approval`; never select the latest record by application, because evidence may
+  be superseded after a returned or completed cycle.
+- Project the meeting id, outcome, meeting date, related-party type/user, and the three document
+  metadata ids from that frozen row. Do not grant document access through register read permission;
+  downloads keep the document module's own permission/sensitivity boundary.
+- A missing/pending/rejected gate produces no final approve action and no sanction decision, so it
+  cannot generate a sanctioned register row. Conflict-blocked and returned cycles remain outside
+  terminal register generation; their case-frozen meeting references stay historical only.
+
 ## Run-Ahead Sharpening Review (007F delivered contract, 2026-07-13)
 
 - Resolve an exception reference only through the final case's one-to-one

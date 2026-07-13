@@ -1,5 +1,20 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007G General-Meeting Evidence
+
+- The §25.11 endpoint records immutable Director/relative/committee-member evidence with notice,
+  minutes, and resolution document references. Recorder authority is the Critical record grant
+  plus canonical case scope and existing document-read permission. Exact replay is zero-write;
+  changed evidence creates a one-to-one superseding row with attributable audit/workflow history.
+- The final sanction gate runs only after conflict, assignment, version, and distinct effective
+  authority. Missing/pending/rejected current evidence has dedicated 409 contracts and inserts no
+  final action, sanction, communication, or Exception Register outcome. Non-related cycles are
+  unchanged and conflict denials retain their earlier canonical contract.
+- Successful final approval freezes the approved meeting record on that exact case/cycle. Return
+  freezes the then-applicable record without requiring approval, so later application supersession
+  cannot rewrite historical cycles. Canonical collection/detail/action projections add the meeting
+  object beside unchanged route/effective/action authority facts.
+
 ## 007F Exception Approval Workflow
 
 - Exception enrichment requires a distinct business reason, optional risk assessment, and the

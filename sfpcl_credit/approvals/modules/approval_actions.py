@@ -10,6 +10,7 @@ from sfpcl_credit.approvals.models import ApprovalAction, ApprovalCase, Sanction
 from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
 from sfpcl_credit.approvals.modules import exception_register
+from sfpcl_credit.approvals.modules import general_meeting
 from sfpcl_credit.approvals.modules.approval_case_projection import (
     refresh_approval_case_projection,
 )
@@ -130,7 +131,11 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
     )
     case = (
         ApprovalCase.objects.select_for_update()
-        .select_related("loan_application", "loan_appraisal_note__risk_assessment")
+        .select_related(
+            "loan_application",
+            "loan_appraisal_note__risk_assessment",
+            "general_meeting_approval",
+        )
         .prefetch_related("actions")
         .get(pk=case_id)
     )
@@ -185,6 +190,20 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
     completes_approval = action_code == "approve" and (
         approved_ids | {str(actor.pk)}
     ) == required_ids
+    meeting_evidence = (
+        general_meeting.latest_evidence_for_case(case)
+        if action_code == "return"
+        else None
+    )
+    if completes_approval:
+        try:
+            meeting_evidence = general_meeting.approved_evidence_for_final_action(case)
+        except general_meeting.GeneralMeetingGateConflict as exc:
+            raise ApprovalActionConflict(
+                exc.message,
+                code=exc.code,
+                details=exc.details,
+            ) from exc
     case_target = {
         "reject": ApprovalCase.STATUS_REJECTED,
         "return": ApprovalCase.STATUS_RETURNED,
@@ -282,6 +301,7 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
     elif action_code == "return":
         case.current_status = case_transition.next_state
         case.closed_at = timezone.now()
+        case.general_meeting_approval = meeting_evidence
         application.application_status = application_transition.next_state
         application.save(update_fields=["application_status"])
         note.appraisal_status = appraisal_transition.next_state
@@ -289,6 +309,7 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
     elif completes_approval:
         case.current_status = case_transition.next_state
         case.closed_at = timezone.now()
+        case.general_meeting_approval = meeting_evidence
         application.application_status = application_transition.next_state
         application.save(update_fields=["application_status"])
         decision = SanctionDecision.objects.create(
@@ -309,7 +330,8 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
     case.version += 1
     case.save(update_fields=[
         "current_status", "reason_for_rejection", "closed_at",
-        "excluded_approvers_json", "conflict_block_reason", "version",
+        "excluded_approvers_json", "conflict_block_reason",
+        "general_meeting_approval", "version",
     ])
     refresh_approval_case_projection(case)
     exception_register.project_case_outcome(
@@ -357,7 +379,9 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         )
     case = (
         ApprovalCase.objects.select_related(
-            "loan_application", "loan_appraisal_note__risk_assessment"
+            "loan_application",
+            "loan_appraisal_note__risk_assessment",
+            "general_meeting_approval",
         )
         .prefetch_related("actions")
         .get(pk=case.pk)

@@ -5551,3 +5551,28 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_182512_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007G-general-meeting-evidence-for-special-cases
+- Summary: Added immutable General Meeting evidence with exact replay/supersession, Critical
+  permission plus case/document scope, dedicated final-sanction gates, audit/workflow history, and
+  cycle-frozen approval projection without changing conflict or Exception Register authority.
+- Tests run: retained six RED/GREEN tracer cycles and migration-repair repro; backend check,
+  migration sync, and 664 tests with 19 expected SQLite skips at 93% coverage; frontend
+  build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_182512_normal_run/evidence/`
+- Result: Success
+- Risk level: Medium slice with a Critical record permission and sanction-completion gate.
+- Next action: Run 007H Credit Sanction Register.
+
+## 2026-07-13 18:57:57 - 2026-07-13_182512_normal_run
+- Agent tool used: codex
+- Slice attempted: 007G-general-meeting-evidence-for-special-cases
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_182512_normal_run/.ralph/runs/2026-07-13_182512_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_182512_normal_run/.ralph/runs/2026-07-13_182512_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

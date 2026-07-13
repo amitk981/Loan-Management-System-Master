@@ -208,6 +208,13 @@ class ApprovalCase(models.Model):
     required_approvers_json = models.JSONField(default=dict, blank=True)
     excluded_approvers_json = models.JSONField(default=list, blank=True)
     general_meeting_evidence_required = models.BooleanField(default=False)
+    general_meeting_approval = models.ForeignKey(
+        "approvals.GeneralMeetingApproval",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="consuming_approval_cases",
+    )
     conflict_block_reason = models.TextField(blank=True)
     amount = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
     related_entity_type = models.CharField(max_length=80, blank=True)
@@ -566,5 +573,110 @@ class ExceptionRegisterEntry(models.Model):
             models.CheckConstraint(
                 check=models.Q(business_reason__regex=r"\S"),
                 name="exception_register_reason_nonblank",
+            ),
+        ]
+
+
+class GeneralMeetingApproval(models.Model):
+    TYPE_DIRECTOR = "director"
+    TYPE_DIRECTOR_RELATIVE = "director_relative"
+    TYPE_COMMITTEE_MEMBER = "committee_member"
+    RELATED_PARTY_TYPES = (
+        (TYPE_DIRECTOR, "Director"),
+        (TYPE_DIRECTOR_RELATIVE, "Director relative"),
+        (TYPE_COMMITTEE_MEMBER, "Sanction Committee member"),
+    )
+    STATUS_PENDING = "pending"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+    STATUSES = (
+        (STATUS_PENDING, "Pending"),
+        (STATUS_APPROVED, "Approved"),
+        (STATUS_REJECTED, "Rejected"),
+    )
+
+    general_meeting_approval_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    loan_application = models.ForeignKey(
+        "applications.LoanApplication",
+        on_delete=models.PROTECT,
+        related_name="general_meeting_approvals",
+    )
+    related_party_type = models.CharField(max_length=80, choices=RELATED_PARTY_TYPES)
+    related_party_user = models.ForeignKey(
+        "identity.User",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="related_general_meeting_approvals",
+    )
+    relationship_description = models.TextField()
+    meeting_date = models.DateField()
+    notice_document = models.ForeignKey(
+        "documents.DocumentFile",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="general_meeting_notice_records",
+    )
+    minutes_document = models.ForeignKey(
+        "documents.DocumentFile",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="general_meeting_minutes_records",
+    )
+    resolution_document = models.ForeignKey(
+        "documents.DocumentFile",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="general_meeting_resolution_records",
+    )
+    approval_status = models.CharField(
+        max_length=60, choices=STATUSES, db_index=True
+    )
+    recorded_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="recorded_general_meeting_approvals",
+    )
+    recorded_at = models.DateTimeField(default=timezone.now, db_index=True)
+    supersedes = models.OneToOneField(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="superseded_by",
+    )
+
+    class Meta:
+        db_table = "general_meeting_approvals"
+        ordering = ["-recorded_at", "-general_meeting_approval_id"]
+        indexes = [
+            models.Index(
+                fields=["loan_application", "recorded_at"],
+                name="idx_gm_application_time",
+            )
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(
+                    related_party_type__in=[
+                        "director",
+                        "director_relative",
+                        "committee_member",
+                    ]
+                ),
+                name="gm_related_party_type_valid",
+            ),
+            models.CheckConstraint(
+                check=models.Q(approval_status__in=["pending", "approved", "rejected"]),
+                name="gm_approval_status_valid",
+            ),
+            models.CheckConstraint(
+                check=models.Q(relationship_description__regex=r"\S"),
+                name="gm_relationship_nonblank",
             ),
         ]

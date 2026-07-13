@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_general_meeting_document_and_permission_denials_are_zero_write (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_general_meeting_document_and_permission_denials_are_zero_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_182512_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1498, in test_general_meeting_document_and_permission_denials_are_zero_write
+    missing.json()["error"]["field_errors"]["resolution_document_id"],
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'resolution_document_id'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.031s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

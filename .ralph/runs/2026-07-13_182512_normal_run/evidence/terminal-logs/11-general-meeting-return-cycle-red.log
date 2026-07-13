@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_returned_cycle_keeps_its_applicable_general_meeting_reference (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_returned_cycle_keeps_its_applicable_general_meeting_reference)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_182512_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1565, in test_returned_cycle_keeps_its_applicable_general_meeting_reference
+    self.assertEqual(
+AssertionError: None != {'general_meeting_approval_id': 'f683e050[674 chars]None}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.039s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
