@@ -1,0 +1,8 @@
+Name                                          Stmts   Miss  Cover
+-----------------------------------------------------------------
+credit/modules/borrower_limit_projection.py      50      2    96%
+credit/modules/eligibility_assessment.py        140     25    82%
+members/modules/active_member_status.py         290     30    90%
+members/modules/member_authority.py              24      1    96%
+-----------------------------------------------------------------
+TOTAL                                           504     58    88%

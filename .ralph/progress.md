@@ -5093,3 +5093,24 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_085050_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 006Z14-member-authority-action-and-calculation-proof-closure
+- Summary: Added executable permission-versus-scope member action proof and removed the dead calculation authority seam and brittle caller whitelist.
+- Tests run: 11 isolated matrix rows; 83 focused ownership tests at 88% focused coverage; backend 544 tests at 93%; frontend build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_085050_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High; production change removes only an unused interface and preserves calculations.
+- Next action: 007A5 approval governance complete loser ledger.
+
+## 2026-07-13 09:00:50 - 2026-07-13_085050_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z14-member-authority-action-and-calculation-proof-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_085050_normal_run/.ralph/runs/2026-07-13_085050_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_085050_normal_run/.ralph/runs/2026-07-13_085050_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

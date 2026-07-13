@@ -139,6 +139,12 @@ Medium
   leaves every enriched case fact unchanged. This slice depends on 007A5 rather than accepting
   count-only concurrency evidence.
 
+## Run-Ahead Sharpening Review (006Z14, 2026-07-13)
+
+- Exercise `approvals.case.create` permission and the existing authorised appraisal handoff as
+  separate public facts. Derive the member/application from that persisted handoff and reject any
+  client-supplied related-entity substitution with no enrichment, audit, or workflow writes.
+
 ## Done Checklist
 
 - [ ] Execution plan written

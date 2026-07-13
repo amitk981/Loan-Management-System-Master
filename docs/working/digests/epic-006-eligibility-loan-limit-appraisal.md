@@ -1,5 +1,20 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006Z14 Member Authority Action and Calculation Proof Closure
+
+- Eleven independently selectable member-authority rows now use one custom-role actor with every
+  action permission and no initial scope. Every denial returns the canonical object-scope result
+  with unchanged member, assignment, supply, service evidence, active status, history, audit, and
+  workflow ledgers; only the matching assigned scope enables the row and unrelated members/actions
+  remain denied.
+- Existing scope-shape tests retain global, created-by, assigned, active team, inactive team, and
+  unrelated-member proof. The focused application, portal, borrower-limit, supply, and member suites
+  execute the real owning boundaries rather than inferring safety from caller filenames.
+- The unused `calculate_for_actor` seam and exact source-text caller whitelist are removed.
+  `ActiveMemberStatusModule.calculate` remains an actorless domain calculation reached from
+  application-authorised staff or authenticated member-owned boundaries; BR-004/006/007 and
+  M02-FR-004..006 calculations are unchanged.
+
 ## Architecture Review 2026-07-13 08:41 - Member Authority Proof Closure
 
 - 006Z13 correctly adds database shape/uniqueness constraints, retains valid legacy assignments,

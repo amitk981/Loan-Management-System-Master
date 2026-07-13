@@ -72,3 +72,9 @@ High
 - Governed races prove complete winner-only writes, not only cardinality.
 - CFG-007 is exercised inside a real conflicting PostgreSQL activation race.
 
+## Run-Ahead Sharpening Review (006Z14, 2026-07-13)
+
+- Keep every committee-history and race row independently addressable by its Django test method;
+  completeness metadata must resolve and execute those methods, not compare advertised strings.
+- Assert public proposal-detail and resolver outputs plus persisted ledgers. Do not add a
+  filename/source-text whitelist as a substitute for the observable loser and open-case behavior.
