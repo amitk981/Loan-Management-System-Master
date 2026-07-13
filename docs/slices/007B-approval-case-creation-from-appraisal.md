@@ -14,7 +14,7 @@ Enrich the approval case shell that 006G already creates: resolve the effective 
 Every submitted appraisal becomes exactly one routed approval case whose required authority is a durable snapshot of the rule that applied on that day.
 
 ## Depends On
-- 007A3
+- 007A4
 
 ## Source References
 - docs/working/digests/epic-007-sanction-approval-workflow.md (007B section: 006G owns the unique pending case shell; enrichment only; no duplicate create path)
@@ -98,6 +98,14 @@ Medium
 - Prove enrichment on a historical decision date after newer rule and committee versions activate:
   the stored rule/committee ids, versions, authority users, and decision date must match the unique
   historical projections and remain stable across repeat/read.
+
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_055322, 2026-07-13)
+
+- Consume only configuration versions whose governed activation passed the post-007A3 concurrency
+  boundary in 007A4; a still-pending or losing proposal is never a routable rule or committee.
+- Reuse 007A4's real open-case snapshot fixture shape when proving later activation cannot rewrite
+  the enriched case. Include the case version and complete required-approver snapshot in the exact
+  before/after equality, not only the linked rule/committee ids.
 
 ## Done Checklist
 

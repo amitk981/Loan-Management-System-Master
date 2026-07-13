@@ -1,0 +1,10 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/007B-approval-case-creation-from-appraisal.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+?? .ralph/runs/2026-07-13_055322_architecture_review/
+?? docs/slices/006Z13-member-scope-persistence-and-action-matrix-closure.md
+?? docs/slices/007A4-approval-governance-concurrency-and-case-snapshot-closure.md

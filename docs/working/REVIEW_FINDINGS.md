@@ -2,6 +2,111 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-13 06:01 - Architecture Review 2026-07-13_055322_architecture_review
+
+Reviewed completed product work since architecture-review commit `23331d5`:
+- `006Z11-member-scope-assignment-and-list-nondisclosure-closure` (`6afd173`)
+- `006Z12-portal-limit-denial-matrix-evidence-closure` (`46b47c0`)
+- `007A2-approval-configuration-history-and-committee-authority-closure` (`7359389`)
+- `007A3-approval-matrix-maker-checker-governance` (`955cfc1`)
+
+The review checked `git diff 23331d5...955cfc1`, production/test hunks, retained red/green and
+PostgreSQL evidence, Epic 006/007 digests, cited source sections, BR-003..007, M02-FR-004..006,
+M04-FR-005..007, and M05-FR-003..006. Standards and spec fidelity were reviewed independently.
+Production code was not changed. `CONTEXT.md` remains truthful, and state/files contain no Blocked
+slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - PostgreSQL races still exercise the pre-governance activation interface
+
+`ApprovalMatrixConcurrencyTests` still calls `create_rule`/`create_committee` and expects those calls
+to activate one row, reject one contender, and return effective entity ids. After 007A3 those calls
+only create pending proposals, so both contenders can create proposals and the supersede tests index
+ids that are no longer returned. The retained 007A2 PostgreSQL logs genuinely ran all four tests
+twice, but they predate migration 0005 and the governed activation seam; 007A3 declared no
+PostgreSQL capability. This violates DECISION_POLICY §2 and codebase-design §§22.3/26.1-26.3's
+current-interface concurrency proof. `007A4` replaces them with approval-time proposal races and
+requires two post-007A3 PostgreSQL runs.
+
+#### Finding 2 - Medium - Persisted member scope is valid only when callers invoke model validation
+
+`MemberScopeAssignment.clean()` rejects invalid scope/member/team shapes, but migration 0013 adds no
+database checks. Its nullable five-column unique constraint also permits duplicate `global` and
+`created_by` rows under PostgreSQL null semantics. Public writers do not yet expose this directly,
+and duplicates are currently behaviorally harmless, but a security authority seam must remain valid
+through bulk/import/admin paths that bypass `save()`. This conflicts with codebase-design §27.1's
+deep Object Access boundary. `006Z13` adds conditional constraints/uniqueness and migration proof.
+
+#### Finding 3 - Medium - Any authenticated user can read Critical configuration proposals
+
+Rule and committee reads use `approvals.matrix.read`, while `proposal_detail` calls only
+`authenticated_user` and returns the change reason, maker/checker ids, and action eligibility. This
+drifts from API design §3's permission-aware boundary and auth §31.1's Critical Approval Matrix
+governance. `007A4` defines and tests a source-backed reader/participant/checker contract without
+role-name inference.
+
+No frontend files changed. 006Z12's redacted public denial ledger is complete and uses real state
+assertions. 006Z11 genuinely removes permission/role provenance as global member scope and preserves
+all service-evidence makers; the remaining persistence/action-matrix items above are closure quality,
+not evidence that the prior unsafe behavior remains in production.
+
+### Spec
+
+#### Finding 1 - High - 007A3's governed activation race is missing and its inherited race suite is broken
+
+007A3 requirements 5-6 and its test matrix require approval-time revalidation plus a competing
+activation with a complete zero-write loser. The implementation plausibly serializes approval via
+the shared lock, but no test races `decide_proposal`; the only PostgreSQL suite calls the obsolete
+immediate-activation interface. The prior missing-PostgreSQL finding was closed at the 007A2 commit
+and reopened by 007A3. `007A4` owns governed create/supersede races for rules and committees.
+
+#### Finding 2 - Medium - Approval authority denial uses a noncanonical public error code
+
+Source API contracts §7.1 defines `APPROVAL_AUTHORITY_REQUIRED`. The module, view, tests, and working
+contract instead introduced `APPROVER_AUTHORITY_REQUIRED`. `007A4` aligns production and evidence
+to the existing canonical code.
+
+#### Finding 3 - Medium - Open-case immutability and complete proposal loser state are unproved
+
+007A3 requires existing approval-case snapshots to remain unchanged across proposal, rejection,
+activation, and later reads. No 007A3 test creates an `ApprovalCase`; `_configuration_snapshot()`
+omits both cases and proposals, so its claimed complete loser checks could miss partial proposal or
+case mutation. `007A4` adds a real open-case fixture and exact full-state equality across decisions
+and races, satisfying auth CFG-007.
+
+#### Finding 4 - Medium - Required committee/lifecycle and malformed-input matrices are partial
+
+007A2 asks for inactive/duplicate/swapped committee authority, historical/current committee
+resolution and backfill conflict, separate malformed/unknown/non-finite zero-write matrices for both
+resources, and both collection contracts. Tests cover ordinary-as-CFO, one current/absent resolver,
+one rule non-finite row, rule pagination, and committee unknown parameters; the implementation is
+plausible but the stated acceptance matrix is not complete. `007A4` finishes these public rows
+alongside the governed activation matrix.
+
+#### Finding 5 - Medium - 006Z11's calculation/action acceptance matrix remains partial
+
+006Z11 requires the common scope across calculation and independently selected public module/HTTP
+rows for every member action. The production call paths now enforce scope around mutations and the
+portal derives its own member, but `ActiveMemberStatusModule.calculate` is actorless and the new
+slice test covers only list/detail/count. Existing tests distribute happy paths across fixtures and
+some patch the evaluator; they do not prove permission-without-scope denial then assignment-enabled
+behavior for every action. `006Z13` maps every calculation caller and adds the real public matrix.
+
+No material scope creep was found. 006Z12 fully closes the prior portal denial matrix and retains
+M04-FR-005..007. 007A2 closes sequential lifecycle/committee authority/pagination behavior and 007A3
+closes unilateral activation sequentially. M05-FR-003..006 remain partial until governed concurrency
+passes in 007A4 and real case routing lands in 007B. BR-003..007 and M02-FR-004..006 behavior is
+substantive, with the remaining public authority proof assigned to 006Z13.
+
+No ADR was added because existing auth, API, data-model, and codebase-design sources already decide
+object-scope persistence, canonical error vocabulary, Critical configuration access, CFG-007, and
+approval-time concurrency.
+
+Summary: Standards found 1 High and 2 Medium issues; the worst is obsolete PostgreSQL concurrency
+evidence. Spec found 1 High and 4 Medium issues; the worst is missing/broken governed activation
+race proof.
+
 ## 2026-07-13 04:49 - Architecture Review 2026-07-13_044409_architecture_review
 
 Reviewed completed product work since architecture-review commit `190eb5c`:

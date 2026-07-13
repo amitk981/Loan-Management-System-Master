@@ -1,5 +1,21 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## Architecture Review 2026-07-13 06:01 - Member Scope Closure Status
+
+- 006Z11 now separates action permission from persisted `global`/`team`/`assigned`/`created_by`
+  scope, filters list totals before pagination, and retains every service-evidence maker. It closes
+  the prior permission-as-global and maker-erasure defects in production.
+- `MemberScopeAssignment` still relies on `clean()` for scope shape and nullable uniqueness, so
+  bulk/direct ORM paths can persist invalid or duplicate authority facts. `006Z13` adds database
+  constraints and non-destructive migration proof before an assignment-management surface exists.
+- Public acceptance remains distributed: list/detail/count are direct, while other action fixtures
+  mostly add assignments to existing happy paths. `006Z13` adds permission-without-scope then
+  assignment-enabled module/HTTP rows for every member action and maps the actorless calculation
+  engine behind staff object scope or authenticated portal ownership.
+- 006Z12 independently executes the remaining stale/supply/missing-fact borrower-limit denials with
+  the exact redacted contract and complete member/authority/evidence/assessment/application/config/
+  audit/workflow before-after ledger. M04-FR-005..007 remain server-owned and passing.
+
 ## 006Z12 Portal Limit Denial Matrix Evidence Closure
 
 - Five independently selectable authenticated public API rows now prove stale authority snapshot,

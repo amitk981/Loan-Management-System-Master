@@ -7,6 +7,21 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - `docs/source/data-model.md` §15.1-§15.4 and §30/§34
 - `docs/source/auth-permissions.md` §12.6, §15.8-§15.9, §20.1, §34.5
 
+## Architecture Review 2026-07-13 06:01 - Governed Activation Regression
+
+- 007A2 closes retained-history lifecycle, persisted committee authority, pagination, and the four
+  direct-activation PostgreSQL races at its own commit. 007A3 then changes create/supersede into
+  pending proposals but leaves those races calling the old interface; the retained PostgreSQL logs
+  predate the proposal migration and no longer prove the shipped activation boundary.
+- `007A4` must create competing proposals and race authorised checkers through approval for rule and
+  committee create/supersede, twice on PostgreSQL. It also owns the unproved CFG-007 open-case
+  snapshot, complete proposal/case loser ledger, and the partial A2 committee/lifecycle matrices.
+- The canonical source error is `APPROVAL_AUTHORITY_REQUIRED`, not the introduced
+  `APPROVER_AUTHORITY_REQUIRED`. Proposal detail must not expose Critical configuration reasons and
+  actor/action facts to every authenticated user; 007A4 aligns both contracts.
+- Sequential governed activation is substantive, but M05-FR-003..006 remain partial until 007A4
+  restores current concurrency acceptance and 007B snapshots the resolver output into real cases.
+
 ## Architecture Review 2026-07-13 04:49 - Historical and Governance Corrections
 
 - Auth §§31.1-31.2 makes the Approval Matrix Critical configuration: every change needs a reason and

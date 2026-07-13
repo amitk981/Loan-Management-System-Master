@@ -1,0 +1,28 @@
+Architecture review static and focused checks
+Run: 2026-07-13_055322_architecture_review
+
+git diff --check
+PASS (no output)
+
+ralph_slice_queue_lint docs/slices
+PASS (exit 0)
+First pending slices:
+006Z13-member-scope-persistence-and-action-matrix-closure.md
+007A4-approval-governance-concurrency-and-case-snapshot-closure.md
+007B-approval-case-creation-from-appraisal.md
+
+Focused backend command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixConcurrencyTests -v 2
+PASS under SQLite with 4 expected skips. Migration approvals.0005_approvalconfigurationproposal
+was applied. All four cases reported: Authoritative approval-matrix race requires PostgreSQL.
+
+Configured frontend gates:
+npm run build; npm run typecheck; npm run lint; npm test -- --run
+PASS: build/typecheck/lint; 29 files and 207 tests passed.
+
+Configured backend gates:
+manage.py check; manage.py makemigrations --check --dry-run; coverage run manage.py test;
+coverage report --fail-under=85
+PASS: check; no migration changes; 527 tests passed with 16 PostgreSQL-only skips; total coverage
+93%, above the 85% floor.
+
