@@ -1,10 +1,14 @@
 """Public read boundary for immutable approval-case routing snapshots."""
 
+from decimal import Decimal, InvalidOperation
 from math import ceil
 
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from sfpcl_credit.approvals.models import ApprovalCase
+from sfpcl_credit.domain_errors import DomainObjectAccessDenied
+from sfpcl_credit.identity.modules.object_permissions import ObjectAccessResult
 
 
 _LIST_PARAMS = {"page", "page_size", "current_status", "approval_type", "assigned_to_me"}
@@ -36,15 +40,25 @@ def list_approval_cases(*, actor, query_params):
         queryset = queryset.filter(current_status=query_params["current_status"])
     if query_params.get("approval_type"):
         queryset = queryset.filter(approval_type=query_params["approval_type"])
-    cases = [case for case in queryset if _is_routed(case)]
+    cases = [
+        case for case in queryset
+        if (
+            is_routable_approval_case(case)
+            and can_read_approval_case(actor=actor, case=case)
+        )
+    ]
     if assigned_to_me:
         actor_id = str(actor.pk)
-        cases = [case for case in cases if _pending_snapshot_actor(case, actor_id)]
+        cases = [
+            case
+            for case in cases
+            if is_pending_approval_case_actor(case=case, actor_id=actor_id)
+        ]
     total_count = len(cases)
     total_pages = ceil(total_count / page_size) if total_count else 1
     page = min(page, total_pages)
     offset = (page - 1) * page_size
-    return [serialize_case_summary(case) for case in cases[offset : offset + page_size]], {
+    return [serialize_case_snapshot(case) for case in cases[offset : offset + page_size]], {
         "page": page,
         "page_size": page_size,
         "total_count": total_count,
@@ -64,9 +78,27 @@ def get_approval_case(*, actor, case_id, actor_permissions):
         .filter(pk=case_id)
         .first()
     )
-    if case is None or not _is_routed(case):
+    if case is None or not is_routable_approval_case(case):
         raise ApprovalCase.DoesNotExist
+    if not can_read_approval_case(actor=actor, case=case):
+        raise DomainObjectAccessDenied(
+            ObjectAccessResult(
+                allowed=False,
+                reason="approval_case_not_assigned",
+                error_code="OBJECT_ACCESS_DENIED",
+                required_permission="approvals.case.read",
+            )
+        )
     return serialize_case_detail(case, actor, set(actor_permissions))
+
+
+def can_read_approval_case(*, actor, case):
+    """Return whether the immutable case snapshot gives this actor object scope."""
+    actor_id = str(actor.pk)
+    return any(
+        isinstance(item, dict) and str(item.get("user_id")) == actor_id
+        for item in case.required_approvers_json
+    )
 
 
 def serialize_case_summary(case):
@@ -103,24 +135,32 @@ def serialize_case_detail(case, actor, actor_permissions):
             }
         )
     snapshot = {
-        **serialize_case_summary(case),
-        "approval_matrix_rule_id": str(case.approval_matrix_rule_id),
-        "approval_matrix_rule_version": case.approval_matrix_rule_version,
-        "sanction_committee_id": str(case.sanction_committee_id),
-        "sanction_committee_version": case.sanction_committee_version,
+        **serialize_case_snapshot(case),
         "required_approvers": required_approvers,
-        "excluded_approvers": case.excluded_approvers_json,
-        "reason_for_approval": case.reason_for_approval,
-        "exception_condition_code": case.exception_condition_code or None,
-        "matrix_projection": case.matrix_projection_json,
-        "committee_projection": case.committee_projection_json,
-        "loan_limit_provenance": case.loan_limit_provenance_json,
         "review_facts": _review_facts(case),
         "available_actions": _available_actions(
             case, actor, actor_permissions, action_by_user
         ),
     }
     return snapshot
+
+
+def serialize_case_snapshot(case):
+    """Serialize the canonical immutable routed-case projection."""
+    return {
+        **serialize_case_summary(case),
+        "approval_matrix_rule_id": str(case.approval_matrix_rule_id),
+        "approval_matrix_rule_version": case.approval_matrix_rule_version,
+        "sanction_committee_id": str(case.sanction_committee_id),
+        "sanction_committee_version": case.sanction_committee_version,
+        "required_approvers": case.required_approvers_json,
+        "excluded_approvers": case.excluded_approvers_json,
+        "reason_for_approval": case.reason_for_approval,
+        "exception_condition_code": case.exception_condition_code or None,
+        "matrix_projection": case.matrix_projection_json,
+        "committee_projection": case.committee_projection_json,
+        "loan_limit_provenance": case.loan_limit_provenance_json,
+    }
 
 
 def _review_facts(case):
@@ -177,7 +217,9 @@ def _review_facts(case):
 
 def _available_actions(case, actor, actor_permissions, action_by_user):
     actor_id = str(actor.pk)
-    pending_assignment = _pending_snapshot_actor(case, actor_id)
+    pending_assignment = is_pending_approval_case_actor(
+        case=case, actor_id=actor_id
+    )
     action_specs = (
         ("approve", "Approve", "approvals.case.approve"),
         ("reject", "Reject", "approvals.case.reject"),
@@ -212,7 +254,8 @@ def _available_actions(case, actor, actor_permissions, action_by_user):
     return actions
 
 
-def _is_routed(case):
+def is_routable_approval_case(case):
+    """Validate the complete immutable authority and credit snapshot."""
     required = case.required_approvers_json
     matrix = case.matrix_projection_json
     committee = case.committee_projection_json
@@ -228,6 +271,7 @@ def _is_routed(case):
         and case.related_entity_id is not None
         and isinstance(required, list)
         and bool(required)
+        and isinstance(case.excluded_approvers_json, list)
         and all(
             isinstance(item, dict)
             and item.get("role_code")
@@ -239,16 +283,102 @@ def _is_routed(case):
         and matrix.get("approval_matrix_rule_id") == str(case.approval_matrix_rule_id)
         and matrix.get("version_number") == case.approval_matrix_rule_version
         and matrix.get("decision_date") == case.decision_date.isoformat()
-        and isinstance(matrix.get("required_approver_roles"), list)
+        and _matrix_projection_is_coherent(case, matrix)
         and isinstance(committee, dict)
         and committee.get("sanction_committee_id") == str(case.sanction_committee_id)
         and committee.get("version_number") == case.sanction_committee_version
         and committee.get("decision_date") == case.decision_date.isoformat()
-        and committee.get("cfo_user_id")
-        and isinstance(committee.get("director_user_ids"), list)
-        and len(committee["director_user_ids"]) == 2
+        and _approver_snapshot_is_coherent(required, matrix, committee)
         and _loan_limit_provenance_is_complete(case)
     )
+
+
+def _matrix_projection_is_coherent(case, matrix):
+    condition = matrix.get("condition_code") or ""
+    roles = matrix.get("required_approver_roles")
+    director_count = matrix.get("required_director_count")
+    return (
+        case.approval_type == ApprovalCase.TYPE_SANCTION
+        and case.related_entity_type == "loan_application"
+        and str(case.related_entity_id) == str(case.loan_application_id)
+        and matrix.get("decision_type") == "loan_sanction"
+        and _same_amount(matrix.get("amount"), case.amount)
+        and _amount_inside_projection(case.amount, matrix)
+        and condition == (case.exception_condition_code or "")
+        and condition in ("", "exceeds_permissible_limit")
+        and (
+            (not condition and not case.exception_reason)
+            or (
+                condition
+                and bool(case.exception_reason.strip())
+                and case.exception_reason == case.reason_for_approval
+            )
+        )
+        and isinstance(roles, list)
+        and roles == ["cfo", "director"]
+        and isinstance(director_count, int)
+        and director_count in (1, 2)
+        and matrix.get("joint_approval_required") is True
+        and isinstance(matrix.get("register_required"), str)
+        and bool(matrix["register_required"].strip())
+        and case.loan_appraisal_note.reviewed_at is not None
+        and case.decision_date
+        == timezone.localdate(case.loan_appraisal_note.reviewed_at)
+        and case.amount == case.loan_appraisal_note.recommended_amount
+    )
+
+
+def _approver_snapshot_is_coherent(required, matrix, committee):
+    cfo_id = str(committee.get("cfo_user_id") or "")
+    director_ids = committee.get("director_user_ids")
+    if (
+        not cfo_id
+        or not isinstance(director_ids, list)
+        or len(director_ids) != 2
+        or any(not item for item in director_ids)
+    ):
+        return False
+    director_ids = [str(item) for item in director_ids]
+    committee_ids = [cfo_id, *director_ids]
+    if len(set(committee_ids)) != 3:
+        return False
+    expected = [("cfo", cfo_id)] + [
+        ("director", user_id)
+        for user_id in director_ids[: matrix["required_director_count"]]
+    ]
+    if len(required) != len(expected):
+        return False
+    actual = []
+    for item in required:
+        if (
+            not isinstance(item, dict)
+            or not isinstance(item.get("full_name"), str)
+            or not item["full_name"].strip()
+        ):
+            return False
+        actual.append((item.get("role_code"), str(item.get("user_id") or "")))
+    return actual == expected and len({user_id for _, user_id in actual}) == len(actual)
+
+
+def _same_amount(first, second):
+    try:
+        return Decimal(str(first)) == Decimal(str(second))
+    except (InvalidOperation, TypeError, ValueError):
+        return False
+
+
+def _amount_inside_projection(amount, matrix):
+    try:
+        amount = Decimal(str(amount))
+        minimum = Decimal(str(matrix["amount_min"]))
+        maximum = (
+            Decimal(str(matrix["amount_max"]))
+            if matrix.get("amount_max") is not None
+            else None
+        )
+    except (KeyError, InvalidOperation, TypeError, ValueError):
+        return False
+    return amount >= minimum and (maximum is None or amount <= maximum)
 
 
 def _loan_limit_provenance_is_complete(case):
@@ -262,6 +392,8 @@ def _loan_limit_provenance_is_complete(case):
         "policy_name",
         "calculated_at",
     )
+    snapshot = case.loan_appraisal_note.loan_limit_snapshot_json
+    condition_requires_exception = bool(case.exception_condition_code)
     return (
         isinstance(provenance, dict)
         and all(provenance.get(key) not in (None, "") for key in required)
@@ -269,10 +401,15 @@ def _loan_limit_provenance_is_complete(case):
         == str(case.loan_appraisal_note.loan_limit_assessment_id_snapshot)
         and str(provenance["loan_application_id"]) == str(case.loan_application_id)
         and isinstance(provenance["exception_required_flag"], bool)
+        and provenance["exception_required_flag"] == case.exception_required_flag
+        and (not provenance["exception_required_flag"] or condition_requires_exception)
+        and isinstance(snapshot, dict)
+        and all(provenance.get(key) == snapshot.get(key) for key in required)
     )
 
 
-def _pending_snapshot_actor(case, actor_id):
+def is_pending_approval_case_actor(*, case, actor_id):
+    """Return whether an in-scope actor still owns a pending decision slot."""
     if case.current_status != ApprovalCase.STATUS_PENDING:
         return False
     excluded_ids = {

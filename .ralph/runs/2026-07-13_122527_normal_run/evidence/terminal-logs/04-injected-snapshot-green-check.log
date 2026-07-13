@@ -1,0 +1,24 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+.F
+======================================================================
+FAIL: test_assigned_to_me_returns_the_pending_snapshotted_case (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_assigned_to_me_returns_the_pending_snapshotted_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_122527_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 209, in test_assigned_to_me_returns_the_pending_snapshotted_case
+    self.assertEqual(
+AssertionError: Lists differ: [] != ['f8efd117-bb8d-4dc8-b917-cc6abe46a145']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'f8efd117-bb8d-4dc8-b917-cc6abe46a145'
+
+- []
++ ['f8efd117-bb8d-4dc8-b917-cc6abe46a145']
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.033s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

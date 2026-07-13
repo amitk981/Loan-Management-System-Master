@@ -1,0 +1,33 @@
+Creating test database for alias 'default'...
+Found 3 test(s).
+System check identified no issues (0 silenced).
+F..
+======================================================================
+FAIL: test_read_permission_without_snapshot_scope_cannot_list_or_retrieve_the_case (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_read_permission_without_snapshot_scope_cannot_list_or_retrieve_the_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_122527_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 377, in test_read_permission_without_snapshot_scope_cannot_list_or_retrieve_the_case
+    self.assertEqual(ordinary_list.json()["data"], [])
+AssertionError: Lists differ: [{'approval_case_id': '9def88ea-6a70-4e5b-[354 chars]: 2}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'approval_case_id': '9def88ea-6a70-4e5b-82ff-29f94bdc9180', 'approval_type': 'sanction', 'related_entity_type': 'loan_application', 'related_entity_id': 'c4aa3b42-86f0-4390-8425-4608c39d6793', 'loan_application_id': 'c4aa3b42-86f0-4390-8425-4608c39d6793', 'application_reference_number': 'LO00000701', 'amount': '500000.00', 'current_status': 'pending', 'decision_date': '2026-07-13', 'version': 2}
+
++ []
+- [{'amount': '500000.00',
+-   'application_reference_number': 'LO00000701',
+-   'approval_case_id': '9def88ea-6a70-4e5b-82ff-29f94bdc9180',
+-   'approval_type': 'sanction',
+-   'current_status': 'pending',
+-   'decision_date': '2026-07-13',
+-   'loan_application_id': 'c4aa3b42-86f0-4390-8425-4608c39d6793',
+-   'related_entity_id': 'c4aa3b42-86f0-4390-8425-4608c39d6793',
+-   'related_entity_type': 'loan_application',
+-   'version': 2}]
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.046s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

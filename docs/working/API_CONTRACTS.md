@@ -2443,10 +2443,18 @@ has no immutable `approval_actions` row, and the case is still pending. Missing/
 facts never fall back to amount, the current matrix, or the current committee.
 
 `GET /api/v1/approval-cases/{approval_case_id}/` also requires `approvals.case.read`. Any global
-reader with that permission may read a complete routed case; only a still-pending snapshotted
-approver with the corresponding `approvals.case.approve`, `.reject`, or `.return` permission gets
-an enabled §44 action. A non-reader receives `403 FORBIDDEN`; an incomplete/unrouted shell is not a
-public case and returns `404 NOT_FOUND`. Reads write no audit event.
+object scope must be persisted separately; the permission alone is not global scope. A complete
+routed case is visible only when its immutable `required_approvers` snapshot names the caller,
+including the caller's own acted history. Unassigned Directors, the case maker, and arbitrary
+custom-role permission holders receive an empty scope-filtered collection (`total_count = 0`) and
+direct detail returns `403 OBJECT_ACCESS_DENIED`. A non-reader receives `403 FORBIDDEN`; an
+incomplete or internally contradictory snapshot is not a public case and returns `404 NOT_FOUND`.
+Reads and denials write no audit or workflow evidence.
+
+Object scope is applied before pagination and count calculation. `assigned_to_me=true` is the
+narrower queue filter: the caller must additionally be pending, unexcluded, and without an
+immutable action. The ordinary collection does not bypass object scope and keeps acted cases in
+the assigned actor's readable history.
 
 Detail returns stored authority/provenance (`approval_matrix_rule_id` and version,
 `sanction_committee_id` and version, `decision_date`, ordered required/excluded approvers,
@@ -2465,3 +2473,24 @@ The nested `review_facts` object is a read-through projection, not approval-case
 
 Changing current matrix/committee rows cannot change queue membership, stored provenance, or
 action assignment for an existing case.
+
+Routability is one approval-owned validation contract shared by list, detail, and later action
+seams. Case/application/type/amount/decision/exception facts must agree with the stored matrix;
+rule and committee ids, versions, and dates must match; the snapshot must contain exactly the
+stored CFO and required distinct Directors with unique ids; required roles/director count and
+joint/register facts must be complete; and the loan-limit assessment/application/exception/policy
+provenance must equal the reviewed credit snapshot. Invalid or contradictory snapshots are hidden
+and non-actionable without writes; live rule, committee, or user membership is never queried to
+repair them.
+
+The §25.2 enrichment success projection now includes source-required `current_status`. Enrichment,
+list, and detail compose the same canonical immutable routing projection (status, rule/committee,
+decision date, required/excluded authority, and loan-limit provenance). Detail adds immutable
+decision history, review read-throughs, and caller-specific actions; existing submission fields
+remain backward-compatible additions.
+
+An enrichment replay is exact only when the locked reviewed decision date and recommended amount,
+assessment/application ids, exception flag, calculation rule, policy id/name, and calculation time
+equal the frozen case provenance. Any changed reviewed or credit fact returns stable
+`409 INVALID_STATE_TRANSITION` and leaves case/action/audit/workflow ledgers unchanged. A later
+effective governed configuration version does not rewrite an otherwise coherent historical case.

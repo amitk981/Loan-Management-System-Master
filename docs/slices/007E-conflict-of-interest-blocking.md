@@ -54,6 +54,22 @@ A Director, committee member, or preparer can never approve their own or a relat
   read explicitly chosen under requirement 6 and never inherits a global case read from permission
   possession.
 
+## Run-Ahead Sharpening Review (007C2, 2026-07-13)
+
+- Requirement 2's “move” is an eligibility overlay, not destructive history: keep the complete
+  ordered `required_approvers_json` authority snapshot byte-for-byte unchanged and write unique
+  `{user_id, reason}` objects to `excluded_approvers_json`. Extend the public 007C2 coherence and
+  pending-actor predicates so exclusions can disable assignment/actions without making the frozen
+  matrix/committee snapshot contradictory.
+- Recompute satisfiability from the frozen committee candidates and stored matrix role/count facts,
+  never live users or configuration. If a required CFO/Director slot has no non-conflicted stored
+  candidate, persist the source-defined blocked outcome atomically or return a no-write contract
+  error if the source still leaves that state unnamed; record that choice in ASSUMPTIONS.md.
+- Decide and document the §17.1/COI-005 limited-read rule explicitly: base permission never grants
+  global scope, unassigned users remain nondisclosed, and an excluded snapshotted actor receives
+  only the fields source law requires. Denied conflict actions remain audited as the explicit
+  COI-006 exception to 007C2's zero-write ordinary object denial.
+
 ## Test Cases
 - Each §17.1 conflict class excludes at enrichment with recorded reason; attempted approval by each returns the exact §17.3 body and an audit row.
 - Exclusion that breaks required authority blocks the case rather than completing with fewer approvers.

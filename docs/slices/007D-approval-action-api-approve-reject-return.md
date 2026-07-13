@@ -83,6 +83,21 @@ Conflict determination (007E), exception register (007F), general-meeting gate (
   concurrent actions. Zero-write losers require exact equality; the winner adds only attributable
   action/completion evidence required by the stored snapshot.
 
+## Run-Ahead Sharpening Review (007C2, 2026-07-13)
+
+- Lock the application/appraisal/case in the established order, then re-run the public
+  `is_routable_approval_case`, `can_read_approval_case`, and
+  `is_pending_approval_case_actor` predicates inside that transaction before inserting an action.
+  The pre-lock §44 projection is not write authority, and no action adapter may parse
+  `required_approvers_json` independently.
+- Require the caller's submitted case `version` and reject a stale version with the complete
+  case/action/sanction/audit/workflow ledger unchanged. A contradictory snapshot stays hidden and
+  non-actionable; an unassigned permission holder receives `OBJECT_ACCESS_DENIED`; an assigned but
+  acted/excluded/closed caller receives the action-specific disabled-state conflict.
+- Return the canonical case projection by composing `approval_case_engine` after the successful
+  write. Collection, detail, and action response must agree on `current_status`, immutable routing
+  provenance, per-approver decision/acted-at, and remaining actions without a new serializer.
+
 ## Risk Level
 High
 

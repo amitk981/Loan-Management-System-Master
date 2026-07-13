@@ -7,6 +7,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from sfpcl_credit.approvals.models import ApprovalCase
+from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.approvals.modules.approval_matrix import resolve_approval_matrix
 from sfpcl_credit.approvals.modules.sanction_committee import resolve_sanction_committee
 from sfpcl_credit.applications import services as application_services
@@ -189,7 +190,7 @@ class SanctionHandoffModule:
         if case.current_status != ApprovalCase.STATUS_PENDING:
             raise DomainInvalidStateError("Only a pending approval case can be enriched.")
         if case.approval_matrix_rule_id is not None:
-            if self._matches_enrichment(case, normalized):
+            if self._matches_enrichment(case, normalized, facts):
                 return SanctionHandoffResult(
                     snapshot=self.serialize(case, facts.latest_review)
                 )
@@ -339,16 +340,23 @@ class SanctionHandoffModule:
         return approvers
 
     @staticmethod
-    def _matches_enrichment(case, normalized):
+    def _matches_enrichment(case, normalized, facts):
         expected_exception = (
             normalized["force_exception_route"]
-            or case.loan_limit_provenance_json.get("exception_required_flag") is True
+            or facts.exception_required_flag
         )
         return (
             case.approval_type == normalized["approval_type"]
             and case.amount == normalized["amount"]
+            and case.amount == facts.recommended_amount
             and case.reason_for_approval == normalized["reason_for_approval"]
             and bool(case.exception_condition_code) == expected_exception
+            and case.exception_required_flag == facts.exception_required_flag
+            and case.decision_date == facts.decision_date
+            and case.loan_application_id == facts.application.pk
+            and case.related_entity_id == facts.application.pk
+            and case.loan_appraisal_note_id == facts.appraisal_note.pk
+            and case.loan_limit_provenance_json == facts.loan_limit_provenance
         )
 
     @staticmethod
@@ -373,23 +381,5 @@ class SanctionHandoffModule:
             "available_actions": [],
         }
         if case.approval_matrix_rule_id is not None:
-            snapshot.update({
-                "approval_type": case.approval_type,
-                "approval_matrix_rule_id": str(case.approval_matrix_rule_id),
-                "approval_matrix_rule_version": case.approval_matrix_rule_version,
-                "sanction_committee_id": str(case.sanction_committee_id),
-                "sanction_committee_version": case.sanction_committee_version,
-                "decision_date": case.decision_date.isoformat(),
-                "amount": f"{case.amount:.2f}",
-                "required_approvers": case.required_approvers_json,
-                "excluded_approvers": case.excluded_approvers_json,
-                "related_entity_type": case.related_entity_type,
-                "related_entity_id": str(case.related_entity_id),
-                "reason_for_approval": case.reason_for_approval,
-                "exception_condition_code": case.exception_condition_code or None,
-                "matrix_projection": case.matrix_projection_json,
-                "committee_projection": case.committee_projection_json,
-                "loan_limit_provenance": case.loan_limit_provenance_json,
-                "version": case.version,
-            })
+            snapshot.update(approval_case_engine.serialize_case_snapshot(case))
         return snapshot

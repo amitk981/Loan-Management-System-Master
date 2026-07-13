@@ -1,7 +1,7 @@
 # Slice 007C2: Approval-Case Read Scope and Snapshot Contract Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers

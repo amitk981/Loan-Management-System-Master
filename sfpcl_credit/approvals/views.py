@@ -4,6 +4,7 @@ from django.views.decorators.http import require_http_methods
 from sfpcl_credit.api import error_response, list_response, parse_json_body, success_response
 from sfpcl_credit.approvals.modules import approval_matrix_configuration as services
 from sfpcl_credit.approvals.modules import approval_case_engine
+from sfpcl_credit.domain_errors import DomainObjectAccessDenied
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.identity.modules.auth_service import effective_permission_codes
 
@@ -73,6 +74,13 @@ def approval_case_detail(request, approval_case_id):
         return success_response(data, request)
     except ObjectDoesNotExist:
         return error_response(request, 404, "NOT_FOUND", "Approval case was not found.")
+    except DomainObjectAccessDenied:
+        return error_response(
+            request,
+            403,
+            "OBJECT_ACCESS_DENIED",
+            "You cannot access this approval case.",
+        )
 
 
 @require_http_methods(["GET", "POST"])

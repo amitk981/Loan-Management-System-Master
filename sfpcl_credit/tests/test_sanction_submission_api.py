@@ -15,7 +15,11 @@ from django.test import Client, RequestFactory, TestCase, TransactionTestCase
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import LoanApplication, RejectionNote
-from sfpcl_credit.approvals.models import ApprovalMatrixRule, SanctionCommittee
+from sfpcl_credit.approvals.models import (
+    ApprovalConfigurationProposal,
+    ApprovalMatrixRule,
+    SanctionCommittee,
+)
 from sfpcl_credit.approvals.modules import approval_matrix_configuration
 from sfpcl_credit.approvals.modules import sanction_handoff as sanction_handoff_module
 from sfpcl_credit.approvals.modules.approval_matrix import resolve_approval_matrix
@@ -25,6 +29,7 @@ from sfpcl_credit.credit.models import (
     LoanAppraisalNote,
     RiskAssessment,
 )
+from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import Member
 from sfpcl_credit.tests.api_contracts import assert_success_envelope
@@ -364,6 +369,7 @@ class SanctionSubmissionApiTests(TestCase):
         self.assertEqual(data["sanction_committee_version"], "committee-v1")
         self.assertEqual(data["decision_date"], decision_date.isoformat())
         self.assertEqual(data["amount"], "500000.00")
+        self.assertEqual(data["current_status"], "pending")
         self.assertEqual(
             data["required_approvers"],
             [
@@ -630,6 +636,142 @@ class SanctionSubmissionApiTests(TestCase):
         self.assertFalse(
             WorkflowEvent.objects.filter(workflow_name="approval_case_enrichment").exists()
         )
+
+    def test_enrichment_replay_rejects_changed_loan_limit_assessment_provenance(self):
+        setup = self._create_real_enriched_case()
+        changed_assessment_id = "70000000-0000-0000-0000-000000000007"
+        self.note.loan_limit_assessment_id_snapshot = changed_assessment_id
+        self.note.loan_limit_snapshot_json[
+            "loan_limit_assessment_id"
+        ] = changed_assessment_id
+        self.note.save(
+            update_fields=[
+                "loan_limit_assessment_id_snapshot",
+                "loan_limit_snapshot_json",
+            ]
+        )
+        before = self._approval_case_business_ledger()
+
+        response = self._enrich_with_token(setup["payload"], setup["token"])
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(response.json()["error"]["code"], "INVALID_STATE_TRANSITION")
+        self.assertEqual(self._approval_case_business_ledger(), before)
+
+    def test_enrichment_replay_rejects_changed_policy_provenance(self):
+        setup = self._create_real_enriched_case()
+        self.note.loan_limit_snapshot_json.update(
+            {
+                "calculation_rule_version": "changed-limit-v2",
+                "policy_config_id": "80000000-0000-0000-0000-000000000008",
+                "policy_name": "Changed Board Policy",
+                "calculated_at": (self.note.prepared_at - timedelta(minutes=1)).isoformat(),
+            }
+        )
+        self.note.save(update_fields=["loan_limit_snapshot_json"])
+        before = self._approval_case_business_ledger()
+
+        response = self._enrich_with_token(setup["payload"], setup["token"])
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(response.json()["error"]["code"], "INVALID_STATE_TRANSITION")
+        self.assertEqual(self._approval_case_business_ledger(), before)
+
+    def test_enrichment_replay_rejects_changed_review_decision_date(self):
+        setup = self._create_real_enriched_case()
+        changed_reviewed_at = self.reviewed_at + timedelta(days=1)
+        self.note.reviewed_at = changed_reviewed_at
+        self.note.save(update_fields=["reviewed_at"])
+        AppraisalReviewDecision.objects.filter(pk=self.history.pk).update(
+            decided_at=changed_reviewed_at
+        )
+        before = self._approval_case_business_ledger()
+
+        response = self._enrich_with_token(setup["payload"], setup["token"])
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(response.json()["error"]["code"], "INVALID_STATE_TRANSITION")
+        self.assertEqual(self._approval_case_business_ledger(), before)
+
+    def test_enrichment_replay_rejects_changed_exception_provenance(self):
+        setup = self._create_real_enriched_case()
+        self.note.loan_limit_snapshot_json["exception_required_flag"] = True
+        self.note.save(update_fields=["loan_limit_snapshot_json"])
+        before = self._approval_case_business_ledger()
+
+        response = self._enrich_with_token(setup["payload"], setup["token"])
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(response.json()["error"]["code"], "INVALID_STATE_TRANSITION")
+        self.assertEqual(self._approval_case_business_ledger(), before)
+
+    def test_enrichment_replay_rejects_changed_recommended_amount(self):
+        setup = self._create_real_enriched_case()
+        self.note.recommended_amount = "410000.00"
+        self.note.save(update_fields=["recommended_amount"])
+        replay_payload = setup["payload"] | {"amount": "410000.00"}
+        before = self._approval_case_business_ledger()
+
+        response = self._enrich_with_token(replay_payload, setup["token"])
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(response.json()["error"]["code"], "INVALID_STATE_TRANSITION")
+        self.assertEqual(self._approval_case_business_ledger(), before)
+
+    def test_enrichment_replay_rejects_changed_application_provenance(self):
+        setup = self._create_real_enriched_case()
+        self.note.loan_limit_snapshot_json[
+            "loan_application_id"
+        ] = "90000000-0000-0000-0000-000000000009"
+        self.note.save(update_fields=["loan_limit_snapshot_json"])
+        before = self._approval_case_business_ledger()
+
+        response = self._enrich_with_token(setup["payload"], setup["token"])
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(response.json()["error"]["code"], "INVALID_STATE_TRANSITION")
+        self.assertEqual(self._approval_case_business_ledger(), before)
+
+    def test_enrichment_list_and_detail_share_the_canonical_routing_projection(self):
+        setup = self._create_real_enriched_case()
+        headers = {
+            "Authorization": f"Bearer {self._login(setup['cfo'])}"
+        }
+
+        collection = self.client.get("/api/v1/approval-cases/", headers=headers)
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{setup['data']['approval_case_id']}/",
+            headers=headers,
+        )
+
+        self.assertEqual(collection.status_code, 200, collection.content)
+        self.assertEqual(detail.status_code, 200, detail.content)
+        list_case = collection.json()["data"][0]
+        detail_case = detail.json()["data"]
+        canonical_fields = (
+            "approval_case_id",
+            "approval_type",
+            "related_entity_type",
+            "related_entity_id",
+            "loan_application_id",
+            "amount",
+            "current_status",
+            "decision_date",
+            "version",
+            "approval_matrix_rule_id",
+            "approval_matrix_rule_version",
+            "sanction_committee_id",
+            "sanction_committee_version",
+            "excluded_approvers",
+            "reason_for_approval",
+            "exception_condition_code",
+            "matrix_projection",
+            "committee_projection",
+            "loan_limit_provenance",
+        )
+        for field in canonical_fields:
+            self.assertEqual(list_case[field], setup["data"][field], field)
+            self.assertEqual(detail_case[field], setup["data"][field], field)
 
     def test_pending_case_read_is_scoped_and_missing_case_is_not_found(self):
         missing = self._get_case()
@@ -1046,75 +1188,128 @@ from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow as 
         self._assert_no_submission_writes()
 
     def test_open_case_configuration_snapshot_is_immutable_across_governed_decisions(self):
-        self.assertEqual(self._submit({"remarks": "Freeze configuration facts."}).status_code, 200)
-        ApprovalMatrixRule.objects.all().delete()
-        SanctionCommittee.objects.all().delete()
-        checker = self._user("snapshot_checker", "Snapshot Checker")
-        checker.approval_authority_type = "cfo"
-        checker.save(update_fields=["approval_authority_type"])
-        director_1 = self._user("snapshot_director_1", "Snapshot Director 1")
-        director_1.approval_authority_type = "director"
-        director_1.save(update_fields=["approval_authority_type"])
-        director_2 = self._user("snapshot_director_2", "Snapshot Director 2")
-        director_2.approval_authority_type = "director"
-        director_2.save(update_fields=["approval_authority_type"])
-        rule = ApprovalMatrixRule.objects.create(
-            decision_type="loan_sanction", amount_min="0", amount_max="500000",
-            required_approver_roles_json=["cfo", "director"], required_director_count=1,
-            effective_from=date(2026, 4, 1), status="active", version_number="snapshot-v1",
-        )
-        committee = SanctionCommittee.objects.create(
-            committee_name="Snapshot Committee", cfo_user=checker,
-            director_1_user=director_1, director_2_user=director_2,
-            board_meeting_reference="BOARD-SNAPSHOT-1", effective_from=date(2026, 4, 1),
-            status="active", version_number="snapshot-v1",
-        )
+        setup = self._create_real_enriched_case()
         case_model = apps.get_model("approvals", "ApprovalCase")
         case = case_model.objects.get()
-        case.approval_matrix_rule = rule
-        case.approval_matrix_rule_version = rule.version_number
-        case.sanction_committee = committee
-        case.sanction_committee_version = committee.version_number
-        case.required_approvers_json = {
-            "cfo_user_id": str(checker.pk),
-            "director_user_ids": [str(director_1.pk)],
+        checker = setup["cfo"]
+        read_headers = {"Authorization": f"Bearer {self._login(checker)}"}
+        canonical_url = f"/api/v1/approval-cases/{case.pk}/"
+        canonical_before = self.client.get(canonical_url, headers=read_headers)
+        self.assertEqual(canonical_before.status_code, 200, canonical_before.content)
+        case_ledger_before = {
+            "case": case_model.objects.filter(pk=case.pk).values().get(),
+            "actions": list(case.actions.order_by("pk").values()),
+            "case_audits": list(
+                AuditLog.objects.filter(entity_id=case.pk).order_by("pk").values()
+            ),
+            "workflows": list(WorkflowEvent.objects.order_by("pk").values()),
         }
-        case.decision_date = date(2026, 7, 13)
-        case.version = 1
-        case.save(update_fields=[
-            "approval_matrix_rule", "approval_matrix_rule_version", "sanction_committee",
-            "sanction_committee_version", "required_approvers_json", "decision_date", "version",
-        ])
-        before = case_model.objects.filter(pk=case.pk).values().get()
-        request = RequestFactory().post("/api/v1/approval-matrix-rules/")
+        rule = case.approval_matrix_rule
         replacement = {
-            "decision_type": "loan_sanction", "amount_min": "0", "amount_max": "500000",
-            "condition_code": None, "required_approver_roles": ["cfo", "director"],
-            "required_director_count": 2, "joint_approval_required_flag": True,
-            "register_required": "credit_sanction_register", "effective_from": "2027-01-01",
-            "effective_to": None, "version_number": "snapshot-v2", "reason": "Annual replacement",
+            "decision_type": "loan_sanction",
+            "amount_min": "0.00",
+            "amount_max": "500000.00",
+            "condition_code": None,
+            "required_approver_roles": ["cfo", "director"],
+            "required_director_count": 2,
+            "joint_approval_required_flag": True,
+            "register_required": "credit_sanction_register",
+            "effective_from": "2027-01-01",
+            "effective_to": None,
+            "version_number": "rejected-rule-v2",
+            "reason": "Rejected route reason must not enter winner evidence",
         }
+        rejected_request = RequestFactory().post(
+            "/api/v1/approval-matrix-rules/",
+            HTTP_X_REQUEST_ID="rejected-route-request",
+        )
         rejected = approval_matrix_configuration.supersede_rule(
-            self.reviewer, request, rule.pk, replacement
+            self.reviewer, rejected_request, rule.pk, replacement
         )
         approval_matrix_configuration.decide_proposal(
-            rejected["approval_configuration_proposal_id"], checker, request,
-            {"version": 1, "reason": "Evidence incomplete"}, "reject",
+            rejected["approval_configuration_proposal_id"],
+            checker,
+            rejected_request,
+            {"version": 1, "reason": "Evidence incomplete"},
+            "reject",
+        )
+        approved_request = RequestFactory().post(
+            "/api/v1/approval-matrix-rules/",
+            HTTP_X_REQUEST_ID="approved-route-request",
         )
         approved = approval_matrix_configuration.supersede_rule(
-            self.reviewer, request, rule.pk, replacement | {"version_number": "snapshot-v2-approved"}
+            self.reviewer,
+            approved_request,
+            rule.pk,
+            replacement
+            | {
+                "version_number": "approved-rule-v2",
+                "reason": "Approved annual route replacement",
+            },
         )
         approval_matrix_configuration.decide_proposal(
-            approved["approval_configuration_proposal_id"], checker, request,
-            {"version": 1}, "approve",
+            approved["approval_configuration_proposal_id"],
+            checker,
+            approved_request,
+            {"version": 1},
+            "approve",
         )
-        resolve_approval_matrix(
-            decision_type="loan_sanction", amount="100", condition_code=None,
-            decision_date=date(2026, 7, 13),
+        rejected_row = ApprovalConfigurationProposal.objects.get(
+            pk=rejected["approval_configuration_proposal_id"]
         )
-        resolve_sanction_committee(date(2026, 7, 13))
-        approval_matrix_configuration.get_proposal(approved["approval_configuration_proposal_id"], checker)
-        self.assertEqual(case_model.objects.filter(pk=case.pk).values().get(), before)
+        approved_row = ApprovalConfigurationProposal.objects.get(
+            pk=approved["approval_configuration_proposal_id"]
+        )
+        activated = ApprovalMatrixRule.objects.get(version_number="approved-rule-v2")
+        history = VersionHistory.objects.get(
+            versioned_entity_type="approval_matrix_rule",
+            versioned_entity_id=activated.pk,
+        )
+        audit = AuditLog.objects.get(
+            action="config.changed",
+            entity_type="approval_matrix_rule",
+            entity_id=activated.pk,
+        )
+
+        self.assertEqual(history.author_user_id, self.reviewer.pk)
+        self.assertEqual(history.approver_user_id, checker.pk)
+        self.assertNotEqual(history.author_user_id, history.approver_user_id)
+        self.assertEqual(history.change_summary, approved_row.reason)
+        self.assertEqual(history.approval_reference, "approved-route-request")
+        self.assertEqual(history.approved_at, approved_row.decided_at)
+        self.assertEqual(history.new_value_json["proposal_id"], str(approved_row.pk))
+        self.assertEqual(
+            history.new_value_json["target_entity_id"], str(rule.pk)
+        )
+        self.assertEqual(audit.actor_user_id, checker.pk)
+        self.assertEqual(audit.new_value_json["proposal_id"], str(approved_row.pk))
+        self.assertEqual(audit.new_value_json["author_user_id"], str(self.reviewer.pk))
+        self.assertEqual(audit.new_value_json["approver_user_id"], str(checker.pk))
+        self.assertEqual(audit.new_value_json["request_id"], "approved-route-request")
+        self.assertEqual(
+            audit.new_value_json["superseded_configuration"]["approval_matrix_rule_id"],
+            str(rule.pk),
+        )
+        winner_evidence = str({"history": history.new_value_json, "audit": audit.new_value_json})
+        self.assertNotIn(rejected_row.reason, winner_evidence)
+        self.assertNotIn(rejected_row.request_id, winner_evidence)
+        self.assertNotIn(rejected_row.payload_json["version_number"], winner_evidence)
+
+        self.assertEqual(
+            {
+                "case": case_model.objects.filter(pk=case.pk).values().get(),
+                "actions": list(case.actions.order_by("pk").values()),
+                "case_audits": list(
+                    AuditLog.objects.filter(entity_id=case.pk).order_by("pk").values()
+                ),
+                "workflows": list(WorkflowEvent.objects.order_by("pk").values()),
+            },
+            case_ledger_before,
+        )
+        canonical_after = self.client.get(canonical_url, headers=read_headers)
+        self.assertEqual(canonical_after.status_code, 200, canonical_after.content)
+        self.assertEqual(canonical_after.json()["data"], canonical_before.json()["data"])
+        self.assertEqual(setup["data"]["approval_case_id"], str(case.pk))
 
     def _submit(self, payload, *, actor=None, request_id="submit-sanction-test"):
         actor = actor or self.reviewer
@@ -1144,6 +1339,109 @@ from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow as 
             content_type="application/json",
             headers={"Authorization": f"Bearer {self._login(actor)}"},
         )
+
+    def _enrich_with_token(self, payload, token):
+        return self.client.post(
+            f"/api/v1/loan-applications/{self.application.pk}/approval-cases/",
+            data=payload,
+            content_type="application/json",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    def _create_real_enriched_case(self):
+        ApprovalMatrixRule.objects.all().delete()
+        SanctionCommittee.objects.all().delete()
+        create_permission = self._permission(
+            "approvals.case.create", "Create approval case"
+        )
+        RolePermission.objects.create(
+            role=self.reviewer.primary_role, permission=create_permission
+        )
+        read_permission = self._permission(
+            "approvals.case.read", "Read approval cases"
+        )
+        cfo = self._user("replay_cfo", "Replay CFO", read_permission)
+        cfo.approval_authority_type = "cfo"
+        cfo.save(update_fields=["approval_authority_type"])
+        director_1 = self._user("replay_director_1", "Replay Director 1")
+        director_1.approval_authority_type = "director"
+        director_1.save(update_fields=["approval_authority_type"])
+        director_2 = self._user("replay_director_2", "Replay Director 2")
+        director_2.approval_authority_type = "director"
+        director_2.save(update_fields=["approval_authority_type"])
+        decision_date = timezone.localdate(self.history.decided_at)
+        ApprovalMatrixRule.objects.create(
+            decision_type="loan_sanction",
+            amount_min="0.00",
+            amount_max="500000.00",
+            required_approver_roles_json=["cfo", "director"],
+            required_director_count=1,
+            joint_approval_required_flag=True,
+            register_required="credit_sanction_register",
+            effective_from=decision_date,
+            status="active",
+            version_number="replay-rule-v1",
+        )
+        SanctionCommittee.objects.create(
+            committee_name="Replay Committee",
+            cfo_user=cfo,
+            director_1_user=director_1,
+            director_2_user=director_2,
+            board_meeting_reference="BOARD-REPLAY-1",
+            effective_from=decision_date,
+            status="active",
+            version_number="replay-committee-v1",
+        )
+        provenance = {
+            "loan_limit_assessment_id": str(
+                self.note.loan_limit_assessment_id_snapshot
+            ),
+            "loan_application_id": str(self.application.pk),
+            "exception_required_flag": False,
+            "calculation_rule_version": "replay-limit-v1",
+            "policy_config_id": "30000000-0000-0000-0000-000000000003",
+            "policy_name": "Replay Board Policy",
+            "calculated_at": self.note.prepared_at.isoformat(),
+        }
+        self.note.loan_limit_snapshot_json = {
+            **self.note.loan_limit_snapshot_json,
+            **provenance,
+        }
+        self.note.save(update_fields=["loan_limit_snapshot_json"])
+        self.assertEqual(
+            self._submit({"remarks": "Create a real replay shell."}).status_code,
+            200,
+        )
+        payload = {
+            "approval_type": "sanction",
+            "amount": "400000.00",
+            "reason_for_approval": "Replay the reviewed appraisal exactly.",
+            "force_exception_route": False,
+        }
+        enriched = self._enrich(payload)
+        self.assertEqual(enriched.status_code, 200, enriched.content)
+        return {
+            "payload": payload,
+            "token": self._login(self.reviewer),
+            "data": enriched.json()["data"],
+            "cfo": cfo,
+            "directors": (director_1, director_2),
+        }
+
+    @staticmethod
+    def _approval_case_business_ledger():
+        case_model = apps.get_model("approvals", "ApprovalCase")
+        action_model = apps.get_model("approvals", "ApprovalAction")
+        return {
+            "cases": list(case_model.objects.order_by("pk").values()),
+            "actions": list(action_model.objects.order_by("pk").values()),
+            "audits": list(
+                AuditLog.objects.exclude(action__startswith="auth.")
+                .order_by("pk")
+                .values()
+            ),
+            "workflows": list(WorkflowEvent.objects.order_by("pk").values()),
+        }
 
     def _login(self, actor):
         login = self.client.post(

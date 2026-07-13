@@ -1,0 +1,35 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_arbitrary_user_injected_into_required_snapshot_is_not_routable (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_arbitrary_user_injected_into_required_snapshot_is_not_routable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_122527_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 371, in test_arbitrary_user_injected_into_required_snapshot_is_not_routable
+    self._assert_snapshot_is_hidden_without_writes(injected)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_122527_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 713, in _assert_snapshot_is_hidden_without_writes
+    self.assertEqual(collection.json()["data"], [])
+AssertionError: Lists differ: [{'approval_case_id': '3ff52bfc-467b-45c8-[354 chars]: 2}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'approval_case_id': '3ff52bfc-467b-45c8-a7bb-d4ecead50fd0', 'approval_type': 'sanction', 'related_entity_type': 'loan_application', 'related_entity_id': '9d498a58-844b-41d4-b505-c13089a4f919', 'loan_application_id': '9d498a58-844b-41d4-b505-c13089a4f919', 'application_reference_number': 'LO00000701', 'amount': '500000.00', 'current_status': 'pending', 'decision_date': '2026-07-13', 'version': 2}
+
++ []
+- [{'amount': '500000.00',
+-   'application_reference_number': 'LO00000701',
+-   'approval_case_id': '3ff52bfc-467b-45c8-a7bb-d4ecead50fd0',
+-   'approval_type': 'sanction',
+-   'current_status': 'pending',
+-   'decision_date': '2026-07-13',
+-   'loan_application_id': '9d498a58-844b-41d4-b505-c13089a4f919',
+-   'related_entity_id': '9d498a58-844b-41d4-b505-c13089a4f919',
+-   'related_entity_type': 'loan_application',
+-   'version': 2}]
+
+----------------------------------------------------------------------
+Ran 1 test in 0.022s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

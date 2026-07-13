@@ -128,6 +128,26 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
   action decisions are read from the immutable §15.4 ledger without mutating required snapshot
   JSON. Approval actions, conflict population, and UI remain 007D/007E/007I.
 
+## 007C2 Read Scope and Snapshot Contract Closure
+
+- `approvals.case.read` is necessary but never global object scope. The ordinary list is filtered
+  before pagination/counts to immutable snapshotted actors, including their acted history;
+  `assigned_to_me=true` is the narrower pending/unexcluded/unacted queue. Unassigned Directors,
+  makers, and arbitrary permission holders see zero rows and direct detail returns
+  `OBJECT_ACCESS_DENIED` without writes.
+- One public approval-owned coherence predicate reconciles case/application/type/amount/decision/
+  exception facts, rule and committee identity/version/date, exact unique CFO/Director authority,
+  role/count/joint/register facts, and frozen assessment/application/policy provenance. Malformed
+  or injected snapshots are neither listable, retrievable, nor eligible for later actions; live
+  configuration and membership remain irrelevant.
+- Exact enrichment replay now compares the locked reviewed date/recommendation plus assessment,
+  application, exception, calculation-rule, policy-id/name, and calculation-time provenance. A
+  changed fact returns 409 with unchanged case/action/audit/workflow evidence.
+- §25.2 now includes `current_status`; enrichment, list, and detail compose the same canonical
+  immutable routing projection. A real submit → enrich → canonical-read case remains byte-for-byte
+  stable across rejected and later approved governed configuration proposals, including exact
+  winner evidence and loser-evidence omission.
+
 ## 007A Delivered Configuration Contract
 
 - Exact ₹5,00,000 is included in the lower persisted rule; the upper rule begins at ₹5,00,000.01.

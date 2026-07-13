@@ -19,6 +19,7 @@ from sfpcl_credit.tests.api_contracts import (
     assert_pagination_shape,
     assert_success_envelope,
 )
+from sfpcl_credit.workflows.models import WorkflowEvent
 
 
 class ApprovalCaseRoutingApiTests(TestCase):
@@ -79,6 +80,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
             risk_mitigation_notes="Seasonal cash-flow monitoring.",
             assessed_by_user=self.preparer,
         )
+        calculated_at = timezone.now() - timedelta(hours=1)
         self.note = LoanAppraisalNote.objects.create(
             loan_application=self.application,
             prepared_by_user=self.preparer,
@@ -98,8 +100,14 @@ class ApprovalCaseRoutingApiTests(TestCase):
                 "purpose_check": "pass",
             },
             loan_limit_snapshot_json={
+                "loan_limit_assessment_id": "20000000-0000-0000-0000-000000000002",
+                "loan_application_id": str(self.application.pk),
                 "final_eligible_loan_amount": "500000.00",
                 "exception_required_flag": False,
+                "calculation_rule_version": "limit-v7",
+                "policy_config_id": "30000000-0000-0000-0000-000000000003",
+                "policy_name": "Board Loan Policy",
+                "calculated_at": calculated_at.isoformat(),
             },
             prerequisite_provenance="verified",
             borrower_summary="No prior SFPCL borrowing.",
@@ -190,7 +198,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
                 "calculation_rule_version": "limit-v7",
                 "policy_config_id": "30000000-0000-0000-0000-000000000003",
                 "policy_name": "Board Loan Policy",
-                "calculated_at": timezone.now().isoformat(),
+                "calculated_at": calculated_at.isoformat(),
             },
             decision_date=decision_date,
             version=2,
@@ -356,29 +364,131 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["data"], [])
 
-    def test_global_reader_sees_case_without_assignment_actions_and_unpermitted_user_is_denied(self):
-        reader = self._user("approval_reader", "Approval Reader", self.read_permission)
-        unrelated = self._user("unrelated", "Unrelated User")
+    def test_arbitrary_user_injected_into_required_snapshot_is_not_routable(self):
+        injected = self._user(
+            "injected_reader", "Injected Reader", self.read_permission
+        )
+        self.case.required_approvers_json[1] = {
+            "role_code": "director",
+            "user_id": str(injected.pk),
+            "full_name": injected.full_name,
+        }
+        self.case.save(update_fields=["required_approvers_json"])
 
-        response = self.client.get(
-            f"/api/v1/approval-cases/{self.case.pk}/",
-            **self._auth(reader),
+        self._assert_snapshot_is_hidden_without_writes(injected)
+
+    def test_duplicate_required_approver_is_not_routable(self):
+        self.case.required_approvers_json[1]["user_id"] = str(self.cfo.pk)
+        self.case.save(update_fields=["required_approvers_json"])
+
+        self._assert_snapshot_is_hidden_without_writes(self.cfo)
+
+    def test_required_approver_with_wrong_role_is_not_routable(self):
+        self.case.required_approvers_json[1]["role_code"] = "cfo"
+        self.case.save(update_fields=["required_approvers_json"])
+
+        self._assert_snapshot_is_hidden_without_writes(self.cfo)
+
+    def test_required_approver_count_disagrees_with_matrix_projection(self):
+        self.case.matrix_projection_json["required_director_count"] = 2
+        self.case.save(update_fields=["matrix_projection_json"])
+
+        self._assert_snapshot_is_hidden_without_writes(self.cfo)
+
+    def test_case_amount_disagrees_with_matrix_projection(self):
+        self.case.matrix_projection_json["amount"] = "499999.99"
+        self.case.save(update_fields=["matrix_projection_json"])
+
+        self._assert_snapshot_is_hidden_without_writes(self.cfo)
+
+    def test_case_condition_disagrees_with_matrix_projection(self):
+        self.case.matrix_projection_json[
+            "condition_code"
+        ] = "exceeds_permissible_limit"
+        self.case.save(update_fields=["matrix_projection_json"])
+
+        self._assert_snapshot_is_hidden_without_writes(self.cfo)
+
+    def test_incomplete_joint_approval_projection_is_not_routable(self):
+        del self.case.matrix_projection_json["joint_approval_required"]
+        self.case.save(update_fields=["matrix_projection_json"])
+
+        self._assert_snapshot_is_hidden_without_writes(self.cfo)
+
+    def test_incomplete_register_projection_is_not_routable(self):
+        self.case.matrix_projection_json["register_required"] = None
+        self.case.save(update_fields=["matrix_projection_json"])
+
+        self._assert_snapshot_is_hidden_without_writes(self.cfo)
+
+    def test_read_permission_without_snapshot_scope_cannot_list_or_retrieve_the_case(self):
+        reader = self._user("approval_reader", "Approval Reader", self.read_permission)
+        unassigned_director = self._user(
+            "unassigned_director", "Unassigned Director", self.read_permission
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            all(not action["enabled"] for action in response.json()["data"]["available_actions"])
+        RolePermission.objects.create(
+            role=self.preparer.primary_role, permission=self.read_permission
         )
-        self.assertTrue(
-            all(
-                action["disabled_reason"] == "You are not a pending approver for this case."
-                for action in response.json()["data"]["available_actions"]
+        actor_headers = {
+            actor.pk: self._auth(actor)
+            for actor in (reader, unassigned_director, self.preparer)
+        }
+        ledger_before = {
+            "case": ApprovalCase.objects.filter(pk=self.case.pk).values().get(),
+            "actions": list(ApprovalAction.objects.filter(approval_case=self.case).values()),
+            "audits": list(AuditLog.objects.order_by("pk").values()),
+            "workflows": list(WorkflowEvent.objects.order_by("pk").values()),
+        }
+
+        for actor in (reader, unassigned_director, self.preparer):
+            ordinary_list = self.client.get(
+                "/api/v1/approval-cases/", **actor_headers[actor.pk]
             )
+            self.assertEqual(ordinary_list.status_code, 200)
+            self.assertEqual(ordinary_list.json()["data"], [])
+            self.assertEqual(ordinary_list.json()["pagination"]["total_count"], 0)
+
+            detail = self.client.get(
+                f"/api/v1/approval-cases/{self.case.pk}/", **actor_headers[actor.pk]
+            )
+            self.assertEqual(detail.status_code, 403)
+            assert_error_envelope(self, detail.json(), "OBJECT_ACCESS_DENIED")
+
+        self.assertEqual(
+            {
+                "case": ApprovalCase.objects.filter(pk=self.case.pk).values().get(),
+                "actions": list(ApprovalAction.objects.filter(approval_case=self.case).values()),
+                "audits": list(AuditLog.objects.order_by("pk").values()),
+                "workflows": list(WorkflowEvent.objects.order_by("pk").values()),
+            },
+            ledger_before,
         )
-        assigned = self.client.get(
-            "/api/v1/approval-cases/?assigned_to_me=true",
-            **self._auth(reader),
+
+    def test_assigned_approver_can_retrieve_own_acted_history(self):
+        ApprovalAction.objects.create(
+            approval_case=self.case,
+            approver_user=self.cfo,
+            approver_role_code="cfo",
+            decision="approved",
+            comments="Approved after review.",
         )
-        self.assertEqual(assigned.json()["data"], [])
+
+        ordinary_list = self.client.get(
+            "/api/v1/approval-cases/", **self._auth(self.cfo)
+        )
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **self._auth(self.cfo)
+        )
+
+        self.assertEqual(ordinary_list.status_code, 200)
+        self.assertEqual(ordinary_list.json()["pagination"]["total_count"], 1)
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(
+            detail.json()["data"]["required_approvers"][0]["decision"], "approved"
+        )
+
+    def test_missing_case_read_permission_is_denied_before_object_scope(self):
+        unrelated = self._user("unrelated", "Unrelated User")
 
         denied = self.client.get(
             f"/api/v1/approval-cases/{self.case.pk}/",
@@ -553,7 +663,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
             "cfo_user_id": str(current_cfo.pk),
             "director_user_ids": [str(current_director_1.pk), str(current_director_2.pk)],
         }
-        shell.loan_limit_provenance_json = {
+        current_provenance = {
             "loan_limit_assessment_id": str(shell.loan_appraisal_note.loan_limit_assessment_id_snapshot),
             "loan_application_id": str(shell.loan_application_id),
             "exception_required_flag": False,
@@ -562,9 +672,18 @@ class ApprovalCaseRoutingApiTests(TestCase):
             "policy_name": "Current Board Loan Policy",
             "calculated_at": timezone.now().isoformat(),
         }
+        shell.loan_limit_provenance_json = current_provenance
         shell.decision_date = current_date
         shell.version = 2
         shell.save()
+        shell.loan_appraisal_note.reviewed_at += timedelta(days=1)
+        shell.loan_appraisal_note.loan_limit_snapshot_json = {
+            **shell.loan_appraisal_note.loan_limit_snapshot_json,
+            **current_provenance,
+        }
+        shell.loan_appraisal_note.save(
+            update_fields=["reviewed_at", "loan_limit_snapshot_json"]
+        )
 
         historical_queue = self.client.get(
             "/api/v1/approval-cases/?assigned_to_me=true",
@@ -639,6 +758,35 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         return {"HTTP_AUTHORIZATION": f"Bearer {response.json()['data']['access_token']}"}
+
+    def _assert_snapshot_is_hidden_without_writes(self, actor):
+        headers = self._auth(actor)
+        before = {
+            "case": ApprovalCase.objects.filter(pk=self.case.pk).values().get(),
+            "actions": list(ApprovalAction.objects.filter(approval_case=self.case).values()),
+            "audits": list(AuditLog.objects.order_by("pk").values()),
+            "workflows": list(WorkflowEvent.objects.order_by("pk").values()),
+        }
+
+        collection = self.client.get("/api/v1/approval-cases/", **headers)
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **headers
+        )
+
+        self.assertEqual(collection.status_code, 200)
+        self.assertEqual(collection.json()["data"], [])
+        self.assertEqual(collection.json()["pagination"]["total_count"], 0)
+        self.assertEqual(detail.status_code, 404)
+        assert_error_envelope(self, detail.json(), "NOT_FOUND")
+        self.assertEqual(
+            {
+                "case": ApprovalCase.objects.filter(pk=self.case.pk).values().get(),
+                "actions": list(ApprovalAction.objects.filter(approval_case=self.case).values()),
+                "audits": list(AuditLog.objects.order_by("pk").values()),
+                "workflows": list(WorkflowEvent.objects.order_by("pk").values()),
+            },
+            before,
+        )
 
     def _create_unrouted_shell(self):
         application = LoanApplication.objects.create(

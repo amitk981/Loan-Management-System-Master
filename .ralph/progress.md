@@ -5265,3 +5265,28 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_122527_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007C2-approval-case-read-scope-and-snapshot-contract-closure
+- Summary: Closed approval-case object scope, coherent immutable snapshot validation, exact
+  enrichment replay provenance, canonical serializer parity, and real enriched-case configuration
+  immutability.
+- Tests run: RED/GREEN contract tracer bullets; 49 focused contract rows; 74 broader approval rows;
+  backend 585 tests at 93% coverage; frontend build/typecheck/lint and 208 tests; Django check and
+  migration sync.
+- Evidence saved: `.ralph/runs/2026-07-13_122527_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High
+- Next action: 007D approval action API — approve, reject, return.
+
+## 2026-07-13 12:53:01 - 2026-07-13_122527_normal_run
+- Agent tool used: codex
+- Slice attempted: 007C2-approval-case-read-scope-and-snapshot-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_122527_normal_run/.ralph/runs/2026-07-13_122527_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_122527_normal_run/.ralph/runs/2026-07-13_122527_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
