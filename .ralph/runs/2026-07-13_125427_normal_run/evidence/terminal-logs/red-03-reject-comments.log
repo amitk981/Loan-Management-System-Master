@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_reject_requires_comments_before_any_ledger_write (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_reject_requires_comments_before_any_ledger_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_125427_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 344, in test_reject_requires_comments_before_any_ledger_write
+    self.assertEqual(response.status_code, 400)
+AssertionError: 404 != 400
+
+----------------------------------------------------------------------
+Ran 1 test in 0.017s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

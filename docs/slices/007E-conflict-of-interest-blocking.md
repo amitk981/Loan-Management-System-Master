@@ -76,6 +76,16 @@ A Director, committee member, or preparer can never approve their own or a relat
 - Abstention flow keeps or blocks the case correctly; director/relative case flags the 007G requirement.
 - Maker-checker: appraisal author cannot approve the same application's case.
 
+## Run-Ahead Sharpening Review (007D, 2026-07-13)
+
+- Extend `approval_actions.record_action` before its immutable insert; preserve its application ->
+  appraisal -> case lock order, stale-version check, and canonical response composition.
+- Ordinary unassigned/contradictory/acted denials remain exact zero-write outcomes. Only the
+  source-required conflict denial may add COI-006 audit evidence, and that row must not change case,
+  action, sanction, workflow, or notification ledgers.
+- Conflict-abstention must use the existing immutable action ledger and case version increment; do
+  not add a parallel action serializer or mutate the frozen required-approver snapshot.
+
 ## Out of Scope
 General-meeting evidence recording (007G), exception register (007F), relationship data capture UI (member master owns relationships).
 

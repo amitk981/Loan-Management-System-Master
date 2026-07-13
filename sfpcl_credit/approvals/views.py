@@ -4,6 +4,7 @@ from django.views.decorators.http import require_http_methods
 from sfpcl_credit.api import error_response, list_response, parse_json_body, success_response
 from sfpcl_credit.approvals.modules import approval_matrix_configuration as services
 from sfpcl_credit.approvals.modules import approval_case_engine
+from sfpcl_credit.approvals.modules import approval_actions
 from sfpcl_credit.domain_errors import DomainObjectAccessDenied
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.identity.modules.auth_service import effective_permission_codes
@@ -83,6 +84,53 @@ def approval_case_detail(request, approval_case_id):
         )
 
 
+@require_http_methods(["POST"])
+def approval_case_approve(request, approval_case_id):
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+
+
+@require_http_methods(["POST"])
+def approval_case_reject(request, approval_case_id):
+    return _approval_case_action(request, approval_case_id, approval_actions.reject_case)
+
+
+@require_http_methods(["POST"])
+def approval_case_return(request, approval_case_id):
+    return _approval_case_action(request, approval_case_id, approval_actions.return_case)
+
+
+def _approval_case_action(request, approval_case_id, handler):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data = handler(
+            actor=user,
+            case_id=approval_case_id,
+            payload=parse_json_body(request),
+            actor_permissions=effective_permission_codes(user),
+            request_meta={
+                "request_id": request.headers.get("X-Request-ID"),
+                "ip_address": request.META.get("REMOTE_ADDR", ""),
+                "user_agent": request.headers.get("User-Agent", ""),
+            },
+        )
+        return success_response(data, request)
+    except ObjectDoesNotExist:
+        return error_response(request, 404, "NOT_FOUND", "Approval case was not found.")
+    except ValidationError as exc:
+        details = exc.message_dict if hasattr(exc, "message_dict") else {}
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Approval action failed validation.",
+            {key: value[0] if isinstance(value, list) else value for key, value in details.items()},
+        )
+    except approval_actions.ApprovalActionConflict as exc:
+        return error_response(
+            request, exc.status, exc.code, exc.message, exc.field_errors
+        )
 @require_http_methods(["GET", "POST"])
 def rule_collection(request):
     user, response = _authorized(request, manage=request.method == "POST")

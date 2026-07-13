@@ -149,6 +149,9 @@ class SanctionCommittee(models.Model):
 class ApprovalCase(models.Model):
     TYPE_SANCTION = "sanction"
     STATUS_PENDING = "pending"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+    STATUS_RETURNED = "returned_for_clarification"
 
     approval_case_id = models.UUIDField(
         primary_key=True,
@@ -197,6 +200,7 @@ class ApprovalCase(models.Model):
     related_entity_type = models.CharField(max_length=80, blank=True)
     related_entity_id = models.UUIDField(null=True, blank=True, db_index=True)
     reason_for_approval = models.TextField(blank=True)
+    reason_for_rejection = models.TextField(blank=True)
     exception_condition_code = models.CharField(max_length=120, blank=True)
     exception_reason = models.TextField(blank=True)
     matrix_projection_json = models.JSONField(default=dict, blank=True)
@@ -204,6 +208,7 @@ class ApprovalCase(models.Model):
     loan_limit_provenance_json = models.JSONField(default=dict, blank=True)
     decision_date = models.DateField(null=True, blank=True)
     version = models.PositiveIntegerField(default=1)
+    closed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "approval_cases"
@@ -259,4 +264,42 @@ class ApprovalAction(models.Model):
                 check=models.Q(decision__in=["approved", "rejected", "returned"]),
                 name="approval_action_valid_decision",
             ),
+        ]
+
+
+class SanctionDecision(models.Model):
+    sanction_decision_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    loan_application = models.OneToOneField(
+        "applications.LoanApplication",
+        on_delete=models.PROTECT,
+        related_name="sanction_decision",
+    )
+    approval_case = models.OneToOneField(
+        ApprovalCase, on_delete=models.PROTECT, related_name="sanction_decision"
+    )
+    decision = models.CharField(max_length=60, db_index=True)
+    sanctioned_amount = models.DecimalField(
+        max_digits=18, decimal_places=2, null=True, blank=True
+    )
+    sanctioned_tenure_months = models.PositiveIntegerField(null=True, blank=True)
+    interest_rate_type = models.CharField(max_length=60)
+    interest_rate_value = models.DecimalField(
+        max_digits=8, decimal_places=4, null=True, blank=True
+    )
+    repayment_date = models.DateField(null=True, blank=True)
+    penal_interest_rate = models.DecimalField(
+        max_digits=8, decimal_places=4, null=True, blank=True
+    )
+    charges_json = models.JSONField(default=dict, blank=True)
+    security_required_summary = models.TextField()
+    conditions_precedent = models.TextField(blank=True)
+    decision_reason = models.TextField()
+    recorded_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "sanction_decisions"
+        indexes = [
+            models.Index(fields=["decision", "recorded_at"], name="idx_sanction_decision_time")
         ]

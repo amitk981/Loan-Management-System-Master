@@ -198,6 +198,16 @@ class ApprovalCaseEnrichmentFacts:
 
 
 class AppraisalWorkflow:
+    @staticmethod
+    def lock_submitted_appraisal(*, appraisal_id):
+        """Lock and return an appraisal for the approval-owned transaction."""
+        return LoanAppraisalNote.objects.select_for_update().get(pk=appraisal_id)
+
+    @staticmethod
+    def restore_reviewed_state(appraisal_note):
+        appraisal_note.appraisal_status = LoanAppraisalNote.STATUS_REVIEWED
+        appraisal_note.save(update_fields=["appraisal_status"])
+
     @transaction.atomic
     def create_or_update(
         self,

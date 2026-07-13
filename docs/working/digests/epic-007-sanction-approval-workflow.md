@@ -1,5 +1,20 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007D Approval Action Boundary
+
+- Approve/reject/return execute through one locked application -> appraisal -> case transaction and
+  re-run 007C2 routability, object scope, pending assignment, permission, and optimistic version
+  checks before the immutable action insert.
+- Every action increments the case version and returns the canonical detail projection. Partial
+  approvals stay pending; final joint approval creates the unique sanction decision and advances
+  the application. Reject and return close the case without sanction; return restores the reviewed
+  pre-committee state.
+- Action audit/workflow evidence carries actor, decision/comments, request, case/application, IP and
+  user-agent facts. Terminal outcomes notify the `credit_assessment` team. Register generation
+  remains 007F/007H.
+- The reviewed appraisal does not yet own numeric rate/repayment/charge/condition facts, so A-079
+  preserves nullable/empty §25.8 fields rather than inventing financial rules.
+
 Sources distilled while finishing 006G and sharpening 006H/006X:
 
 - `docs/source/implementation-roadmap.md` §12.1-§12.5

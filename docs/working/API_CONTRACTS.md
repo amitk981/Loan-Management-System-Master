@@ -2494,3 +2494,22 @@ assessment/application ids, exception flag, calculation rule, policy id/name, an
 equal the frozen case provenance. Any changed reviewed or credit fact returns stable
 `409 INVALID_STATE_TRANSITION` and leaves case/action/audit/workflow ledgers unchanged. A later
 effective governed configuration version does not rewrite an otherwise coherent historical case.
+
+# Approval-case actions and sanction decision creation (007D)
+
+`POST /api/v1/approval-cases/{approval_case_id}/approve/`, `reject/`, and
+`return-for-clarification/` accept exactly optimistic integer `version` and optional `comments`;
+comments are mandatory and non-blank for reject/return. The caller must hold the action-specific
+permission and remain a pending, unexcluded actor in the coherent immutable case snapshot.
+Permission failure is `403 FORBIDDEN`, missing object scope is `403 OBJECT_ACCESS_DENIED`, stale
+version is `409 STALE_VERSION`, and acted/closed/excluded state is `409 TRANSITION_CONFLICT`.
+
+Success returns the §25.5 action identifiers/status/sanction flags merged with the canonical 007C2
+case detail projection. Each action increments case `version`, creates one immutable §15.4 row,
+and immediately disables every action for that actor. Partial joint approval remains pending. Final
+approval atomically closes the case, advances the application to `approved_by_sanction_committee`,
+and creates the unique per-application §15.5 sanction decision. Reject advances the application to
+`rejected_by_sanction_committee`; return restores application/appraisal to `appraisal_reviewed`.
+Every successful action writes attributable audit/workflow evidence; each terminal outcome sends
+one in-app notification to the persisted `credit_assessment` team. No register row is created in
+007D (007F/007H own those projections).

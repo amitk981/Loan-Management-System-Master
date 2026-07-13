@@ -40,6 +40,15 @@ Above-limit or policy-exception lending is possible only through the stricter au
 - Register read: filters, pagination, permission negatives; no mutation endpoint exists.
 - Unknown exception_type rejected.
 
+## Run-Ahead Sharpening Review (007D, 2026-07-13)
+
+- Attach exception status changes inside `approval_actions.record_action` after its locked coherent
+  case checks and before canonical serialization. The register row must share the action transaction
+  and never infer outcome from a later polling job.
+- Final approval exposes the created sanction id; reject/return expose no sanction. Exception
+  evidence must therefore reference the persisted action/case outcome and must not claim a sanction
+  or completion artefact absent from the 007D result.
+
 ## Out of Scope
 Loan-limit calculation (006C/006D), general-meeting evidence (007G), register UI (007J), waiver workflows beyond vocabulary.
 

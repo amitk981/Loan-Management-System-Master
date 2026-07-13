@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.apps import apps
 from django.test import Client, TestCase
 from django.utils import timezone
 
@@ -11,6 +12,7 @@ from sfpcl_credit.approvals.models import (
     SanctionCommittee,
 )
 from sfpcl_credit.credit.models import LoanAppraisalNote, RiskAssessment
+from sfpcl_credit.communications.models import Notification
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import Member
 from sfpcl_credit.tests.api_contracts import (
@@ -210,7 +212,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
             **self._auth(self.cfo),
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.json())
         body = response.json()
         assert_pagination_shape(self, body)
         self.assertEqual(
@@ -218,6 +220,210 @@ class ApprovalCaseRoutingApiTests(TestCase):
             [str(self.case.pk)],
         )
         self.assertEqual(body["pagination"]["total_count"], 1)
+
+    def test_assigned_approver_can_record_partial_approval_through_canonical_case_projection(self):
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2, "comments": "Approved after reviewing the appraisal."},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="req-approval-partial",
+            HTTP_USER_AGENT="Approval Action Contract Test",
+            REMOTE_ADDR="203.0.113.17",
+            **self._auth(self.cfo),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()["data"]
+        self.assertEqual(data["approval_case_id"], str(self.case.pk))
+        self.assertEqual(data["decision"], "approved")
+        self.assertEqual(data["approval_case_status"], "pending")
+        self.assertFalse(data["sanction_decision_created"])
+        self.assertIsNone(data["sanction_decision_id"])
+        self.assertEqual(data["current_status"], "pending")
+        self.assertEqual(data["version"], 3)
+        self.assertEqual(
+            next(
+                item for item in data["required_approvers"]
+                if item["user_id"] == str(self.cfo.pk)
+            )["decision"],
+            "approved",
+        )
+        self.assertTrue(all(not item["enabled"] for item in data["available_actions"]))
+
+        action = ApprovalAction.objects.get(approval_case=self.case, approver_user=self.cfo)
+        self.assertEqual(str(action.pk), data["approval_action_id"])
+        self.assertEqual(action.approver_role_code, "cfo")
+        self.assertEqual(action.comments, "Approved after reviewing the appraisal.")
+        self.assertEqual(action.ip_address, "203.0.113.17")
+        self.assertEqual(action.user_agent, "Approval Action Contract Test")
+        self.case.refresh_from_db()
+        self.assertEqual(self.case.current_status, "pending")
+        self.assertEqual(self.case.version, 3)
+
+    def test_final_joint_approval_creates_source_shaped_sanction_and_completion_evidence(self):
+        self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2, "comments": "CFO approval."},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="req-approval-cfo",
+            **self._auth(self.cfo),
+        )
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3, "comments": "Director approval."},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="req-approval-final",
+            HTTP_USER_AGENT="Final Approval Contract Test",
+            REMOTE_ADDR="203.0.113.18",
+            **self._auth(self.director),
+        )
+
+        self.assertEqual(response.status_code, 200, response.json())
+        data = response.json()["data"]
+        self.assertEqual(data["approval_case_status"], "approved")
+        self.assertEqual(data["current_status"], "approved")
+        self.assertEqual(data["version"], 4)
+        self.assertTrue(data["sanction_decision_created"])
+
+        SanctionDecision = apps.get_model("approvals", "SanctionDecision")
+        decision = SanctionDecision.objects.get(approval_case=self.case)
+        self.assertEqual(str(decision.pk), data["sanction_decision_id"])
+        self.assertEqual(decision.decision, "sanctioned")
+        self.assertEqual(str(decision.sanctioned_amount), "500000.00")
+        self.assertEqual(decision.sanctioned_tenure_months, 12)
+        self.assertEqual(decision.interest_rate_type, "floating")
+        self.assertIsNone(decision.interest_rate_value)
+        self.assertIsNone(decision.repayment_date)
+        self.assertIsNone(decision.penal_interest_rate)
+        self.assertEqual(decision.charges_json, {})
+        self.assertEqual(decision.security_required_summary, "Standard member security package.")
+        self.assertEqual(decision.conditions_precedent, "")
+        self.assertEqual(decision.decision_reason, self.case.reason_for_approval)
+
+        self.case.refresh_from_db()
+        self.application.refresh_from_db()
+        self.assertEqual(self.case.current_status, "approved")
+        self.assertIsNotNone(self.case.closed_at)
+        self.assertEqual(self.application.application_status, "approved_by_sanction_committee")
+        self.assertEqual(ApprovalAction.objects.filter(approval_case=self.case).count(), 2)
+
+        action_audits = AuditLog.objects.filter(
+            action="approval_case.action_recorded", entity_id=self.case.pk
+        ).order_by("created_at")
+        self.assertEqual(action_audits.count(), 2)
+        final_audit = action_audits.last()
+        self.assertEqual(str(final_audit.actor_user_id), str(self.director.pk))
+        self.assertEqual(final_audit.ip_address, "203.0.113.18")
+        self.assertEqual(final_audit.user_agent, "Final Approval Contract Test")
+        self.assertEqual(final_audit.new_value_json["request_id"], "req-approval-final")
+        self.assertEqual(final_audit.new_value_json["decision"], "approved")
+        self.assertEqual(final_audit.new_value_json["comments"], "Director approval.")
+        self.assertEqual(final_audit.old_value_json, {"current_status": "pending"})
+        self.assertEqual(final_audit.new_value_json["current_status"], "approved")
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                workflow_name="sanction_approval", entity_id=self.case.pk
+            ).count(),
+            2,
+        )
+        notification = Notification.objects.get(
+            related_entity_type="approval_case", related_entity_id=self.case.pk
+        )
+        self.assertEqual(notification.recipient_team_code, "credit_assessment")
+        self.assertEqual(notification.sender_user, self.director)
+
+    def test_reject_requires_comments_before_any_ledger_write(self):
+        auth = self._auth(self.cfo)
+        before = self._action_ledgers()
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/reject/",
+            {"version": 2, "comments": "   "},
+            content_type="application/json",
+            **auth,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"]["code"], "VALIDATION_ERROR")
+        self.assertIn("comments", response.json()["error"]["field_errors"])
+        self.assertEqual(self._action_ledgers(), before)
+
+    def test_reject_closes_case_and_application_without_sanction(self):
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/reject/",
+            {"version": 2, "comments": "Eligibility evidence is insufficient."},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        self.assertEqual(response.status_code, 200, response.json())
+        self.assertEqual(response.json()["data"]["current_status"], "rejected")
+        self.assertFalse(response.json()["data"]["sanction_decision_created"])
+        self.case.refresh_from_db()
+        self.application.refresh_from_db()
+        self.assertEqual(self.case.reason_for_rejection, "Eligibility evidence is insufficient.")
+        self.assertEqual(self.application.application_status, "rejected_by_sanction_committee")
+
+    def test_return_restores_reviewed_precommittee_state_without_sanction(self):
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/return-for-clarification/",
+            {"version": 2, "comments": "Clarify crop plan evidence."},
+            content_type="application/json",
+            **self._auth(self.director),
+        )
+        self.assertEqual(response.status_code, 200, response.json())
+        self.assertEqual(response.json()["data"]["current_status"], "returned_for_clarification")
+        self.application.refresh_from_db()
+        self.note.refresh_from_db()
+        self.assertEqual(self.application.application_status, "appraisal_reviewed")
+        self.assertEqual(self.note.appraisal_status, "reviewed")
+        self.assertFalse(apps.get_model("approvals", "SanctionDecision").objects.exists())
+
+    def test_stale_and_duplicate_actions_preserve_the_complete_ledger(self):
+        auth = self._auth(self.cfo)
+        before = self._action_ledgers()
+        stale = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 1}, content_type="application/json", **auth,
+        )
+        self.assertEqual(stale.status_code, 409)
+        self.assertEqual(stale.json()["error"]["code"], "STALE_VERSION")
+        self.assertEqual(self._action_ledgers(), before)
+
+        first = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2}, content_type="application/json", **auth,
+        )
+        self.assertEqual(first.status_code, 200)
+        after_first = self._action_ledgers()
+        duplicate = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3}, content_type="application/json", **auth,
+        )
+        self.assertEqual(duplicate.status_code, 409)
+        self.assertEqual(duplicate.json()["error"]["code"], "TRANSITION_CONFLICT")
+        self.assertEqual(self._action_ledgers(), after_first)
+
+    def test_permission_and_snapshot_scope_denials_preserve_all_business_ledgers(self):
+        outsider = self._user("custom_approver", "Unassigned Approver", self.approve_permission)
+        cfo_auth = self._auth(self.cfo)
+        outsider_auth = self._auth(outsider)
+        RolePermission.objects.filter(
+            role=self.cfo.primary_role, permission=self.approve_permission
+        ).delete()
+        before = self._action_ledgers()
+
+        forbidden = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2}, content_type="application/json", **cfo_auth,
+        )
+        self.assertEqual(forbidden.status_code, 403)
+        self.assertEqual(forbidden.json()["error"]["code"], "FORBIDDEN")
+        denied = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2}, content_type="application/json", **outsider_auth,
+        )
+        self.assertEqual(denied.status_code, 403)
+        self.assertEqual(denied.json()["error"]["code"], "OBJECT_ACCESS_DENIED")
+        self.assertEqual(self._action_ledgers(), before)
 
     def test_assigned_to_me_excludes_an_approver_with_an_immutable_action(self):
         ApprovalAction.objects.create(
@@ -729,6 +935,16 @@ class ApprovalCaseRoutingApiTests(TestCase):
             module_name="approvals",
             risk_level="high",
         )
+
+    def _action_ledgers(self):
+        return {
+            "case": ApprovalCase.objects.filter(pk=self.case.pk).values().get(),
+            "actions": list(ApprovalAction.objects.order_by("pk").values()),
+            "sanctions": list(apps.get_model("approvals", "SanctionDecision").objects.order_by("pk").values()),
+            "audits": list(AuditLog.objects.order_by("pk").values()),
+            "workflows": list(WorkflowEvent.objects.order_by("pk").values()),
+            "notifications": list(Notification.objects.order_by("pk").values()),
+        }
 
     @staticmethod
     def _user(role_code, full_name, *permissions):
