@@ -8,6 +8,7 @@ from django.utils import timezone
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import ApprovalAction, ApprovalCase, SanctionDecision
 from sfpcl_credit.approvals.modules import approval_case_engine
+from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
 from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow
 from sfpcl_credit.communications import services as communication_services
 from sfpcl_credit.identity.models import AuditLog
@@ -21,6 +22,7 @@ class ApprovalActionConflict(Exception):
     code: str = "TRANSITION_CONFLICT"
     status: int = 409
     field_errors: dict | None = None
+    details: dict | None = None
 
     def __str__(self):
         return self.message
@@ -40,11 +42,11 @@ _ACTION_SPECS = {
         ("approve", ApprovalCase.STATUS_PENDING, "approvals.case.approve"),
         ("reject", ApprovalCase.STATUS_REJECTED, "approvals.case.reject"),
         ("return", ApprovalCase.STATUS_RETURNED, "approvals.case.return"),
+        ("abstain", ApprovalCase.STATUS_PENDING, "approvals.case.approve"),
     )
 }
 
 
-@transaction.atomic
 def approve_case(*, actor, case_id, payload, actor_permissions, request_meta=None):
     return record_action(
         actor=actor, case_id=case_id, action_code="approve", payload=payload,
@@ -66,10 +68,50 @@ def return_case(*, actor, case_id, payload, actor_permissions, request_meta=None
     )
 
 
-@transaction.atomic
+def abstain_from_case(*, actor, case_id, payload, actor_permissions, request_meta=None):
+    return record_action(
+        actor=actor, case_id=case_id, action_code="abstain", payload=payload,
+        actor_permissions=actor_permissions, request_meta=request_meta,
+    )
+
+
 def record_action(*, actor, case_id, action_code, payload, actor_permissions, request_meta=None):
+    try:
+        return _record_action(
+            actor=actor,
+            case_id=case_id,
+            action_code=action_code,
+            payload=payload,
+            actor_permissions=actor_permissions,
+            request_meta=request_meta,
+        )
+    except ApprovalActionConflict as exc:
+        if exc.code == "CONFLICTED_APPROVER_NOT_ALLOWED":
+            request_meta = request_meta or {}
+            case = ApprovalCase.objects.only("cycle_number").get(pk=case_id)
+            AuditLog.objects.create(
+                actor_user=actor,
+                action="approval_case.conflicted_action_denied",
+                entity_type="approval_case",
+                entity_id=case_id,
+                old_value_json={},
+                new_value_json={
+                    "approval_case_id": str(case_id),
+                    "cycle_number": case.cycle_number,
+                    "attempted_action": action_code,
+                    "conflict_reason": exc.details["conflict_reason"],
+                    "request_id": request_meta.get("request_id"),
+                },
+                ip_address=request_meta.get("ip_address", ""),
+                user_agent=request_meta.get("user_agent", ""),
+            )
+        raise
+
+
+@transaction.atomic
+def _record_action(*, actor, case_id, action_code, payload, actor_permissions, request_meta=None):
     version = _submitted_version(payload)
-    comments = _comments(payload, required=action_code in {"reject", "return"})
+    comments = _comments(payload, required=action_code in {"reject", "return", "abstain"})
     identifiers = ApprovalCase.objects.filter(pk=case_id).values(
         "loan_application_id", "loan_appraisal_note_id"
     ).first()
@@ -100,6 +142,18 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
         )
     if case.version != version:
         raise ApprovalActionConflict("Approval case version is stale.", code="STALE_VERSION")
+    conflict_reason = ConflictOfInterestModule.conflict_reason(
+        case=case, actor_id=actor.pk
+    )
+    if conflict_reason:
+        raise ApprovalActionConflict(
+            "This user is marked as conflicted for the approval case and cannot approve it.",
+            code="CONFLICTED_APPROVER_NOT_ALLOWED",
+            details={
+                "approval_case_id": str(case.pk),
+                "conflict_reason": conflict_reason,
+            },
+        )
     availability = approval_case_engine.approval_case_action_availability(
         case=case,
         actor=actor,
@@ -116,7 +170,8 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
             status=403 if missing_permission else 409,
         )
 
-    required_ids = {str(item["user_id"]) for item in case.required_approvers_json}
+    effective_approvers = ConflictOfInterestModule.effective_approvers(case)
+    required_ids = {str(item["user_id"]) for item in effective_approvers}
     approved_ids = {
         str(item.approver_user_id)
         for item in ApprovalAction.objects.filter(
@@ -179,7 +234,7 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
 
     role_code = next(
         item["role_code"]
-        for item in case.required_approvers_json
+        for item in effective_approvers
         if str(item["user_id"]) == str(actor.pk)
     )
     request_meta = request_meta or {}
@@ -187,14 +242,34 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
         approval_case=case,
         approver_user=actor,
         approver_role_code=role_code,
-        decision={"approve": "approved", "reject": "rejected", "return": "returned"}[action_code],
+        decision={
+            "approve": "approved",
+            "reject": "rejected",
+            "return": "returned",
+            "abstain": "abstained",
+        }[action_code],
         comments=comments,
         ip_address=request_meta.get("ip_address") or None,
         user_agent=request_meta.get("user_agent") or None,
     )
     previous_status = case.current_status
     decision = None
-    if action_code == "reject":
+    if action_code == "abstain":
+        case.excluded_approvers_json = [
+            *case.excluded_approvers_json,
+            {
+                "user_id": str(actor.pk),
+                "conflict_code": "self_declared_abstention",
+                "reason": comments,
+            },
+        ]
+        if not ConflictOfInterestModule.authority_is_satisfiable(case):
+            case.current_status = ApprovalCase.STATUS_BLOCKED_CONFLICT
+            case.conflict_block_reason = (
+                ConflictOfInterestModule.authority_gap_reason(case)
+            )
+            case.closed_at = timezone.now()
+    elif action_code == "reject":
         case.current_status = case_transition.next_state
         case.reason_for_rejection = comments
         case.closed_at = timezone.now()
@@ -228,7 +303,10 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
             decision_reason=case.reason_for_approval,
         )
     case.version += 1
-    case.save(update_fields=["current_status", "reason_for_rejection", "closed_at", "version"])
+    case.save(update_fields=[
+        "current_status", "reason_for_rejection", "closed_at",
+        "excluded_approvers_json", "conflict_block_reason", "version",
+    ])
     AuditLog.objects.create(
         actor_user=actor,
         action="approval_case.action_recorded",

@@ -99,6 +99,13 @@ def approval_case_return(request, approval_case_id):
     return _approval_case_action(request, approval_case_id, approval_actions.return_case)
 
 
+@require_http_methods(["POST"])
+def approval_case_abstain(request, approval_case_id):
+    return _approval_case_action(
+        request, approval_case_id, approval_actions.abstain_from_case
+    )
+
+
 def _approval_case_action(request, approval_case_id, handler):
     user, response = http_auth.authenticated_user(request)
     if response is not None:
@@ -129,7 +136,8 @@ def _approval_case_action(request, approval_case_id, handler):
         )
     except approval_actions.ApprovalActionConflict as exc:
         return error_response(
-            request, exc.status, exc.code, exc.message, exc.field_errors
+            request, exc.status, exc.code, exc.message, exc.field_errors,
+            details=exc.details,
         )
 @require_http_methods(["GET", "POST"])
 def rule_collection(request):

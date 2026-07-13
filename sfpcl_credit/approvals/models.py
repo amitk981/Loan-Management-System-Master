@@ -152,6 +152,7 @@ class ApprovalCase(models.Model):
     STATUS_APPROVED = "approved"
     STATUS_REJECTED = "rejected"
     STATUS_RETURNED = "returned_for_clarification"
+    STATUS_BLOCKED_CONFLICT = "blocked_by_conflict"
 
     approval_case_id = models.UUIDField(
         primary_key=True,
@@ -206,6 +207,8 @@ class ApprovalCase(models.Model):
     sanction_committee_version = models.CharField(max_length=40, blank=True)
     required_approvers_json = models.JSONField(default=dict, blank=True)
     excluded_approvers_json = models.JSONField(default=list, blank=True)
+    general_meeting_evidence_required = models.BooleanField(default=False)
+    conflict_block_reason = models.TextField(blank=True)
     amount = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
     related_entity_type = models.CharField(max_length=80, blank=True)
     related_entity_id = models.UUIDField(null=True, blank=True, db_index=True)
@@ -240,6 +243,16 @@ class ApprovalCase(models.Model):
                 try:
                     indexed_user_ids.add(uuid.UUID(str(item.get("user_id"))))
                 except (AttributeError, TypeError, ValueError):
+                    continue
+        if isinstance(self.committee_projection_json, dict):
+            committee_ids = [self.committee_projection_json.get("cfo_user_id")]
+            director_ids = self.committee_projection_json.get("director_user_ids")
+            if isinstance(director_ids, list):
+                committee_ids.extend(director_ids)
+            for user_id in committee_ids:
+                try:
+                    indexed_user_ids.add(uuid.UUID(str(user_id)))
+                except (TypeError, ValueError):
                     continue
         ApprovalCaseRequiredApprover.objects.filter(approval_case=self).exclude(
             user_id__in=indexed_user_ids
@@ -380,6 +393,69 @@ class ApprovalCaseReadScopeGrant(models.Model):
         ]
 
 
+class ApprovalConflictDeclaration(models.Model):
+    CONFLICT_BORROWER = "borrower"
+    CONFLICT_DIRECTOR_RELATIVE = "director_relative"
+    CONFLICT_MATERIAL_INTEREST = "material_interest"
+    CONFLICT_TYPES = (
+        (CONFLICT_BORROWER, "Borrower"),
+        (CONFLICT_DIRECTOR_RELATIVE, "Director relative"),
+        (CONFLICT_MATERIAL_INTEREST, "Material interest"),
+    )
+
+    approval_conflict_declaration_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    loan_application = models.ForeignKey(
+        "applications.LoanApplication",
+        on_delete=models.PROTECT,
+        related_name="approval_conflict_declarations",
+    )
+    user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="approval_conflict_declarations",
+    )
+    conflict_type = models.CharField(max_length=40, choices=CONFLICT_TYPES)
+    reason = models.TextField()
+    declared_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.PROTECT,
+        related_name="recorded_approval_conflicts",
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        db_table = "approval_conflict_declarations"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["loan_application", "user", "conflict_type"],
+                name="unique_application_user_conflict",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    conflict_type__in=[
+                        "borrower",
+                        "director_relative",
+                        "material_interest",
+                    ]
+                ),
+                name="approval_conflict_type_valid",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(reason=""),
+                name="approval_conflict_reason_nonblank",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["loan_application", "is_active"],
+                name="idx_conflict_app_active",
+            )
+        ]
+
+
 class ApprovalAction(models.Model):
     approval_action_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -412,7 +488,9 @@ class ApprovalAction(models.Model):
                 name="unique_case_approver_action",
             ),
             models.CheckConstraint(
-                check=models.Q(decision__in=["approved", "rejected", "returned"]),
+                check=models.Q(
+                    decision__in=["approved", "rejected", "returned", "abstained"]
+                ),
                 name="approval_action_valid_decision",
             ),
         ]

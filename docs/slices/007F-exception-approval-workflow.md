@@ -61,6 +61,18 @@ Above-limit or policy-exception lending is possible only through the stricter au
   register projections may show multiple historical cycle rows but must make the cycle/case linkage
   unambiguous and preserve object scope before pagination.
 
+## Run-Ahead Sharpening Review (007E, 2026-07-13)
+
+- Consume 007E's canonical case outcome rather than independently interpreting exclusions. A
+  `blocked_by_conflict` exception case has no sanction decision and its register projection must
+  expose the exact case/cycle and conflict-block reason without claiming approval or rejection.
+- Register status transition logic must preserve the COI-006 exception: a denied conflicted write
+  adds only its denial audit and cannot create, close, or mutate an exception-register entry.
+- An abstention that leaves frozen alternate authority satisfiable keeps the exception entry
+  pending; a terminal conflict-blocked abstention and its communication share the existing locked
+  case action transaction. Confirm the source §15.7 status vocabulary before naming that terminal
+  register status; do not infer one from display text.
+
 ## Out of Scope
 Loan-limit calculation (006C/006D), general-meeting evidence (007G), register UI (007J), waiver workflows beyond vocabulary.
 

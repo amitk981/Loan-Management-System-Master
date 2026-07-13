@@ -13,6 +13,7 @@ from sfpcl_credit.approvals.modules.approval_case_selector import (
 from sfpcl_credit.approvals.modules.read_scope import (
     evaluate_approval_case_read_scope,
 )
+from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
 from sfpcl_credit.domain_errors import DomainObjectAccessDenied
 from sfpcl_credit.identity.modules.auth_service import effective_permission_codes
 from sfpcl_credit.identity.modules.object_permissions import ObjectAccessResult
@@ -182,6 +183,8 @@ def serialize_case_snapshot(case):
         "sanction_committee_version": case.sanction_committee_version,
         "required_approvers": case.required_approvers_json,
         "excluded_approvers": case.excluded_approvers_json,
+        "general_meeting_evidence_required": case.general_meeting_evidence_required,
+        "conflict_block_reason": case.conflict_block_reason or None,
         "reason_for_approval": case.reason_for_approval,
         "exception_condition_code": case.exception_condition_code or None,
         "matrix_projection": case.matrix_projection_json,
@@ -197,6 +200,21 @@ def serialize_case_review_facts(case):
     eligibility = note.eligibility_snapshot_json
     loan_limit = note.loan_limit_snapshot_json
     return {
+        "maker_checker": {
+            "application_created_by_user_id": (
+                str(application.created_by_user_id)
+                if application.created_by_user_id else None
+            ),
+            "application_received_by_user_id": str(application.received_by_user_id),
+            "application_submitted_by_user_id": (
+                str(application.submitted_by_user_id)
+                if application.submitted_by_user_id else None
+            ),
+            "appraisal_prepared_by_user_id": str(note.prepared_by_user_id),
+            "appraisal_reviewed_by_user_id": (
+                str(note.reviewed_by_user_id) if note.reviewed_by_user_id else None
+            ),
+        },
         "eligibility": eligibility,
         "loan_amounts": {
             "requested_amount": (
@@ -244,6 +262,9 @@ def serialize_case_review_facts(case):
 
 def _available_actions(case, actor, actor_permissions, action_by_user):
     actor_id = str(actor.pk)
+    conflict_reason = ConflictOfInterestModule.conflict_reason(
+        case=case, actor_id=actor_id
+    )
     pending_assignment = is_pending_approval_case_actor(
         case=case, actor_id=actor_id
     )
@@ -251,6 +272,7 @@ def _available_actions(case, actor, actor_permissions, action_by_user):
         ("approve", "Approve", "approvals.case.approve"),
         ("reject", "Reject", "approvals.case.reject"),
         ("return", "Return for Clarification", "approvals.case.return"),
+        ("abstain", "Abstain for Conflict", "approvals.case.approve"),
     )
     actions = []
     for action_code, label, permission in action_specs:
@@ -263,6 +285,8 @@ def _available_actions(case, actor, actor_permissions, action_by_user):
             reason = "Approval case is not pending."
         elif actor_id in action_by_user:
             reason = "You have already acted on this approval case."
+        elif conflict_reason:
+            reason = "This user is marked as conflicted for the approval case and cannot approve it."
         elif permission not in actor_permissions:
             reason = "Required permission is not granted."
         elif not pending_assignment:
@@ -331,6 +355,8 @@ def is_routable_approval_case(case):
         and committee.get("version_number") == case.sanction_committee_version
         and committee.get("decision_date") == case.decision_date.isoformat()
         and _approver_snapshot_is_coherent(required, matrix, committee)
+        and _exclusion_snapshot_is_coherent(case.excluded_approvers_json, committee)
+        and _conflict_authority_state_is_coherent(case)
         and _loan_limit_provenance_is_complete(case)
     )
 
@@ -414,6 +440,46 @@ def _approver_snapshot_is_coherent(required, matrix, committee):
     return actual == expected and len({user_id for _, user_id in actual}) == len(actual)
 
 
+def _exclusion_snapshot_is_coherent(exclusions, committee):
+    committee_ids = {
+        str(committee.get("cfo_user_id") or ""),
+        *(
+            str(user_id)
+            for user_id in committee.get("director_user_ids", [])
+            if user_id
+        ),
+    } - {""}
+    seen = set()
+    for item in exclusions:
+        if not isinstance(item, dict):
+            return False
+        user_id = str(item.get("user_id") or "")
+        if (
+            not user_id
+            or user_id not in committee_ids
+            or user_id in seen
+            or not isinstance(item.get("reason"), str)
+            or not item["reason"].strip()
+            or not isinstance(item.get("conflict_code"), str)
+            or not item["conflict_code"].strip()
+        ):
+            return False
+        seen.add(user_id)
+    return True
+
+
+def _conflict_authority_state_is_coherent(case):
+    satisfiable = ConflictOfInterestModule.authority_is_satisfiable(case)
+    if case.current_status == ApprovalCase.STATUS_BLOCKED_CONFLICT:
+        return (
+            not satisfiable
+            and case.closed_at is not None
+            and case.conflict_block_reason
+            == ConflictOfInterestModule.authority_gap_reason(case)
+        )
+    return satisfiable and not case.conflict_block_reason
+
+
 def _same_amount(first, second):
     try:
         return Decimal(str(first)) == Decimal(str(second))
@@ -474,7 +540,7 @@ def is_pending_approval_case_actor(*, case, actor_id):
     acted_ids = {str(action.approver_user_id) for action in case.actions.all()}
     return actor_id not in excluded_ids and actor_id not in acted_ids and any(
         str(item.get("user_id")) == actor_id
-        for item in case.required_approvers_json
+        for item in ConflictOfInterestModule.effective_approvers(case)
         if isinstance(item, dict)
     )
 

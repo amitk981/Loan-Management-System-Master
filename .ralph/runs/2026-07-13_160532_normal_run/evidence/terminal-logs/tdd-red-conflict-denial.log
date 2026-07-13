@@ -1,0 +1,22 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_conflicted_approval_returns_exact_source_error_and_denial_audit (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_conflicted_approval_returns_exact_source_error_and_denial_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_160532_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 407, in test_conflicted_approval_returns_exact_source_error_and_denial_audit
+    assert_error_envelope(self, response.json(), "CONFLICTED_APPROVER_NOT_ALLOWED")
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_160532_normal_run/sfpcl_credit/tests/api_contracts.py", line 71, in assert_error_envelope
+    test_case.assertEqual(error["code"], expected_code)
+AssertionError: 'TRANSITION_CONFLICT' != 'CONFLICTED_APPROVER_NOT_ALLOWED'
+- TRANSITION_CONFLICT
++ CONFLICTED_APPROVER_NOT_ALLOWED
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.021s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

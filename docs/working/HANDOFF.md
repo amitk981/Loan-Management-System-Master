@@ -1,43 +1,39 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_155025_repair
+2026-07-13_160532_normal_run
 
 ## Current Status
 
-007D3 is complete. Approval cases are positive, immutable application cycles with unique
-application/cycle identity and at most one pending cycle. Existing rows migrate to cycle 1 with a
-matched historical review where safely available and frozen review facts. Every public case
-projection exposes `cycle_number`.
+007E is complete. The approval-owned conflict module evaluates typed persisted borrower,
+Director-relative, and material-interest declarations plus immutable application/appraisal maker
+facts for each case cycle. Enrichment preserves ordered required-authority history, freezes unique
+exclusions/reasons, and sets the general-meeting-evidence flag.
 
-Return now closes the current cycle and restores the appraisal to editable draft. A later sanction
-submission requires attributable non-empty correction evidence plus a newer independent Credit
-Manager review. The existing application -> appraisal -> case transaction creates cycle N+1;
-pending, approved, rejected, uncorrected, and not-freshly-reviewed attempts preserve exact ledgers.
-Each enrichment freezes its own facts, prior actions never satisfy later cycles, and final sanction
-creation remains linked to the latest cycle only.
+Excluded actors retain limited history/detail read but never queue or action authority. Frozen
+same-role committee alternates preserve the matrix role/count; missing CFO/Director authority
+closes the case as `blocked_by_conflict` without a sanction. Approve/reject/return use exact
+`CONFLICTED_APPROVER_NOT_ALLOWED` details and add only the cycle-attributed COI-006 denial audit.
+Reasoned abstention uses the immutable action ledger and either assigns a frozen alternate or
+creates a communication-backed conflict-blocked outcome. Prior-cycle exclusions/actions never
+populate a later cycle.
 
 ## Validation
 
-The first trusted gate exposed an acceptance-selection mismatch: the protected validator requires
-exactly five selected PostgreSQL races, but adding the 007D3 returned-cycle race made the selected
-classes contain six. Repair `2026-07-13_153721_repair` moved the retained initial-submission race to
-its own PostgreSQL-only class without deleting or weakening it. The exact trusted selection now
-passes twice locally with five races, the retained initial-submission race passes separately, and
-the non-secret PostgreSQL environment probe succeeds.
+TDD red/green evidence covers frozen maker facts, declarations, enrichment, exact denial/audit,
+alternate authority, satisfiable and blocked abstention, and malformed snapshot rejection. The
+focused approval suite passes 70 tests with two expected PostgreSQL-only skips. Backend check and
+migration sync pass; the full 637-test suite passes with 19 expected PostgreSQL-only SQLite skips
+and 93% coverage. Frontend build/typecheck/lint and all 208 tests pass.
 
-The trusted functional repair evidence remains under `.ralph/runs/2026-07-13_153721_repair/`.
-Repair `2026-07-13_155025_repair` corrected the sole downstream artifact failure: the prior review
-packet used imperative commit-veto wording that the protected agent-result safety check correctly
-reserves for failed runs. No product code, tests, migration, protected script, or slice requirement
-changed in this second repair.
-
-The artifact predicate now passes. Frontend build/typecheck/lint and 208 isolated tests pass.
-Backend check/migration sync and 628 tests pass with 19 expected PostgreSQL-only SQLite skips and
-93% coverage. The exact PostgreSQL five-race selection also passes twice in this repair. Full
-independent Ralph revalidation remains the commit gate.
+The first full backend attempt exposed a migration-graph interaction with the legacy witness
+migration test. The approvals migration dependency was narrowed from applications 0014 to the
+earliest schema it consumes (0011); the three migration tests plus approval regressions then passed,
+followed by the full green suite. No protected files or source documents changed.
 
 ## Next Run
 
-Run `007E-conflict-of-interest-blocking`. It is sharpened to recompute conflict facts per frozen
-cycle and prevent exclusions/abstentions from leaking between returned history and current work.
+Architecture review is now due after four completed slices. After that review, run
+`007F-exception-approval-workflow`; it is sharpened for conflict-blocked outcomes and COI-006
+zero-mutation register behavior. `007G` is also sharpened to consume the immutable per-cycle
+general-meeting flag without re-evaluating live conflict facts.

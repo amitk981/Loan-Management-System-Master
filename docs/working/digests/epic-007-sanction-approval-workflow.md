@@ -1,5 +1,21 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007E Conflict-of-Interest Blocking
+
+- `approvals.modules.conflict_of_interest` evaluates typed persisted borrower/Director-relative/
+  material-interest declarations plus frozen application/appraisal maker facts for one immutable
+  case cycle. Enrichment freezes unique reasons and the general-meeting-evidence flag without
+  rewriting ordered required authority history.
+- Exclusions are an eligibility overlay. A same-role alternate comes only from the frozen committee
+  projection and the original matrix count remains binding; an unavailable CFO/Director slot closes
+  the case as `blocked_by_conflict` without sanction creation.
+- Excluded actors receive limited history/detail read, never queue/action scope. Approve/reject/
+  return use exact `CONFLICTED_APPROVER_NOT_ALLOWED` details and add only a cycle-attributed COI-006
+  denial audit.
+- `POST .../abstain/` records mandatory reasoned `abstained` action history, exclusion, version
+  increment, and either frozen-alternate reassignment or a communication-backed blocked outcome.
+  Returned-cycle exclusions/actions never leak into a later recomputed cycle.
+
 ## 007D3 Returned Approval Cycles
 
 - Approval cases are numbered immutable cycles per application. The database enforces positive

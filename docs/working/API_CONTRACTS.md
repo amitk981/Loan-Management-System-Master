@@ -2566,3 +2566,44 @@ Cycle N+1 is enriched from its own current reviewed appraisal/configuration fact
 starts empty, so a user who acted in cycle N may independently act again when snapshotted in cycle
 N+1. Final approval creates the application-unique sanction decision only from the latest pending
 cycle; prior returned actions never count toward joint approval.
+
+# Conflict-of-interest exclusions and abstention (007E)
+
+Approval enrichment evaluates source conflict declarations plus frozen application/appraisal maker
+facts for that exact `cycle_number`. It leaves ordered `required_approvers` unchanged and writes
+unique `excluded_approvers` objects containing `user_id`, `conflict_code`, and non-blank `reason`.
+Director/relative declarations set `general_meeting_evidence_required = true`. A frozen same-role
+committee alternate may fill an excluded Director slot; the stored matrix role/count never shrinks.
+If no frozen alternate can preserve required CFO/Director authority, the case becomes
+`blocked_by_conflict`, closes without a sanction decision, and exposes `conflict_block_reason`.
+
+An excluded actor has limited case-detail/history access only: they never enter
+`assigned_to_me`, never receive an enabled action, and no permission or live committee membership
+widens that scope. Every attempted approve/reject/return returns `409` with the exact source body:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "CONFLICTED_APPROVER_NOT_ALLOWED",
+    "message": "This user is marked as conflicted for the approval case and cannot approve it.",
+    "details": {
+      "approval_case_id": "uuid",
+      "conflict_reason": "Borrower is relative of Director."
+    },
+    "field_errors": {}
+  }
+}
+```
+
+The denial adds one `approval_case.conflicted_action_denied` audit row naming the exact case,
+cycle, attempted action, reason, actor, request, IP, and user agent. It creates no ApprovalAction and
+changes no case/application/appraisal/sanction/workflow/communication ledger.
+
+`POST /api/v1/approval-cases/{approval_case_id}/abstain/` accepts exactly positive integer
+`version` and mandatory non-blank `comments`. It uses the existing approval authority permission
+and immutable action ledger with decision `abstained`, increments case version, and adds a
+`self_declared_abstention` exclusion. The case stays pending when frozen alternate authority can
+satisfy the matrix; otherwise it closes as `blocked_by_conflict` and notifies the Credit Assessment
+team through the communication adapter. Prior-cycle exclusions/abstentions never populate a later
+cycle; every enrichment recomputes from that cycle's frozen facts.

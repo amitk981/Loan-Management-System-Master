@@ -1,0 +1,13 @@
+{
+  "success": false,
+  "error": {
+    "code": "CONFLICTED_APPROVER_NOT_ALLOWED",
+    "message": "This user is marked as conflicted for the approval case and cannot approve it.",
+    "details": {
+      "approval_case_id": "00000000-0000-0000-0000-000000000000",
+      "conflict_reason": "Borrower is relative of Director."
+    },
+    "field_errors": {}
+  },
+  "evidence_note": "Contract shape asserted by test_conflicted_approval_returns_exact_source_error_and_denial_audit; UUID is synthetic."
+}

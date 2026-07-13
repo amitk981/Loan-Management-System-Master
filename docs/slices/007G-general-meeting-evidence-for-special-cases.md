@@ -38,6 +38,21 @@ Related-party loans cannot be sanctioned without the legally required general-me
 - Document-id validation negatives (missing/no-access document); permission negatives.
 - Superseding record keeps history; rejected meeting blocks sanction with the contract error.
 
+## Run-Ahead Sharpening Review (007E, 2026-07-13)
+
+- Gate exclusively on the immutable case field `general_meeting_evidence_required`; do not
+  re-evaluate live declarations, member relationships, committee membership, or a later appraisal
+  when deciding a historical cycle.
+- `blocked_by_conflict` is an authority failure, not missing general-meeting evidence. An approved
+  meeting record cannot unblock absent CFO/Director authority, and recording evidence must not
+  mutate exclusions, abstentions, required authority history, or case cycle facts.
+- Extend 007D's final-action transaction after its conflict availability decision: a conflicted
+  actor still receives exact `CONFLICTED_APPROVER_NOT_ALLOWED`; an otherwise eligible final actor
+  receives the dedicated missing/rejected-meeting contract before action/sanction insertion.
+- Prove cycle isolation: a returned cycle's meeting reference and conflict flag remain historical;
+  a later cycle consumes only an applicable approved record under the §25.11 application-history
+  rules and retains its own `cycle_number` in detail/action evidence.
+
 ## Out of Scope
 Conflict determination (007E), register generation (007H), document upload itself (003C/§26), UI (007I).
 

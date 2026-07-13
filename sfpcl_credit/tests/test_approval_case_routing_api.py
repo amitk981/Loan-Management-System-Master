@@ -15,13 +15,15 @@ from sfpcl_credit.approvals.models import (
     ApprovalAction,
     ApprovalCase,
     ApprovalCaseReadScopeGrant,
+    ApprovalConflictDeclaration,
     ApprovalMatrixRule,
     SanctionCommittee,
 )
 from sfpcl_credit.approvals.modules.approval_case_selector import (
     select_approval_case_candidates,
 )
-from sfpcl_credit.approvals.modules import approval_actions
+from sfpcl_credit.approvals.modules import approval_actions, approval_case_engine
+from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
 from sfpcl_credit.approvals.modules.sanction_handoff import SanctionHandoffModule
 from sfpcl_credit.credit.models import (
     AppraisalReviewDecision,
@@ -242,6 +244,374 @@ class ApprovalCaseRoutingApiTests(TestCase):
             [str(self.case.pk)],
         )
         self.assertEqual(body["pagination"]["total_count"], 1)
+
+    def test_conflict_module_uses_frozen_cycle_maker_facts(self):
+        self.application.created_by_user = self.cfo
+        self.application.save(update_fields=["created_by_user"])
+        self.case.refresh_from_db()
+        frozen_facts = {
+            **approval_case_engine.serialize_case_review_facts(self.case),
+            "maker_checker": {
+                "application_created_by_user_id": str(self.cfo.pk),
+                "application_received_by_user_id": str(self.preparer.pk),
+                "application_submitted_by_user_id": None,
+                "appraisal_prepared_by_user_id": str(self.preparer.pk),
+                "appraisal_reviewed_by_user_id": str(self.preparer.pk),
+            },
+        }
+        self.case.appraisal_facts_json = frozen_facts
+        self.case.save(update_fields=["appraisal_facts_json"])
+        self.application.created_by_user = self.preparer
+        self.application.save(update_fields=["created_by_user"])
+
+        assessment = ConflictOfInterestModule().evaluate_for_case(self.case)
+
+        self.assertEqual(
+            assessment.exclusions,
+            (
+                {
+                    "user_id": str(self.cfo.pk),
+                    "conflict_code": "own_application",
+                    "reason": "User created the loan application.",
+                },
+            ),
+        )
+
+    def test_conflict_module_maps_declared_relationship_and_interest_facts(self):
+        for conflict_type, actor, reason in (
+            ("borrower", self.cfo, "Committee member is the borrower."),
+            ("director_relative", self.director, "Borrower is relative of Director."),
+            (
+                "material_interest",
+                self.committee.director_2_user,
+                "Committee member declared a material interest.",
+            ),
+        ):
+            ApprovalConflictDeclaration.objects.create(
+                loan_application=self.application,
+                user=actor,
+                conflict_type=conflict_type,
+                reason=reason,
+                declared_by_user=self.preparer,
+            )
+
+        assessment = ConflictOfInterestModule().evaluate_for_case(self.case)
+
+        self.assertEqual(
+            {item["conflict_code"] for item in assessment.exclusions},
+            {"borrower", "director_relative", "material_interest"},
+        )
+        self.assertTrue(assessment.general_meeting_evidence_required)
+
+    def test_enrichment_freezes_exclusions_without_rewriting_authority_snapshot(self):
+        review = AppraisalReviewDecision.objects.create(
+            loan_appraisal_note=self.note,
+            decision="reviewed",
+            review_comments="Reviewed for conflict enrichment.",
+            reviewer_user=self.preparer,
+            decided_at=self.note.reviewed_at,
+            from_state=LoanAppraisalNote.STATUS_REVIEW_PENDING,
+            to_state=LoanAppraisalNote.STATUS_REVIEWED,
+        )
+        ApprovalConflictDeclaration.objects.create(
+            loan_application=self.application,
+            user=self.director,
+            conflict_type="director_relative",
+            reason="Borrower is relative of Director.",
+            declared_by_user=self.preparer,
+        )
+        self.case.approval_matrix_rule = None
+        self.case.approval_matrix_rule_version = ""
+        self.case.sanction_committee = None
+        self.case.sanction_committee_version = ""
+        self.case.required_approvers_json = {}
+        self.case.excluded_approvers_json = []
+        self.case.amount = None
+        self.case.related_entity_type = ""
+        self.case.related_entity_id = None
+        self.case.reason_for_approval = ""
+        self.case.matrix_projection_json = {}
+        self.case.committee_projection_json = {}
+        self.case.loan_limit_provenance_json = {}
+        self.case.appraisal_facts_json = {}
+        self.case.decision_date = None
+        self.case.appraisal_review_decision = review
+        self.case.version = 1
+        self.case.save()
+        ApprovalMatrixRule.objects.exclude(pk=self.rule.pk).update(status="inactive")
+        SanctionCommittee.objects.exclude(pk=self.committee.pk).update(status="inactive")
+
+        snapshot = SanctionHandoffModule().enrich_pending(
+            actor=self.preparer,
+            application_id=self.application.pk,
+            payload={
+                "approval_type": "sanction",
+                "amount": "500000.00",
+                "reason_for_approval": "Reviewed appraisal recommends approval.",
+                "force_exception_route": False,
+            },
+            actor_permissions={"approvals.case.create"},
+        ).snapshot
+
+        self.case.refresh_from_db()
+        self.assertEqual(
+            self.case.required_approvers_json,
+            [
+                {"role_code": "cfo", "user_id": str(self.cfo.pk), "full_name": self.cfo.full_name},
+                {
+                    "role_code": "director",
+                    "user_id": str(self.director.pk),
+                    "full_name": self.director.full_name,
+                },
+            ],
+        )
+        self.assertEqual(
+            self.case.excluded_approvers_json,
+            [
+                {
+                    "user_id": str(self.director.pk),
+                    "conflict_code": "director_relative",
+                    "reason": "Borrower is relative of Director.",
+                }
+            ],
+        )
+        self.assertTrue(snapshot["general_meeting_evidence_required"])
+        self.assertEqual(
+            self.case.appraisal_facts_json["maker_checker"]["appraisal_prepared_by_user_id"],
+            str(self.preparer.pk),
+        )
+
+    def test_conflicted_approval_returns_exact_source_error_and_denial_audit(self):
+        reason = "Borrower is relative of Director."
+        self.case.excluded_approvers_json = [
+            {
+                "user_id": str(self.director.pk),
+                "conflict_code": "director_relative",
+                "reason": reason,
+            }
+        ]
+        self.case.save(update_fields=["excluded_approvers_json"])
+        case_before = ApprovalCase.objects.filter(pk=self.case.pk).values().get()
+
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2, "comments": "Conflicted attempt."},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="req-conflict-denial",
+            HTTP_USER_AGENT="Conflict Contract Test",
+            REMOTE_ADDR="203.0.113.27",
+            **self._auth(self.director),
+        )
+
+        self.assertEqual(response.status_code, 409, response.json())
+        assert_error_envelope(self, response.json(), "CONFLICTED_APPROVER_NOT_ALLOWED")
+        self.assertEqual(
+            response.json()["error"],
+            {
+                "code": "CONFLICTED_APPROVER_NOT_ALLOWED",
+                "message": "This user is marked as conflicted for the approval case and cannot approve it.",
+                "details": {
+                    "approval_case_id": str(self.case.pk),
+                    "conflict_reason": reason,
+                },
+                "field_errors": {},
+            },
+        )
+        self.assertEqual(ApprovalCase.objects.filter(pk=self.case.pk).values().get(), case_before)
+        self.assertFalse(ApprovalAction.objects.filter(approval_case=self.case).exists())
+        denial = AuditLog.objects.get(
+            action="approval_case.conflicted_action_denied", entity_id=self.case.pk
+        )
+        self.assertEqual(denial.actor_user, self.director)
+        self.assertEqual(denial.ip_address, "203.0.113.27")
+        self.assertEqual(denial.user_agent, "Conflict Contract Test")
+        self.assertEqual(
+            denial.new_value_json,
+            {
+                "approval_case_id": str(self.case.pk),
+                "cycle_number": 1,
+                "attempted_action": "approve",
+                "conflict_reason": reason,
+                "request_id": "req-conflict-denial",
+            },
+        )
+
+    def test_every_conflicted_write_path_uses_one_exact_denial_contract(self):
+        reason = "Committee member declared a material interest."
+        self.case.excluded_approvers_json = [
+            {
+                "user_id": str(self.director.pk),
+                "conflict_code": "material_interest",
+                "reason": reason,
+            }
+        ]
+        self.case.save(update_fields=["excluded_approvers_json"])
+        for path, action_code in (
+            ("approve", "approve"),
+            ("reject", "reject"),
+            ("return-for-clarification", "return"),
+        ):
+            with self.subTest(path=path):
+                response = self.client.post(
+                    f"/api/v1/approval-cases/{self.case.pk}/{path}/",
+                    {"version": 2, "comments": "Denied conflict attempt."},
+                    content_type="application/json",
+                    **self._auth(self.director),
+                )
+                self.assertEqual(response.status_code, 409)
+                assert_error_envelope(
+                    self, response.json(), "CONFLICTED_APPROVER_NOT_ALLOWED"
+                )
+                self.assertEqual(
+                    response.json()["error"]["details"]["conflict_reason"], reason
+                )
+                self.assertTrue(
+                    AuditLog.objects.filter(
+                        action="approval_case.conflicted_action_denied",
+                        entity_id=self.case.pk,
+                        new_value_json__attempted_action=action_code,
+                    ).exists()
+                )
+        self.assertFalse(ApprovalAction.objects.filter(approval_case=self.case).exists())
+        self.case.refresh_from_db()
+        self.assertEqual(self.case.current_status, ApprovalCase.STATUS_PENDING)
+        self.assertEqual(self.case.version, 2)
+
+    def test_frozen_alternate_director_satisfies_original_role_count_after_exclusion(self):
+        alternate = self.committee.director_2_user
+        for permission in (
+            self.read_permission,
+            self.approve_permission,
+            self.reject_permission,
+            self.return_permission,
+        ):
+            RolePermission.objects.create(role=alternate.primary_role, permission=permission)
+        self.case.excluded_approvers_json = [
+            {
+                "user_id": str(self.director.pk),
+                "conflict_code": "director_relative",
+                "reason": "Borrower is relative of Director.",
+            }
+        ]
+        self.case.save(update_fields=["excluded_approvers_json"])
+
+        queue = self.client.get(
+            "/api/v1/approval-cases/?assigned_to_me=true", **self._auth(alternate)
+        )
+        cfo = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2}, content_type="application/json", **self._auth(self.cfo),
+        )
+        final = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3}, content_type="application/json", **self._auth(alternate),
+        )
+
+        self.assertEqual(queue.status_code, 200)
+        self.assertEqual(queue.json()["pagination"]["total_count"], 1)
+        self.assertEqual(cfo.status_code, 200, cfo.json())
+        self.assertEqual(final.status_code, 200, final.json())
+        self.assertEqual(final.json()["data"]["current_status"], "approved")
+        self.assertTrue(final.json()["data"]["sanction_decision_created"])
+        self.assertEqual(
+            ApprovalAction.objects.get(
+                approval_case=self.case, approver_user=alternate
+            ).approver_role_code,
+            "director",
+        )
+
+    def test_conflict_abstention_uses_immutable_action_and_assigns_frozen_alternate(self):
+        alternate = self.committee.director_2_user
+        for permission in (
+            self.read_permission,
+            self.approve_permission,
+            self.reject_permission,
+            self.return_permission,
+        ):
+            RolePermission.objects.create(role=alternate.primary_role, permission=permission)
+
+        abstention = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/abstain/",
+            {"version": 2, "comments": "Borrower is my relative."},
+            content_type="application/json",
+            **self._auth(self.director),
+        )
+
+        self.assertEqual(abstention.status_code, 200, abstention.json())
+        self.assertEqual(abstention.json()["data"]["decision"], "abstained")
+        self.assertEqual(abstention.json()["data"]["current_status"], "pending")
+        self.assertEqual(abstention.json()["data"]["version"], 3)
+        self.case.refresh_from_db()
+        self.assertEqual(
+            self.case.excluded_approvers_json,
+            [
+                {
+                    "user_id": str(self.director.pk),
+                    "conflict_code": "self_declared_abstention",
+                    "reason": "Borrower is my relative.",
+                }
+            ],
+        )
+        action = ApprovalAction.objects.get(
+            approval_case=self.case, approver_user=self.director
+        )
+        self.assertEqual(action.decision, "abstained")
+        queue = self.client.get(
+            "/api/v1/approval-cases/?assigned_to_me=true", **self._auth(alternate)
+        )
+        self.assertEqual(queue.json()["pagination"]["total_count"], 1)
+
+    def test_unsatisfiable_abstention_blocks_case_without_creating_sanction(self):
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/abstain/",
+            {"version": 2, "comments": "I have a material interest."},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+
+        self.assertEqual(response.status_code, 200, response.json())
+        data = response.json()["data"]
+        self.assertEqual(data["decision"], "abstained")
+        self.assertEqual(data["current_status"], "blocked_by_conflict")
+        self.assertEqual(
+            data["conflict_block_reason"],
+            "Required CFO approval authority is unavailable after conflict exclusion.",
+        )
+        self.case.refresh_from_db()
+        self.assertEqual(self.case.current_status, "blocked_by_conflict")
+        self.assertIsNotNone(self.case.closed_at)
+        self.assertFalse(
+            apps.get_model("approvals", "SanctionDecision").objects.filter(
+                approval_case=self.case
+            ).exists()
+        )
+        self.assertTrue(
+            Communication.objects.filter(
+                related_entity_type="approval_case", related_entity_id=self.case.pk
+            ).exists()
+        )
+
+    def test_malformed_exclusion_snapshot_is_not_public_or_actionable(self):
+        self.case.excluded_approvers_json = [
+            {
+                "user_id": str(self.director.pk),
+                "conflict_code": "director_relative",
+                "reason": "",
+            }
+        ]
+        self.case.save(update_fields=["excluded_approvers_json"])
+
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **self._auth(self.cfo)
+        )
+        action = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2}, content_type="application/json", **self._auth(self.cfo),
+        )
+
+        self.assertEqual(detail.status_code, 404)
+        self.assertEqual(action.status_code, 404)
+        self.assertFalse(ApprovalAction.objects.filter(approval_case=self.case).exists())
 
     def test_cycle_database_constraints_reject_duplicate_pending_and_nonpositive_rows(self):
         review = AppraisalReviewDecision.objects.create(
@@ -794,6 +1164,14 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
         self.assertEqual(returned.status_code, 200, returned.json())
         cycle_one = ApprovalCase.objects.get(pk=self.case.pk)
+        cycle_one.excluded_approvers_json = [
+            {
+                "user_id": str(self.director.pk),
+                "conflict_code": "self_declared_abstention",
+                "reason": "Cycle-one conflict history.",
+            }
+        ]
+        cycle_one.save(update_fields=["excluded_approvers_json"])
         self.note.eligibility_snapshot_json = {
             **self.note.eligibility_snapshot_json,
             "eligibility_assessment_id": str(
@@ -863,6 +1241,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
             actor_permissions={"approvals.case.create"},
         ).snapshot
         self.assertEqual(enriched["cycle_number"], 2)
+        self.assertEqual(enriched["excluded_approvers"], [])
         returned_history = self.client.get(
             f"/api/v1/approval-cases/{cycle_one.pk}/", **self._auth(self.director)
         )
@@ -1244,12 +1623,21 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
 
     def test_excluded_actor_post_matches_disabled_detail_reason_without_writes(self):
-        self.case.excluded_approvers_json = [{"user_id": str(self.cfo.pk)}]
+        self.case.excluded_approvers_json = [{
+            "user_id": str(self.director.pk),
+            "conflict_code": "material_interest",
+            "reason": "Director declared a material interest.",
+        }]
         self.case.save(update_fields=["excluded_approvers_json"])
-        self._assert_disabled_action_post_parity(
-            actor=self.cfo, action_code="approve", action_path="approve",
-            expected_status=409, expected_code="TRANSITION_CONFLICT",
+        before_case = ApprovalCase.objects.filter(pk=self.case.pk).values().get()
+        response = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2}, content_type="application/json", **self._auth(self.director),
         )
+        self.assertEqual(response.status_code, 409)
+        assert_error_envelope(self, response.json(), "CONFLICTED_APPROVER_NOT_ALLOWED")
+        self.assertEqual(ApprovalCase.objects.filter(pk=self.case.pk).values().get(), before_case)
+        self.assertFalse(ApprovalAction.objects.filter(approval_case=self.case).exists())
 
     def test_closed_case_post_matches_disabled_detail_reason_without_writes(self):
         self.case.current_status = ApprovalCase.STATUS_APPROVED
@@ -1394,7 +1782,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
         assert_available_actions_shape(self, data["available_actions"])
         self.assertEqual(
             {action["action_code"]: action["enabled"] for action in data["available_actions"]},
-            {"approve": True, "reject": True, "return": True},
+            {"approve": True, "reject": True, "return": True, "abstain": True},
         )
         self.assertEqual(data["review_facts"]["eligibility"]["overall_result"], "eligible")
         self.assertEqual(
@@ -1437,7 +1825,11 @@ class ApprovalCaseRoutingApiTests(TestCase):
 
     def test_excluded_or_incompletely_routed_snapshots_never_enter_the_queue(self):
         self.case.excluded_approvers_json = [
-            {"user_id": str(self.cfo.pk), "reason": "Conflict fixture"}
+            {
+                "user_id": str(self.cfo.pk),
+                "conflict_code": "material_interest",
+                "reason": "Conflict fixture",
+            }
         ]
         self.case.save(update_fields=["excluded_approvers_json"])
         excluded = self.client.get(

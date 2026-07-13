@@ -6,6 +6,7 @@ from sfpcl_credit.applications.modules.application_authority import (
     evaluate_application_object_access,
 )
 from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
+from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
 from sfpcl_credit.identity.modules.auth_service import effective_permission_codes
 from sfpcl_credit.identity.models import Role
 
@@ -47,6 +48,15 @@ def evaluate_approval_case_read_scope(
 ):
     """Return the exact persisted or object-owned reason an actor can read a case."""
     actor_id = str(actor.pk)
+    if ConflictOfInterestModule.conflict_reason(case=case, actor_id=actor_id):
+        return ApprovalCaseReadScopeDecision(
+            True, "conflict_limited_readonly", "case_exclusion"
+        )
+    if any(
+        str(item.get("user_id")) == actor_id
+        for item in ConflictOfInterestModule.effective_approvers(case)
+    ):
+        return ApprovalCaseReadScopeDecision(True, "approval_assigned", "case_snapshot")
     if any(
         isinstance(item, dict) and str(item.get("user_id")) == actor_id
         for item in case.required_approvers_json

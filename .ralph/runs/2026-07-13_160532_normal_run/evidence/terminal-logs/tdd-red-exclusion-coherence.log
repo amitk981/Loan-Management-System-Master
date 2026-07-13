@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_malformed_exclusion_snapshot_is_not_public_or_actionable (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_malformed_exclusion_snapshot_is_not_public_or_actionable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_160532_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 571, in test_malformed_exclusion_snapshot_is_not_public_or_actionable
+    self.assertEqual(detail.status_code, 404)
+AssertionError: 200 != 404
+
+----------------------------------------------------------------------
+Ran 1 test in 0.026s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

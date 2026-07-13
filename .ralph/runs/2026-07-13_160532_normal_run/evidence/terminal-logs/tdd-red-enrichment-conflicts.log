@@ -1,0 +1,26 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_enrichment_freezes_exclusions_without_rewriting_authority_snapshot (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_enrichment_freezes_exclusions_without_rewriting_authority_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_160532_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 368, in test_enrichment_freezes_exclusions_without_rewriting_authority_snapshot
+    self.assertEqual(
+AssertionError: Lists differ: [] != [{'user_id': 'b578b69f-ba27-4c36-ab3a-ae58[91 chars]r.'}]
+
+Second list contains 1 additional elements.
+First extra element 0:
+{'user_id': 'b578b69f-ba27-4c36-ab3a-ae58e914a19c', 'conflict_code': 'director_relative', 'reason': 'Borrower is relative of Director.'}
+
+- []
++ [{'conflict_code': 'director_relative',
++   'reason': 'Borrower is relative of Director.',
++   'user_id': 'b578b69f-ba27-4c36-ab3a-ae58e914a19c'}]
+
+----------------------------------------------------------------------
+Ran 1 test in 0.021s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

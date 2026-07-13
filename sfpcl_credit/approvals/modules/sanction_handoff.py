@@ -8,11 +8,13 @@ from django.utils import timezone
 
 from sfpcl_credit.approvals.models import ApprovalCase
 from sfpcl_credit.approvals.modules import approval_case_engine
+from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
 from sfpcl_credit.approvals.modules.approval_matrix import resolve_approval_matrix
 from sfpcl_credit.approvals.modules.sanction_committee import resolve_sanction_committee
 from sfpcl_credit.applications import services as application_services
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow
+from sfpcl_credit.communications import services as communication_services
 from sfpcl_credit.domain_errors import (
     DomainInvalidStateError,
     DomainNotFound,
@@ -291,6 +293,17 @@ class SanctionHandoffModule:
         case.appraisal_facts_json = approval_case_engine.serialize_case_review_facts(
             case
         )
+        conflict_assessment = ConflictOfInterestModule().evaluate_for_case(case)
+        case.excluded_approvers_json = list(conflict_assessment.exclusions)
+        case.general_meeting_evidence_required = (
+            conflict_assessment.general_meeting_evidence_required
+        )
+        if not ConflictOfInterestModule.authority_is_satisfiable(case):
+            case.current_status = ApprovalCase.STATUS_BLOCKED_CONFLICT
+            case.conflict_block_reason = (
+                ConflictOfInterestModule.authority_gap_reason(case)
+            )
+            case.closed_at = timezone.now()
         case.decision_date = facts.decision_date
         case.version += 1
         case.save(update_fields=[
@@ -300,7 +313,8 @@ class SanctionHandoffModule:
             "related_entity_type", "related_entity_id", "reason_for_approval",
             "exception_condition_code", "exception_reason", "matrix_projection_json",
             "committee_projection_json", "loan_limit_provenance_json", "decision_date",
-            "appraisal_facts_json", "version",
+            "appraisal_facts_json", "general_meeting_evidence_required",
+            "current_status", "conflict_block_reason", "closed_at", "version",
         ])
         request_meta = request_meta or {}
         AuditLog.objects.create(
@@ -328,6 +342,18 @@ class SanctionHandoffModule:
             trigger_reason=f"Approval case {case.pk} received its immutable authority snapshot.",
             action_code="approval_case.enriched",
         )
+        if case.current_status == ApprovalCase.STATUS_BLOCKED_CONFLICT:
+            communication_services.create_internal_team_communication(
+                sender=actor,
+                team_code="credit_assessment",
+                related_entity_type="approval_case",
+                related_entity_id=case.pk,
+                subject="Sanction approval blocked by conflict",
+                body=case.conflict_block_reason,
+                action_label="Open approval case",
+                action_url=f"/sanctions/{case.pk}",
+                request_meta=request_meta,
+            )
         return SanctionHandoffResult(snapshot=self.serialize(case, facts.latest_review))
 
     @staticmethod

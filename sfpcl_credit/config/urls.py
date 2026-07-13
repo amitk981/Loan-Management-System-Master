@@ -31,6 +31,7 @@ urlpatterns = [
     path("api/v1/approval-cases/<uuid:approval_case_id>/approve/", approval_views.approval_case_approve, name="approval-case-approve"),
     path("api/v1/approval-cases/<uuid:approval_case_id>/reject/", approval_views.approval_case_reject, name="approval-case-reject"),
     path("api/v1/approval-cases/<uuid:approval_case_id>/return-for-clarification/", approval_views.approval_case_return, name="approval-case-return"),
+    path("api/v1/approval-cases/<uuid:approval_case_id>/abstain/", approval_views.approval_case_abstain, name="approval-case-abstain"),
     path("api/v1/approval-matrix-rules/", approval_views.rule_collection, name="approval-matrix-rule-list-create"),
     path("api/v1/approval-matrix-rules/<uuid:approval_matrix_rule_id>/", approval_views.rule_detail, name="approval-matrix-rule-supersede"),
     path("api/v1/sanction-committees/", approval_views.committee_collection, name="sanction-committee-list-create"),

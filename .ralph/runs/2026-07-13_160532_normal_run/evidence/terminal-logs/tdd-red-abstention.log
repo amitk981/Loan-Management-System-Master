@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_conflict_abstention_uses_immutable_action_and_assigns_frozen_alternate (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_conflict_abstention_uses_immutable_action_and_assigns_frozen_alternate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_160532_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 499, in test_conflict_abstention_uses_immutable_action_and_assigns_frozen_alternate
+    self.assertEqual(abstention.status_code, 200, abstention.json())
+                                                  ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 882, in _parse_json
+    raise ValueError(
+ValueError: Content-Type header is "text/html; charset=utf-8", not "application/json"
+
+----------------------------------------------------------------------
+Ran 1 test in 0.016s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

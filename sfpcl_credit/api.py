@@ -50,14 +50,14 @@ def list_response(data, pagination, request, **resource_metadata):
     )
 
 
-def error_response(request, status, code, message, field_errors=None):
+def error_response(request, status, code, message, field_errors=None, details=None):
     return JsonResponse(
         {
             "success": False,
             "error": {
                 "code": public_error_code(code),
                 "message": message,
-                "details": {},
+                "details": details or {},
                 "field_errors": field_errors or {},
             },
             "meta": response_meta(request),
