@@ -1,7 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.views.decorators.http import require_http_methods
 
-from sfpcl_credit.api import error_response, parse_json_body, success_response
+from sfpcl_credit.api import error_response, list_response, parse_json_body, success_response
 from sfpcl_credit.approvals.modules import approval_matrix_configuration as services
 from sfpcl_credit.identity.modules import http_auth
 
@@ -28,7 +28,12 @@ def _failure(request, exc):
 def rule_collection(request):
     user, response = _authorized(request, manage=request.method == "POST")
     if response is not None: return response
-    if request.method == "GET": return success_response(services.list_rules(), request)
+    if request.method == "GET":
+        try:
+            data, pagination = services.list_rules(request.GET)
+            return list_response(data, pagination, request)
+        except ValidationError as exc:
+            return _failure(request, exc)
     try: return success_response(services.create_rule(user, request, parse_json_body(request)), request)
     except (ValidationError, services.ConfigurationConflict) as exc: return _failure(request, exc)
 
@@ -45,7 +50,12 @@ def rule_detail(request, approval_matrix_rule_id):
 def committee_collection(request):
     user, response = _authorized(request, manage=request.method == "POST")
     if response is not None: return response
-    if request.method == "GET": return success_response(services.list_committees(), request)
+    if request.method == "GET":
+        try:
+            data, pagination = services.list_committees(request.GET)
+            return list_response(data, pagination, request)
+        except ValidationError as exc:
+            return _failure(request, exc)
     try: return success_response(services.create_committee(user, request, parse_json_body(request)), request)
     except (ValidationError, services.ConfigurationConflict) as exc: return _failure(request, exc)
 

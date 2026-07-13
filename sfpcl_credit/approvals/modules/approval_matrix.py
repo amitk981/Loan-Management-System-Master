@@ -52,6 +52,10 @@ def resolve_approval_matrix(*, decision_type, amount, condition_code, decision_d
         ApprovalMatrixRule.objects.filter(
             decision_type=decision_type.strip(),
             condition_code=condition_code,
+            status__in=(
+                ApprovalMatrixRule.STATUS_ACTIVE,
+                ApprovalMatrixRule.STATUS_SUPERSEDED,
+            ),
             effective_from__lte=decision_date,
         )
         .filter(Q(effective_to__isnull=True) | Q(effective_to__gte=decision_date))

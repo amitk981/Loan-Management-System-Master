@@ -1,7 +1,7 @@
 # Slice 007A2: Approval Configuration History and Committee Authority Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -80,4 +80,3 @@ High
 
 - Every decision date resolves at most one immutable rule and one correctly authorised committee.
 - Historical configuration cannot be made ambiguous by a later mutation.
-

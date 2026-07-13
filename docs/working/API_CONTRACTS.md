@@ -2366,3 +2366,14 @@ not supplement this resource projection from `/auth/me.available_actions`.
 - The approval-owned resolver interface accepts typed `decision_type`, canonical nullable
   `condition_code`, finite non-negative amount, and authoritative `decision_date`; it returns one
   immutable rule-id/version projection or stable no-effective/ambiguous/invalid-facts domain errors.
+# Approval Configuration Collections and Committee Resolution (007A2)
+
+`GET /api/v1/approval-matrix-rules/` and `GET /api/v1/sanction-committees/` use the standard
+top-level paginated list envelope. They accept only positive `page` and `page_size`; `page_size` is
+capped at 100 and unknown parameters return `400 VALIDATION_ERROR`. Ordering is deterministic.
+
+Committee POST/PATCH payloads retain the 007A fields, but the three referenced active users must
+carry persisted authority types `cfo`, `director`, and `director` respectively and must be distinct.
+Approval-owned `resolve_sanction_committee(decision_date)` returns the immutable committee id,
+version, decision date, CFO user id, and both Director user ids. No match and multiple matches have
+stable `NO_EFFECTIVE_SANCTION_COMMITTEE` and `AMBIGUOUS_SANCTION_COMMITTEE` domain codes.

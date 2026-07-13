@@ -62,3 +62,15 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
   no rule, committee, version history, or business audit evidence.
 - Downstream 007B/007C must call `resolve_approval_matrix` with the case decision date and store its
   immutable projection unchanged; they must not query rule rows or repeat range/director/register logic.
+
+## 007A2 Historical and Committee Closure
+
+- Active and superseded rows are the only resolvable lifecycle states and remain resolvable only
+  inside their stored inclusive dates; inactive rows never resolve. New writes cannot overlap any
+  retained resolvable history.
+- Committee membership is authorised exclusively by three distinct active users' persisted
+  `approval_authority_type`: exactly CFO, Director, Director. Display role names are irrelevant.
+- `resolve_sanction_committee(decision_date)` is the sole dated committee projection for 007B and
+  returns the retained committee id/version plus the three authority user ids.
+- Rule and committee lists accept only bounded `page`/`page_size` and return the standard paginated
+  envelope; four PostgreSQL create/supersede races are the authoritative concurrency proof.

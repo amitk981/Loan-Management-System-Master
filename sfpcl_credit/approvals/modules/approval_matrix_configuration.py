@@ -1,6 +1,7 @@
 import uuid
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
+from math import ceil
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -57,12 +58,12 @@ def serialize_committee(row):
     }
 
 
-def list_rules():
-    return [serialize_rule(row) for row in ApprovalMatrixRule.objects.all()]
+def list_rules(query_params):
+    return _paginated(ApprovalMatrixRule.objects.order_by("decision_type", "condition_code", "amount_min", "effective_from", "approval_matrix_rule_id"), serialize_rule, query_params)
 
 
-def list_committees():
-    return [serialize_committee(row) for row in SanctionCommittee.objects.all()]
+def list_committees(query_params):
+    return _paginated(SanctionCommittee.objects.order_by("-effective_from", "sanction_committee_id"), serialize_committee, query_params)
 
 
 @transaction.atomic
@@ -210,6 +211,11 @@ def _validate_committee(payload):
         try: users[field[:-3]] = User.objects.get(pk=uuid.UUID(str(payload.get(field))))
         except (ValueError, TypeError, User.DoesNotExist): errors[field] = "Must identify an existing user."
     if len({getattr(user, "pk", None) for user in users.values()}) != 3: errors["director_1_user_id"] = "Committee members must be distinct."
+    expected = {"cfo_user": "cfo", "director_1_user": "director", "director_2_user": "director"}
+    for field, authority in expected.items():
+        user = users.get(field)
+        if user is not None and (user.status != User.ACTIVE_STATUS or user.approval_authority_type != authority):
+            errors[f"{field}_id"] = f"Must identify an active user with {authority} approval authority."
     for field in ("committee_name", "board_meeting_reference", "version_number"):
         if not isinstance(payload.get(field), str) or not payload.get(field, "").strip(): errors[field] = "This field is required."
     if errors: raise ValidationError(errors)
@@ -219,19 +225,25 @@ def _validate_committee(payload):
 
 
 def _ensure_no_rule_overlap(cleaned, exclude_id=None):
-    qs = ApprovalMatrixRule.objects.filter(decision_type=cleaned["decision_type"], condition_code=cleaned["condition_code"], status="active")
+    qs = ApprovalMatrixRule.objects.filter(
+        decision_type=cleaned["decision_type"],
+        condition_code=cleaned["condition_code"],
+        status__in=(ApprovalMatrixRule.STATUS_ACTIVE, ApprovalMatrixRule.STATUS_SUPERSEDED),
+    )
     if exclude_id: qs = qs.exclude(pk=exclude_id)
     qs = _date_overlap(qs, cleaned["effective_from"], cleaned["effective_to"])
     for row in qs:
         if _ranges_overlap(cleaned["amount_min"], cleaned["amount_max"], row.amount_min, row.amount_max):
-            raise ConfigurationConflict("Approval rule amount and effective ranges overlap an active rule.")
+            raise ConfigurationConflict("Approval rule amount and effective ranges overlap retained history.")
 
 
 def _ensure_no_committee_overlap(cleaned, exclude_id=None):
-    qs = SanctionCommittee.objects.filter(status="active")
+    qs = SanctionCommittee.objects.filter(
+        status__in=(SanctionCommittee.STATUS_ACTIVE, SanctionCommittee.STATUS_SUPERSEDED)
+    )
     if exclude_id: qs = qs.exclude(pk=exclude_id)
     if _date_overlap(qs, cleaned["effective_from"], cleaned["effective_to"]).exists():
-        raise ConfigurationConflict("Committee effective range overlaps an active committee.")
+        raise ConfigurationConflict("Committee effective range overlaps retained history.")
 
 
 def _lock_rule_scope(decision_type, condition_code):
@@ -289,3 +301,31 @@ def _nullable_string(value):
 
 def _decimal(value):
     return f"{value:.2f}" if value is not None else None
+
+
+def _paginated(queryset, serializer, query_params):
+    unknown = set(query_params.keys()) - {"page", "page_size"}
+    if unknown:
+        raise ValidationError({key: "Unknown query parameter." for key in sorted(unknown)})
+    page = _positive_int("page", query_params.get("page"), 1)
+    page_size = min(_positive_int("page_size", query_params.get("page_size"), 20), 100)
+    total_count = queryset.count()
+    total_pages = ceil(total_count / page_size) if total_count else 1
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+    return [serializer(row) for row in queryset[offset:offset + page_size]], {
+        "page": page, "page_size": page_size, "total_count": total_count,
+        "total_pages": total_pages, "has_next": page < total_pages, "has_previous": page > 1,
+    }
+
+
+def _positive_int(field, value, default):
+    if value in (None, ""):
+        return default
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError({field: "Must be a positive integer."}) from exc
+    if parsed < 1:
+        raise ValidationError({field: "Must be a positive integer."})
+    return parsed

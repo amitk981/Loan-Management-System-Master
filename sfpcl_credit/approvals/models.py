@@ -14,6 +14,7 @@ class ApprovalConfigurationLock(models.Model):
 class ApprovalMatrixRule(models.Model):
     STATUS_ACTIVE = "active"
     STATUS_SUPERSEDED = "superseded"
+    STATUS_INACTIVE = "inactive"
 
     approval_matrix_rule_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -40,11 +41,26 @@ class ApprovalMatrixRule(models.Model):
                 name="idx_matrix_route_status",
             )
         ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(status__in=["active", "superseded", "inactive"]),
+                name="approval_rule_valid_status",
+            ),
+            models.CheckConstraint(
+                check=models.Q(effective_to__isnull=True) | models.Q(effective_to__gte=models.F("effective_from")),
+                name="approval_rule_valid_dates",
+            ),
+            models.CheckConstraint(
+                check=models.Q(amount_min__isnull=True) | models.Q(amount_max__isnull=True) | models.Q(amount_max__gte=models.F("amount_min")),
+                name="approval_rule_valid_amounts",
+            ),
+        ]
 
 
 class SanctionCommittee(models.Model):
     STATUS_ACTIVE = "active"
     STATUS_SUPERSEDED = "superseded"
+    STATUS_INACTIVE = "inactive"
 
     sanction_committee_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -68,6 +84,21 @@ class SanctionCommittee(models.Model):
     class Meta:
         db_table = "sanction_committees"
         ordering = ["-effective_from", "-sanction_committee_id"]
+        indexes = [models.Index(fields=["status", "effective_from", "effective_to"], name="idx_committee_effective")]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(status__in=["active", "superseded", "inactive"]),
+                name="committee_valid_status",
+            ),
+            models.CheckConstraint(
+                check=models.Q(effective_to__isnull=True) | models.Q(effective_to__gte=models.F("effective_from")),
+                name="committee_valid_dates",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(cfo_user=models.F("director_1_user")) & ~models.Q(cfo_user=models.F("director_2_user")) & ~models.Q(director_1_user=models.F("director_2_user")),
+                name="committee_distinct_members",
+            ),
+        ]
 
 
 class ApprovalCase(models.Model):

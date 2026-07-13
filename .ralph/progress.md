@@ -1,5 +1,16 @@
 # Ralph Progress Log
 
+# Run 2026-07-13_052556_normal_run
+
+- Completed 007A2 with full-history rule/committee overlap protection, explicit resolvable
+  lifecycle handling, persisted CFO/two-Director authority validation, and an approval-owned dated
+  committee projection.
+- Both configuration collections now use deterministic bounded pagination and reject unknown query
+  parameters; database constraints protect lifecycle, dates, amount ordering, and distinct members.
+- Four PostgreSQL create/supersede races pass twice. Backend check/migration sync and 525 tests pass
+  with 93% coverage; frontend build/typecheck/lint and 207 tests pass.
+- Evidence: `.ralph/runs/2026-07-13_052556_normal_run/`. Next: already-sharpened 007A3, then 007B.
+
 # Run 2026-07-13_044409_architecture_review
 
 - Reviewed 006Y16, 006Z9, 006Z10, and 007A independently across standards and spec fidelity;
@@ -4899,6 +4910,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_051716_normal_run/.ralph/runs/2026-07-13_051716_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_051716_normal_run/.ralph/runs/2026-07-13_051716_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 05:39:11 - 2026-07-13_052556_normal_run
+- Agent tool used: codex
+- Slice attempted: 007A2-approval-configuration-history-and-committee-authority-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_052556_normal_run/.ralph/runs/2026-07-13_052556_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_052556_normal_run/.ralph/runs/2026-07-13_052556_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

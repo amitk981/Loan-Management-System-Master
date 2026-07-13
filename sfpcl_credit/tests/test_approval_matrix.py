@@ -6,13 +6,17 @@ from unittest import skipUnless
 from django.db import close_old_connections, connection
 from django.test import Client, RequestFactory, TestCase, TransactionTestCase
 
-from sfpcl_credit.approvals.models import ApprovalMatrixRule, SanctionCommittee
+from sfpcl_credit.approvals.models import ApprovalConfigurationLock, ApprovalMatrixRule, SanctionCommittee
 from sfpcl_credit.approvals.modules.approval_matrix import (
     InvalidApprovalFacts,
     NoEffectiveApprovalRule,
     resolve_approval_matrix,
 )
 from sfpcl_credit.approvals.modules import approval_matrix_configuration
+from sfpcl_credit.approvals.modules.sanction_committee import (
+    NoEffectiveSanctionCommittee,
+    resolve_sanction_committee,
+)
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.tests.api_contracts import assert_error_envelope, assert_success_envelope
@@ -21,6 +25,7 @@ from sfpcl_credit.tests.api_contracts import assert_error_envelope, assert_succe
 class ApprovalMatrixResolverTests(TestCase):
     def setUp(self):
         ApprovalMatrixRule.objects.all().delete()
+        ApprovalConfigurationLock.objects.get_or_create(lock_name="approval_matrix")
 
     def test_exact_five_lakh_resolves_stored_inclusive_rule_projection(self):
         rule = ApprovalMatrixRule.objects.create(
@@ -153,8 +158,9 @@ class ApprovalMatrixApiTests(TestCase):
         self.plain = self._user("plain@example.test", plain_role)
 
     @staticmethod
-    def _user(email, role):
-        user = User.objects.create(full_name=email, email=email, status="active", primary_role=role)
+    def _user(email, role, approval_authority_type=""):
+        user = User.objects.create(full_name=email, email=email, status="active", primary_role=role,
+                                   approval_authority_type=approval_authority_type)
         user.set_password("Pass123!pass")
         user.save()
         return user
@@ -176,6 +182,17 @@ class ApprovalMatrixApiTests(TestCase):
             "register_required": "credit_sanction_register",
             "effective_from": "2026-04-01", "effective_to": None,
             "version_number": "1",
+        }
+        payload.update(overrides)
+        return payload
+
+    @staticmethod
+    def _committee_payload(cfo, d1, d2, **overrides):
+        payload = {
+            "committee_name": "FY 2026 Committee", "cfo_user_id": str(cfo.pk),
+            "director_1_user_id": str(d1.pk), "director_2_user_id": str(d2.pk),
+            "board_meeting_reference": "BOARD-2026-01", "effective_from": "2026-04-01",
+            "effective_to": None, "version_number": "1",
         }
         payload.update(overrides)
         return payload
@@ -227,12 +244,49 @@ class ApprovalMatrixApiTests(TestCase):
         self.assertEqual(old.effective_to, date(2026, 12, 31))
         self.assertNotEqual(response.json()["data"]["approval_matrix_rule_id"], str(old.pk))
 
+    def test_historical_backfill_cannot_ambiguate_a_superseded_rule(self):
+        headers = self._headers(self.manager)
+        original = self.client.post(
+            "/api/v1/approval-matrix-rules/",
+            data=self._payload(),
+            content_type="application/json",
+            headers=headers,
+        ).json()["data"]
+        self.client.patch(
+            f"/api/v1/approval-matrix-rules/{original['approval_matrix_rule_id']}/",
+            data=self._payload(effective_from="2027-01-01", version_number="2"),
+            content_type="application/json",
+            headers=headers,
+        )
+        before = self._configuration_snapshot()
+
+        response = self.client.post(
+            "/api/v1/approval-matrix-rules/",
+            data=self._payload(
+                effective_from="2026-06-01",
+                effective_to="2026-06-30",
+                version_number="historical-backfill",
+            ),
+            content_type="application/json",
+            headers=headers,
+        )
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(self._configuration_snapshot(), before)
+        resolved = resolve_approval_matrix(
+            decision_type="loan_sanction",
+            amount="100.00",
+            condition_code=None,
+            decision_date=date(2026, 6, 15),
+        )
+        self.assertEqual(str(resolved.approval_matrix_rule_id), original["approval_matrix_rule_id"])
+
     def test_committee_collection_uses_same_permissions_and_audit_pattern(self):
         cfo_role = Role.objects.create(role_code="cfo_test", role_name="CFO")
         director_role = Role.objects.create(role_code="director_test", role_name="Director")
-        cfo = self._user("cfo@example.test", cfo_role)
-        d1 = self._user("d1@example.test", director_role)
-        d2 = self._user("d2@example.test", director_role)
+        cfo = self._user("cfo@example.test", cfo_role, "cfo")
+        d1 = self._user("d1@example.test", director_role, "director")
+        d2 = self._user("d2@example.test", director_role, "director")
         response = self.client.post(
             "/api/v1/sanction-committees/",
             data={"committee_name": "FY 2026 Committee", "cfo_user_id": str(cfo.pk),
@@ -244,6 +298,39 @@ class ApprovalMatrixApiTests(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(SanctionCommittee.objects.count(), 1)
         self.assertTrue(AuditLog.objects.filter(action="approvals.sanction_committee.created").exists())
+
+    def test_committee_requires_persisted_authority_and_resolves_by_decision_date(self):
+        role = Role.objects.create(role_code="committee_shape", role_name="CFO / Director")
+        ordinary = self._user("ordinary@example.test", role)
+        d1 = self._user("authority-d1@example.test", role, "director")
+        d2 = self._user("authority-d2@example.test", role, "director")
+        before = self._configuration_snapshot()
+        denied = self.client.post(
+            "/api/v1/sanction-committees/", data=self._committee_payload(ordinary, d1, d2),
+            content_type="application/json", headers=self._headers(self.manager),
+        )
+        self.assertEqual(denied.status_code, 400, denied.content)
+        self.assertEqual(self._configuration_snapshot(), before)
+
+        cfo = self._user("authority-cfo@example.test", role, "cfo")
+        created = self.client.post(
+            "/api/v1/sanction-committees/", data=self._committee_payload(cfo, d1, d2),
+            content_type="application/json", headers=self._headers(self.manager),
+        ).json()["data"]
+        projection = resolve_sanction_committee(date(2026, 6, 1))
+        self.assertEqual(str(projection.sanction_committee_id), created["sanction_committee_id"])
+        self.assertEqual(projection.version_number, "1")
+        with self.assertRaises(NoEffectiveSanctionCommittee):
+            resolve_sanction_committee(date(2025, 1, 1))
+
+    def test_configuration_collections_are_bounded_paginated_and_reject_unknown_params(self):
+        headers = self._headers(self.reader)
+        response = self.client.get("/api/v1/approval-matrix-rules/?page=1&page_size=1", headers=headers)
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["pagination"]["page_size"], 1)
+        self.assertLessEqual(len(response.json()["data"]), 1)
+        unknown = self.client.get("/api/v1/sanction-committees/?all=true", headers=headers)
+        self.assertEqual(unknown.status_code, 400, unknown.content)
 
     def test_read_and_mutation_permission_negatives_cover_both_resources(self):
         for path in ("/api/v1/approval-matrix-rules/", "/api/v1/sanction-committees/"):
@@ -282,12 +369,20 @@ class ApprovalMatrixConcurrencyTests(TransactionTestCase):
 
     def setUp(self):
         ApprovalMatrixRule.objects.all().delete()
+        ApprovalConfigurationLock.objects.get_or_create(lock_name="approval_matrix")
         role = Role.objects.create(role_code="race_manager", role_name="Race Manager")
-        permission = Permission.objects.get(permission_code="approvals.matrix.manage")
+        permission, _ = Permission.objects.get_or_create(
+            permission_code="approvals.matrix.manage",
+            defaults={"permission_name": "Manage matrix", "module_name": "approvals", "risk_level": "critical"},
+        )
         RolePermission.objects.create(role=role, permission=permission)
         self.user = User.objects.create(full_name="Race Manager", email="race@example.test", status="active", primary_role=role)
         self.user.set_password("unused")
         self.user.save()
+        authority_role = Role.objects.create(role_code="race_authority", role_name="Race Authority")
+        self.cfo = User.objects.create(full_name="Race CFO", email="race-cfo@example.test", status="active", primary_role=authority_role, approval_authority_type="cfo")
+        self.d1 = User.objects.create(full_name="Race Director 1", email="race-d1@example.test", status="active", primary_role=authority_role, approval_authority_type="director")
+        self.d2 = User.objects.create(full_name="Race Director 2", email="race-d2@example.test", status="active", primary_role=authority_role, approval_authority_type="director")
 
     @staticmethod
     def _payload(version):
@@ -339,3 +434,52 @@ class ApprovalMatrixConcurrencyTests(TransactionTestCase):
         self.assertEqual(ApprovalMatrixRule.objects.count(), 2)
         self.assertEqual(VersionHistory.objects.filter(versioned_entity_type="approval_matrix_rule").count(), 2)
         self.assertEqual(AuditLog.objects.filter(action__startswith="approvals.matrix_rule.").count(), 2)
+
+    def _committee_payload(self, version, effective_from="2026-04-01"):
+        return ApprovalMatrixApiTests._committee_payload(
+            self.cfo, self.d1, self.d2, version_number=version, effective_from=effective_from
+        )
+
+    def _create_committee(self, version):
+        close_old_connections()
+        try:
+            user = User.objects.get(pk=self.user.pk)
+            request = RequestFactory().post("/api/v1/sanction-committees/")
+            return ("won", approval_matrix_configuration.create_committee(user, request, self._committee_payload(version)))
+        except approval_matrix_configuration.ConfigurationConflict:
+            return ("lost", None)
+        finally:
+            close_old_connections()
+
+    def test_competing_committee_creates_have_one_winner_and_zero_write_loser(self):
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(self._create_committee, ("committee-a", "committee-b")))
+        self.assertEqual(sorted(result[0] for result in results), ["lost", "won"])
+        self.assertEqual(SanctionCommittee.objects.count(), 1)
+        self.assertEqual(VersionHistory.objects.filter(versioned_entity_type="sanction_committee").count(), 1)
+        self.assertEqual(AuditLog.objects.filter(action="approvals.sanction_committee.created").count(), 1)
+
+    def test_competing_committee_supersedes_have_one_winner_and_zero_write_loser(self):
+        original = self._create_committee("original-committee")[1]
+
+        def supersede(version):
+            close_old_connections()
+            try:
+                user = User.objects.get(pk=self.user.pk)
+                request = RequestFactory().patch("/api/v1/sanction-committees/x/")
+                approval_matrix_configuration.supersede_committee(
+                    user, request, original["sanction_committee_id"],
+                    self._committee_payload(version, effective_from="2027-01-01"),
+                )
+                return "won"
+            except approval_matrix_configuration.ConfigurationConflict:
+                return "lost"
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(supersede, ("committee-next-a", "committee-next-b")))
+        self.assertEqual(sorted(results), ["lost", "won"])
+        self.assertEqual(SanctionCommittee.objects.count(), 2)
+        self.assertEqual(VersionHistory.objects.filter(versioned_entity_type="sanction_committee").count(), 2)
+        self.assertEqual(AuditLog.objects.filter(action__startswith="approvals.sanction_committee.").count(), 2)
