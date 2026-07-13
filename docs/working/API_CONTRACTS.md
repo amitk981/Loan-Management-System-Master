@@ -2377,3 +2377,23 @@ carry persisted authority types `cfo`, `director`, and `director` respectively a
 Approval-owned `resolve_sanction_committee(decision_date)` returns the immutable committee id,
 version, decision date, CFO user id, and both Director user ids. No match and multiple matches have
 stable `NO_EFFECTIVE_SANCTION_COMMITTEE` and `AMBIGUOUS_SANCTION_COMMITTEE` domain codes.
+
+# Approval Configuration Maker-Checker Governance (007A3)
+
+Rule and committee POST/PATCH payloads now require a non-blank `reason`; success returns a pending
+proposal with `approval_configuration_proposal_id`, `proposal_type`, nullable `target_entity_id`,
+`reason`, `status`, `version`, maker/checker ids, rejection reason, and §44-shaped
+`available_actions`. It does not make configuration effective.
+
+- `GET /api/v1/approval-configuration-proposals/{proposal_id}/`
+- `POST /api/v1/approval-configuration-proposals/{proposal_id}/approve/` — `{"version": 1}`
+- `POST /api/v1/approval-configuration-proposals/{proposal_id}/reject/` —
+  `{"version": 1, "reason": "Policy evidence incomplete"}`
+
+The checker must be active, distinct from the maker, and carry persisted `cfo` or
+`company_secretary` authority. Self-decision and missing authority return
+`403 MAKER_CHECKER_VIOLATION` and `403 APPROVER_AUTHORITY_REQUIRED`; stale version returns
+`409 STALE_VERSION`; terminal replay returns `409 TRANSITION_CONFLICT`; approval-time lifecycle
+conflicts return `409 CONFIGURATION_CONFLICT` or `409 PROPOSAL_STALE`. Validation uses the standard
+`400 VALIDATION_ERROR` field-error envelope. Approval atomically activates/supersedes and writes
+separate author/approver VersionHistory plus `config.changed`; rejection changes no effective row.

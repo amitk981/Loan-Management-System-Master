@@ -6,7 +6,12 @@ from unittest import skipUnless
 from django.db import close_old_connections, connection
 from django.test import Client, RequestFactory, TestCase, TransactionTestCase
 
-from sfpcl_credit.approvals.models import ApprovalConfigurationLock, ApprovalMatrixRule, SanctionCommittee
+from sfpcl_credit.approvals.models import (
+    ApprovalConfigurationLock,
+    ApprovalConfigurationProposal,
+    ApprovalMatrixRule,
+    SanctionCommittee,
+)
 from sfpcl_credit.approvals.modules.approval_matrix import (
     InvalidApprovalFacts,
     NoEffectiveApprovalRule,
@@ -156,6 +161,11 @@ class ApprovalMatrixApiTests(TestCase):
         self.reader = self._user("reader@example.test", reader_role)
         plain_role = Role.objects.create(role_code="plain", role_name="Plain")
         self.plain = self._user("plain@example.test", plain_role)
+        authority_role = Role.objects.create(role_code="business_checker", role_name="Business Checker")
+        self.checker = self._user("checker@example.test", authority_role, "cfo")
+        self.inactive_checker = self._user("inactive-checker@example.test", authority_role, "cfo")
+        self.inactive_checker.status = "inactive"; self.inactive_checker.save(update_fields=["status"])
+        self.director_checker = self._user("director-checker@example.test", authority_role, "director")
 
     @staticmethod
     def _user(email, role, approval_authority_type=""):
@@ -182,6 +192,7 @@ class ApprovalMatrixApiTests(TestCase):
             "register_required": "credit_sanction_register",
             "effective_from": "2026-04-01", "effective_to": None,
             "version_number": "1",
+            "reason": "Annual governed configuration update",
         }
         payload.update(overrides)
         return payload
@@ -193,6 +204,7 @@ class ApprovalMatrixApiTests(TestCase):
             "director_1_user_id": str(d1.pk), "director_2_user_id": str(d2.pk),
             "board_meeting_reference": "BOARD-2026-01", "effective_from": "2026-04-01",
             "effective_to": None, "version_number": "1",
+            "reason": "Annual governed committee update",
         }
         payload.update(overrides)
         return payload
@@ -213,51 +225,134 @@ class ApprovalMatrixApiTests(TestCase):
         )
         self.assertEqual(created.status_code, 200, created.content)
         assert_success_envelope(self, created.json())
-        self.assertEqual(created.json()["data"]["required_director_count"], 1)
-        before = (ApprovalMatrixRule.objects.count(), VersionHistory.objects.count(), AuditLog.objects.count())
+        self._approve(created.json()["data"])
+        before = (ApprovalMatrixRule.objects.count(), VersionHistory.objects.count(), AuditLog.objects.exclude(action__startswith="auth.").count())
 
         overlap = self.client.post(
             "/api/v1/approval-matrix-rules/",
             data=self._payload(amount_min="500000.00", version_number="2"),
             content_type="application/json", headers=manager_headers,
         )
-        self.assertEqual(overlap.status_code, 409, overlap.content)
-        assert_error_envelope(self, overlap.json(), "CONFIGURATION_CONFLICT")
+        self.assertEqual(overlap.status_code, 200, overlap.content)
+        denied = self._approve(overlap.json()["data"], expected_status=409)
+        assert_error_envelope(self, denied.json(), "CONFIGURATION_CONFLICT")
         self.assertEqual(
-            (ApprovalMatrixRule.objects.count(), VersionHistory.objects.count(), AuditLog.objects.count()),
+            (ApprovalMatrixRule.objects.count(), VersionHistory.objects.count(), AuditLog.objects.exclude(action__startswith="auth.").count()),
             before,
         )
 
+    def test_create_rule_requires_reason_and_stays_pending_until_distinct_business_approval(self):
+        headers = self._headers(self.manager)
+        payload_without_reason = self._payload(); payload_without_reason.pop("reason")
+        missing_reason = self.client.post(
+            "/api/v1/approval-matrix-rules/", data=payload_without_reason,
+            content_type="application/json", headers=headers,
+        )
+        self.assertEqual(missing_reason.status_code, 400, missing_reason.content)
+        self.assertEqual(ApprovalConfigurationProposal.objects.count(), 0)
+
+        proposed = self.client.post(
+            "/api/v1/approval-matrix-rules/",
+            data=self._payload(reason="Annual matrix governance update"),
+            content_type="application/json", headers=headers,
+        )
+        self.assertEqual(proposed.status_code, 200, proposed.content)
+        self.assertEqual(proposed.json()["data"]["status"], "pending")
+        self.assertEqual(ApprovalMatrixRule.objects.count(), 0)
+        self.assertEqual(VersionHistory.objects.count(), 0)
+        self.assertEqual(AuditLog.objects.exclude(action__startswith="auth.").count(), 0)
+
+    def test_proposal_decision_enforces_authority_version_rejection_and_immutable_evidence(self):
+        proposed = self.client.post(
+            "/api/v1/approval-matrix-rules/", data=self._payload(reason="Traceable change reason"),
+            content_type="application/json", headers=self._headers(self.manager),
+        ).json()["data"]
+        path = f"/api/v1/approval-configuration-proposals/{proposed['approval_configuration_proposal_id']}"
+        before = self._configuration_snapshot()
+        for actor, code in (
+            (self.manager, "MAKER_CHECKER_VIOLATION"),
+            (self.plain, "APPROVER_AUTHORITY_REQUIRED"),
+            (self.director_checker, "APPROVER_AUTHORITY_REQUIRED"),
+        ):
+            denied = self.client.post(f"{path}/approve/", data={"version": 1},
+                                      content_type="application/json", headers=self._headers(actor))
+            self.assertEqual(denied.status_code, 403)
+            self.assertEqual(denied.json()["error"]["code"], code)
+        inactive_login = self.client.post(
+            "/api/v1/auth/login/", data={"email": self.inactive_checker.email, "password": "Pass123!pass"},
+            content_type="application/json",
+        )
+        self.assertEqual(inactive_login.status_code, 401)
+        self.assertEqual(self._configuration_snapshot(), before)
+
+        stale = self.client.post(f"{path}/approve/", data={"version": 2},
+                                 content_type="application/json", headers=self._headers(self.checker))
+        self.assertEqual(stale.status_code, 409)
+        self.assertEqual(stale.json()["error"]["code"], "STALE_VERSION")
+        approved = self.client.post(f"{path}/approve/", data={"version": 1},
+                                    content_type="application/json", headers=self._headers(self.checker))
+        self.assertEqual(approved.status_code, 200, approved.content)
+        history = VersionHistory.objects.get()
+        self.assertEqual(history.author_user, self.manager)
+        self.assertEqual(history.approver_user, self.checker)
+        self.assertEqual(history.change_summary, "Traceable change reason")
+        audit = AuditLog.objects.get(action="config.changed")
+        self.assertEqual(audit.new_value_json["reason"], "Traceable change reason")
+        duplicate = self.client.post(f"{path}/approve/", data={"version": 2},
+                                     content_type="application/json", headers=self._headers(self.checker))
+        self.assertEqual(duplicate.status_code, 409)
+        self.assertEqual(duplicate.json()["error"]["code"], "TRANSITION_CONFLICT")
+
+        rejected_proposal = self.client.post(
+            "/api/v1/approval-matrix-rules/",
+            data=self._payload(amount_min="600000.00", amount_max="700000.00", version_number="reject-me"),
+            content_type="application/json", headers=self._headers(self.manager),
+        ).json()["data"]
+        reject_path = f"/api/v1/approval-configuration-proposals/{rejected_proposal['approval_configuration_proposal_id']}/reject/"
+        missing = self.client.post(reject_path, data={"version": 1}, content_type="application/json",
+                                   headers=self._headers(self.checker))
+        self.assertEqual(missing.status_code, 400)
+        rejected = self.client.post(reject_path, data={"version": 1, "reason": "Policy evidence incomplete"},
+                                    content_type="application/json", headers=self._headers(self.checker))
+        self.assertEqual(rejected.status_code, 200)
+        self.assertEqual(ApprovalMatrixRule.objects.count(), 1)
+
     def test_patch_supersedes_instead_of_rewriting_history(self):
-        created = self.client.post(
+        proposal = self.client.post(
             "/api/v1/approval-matrix-rules/", data=self._payload(),
             content_type="application/json", headers=self._headers(self.manager),
         ).json()["data"]
+        self._approve(proposal)
+        created = approval_matrix_configuration.serialize_rule(ApprovalMatrixRule.objects.get())
         response = self.client.patch(
             f"/api/v1/approval-matrix-rules/{created['approval_matrix_rule_id']}/",
             data=self._payload(effective_from="2027-01-01", version_number="2", required_director_count=2),
             content_type="application/json", headers=self._headers(self.manager),
         )
         self.assertEqual(response.status_code, 200, response.content)
+        self._approve(response.json()["data"])
         old = ApprovalMatrixRule.objects.get(pk=created["approval_matrix_rule_id"])
         self.assertEqual(old.status, "superseded")
         self.assertEqual(old.effective_to, date(2026, 12, 31))
-        self.assertNotEqual(response.json()["data"]["approval_matrix_rule_id"], str(old.pk))
+        self.assertTrue(ApprovalMatrixRule.objects.exclude(pk=old.pk).filter(status="active").exists())
 
     def test_historical_backfill_cannot_ambiguate_a_superseded_rule(self):
         headers = self._headers(self.manager)
-        original = self.client.post(
+        original_proposal = self.client.post(
             "/api/v1/approval-matrix-rules/",
             data=self._payload(),
             content_type="application/json",
             headers=headers,
         ).json()["data"]
-        self.client.patch(
+        self._approve(original_proposal)
+        original = approval_matrix_configuration.serialize_rule(ApprovalMatrixRule.objects.get())
+        supersede = self.client.patch(
             f"/api/v1/approval-matrix-rules/{original['approval_matrix_rule_id']}/",
             data=self._payload(effective_from="2027-01-01", version_number="2"),
             content_type="application/json",
             headers=headers,
         )
+        self._approve(supersede.json()["data"])
         before = self._configuration_snapshot()
 
         response = self.client.post(
@@ -271,7 +366,8 @@ class ApprovalMatrixApiTests(TestCase):
             headers=headers,
         )
 
-        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(response.status_code, 200, response.content)
+        self._approve(response.json()["data"], expected_status=409)
         self.assertEqual(self._configuration_snapshot(), before)
         resolved = resolve_approval_matrix(
             decision_type="loan_sanction",
@@ -292,12 +388,13 @@ class ApprovalMatrixApiTests(TestCase):
             data={"committee_name": "FY 2026 Committee", "cfo_user_id": str(cfo.pk),
                   "director_1_user_id": str(d1.pk), "director_2_user_id": str(d2.pk),
                   "board_meeting_reference": "BOARD-2026-01", "effective_from": "2026-04-01",
-                  "effective_to": None, "version_number": "1"},
+                  "effective_to": None, "version_number": "1", "reason": "Committee update"},
             content_type="application/json", headers=self._headers(self.manager),
         )
         self.assertEqual(response.status_code, 200, response.content)
+        self._approve(response.json()["data"])
         self.assertEqual(SanctionCommittee.objects.count(), 1)
-        self.assertTrue(AuditLog.objects.filter(action="approvals.sanction_committee.created").exists())
+        self.assertTrue(AuditLog.objects.filter(action="config.changed").exists())
 
     def test_committee_requires_persisted_authority_and_resolves_by_decision_date(self):
         role = Role.objects.create(role_code="committee_shape", role_name="CFO / Director")
@@ -313,10 +410,12 @@ class ApprovalMatrixApiTests(TestCase):
         self.assertEqual(self._configuration_snapshot(), before)
 
         cfo = self._user("authority-cfo@example.test", role, "cfo")
-        created = self.client.post(
+        proposed = self.client.post(
             "/api/v1/sanction-committees/", data=self._committee_payload(cfo, d1, d2),
             content_type="application/json", headers=self._headers(self.manager),
         ).json()["data"]
+        self._approve(proposed)
+        created = approval_matrix_configuration.serialize_committee(SanctionCommittee.objects.get())
         projection = resolve_sanction_committee(date(2026, 6, 1))
         self.assertEqual(str(projection.sanction_committee_id), created["sanction_committee_id"])
         self.assertEqual(projection.version_number, "1")
@@ -361,6 +460,15 @@ class ApprovalMatrixApiTests(TestCase):
             "versions": list(VersionHistory.objects.order_by("pk").values()),
             "audits": list(AuditLog.objects.exclude(action__startswith="auth.").order_by("pk").values()),
         }
+
+    def _approve(self, proposal, expected_status=200):
+        response = self.client.post(
+            f"/api/v1/approval-configuration-proposals/{proposal['approval_configuration_proposal_id']}/approve/",
+            data={"version": proposal["version"]}, content_type="application/json",
+            headers=self._headers(self.checker),
+        )
+        self.assertEqual(response.status_code, expected_status, response.content)
+        return response
 
 
 @skipUnless(connection.vendor == "postgresql", "Authoritative approval-matrix race requires PostgreSQL.")

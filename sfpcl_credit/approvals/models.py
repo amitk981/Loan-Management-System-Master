@@ -11,6 +11,51 @@ class ApprovalConfigurationLock(models.Model):
         db_table = "approval_configuration_locks"
 
 
+class ApprovalConfigurationProposal(models.Model):
+    TYPE_RULE_CREATE = "rule_create"
+    TYPE_RULE_SUPERSEDE = "rule_supersede"
+    TYPE_COMMITTEE_CREATE = "committee_create"
+    TYPE_COMMITTEE_SUPERSEDE = "committee_supersede"
+    STATUS_PENDING = "pending"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+
+    approval_configuration_proposal_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    proposal_type = models.CharField(max_length=40, db_index=True)
+    target_entity_id = models.UUIDField(null=True, blank=True)
+    payload_json = models.JSONField()
+    reason = models.TextField()
+    status = models.CharField(max_length=20, default=STATUS_PENDING, db_index=True)
+    version = models.PositiveIntegerField(default=1)
+    made_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="made_approval_configuration_proposals"
+    )
+    made_at = models.DateTimeField(default=timezone.now)
+    decided_by_user = models.ForeignKey(
+        "identity.User", null=True, blank=True, on_delete=models.PROTECT,
+        related_name="decided_approval_configuration_proposals",
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True)
+    request_id = models.CharField(max_length=255, blank=True)
+    request_ip = models.CharField(max_length=80, blank=True)
+    request_user_agent = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "approval_configuration_proposals"
+        ordering = ["-made_at", "-approval_configuration_proposal_id"]
+        indexes = [models.Index(fields=["status", "proposal_type"], name="idx_config_proposal_state")]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(status__in=["pending", "approved", "rejected"]),
+                name="config_proposal_valid_status",
+            ),
+            models.CheckConstraint(check=models.Q(version__gte=1), name="config_proposal_version_positive"),
+        ]
+
+
 class ApprovalMatrixRule(models.Model):
     STATUS_ACTIVE = "active"
     STATUS_SUPERSEDED = "superseded"

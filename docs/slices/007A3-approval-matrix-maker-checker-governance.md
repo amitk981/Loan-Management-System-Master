@@ -1,7 +1,7 @@
 # Slice 007A3: Approval Matrix Maker-Checker Governance
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -72,4 +72,3 @@ High
 
 - Critical approval configuration cannot be activated by one actor.
 - Every activation has a reason, distinct authorised business approver, immutable history, and audit.
-

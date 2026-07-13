@@ -74,3 +74,12 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
   returns the retained committee id/version plus the three authority user ids.
 - Rule and committee lists accept only bounded `page`/`page_size` and return the standard paginated
   envelope; four PostgreSQL create/supersede races are the authoritative concurrency proof.
+
+## 007A3 Maker-Checker Governance
+
+- Rule and committee POST/PATCH writes create immutable pending proposals with mandatory reasons;
+  resolvers remain on the prior effective configuration until approval.
+- Only a distinct active user with persisted CFO or Company Secretary authority may decide.
+- Approval revalidates retained history and committee authority under the shared lock, activates
+  atomically, and writes separate author/approver history plus `config.changed` evidence. Rejection
+  and stale/conflicting losers leave effective configuration and open-case snapshots unchanged.

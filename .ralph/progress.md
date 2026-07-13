@@ -1769,6 +1769,18 @@ Validation evidence added:
 - Risk level: See risk assessment.
 - Next action: Review packet.
 
+## 2026-07-13 05:52:00 - 2026-07-13_053920_normal_run
+- Agent tool used: codex
+- Slice attempted: 007A3-approval-matrix-maker-checker-governance
+- Summary: Added reasoned pending approval-configuration proposals and distinct CFO/Company
+  Secretary approve/reject governance with atomic activation, immutable history, and audit evidence.
+- Tests run: frontend build/typecheck/lint and 207 tests; backend check/migration sync and 527 tests
+  with 16 expected skips and 93% coverage.
+- Evidence saved: `.ralph/runs/2026-07-13_053920_normal_run/`
+- Result: Success
+- Risk level: High under standing approval; see risk assessment.
+- Next action: Architecture review is due, then 007B.
+
 # Run 2026-07-13_045928_normal_run
 
 - Completed 006Z11 with persisted action-specific member scope assignments shared by list, detail,
@@ -4920,6 +4932,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_052556_normal_run/.ralph/runs/2026-07-13_052556_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_052556_normal_run/.ralph/runs/2026-07-13_052556_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 05:53:14 - 2026-07-13_053920_normal_run
+- Agent tool used: codex
+- Slice attempted: 007A3-approval-matrix-maker-checker-governance
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_053920_normal_run/.ralph/runs/2026-07-13_053920_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_053920_normal_run/.ralph/runs/2026-07-13_053920_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

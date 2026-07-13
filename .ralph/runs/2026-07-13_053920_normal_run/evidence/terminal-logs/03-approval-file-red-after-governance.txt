@@ -1,0 +1,52 @@
+Creating test database for alias 'default'...
+Found 18 test(s).
+System check identified no issues (0 silenced).
+FFE..E.E......ssss
+======================================================================
+ERROR: test_committee_requires_persisted_authority_and_resolves_by_decision_date (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_committee_requires_persisted_authority_and_resolves_by_decision_date)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_053920_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 341, in test_committee_requires_persisted_authority_and_resolves_by_decision_date
+    created = self.client.post(
+              ^^^^^^^^^^^^^^^^^
+KeyError: 'data'
+
+======================================================================
+ERROR: test_historical_backfill_cannot_ambiguate_a_superseded_rule (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_historical_backfill_cannot_ambiguate_a_superseded_rule)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_053920_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 274, in test_historical_backfill_cannot_ambiguate_a_superseded_rule
+    original = self.client.post(
+               ^^^^^^^^^^^^^^^^^
+KeyError: 'data'
+
+======================================================================
+ERROR: test_patch_supersedes_instead_of_rewriting_history (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_patch_supersedes_instead_of_rewriting_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_053920_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 257, in test_patch_supersedes_instead_of_rewriting_history
+    created = self.client.post(
+              ^^^^^^^^^^^^^^^^^
+KeyError: 'data'
+
+======================================================================
+FAIL: test_auth_and_atomic_create_overlap_contract (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_auth_and_atomic_create_overlap_contract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_053920_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 219, in test_auth_and_atomic_create_overlap_contract
+    self.assertEqual(created.status_code, 200, created.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Configuration failed validation.", "details": {}, "field_errors": {"reason": "This field is required."}}, "meta": {"request_id": null, "timestamp": "2026-07-13T00:13:44.738808Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_committee_collection_uses_same_permissions_and_audit_pattern (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_committee_collection_uses_same_permissions_and_audit_pattern)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_053920_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 323, in test_committee_collection_uses_same_permissions_and_audit_pattern
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Configuration failed validation.", "details": {}, "field_errors": {"reason": "This field is required."}}, "meta": {"request_id": null, "timestamp": "2026-07-13T00:13:44.745544Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.095s
+
+FAILED (failures=2, errors=3, skipped=4)
+Destroying test database for alias 'default'...

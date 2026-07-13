@@ -1,0 +1,55 @@
+Creating test database for alias 'default'...
+Found 9 test(s).
+System check identified no issues (0 silenced).
+F.E..E.E.
+======================================================================
+ERROR: test_committee_requires_persisted_authority_and_resolves_by_decision_date (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_committee_requires_persisted_authority_and_resolves_by_decision_date)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_053920_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 360, in test_committee_requires_persisted_authority_and_resolves_by_decision_date
+    created = serialize_committee(SanctionCommittee.objects.get())
+              ^^^^^^^^^^^^^^^^^^^
+NameError: name 'serialize_committee' is not defined
+
+======================================================================
+ERROR: test_historical_backfill_cannot_ambiguate_a_superseded_rule (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_historical_backfill_cannot_ambiguate_a_superseded_rule)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_053920_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 290, in test_historical_backfill_cannot_ambiguate_a_superseded_rule
+    original = serialize_rule(ApprovalMatrixRule.objects.get())
+               ^^^^^^^^^^^^^^
+NameError: name 'serialize_rule' is not defined
+
+======================================================================
+ERROR: test_patch_supersedes_instead_of_rewriting_history (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_patch_supersedes_instead_of_rewriting_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_053920_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 268, in test_patch_supersedes_instead_of_rewriting_history
+    created = serialize_rule(ApprovalMatrixRule.objects.get())
+              ^^^^^^^^^^^^^^
+NameError: name 'serialize_rule' is not defined
+
+======================================================================
+FAIL: test_auth_and_atomic_create_overlap_contract (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_auth_and_atomic_create_overlap_contract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_053920_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 236, in test_auth_and_atomic_create_overlap_contract
+    self.assertEqual(
+AssertionError: Tuples differ: (1, 1, 5) != (1, 1, 4)
+
+First differing element 2:
+5
+4
+
+- (1, 1, 5)
+?        ^
+
++ (1, 1, 4)
+?        ^
+
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.098s
+
+FAILED (failures=1, errors=3)
+Destroying test database for alias 'default'...

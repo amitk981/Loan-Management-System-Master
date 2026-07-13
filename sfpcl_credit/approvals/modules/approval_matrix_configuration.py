@@ -7,9 +7,15 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
 from django.utils.dateparse import parse_date
+from django.utils import timezone
 
 from sfpcl_credit.api import request_ip, request_user_agent
-from sfpcl_credit.approvals.models import ApprovalConfigurationLock, ApprovalMatrixRule, SanctionCommittee
+from sfpcl_credit.approvals.models import (
+    ApprovalConfigurationLock,
+    ApprovalConfigurationProposal,
+    ApprovalMatrixRule,
+    SanctionCommittee,
+)
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.identity.modules import auth_service
@@ -20,7 +26,9 @@ MANAGE_PERMISSION = "approvals.matrix.manage"
 
 
 class ConfigurationConflict(Exception):
-    pass
+    def __init__(self, message, code="CONFIGURATION_CONFLICT"):
+        super().__init__(message)
+        self.code = code
 
 
 def can_read(user):
@@ -55,6 +63,38 @@ def serialize_committee(row):
         "effective_from": row.effective_from.isoformat(),
         "effective_to": row.effective_to.isoformat() if row.effective_to else None,
         "status": row.status, "version_number": row.version_number,
+    }
+
+
+def serialize_proposal(proposal, user=None):
+    actions = []
+    if user is not None:
+        enabled = (
+            proposal.status == ApprovalConfigurationProposal.STATUS_PENDING
+            and proposal.made_by_user_id != user.pk
+            and user.status == User.ACTIVE_STATUS
+            and user.approval_authority_type in {"cfo", "company_secretary"}
+        )
+        reason = None if enabled else (
+            "Proposal is no longer pending." if proposal.status != ApprovalConfigurationProposal.STATUS_PENDING
+            else "Maker cannot approve or reject their own proposal." if proposal.made_by_user_id == user.pk
+            else "Active CFO or Company Secretary approval authority is required."
+        )
+        for code, label in (("approvals.configuration_proposal.approve", "Approve"), ("approvals.configuration_proposal.reject", "Reject")):
+            actions.append({"action_code": code, "label": label, "enabled": enabled,
+                            "disabled_reason": reason, "required_permission": "",
+                            "confirmation_required": True})
+    return {
+        "approval_configuration_proposal_id": str(proposal.pk),
+        "proposal_type": proposal.proposal_type,
+        "target_entity_id": str(proposal.target_entity_id) if proposal.target_entity_id else None,
+        "reason": proposal.reason,
+        "status": proposal.status,
+        "version": proposal.version,
+        "made_by_user_id": str(proposal.made_by_user_id),
+        "decided_by_user_id": str(proposal.decided_by_user_id) if proposal.decided_by_user_id else None,
+        "rejection_reason": proposal.rejection_reason or None,
+        "available_actions": actions,
     }
 
 
@@ -97,71 +137,163 @@ def seed_demo_committee():
 
 @transaction.atomic
 def create_rule(user, request, payload):
-    cleaned = _validate_rule(payload)
-    _lock_configuration_boundary()
-    _lock_rule_scope(cleaned["decision_type"], cleaned["condition_code"])
-    _ensure_no_rule_overlap(cleaned)
-    rule = ApprovalMatrixRule.objects.create(**cleaned, status=ApprovalMatrixRule.STATUS_ACTIVE)
-    _version_and_audit(user, request, "approval_matrix_rule", rule.pk, rule.version_number,
-                       rule.effective_from, rule.effective_to, "approvals.matrix_rule.created", None,
-                       serialize_rule(rule))
-    return serialize_rule(rule)
+    reason, configuration_payload = _proposal_payload(payload)
+    _validate_rule(configuration_payload)
+    proposal = ApprovalConfigurationProposal.objects.create(
+        proposal_type=ApprovalConfigurationProposal.TYPE_RULE_CREATE,
+        payload_json=configuration_payload,
+        reason=reason,
+        made_by_user=user,
+        request_id=request.headers.get("X-Request-ID", ""),
+        request_ip=request_ip(request),
+        request_user_agent=request_user_agent(request),
+    )
+    return serialize_proposal(proposal, user)
 
 
 @transaction.atomic
 def supersede_rule(user, request, rule_id, payload):
-    _lock_configuration_boundary()
-    old = ApprovalMatrixRule.objects.select_for_update().get(pk=rule_id)
+    old = ApprovalMatrixRule.objects.get(pk=rule_id)
     if old.status != ApprovalMatrixRule.STATUS_ACTIVE:
         raise ConfigurationConflict("Only an active rule can be superseded.")
-    cleaned = _validate_rule(payload)
+    reason, configuration_payload = _proposal_payload(payload)
+    cleaned = _validate_rule(configuration_payload)
     if cleaned["effective_from"] <= old.effective_from:
         raise ValidationError({"effective_from": "A replacement must start after the existing rule."})
-    _lock_rule_scope(cleaned["decision_type"], cleaned["condition_code"])
-    _ensure_no_rule_overlap(cleaned, exclude_id=old.pk)
-    before = serialize_rule(old)
-    old.status = ApprovalMatrixRule.STATUS_SUPERSEDED
-    old.effective_to = cleaned["effective_from"] - timedelta(days=1)
-    old.save(update_fields=["status", "effective_to"])
-    replacement = ApprovalMatrixRule.objects.create(**cleaned, status=ApprovalMatrixRule.STATUS_ACTIVE)
-    _version_and_audit(user, request, "approval_matrix_rule", replacement.pk,
-                       replacement.version_number, replacement.effective_from, replacement.effective_to,
-                       "approvals.matrix_rule.superseded", before, serialize_rule(replacement))
-    return serialize_rule(replacement)
+    proposal = ApprovalConfigurationProposal.objects.create(
+        proposal_type=ApprovalConfigurationProposal.TYPE_RULE_SUPERSEDE,
+        target_entity_id=old.pk, payload_json=configuration_payload, reason=reason,
+        made_by_user=user, request_id=request.headers.get("X-Request-ID", ""),
+        request_ip=request_ip(request), request_user_agent=request_user_agent(request),
+    )
+    return serialize_proposal(proposal, user)
 
 
 @transaction.atomic
 def create_committee(user, request, payload):
-    cleaned = _validate_committee(payload)
-    _lock_configuration_boundary()
-    list(SanctionCommittee.objects.select_for_update().filter(status="active"))
-    _ensure_no_committee_overlap(cleaned)
-    row = SanctionCommittee.objects.create(**cleaned, status=SanctionCommittee.STATUS_ACTIVE)
-    _version_and_audit(user, request, "sanction_committee", row.pk, row.version_number,
-                       row.effective_from, row.effective_to, "approvals.sanction_committee.created",
-                       None, serialize_committee(row))
-    return serialize_committee(row)
+    reason, configuration_payload = _proposal_payload(payload)
+    _validate_committee(configuration_payload)
+    proposal = ApprovalConfigurationProposal.objects.create(
+        proposal_type=ApprovalConfigurationProposal.TYPE_COMMITTEE_CREATE,
+        payload_json=configuration_payload, reason=reason, made_by_user=user,
+        request_id=request.headers.get("X-Request-ID", ""), request_ip=request_ip(request),
+        request_user_agent=request_user_agent(request),
+    )
+    return serialize_proposal(proposal, user)
 
 
 @transaction.atomic
 def supersede_committee(user, request, committee_id, payload):
-    _lock_configuration_boundary()
-    old = SanctionCommittee.objects.select_for_update().get(pk=committee_id)
+    old = SanctionCommittee.objects.get(pk=committee_id)
     if old.status != SanctionCommittee.STATUS_ACTIVE:
         raise ConfigurationConflict("Only an active committee can be superseded.")
-    cleaned = _validate_committee(payload)
+    reason, configuration_payload = _proposal_payload(payload)
+    cleaned = _validate_committee(configuration_payload)
     if cleaned["effective_from"] <= old.effective_from:
         raise ValidationError({"effective_from": "A replacement must start after the existing committee."})
-    _ensure_no_committee_overlap(cleaned, exclude_id=old.pk)
-    before = serialize_committee(old)
-    old.status = SanctionCommittee.STATUS_SUPERSEDED
-    old.effective_to = cleaned["effective_from"] - timedelta(days=1)
-    old.save(update_fields=["status", "effective_to"])
-    row = SanctionCommittee.objects.create(**cleaned, status=SanctionCommittee.STATUS_ACTIVE)
-    _version_and_audit(user, request, "sanction_committee", row.pk, row.version_number,
-                       row.effective_from, row.effective_to, "approvals.sanction_committee.superseded",
-                       before, serialize_committee(row))
-    return serialize_committee(row)
+    proposal = ApprovalConfigurationProposal.objects.create(
+        proposal_type=ApprovalConfigurationProposal.TYPE_COMMITTEE_SUPERSEDE,
+        target_entity_id=old.pk, payload_json=configuration_payload, reason=reason,
+        made_by_user=user, request_id=request.headers.get("X-Request-ID", ""),
+        request_ip=request_ip(request), request_user_agent=request_user_agent(request),
+    )
+    return serialize_proposal(proposal, user)
+
+
+def get_proposal(proposal_id, user):
+    return serialize_proposal(ApprovalConfigurationProposal.objects.get(pk=proposal_id), user)
+
+
+@transaction.atomic
+def decide_proposal(proposal_id, user, request, payload, decision):
+    proposal = ApprovalConfigurationProposal.objects.select_for_update().get(pk=proposal_id)
+    try:
+        expected_version = int(payload.get("version"))
+    except (TypeError, ValueError) as exc:
+        raise ValidationError({"version": "A positive integer version is required."}) from exc
+    if expected_version != proposal.version:
+        raise ConfigurationConflict("Proposal version is stale.", "STALE_VERSION")
+    if proposal.status != ApprovalConfigurationProposal.STATUS_PENDING:
+        raise ConfigurationConflict("Proposal has already been decided.", "TRANSITION_CONFLICT")
+    _require_business_approver(proposal, user)
+    rejection_reason = payload.get("reason")
+    allowed = {"version", "reason"} if decision == "reject" else {"version"}
+    unknown = set(payload) - allowed
+    if unknown:
+        raise ValidationError({key: "Unknown field." for key in unknown})
+    if decision == "reject" and (not isinstance(rejection_reason, str) or not rejection_reason.strip()):
+        raise ValidationError({"reason": "This field is required."})
+    if decision == "approve":
+        _activate_proposal(proposal, user, request)
+        proposal.status = ApprovalConfigurationProposal.STATUS_APPROVED
+    else:
+        proposal.status = ApprovalConfigurationProposal.STATUS_REJECTED
+        proposal.rejection_reason = rejection_reason.strip()
+    proposal.decided_by_user = user
+    proposal.decided_at = timezone.now()
+    proposal.version += 1
+    proposal.save(update_fields=["status", "rejection_reason", "decided_by_user", "decided_at", "version"])
+    return serialize_proposal(proposal, user)
+
+
+def _require_business_approver(proposal, user):
+    if proposal.made_by_user_id == user.pk:
+        raise ConfigurationConflict("Maker cannot decide their own proposal.", "MAKER_CHECKER_VIOLATION")
+    if user.status != User.ACTIVE_STATUS or user.approval_authority_type not in {"cfo", "company_secretary"}:
+        raise ConfigurationConflict("Active CFO or Company Secretary approval authority is required.", "APPROVER_AUTHORITY_REQUIRED")
+
+
+def _activate_proposal(proposal, approver, request):
+    _lock_configuration_boundary()
+    kind = proposal.proposal_type
+    if kind.startswith("rule_"):
+        cleaned = _validate_rule(proposal.payload_json)
+        old = None
+        if kind == ApprovalConfigurationProposal.TYPE_RULE_SUPERSEDE:
+            old = ApprovalMatrixRule.objects.select_for_update().get(pk=proposal.target_entity_id)
+            if old.status != ApprovalMatrixRule.STATUS_ACTIVE:
+                raise ConfigurationConflict("Target rule is no longer active.", "PROPOSAL_STALE")
+            if cleaned["effective_from"] <= old.effective_from:
+                raise ConfigurationConflict("Replacement effective date is stale.", "PROPOSAL_STALE")
+        _lock_rule_scope(cleaned["decision_type"], cleaned["condition_code"])
+        _ensure_no_rule_overlap(cleaned, exclude_id=old.pk if old else None)
+        before = serialize_rule(old) if old else None
+        if old:
+            old.status = ApprovalMatrixRule.STATUS_SUPERSEDED
+            old.effective_to = cleaned["effective_from"] - timedelta(days=1)
+            old.save(update_fields=["status", "effective_to"])
+        row = ApprovalMatrixRule.objects.create(**cleaned, status=ApprovalMatrixRule.STATUS_ACTIVE)
+        entity_type, after = "approval_matrix_rule", serialize_rule(row)
+    else:
+        cleaned = _validate_committee(proposal.payload_json)
+        list(SanctionCommittee.objects.select_for_update().filter(status__in=("active", "superseded")))
+        old = None
+        if kind == ApprovalConfigurationProposal.TYPE_COMMITTEE_SUPERSEDE:
+            old = SanctionCommittee.objects.select_for_update().get(pk=proposal.target_entity_id)
+            if old.status != SanctionCommittee.STATUS_ACTIVE:
+                raise ConfigurationConflict("Target committee is no longer active.", "PROPOSAL_STALE")
+        _ensure_no_committee_overlap(cleaned, exclude_id=old.pk if old else None)
+        before = serialize_committee(old) if old else None
+        if old:
+            old.status = SanctionCommittee.STATUS_SUPERSEDED
+            old.effective_to = cleaned["effective_from"] - timedelta(days=1)
+            old.save(update_fields=["status", "effective_to"])
+        row = SanctionCommittee.objects.create(**cleaned, status=SanctionCommittee.STATUS_ACTIVE)
+        entity_type, after = "sanction_committee", serialize_committee(row)
+    VersionHistory.objects.create(
+        versioned_entity_type=entity_type, versioned_entity_id=row.pk,
+        version_number=row.version_number, change_summary=proposal.reason,
+        author_user=proposal.made_by_user, approver_user=approver,
+        effective_from=row.effective_from, effective_to=row.effective_to,
+    )
+    AuditLog.objects.create(
+        actor_user=approver, action="config.changed", entity_type=entity_type, entity_id=row.pk,
+        old_value_json=before,
+        new_value_json={"configuration": after, "reason": proposal.reason,
+                        "proposal_id": str(proposal.pk), "author_user_id": str(proposal.made_by_user_id),
+                        "approver_user_id": str(approver.pk), "request_id": proposal.request_id},
+        ip_address=request_ip(request), user_agent=request_user_agent(request),
+    )
 
 
 def _validate_rule(payload):
@@ -276,6 +408,13 @@ def _unknown_missing(payload, allowed, required):
     errors = {key: "Unknown field." for key in set(payload) - allowed}
     errors.update({key: "This field is required." for key in required if payload.get(key) in (None, "")})
     return errors
+
+
+def _proposal_payload(payload):
+    reason = payload.get("reason")
+    if not isinstance(reason, str) or not reason.strip():
+        raise ValidationError({"reason": "This field is required."})
+    return reason.strip(), {key: value for key, value in payload.items() if key != "reason"}
 
 
 def _date(field, value, errors, optional=False):

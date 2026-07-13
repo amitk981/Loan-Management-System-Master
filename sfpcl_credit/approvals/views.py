@@ -16,7 +16,8 @@ def _authorized(request, manage=False):
 
 def _failure(request, exc):
     if isinstance(exc, services.ConfigurationConflict):
-        return error_response(request, 409, "CONFIGURATION_CONFLICT", str(exc))
+        status = 403 if exc.code in {"MAKER_CHECKER_VIOLATION", "APPROVER_AUTHORITY_REQUIRED"} else 409
+        return error_response(request, status, exc.code, str(exc))
     if isinstance(exc, ObjectDoesNotExist):
         return error_response(request, 404, "NOT_FOUND", "Configuration was not found.")
     details = exc.message_dict if hasattr(exc, "message_dict") else {"non_field_errors": [str(exc)]}
@@ -65,4 +66,34 @@ def committee_detail(request, sanction_committee_id):
     user, response = _authorized(request, manage=True)
     if response is not None: return response
     try: return success_response(services.supersede_committee(user, request, sanction_committee_id, parse_json_body(request)), request)
+    except (ValidationError, services.ConfigurationConflict, ObjectDoesNotExist) as exc: return _failure(request, exc)
+
+
+@require_http_methods(["GET"])
+def proposal_detail(request, approval_configuration_proposal_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None: return response
+    try: return success_response(services.get_proposal(approval_configuration_proposal_id, user), request)
+    except ObjectDoesNotExist as exc: return _failure(request, exc)
+
+
+@require_http_methods(["POST"])
+def proposal_approve(request, approval_configuration_proposal_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None: return response
+    try:
+        return success_response(services.decide_proposal(
+            approval_configuration_proposal_id, user, request, parse_json_body(request), "approve"
+        ), request)
+    except (ValidationError, services.ConfigurationConflict, ObjectDoesNotExist) as exc: return _failure(request, exc)
+
+
+@require_http_methods(["POST"])
+def proposal_reject(request, approval_configuration_proposal_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None: return response
+    try:
+        return success_response(services.decide_proposal(
+            approval_configuration_proposal_id, user, request, parse_json_body(request), "reject"
+        ), request)
     except (ValidationError, services.ConfigurationConflict, ObjectDoesNotExist) as exc: return _failure(request, exc)

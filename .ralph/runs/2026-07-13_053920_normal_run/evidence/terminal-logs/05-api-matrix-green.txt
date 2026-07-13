@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 9 test(s).
+System check identified no issues (0 silenced).
+.......E.
+======================================================================
+ERROR: test_patch_supersedes_instead_of_rewriting_history (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_patch_supersedes_instead_of_rewriting_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_053920_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 279, in test_patch_supersedes_instead_of_rewriting_history
+    self.assertNotEqual(response.json()["data"]["approval_matrix_rule_id"], str(old.pk))
+                        ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'approval_matrix_rule_id'
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.119s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
