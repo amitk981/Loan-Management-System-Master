@@ -1,5 +1,21 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007J2 SettingsHub Remaining Panels
+
+- S70 and M01 make loan product, share/scale, interest, approval threshold, re-KYC, retention, and
+  related policy facts versioned configuration. SettingsHub now reads the retained 003E/006C
+  `LoanPolicyConfig` collection and allows only `config.loan_policy.manage` actors to POST a
+  complete new draft version; it never patches active truth or exposes client-side activation, so
+  stale form state cannot overwrite a retained row. The 003E POST has no expected-version token;
+  007J2 does not fabricate a stale-write response or a single-draft business rule.
+- S71 names approval rules only. Its delivered 007J panel remains independent. The prototype's
+  illustrative workflow TAT rows have no cited configuration boundary and are explicitly inert
+  until 012EA owns authoritative task/due/escalation generation.
+- S72 requires document files, borrower variants, approval/effective facts, and retained history.
+  Those fixtures/actions are inert until 008A; 003F communication content is not treated as an S72
+  document-template substitute. S73's duplicate tab and fixtures are removed in favor of the
+  existing 002G/002G2 Admin User Management authority.
+
 ## 007J Registers and Approval Matrix UI
 
 - RegistersHub S23 and S25 now use independent authenticated clients for the actor-scoped 007H and

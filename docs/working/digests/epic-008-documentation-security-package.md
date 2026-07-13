@@ -66,6 +66,18 @@ Generate from the 008A templates with borrower/nominee/loan facts; Individual vs
 selection (V10 p.29). Generated Term Sheet must carry all 13 §4.9 fields; Loan Agreement follows
 Term Sheet execution (V10 p.17 §4.10).
 
+API/model extract added while sharpening 008B (2026-07-14): API contracts §26.4 defines
+`POST /api/v1/loan-applications/{loan_application_id}/loan-documents/generate/` with
+`document_type`, `template_id`, and `output_format`, returning the loan-document id, generated
+status, stored document id, and file name. Section 26.5 separately lists generated documents.
+Data model §16.3 owns the immutable application/template/file linkage plus category, required
+party, generation/execution/verification states, optional stamp/notary/custody/retention facts, and
+creation time. Functional §15.1 requires approved-field generation for borrower variants,
+borrower/loan/shareholding/nominee/witness facts, configurable clause/template history, PDF or Word
+output, later signed-copy upload, and verification status. Generation must use application-owned
+source facts and the exact approved/effective template; it must not fabricate missing nominee,
+witness, appraisal, sanction, or repayment facts.
+
 ### 008C Documentation Checklist Applicability
 Applicability rules above: SH-4 iff physical shares; CDSL pledge iff demat; tri-party when a
 subsidiary relationship exists; bank-verification letter iff mismatch; everything else always.

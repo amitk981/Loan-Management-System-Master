@@ -1,0 +1,17 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/settings/SettingsHub.test.tsx src/services/loanPolicyApi.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_004058_normal_run/sfpcl-lms
+
+ ✓ src/services/loanPolicyApi.test.ts (2 tests) 4ms
+ ✓ src/pages/settings/SettingsHub.test.tsx (9 tests) 695ms
+   ✓ SettingsHub Approval Matrix panel > permits a canonical manager to submit a complete successor version as a pending proposal  309ms
+
+ Test Files  2 passed (2)
+      Tests  11 passed (11)
+   Start at  00:58:30
+   Duration  1.45s (transform 180ms, setup 0ms, collect 304ms, tests 699ms, environment 213ms, prepare 79ms)
+

@@ -5832,3 +5832,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_004058_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007J2-settings-hub-panels-wiring-or-lockdown
+- Summary: Wired retained S70 loan-policy versions and complete POST-created drafts to the real
+  003E/006C boundary; removed all remaining SettingsHub business fixtures and the duplicate user
+  tab; made TAT and document-template surfaces explicitly inert under 012EA and 008A; preserved the
+  delivered 007J approval-matrix boundary unchanged.
+- Tests run: retained frontend RED/GREEN cycles and two-axis review fixes; frontend build,
+  typecheck, lint, and 251 tests; backend check/migration sync and 680 tests with 19 expected SQLite
+  skips at 93% coverage.
+- Evidence saved: `.ralph/runs/2026-07-14_004058_normal_run/evidence/`
+- Result: Success
+- Risk level: Medium
+- Next action: Independent orchestrator validation/commit/merge/push, then the due architecture
+  review before 008A.
+
+## 2026-07-14 01:05:24 - 2026-07-14_004058_normal_run
+- Agent tool used: codex
+- Slice attempted: 007J2-settings-hub-panels-wiring-or-lockdown
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_004058_normal_run/.ralph/runs/2026-07-14_004058_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_004058_normal_run/.ralph/runs/2026-07-14_004058_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
