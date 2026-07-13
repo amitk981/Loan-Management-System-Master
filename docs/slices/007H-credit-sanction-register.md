@@ -1,7 +1,7 @@
 # Slice 007H: Credit Sanction Register
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -39,6 +39,30 @@ The committee, CS, and auditors read a complete, generated register of every san
 - Register projection matches the 15 fields against a seeded exception + related-party + abstention case.
 - Filters/pagination/permission negatives on both read APIs; mutation attempts have no route.
 
+## Run-Ahead Sharpening Review (007G delivered contract, 2026-07-13)
+
+- The register's general-meeting reference comes only from the terminal case's frozen nullable
+  `general_meeting_approval`; never select the latest record by application, because evidence may
+  be superseded after a returned or completed cycle.
+- Project the meeting id, outcome, meeting date, related-party type/user, and the three document
+  metadata ids from that frozen row. Do not grant document access through register read permission;
+  downloads keep the document module's own permission/sensitivity boundary.
+- A missing/pending/rejected gate produces no final approve action and no sanction decision, so it
+  cannot generate a sanctioned register row. Conflict-blocked and returned cycles remain outside
+  terminal register generation; their case-frozen meeting references stay historical only.
+
+## Run-Ahead Sharpening Review (007F delivered contract, 2026-07-13)
+
+- Resolve an exception reference only through the final case's one-to-one
+  `ExceptionRegisterEntry`; never select by application alone because returned/re-enriched cycles
+  may retain multiple immutable historical rows.
+- Project exception id, type, business reason, status, and cycle from 007F. Authority still comes
+  from that same case's canonical route/effective/action history, never from register summary text
+  or live committee membership.
+- A rejected exception case has a rejected exception row but no `SanctionDecision`; use terminal
+  case/action facts without inventing a sanction id. Pending returned/conflict-blocked exception
+  rows are not terminal sanction-register decisions.
+
 ## Out of Scope
 Register UI (007J), file exports (012B/012C), exception register (007F owns), disbursement handoff (Epic 009).
 
@@ -50,15 +74,15 @@ Medium
 - All gates pass; API examples saved.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated
-- [ ] Database rules followed
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated
+- [x] Database rules followed
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [x] Commit creation deferred to the orchestrator after independent validation

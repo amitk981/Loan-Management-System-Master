@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_existing_case_is_enriched_from_authoritative_appraisal_facts (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_existing_case_is_enriched_from_authoritative_appraisal_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 393, in test_existing_case_is_enriched_from_authoritative_appraisal_facts
+    self.assertEqual(decided_repeat.status_code, 409, decided_repeat.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"approval_case_id": "682ee9d1-4b04-4612-8b6c-aa51ac28fbd1", "loan_application_id": "eb8c3874-b16f-461b-956a-9f521c83d7e3", "loan_appraisal_note_id": "cf6adf9c-4575-4585-8c0b-9f4185d649ff", "appraisal_review_decision_id": "a96fde05-21cc-4870-9002-1da400150573", "workflow_event_id": "cd8d7823-2d35-403b-9161-03afbfedaba1", "application_status": "submitted_to_sanction_committee", "appraisal_status": "submitted_to_sanction_committee", "submission_status": "approved", "exception_required_flag": false, "submitted_by": {"user_id": "178e9934-f029-4e80-86f4-5670a1eb5ea0", "full_name": "Credit Manager"}, "submitted_at": "2026-07-13T03:53:41.489488+00:00", "available_actions": [], "approval_type": "sanction", "approval_matrix_rule_id": "3d963de6-4796-4955-b791-5cb988667768", "approval_matrix_rule_version": "lower-v1", "sanction_committee_id": "64c627f8-39d2-4657-bd48-888e30208367", "sanction_committee_version": "committee-v1", "decision_date": "2026-07-13", "amount": "400000.00", "required_approvers": [{"role_code": "cfo", "user_id": "6697a8b6-be04-43f4-b5a6-2ab84f9b8471", "full_name": "Case CFO"}, {"role_code": "director", "user_id": "a44397ad-eea3-455d-97a8-8740b240c5b4", "full_name": "Case Director 1"}], "excluded_approvers": [], "related_entity_type": "loan_application", "related_entity_id": "eb8c3874-b16f-461b-956a-9f521c83d7e3", "reason_for_approval": "Loan appraisal recommended approval.", "exception_condition_code": null, "matrix_projection": {"decision_type": "loan_sanction", "amount": "400000.00", "condition_code": null, "required_approver_roles": ["cfo", "director"], "required_director_count": 1, "joint_approval_required": true, "register_required": "credit_sanction_register"}, "committee_projection": {"cfo_user_id": "6697a8b6-be04-43f4-b5a6-2ab84f9b8471", "director_user_ids": ["a44397ad-eea3-455d-97a8-8740b240c5b4", "00ba7f31-09fb-412a-9af3-7b26cd434d2a"]}, "loan_limit_provenance": {"loan_limit_assessment_id": "20000000-0000-0000-0000-000000000002", "loan_application_id": "eb8c3874-b16f-461b-956a-9f521c83d7e3", "exception_required_flag": false, "calculation_rule_version": "limit-v7", "policy_config_id": "30000000-0000-0000-0000-000000000003", "policy_name": "Approved loan-limit policy", "calculated_at": "2026-07-13T01:53:41.452048+00:00"}, "version": 2}, "meta": {"request_id": null, "timestamp": "2026-07-13T03:53:41.504665Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.058s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

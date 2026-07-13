@@ -3,7 +3,15 @@ from django.views.decorators.http import require_http_methods
 
 from sfpcl_credit.api import error_response, list_response, parse_json_body, success_response
 from sfpcl_credit.approvals.modules import approval_matrix_configuration as services
+from sfpcl_credit.approvals.modules import approval_case_engine
+from sfpcl_credit.approvals.modules import approval_actions
+from sfpcl_credit.approvals.modules import exception_register
+from sfpcl_credit.approvals.modules import general_meeting
+from sfpcl_credit.approvals.modules import sanction_register
+from sfpcl_credit.domain_errors import DomainObjectAccessDenied
+from sfpcl_credit.domain_errors import DomainInvalidStateError, DomainPermissionDenied
 from sfpcl_credit.identity.modules import http_auth
+from sfpcl_credit.identity.modules.auth_service import effective_permission_codes
 
 
 def _authorized(request, manage=False):
@@ -16,7 +24,9 @@ def _authorized(request, manage=False):
 
 def _failure(request, exc):
     if isinstance(exc, services.ConfigurationConflict):
-        status = 403 if exc.code in {"MAKER_CHECKER_VIOLATION", "APPROVER_AUTHORITY_REQUIRED"} else 409
+        status = 403 if exc.code in {
+            "FORBIDDEN", "MAKER_CHECKER_VIOLATION", "APPROVAL_AUTHORITY_REQUIRED"
+        } else 409
         return error_response(request, status, exc.code, str(exc))
     if isinstance(exc, ObjectDoesNotExist):
         return error_response(request, 404, "NOT_FOUND", "Configuration was not found.")
@@ -25,6 +35,240 @@ def _failure(request, exc):
                           {key: value[0] if isinstance(value, list) else value for key, value in details.items()})
 
 
+@require_http_methods(["GET"])
+def approval_case_collection(request):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if "approvals.case.read" not in effective_permission_codes(user):
+        return error_response(
+            request, 403, "FORBIDDEN", "You do not have approval case read permission."
+        )
+    try:
+        data, pagination = approval_case_engine.list_approval_cases(
+            actor=user, query_params=request.GET
+        )
+        return list_response(data, pagination, request)
+    except ValidationError as exc:
+        details = exc.message_dict if hasattr(exc, "message_dict") else {}
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Approval case filters failed validation.",
+            {key: value[0] if isinstance(value, list) else value for key, value in details.items()},
+        )
+
+
+@require_http_methods(["GET"])
+def exception_register_collection(request):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    permissions = effective_permission_codes(user)
+    if exception_register.READ_PERMISSION not in permissions:
+        return error_response(
+            request,
+            403,
+            "FORBIDDEN",
+            "You do not have Exception Register read permission.",
+        )
+    try:
+        data, pagination = exception_register.list_entries(
+            actor=user, query_params=request.GET, actor_permissions=permissions
+        )
+        return list_response(data, pagination, request)
+    except ValidationError as exc:
+        details = exc.message_dict if hasattr(exc, "message_dict") else {}
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Exception Register filters failed validation.",
+            {
+                key: value[0] if isinstance(value, list) else value
+                for key, value in details.items()
+            },
+        )
+
+
+@require_http_methods(["GET"])
+def credit_sanction_register_collection(request):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    permissions = effective_permission_codes(user)
+    if sanction_register.REGISTER_READ_PERMISSION not in permissions:
+        return error_response(
+            request,
+            403,
+            "FORBIDDEN",
+            "You do not have Credit Sanction Register read permission.",
+        )
+    try:
+        data, pagination = sanction_register.list_entries(request.GET)
+        return list_response(data, pagination, request)
+    except ValidationError as exc:
+        details = exc.message_dict if hasattr(exc, "message_dict") else {}
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Credit Sanction Register filters failed validation.",
+            {
+                key: value[0] if isinstance(value, list) else value
+                for key, value in details.items()
+            },
+        )
+
+
+@require_http_methods(["GET"])
+def loan_application_sanction_decision(request, loan_application_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    if sanction_register.SANCTION_READ_PERMISSION not in effective_permission_codes(user):
+        return error_response(
+            request, 403, "FORBIDDEN", "You do not have sanction decision read permission."
+        )
+    try:
+        return success_response(
+            sanction_register.get_sanction_decision(loan_application_id), request
+        )
+    except ObjectDoesNotExist:
+        return error_response(request, 404, "NOT_FOUND", "Sanction decision was not found.")
+
+
+@require_http_methods(["POST"])
+def loan_application_general_meeting_approval(request, loan_application_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data = general_meeting.record_for_application(
+            actor=user,
+            application_id=loan_application_id,
+            payload=parse_json_body(request),
+            actor_permissions=effective_permission_codes(user),
+            request_meta={
+                "request_id": request.headers.get("X-Request-ID"),
+                "ip_address": request.META.get("REMOTE_ADDR", ""),
+                "user_agent": request.headers.get("User-Agent", ""),
+            },
+        )
+        return success_response(data, request)
+    except ObjectDoesNotExist:
+        return error_response(
+            request, 404, "NOT_FOUND", "Loan application was not found."
+        )
+    except ValidationError as exc:
+        details = exc.message_dict if hasattr(exc, "message_dict") else {}
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "General meeting approval failed validation.",
+            {
+                key: value[0] if isinstance(value, list) else value
+                for key, value in details.items()
+            },
+        )
+    except DomainObjectAccessDenied:
+        return error_response(
+            request,
+            403,
+            "OBJECT_ACCESS_DENIED",
+            "You cannot access this approval case.",
+        )
+    except DomainPermissionDenied as exc:
+        return error_response(request, 403, "FORBIDDEN", exc.message)
+    except DomainInvalidStateError as exc:
+        return error_response(request, 409, "INVALID_STATE", str(exc))
+
+
+@require_http_methods(["GET"])
+def approval_case_detail(request, approval_case_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    permissions = effective_permission_codes(user)
+    if "approvals.case.read" not in permissions:
+        return error_response(
+            request, 403, "FORBIDDEN", "You do not have approval case read permission."
+        )
+    try:
+        data = approval_case_engine.get_approval_case(
+            actor=user,
+            case_id=approval_case_id,
+            actor_permissions=permissions,
+        )
+        return success_response(data, request)
+    except ObjectDoesNotExist:
+        return error_response(request, 404, "NOT_FOUND", "Approval case was not found.")
+    except DomainObjectAccessDenied:
+        return error_response(
+            request,
+            403,
+            "OBJECT_ACCESS_DENIED",
+            "You cannot access this approval case.",
+        )
+
+
+@require_http_methods(["POST"])
+def approval_case_approve(request, approval_case_id):
+    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+
+
+@require_http_methods(["POST"])
+def approval_case_reject(request, approval_case_id):
+    return _approval_case_action(request, approval_case_id, approval_actions.reject_case)
+
+
+@require_http_methods(["POST"])
+def approval_case_return(request, approval_case_id):
+    return _approval_case_action(request, approval_case_id, approval_actions.return_case)
+
+
+@require_http_methods(["POST"])
+def approval_case_abstain(request, approval_case_id):
+    return _approval_case_action(
+        request, approval_case_id, approval_actions.abstain_from_case
+    )
+
+
+def _approval_case_action(request, approval_case_id, handler):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data = handler(
+            actor=user,
+            case_id=approval_case_id,
+            payload=parse_json_body(request),
+            actor_permissions=effective_permission_codes(user),
+            request_meta={
+                "request_id": request.headers.get("X-Request-ID"),
+                "ip_address": request.META.get("REMOTE_ADDR", ""),
+                "user_agent": request.headers.get("User-Agent", ""),
+            },
+        )
+        return success_response(data, request)
+    except ObjectDoesNotExist:
+        return error_response(request, 404, "NOT_FOUND", "Approval case was not found.")
+    except ValidationError as exc:
+        details = exc.message_dict if hasattr(exc, "message_dict") else {}
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            "Approval action failed validation.",
+            {key: value[0] if isinstance(value, list) else value for key, value in details.items()},
+        )
+    except approval_actions.ApprovalActionConflict as exc:
+        return error_response(
+            request, exc.status, exc.code, exc.message, exc.field_errors,
+            details=exc.details,
+        )
 @require_http_methods(["GET", "POST"])
 def rule_collection(request):
     user, response = _authorized(request, manage=request.method == "POST")
@@ -74,7 +318,7 @@ def proposal_detail(request, approval_configuration_proposal_id):
     user, response = http_auth.authenticated_user(request)
     if response is not None: return response
     try: return success_response(services.get_proposal(approval_configuration_proposal_id, user), request)
-    except ObjectDoesNotExist as exc: return _failure(request, exc)
+    except (services.ConfigurationConflict, ObjectDoesNotExist) as exc: return _failure(request, exc)
 
 
 @require_http_methods(["POST"])

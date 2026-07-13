@@ -31,7 +31,7 @@ It runs the slice queue autonomously: one slice per iteration with full gates, a
 - Stop only for the never-do list in DECISION_POLICY.md, unsafe git state, repeated failures, protected/forbidden file edits, an owner veto, or diff limit violations.
 - If a previous session was interrupted mid-run (limit exhaustion, crash — whichever agent was driving), recovery is automatic: `./scripts/ralph-loop.sh` runs `scripts/ralph-recover.sh` at startup, which salvages the dead run's artifacts, removes its worktree, and requeues the slice. For manual single runs, run `./scripts/ralph-recover.sh` yourself first. Never salvage ungated work.
 
-Read in this order during normal runs:
+Read in this order during normal runs (same order as the generated run prompt):
 1. `docs/working/TOKEN_RULES.md`
 2. `docs/working/CONTEXT.md`
 3. `docs/working/AFK_RUNBOOK.md`
@@ -39,6 +39,9 @@ Read in this order during normal runs:
 5. `.ralph/permissions.json`
 6. `.ralph/state.json`
 7. `docs/working/HANDOFF.md`
-8. The selected `docs/slices/*.md` file only
+8. `docs/working/DECISION_POLICY.md`
+9. `docs/working/FRONTEND_DESIGN_RULES.md` (mandatory before any frontend change)
+10. The selected `docs/slices/*.md` file only
+11. The matching `docs/working/digests/` file for the slice's epic, if it exists
 
 Do not load all source documents during normal runs unless the selected slice explicitly requires it.

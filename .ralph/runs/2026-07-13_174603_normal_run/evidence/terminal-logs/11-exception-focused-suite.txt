@@ -1,0 +1,1091 @@
+Creating test database for alias 'default'...
+Found 127 test(s).
+System check identified no issues (0 silenced).
+......E.F.....................EEE.E.EEE.EEE..E......E...E....EE..EEEE...E...E..E.EE..EEEE....EEE.E...E......EE.....Catalogue seeded: 181 permissions, 20 roles, 8 teams, 177 role-permission links.
+Catalogue seeded: 181 permissions, 20 roles, 8 teams, 177 role-permission links.
+.........ssss
+======================================================================
+ERROR: test_enrichment_list_and_detail_share_the_canonical_routing_projection (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_enrichment_list_and_detail_share_the_canonical_routing_projection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_sanction_submission_api.py", line 807, in test_enrichment_list_and_detail_share_the_canonical_routing_projection
+    collection = self.client.get("/api/v1/approval-cases/", headers=headers)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_active_company_secretary_grant_allows_read_only_case_access (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_active_company_secretary_grant_allows_read_only_case_access)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1003, in test_active_company_secretary_grant_allows_read_only_case_access
+    collection = self.client.get("/api/v1/approval-cases/", **headers)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_alternate_action_is_canonical_without_rewriting_route_provenance (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_alternate_action_is_canonical_without_rewriting_route_provenance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 607, in test_alternate_action_is_canonical_without_rewriting_route_provenance
+    collection = self.client.get(
+                 ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_arbitrary_user_injected_into_required_snapshot_is_not_routable (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_arbitrary_user_injected_into_required_snapshot_is_not_routable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2264, in test_arbitrary_user_injected_into_required_snapshot_is_not_routable
+    self._assert_snapshot_is_hidden_without_writes(injected)
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3035, in _assert_snapshot_is_hidden_without_writes
+    collection = self.client.get("/api/v1/approval-cases/", **headers)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_assigned_approver_can_retrieve_own_acted_history (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_assigned_approver_can_retrieve_own_acted_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2362, in test_assigned_approver_can_retrieve_own_acted_history
+    ordinary_list = self.client.get(
+                    ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_assigned_to_me_excludes_a_case_that_is_no_longer_pending (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_assigned_to_me_excludes_a_case_that_is_no_longer_pending)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2126, in test_assigned_to_me_excludes_a_case_that_is_no_longer_pending
+    response = self.client.get(
+               ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_assigned_to_me_excludes_an_approver_with_an_immutable_action (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_assigned_to_me_excludes_an_approver_with_an_immutable_action)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2113, in test_assigned_to_me_excludes_an_approver_with_an_immutable_action
+    response = self.client.get(
+               ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_assigned_to_me_returns_the_pending_snapshotted_case (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_assigned_to_me_returns_the_pending_snapshotted_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 240, in test_assigned_to_me_returns_the_pending_snapshotted_case
+    response = self.client.get(
+               ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_auditor_scope_never_assigns_or_mutates_a_case (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_auditor_scope_never_assigns_or_mutates_a_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1060, in test_auditor_scope_never_assigns_or_mutates_a_case
+    self._assert_read_only_scope_never_assigns_or_mutates(auditor)
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2632, in _assert_read_only_scope_never_assigns_or_mutates
+    ordinary = self.client.get("/api/v1/approval-cases/", **headers)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_case_amount_disagrees_with_matrix_projection (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_case_amount_disagrees_with_matrix_projection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2288, in test_case_amount_disagrees_with_matrix_projection
+    self._assert_snapshot_is_hidden_without_writes(self.cfo)
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3035, in _assert_snapshot_is_hidden_without_writes
+    collection = self.client.get("/api/v1/approval-cases/", **headers)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_case_condition_disagrees_with_matrix_projection (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_case_condition_disagrees_with_matrix_projection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2296, in test_case_condition_disagrees_with_matrix_projection
+    self._assert_snapshot_is_hidden_without_writes(self.cfo)
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3035, in _assert_snapshot_is_hidden_without_writes
+    collection = self.client.get("/api/v1/approval-cases/", **headers)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_conflict_abstention_uses_immutable_action_and_assigns_frozen_alternate (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_conflict_abstention_uses_immutable_action_and_assigns_frozen_alternate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 850, in test_conflict_abstention_uses_immutable_action_and_assigns_frozen_alternate
+    queue = self.client.get(
+            ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_credit_manager_reads_only_a_case_owned_through_the_credit_submission_scope (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_credit_manager_reads_only_a_case_owned_through_the_credit_submission_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 964, in test_credit_manager_reads_only_a_case_owned_through_the_credit_submission_scope
+    owned_list = self.client.get("/api/v1/approval-cases/", **headers)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_duplicate_required_approver_is_not_routable (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_duplicate_required_approver_is_not_routable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2270, in test_duplicate_required_approver_is_not_routable
+    self._assert_snapshot_is_hidden_without_writes(self.cfo)
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3035, in _assert_snapshot_is_hidden_without_writes
+    collection = self.client.get("/api/v1/approval-cases/", **headers)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_excluded_or_incompletely_routed_snapshots_never_enter_the_queue (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_excluded_or_incompletely_routed_snapshots_never_enter_the_queue)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2217, in test_excluded_or_incompletely_routed_snapshots_never_enter_the_queue
+    excluded = self.client.get(
+               ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_final_action_collection_detail_and_action_share_history_aware_projection (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_final_action_collection_detail_and_action_share_history_aware_projection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1452, in test_final_action_collection_detail_and_action_share_history_aware_projection
+    collection_response = self.client.get(
+                          ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_frozen_alternate_director_satisfies_original_role_count_after_exclusion (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_frozen_alternate_director_satisfies_original_role_count_after_exclusion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 505, in test_frozen_alternate_director_satisfies_original_role_count_after_exclusion
+    queue = self.client.get(
+            ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_incomplete_joint_approval_projection_is_not_routable (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_incomplete_joint_approval_projection_is_not_routable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2302, in test_incomplete_joint_approval_projection_is_not_routable
+    self._assert_snapshot_is_hidden_without_writes(self.cfo)
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3035, in _assert_snapshot_is_hidden_without_writes
+    collection = self.client.get("/api/v1/approval-cases/", **headers)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_incomplete_register_projection_is_not_routable (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_incomplete_register_projection_is_not_routable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2308, in test_incomplete_register_projection_is_not_routable
+    self._assert_snapshot_is_hidden_without_writes(self.cfo)
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3035, in _assert_snapshot_is_hidden_without_writes
+    collection = self.client.get("/api/v1/approval-cases/", **headers)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_list_filters_are_strict_and_preserve_the_exact_threshold_route (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_list_filters_are_strict_and_preserve_the_exact_threshold_route)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2186, in test_list_filters_are_strict_and_preserve_the_exact_threshold_route
+    response = self.client.get(
+               ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_missing_loan_limit_provenance_cannot_be_inferred_from_amount (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_missing_loan_limit_provenance_cannot_be_inferred_from_amount)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2245, in test_missing_loan_limit_provenance_cannot_be_inferred_from_amount
+    response = self.client.get(
+               ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_partial_action_collection_detail_and_action_share_history_aware_projection (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_partial_action_collection_detail_and_action_share_history_aware_projection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1298, in test_partial_action_collection_detail_and_action_share_history_aware_projection
+    collection_response = self.client.get(
+                          ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_persisted_scope_list_query_count_is_bounded_as_repository_grows (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_persisted_scope_list_query_count_is_bounded_as_repository_grows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1110, in test_persisted_scope_list_query_count_is_bounded_as_repository_grows
+    baseline = self.client.get("/api/v1/approval-cases/", **headers)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_public_committee_borrower_conflict_matrix (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_public_committee_borrower_conflict_matrix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 728, in test_public_committee_borrower_conflict_matrix
+    self._assert_public_conflict_class(
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2797, in _assert_public_conflict_class
+    queue = self.client.get(
+            ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_public_director_relative_conflict_matrix (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_public_director_relative_conflict_matrix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 736, in test_public_director_relative_conflict_matrix
+    self._assert_public_conflict_class(
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2797, in _assert_public_conflict_class
+    queue = self.client.get(
+            ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_public_maker_checker_conflict_matrix (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_public_maker_checker_conflict_matrix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 760, in test_public_maker_checker_conflict_matrix
+    self._assert_public_conflict_class(
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2797, in _assert_public_conflict_class
+    queue = self.client.get(
+            ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_public_material_interest_conflict_matrix (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_public_material_interest_conflict_matrix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 744, in test_public_material_interest_conflict_matrix
+    self._assert_public_conflict_class(
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2797, in _assert_public_conflict_class
+    queue = self.client.get(
+            ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_public_own_application_conflict_matrix (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_public_own_application_conflict_matrix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 752, in test_public_own_application_conflict_matrix
+    self._assert_public_conflict_class(
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2797, in _assert_public_conflict_class
+    queue = self.client.get(
+            ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_read_permission_without_snapshot_scope_cannot_list_or_retrieve_the_case (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_read_permission_without_snapshot_scope_cannot_list_or_retrieve_the_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2330, in test_read_permission_without_snapshot_scope_cannot_list_or_retrieve_the_case
+    ordinary_list = self.client.get(
+                    ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_required_approver_count_disagrees_with_matrix_projection (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_required_approver_count_disagrees_with_matrix_projection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2282, in test_required_approver_count_disagrees_with_matrix_projection
+    self._assert_snapshot_is_hidden_without_writes(self.cfo)
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3035, in _assert_snapshot_is_hidden_without_writes
+    collection = self.client.get("/api/v1/approval-cases/", **headers)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_required_approver_selector_uses_exact_user_id_not_json_substring (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_required_approver_selector_uses_exact_user_id_not_json_substring)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1149, in test_required_approver_selector_uses_exact_user_id_not_json_substring
+    response = self.client.get(
+               ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_required_approver_with_wrong_role_is_not_routable (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_required_approver_with_wrong_role_is_not_routable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2276, in test_required_approver_with_wrong_role_is_not_routable
+    self._assert_snapshot_is_hidden_without_writes(self.cfo)
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 3035, in _assert_snapshot_is_hidden_without_writes
+    collection = self.client.get("/api/v1/approval-cases/", **headers)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_return_correction_fresh_review_creates_immutable_second_cycle (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_return_correction_fresh_review_creates_immutable_second_cycle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1630, in test_return_correction_fresh_review_creates_immutable_second_cycle
+    current_queue = self.client.get(
+                    ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_routed_historical_case_wins_over_same_amount_unrouted_shell_after_live_change (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_routed_historical_case_wins_over_same_amount_unrouted_shell_after_live_change)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2466, in test_routed_historical_case_wins_over_same_amount_unrouted_shell_after_live_change
+    first_queue = self.client.get(
+                  ^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_unused_committee_alternate_is_nondisclosed_before_pagination (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_unused_committee_alternate_is_nondisclosed_before_pagination) (declared=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 666, in test_unused_committee_alternate_is_nondisclosed_before_pagination
+    ordinary = self.client.get("/api/v1/approval-cases/", **headers)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+ERROR: test_unused_committee_alternate_is_nondisclosed_before_pagination (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_unused_committee_alternate_is_nondisclosed_before_pagination) (declared=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 666, in test_unused_committee_alternate_is_nondisclosed_before_pagination
+    ordinary = self.client.get("/api/v1/approval-cases/", **headers)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 204, in _get_response
+    self.check_response(response, callback)
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 332, in check_response
+    raise ValueError(
+ValueError: The view sfpcl_credit.approvals.views.approval_case_collection didn't return an HttpResponse object. It returned None instead.
+
+======================================================================
+FAIL: test_enrichment_replay_rejects_changed_exception_provenance (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_enrichment_replay_rejects_changed_exception_provenance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_sanction_submission_api.py", line 770, in test_enrichment_replay_rejects_changed_exception_provenance
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 400 != 409 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Approval-case payload failed validation.", "details": {}, "field_errors": {"business_reason": "This field must not be blank."}}, "meta": {"request_id": null, "timestamp": "2026-07-13T12:26:47.129696Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 127 tests in 3.875s
+
+FAILED (failures=1, errors=36, skipped=4)
+Destroying test database for alias 'default'...

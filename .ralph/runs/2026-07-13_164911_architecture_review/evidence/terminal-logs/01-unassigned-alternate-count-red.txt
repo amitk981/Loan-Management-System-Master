@@ -1,0 +1,16 @@
+Architecture-review executable probe: unused frozen committee alternate must not receive an
+ordinary approval-case collection count.
+
+Command:
+DJANGO_SETTINGS_MODULE=sfpcl_credit.config.settings /Users/amitkallapa/LMS/.ralph/venv/bin/python
+ran one dynamically attached Django TestCase method through DiscoverRunner. The method granted
+only `approvals.case.read` to the lower-rule committee's unused second Director, called
+`GET /api/v1/approval-cases/`, asserted an empty data array, and expected `total_count == 0`.
+
+Result: RED (exit 1), reproduced against an isolated in-memory migrated test database.
+
+Assertion:
+`AssertionError: 1 != 0`
+
+The response data was empty but the SQL count included the unused committee candidate. Production
+code and committed tests were not modified by this dynamic probe.

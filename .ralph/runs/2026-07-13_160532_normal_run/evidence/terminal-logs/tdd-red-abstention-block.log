@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_unsatisfiable_abstention_blocks_case_without_creating_sanction (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_unsatisfiable_abstention_blocks_case_without_creating_sanction)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_160532_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 534, in test_unsatisfiable_abstention_blocks_case_without_creating_sanction
+    self.assertEqual(data["current_status"], "blocked_by_conflict")
+AssertionError: 'pending' != 'blocked_by_conflict'
+- pending
++ blocked_by_conflict
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.020s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

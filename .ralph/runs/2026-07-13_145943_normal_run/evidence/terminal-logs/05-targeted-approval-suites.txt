@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 86 test(s).
+System check identified no issues (0 silenced).
+.......................................................................F.........sss..
+======================================================================
+FAIL: test_existing_case_is_enriched_from_authoritative_appraisal_facts (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_existing_case_is_enriched_from_authoritative_appraisal_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_145943_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 438, in test_existing_case_is_enriched_from_authoritative_appraisal_facts
+    self.assertEqual(decided_repeat.status_code, 409, decided_repeat.content)
+AssertionError: 404 != 409 : b'{"success": false, "error": {"code": "NOT_FOUND", "message": "Pending sanction case was not found.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-13T09:37:43.211699Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 86 tests in 6.743s
+
+FAILED (failures=1, skipped=3)
+Destroying test database for alias 'default'...

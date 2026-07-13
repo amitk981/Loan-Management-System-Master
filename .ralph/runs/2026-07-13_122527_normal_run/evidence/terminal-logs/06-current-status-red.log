@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_existing_case_is_enriched_from_authoritative_appraisal_facts (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_existing_case_is_enriched_from_authoritative_appraisal_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_122527_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 367, in test_existing_case_is_enriched_from_authoritative_appraisal_facts
+    self.assertEqual(data["current_status"], "pending")
+                     ~~~~^^^^^^^^^^^^^^^^^^
+KeyError: 'current_status'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.031s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

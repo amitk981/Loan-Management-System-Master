@@ -1,0 +1,31 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_exception_condition_not_amount_selects_two_director_route (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_exception_condition_not_amount_selects_two_director_route)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/apps/config.py", line 235, in get_model
+    return self.models[model_name.lower()]
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+KeyError: 'exceptionregisterentry'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_sanction_submission_api.py", line 500, in test_exception_condition_not_amount_selects_two_director_route
+    register_entry = apps.get_model(
+                     ^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/apps/registry.py", line 213, in get_model
+    return app_config.get_model(model_name, require_ready=require_ready)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<LMS_ROOT>/.ralph/venv/lib/python3.11/site-packages/django/apps/config.py", line 237, in get_model
+    raise LookupError(
+LookupError: App 'approvals' doesn't have a 'ExceptionRegisterEntry' model.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.037s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

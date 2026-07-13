@@ -1,0 +1,18 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/007B-approval-case-creation-from-appraisal.md
+ M docs/slices/007C-cfo-and-director-threshold-routing.md
+ M docs/slices/007D-approval-action-api-approve-reject-return.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+ M sfpcl_credit/applications/views.py
+ M sfpcl_credit/approvals/models.py
+ M sfpcl_credit/approvals/modules/approval_matrix.py
+ M sfpcl_credit/approvals/modules/sanction_handoff.py
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/credit/modules/appraisal_workflow.py
+ M sfpcl_credit/tests/test_sanction_submission_api.py
+?? .ralph/runs/2026-07-13_091510_normal_run/
+?? sfpcl_credit/approvals/migrations/0007_approvalcase_enrichment_snapshot.py

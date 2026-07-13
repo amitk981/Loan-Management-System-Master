@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_credit_manager_reads_only_a_case_owned_through_the_credit_submission_scope (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_credit_manager_reads_only_a_case_owned_through_the_credit_submission_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_135007_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 240, in test_credit_manager_reads_only_a_case_owned_through_the_credit_submission_scope
+    self.assertEqual(owned_list.json()["pagination"]["total_count"], 1)
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.021s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

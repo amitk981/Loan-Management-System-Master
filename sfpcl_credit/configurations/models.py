@@ -77,6 +77,10 @@ class VersionHistory(models.Model):
         related_name="approved_version_histories",
     )
     board_approval_reference = models.CharField(max_length=255, blank=True, null=True)
+    approval_reference = models.CharField(max_length=255, blank=True, default="")
+    approved_at = models.DateTimeField(blank=True, null=True)
+    old_value_json = models.JSONField(blank=True, null=True)
+    new_value_json = models.JSONField(blank=True, null=True)
     effective_from = models.DateField()
     effective_to = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)

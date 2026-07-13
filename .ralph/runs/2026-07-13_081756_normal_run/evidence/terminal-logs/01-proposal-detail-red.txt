@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_proposal_detail_is_limited_to_participants_eligible_checkers_and_matrix_readers (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_proposal_detail_is_limited_to_participants_eligible_checkers_and_matrix_readers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_081756_normal_run/sfpcl_credit/tests/test_approval_matrix.py", line 277, in test_proposal_detail_is_limited_to_participants_eligible_checkers_and_matrix_readers
+    self.assertEqual(denied.status_code, 403, denied.content)
+AssertionError: 200 != 403 : b'{"success": true, "data": {"approval_configuration_proposal_id": "d52229a2-711a-4e8b-8173-1d2d54f934c3", "proposal_type": "rule_create", "target_entity_id": null, "reason": "Annual governed configuration update", "status": "pending", "version": 1, "made_by_user_id": "1a6b9c01-4a06-41d8-8f10-2022f1013f74", "decided_by_user_id": null, "rejection_reason": null, "available_actions": [{"action_code": "approvals.configuration_proposal.approve", "label": "Approve", "enabled": false, "disabled_reason": "Active CFO or Company Secretary approval authority is required.", "required_permission": "", "confirmation_required": true}, {"action_code": "approvals.configuration_proposal.reject", "label": "Reject", "enabled": false, "disabled_reason": "Active CFO or Company Secretary approval authority is required.", "required_permission": "", "confirmation_required": true}]}, "meta": {"request_id": null, "timestamp": "2026-07-13T02:50:54.390922Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.014s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

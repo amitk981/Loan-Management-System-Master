@@ -12,7 +12,7 @@ from sfpcl_credit.api import (
 )
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.members import services
-from sfpcl_credit.members.modules import MemberRegistry
+from sfpcl_credit.members.modules import MemberObjectAccessDenied, MemberRegistry
 from sfpcl_credit.members.modules.active_member_status import (
     ActiveMemberObjectAccessDenied,
     ActiveMemberStatusConflict,
@@ -116,9 +116,10 @@ def approve_member_identity_change(request, request_id):
     try:
         parse_json_body(request)
         member = MemberRegistry.approve_identity_change(request_id, user)
+    except MemberObjectAccessDenied as exc:
+        return error_response(request, 403, "OBJECT_ACCESS_DENIED", str(exc))
     except PermissionDenied as exc:
-        code = "OBJECT_ACCESS_DENIED" if str(exc) == "You cannot access this member." else "FORBIDDEN"
-        return error_response(request, 403, code, str(exc))
+        return error_response(request, 403, "FORBIDDEN", str(exc))
     except services.MemberWriteConflict as exc:
         return error_response(request, 409, exc.code, exc.message, exc.field_errors)
     except ValidationError as exc:
@@ -130,6 +131,8 @@ def approve_member_identity_change(request, request_id):
 def _member_update_response(request, member_id, user, reverification):
     try:
         member = MemberRegistry.update(member_id, parse_json_body(request), user, request_ip(request), request_user_agent(request))
+    except MemberObjectAccessDenied as exc:
+        return error_response(request, 403, "OBJECT_ACCESS_DENIED", str(exc))
     except PermissionDenied as exc:
         return error_response(request, 403, "FORBIDDEN", str(exc))
     except services.MemberWriteConflict as exc:
@@ -396,6 +399,8 @@ def member_produce_supply_records(request, member_id):
         record = services.create_produce_supply_record(
             member, parse_json_body(request), user, request_ip(request), request_user_agent(request)
         )
+    except services.MemberObjectAccessDenied as exc:
+        return error_response(request, 403, "OBJECT_ACCESS_DENIED", str(exc))
     except ValidationError as exc:
         return error_response(request, 400, "VALIDATION_ERROR", "Produce supply payload failed validation.", services.validation_field_errors(exc))
     except services.ProduceSupplyConflict as exc:
@@ -413,6 +418,8 @@ def produce_supply_record_verify(request, record_id):
         record = services.verify_produce_supply_record(
             record_id, body.get("version"), user, request_ip(request), request_user_agent(request)
         )
+    except services.MemberObjectAccessDenied as exc:
+        return error_response(request, 403, "OBJECT_ACCESS_DENIED", str(exc))
     except PermissionError as exc:
         return error_response(request, 403, "FORBIDDEN", str(exc))
     except ValidationError as exc:

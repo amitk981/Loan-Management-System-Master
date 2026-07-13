@@ -1,11 +1,234 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007H Credit Sanction Register
+
+- Approved and rejected terminal actions now create exactly one immutable case/cycle register row
+  inside the existing locked approval transaction. Approved rows link the sanction decision;
+  rejected rows retain a null sanction link/amount. Partial, returned, conflict-blocked, and
+  general-meeting-denied outcomes create none. The row references the terminal sanction workflow
+  event and has attributable creation audit evidence.
+- The 15-field projection freezes application/member, verified loan-limit, reviewed appraisal,
+  effective authority/action, same-case 007F exception, frozen 007E exclusion/abstention, and
+  case-frozen 007G meeting evidence. It never selects the latest exception/meeting by application,
+  and metadata ids do not grant document downloads.
+- §25.8 sanction-decision GET requires `approvals.sanction.read` and returns 404 before approval or
+  after rejection. §25.9 register GET requires `approvals.sanction_register.read`, standard bounded
+  pagination, exact decision values, and A-086 April-March `FYyyyy-yy` filtering. There is no
+  mutation route. Annexure K/template code remains absent under unresolved OC-002/A-087.
+
+## 007G General-Meeting Evidence
+
+- The §25.11 endpoint records immutable Director/relative/committee-member evidence with notice,
+  minutes, and resolution document references. Recorder authority is the Critical record grant
+  plus canonical case scope and existing document-read permission. Exact replay is zero-write;
+  changed evidence creates a one-to-one superseding row with attributable audit/workflow history.
+- The final sanction gate runs only after conflict, assignment, version, and distinct effective
+  authority. Missing/pending/rejected current evidence has dedicated 409 contracts and inserts no
+  final action, sanction, communication, or Exception Register outcome. Non-related cycles are
+  unchanged and conflict denials retain their earlier canonical contract.
+- Successful final approval freezes the approved meeting record on that exact case/cycle. Return
+  freezes the then-applicable record without requiring approval, so later application supersession
+  cannot rewrite historical cycles. Canonical collection/detail/action projections add the meeting
+  object beside unchanged route/effective/action authority facts.
+
+## 007F Exception Approval Workflow
+
+- Exception enrichment requires a distinct business reason, optional risk assessment, and the
+  Critical system-generation permission. One immutable entry is keyed to each case/cycle;
+  ordinary routes create none and exact replay is zero-write.
+- Vocabulary is bounded to `exceeds_loan_limit`, `stage_bypass`, and `waiver`. Entry status is
+  pending/approved/rejected; approval/rejection project atomically from the locked case action.
+  Returned and conflict-blocked closed cycles retain pending because §15.7 names no fourth status.
+  A forced within-limit caller must state stage-bypass or waiver so it cannot be mislabeled as a
+  frozen loan-limit breach; replay includes exact optional risk text.
+- The read-only register delegates to the corrected original/effective/acted selector before
+  count/pagination and returns cycle linkage plus canonical route/replacement/action history.
+  Creation/status projection write attributable audit and workflow evidence.
+- Credit Manager receives the system-generation grant needed by enrichment; CFO, Director, and
+  Internal Auditor receive the source-backed generated-register read permission.
+
+## 007E2 Conflict Authority, Projection, and Scope Closure
+
+- Conflict replacement now fills exact frozen CFO/Director slots with distinct users; excluding
+  either Director on a two-Director route cannot reuse the survivor and instead produces the exact
+  conflict-blocked, no-sanction ledger.
+- Immutable `required_approvers_json` remains route provenance. Canonical reads expose unchanged
+  `route_approvers`, executable `required_approvers` with replacement attribution, and every
+  immutable `approval_actions` row identically across collection/detail/action/history.
+- One explicit approval-owned projection updater owns coherence and exact reader actors for case
+  creation, workflow linkage, enrichment, actions/abstention, appraisal refresh, and migration.
+  Ordinary model saves have no hidden cross-table workflow behavior.
+- Reader SQL includes only original/effective/acted cycle participants. Unused committee alternates
+  disclose neither counts nor rows; COI-005 is applied only after attributable base scope.
+- General-meeting detection scans active borrower/Director-relative declarations independently of
+  case assignment, while exclusions remain limited to frozen candidates. Whitespace-only reasons
+  are rejected by database constraint.
+
+## 007E Conflict-of-Interest Blocking
+
+- `approvals.modules.conflict_of_interest` evaluates typed persisted borrower/Director-relative/
+  material-interest declarations plus frozen application/appraisal maker facts for one immutable
+  case cycle. Enrichment freezes unique reasons and the general-meeting-evidence flag without
+  rewriting ordered required authority history.
+- Exclusions are an eligibility overlay. A same-role alternate comes only from the frozen committee
+  projection and the original matrix count remains binding; an unavailable CFO/Director slot closes
+  the case as `blocked_by_conflict` without sanction creation.
+- Excluded actors receive limited history/detail read, never queue/action scope. Approve/reject/
+  return use exact `CONFLICTED_APPROVER_NOT_ALLOWED` details and add only a cycle-attributed COI-006
+  denial audit.
+- `POST .../abstain/` records mandatory reasoned `abstained` action history, exclusion, version
+  increment, and either frozen-alternate reassignment or a communication-backed blocked outcome.
+  Returned-cycle exclusions/actions never leak into a later recomputed cycle.
+
+## Architecture Review 2026-07-13 17:04 - Conflict Authority and Scope Corrections
+
+- 007E's replacement loop can reuse the same Director for an excluded slot and that Director's
+  original slot. The length-only satisfiability check then accepts CFO + one distinct Director for
+  a rule requiring CFO + two Directors. `007E2` requires exact distinct role/user cardinality and a
+  conflict-blocked no-sanction outcome when the frozen candidate set cannot fill it.
+- The canonical detail/action projection joins actions only to original
+  `required_approvers_json`; a successful frozen alternate therefore disappears from history while
+  the excluded original appears undecided. `007E2` preserves immutable route provenance and adds
+  explicit replacement/action history shared by collection, detail, action, returned cycles, and
+  downstream registers.
+- The read helper index currently contains every committee candidate. An unused second Director can
+  receive `total_count: 1` before the Python object check removes the row, and a declaration can
+  grant that unused actor conflict-limited detail. `007E2` backfills an exact read projection and
+  applies COI-005 only after attributable original/effective/acted cycle participation.
+- Source auth §16.2 and API/data-model §25.11/§15.8 require general-meeting evidence for Director,
+  relative, and Sanction Committee member borrowers. The flag must see a related Director/member
+  even when they are outside this case's assigned approvers; material-interest or maker-checker
+  conflict alone does not trigger it.
+- M05-FR-007/008/010 remain substantive. M05-FR-011 is partial/unsafe until 007E2 closes distinct
+  authority and public history; M05-FR-009 remains 007H and M05-FR-012's evidence gate remains 007G.
+
+## 007D3 Returned Approval Cycles
+
+- Approval cases are numbered immutable cycles per application. The database enforces positive
+  cycle/revision values, unique application + cycle, and at most one pending application cycle;
+  legacy rows migrate deterministically to cycle 1 with their matched immutable review and frozen
+  review-fact projection.
+- Return closes the current cycle and moves the appraisal to editable draft. Only actual appraisal
+  value changes produce a non-empty correction ledger; a fresh independent Credit Manager review
+  must follow that correction.
+- The existing sanction-handoff boundary creates cycle N+1 only after a returned prior cycle, a
+  newer corrected revision, and a post-return matching reviewed decision. Other prior outcomes,
+  no-op correction, stale review, and duplicate/concurrent attempts create no new cycle evidence.
+- Enrichment freezes each cycle's own appraisal/configuration facts. List/detail/action projections
+  expose `cycle_number`; returned history stays readable but unassigned/non-actionable, and prior
+  approver actions never satisfy the next cycle.
+- Final approval remains application-unique and links only to the latest cycle. Same approvers may
+  make new immutable decisions in a later cycle without changing cycle 1 ledgers.
+
+## 007C3 Source Read-Scope Closure
+
+- `approvals.case.read` is now seeded for Credit Manager, Company Secretary, and Internal Auditor,
+  but it remains only the action permission gate. Object scope comes from the immutable approver
+  snapshot, the existing Credit Manager application object-access decision/case submitter, or one
+  active persisted role grant.
+- `ApprovalCaseReadScopeGrant` permits only `legal_readonly`, `audit_readonly`, or
+  `management_readonly`, with unique role/scope pairs and active-role/active-grant enforcement.
+  Defaults seed only Company Secretary legal read-only and Internal Auditor audit read-only.
+- One attributable `can_read_approval_case` decision is used by list, detail, and actions. Persisted
+  readers can inspect routed packages but never enter assigned queues, enable actions, or write any
+  case/action/sanction/audit/workflow/notification evidence.
+- The approval-owned selector applies role/credit/immutable scope in SQL. A save-maintained
+  coherence projection (refreshed when the owning appraisal changes) allows exact database count
+  and pagination before page serialization; detail/actions still revalidate the complete live
+  immutable snapshot. Permission-only readers and unassigned Directors remain empty-list/403.
+
+## Architecture Review 2026-07-13 13:16 - Read Scope, Action Race, and Cycle Closure
+
+- 006Z15 closes the real member public-action matrix; 007A6 closes exact winner evidence in all
+  four twice-run PostgreSQL configuration races. No new material gap was found in either slice.
+- 007C2 correctly denies arbitrary permission holders and unassigned Directors, but it also denies
+  the source-required Credit Manager, Company Secretary, and Auditor sanction-package reads and
+  scans all eligible cases before Python scope filtering. `007C3` adds persisted read-only scope
+  separate from action permission and a bounded selector.
+- 007D's sequential approve/reject/return behavior is substantive, but collection omits action
+  history, its mandatory final-action PostgreSQL race was never implemented, application/appraisal
+  transitions bypass shared guard acceptance, and terminal notifications bypass the 003I
+  communication boundary. `007D2` closes those claims through one public action matrix and two
+  twice-run PostgreSQL races.
+- A returned case is a permanent dead end because approval cases are one-to-one and sanction
+  handoff rejects any existing case. Data-model cardinality and codebase-design §13.1 require a new
+  immutable approval cycle after correction/fresh review; `007D3` owns that lifecycle.
+- M05-FR-001..006 are substantive. M05-FR-007/008 remain partial on parity/race/cycle acceptance;
+  M05-FR-009 stays with 007H; M05-FR-010 is partial until 007D2 crosses the communication adapter.
+
+## 007D Approval Action Boundary
+
+- Approve/reject/return execute through one locked application -> appraisal -> case transaction and
+  re-run 007C2 routability, object scope, pending assignment, permission, and optimistic version
+  checks before the immutable action insert.
+- Every action increments the case version and returns the canonical detail projection. Partial
+  approvals stay pending; final joint approval creates the unique sanction decision and advances
+  the application. Reject and return close the case without sanction; return restores the reviewed
+  pre-committee state.
+- Action audit/workflow evidence carries actor, decision/comments, request, case/application, IP and
+  user-agent facts. Terminal outcomes notify the `credit_assessment` team. Register generation
+  remains 007F/007H.
+- The reviewed appraisal does not yet own numeric rate/repayment/charge/condition facts, so A-079
+  preserves nullable/empty §25.8 fields rather than inventing financial rules.
+
+## 007D2 Approval Action Boundary Closure
+
+- Collection, detail, and action success now compose one history-aware approval-case projection;
+  immutable route provenance remains unchanged while decision/acted-at and caller actions reflect
+  the immutable action ledger immediately.
+- One canonical §44 availability decision drives detail and writes for acted, excluded, closed,
+  and action-permission states. Unassigned/object-scope and contradictory-snapshot nondisclosure
+  remain outside that decision and preserve their existing 403/404 contracts.
+- The locked application -> appraisal -> case transaction evaluates all three owner transitions
+  through the shared guard before inserting an action. Reject/return comments remain mandatory;
+  approve comments remain optional; every ordinary denial is exact zero-write.
+- Terminal outcomes call the communication-owned internal team adapter. The action transaction
+  persists one pending §24.2 Communication, one linked Credit Assessment notification, and one
+  metadata-only communication audit; any adapter failure rolls the entire outcome back.
+- PostgreSQL acceptance races different remaining actors on one version and duplicates the final
+  actor on one version. Both races passed twice with one serial winner, a stable stale loser, one
+  action per actor, no deadlock, and exactly one final sanction/communication/notification.
+
 Sources distilled while finishing 006G and sharpening 006H/006X:
 
 - `docs/source/implementation-roadmap.md` §12.1-§12.5
 - `docs/source/api-contracts.md` §25.1-§25.4
 - `docs/source/data-model.md` §15.1-§15.4 and §30/§34
 - `docs/source/auth-permissions.md` §12.6, §15.8-§15.9, §20.1, §34.5
+
+## Architecture Review 2026-07-13 10:09 - Case Boundary and Evidence Closure
+
+- 007A5 materially closes the pending loser and open-case ledger, but the sole new VersionHistory
+  and `config.changed` rows are asserted only by cardinality. `007A6` proves their exact winner,
+  maker/checker, reason, target, and old/new content in all four two-run PostgreSQL races.
+- 007B enriches the real shell atomically and freezes complete configuration projections, but its
+  replay predicate ignores changed loan-limit policy/assessment provenance, its governed
+  immutability test manually fills a shell, and §25.2 success omits `current_status`.
+- 007C correctly avoids live configuration and excludes obviously incomplete shells, but any user
+  holding `approvals.case.read` can list/retrieve every routed case. Auth §15.9/§32.1/§37.3 requires
+  unassigned Directors to be denied. Its routable predicate also accepts contradictory required-
+  approver/matrix/committee JSON that can enable an injected user.
+- `007C2` adds one case object-access predicate, validates the complete stored routing snapshot,
+  tightens exact provenance replay, restores §25.2 status, and replaces the manual governance
+  fixture with submit → enrich → read evidence. 007D now depends on that boundary.
+- M05-FR-003..006 threshold/configuration behavior is substantive with winner-evidence content
+  pending 007A6. M05-FR-001..003 routing/review behavior is present but not authority-complete until
+  007C2; actions/conflicts remain explicitly owned by 007D/007E.
+
+## Architecture Review 2026-07-13 08:41 - Complete Governance Ledger
+
+- 007A4 restores the real `decide_proposal` seam and passes all four governed races twice on
+  PostgreSQL after proposal migration 0005; canonical authority and proposal-detail access are
+  aligned, and snapshot storage fields exist.
+- The race helper proves one winner plus an unchanged pending proposal but compares only resource/
+  version/audit counts. It has no open case and does not read the loser publicly. The separate case
+  test performs rejection and sequential approval, not the required conflicting activation race.
+- `007A5` adds full proposal/effective/history/audit/case equality, public loser readback, a
+  discriminating open case inside all four PostgreSQL races, and the remaining historical/current/
+  backfill committee rows.
+- Production case snapshot population remains deliberately owned by 007B. The 006G case is an
+  unrouted shell until 007B atomically consumes the approved rule/committee resolver projections;
+  007C must exclude empty shells from approver queues and actions.
 
 ## Architecture Review 2026-07-13 06:01 - Governed Activation Regression
 
@@ -67,6 +290,53 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - Approver selection, conflict exclusion, actions, sanction decisions, and register entries remain
   their later dedicated slices. Required approver facts are immutable snapshots once assigned.
 
+## 007B Delivered Enrichment Contract
+
+- Source §25.2 enriches, but never creates, the unique 006G shell. Credit owns a locked application
+  → appraisal → review-history projection; approvals then locks the case and consumes each dated
+  public configuration resolver exactly once.
+- The case freezes amount, related application, reason/exception condition, complete rule and
+  committee projections, concrete ordered CFO/Director users, excluded list, verified loan-limit
+  policy provenance, decision date, and version 2 while preserving the 006G workflow-event id.
+- Exact repeats are zero-write reads. Conflicts/decided cases are 409; stale provenance and missing
+  effective approved configuration leave the version-1 shell and all evidence unchanged.
+
+## 007C Delivered Routed Read Contract
+
+- Source API §25.3/§25.4 exposes paginated case list/detail reads under
+  `approvals.case.read`; assignment filtering additionally requires a still-pending user slot in
+  the complete stored 007B snapshot, no exclusion, and no immutable action.
+- A routed case requires matching stored rule/committee ids, versions, decision dates, complete
+  matrix/committee projections, an ordered non-empty authority list, amount/entity facts, and
+  `version >= 2`. An unrouted 006G shell remains invisible even when its amount/status resembles a
+  real case.
+- Detail authority, queue membership, and §44 actions never consult live configuration. Global
+  readers may see the case but receive no enabled assignment action unless they are also the
+  pending stored approver with the action-specific permission.
+- M05-FR-002 review facts are dynamically read through from the application/appraisal owners;
+  action decisions are read from the immutable §15.4 ledger without mutating required snapshot
+  JSON. Approval actions, conflict population, and UI remain 007D/007E/007I.
+
+## 007C2 Read Scope and Snapshot Contract Closure
+
+- `approvals.case.read` is necessary but never global object scope. The ordinary list is filtered
+  before pagination/counts to immutable snapshotted actors, including their acted history;
+  `assigned_to_me=true` is the narrower pending/unexcluded/unacted queue. Unassigned Directors,
+  makers, and arbitrary permission holders see zero rows and direct detail returns
+  `OBJECT_ACCESS_DENIED` without writes.
+- One public approval-owned coherence predicate reconciles case/application/type/amount/decision/
+  exception facts, rule and committee identity/version/date, exact unique CFO/Director authority,
+  role/count/joint/register facts, and frozen assessment/application/policy provenance. Malformed
+  or injected snapshots are neither listable, retrievable, nor eligible for later actions; live
+  configuration and membership remain irrelevant.
+- Exact enrichment replay now compares the locked reviewed date/recommendation plus assessment,
+  application, exception, calculation-rule, policy-id/name, and calculation-time provenance. A
+  changed fact returns 409 with unchanged case/action/audit/workflow evidence.
+- §25.2 now includes `current_status`; enrichment, list, and detail compose the same canonical
+  immutable routing projection. A real submit → enrich → canonical-read case remains byte-for-byte
+  stable across rejected and later approved governed configuration proposals, including exact
+  winner evidence and loser-evidence omission.
+
 ## 007A Delivered Configuration Contract
 
 - Exact ₹5,00,000 is included in the lower persisted rule; the upper rule begins at ₹5,00,000.01.
@@ -98,3 +368,46 @@ Sources distilled while finishing 006G and sharpening 006H/006X:
 - Approval revalidates retained history and committee authority under the shared lock, activates
   atomically, and writes separate author/approver history plus `config.changed` evidence. Rejection
   and stale/conflicting losers leave effective configuration and open-case snapshots unchanged.
+
+## 007A4 Governance Concurrency and Snapshot Closure
+
+- Proposal detail is readable only by its maker, an active persisted CFO/Company Secretary checker,
+  or a holder of `approvals.matrix.read`; unrelated authenticated users receive `403 FORBIDDEN`.
+- The sole ineligible-checker code is `403 APPROVAL_AUTHORITY_REQUIRED`. Approval-time authority is
+  revalidated and Critical activation remains serialized behind the configuration lock.
+- Open approval cases carry immutable rule/committee ids and versions, required approver JSON,
+  decision date, workflow-event identity, and a positive case version. Configuration decisions and
+  resolver/detail reads never mutate those stored facts.
+- Governed rule/committee create and supersede races begin with two pending proposals and race
+  distinct eligible checkers through `decide_proposal`; one activation wins and the loser proposal
+  remains byte-for-byte pending with no effective/history/audit/case writes.
+
+## 007A5 Complete Loser Ledger
+
+- Each of the four governed PostgreSQL races now carries a discriminating open case with stored
+  rule, committee, required-approver, decision-date, workflow-event, and positive-version facts.
+  Proposal, effective configuration, retained history, business audit, and case ledgers distinguish
+  the sole winner from an unchanged pending loser; the exact four methods pass twice after approvals
+  migrations 0005 and 0006.
+- Proposal detail now returns the immutable proposal `payload` and nullable `decided_at`, allowing
+  the public boundary to prove a loser's reason, maker, target/payload, status/version, null decision
+  fields, and checker action projection without querying private implementation state.
+- Historical and current committee dates resolve independently. A conflicting historical backfill
+  returns the stable configuration conflict while the complete ledger and retained resolver output
+  remain unchanged; duplicate and swapped authority failures have independently named public rows.
+
+## 007A6 Winner Evidence Content Closure
+
+- All four governed PostgreSQL create/supersede races identify the sole new VersionHistory and
+  `config.changed` rows and assert their exact winner target/version, maker, distinct checker,
+  reason, proposal/request provenance, approval timestamp/reference, effective dates, and
+  serialized configuration values.
+- Winner and loser proposals carry discriminating reasons, request ids, and versions. Exact content
+  assertions reject winner evidence containing the loser's reason, request id, or version even when
+  ledger cardinality remains correct.
+- Supersession audit evidence preserves the predecessor's pre-activation value in `old_value_json`
+  and adds its exact closed projection as `new_value_json.superseded_configuration`; creation omits
+  that key and retains a null old value.
+- VersionHistory now stores nullable generic old/new JSON plus the approval reference/time. Governed
+  activations persist the proposal id/type/payload, target id, activated resource, and closed
+  predecessor projection; the history timestamp is exactly the proposal decision timestamp.

@@ -1,0 +1,14 @@
+Checks:
+
+- Required prompt/plan/changed-files/risk/final/review artifacts exist and are non-empty.
+- `.ralph/state.json` parses as JSON with the mandated backend interpreter.
+- No template or in-progress marker remains in the repair Markdown artifacts.
+- The current review packet passes the protected agent-result predicate.
+- `git status` contains no modified protected or forbidden path.
+- `git diff --check` passes.
+
+Exit code: 0
+
+PASS: repair artifacts complete, state valid, packet accepted, protected paths clean, diff
+whitespace clean.
+Result: Success

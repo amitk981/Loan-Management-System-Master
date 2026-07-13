@@ -1,0 +1,27 @@
+Creating test database for alias 'default'...
+Found 17 test(s).
+System check identified no issues (0 silenced).
+F................
+======================================================================
+FAIL: test_business_app_dependency_direction_is_approvals_to_credit_only (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_business_app_dependency_direction_is_approvals_to_credit_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 565, in test_business_app_dependency_direction_is_approvals_to_credit_only
+    self.assertEqual(
+AssertionError: Lists differ: [(PosixPath('/Users/amitkallapa/LMS/.ralph[347 chars]ss')] != []
+
+First list contains 2 additional elements.
+First extra element 0:
+(PosixPath('/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/approvals/modules/sanction_handoff.py'), 'sfpcl_credit.credit.modules.common.require_permission')
+
++ []
+- [(PosixPath('/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/approvals/modules/sanction_handoff.py'),
+-   'sfpcl_credit.credit.modules.common.require_permission'),
+-  (PosixPath('/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/approvals/modules/sanction_handoff.py'),
+-   'sfpcl_credit.credit.modules.common.require_application_access')]
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.335s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

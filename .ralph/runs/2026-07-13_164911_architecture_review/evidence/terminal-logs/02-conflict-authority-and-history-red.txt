@@ -1,0 +1,25 @@
+Architecture-review executable probes: conflict replacement must preserve distinct configured
+authority, and a successful alternate action must appear in canonical public history.
+
+Command:
+DJANGO_SETTINGS_MODULE=sfpcl_credit.config.settings /Users/amitkallapa/LMS/.ralph/venv/bin/python
+ran two dynamically attached Django TestCase methods through DiscoverRunner against an isolated
+in-memory migrated test database.
+
+Probe 1 configured required `[CFO, Director 1, Director 2]`, excluded Director 1, and asserted that
+the effective authority contained three distinct users and was not satisfiable without another
+Director.
+
+Probe 2 completed the existing public one-Director alternate path through two HTTP approvals, then
+retrieved case detail and asserted one `required_approvers` history row for the alternate with an
+`approved` decision.
+
+Result: RED (exit 1), two tests failed.
+
+Assertions:
+- Distinct authority: `AssertionError: 2 != 3`
+- Canonical alternate history: `AssertionError: 0 != 1`
+
+The workflow currently duplicates Director 2 in effective slots and omits that actor from public
+history after their real approval. Production code and committed tests were not modified by these
+dynamic probes.

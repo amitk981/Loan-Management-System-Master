@@ -1,7 +1,7 @@
 # Slice 007B: Approval Case Creation from Appraisal
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -14,7 +14,7 @@ Enrich the approval case shell that 006G already creates: resolve the effective 
 Every submitted appraisal becomes exactly one routed approval case whose required authority is a durable snapshot of the rule that applied on that day.
 
 ## Depends On
-- 007A4
+- 007A5
 
 ## Source References
 - docs/working/digests/epic-007-sanction-approval-workflow.md (007B section: 006G owns the unique pending case shell; enrichment only; no duplicate create path)
@@ -116,17 +116,55 @@ Medium
   amount/condition route, roles/director count, joint/register facts, effective decision date, and
   rule/committee ids and versions without reconstructing those facts in the case module.
 
+## Run-Ahead Sharpening Review (007A4, 2026-07-13)
+
+- Reuse the case snapshot columns introduced by 007A4 (`approval_matrix_rule`, rule version,
+  `sanction_committee`, committee version, `required_approvers_json`, `decision_date`, and case
+  `version`); do not introduce parallel configuration columns or a second snapshot representation.
+- Populate all snapshot columns in one approval-owned atomic enrichment and increment the case
+  version exactly once. A missing/ambiguous resolver projection or conflicting repeat leaves every
+  column, the original workflow-event identity, audit rows, and case version unchanged.
+
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_083408, 2026-07-13)
+
+- The 006G row is an explicitly unrouted shell until enrichment. No approval queue, detail action,
+  or decision boundary may treat nullable/empty 007A4 snapshot fields as a valid route. After
+  enrichment, persist the source-required amount and excluded-approver projection alongside the
+  existing rule/committee/required-approver fields; do not silently default a routable case.
+- Prove creation through the real sanction-handoff/approval-case module interface: submit one
+  reviewed appraisal, enrich the existing case atomically, then read the canonical case. A test
+  that manually assigns snapshot fields after case creation is fixture setup only and cannot count
+  as production snapshot acceptance.
+- Reuse 007A5's complete configuration/case ledger so a later winning or losing governed activation
+  leaves every enriched case fact unchanged. This slice depends on 007A5 rather than accepting
+  count-only concurrency evidence.
+
+## Run-Ahead Sharpening Review (006Z14, 2026-07-13)
+
+- Exercise `approvals.case.create` permission and the existing authorised appraisal handoff as
+  separate public facts. Derive the member/application from that persisted handoff and reject any
+  client-supplied related-entity substitution with no enrichment, audit, or workflow writes.
+
+## Run-Ahead Sharpening Review (007A5, 2026-07-13)
+
+- Reuse the complete 007A5 ledger shape after real enrichment: proposals, rules, committees,
+  version history, business audit, and the entire case row. Both a conflicting pending loser and a
+  later winning activation may change only their exact configuration facts; the enriched case and
+  its public projection must remain identical.
+- Preserve the proposal payload as governance evidence only. Case enrichment must consume the
+  approved public rule/committee resolver projections, never a pending proposal payload or target.
+
 ## Done Checklist
 
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated
-- [ ] Database rules followed
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated
+- [x] Database rules followed
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

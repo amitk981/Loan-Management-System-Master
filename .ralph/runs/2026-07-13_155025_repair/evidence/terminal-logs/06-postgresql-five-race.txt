@@ -1,0 +1,18 @@
+Command selection (run twice with distinct `SFPCL_POSTGRES_TEST_DB` names):
+
+`/Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_credit_modules.LoanLimitConcurrencyTests sfpcl_credit.tests.test_appraisal_api.AppraisalConcurrencyTests sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests --settings=sfpcl_credit.config.postgres_test_settings --noinput`
+
+First run:
+
+- Found 5 test(s).
+- Ran 5 tests in 5.091 seconds.
+- OK; exit 0.
+
+Second run:
+
+- Found 5 test(s).
+- Ran 5 tests in 5.125 seconds.
+- OK; exit 0.
+
+Both runs included
+`test_concurrent_returned_cycle_resubmissions_create_one_cycle_two_ledger`.

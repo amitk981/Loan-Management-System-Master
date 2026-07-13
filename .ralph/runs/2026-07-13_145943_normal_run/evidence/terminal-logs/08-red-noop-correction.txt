@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_fresh_review_without_correction_cannot_create_a_second_cycle (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_fresh_review_without_correction_cannot_create_a_second_cycle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_145943_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 905, in test_fresh_review_without_correction_cannot_create_a_second_cycle
+    self.assertEqual(self.note.content_revision, 1)
+AssertionError: 2 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.030s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

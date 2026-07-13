@@ -2,7 +2,12 @@ from sfpcl_credit.identity.modules import auth_service
 from django.db.models import Q
 
 from sfpcl_credit.identity.modules.object_permissions import ObjectAccessResult
+from django.core.exceptions import PermissionDenied
 from sfpcl_credit.members.models import MemberScopeAssignment
+
+
+class MemberObjectAccessDenied(PermissionDenied, PermissionError):
+    """Canonical member-scope denial shared by module and HTTP interfaces."""
 
 
 def member_scope_predicate(*, actor_user, permission):

@@ -42,6 +42,7 @@ from sfpcl_credit.members.modules.active_member_status import (
     QUALIFYING_ROUTES,
     canonical_financial_year_start,
 )
+from sfpcl_credit.members.modules.member_authority import MemberObjectAccessDenied
 
 
 MEMBER_READ_PERMISSION = "members.member.read"
@@ -815,7 +816,7 @@ def create_produce_supply_record(member, payload, actor_user, request_ip="", req
     if not evaluate_member_authority(
         actor_user=actor_user, member=member, permission=PRODUCE_SUPPLY_CAPTURE_PERMISSION
     ).allowed:
-        raise PermissionError("You cannot access this member.")
+        raise MemberObjectAccessDenied("You cannot access this member.")
     if payload["version"] != member.version:
         raise ProduceSupplyConflict("STALE_WRITE", "Member has changed; refresh and retry.", {"version": "Version is stale."})
     routed_member = None
@@ -928,7 +929,7 @@ def verify_produce_supply_record(record_id, version, actor_user, request_ip="", 
     if not evaluate_member_authority(
         actor_user=actor_user, member=member, permission=PRODUCE_SUPPLY_VERIFY_PERMISSION
     ).allowed:
-        raise PermissionError("You cannot access this member.")
+        raise MemberObjectAccessDenied("You cannot access this member.")
     if member_version is not None and member_version != member.version:
         raise ProduceSupplyConflict("STALE_WRITE", "Member has changed; refresh and retry.", {"member_version": "Version is stale."})
     if record.captured_by_user_id == actor_user.user_id:

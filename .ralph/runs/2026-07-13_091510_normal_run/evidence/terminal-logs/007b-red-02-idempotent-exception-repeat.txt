@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_exception_condition_not_amount_selects_two_director_route (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_exception_condition_not_amount_selects_two_director_route)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 447, in test_exception_condition_not_amount_selects_two_director_route
+    self.assertEqual(repeat.status_code, 200, repeat.content)
+AssertionError: 409 != 200 : b'{"success": false, "error": {"code": "INVALID_STATE_TRANSITION", "message": "The approval case already has a different immutable routing snapshot.", "details": {}, "field_errors": {}}, "meta": {"request_id": null, "timestamp": "2026-07-13T03:52:05.374569Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.034s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

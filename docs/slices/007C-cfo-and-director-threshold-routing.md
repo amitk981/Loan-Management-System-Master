@@ -1,7 +1,7 @@
 # Slice 007C: CFO and Director Threshold Routing
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -58,15 +58,53 @@ Medium
   activate later matrix/committee versions in a regression test and prove queue membership and
   actions for the historical case remain byte-for-byte unchanged.
 
+## Run-Ahead Sharpening Review (007A4, 2026-07-13)
+
+- Read assignment solely from 007A4/007B's stored `required_approvers_json` and return the stored
+  case `version` for later optimistic action writes. Never join current committee membership to
+  decide queue inclusion or action eligibility.
+- Exercise an unrelated authenticated user, a configured matrix reader who is not assigned, the
+  maker, and each snapshotted authority independently. Proposal-detail eligibility from 007A4 does
+  not grant approval-case object access; case access remains governed by `approvals.case.read` plus
+  the approval-case object boundary.
+
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_083408, 2026-07-13)
+
+- Exclude the pre-enrichment 006G shell from `assigned_to_me` and return no enabled approval action
+  from detail until every 007B routing snapshot fact is populated. Empty/default snapshot JSON must
+  never mean globally assigned or fall back to the current matrix/committee.
+- Add contradictory fixtures: a historical case whose stored approvers differ from the current
+  committee and an unrouted shell with the same amount/status. Only the stored historical snapshot
+  determines queue membership; amount, current status, live configuration, and proposal-detail
+  eligibility cannot infer assignment.
+
+## Run-Ahead Sharpening Review (007A5, 2026-07-13)
+
+- Independently route a case snapshotted to the retained historical committee and one to the current
+  committee on their boundary dates. A rejected/conflicting committee backfill proposal must not
+  alter either queue, detail provenance, stored case version, or action projection.
+- Proposal-detail `available_actions` describes configuration governance only and grants no case
+  assignment. Prove an eligible configuration checker absent from `required_approvers_json` sees no
+  case action and cannot enter `assigned_to_me`.
+
+## Run-Ahead Sharpening Review (007B, 2026-07-13)
+
+- A routable row has non-null rule/committee ids, matching stored versions and decision date,
+  `version >= 2`, a non-empty list-shaped `required_approvers_json`, and complete matrix/committee
+  projections. Exclude any row missing one of those facts even if amount/status resembles a case.
+- Consume the stored ordered `{role_code,user_id,full_name}` approver items unchanged; do not join
+  current users or committees to rebuild assignment. Preserve `excluded_approvers_json` separately
+  for 007E instead of destructively filtering the required snapshot.
+
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
 - [ ] Commit created only after passing gates

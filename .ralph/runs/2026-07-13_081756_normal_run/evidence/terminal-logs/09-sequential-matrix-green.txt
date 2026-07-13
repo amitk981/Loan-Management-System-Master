@@ -1,0 +1,94 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 23 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, approvals, communications, configurations, contenttypes, credit, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying documents.0001_initial... OK
+  Applying members.0007_kycprofile_kycdocument_and_more... OK
+  Applying members.0008_cancelledcheque_bankaccount_and_more... OK
+  Applying identity.0003_portal_member_auth... OK
+  Applying applications.0001_initial... OK
+  Applying applications.0002_loanapplication_submitted_by_user... OK
+  Applying applications.0003_systemsequence_loanrequestregisterentry... OK
+  Applying applications.0004_applicationdocument_and_more... OK
+  Applying applications.0005_application_deficiency... OK
+  Applying applications.0006_rejection_note... OK
+  Applying applications.0007_eligibilityassessment... OK
+  Applying applications.0008_loanlimitassessment... OK
+  Applying applications.0009_loan_limit_policy_snapshot... OK
+  Applying applications.0010_loanapplication_nominee... OK
+  Applying applications.0011_witness... OK
+  Applying applications.0012_witness_verification_evidence... OK
+  Applying applications.0013_witness_correction... OK
+  Applying applications.0014_witness_contact_fields... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying credit.0001_credit_assessment_model_ownership... OK
+  Applying credit.0002_riskassessment_loanappraisalnote... OK
+  Applying credit.0003_appraisal_prerequisite_snapshots... OK
+  Applying credit.0004_appraisal_review_facts... OK
+  Applying credit.0005_appraisalreviewdecision... OK
+  Applying approvals.0001_initial... OK
+  Applying approvals.0002_approvalcase_workflow_event... OK
+  Applying approvals.0003_approvalmatrixrule_sanctioncommittee... OK
+  Applying approvals.0004_approval_configuration_history_constraints... OK
+  Applying approvals.0005_approvalconfigurationproposal... OK
+  Applying approvals.0006_approvalcase_configuration_snapshot... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying configurations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying credit.0006_legacy_appraisal_history_remediation... OK
+  Applying credit.0007_eligibility_active_member_snapshot... OK
+  Applying members.0009_member_identity_governance... OK
+  Applying members.0010_member_identity_change_request... OK
+  Applying members.0011_producesupplyrecord... OK
+  Applying members.0012_memberserviceevidence_activememberstatus_and_more... OK
+  Applying members.0013_memberserviceevidence_maker_users_and_more... OK
+  Applying members.0014_remove_memberscopeassignment_uniq_member_scope_assignment_and_more... OK
+  Applying scheduler.0001_initial... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_auth_and_atomic_create_overlap_contract (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_auth_and_atomic_create_overlap_contract) ... ok
+test_committee_collection_uses_same_permissions_and_audit_pattern (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_committee_collection_uses_same_permissions_and_audit_pattern) ... ok
+test_committee_requires_persisted_authority_and_resolves_by_decision_date (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_committee_requires_persisted_authority_and_resolves_by_decision_date) ... ok
+test_configuration_collections_are_bounded_paginated_and_reject_unknown_params (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_configuration_collections_are_bounded_paginated_and_reject_unknown_params) ... ok
+test_create_rule_requires_reason_and_stays_pending_until_distinct_business_approval (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_create_rule_requires_reason_and_stays_pending_until_distinct_business_approval) ... ok
+test_historical_backfill_cannot_ambiguate_a_superseded_rule (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_historical_backfill_cannot_ambiguate_a_superseded_rule) ... ok
+test_inactive_configuration_never_resolves_and_checker_is_revalidated_at_decision_time (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_inactive_configuration_never_resolves_and_checker_is_revalidated_at_decision_time) ... ok
+test_invalid_non_finite_create_leaves_complete_configuration_evidence_unchanged (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_invalid_non_finite_create_leaves_complete_configuration_evidence_unchanged) ... ok
+test_patch_supersedes_instead_of_rewriting_history (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_patch_supersedes_instead_of_rewriting_history) ... ok
+test_proposal_decision_enforces_authority_version_rejection_and_immutable_evidence (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_proposal_decision_enforces_authority_version_rejection_and_immutable_evidence) ... ok
+test_proposal_detail_is_limited_to_participants_eligible_checkers_and_matrix_readers (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_proposal_detail_is_limited_to_participants_eligible_checkers_and_matrix_readers) ... ok
+test_read_and_mutation_permission_negatives_cover_both_resources (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_read_and_mutation_permission_negatives_cover_both_resources) ... ok
+test_rule_and_committee_malformed_inputs_are_independent_zero_write_rows (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixApiTests.test_rule_and_committee_malformed_inputs_are_independent_zero_write_rows) ... ok
+test_condition_and_decision_date_are_authoritative_stored_facts (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixResolverTests.test_condition_and_decision_date_are_authoritative_stored_facts) ... ok
+test_exact_five_lakh_resolves_stored_inclusive_rule_projection (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixResolverTests.test_exact_five_lakh_resolves_stored_inclusive_rule_projection) ... ok
+test_historical_date_still_resolves_superseded_rule (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixResolverTests.test_historical_date_still_resolves_superseded_rule) ... ok
+test_non_finite_amount_is_rejected_without_query_authority (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixResolverTests.test_non_finite_amount_is_rejected_without_query_authority) ... ok
+test_source_rules_resolve_below_exact_above_and_exception_routes (sfpcl_credit.tests.test_approval_matrix.SeededApprovalMatrixTests.test_source_rules_resolve_below_exact_above_and_exception_routes) ... ok
+test_open_case_configuration_snapshot_is_immutable_across_governed_decisions (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_open_case_configuration_snapshot_is_immutable_across_governed_decisions) ... ok
+test_competing_committee_creates_have_one_winner_and_zero_write_loser (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixConcurrencyTests.test_competing_committee_creates_have_one_winner_and_zero_write_loser) ... skipped 'Authoritative approval-matrix race requires PostgreSQL.'
+test_competing_committee_supersedes_have_one_winner_and_zero_write_loser (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixConcurrencyTests.test_competing_committee_supersedes_have_one_winner_and_zero_write_loser) ... skipped 'Authoritative approval-matrix race requires PostgreSQL.'
+test_competing_overlapping_creates_have_one_winner_and_zero_write_loser (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixConcurrencyTests.test_competing_overlapping_creates_have_one_winner_and_zero_write_loser) ... skipped 'Authoritative approval-matrix race requires PostgreSQL.'
+test_competing_supersedes_have_one_winner_and_zero_write_loser (sfpcl_credit.tests.test_approval_matrix.ApprovalMatrixConcurrencyTests.test_competing_supersedes_have_one_winner_and_zero_write_loser) ... skipped 'Authoritative approval-matrix race requires PostgreSQL.'
+
+----------------------------------------------------------------------
+Ran 23 tests in 0.255s
+
+OK (skipped=4)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

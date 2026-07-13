@@ -1,0 +1,262 @@
+Creating test database for alias 'default'...
+Found 35 test(s).
+System check identified no issues (0 silenced).
+.....EE.E...E..E.E.................
+======================================================================
+ERROR: test_enrichment_requires_auth_permission_and_fresh_policy_provenance (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_enrichment_requires_auth_permission_and_fresh_policy_provenance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 554, in test_enrichment_requires_auth_permission_and_fresh_policy_provenance
+    stale = self._enrich(payload)
+            ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 1070, in _enrich
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/applications/views.py", line 730, in loan_application_approval_case
+    result = SanctionHandoffModule().enrich_pending(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/approvals/modules/sanction_handoff.py", line 187, in enrich_pending
+    payload, facts.recommended_amount
+             ^^^^^
+NameError: name 'facts' is not defined
+
+======================================================================
+ERROR: test_exception_condition_not_amount_selects_two_director_route (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_exception_condition_not_amount_selects_two_director_route)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 459, in test_exception_condition_not_amount_selects_two_director_route
+    response = self._enrich({
+               ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 1070, in _enrich
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/applications/views.py", line 730, in loan_application_approval_case
+    result = SanctionHandoffModule().enrich_pending(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/approvals/modules/sanction_handoff.py", line 187, in enrich_pending
+    payload, facts.recommended_amount
+             ^^^^^
+NameError: name 'facts' is not defined
+
+======================================================================
+ERROR: test_existing_case_is_enriched_from_authoritative_appraisal_facts (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_existing_case_is_enriched_from_authoritative_appraisal_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 323, in test_existing_case_is_enriched_from_authoritative_appraisal_facts
+    response = self.client.post(
+               ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/applications/views.py", line 730, in loan_application_approval_case
+    result = SanctionHandoffModule().enrich_pending(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/approvals/modules/sanction_handoff.py", line 187, in enrich_pending
+    payload, facts.recommended_amount
+             ^^^^^
+NameError: name 'facts' is not defined
+
+======================================================================
+ERROR: test_no_effective_rule_leaves_existing_shell_and_ledgers_unchanged (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_no_effective_rule_leaves_existing_shell_and_ledgers_unchanged)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 522, in test_no_effective_rule_leaves_existing_shell_and_ledgers_unchanged
+    response = self._enrich({
+               ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 1070, in _enrich
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/applications/views.py", line 730, in loan_application_approval_case
+    result = SanctionHandoffModule().enrich_pending(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/approvals/modules/sanction_handoff.py", line 187, in enrich_pending
+    payload, facts.recommended_amount
+             ^^^^^
+NameError: name 'facts' is not defined
+
+======================================================================
+ERROR: test_pending_case_read_is_scoped_and_missing_case_is_not_found (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_pending_case_read_is_scoped_and_missing_case_is_not_found)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 564, in test_pending_case_read_is_scoped_and_missing_case_is_not_found
+    missing = self._get_case()
+              ^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 1063, in _get_case
+    return self.client.get(
+           ^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/applications/views.py", line 710, in loan_application_sanction_case
+    result = SanctionHandoffModule().get_pending(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/approvals/modules/sanction_handoff.py", line 140, in get_pending
+    facts = AppraisalWorkflow().prepare_approval_case_enrichment(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/credit/modules/appraisal_workflow.py", line 940, in prepare_approval_case_enrichment
+    raise CreditModuleInvalidStateError(
+sfpcl_credit.domain_errors.DomainInvalidStateError: The submitted appraisal no longer matches its reviewed decision.
+
+======================================================================
+ERROR: test_reviewed_appraisal_creates_one_pending_case_and_metadata_only_evidence (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_reviewed_appraisal_creates_one_pending_case_and_metadata_only_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 262, in test_reviewed_appraisal_creates_one_pending_case_and_metadata_only_evidence
+    reloaded = self._get_case()
+               ^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 1063, in _get_case
+    return self.client.get(
+           ^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/applications/views.py", line 710, in loan_application_sanction_case
+    result = SanctionHandoffModule().get_pending(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/approvals/modules/sanction_handoff.py", line 140, in get_pending
+    facts = AppraisalWorkflow().prepare_approval_case_enrichment(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/credit/modules/appraisal_workflow.py", line 969, in prepare_approval_case_enrichment
+    raise CreditModuleInvalidStateError(
+sfpcl_credit.domain_errors.DomainInvalidStateError: The stored loan-limit assessment is missing, stale, or lacks policy provenance.
+
+----------------------------------------------------------------------
+Ran 35 tests in 0.611s
+
+FAILED (errors=6)
+Destroying test database for alias 'default'...

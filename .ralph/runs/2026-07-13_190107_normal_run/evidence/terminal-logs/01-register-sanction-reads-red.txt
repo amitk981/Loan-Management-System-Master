@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_final_approval_publishes_immutable_register_and_sanction_decision_reads (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_final_approval_publishes_immutable_register_and_sanction_decision_reads)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1936, in test_final_approval_publishes_immutable_register_and_sanction_decision_reads
+    self.assertEqual(decision.status_code, 200, decision.json())
+                                                ^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 882, in _parse_json
+    raise ValueError(
+ValueError: Content-Type header is "text/html; charset=utf-8", not "application/json"
+
+----------------------------------------------------------------------
+Ran 1 test in 0.044s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

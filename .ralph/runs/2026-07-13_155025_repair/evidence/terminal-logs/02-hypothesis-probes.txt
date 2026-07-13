@@ -1,0 +1,11 @@
+Command: protected-predicate probes against the prior and current review packets
+Exit code: 0
+
+H2/H3 extracted result: <Ready for independent revalidation>
+H2 falsified: result text has no failure token
+H1 supported: replacing only reserved veto wording makes prior packet pass
+H4 current packet path/result: .ralph/runs/2026-07-13_155025_repair/review-packet.md <In Progress>
+
+Conclusion: the demonstrated failure is caused solely by the prior packet's reserved
+"Do not commit manually" veto wording. The result parser extracted exactly one intended line, and
+the current repair packet is the correct new validation target.

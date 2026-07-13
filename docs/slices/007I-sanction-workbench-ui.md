@@ -45,6 +45,33 @@ The Sanction Committee reviews and decides real cases — with the ten-point che
 - Regression: no `mockData` import on the wired path.
 - Role matrix: CFO/Director see enabled actions on assigned cases only; Credit Manager sees read-only; unauthorized role blocked.
 
+## Run-Ahead Sharpening Review (007G delivered contract, 2026-07-13)
+
+- Render only the case projection's nullable frozen `general_meeting_approval`; do not fetch or
+  calculate the latest application outcome client-side. The record affordance requires the current
+  case's object scope plus all three backend permissions named in API_CONTRACTS.md/A-085.
+- Surface the exact missing/pending/rejected 409 codes distinctly while leaving the failed final
+  action/version unchanged. `CONFLICTED_APPROVER_NOT_ALLOWED` remains the higher-priority conflict
+  treatment and must not be replaced by a meeting-evidence message.
+- Send all three distinct uploaded document ids and bounded related-party/status vocabulary to
+  §25.11. Exact replay may return the same id; a changed submission returns a new superseding id.
+  Keep document download actions behind the existing document permission rather than case/register
+  visibility.
+
+## Run-Ahead Sharpening Review (007H delivered contract, 2026-07-13)
+
+- After a final approved action, render decision terms only from
+  `GET /api/v1/loan-applications/{id}/sanction-decision/` under
+  `approvals.sanction.read`; do not copy the action response's sanction id into a client-owned
+  financial projection. Before final approval and after rejection the endpoint deliberately
+  returns `404 NOT_FOUND`, so case status/reason remains the authoritative rejected/pending UI.
+- The workbench does not gain register scope from case or sanction permission. Do not call the
+  Credit Sanction Register to reconstruct a case, approver, exception, conflict, meeting, or
+  decision view; it is a separate `approvals.sanction_register.read` compliance projection.
+- A terminal action is atomic with the generated register row and its audit/workflow reference.
+  The UI must treat action failure as no completion and re-fetch the canonical case/decision only
+  after success; never optimistically fabricate a register or sanction outcome.
+
 ## Visual Acceptance Criteria
 Queue, case detail (pending/partially approved/approved/rejected/returned), exception-flagged case, special-case panel, conflict/abstention display, empty, loading, denied, and error states; deterministic Playwright baselines per the 006H3 harness conventions.
 

@@ -1,0 +1,14 @@
+Command:
+source scripts/lib/ralph-postgresql-acceptance.sh
+postgresql_acceptance_log_passes .ralph/runs/2026-07-13_145943_normal_run/evidence/terminal-logs/postgresql-acceptance-validation-1.txt
+
+Observed diagnostic before the repair:
+RED: protected acceptance predicate rejected an otherwise-green PostgreSQL run
+7:Found 6 test(s).
+89:Ran 6 tests in 5.356s
+91:OK
+94:Exit code: 0
+95:Cleanup exit code: 0
+
+Reason: the protected predicate requires the exact markers `Found 5 test(s).` and
+`Ran 5 tests in ...`; the selected concurrency classes contained six tests.

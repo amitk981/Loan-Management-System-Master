@@ -1,0 +1,54 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_no_effective_rule_leaves_existing_shell_and_ledgers_unchanged (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_no_effective_rule_leaves_existing_shell_and_ledgers_unchanged)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 479, in test_no_effective_rule_leaves_existing_shell_and_ledgers_unchanged
+    response = self._enrich({
+               ^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 999, in _enrich
+    return self.client.post(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/applications/views.py", line 728, in loan_application_approval_case
+    result = SanctionHandoffModule().enrich_pending(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/approvals/modules/sanction_handoff.py", line 202, in enrich_pending
+    matrix = resolve_approval_matrix(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/approvals/modules/approval_matrix.py", line 66, in resolve_approval_matrix
+    raise NoEffectiveApprovalRule("No effective approval matrix rule matches the supplied facts.")
+sfpcl_credit.approvals.modules.approval_matrix.NoEffectiveApprovalRule: No effective approval matrix rule matches the supplied facts.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.041s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

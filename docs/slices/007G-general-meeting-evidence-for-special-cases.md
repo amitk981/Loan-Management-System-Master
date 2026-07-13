@@ -1,7 +1,7 @@
 # Slice 007G: General Meeting Evidence for Special Cases
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -38,6 +38,55 @@ Related-party loans cannot be sanctioned without the legally required general-me
 - Document-id validation negatives (missing/no-access document); permission negatives.
 - Superseding record keeps history; rejected meeting blocks sanction with the contract error.
 
+## Run-Ahead Sharpening Review (007E, 2026-07-13)
+
+- Gate exclusively on the immutable case field `general_meeting_evidence_required`; do not
+  re-evaluate live declarations, member relationships, committee membership, or a later appraisal
+  when deciding a historical cycle.
+- `blocked_by_conflict` is an authority failure, not missing general-meeting evidence. An approved
+  meeting record cannot unblock absent CFO/Director authority, and recording evidence must not
+  mutate exclusions, abstentions, required authority history, or case cycle facts.
+- Extend 007D's final-action transaction after its conflict availability decision: a conflicted
+  actor still receives exact `CONFLICTED_APPROVER_NOT_ALLOWED`; an otherwise eligible final actor
+  receives the dedicated missing/rejected-meeting contract before action/sanction insertion.
+- Prove cycle isolation: a returned cycle's meeting reference and conflict flag remain historical;
+  a later cycle consumes only an applicable approved record under the §25.11 application-history
+  rules and retains its own `cycle_number` in detail/action evidence.
+
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_164911, 2026-07-13)
+
+- Consume only 007E2's immutable per-cycle flag. The source §16.2 set includes Director, relative,
+  and Sanction Committee member borrowers even when the related Director/member is not an assigned
+  approver; material-interest and maker-checker conflicts alone do not trigger meeting evidence.
+- The final sanction gate must run after distinct effective authority has been proved. Approved
+  meeting evidence cannot make a duplicated/insufficient CFO-or-Director set satisfiable, and a
+  missing meeting record cannot mask the more fundamental `blocked_by_conflict` outcome.
+- Project the applicable meeting reference alongside the canonical replacement/action history so
+  007H can evidence the actual distinct approvers. Unused committee candidates remain outside
+  list/detail counts and cannot obtain meeting-document access through conflict declaration alone.
+
+## Run-Ahead Sharpening Review (007E2 delivered contract, 2026-07-13)
+
+- Treat `general_meeting_evidence_required` as the sole immutable per-cycle gate input. 007E2 sets
+  it for active borrower/Director-relative declarations even when the related person is outside the
+  assigned route, and does not set it for material-interest or maker-checker facts alone.
+- Meeting-document read authority must start from the corrected original/effective/acted case scope;
+  a declaration, unused committee candidacy, or `approvals.case.read` permission cannot create it.
+- Return the meeting reference beside, but never inside or instead of, the canonical
+  `route_approvers`/`required_approvers`/`approval_actions` facts so authority provenance remains
+  byte-stable across collection, detail, action response, and historical cycles.
+
+## Run-Ahead Sharpening Review (007F delivered contract, 2026-07-13)
+
+- Meeting evidence must never mutate or reuse the case-unique `ExceptionRegisterEntry`. A related-
+  party exception cycle keeps its own entry identity/status/closed time; a later cycle receives a
+  new exception entry only when its own frozen route requires one.
+- A missing/rejected meeting gate runs before final action insertion, leaving the exception row
+  pending with no exception status evidence. Successful final approval lets 007F's existing locked
+  action projection close that exact row as approved.
+- Meeting-document permission or application-level evidence must not widen Exception Register
+  counts beyond the canonical original/effective/acted case reader scope.
+
 ## Out of Scope
 Conflict determination (007E), register generation (007H), document upload itself (003C/§26), UI (007I).
 
@@ -49,15 +98,15 @@ Medium
 - All gates pass; API examples saved.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated
-- [ ] Database rules followed
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated
+- [x] Database rules followed
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [x] Commit created only after passing gates

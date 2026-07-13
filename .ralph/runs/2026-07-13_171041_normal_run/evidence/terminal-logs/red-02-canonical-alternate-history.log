@@ -1,0 +1,21 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_alternate_action_is_canonical_without_rewriting_route_provenance (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_alternate_action_is_canonical_without_rewriting_route_provenance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_171041_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 600, in test_alternate_action_is_canonical_without_rewriting_route_provenance
+    action_facts = {
+                   ^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_171041_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 601, in <dictcomp>
+    key: final.json()["data"][key]
+         ~~~~~~~~~~~~~~~~~~~~^^^^^
+KeyError: 'route_approvers'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.042s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

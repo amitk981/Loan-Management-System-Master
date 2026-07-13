@@ -1,0 +1,39 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+EE
+======================================================================
+ERROR: test_selector_materializes_only_credit_manager_object_scope_candidates (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_selector_materializes_only_credit_manager_object_scope_candidates)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_135007_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 371, in test_selector_materializes_only_credit_manager_object_scope_candidates
+    shell = self._create_unrouted_shell()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_135007_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1178, in _create_unrouted_shell
+    application = LoanApplication.objects.create(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_135007_normal_run/sfpcl_credit/applications/models.py", line 172, in save
+    self.full_clean()
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 1556, in full_clean
+    raise ValidationError(errors)
+django.core.exceptions.ValidationError: {'application_reference_number': ['Loan application with this Application reference number already exists.']}
+
+======================================================================
+ERROR: test_active_company_secretary_grant_allows_read_only_case_access (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_active_company_secretary_grant_allows_read_only_case_access)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_135007_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 292, in test_active_company_secretary_grant_allows_read_only_case_access
+    self.assertEqual(inactive_role.json()["pagination"]["total_count"], 0)
+                     ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'pagination'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.035s
+
+FAILED (errors=2)
+Destroying test database for alias 'default'...

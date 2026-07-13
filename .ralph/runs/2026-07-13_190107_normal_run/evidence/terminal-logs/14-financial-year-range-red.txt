@@ -1,0 +1,49 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_register_filters_pagination_permissions_and_read_only_routes (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_register_filters_pagination_permissions_and_read_only_routes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2151, in test_register_filters_pagination_permissions_and_read_only_routes
+    invalid_year_range = self.client.get(
+                         ^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1049, in get
+    response = super().get(path, data=data, secure=secure, headers=headers, **extra)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 465, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<WORKTREE>/sfpcl_credit/approvals/views.py", line 109, in credit_sanction_register_collection
+    data, pagination = sanction_register.list_entries(request.GET)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<WORKTREE>/sfpcl_credit/approvals/modules/sanction_register.py", line 160, in list_entries
+    start, end = _financial_year_dates(financial_year)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<WORKTREE>/sfpcl_credit/approvals/modules/sanction_register.py", line 289, in _financial_year_dates
+    return date(start_year, 4, 1), date(start_year + 1, 4, 1)
+           ^^^^^^^^^^^^^^^^^^^^^^
+ValueError: year 0 is out of range
+
+----------------------------------------------------------------------
+Ran 1 test in 0.062s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

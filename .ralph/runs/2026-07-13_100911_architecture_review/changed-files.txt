@@ -1,0 +1,12 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/007D-approval-action-api-approve-reject-return.md
+ M docs/slices/007E-conflict-of-interest-blocking.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-006-eligibility-loan-limit-appraisal.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+?? .ralph/runs/2026-07-13_100911_architecture_review/
+?? docs/slices/006Z15-member-public-action-authority-matrix-closure.md
+?? docs/slices/007A6-approval-governance-winner-evidence-content-closure.md
+?? docs/slices/007C2-approval-case-read-scope-and-snapshot-contract-closure.md

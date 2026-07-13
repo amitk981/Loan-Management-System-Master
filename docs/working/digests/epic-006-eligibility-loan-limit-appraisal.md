@@ -1,5 +1,65 @@
 # Epic 006 Digest: Eligibility, Loan Limit, Appraisal, and Credit Review
 
+## 006Z15 Member Public-Action Authority Matrix Closure
+
+- Ten independently selectable rows now invoke the real member list/detail/update, identity
+  approval, supply capture/verification, service-evidence create/update, staff eligibility
+  calculation, and active-status verification interfaces. No row imports or calls the authority
+  evaluator as acceptance; exact denial and success ledgers cover member, identity, scope, supply,
+  service-maker, status, eligibility, history, audit, and workflow facts.
+- Permission-without-scope detail/mutations return `403 OBJECT_ACCESS_DENIED`; the source-required
+  list contract filters to an empty `200` page before counts. Matching assigned, global,
+  created-by, active-team, inactive-team, unrelated-team, and unrelated-member behavior executes
+  real list/detail/mutation seams.
+- Staff calculation rejects cross-member query/body substitution after application authority and
+  derives the member only from the owned application. Portal self-service and borrower-limit reads
+  reject a different `member_id` from the authenticated `PortalAccount` without writes or identifier
+  disclosure. `ActiveMemberStatusModule.calculate` remains actorless and internal.
+- HTTP adapters now preserve object-scope denial separately from missing-permission and
+  maker-checker denial using typed module exceptions; member calculations and M02-FR-004..006
+  business rules are unchanged.
+
+## Architecture Review 2026-07-13 10:09 - Public Action Proof Still Shallow
+
+- 006Z14 correctly removes the dead `calculate_for_actor` seam and brittle filename/string caller
+  whitelist. Existing focused suites retain substantive member calculations, persisted scope
+  shapes, and application/portal ownership behavior.
+- Its new ten-row “action matrix” never invokes the named list/detail/update/identity/supply/
+  evidence/status boundaries. Every row calls only `evaluate_member_authority`, asserts a Boolean,
+  and counts mostly empty ledgers; a label can therefore claim a public action without executing it.
+- `006Z15` replaces those aliases with independently selectable real module/HTTP actions, exact
+  no-scope denial ledgers, matching-scope success, all persisted scope kinds, and actorless staff/
+  portal/borrower-limit substitution proof.
+- M02-FR-004..006 business behavior remains substantive, but the source-required public authority
+  proof remains partial until 006Z15.
+
+## 006Z14 Member Authority Action and Calculation Proof Closure
+
+- Eleven independently selectable member-authority rows now use one custom-role actor with every
+  action permission and no initial scope. Every denial returns the canonical object-scope result
+  with unchanged member, assignment, supply, service evidence, active status, history, audit, and
+  workflow ledgers; only the matching assigned scope enables the row and unrelated members/actions
+  remain denied.
+- Existing scope-shape tests retain global, created-by, assigned, active team, inactive team, and
+  unrelated-member proof. The focused application, portal, borrower-limit, supply, and member suites
+  execute the real owning boundaries rather than inferring safety from caller filenames.
+- The unused `calculate_for_actor` seam and exact source-text caller whitelist are removed.
+  `ActiveMemberStatusModule.calculate` remains an actorless domain calculation reached from
+  application-authorised staff or authenticated member-owned boundaries; BR-004/006/007 and
+  M02-FR-004..006 calculations are unchanged.
+
+## Architecture Review 2026-07-13 08:41 - Member Authority Proof Closure
+
+- 006Z13 correctly adds database shape/uniqueness constraints, retains valid legacy assignments,
+  and preserves the underlying M02-FR-004..006 supply/status/relaxation behavior.
+- Its promised public permission-versus-scope action matrix is not present: broad existing suites
+  commonly pre-grant scope, while registry negatives often omit permission too. `006Z14` must use
+  one all-permissions/no-scope actor, independently deny every public action with a complete ledger,
+  then enable only the row receiving a matching assignment.
+- The new `calculate_for_actor` has no production caller and the caller guard asserts exact source
+  filenames/strings. `006Z14` replaces that with application/portal/member-owned behavioral proof
+  and removes the unused seam unless a source-backed public boundary actually consumes it.
+
 ## 006Z13 Member Scope Persistence and Calculation Boundary Closure
 
 - Database check constraints now enforce every `MemberScopeAssignment` scope/member/team shape,

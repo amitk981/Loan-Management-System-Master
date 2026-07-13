@@ -12,6 +12,7 @@ from sfpcl_credit.credit.modules.common import (
     ELIGIBILITY_RUN_PERMISSION,
     CreditModuleInvalidStateError,
     CreditModuleNotFound,
+    CreditModuleObjectAccessDenied,
     get_application_or_raise,
     normalize_request_meta,
     require_application_access,
@@ -19,6 +20,7 @@ from sfpcl_credit.credit.modules.common import (
 )
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.identity.modules.object_permissions import ObjectAccessResult
 from sfpcl_credit.members.modules.active_member_status import ActiveMemberStatusModule
 from sfpcl_credit.workflows.events import record_workflow_event
 
@@ -66,7 +68,8 @@ class EligibilityAssessmentModule:
         )
 
     @transaction.atomic
-    def run(self, *, actor, application_id, request_meta=None, actor_permissions=None):
+    def run(self, *, actor, application_id, request_meta=None, actor_permissions=None,
+            claimed_member_ids=()):
         permissions = require_permission(
             actor,
             ELIGIBILITY_RUN_PERMISSION,
@@ -88,6 +91,16 @@ class EligibilityAssessmentModule:
             ELIGIBILITY_RUN_PERMISSION,
             permissions,
         )
+        if any(
+            value not in (None, "") and str(value) != str(application.member_id)
+            for value in claimed_member_ids
+        ):
+            raise CreditModuleObjectAccessDenied(ObjectAccessResult(
+                allowed=False,
+                reason="member_substitution",
+                error_code="OBJECT_ACCESS_DENIED",
+                required_permission=ELIGIBILITY_RUN_PERMISSION,
+            ))
         transition = evaluate_eligibility_run(application)
         if not transition.allowed:
             raise CreditModuleInvalidStateError(transition.reason)

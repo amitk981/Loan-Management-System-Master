@@ -1,0 +1,25 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_two_director_route_never_reuses_remaining_director (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_two_director_route_never_reuses_remaining_director)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_171041_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 547, in test_two_director_route_never_reuses_remaining_director
+    self.assertEqual(
+AssertionError: Lists differ: [('cf[89 chars]084383'), ('director', 'fd712515-98c7-4654-819b-c1ff74084383')] != [('cf[89 chars]084383')]
+
+First list contains 1 additional elements.
+First extra element 2:
+('director', 'fd712515-98c7-4654-819b-c1ff74084383')
+
+  [('cfo', 'bed8472e-ada0-49a7-900b-c2f22d965e84'),
+-  ('director', 'fd712515-98c7-4654-819b-c1ff74084383'),
+   ('director', 'fd712515-98c7-4654-819b-c1ff74084383')]
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

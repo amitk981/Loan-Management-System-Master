@@ -1,0 +1,13 @@
+Commands used the mandated interpreter `/Users/amitkallapa/LMS/.ralph/venv/bin/python`.
+
+- `manage.py check` — exit 0; no issues.
+- `manage.py makemigrations --check --dry-run` — exit 0; no changes detected.
+- `coverage run --source=sfpcl_credit sfpcl_credit/manage.py test sfpcl_credit.tests` followed by
+  `coverage report --fail-under=85` — exit 0.
+
+Results:
+
+- Found 628 tests.
+- Ran 628 tests in 124.967 seconds.
+- OK, with 19 expected PostgreSQL-only skips under SQLite.
+- Total coverage: 93%; required floor: 85%.

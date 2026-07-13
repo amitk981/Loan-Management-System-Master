@@ -2,6 +2,446 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-13 17:04 - Architecture Review 2026-07-13_164911_architecture_review
+
+Reviewed completed product work since architecture-review commit `48ef331`:
+- `007C3-approval-case-source-read-scope-closure` (`846947a`)
+- `007D2-approval-action-boundary-and-postgresql-race-closure` (`111305d`)
+- `007D3-returned-approval-cycle-and-resubmission-closure` (`3736749`)
+- `007E-conflict-of-interest-blocking` (`e46ced6`)
+
+The review checked `git diff 48ef331...HEAD`, production/test hunks, retained RED/GREEN and
+twice-run PostgreSQL evidence, the Epic 007 digest, cited auth/API/data-model/security/codebase-
+design sections, and M05-FR-007..012. Standards and spec fidelity were reviewed independently.
+Three dynamic HTTP/module probes reproduced the significant defects without changing production
+code. `CONTEXT.md` remains truthful, and state/files contain no Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - Critical - A two-Director route can collapse to one distinct Director
+
+`ConflictOfInterestModule.effective_approvers` replaces excluded Director 1 with Director 2, then
+appends Director 2 again when it reaches that actor's original slot. `authority_is_satisfiable`
+compares list lengths rather than exact distinct role/user counts, while final completion converts
+the list to a user-id set. A CFO + two-Director route can therefore be marked satisfiable and
+sanctioned by only CFO + one distinct Director. The executable review probe produced three slots
+but only two distinct user ids. This violates auth §§16.2/27.1, security §12, and codebase-design
+§13.1's all-required-approvals invariant. `007E2` owns distinct replacement and blocked ledgers.
+
+#### Finding 2 - High - Alternate approvals disappear from canonical case history
+
+The supported one-Director replacement path can approve through a frozen alternate, but
+`serialize_case_detail` attaches actions only to the original `required_approvers_json`. The
+approved response/readback can still show the excluded original Director as undecided and omit the
+alternate entirely. The executable HTTP probe completed the case and then found zero alternate rows
+in `required_approvers`. This breaks API §25.4 and 007D2's single history-aware projection claim.
+`007E2` preserves immutable route provenance while projecting every effective replacement/action.
+
+#### Finding 3 - High - Ordinary list counts disclose cases to an unused committee alternate
+
+`ApprovalCase.save` populates `ApprovalCaseRequiredApprover` with every frozen committee candidate,
+not only original/effective approvers. The SQL selector counts that table before the Python object-
+scope check. On the lower rule, the unused second Director with `approvals.case.read` receives an
+empty data array but `total_count: 1`; direct detail correctly returns 403. The focused HTTP probe
+failed exactly `1 != 0`. This violates auth §§32.1/37.3 and the selector/count contract. `007E2`
+backfills an exact approval-owned read projection and tests pre-pagination nondisclosure.
+
+#### Finding 4 - Medium judgment call - Ordinary model saves hide a cross-table workflow seam
+
+`ApprovalCase.save` dynamically imports the approval engine, computes domain coherence, and
+synchronises a second table; appraisal signals invoke the same hidden side effect. This creates
+models-to-modules cyclic ownership and makes a nominal row save mutate read authority. Codebase-
+design §§42.1-42.2 favour an explicit deep-module projection seam. `007E2` makes projection refresh
+explicit and tests every production writer. Migration-local historical duplication remains valid
+and is not classified as drift.
+
+### Spec
+
+#### Finding 1 - Critical - 007E's “do not silently reduce authority” requirement is false
+
+007E requirement 2 requires exclusions to preserve matrix authority or block the case. The
+duplicate-Director path above silently reduces an above-limit/exception route from two Directors to
+one distinct Director. Existing alternate tests exercise only the lower one-Director rule. `007E2`
+adds both excluded-Director directions, missing-alternate, and abstention through public enrichment
+and final action with exact no-sanction ledgers.
+
+#### Finding 2 - High - 007C3's counts-before-pagination acceptance is false for alternates
+
+007C3 requirements 3-5 require an attributable object decision before counts/pagination and keep an
+unassigned Director at empty-list/403. The helper index's unused committee candidates make the row
+count visible even though page serialization later removes it. Existing tests create a completely
+unrelated Director, not the frozen unused alternate that discriminates the selector. `007E2`
+corrects both the projection and its migration/backfill acceptance.
+
+#### Finding 3 - Medium - Conflict-limited read can bypass the base object boundary
+
+007E sharpening says conflict access applies after 007C2 and an unassigned reader stays
+nondisclosed. `evaluate_approval_case_read_scope` instead grants conflict-limited read before base
+scope. Because conflict evaluation includes all frozen committee candidates, a declaration on an
+unused alternate can grant full case detail despite that user never being required, effective, or
+acted. `007E2` restricts COI-005 history access to attributable cycle participants.
+
+#### Finding 4 - Medium - Conflict and related-party public acceptance is incomplete
+
+007E requires every §17.1 class to exclude at enrichment and receive the exact public denial/audit.
+Only Director-relative conflict crosses enrichment; borrower/material-interest/maker cases are
+module-only, while action tests manually inject exclusions. The combined flag test also cannot
+prove that a related Director outside the current committee still triggers the source §16.2 general-
+meeting requirement. `007E2` adds the complete public matrix. A CFO/committee-member borrower
+trigger is not scope creep: auth §16.2 and API/data-model §25.11/§15.8 explicitly include Sanction
+Committee member borrowing.
+
+No material scope creep was found. 007C3's persisted source-reader scopes, 007D2's guarded action/
+communication transactions and twice-run races, and 007D3's immutable correction/review cycles are
+otherwise substantive. M05-FR-007/008/010 work through current public seams; M05-FR-011 is unsafe
+until 007E2 closes distinct authority and projection. M05-FR-009 remains explicitly owned by 007H,
+and M05-FR-012's evidence record/gate remains explicitly owned by 007G after 007E2 fixes flag scope.
+
+No ADR was added because auth §§16-17/27, API §25.4, security §12, and codebase-design §13 already
+decide distinct authority, historical projection, conflict scope, and module ownership. `007F` and
+`007G` were sharpened to depend on/consume the corrected conflict outcome.
+
+Summary: Standards found 1 Critical, 2 High, and 1 Medium/judgment issue; the worst is duplicate
+Director authority. Spec found 1 Critical, 1 High, and 2 Medium issues; the worst is the same silent
+authority reduction at the public workflow boundary.
+
+## 2026-07-13 13:16 - Architecture Review 2026-07-13_131622_architecture_review
+
+Reviewed completed product work since architecture-review commit `26cc7a8`:
+- `006Z15-member-public-action-authority-matrix-closure` (`c63982d`)
+- `007A6-approval-governance-winner-evidence-content-closure` (`2055adc`)
+- `007C2-approval-case-read-scope-and-snapshot-contract-closure` (`984d2cc`)
+- `007D-approval-action-api-approve-reject-return` (`d0f2fbe`)
+
+The review checked targeted production/test diffs, retained RED/GREEN and two-run PostgreSQL
+evidence, Epic 006/007 digests, cited auth/API/data-model/codebase-design sections,
+M02-FR-004..006, and M05-FR-001..010. Standards and spec fidelity were reviewed independently.
+Production code was not changed. `CONTEXT.md` remains truthful, and state/files contain no Blocked
+slice to reopen. Commit `25212f3` changed only protected run-prompt guidance and was excluded from
+product findings.
+
+### Standards
+
+#### Finding 1 - High - Approval-case reads overcorrect assignment scope and deny source readers
+
+007C2 correctly removes permission-implied global reads for arbitrary users and unassigned
+Directors, but `can_read_approval_case` now allows only immutable required approvers. The source
+role matrix says the Credit Manager can view the sanction package and Company Secretary/Auditor
+have read access (auth §§14.1 and 26.3); object scope §19.1 explicitly names `audit_readonly` and
+management/read-only scopes. The current catalogue does not grant these roles
+`approvals.case.read`, and even a custom grant cannot pass the case predicate. `007C3` persists a
+separate source-backed read scope, restores the named read-only roles, and keeps actions and
+unassigned-Director access denied.
+
+#### Finding 2 - High - Return-for-clarification creates a permanent one-case dead end
+
+`record_action` closes the case as returned and restores reviewed statuses, but
+`SanctionHandoffModule.submit_reviewed_appraisal` rejects every application that already has any
+case. `ApprovalCase` also uses one-to-one application/appraisal links. A returned case therefore
+cannot be corrected and submitted again. This conflicts with data-model's application-to-many-case
+cardinality and codebase-design §13.1's invariant that material re-approval creates a new cycle;
+the positive return test checks only the immediate status and misses the next public step. `007D3`
+adds immutable numbered approval cycles and a fresh-review resubmission path.
+
+#### Finding 3 - Medium judgment call - Scoped approval lists still scan the whole case ledger
+
+`list_approval_cases` materializes every broadly eligible case, runs coherence and object access in
+Python, then paginates. The result is correct for small data, but work scales with the repository
+rather than the actor's scope and leaves a complex read inside the workflow module. Codebase-design
+§42.2 calls for selectors to own complex reads. `007C3` adds a database-narrowed approval selector
+while preserving the post-filter coherence check where JSON makes it necessary.
+
+006Z15 now executes all ten advertised member actions through their real boundaries with exact
+denial/success ledgers and substitution proof; no material standards gap remains. 007A6's four
+twice-run PostgreSQL races assert exact winner history/audit content and loser omission; no
+material standards gap remains.
+
+The Standards reviewer also flagged the required action `version`, missing register creation, and
+conflict-denial audit. The version is an explicitly documented optimistic-concurrency addition from
+007C2 sharpening. Register generation and conflict determination are explicitly assigned to 007H
+and 007E, so they are not reclassified as 007D defects in this window.
+
+### Spec
+
+#### Finding 1 - High - Collection/action serializer parity is false after an action
+
+007D requires collection, detail, and action responses to agree on per-approver decision and
+`acted_at`. The action response composes `serialize_case_detail`, but collection returns
+`serialize_case_snapshot`, which emits the raw immutable `required_approvers_json` without action
+history. The new partial-approval test asserts only its action response; the acted-history test
+asserts collection count but not its row. `007D2` makes all three paths compose one history-aware
+projection and adds immediate post-action parity acceptance.
+
+#### Finding 2 - High - The mandatory final-approval PostgreSQL race was never run
+
+007D requirement 5 and its test plan require simultaneous action/final-approval races, a single
+sanction decision, and an exact zero-write loser ledger. The commit adds only ordinary `TestCase`
+methods; no threaded `TransactionTestCase`, race method, runtime capability, or retained race output
+exists. Its own risk assessment says SQLite cannot exercise the locks and the slice declared no
+PostgreSQL capability. `007D2` adds distinct-approver and duplicate-final-action races, each twice on
+PostgreSQL with exact action/sanction/evidence ledgers.
+
+#### Finding 3 - Medium - M05-FR-010 reaches a notification row but bypasses its required adapter
+
+The terminal action directly calls `Notification.objects.create`. That does produce an internal
+workflow notification, so M05-FR-010 is not absent, but 007D requirement 6 explicitly requires the
+003I communication/notification adapter. No source §24.2 `Communication` snapshot, linked
+notification, or communication audit proves the message crossed that boundary. `007D2` routes the
+team notification through a communication-owned internal adapter in the action transaction and
+tests adapter-failure rollback.
+
+#### Finding 4 - Medium - Guard and denial acceptance covers only a subset of the promised matrix
+
+Approval-case state uses `evaluate_transition`, while application and appraisal statuses are set
+directly; no invalid application/appraisal-state test proves the required 002H guard semantics.
+The test plan also names blank return comments and closed, excluded, contradictory-snapshot, and
+per-action permission denials, but the new tests cover blank reject comments, one permission row,
+one outsider, stale, and duplicate only. The production coherence/pending predicates are promising,
+but the claimed write/read parity and complete zero-write matrix are unearned. `007D2` supplies the
+independently runnable public matrix and guarded owner-state transitions.
+
+No material scope creep was found. M02-FR-004..006 remain substantive and now have real-boundary
+authority/substitution proof through 006Z15. M05-FR-001..006 routing/configuration and exact winner
+evidence are substantive through 007A6/007C2. M05-FR-007/008 work sequentially but retain the race,
+parity, guard, and cycle gaps above; M05-FR-009 remains explicitly owned by 007H; M05-FR-010 is
+partial until 007D2. Conflict/general-meeting requirements remain explicitly owned by 007E/007G.
+
+No ADR was added because auth §§14/19/26, data-model approval cardinality, codebase-design §13.1,
+and the existing communication/transition boundaries already decide the corrective direction.
+
+Summary: Standards found 2 High and 1 Medium/judgment issue; the worst issues are missing
+source-required read scopes and the returned-case dead end. Spec found 2 High and 2 Medium issues;
+the worst issues are false post-action serializer parity and absent PostgreSQL race acceptance.
+
+## 2026-07-13 10:09 - Architecture Review 2026-07-13_100911_architecture_review
+
+Reviewed completed product work since architecture-review commit `1752bcb`:
+- `006Z14-member-authority-action-and-calculation-proof-closure` (`6038a83`)
+- `007A5-approval-governance-complete-loser-ledger` (`2e14521`)
+- `007B-approval-case-creation-from-appraisal` (`71fdd50`)
+- `007C-cfo-and-director-threshold-routing` (`b37a349`)
+
+The review checked `git diff 1752bcb...b37a349`, production/test hunks, retained RED/GREEN and
+two-run PostgreSQL evidence, Epic 006/007 digests, cited auth/API/data-model/codebase-design
+sections, M02-FR-004..006, and M05-FR-001..006. Standards and spec fidelity were reviewed
+independently. Production code was not changed. `CONTEXT.md` remains truthful, and state/files
+contain no Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - Approval-case read permission is treated as global object scope
+
+`approval_case_collection` checks only `approvals.case.read`; without
+`assigned_to_me=true`, `list_approval_cases` returns every routed case. Detail likewise returns any
+routed id to any permission holder. The test named `global_reader...` creates only an arbitrary
+custom role with that permission, so it positively encodes permission-implied global access rather
+than a persisted management/audit scope. This violates auth §24.1's queryset/object enforcement,
+§32.1's user-scoped lists, §15.9's assigned-case Director access, and §37.3's explicit “Director
+views unassigned approval case | Denied.” `007C2` introduces one list/detail object-access
+predicate, applies it before counts/pagination, and defaults unrelated permission holders to
+nondisclosure until a source-backed global case scope is actually persisted.
+
+#### Finding 2 - High - The member “public action matrix” never calls a public action
+
+`test_member_authority_action_matrix.py` gives ten test names to one helper that calls
+`evaluate_member_authority` directly. It never invokes list, detail, update, identity approval,
+supply capture/verification, service-evidence mutation, calculation, or verification. An action
+label can therefore pass while its real HTTP/module boundary leaks, mutates, or maps the wrong
+error. This conflicts with codebase-design §§26.1-26.3 and §42.1: tests must cross the same seam as
+callers and assert observable outcomes. `006Z15` replaces each alias with an independently runnable
+production action and exact denial/success ledgers.
+
+#### Finding 3 - Medium - The approval-case seam now has divergent canonical serializers
+
+ADR-0005 and codebase-design §13.1/§27.1 assign case creation, enrichment, reads, routing, and later
+decisions to one deep approval-owned boundary. `SanctionHandoffModule.serialize` and
+`approval_case_engine.serialize_case_*` now expose divergent status and completeness projections;
+the §25.2 POST response has `submission_status` but omits source-required `current_status`.
+`007C2` consolidates/composes these projections behind the deep case boundary and proves parity
+before 007D adds writes.
+
+#### Finding 4 - Low judgment call - Review facts are owner read-throughs, not case snapshots
+
+007C intentionally reads purpose/completeness/risk from their owning rows and tests that direct row
+changes alter detail. API design §3 says borrower details are snapshotted at decision time, while
+the slice requires read-through rather than copied owners and the normal appraisal workflow is
+closed after submission. This review does not classify direct-fixture mutation as a shipped bypass:
+`007C2` must prove public owners cannot mutate the reviewed package after routing, and 007D must
+freeze final sanction-decision facts. No separate slice is justified.
+
+The Standards reviewer also flagged empty conflict exclusions, nullable pre-enrichment case fields,
+and the UUID signature reference. These are real repository states but not unrecorded 007B/007C
+defects: conflict determination/actions are explicitly deferred to 007E, A-059 governs the unique
+unrouted shell, and A-077 governs the signature FK until its documentation-owned target exists.
+
+### Spec
+
+#### Finding 1 - High - 006Z14 still lacks its required real action/scope matrix
+
+Requirements 1-5 demand real module/HTTP rows, one all-permissions/no-scope actor, exact no-write
+denials, matching-scope success, independent global/created-by/team behavior, and executable staff/
+portal/borrower calculation ownership. The diff's new matrix exercises only assigned/unrelated
+evaluator Booleans and mostly empty table counts. Existing focused suites substantively cover scope
+shapes and owned calculations, but they are not tied to each advertised action and cannot make the
+new aliases public acceptance. `006Z15` closes the exact matrix and omission proof.
+
+#### Finding 2 - High - 007B replay and governed immutability acceptance are incomplete
+
+The slice says only an identical assessment/rule repeat is idempotent. `_matches_enrichment`
+compares type, amount, reason, and exception Boolean, but not the locked decision date or frozen
+assessment/policy provenance; changed credit provenance can therefore return the old route as a
+successful repeat. The governed-immutability test also submits a shell and manually assigns route
+fields instead of executing submit → enrich → canonical read before rejected/winning/losing
+configuration decisions, contrary to its explicit sharpening. `007C2` adds exact provenance replay,
+complete no-write conflicts, and real enriched-case governance evidence.
+
+#### Finding 3 - High - 007C accepts contradictory authority snapshots
+
+`_is_routed` checks broad JSON shapes and matching ids/versions/dates, but does not reconcile the
+case amount/condition, required roles/director count/joint/register facts, or the required user list
+with the stored matrix and committee projections. A malformed stored row can inject an arbitrary
+approver into queue membership and enabled actions. This fails 007C's requirement that only a
+complete matching 007B snapshot routes. `007C2` adds independently attributable mismatch rows and
+one coherent stored-snapshot validator shared with 007D.
+
+#### Finding 4 - Medium - 007A5 proves new evidence counts but not winner evidence content
+
+The four PostgreSQL races now preserve the complete old proposal/resource/history/audit/case ledger,
+read the pending loser publicly, and create exactly one new VersionHistory and audit row. They do
+not assert the new rows' actor, approver, reason, proposal/resource target, or old/new payload, so a
+misattributed winner can pass the claimed complete ledger. `007A6` adds exact evidence-content
+assertions and omission checks to all four twice-run races.
+
+No material scope creep was found. Adding the §15.4 `ApprovalAction` read ledger in 007C is a
+bounded prerequisite for projecting immutable decisions and is explicitly reused by 007D. Conflict
+rules remain deferred rather than silently approximated.
+
+M02-FR-004..006 calculations and persistence remain substantive, but their public authority proof
+is partial until 006Z15. M05-FR-003..006 configuration/routing behavior is substantive with exact
+winner evidence pending 007A6. M05-FR-001..003 queue/review behavior exists, but object authority
+and contradictory-snapshot safety remain partial until 007C2. M05-FR-007 onward remains owned by
+007D and later slices, not implicitly claimed by this review window.
+
+No ADR was added because auth object-scope rules, API §3/§25, data-model §15, codebase-design §13.1,
+and ADR-0005 already decide the required boundaries.
+
+Summary: Standards found 2 High, 1 Medium, and 1 Low/judgment issue; the worst issues are global
+approval-case reads and evaluator-only public-action proof. Spec found 3 High and 1 Medium issue;
+the worst issues are the still-missing member action matrix and approval routing/replay authority
+gaps.
+
+## 2026-07-13 08:41 - Architecture Review 2026-07-13_083408_architecture_review
+
+Reviewed completed product work since architecture-review commit `8b1af41`:
+- `006Z13-member-scope-persistence-and-action-matrix-closure` (`fb6de5b`)
+- `CR-002-member-governance-container-ci-timeout` (`b8b9ef5`, plus intake `1f1e7c2`)
+- `CR-003-member-governance-container-pr-ci-timeout` (`349d62c`, plus intake `87a7a46`)
+- `007A4-approval-governance-concurrency-and-case-snapshot-closure` (`a58effa`)
+
+The review checked `git diff 8b1af41...a58effa`, production/test hunks, retained RED/GREEN,
+20-run frontend stress, and two-run PostgreSQL evidence, Epic 004/006/007 digests, cited auth/API/
+data-model/codebase-design sections, and M02-FR-004..006, M04-FR-005..007, and M05-FR-003..006.
+Standards and spec fidelity were reviewed independently. Production code was not changed.
+`CONTEXT.md` remains truthful, and state/files contain no Blocked slice to reopen.
+
+### Standards
+
+#### Finding 1 - High - Member calculation authority is claimed by a dead seam and source-text guard
+
+006Z13 adds `ActiveMemberStatusModule.calculate_for_actor`, but no production caller uses it.
+`test_actorless_active_member_calculation_has_only_owned_domain_callers` then recursively scans
+source text, requires an exact three-filename set, and asserts implementation strings in
+`portal_services.py`. This is not observable authorization proof: an equivalent refactor can fail
+while a real cross-member bypass can pass under a permitted filename. It conflicts with codebase-
+design §§26.1-26.3's interface test surface and leaves an unused security-shaped interface. The
+production callers do have application, portal-account, or member-owned seams, but those facts must
+be executed rather than inferred from spelling. `006Z14` owns the behavioral caller matrix and
+removes or adopts the unused seam based on the source-backed public boundary.
+
+#### Finding 2 - Medium - Governed race tests assert counts where the spec claims complete state
+
+007A4 correctly races `decide_proposal` twice on PostgreSQL and proves one effective winner. Its
+`_race` helper snapshots only proposal rows, however, then checks resource/version/audit counts.
+It does not compare the full effective/history/audit/case ledger or read the losing proposal through
+the public detail boundary. That falls below DECISION_POLICY §2 and codebase-design §§22.3/26.1-
+26.3 for a claimed complete zero-write concurrency invariant. `007A5` adds discriminating full-state
+equality and public loser reads.
+
+#### Finding 3 - Low judgment call - Approval proposal reader policy remains locally duplicated
+
+`can_read_proposal` directly repeats active CFO/Company Secretary authority alongside the central
+permission engine. This is persisted authority rather than forbidden display-role inference and is
+correctly tested, so it is not a current access defect. It is nevertheless a duplication seam
+against codebase-design §27.1; a later approval-authority module should become the single predicate
+when 007C/007D add case assignment/action checks. No standalone slice is justified yet.
+
+#### Finding 4 - Low judgment call - CR-003 retains a testing-library call-count assertion
+
+The split create/update container tests preserve exact POST/PATCH ledgers, canonical readbacks, and
+one human-like update. The additional `userEvent.type` spy checks a library invocation count rather
+than UI/HTTP behavior and may be refactor-brittle, but it is test-only and directly supports the CR's
+human-like interaction requirement. No corrective slice was created.
+
+The Standards reviewer also flagged that production sanction handoff does not populate the new
+ApprovalCase snapshot columns. That is real repository state but not a 007A4 scope violation: the
+Epic 007 digest and 007B explicitly reserve enrichment of the existing 006G shell for 007B. This
+review sharpened 007B so an unrouted shell cannot be treated as routable and production acceptance
+must traverse the real handoff/case interface rather than manually filling a test row.
+
+### Spec
+
+#### Finding 1 - High - 006Z13 still lacks its required permission-without-scope action matrix
+
+Requirement 3 asks for independently selected module and HTTP rows for list, detail/update,
+identity approval, supply capture/verification, service/relaxation evidence, active calculation,
+and active verification: one custom-role actor holds every action permission but no scope, then one
+matching grant enables only its row with a complete zero-write denial ledger. The diff adds database
+constraints, scope-shape evaluation, one direct calculation row, and a broad 85-test rerun. Existing
+fixtures frequently pre-create assignments (the produce-supply helper automatically grants one),
+and the registry's broad negative uses a user without permissions. Those tests do not execute the
+slice's permission-versus-scope matrix. `006Z14` supplies the independently selectable public rows.
+
+#### Finding 2 - High - 007A4 omits complete loser state and the required conflicting case race
+
+Requirements 1/3 and the run-ahead sharpening require each governed race loser to preserve its
+complete pending proposal plus effective/history/audit/case state, require public proposal-detail
+readback, and require a real open case across rejection, winning activation, a conflicting losing
+activation, and later reads. The concurrency class has no ApprovalCase fixture; the separate case
+test manually fills a case and performs rejection plus one sequential approval, but never a
+conflicting race. Thus the retained PostgreSQL runs prove serialization, not the full CFG-007
+scenario or zero-write ledger. `007A5` adds the case to all four PostgreSQL races and retains two
+post-migration runs.
+
+#### Finding 3 - Medium - The promised committee history matrix remains partial
+
+007A4 independently proves inactive non-resolution and selected malformed/duplicate/swapped
+authority rows, but historical/current committee resolution and committee backfill conflict are not
+independently exercised. Several malformed cases are compressed into one tuple loop despite the
+slice requiring attributable public rows. `007A5` closes the historical/current/backfill cases and
+makes the security-relevant loser rows independently identifiable.
+
+#### Finding 4 - Low evidence limitation - CR-003 retains local stress but no later GitHub result
+
+CR-003 has a legitimate red-capable 1000 ms baseline, 20 consecutive five-test green sequences,
+and complete local gates. The requested subsequent green `staging` push and PR checks are not saved
+in the run packet. Later commits reran the full frontend suite locally, so there is no repository
+regression signal, but the external acceptance fact is not independently reviewable from retained
+evidence. This requires orchestrator/owner evidence retention rather than a product corrective slice.
+
+No material scope creep was found. CR-002's first repair was correctly superseded by CR-003's split
+tests without production changes. M04-FR-005..007 remain passing and unchanged. M02-FR-004..006
+business behavior is substantive, but its public authority proof remains partial until 006Z14.
+M05-FR-003..006 configuration/race behavior is substantive; complete loser/CFG-007 proof belongs to
+007A5 and production case routing remains explicitly deferred to 007B.
+
+No ADR was added because the cited auth, API, data-model, codebase-design, and existing ADR-0005
+already decide object authority, interface-level testing, approval locking, immutable case
+snapshots, and module ownership.
+
+Summary: Standards found 1 High, 1 Medium, and 2 Low/judgment issues; the worst is non-behavioral
+member-calculation authority proof. Spec found 2 High, 1 Medium, and 1 Low evidence issue; the worst
+issues are the missing complete member action matrix and incomplete governed loser/CFG-007 race.
+
 ## 2026-07-13 06:01 - Architecture Review 2026-07-13_055322_architecture_review
 
 Reviewed completed product work since architecture-review commit `23331d5`:

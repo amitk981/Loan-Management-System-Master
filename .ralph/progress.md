@@ -1,5 +1,119 @@
 # Ralph Progress Log
 
+# Run 2026-07-13_135007_normal_run
+
+- Completed 007C3 by separating `approvals.case.read` from attributable object scope: immutable
+  approvers, Credit Manager application/case ownership, and active persisted legal/audit/management
+  role grants are the only read authorities.
+- Seeded source-required case-read permission for Credit Manager, Company Secretary, and Internal
+  Auditor; default grants are limited to Company Secretary `legal_readonly` and Internal Auditor
+  `audit_readonly`. Read-only roles never enter assigned queues or mutate any approval ledger.
+- Added exact required-approver UUID indexing and a save/appraisal-refreshed coherence projection so
+  collection scope, count, and LIMIT/OFFSET happen in SQL without JSON substring authority or
+  repository-wide materialization. Detail/actions still execute full canonical coherence checks.
+- Migration 0010 backfills the full frozen predicate and exact index from historical 0009 state;
+  coherent/malformed migration fixtures pass. Independent Standards and Spec reviews report no
+  remaining findings.
+- Frontend build/typecheck/lint and 208 tests pass. Backend check/migration sync and 602 tests pass
+  with 16 expected PostgreSQL-only skips and 93% coverage. Evidence:
+  `.ralph/runs/2026-07-13_135007_normal_run/`. Next: 007D2, then 007D3 before 007E.
+
+# Run 2026-07-13_131622_architecture_review
+
+- Reviewed 006Z15, 007A6, 007C2, and 007D independently across Standards and Spec; production code
+  was not changed.
+- Confirmed 006Z15's ten real member action rows and 007A6's exact twice-run PostgreSQL winner
+  evidence. M02-FR-004..006 and the governed M05-FR-003..006 configuration facts remain substantive.
+- Found that 007C2 overcorrects assignment reads by denying source-required Credit Manager,
+  Company Secretary, and Auditor views and scans the full eligible case ledger before pagination.
+  Created High-risk corrective slice 007C3.
+- Found false collection/action history parity, no required PostgreSQL action race, partial
+  communication-adapter notification evidence, incomplete guard/denial acceptance, and a returned
+  case that cannot enter a new approval cycle. Created High-risk slices 007D2 and 007D3.
+- Made 007E depend on 007D3 and sharpened conflict behavior across the history-aware action and
+  multi-cycle boundaries. No Blocked slice was stale and CONTEXT remains truthful.
+- M05-FR-007/008 are sequentially substantive but partial on race/parity/cycle proof;
+  M05-FR-009 remains with 007H; M05-FR-010 is partial until 007D2.
+- Frontend build/typecheck/lint and 208 tests pass. Backend check/migration sync and 592 tests pass
+  with 16 expected PostgreSQL-only skips and 93% coverage. Queue/integrity gates pass. Evidence:
+  `.ralph/runs/2026-07-13_131622_architecture_review/`.
+- Next: 007C3, then 007D2 and 007D3 before 007E.
+
+# Run 2026-07-13_120630_normal_run
+
+- Completed 007A6 by making all four governed PostgreSQL races prove exact winner history/audit
+  content instead of cardinality alone. Winner/loser reasons, request ids, and versions are
+  discriminating; no loser fact may appear in winner evidence.
+- VersionHistory now persists the exact approval time/reference plus proposal, target, and old/new
+  resource payloads. Supersession evidence includes the retained predecessor's closed projection;
+  creation remains explicitly predecessor-free.
+- The four exact race methods pass twice on PostgreSQL with zero skips. Focused approval tests pass;
+  backend check/migration sync and 568 tests pass with 16 expected SQLite skips at 93% coverage;
+  frontend build/typecheck/lint and 208 tests pass. Next: sharpened 007C2, then 007D.
+
+# Run 2026-07-13_100911_architecture_review
+
+- Reviewed 006Z14, 007A5, 007B, and 007C independently across Standards and Spec; production code
+  was not changed.
+- Confirmed substantive member calculations/scope persistence, governed PostgreSQL one-winner and
+  pending-loser behavior, real approval-case enrichment, historical configuration snapshots, and
+  stored-snapshot queue/action projections.
+- Found that 006Z14's ten named action rows call only the authority evaluator and never execute the
+  public member actions. Created High-risk corrective slice 006Z15.
+- Found that 007A5 checks new history/audit cardinality without exact winner content. Created
+  High-risk corrective slice 007A6.
+- Found permission-implied global approval-case reads, contradictory routable snapshots, incomplete
+  provenance replay, fixture-only governed enrichment evidence, and §25.2 status drift. Created
+  High-risk corrective slice 007C2 and made 007D depend on it.
+- Sharpened 007D/007E to share the single validated case object/snapshot boundary. No Blocked slice
+  was stale and CONTEXT remains truthful.
+- M02-FR-004..006 remain substantive with public authority proof assigned to 006Z15.
+  M05-FR-003..006 are substantive with winner evidence assigned to 007A6; M05-FR-001..003 remain
+  partial on object/snapshot authority until 007C2.
+- Frontend build/typecheck/lint and 208 tests pass. Backend check/migration sync and 566 tests pass
+  with 16 expected PostgreSQL-only skips and 93% coverage. Queue/integrity gates pass. Evidence:
+  `.ralph/runs/2026-07-13_100911_architecture_review/`.
+- Next: 006Z15, 007A6, then 007C2 before 007D.
+
+# Run 2026-07-13_094017_normal_run
+
+- Completed 007C with paginated approval-case list/detail APIs, strict filters,
+  `approvals.case.read`, assignment-only §44 actions, and immutable action-ledger decision reads.
+- Routed visibility requires every 007B rule/committee/policy provenance fact and version 2+;
+  ordered required approvers remain the sole assignment authority. Same-amount version-1 shells,
+  missing provenance, live configuration changes, actions, exclusions, and closed cases cannot
+  infer assignment.
+- M05-FR-002 review facts are read through from application/appraisal owners and API contract
+  documentation identifies every dynamic projection. Reads produce no business audit event.
+- TDD evidence covers absent routes, acted/closed assignment, and incomplete policy provenance.
+  Frontend build/typecheck/lint and 208 tests pass; backend check/migration sync and 566 tests pass
+  with 16 expected PostgreSQL-only skips and 93% coverage.
+- Evidence: `.ralph/runs/2026-07-13_094017_normal_run/`. Architecture review is due, then 007D.
+
+# Run 2026-07-13_083408_architecture_review
+
+- Reviewed 006Z13, CR-002, CR-003, and 007A4 independently across Standards and Spec; production
+  code was not changed.
+- Confirmed database-enforced member-scope shapes/uniqueness, preserved member business behavior,
+  stable split member-governance container coverage, governed PostgreSQL one-winner activation,
+  canonical approval authority errors, and protected proposal detail.
+- Found that 006Z13 lacks its explicit all-permissions/no-scope public action matrix and uses an
+  unused calculation authority seam plus exact source-text caller assertions. Created High-risk
+  corrective slice 006Z14.
+- Found that 007A4's PostgreSQL races compare proposal state and counts, not the complete effective/
+  history/audit/case ledger; its separate case test does not run a conflicting activation race.
+  Created High-risk corrective slice 007A5 and made 007B depend on it.
+- Sharpened 007B/007C around unrouted 006G shells, real case-module enrichment, source-required
+  snapshot facts, and stored-snapshot-only queues/actions. No Blocked slice was stale and CONTEXT
+  remains truthful.
+- M04-FR-005..007 remain passing. M02-FR-004..006 are substantive with public authority proof
+  assigned to 006Z14. M05-FR-003..006 are substantive with complete loser/CFG-007 proof assigned to
+  007A5 and real case routing still owned by 007B.
+- Frontend build/typecheck/lint and 208 tests pass. Backend check/migration sync and 535 tests pass
+  with 16 expected PostgreSQL-only skips and 93% coverage. Evidence:
+  `.ralph/runs/2026-07-13_083408_architecture_review/`.
+- Next: 006Z14, then 007A5 before 007B.
+
 # Run 2026-07-13_073549_normal_run
 
 - Completed CR-002 by replacing per-character complete-form fixture entry with synchronous DOM
@@ -1800,6 +1914,32 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_145943_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007D3-returned-approval-cycle-and-resubmission-closure
+- Summary: Added immutable numbered approval cycles, deterministic cycle-1 migration, correction
+  plus fresh-review resubmission, frozen per-cycle facts, cross-cycle read/action projections,
+  latest-cycle sanction closure, and complete lifecycle/object-scope denial matrices.
+- Tests run: retained RED/GREEN tracer bullets; review-finding closure matrix; backend 628 tests at
+  93% coverage; frontend build/typecheck/lint and 208 tests; Django check and migration sync.
+- Evidence saved: `.ralph/runs/2026-07-13_145943_normal_run/evidence/`
+- Result: Local gates passed; trusted twice-run PostgreSQL race delegated to the orchestrator under
+  the slice's declared runtime capability.
+- Risk level: High
+- Next action: 007E conflict-of-interest blocking.
+
+## 2026-07-13 - 2026-07-13_090059_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007A5-approval-governance-complete-loser-ledger
+- Summary: Closed complete governed winner/loser ledgers, public pending-loser readback, CFG-007 case immutability in all four races, and the remaining committee history matrix.
+- Tests run: two exact PostgreSQL four-race runs; focused 26 approval tests; backend 548 tests at 93% coverage; frontend build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_090059_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High; governed concurrency and Critical configuration disclosure, mitigated by public-boundary tests, exact ledgers, PostgreSQL races, and full gates.
+- Next action: 007B approval-case enrichment from appraisal.
 
 ## 2026-07-13 05:52:00 - 2026-07-13_053920_normal_run
 - Agent tool used: codex
@@ -5035,6 +5175,429 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_080215_normal_run/.ralph/runs/2026-07-13_080215_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_080215_normal_run/.ralph/runs/2026-07-13_080215_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_081756_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007A4-approval-governance-concurrency-and-case-snapshot-closure
+- Summary: Governed approval-time races, canonical permission contract, protected proposal detail, and immutable open-case snapshot closure completed.
+- Tests run: Two PostgreSQL four-race runs; backend 535 tests at 93% coverage; frontend build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_081756_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High, mitigated by atomic lock-bound activation, exact loser ledgers, migration sync, and full gates.
+- Next action: 007B approval-case enrichment from appraisal.
+
+## 2026-07-13 08:33:58 - 2026-07-13_081756_normal_run
+- Agent tool used: codex
+- Slice attempted: 007A4-approval-governance-concurrency-and-case-snapshot-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_081756_normal_run/.ralph/runs/2026-07-13_081756_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_081756_normal_run/.ralph/runs/2026-07-13_081756_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 08:50:40 - 2026-07-13_083408_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_083408_architecture_review/.ralph/runs/2026-07-13_083408_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_083408_architecture_review/.ralph/runs/2026-07-13_083408_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_085050_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 006Z14-member-authority-action-and-calculation-proof-closure
+- Summary: Added executable permission-versus-scope member action proof and removed the dead calculation authority seam and brittle caller whitelist.
+- Tests run: 11 isolated matrix rows; 83 focused ownership tests at 88% focused coverage; backend 544 tests at 93%; frontend build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_085050_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High; production change removes only an unused interface and preserves calculations.
+- Next action: 007A5 approval governance complete loser ledger.
+
+## 2026-07-13 09:00:50 - 2026-07-13_085050_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z14-member-authority-action-and-calculation-proof-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_085050_normal_run/.ralph/runs/2026-07-13_085050_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_085050_normal_run/.ralph/runs/2026-07-13_085050_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 09:14:59 - 2026-07-13_090059_normal_run
+- Agent tool used: codex
+- Slice attempted: 007A5-approval-governance-complete-loser-ledger
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_090059_normal_run/.ralph/runs/2026-07-13_090059_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_090059_normal_run/.ralph/runs/2026-07-13_090059_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_091510_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007B-approval-case-creation-from-appraisal
+- Summary: Enriched the unique appraisal handoff shell with immutable dated matrix, committee,
+  approver, amount, related-entity, exception, and loan-limit provenance snapshots through the
+  approvals-owned public seam.
+- Tests run: focused red/green tracer bullets; backend 553 tests at 93% coverage; frontend
+  build/typecheck/lint and 208 tests; Django check and migration sync.
+- Evidence saved: `.ralph/runs/2026-07-13_091510_normal_run/evidence/`
+- Result: Success
+- Risk level: Medium
+- Next action: 007C CFO and Director threshold routing.
+
+## 2026-07-13 09:39:47 - 2026-07-13_091510_normal_run
+- Agent tool used: codex
+- Slice attempted: 007B-approval-case-creation-from-appraisal
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/.ralph/runs/2026-07-13_091510_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/.ralph/runs/2026-07-13_091510_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 10:07:17 - 2026-07-13_094017_normal_run
+- Agent tool used: codex
+- Slice attempted: 007C-cfo-and-director-threshold-routing
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_094017_normal_run/.ralph/runs/2026-07-13_094017_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_094017_normal_run/.ralph/runs/2026-07-13_094017_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 10:31:01 - 2026-07-13_100911_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_100911_architecture_review/.ralph/runs/2026-07-13_100911_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_100911_architecture_review/.ralph/runs/2026-07-13_100911_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_111515_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 006Z15-member-public-action-authority-matrix-closure
+- Summary: Replaced evaluator-only member authority aliases with ten real public action rows,
+  canonical object-denial transport behavior, exact ledgers, scope-kind execution, and cross-member
+  substitution rejection at staff application and authenticated portal ownership seams.
+- Tests run: 13 independently selectable matrix/omission tests; 68 focused member regressions;
+  backend 568 tests at 93% coverage; frontend build/typecheck/lint and 208 tests; Django check and
+  migration sync.
+- Evidence saved: `.ralph/runs/2026-07-13_111515_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High
+- Next action: 007A6 approval governance winner-evidence content closure.
+
+## 2026-07-13 12:05:51 - 2026-07-13_111515_normal_run
+- Agent tool used: codex
+- Slice attempted: 006Z15-member-public-action-authority-matrix-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_111515_normal_run/.ralph/runs/2026-07-13_111515_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_111515_normal_run/.ralph/runs/2026-07-13_111515_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 12:25:14 - 2026-07-13_120630_normal_run
+- Agent tool used: codex
+- Slice attempted: 007A6-approval-governance-winner-evidence-content-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_120630_normal_run/.ralph/runs/2026-07-13_120630_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_120630_normal_run/.ralph/runs/2026-07-13_120630_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_122527_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007C2-approval-case-read-scope-and-snapshot-contract-closure
+- Summary: Closed approval-case object scope, coherent immutable snapshot validation, exact
+  enrichment replay provenance, canonical serializer parity, and real enriched-case configuration
+  immutability.
+- Tests run: RED/GREEN contract tracer bullets; 49 focused contract rows; 74 broader approval rows;
+  backend 585 tests at 93% coverage; frontend build/typecheck/lint and 208 tests; Django check and
+  migration sync.
+- Evidence saved: `.ralph/runs/2026-07-13_122527_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High
+- Next action: 007D approval action API — approve, reject, return.
+
+## 2026-07-13 12:53:01 - 2026-07-13_122527_normal_run
+- Agent tool used: codex
+- Slice attempted: 007C2-approval-case-read-scope-and-snapshot-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_122527_normal_run/.ralph/runs/2026-07-13_122527_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_122527_normal_run/.ralph/runs/2026-07-13_122527_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_125427_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007D-approval-action-api-approve-reject-return
+- Summary: Added transactional approve/reject/return APIs, immutable versioned actions, joint
+  completion, unique sanction decisions, guarded application transitions, canonical response
+  parity, and exact audit/workflow/notification evidence.
+- Tests run: RED/GREEN tracer bullets; 31 focused approval/dependency rows; backend 592 tests at
+  93% coverage; frontend build/typecheck/lint and 208 tests; Django check and migration sync.
+- Evidence saved: `.ralph/runs/2026-07-13_125427_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High
+- Next action: 007E conflict-of-interest blocking.
+
+## 2026-07-13 13:15:17 - 2026-07-13_125427_normal_run
+- Agent tool used: codex
+- Slice attempted: 007D-approval-action-api-approve-reject-return
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_125427_normal_run/.ralph/runs/2026-07-13_125427_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_125427_normal_run/.ralph/runs/2026-07-13_125427_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 13:49:22 - 2026-07-13_131622_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_131622_architecture_review/.ralph/runs/2026-07-13_131622_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_131622_architecture_review/.ralph/runs/2026-07-13_131622_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 14:32:49 - 2026-07-13_135007_normal_run
+- Agent tool used: codex
+- Slice attempted: 007C3-approval-case-source-read-scope-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_135007_normal_run/.ralph/runs/2026-07-13_135007_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_135007_normal_run/.ralph/runs/2026-07-13_135007_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_143342_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007D2-approval-action-boundary-and-postgresql-race-closure
+- Summary: Closed approval projection/action parity, guarded owner transitions, complete public
+  denial ledgers, communication-owned Credit Assessment notification persistence, adapter rollback,
+  and authoritative approval-action concurrency.
+- Tests run: retained RED/GREEN tracer bullets; 56 focused approval rows (2 PostgreSQL-only in the
+  SQLite suite); both PostgreSQL races twice; backend 621 tests at 93% coverage; frontend
+  build/typecheck/lint and 208 tests; Django check and migration sync.
+- Evidence saved: `.ralph/runs/2026-07-13_143342_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High
+- Next action: 007D3 returned approval cycle and resubmission closure.
+
+## 2026-07-13 14:59:19 - 2026-07-13_143342_normal_run
+- Agent tool used: codex
+- Slice attempted: 007D2-approval-action-boundary-and-postgresql-race-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_143342_normal_run/.ralph/runs/2026-07-13_143342_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_143342_normal_run/.ralph/runs/2026-07-13_143342_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 15:45:18 - 2026-07-13_153721_repair
+
+- Agent tool used: codex
+- Slice repaired: 007D3-returned-approval-cycle-and-resubmission-closure
+- Summary: Repaired the trusted PostgreSQL five-race selection after the returned-cycle test made
+  the protected exact-count predicate discover six tests. Preserved the legacy initial-submission
+  race in a separate PostgreSQL-only class and kept the returned-cycle race in the trusted class.
+- Tests run: exact five-race PostgreSQL selection twice; retained legacy PostgreSQL race; backend
+  Django check, migration sync, 628 tests with 19 expected SQLite skips and 93% coverage; frontend
+  build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_153721_repair/`
+- Result: Repair complete; ready for full independent revalidation.
+- Risk level: High (approval workflow), with repair limited to test organization.
+- Next action: Orchestrator revalidates and commits 007D3; then run 007E.
+
+## 2026-07-13 - 2026-07-13_155025_repair
+
+- Agent tool used: codex
+- Slice repaired: 007D3-returned-approval-cycle-and-resubmission-closure
+- Summary: Corrected the prior repair packet's agent-result wording after the protected safety
+  check interpreted its imperative commit instruction as an explicit veto. Preserved every 007D3
+  production, migration, test, contract, and run-ahead sharpening change.
+- Tests run: exact artifact predicate RED/GREEN; frontend build/typecheck/lint and 208 isolated
+  tests; backend Django check, migration sync, 628 tests with 19 expected SQLite skips and 93%
+  coverage; exact five-race PostgreSQL selection twice.
+- Evidence saved: `.ralph/runs/2026-07-13_155025_repair/`
+- Result: Success
+- Risk level: High (approval workflow), with this repair limited to Ralph result artifacts and
+  bookkeeping.
+- Next action: Full independent revalidation; then run 007E.
+
+## 2026-07-13 16:04:28 - 2026-07-13_155025_repair
+- Agent tool used: codex
+- Slice attempted: 007D3-returned-approval-cycle-and-resubmission-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_145943_normal_run/.ralph/runs/2026-07-13_155025_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_145943_normal_run/.ralph/runs/2026-07-13_155025_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_160532_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007E-conflict-of-interest-blocking
+- Summary: Added cycle-frozen conflict evaluation, exclusion/replacement authority, exact COI-006
+  denial and audit behavior, general-meeting flagging, immutable abstention, and conflict-blocked
+  outcomes without sanction creation.
+- Tests run: retained RED/GREEN tracer bullets; 70 focused approval tests with two expected
+  PostgreSQL-only skips; backend check/migration sync and 637 tests with 19 expected SQLite skips
+  at 93% coverage; frontend build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_160532_normal_run/evidence/terminal-logs/`
+- Result: Success
+- Risk level: High
+- Next action: Architecture review, then 007F exception approval workflow.
+
+## 2026-07-13 16:48:29 - 2026-07-13_160532_normal_run
+- Agent tool used: codex
+- Slice attempted: 007E-conflict-of-interest-blocking
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_160532_normal_run/.ralph/runs/2026-07-13_160532_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_160532_normal_run/.ralph/runs/2026-07-13_160532_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_164911_architecture_review
+
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Review window: `48ef331...e46ced6` (007C3, 007D2, 007D3, 007E).
+- Summary: Found Critical duplicate-Director conflict authority plus High alternate-history and
+  pre-pagination count defects; queued 007E2 and sharpened 007F/007G. Production code unchanged.
+- Tests run: three executable RED review probes; frontend build/typecheck/lint and 208 tests;
+  backend check/migration sync and 637 tests with 19 expected skips at 93% coverage; queue lint.
+- Evidence saved: `.ralph/runs/2026-07-13_164911_architecture_review/evidence/`.
+- Result: Success
+- Risk level: Low review run; queued corrective slice is High risk.
+- Next action: Run 007E2.
+
+## 2026-07-13 17:10:30 - 2026-07-13_164911_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_164911_architecture_review/.ralph/runs/2026-07-13_164911_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_164911_architecture_review/.ralph/runs/2026-07-13_164911_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_171041_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007E2-conflict-authority-projection-and-scope-closure
+- Summary: Closed distinct CFO/Director conflict authority, canonical replacement/action history,
+  exact pre-pagination reader scope, general-meeting detection scope, whitespace declaration
+  validation, and the explicit approval-owned projection updater/backfill.
+- Tests run: retained six RED/GREEN tracer bullets; 86 conflict/projection and migration tests;
+  backend check/migration sync and 651 tests with 19 expected SQLite skips at 93% coverage;
+  frontend build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_171041_normal_run/evidence/`
+- Result: Success
+- Risk level: High
+- Next action: 007F exception approval workflow.
+
+## 2026-07-13 17:45:35 - 2026-07-13_171041_normal_run
+- Agent tool used: codex
+- Slice attempted: 007E2-conflict-authority-projection-and-scope-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_171041_normal_run/.ralph/runs/2026-07-13_171041_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_171041_normal_run/.ralph/runs/2026-07-13_171041_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_174603_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007F-exception-approval-workflow
+- Summary: Added immutable case/cycle Exception Register creation, truthful typed forced routes,
+  exact replay, atomic outcome projection, canonical scoped read API, evidence, and seeded access.
+- Tests run: retained five RED/GREEN cycles and review repairs; backend check/migration sync and
+  656 tests with 19 expected SQLite skips at 93% coverage; frontend typecheck/lint, 208 tests, build.
+- Evidence saved: `.ralph/runs/2026-07-13_174603_normal_run/evidence/`
+- Result: Success
+- Risk level: Medium slice with Critical permission and approval-ledger controls reviewed.
+- Next action: Run 007G general-meeting evidence.
+
+## 2026-07-13 18:24:33 - 2026-07-13_174603_normal_run
+- Agent tool used: codex
+- Slice attempted: 007F-exception-approval-workflow
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_174603_normal_run/.ralph/runs/2026-07-13_174603_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_174603_normal_run/.ralph/runs/2026-07-13_174603_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_182512_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007G-general-meeting-evidence-for-special-cases
+- Summary: Added immutable General Meeting evidence with exact replay/supersession, Critical
+  permission plus case/document scope, dedicated final-sanction gates, audit/workflow history, and
+  cycle-frozen approval projection without changing conflict or Exception Register authority.
+- Tests run: retained six RED/GREEN tracer cycles and migration-repair repro; backend check,
+  migration sync, and 664 tests with 19 expected SQLite skips at 93% coverage; frontend
+  build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_182512_normal_run/evidence/`
+- Result: Success
+- Risk level: Medium slice with a Critical record permission and sanction-completion gate.
+- Next action: Run 007H Credit Sanction Register.
+
+## 2026-07-13 18:57:57 - 2026-07-13_182512_normal_run
+- Agent tool used: codex
+- Slice attempted: 007G-general-meeting-evidence-for-special-cases
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_182512_normal_run/.ralph/runs/2026-07-13_182512_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_182512_normal_run/.ralph/runs/2026-07-13_182512_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 - 2026-07-13_190107_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007H-credit-sanction-register
+- Summary: Added immutable approved/rejected Credit Sanction Register generation in the terminal
+  approval transaction, complete frozen 15-field projection, permissioned sanction/register read
+  APIs, April-March filtering, workflow/audit linkage, and source reader role grants.
+- Tests run: retained RED/GREEN tracer and review-repair logs; 94 focused approval tests; backend
+  check/migration sync and 669 tests with 19 expected SQLite skips at 93% coverage; frontend
+  build/typecheck/lint and 208 tests.
+- Evidence saved: `.ralph/runs/2026-07-13_190107_normal_run/evidence/`
+- Result: Success
+- Risk level: Medium compliance/money projection with immutable financial decision evidence.
+- Next action: Architecture review is due; then run 007I Sanction Workbench UI.
+
+## 2026-07-13 19:31:27 - 2026-07-13_190107_normal_run
+- Agent tool used: codex
+- Slice attempted: 007H-credit-sanction-register
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_190107_normal_run/.ralph/runs/2026-07-13_190107_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_190107_normal_run/.ralph/runs/2026-07-13_190107_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

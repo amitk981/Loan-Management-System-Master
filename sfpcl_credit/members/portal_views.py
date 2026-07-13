@@ -20,6 +20,14 @@ def _portal_member_or_response(request):
             "FORBIDDEN",
             portal_services.PORTAL_PERMISSION_ERROR,
         )
+    claimed_member_id = request.GET.get("member_id")
+    if claimed_member_id and claimed_member_id != str(member.member_id):
+        return None, None, error_response(
+            request,
+            403,
+            "OBJECT_ACCESS_DENIED",
+            "You cannot access this member.",
+        )
     return member, user, None
 
 

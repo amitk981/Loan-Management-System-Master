@@ -1,0 +1,33 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFF
+======================================================================
+FAIL: test_source_sanction_package_readers_receive_case_read_permission (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_source_sanction_package_readers_receive_case_read_permission) (role_code='credit_manager')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_135007_normal_run/sfpcl_credit/tests/test_catalogue_seed.py", line 235, in test_source_sanction_package_readers_receive_case_read_permission
+    self.assertTrue(
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_source_sanction_package_readers_receive_case_read_permission (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_source_sanction_package_readers_receive_case_read_permission) (role_code='internal_auditor')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_135007_normal_run/sfpcl_credit/tests/test_catalogue_seed.py", line 235, in test_source_sanction_package_readers_receive_case_read_permission
+    self.assertTrue(
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_source_sanction_package_readers_receive_case_read_permission (sfpcl_credit.tests.test_catalogue_seed.CatalogueSeedTests.test_source_sanction_package_readers_receive_case_read_permission) (role_code='company_secretary')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_135007_normal_run/sfpcl_credit/tests/test_catalogue_seed.py", line 235, in test_source_sanction_package_readers_receive_case_read_permission
+    self.assertTrue(
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.088s
+
+FAILED (failures=3)
+Destroying test database for alias 'default'...

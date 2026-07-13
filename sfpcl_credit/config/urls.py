@@ -26,6 +26,28 @@ from sfpcl_credit.workflows import event_views
 
 
 urlpatterns = [
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/sanction-decision/",
+        approval_views.loan_application_sanction_decision,
+        name="loan-application-sanction-decision",
+    ),
+    path(
+        "api/v1/credit-sanction-register/",
+        approval_views.credit_sanction_register_collection,
+        name="credit-sanction-register-list",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/general-meeting-approval/",
+        approval_views.loan_application_general_meeting_approval,
+        name="loan-application-general-meeting-approval",
+    ),
+    path("api/v1/exception-register/", approval_views.exception_register_collection, name="exception-register-list"),
+    path("api/v1/approval-cases/", approval_views.approval_case_collection, name="approval-case-list"),
+    path("api/v1/approval-cases/<uuid:approval_case_id>/", approval_views.approval_case_detail, name="approval-case-detail"),
+    path("api/v1/approval-cases/<uuid:approval_case_id>/approve/", approval_views.approval_case_approve, name="approval-case-approve"),
+    path("api/v1/approval-cases/<uuid:approval_case_id>/reject/", approval_views.approval_case_reject, name="approval-case-reject"),
+    path("api/v1/approval-cases/<uuid:approval_case_id>/return-for-clarification/", approval_views.approval_case_return, name="approval-case-return"),
+    path("api/v1/approval-cases/<uuid:approval_case_id>/abstain/", approval_views.approval_case_abstain, name="approval-case-abstain"),
     path("api/v1/approval-matrix-rules/", approval_views.rule_collection, name="approval-matrix-rule-list-create"),
     path("api/v1/approval-matrix-rules/<uuid:approval_matrix_rule_id>/", approval_views.rule_detail, name="approval-matrix-rule-supersede"),
     path("api/v1/sanction-committees/", approval_views.committee_collection, name="sanction-committee-list-create"),
@@ -174,6 +196,11 @@ urlpatterns = [
         "api/v1/loan-applications/<uuid:loan_application_id>/sanction-case/",
         application_views.loan_application_sanction_case,
         name="loan-application-sanction-case",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/approval-cases/",
+        application_views.loan_application_approval_case,
+        name="loan-application-approval-case",
     ),
     path(
         "api/v1/appraisal-notes/<uuid:loan_appraisal_note_id>/submit-for-review/",

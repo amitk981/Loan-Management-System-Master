@@ -1683,7 +1683,8 @@ Protected borrower portal endpoints:
 
 Rules:
 - The member scope comes only from the authenticated active `PortalAccount` linked to the bearer
-  token user. Client-supplied `member_id` query values are ignored and never grant authority.
+  token user. A client-supplied `member_id` query value that differs from that account returns
+  `403 OBJECT_ACCESS_DENIED`; it is never ignored, disclosed, or used for a read/write.
 - If the linked `PortalAccount` becomes suspended/inactive after token issuance, the shared
   session-bound auth validator revokes the active session with reason
   `portal_account_status_changed` and these endpoints return `401 INVALID_TOKEN`.
@@ -1717,11 +1718,14 @@ Frontend wiring:
   `supply_route`, and non-blank `evidence_reference`. Unknown fields, invalid UUID relationships,
   and negative/over-precision quantity or value facts return `400 VALIDATION_ERROR`; stale member
   versions return `409 STALE_WRITE` without record, history, or audit evidence.
+  An existing member outside the actor's action-specific persisted scope returns
+  `403 OBJECT_ACCESS_DENIED` without supply, member-version, history, or audit writes.
 - Direct supply forbids `producer_institution_member_id`; the Producer Institution route requires
   an active, non-self FPC/Producer Institution member UUID. Subsidiary and step-down subsidiary
   destinations require `supplied_to_entity_id`.
 - `POST /api/v1/produce-supply-records/{record_id}/verify/` retains maker-checker separation and
-  the current supply-record `version`; stale verification returns `409 STALE_WRITE`.
+  the current supply-record `version`; stale verification returns `409 STALE_WRITE`. Object-scope
+  denial is `403 OBJECT_ACCESS_DENIED`, while maker-checker denial remains `403 FORBIDDEN`.
 - `POST /api/v1/members/{member_id}/active-status/verify/` requires
   `members.active_status.verify` plus `result_id`, current member `version`, ISO `as_of_date`,
   `decision` (`active`, `inactive`, or `relaxation`), and a non-blank `reason`; missing/future dates
@@ -1830,7 +1834,8 @@ Frontend wiring:
 ### Portal application limit projection (006Z2)
 
 - `GET /api/v1/portal/application-limit-projection/?requested_amount={money}` derives member scope
-  only from the active `PortalAccount` and is read-only.
+  only from the active `PortalAccount` and is read-only. A different client-supplied `member_id`
+  returns `403 OBJECT_ACCESS_DENIED` without assessment, audit, or workflow writes.
 - `status = available` returns the server-calculated shareholding, land, and effective lower limit,
   the effective policy version/date, and the server-owned requested-amount advisory flags.
 - Missing, stale, future, closed, manual, or provenance-mismatched active-member authority—and
@@ -1849,6 +1854,9 @@ Rules:
 - Run requires `credit.eligibility.run` and the existing loan-application object-access boundary.
   A user missing the global run permission receives `403 FORBIDDEN`; a user with the
   permission but outside the application scope receives `403 OBJECT_ACCESS_DENIED`.
+  After application authority succeeds, a query/body `member_id` different from the application's
+  stored member also returns `403 OBJECT_ACCESS_DENIED` without assessment, audit, or workflow
+  writes; the actorless member calculation always derives its member from the application.
 - Read requires the existing `applications.loan_application.read` permission and object-access
   boundary used by application detail.
 - Missing applications return `404 NOT_FOUND`. Reading before an assessment exists returns
@@ -2382,7 +2390,8 @@ stable `NO_EFFECTIVE_SANCTION_COMMITTEE` and `AMBIGUOUS_SANCTION_COMMITTEE` doma
 
 Rule and committee POST/PATCH payloads now require a non-blank `reason`; success returns a pending
 proposal with `approval_configuration_proposal_id`, `proposal_type`, nullable `target_entity_id`,
-`reason`, `status`, `version`, maker/checker ids, rejection reason, and §44-shaped
+immutable `payload`, `reason`, `status`, `version`, maker/checker ids, nullable `decided_at`,
+rejection reason, and §44-shaped
 `available_actions`. It does not make configuration effective.
 
 - `GET /api/v1/approval-configuration-proposals/{proposal_id}/`
@@ -2390,10 +2399,390 @@ proposal with `approval_configuration_proposal_id`, `proposal_type`, nullable `t
 - `POST /api/v1/approval-configuration-proposals/{proposal_id}/reject/` —
   `{"version": 1, "reason": "Policy evidence incomplete"}`
 
+Proposal detail returns `401 AUTH_REQUIRED` without a valid session and `403 FORBIDDEN` to an
+authenticated user who is neither the maker, an active persisted CFO/Company Secretary checker,
+nor a holder of `approvals.matrix.read`. Those participants/readers receive 200. This boundary does
+not infer access from display role names and prevents unrelated users from seeing Critical change
+reasons, actor ids, or action eligibility.
+
 The checker must be active, distinct from the maker, and carry persisted `cfo` or
 `company_secretary` authority. Self-decision and missing authority return
-`403 MAKER_CHECKER_VIOLATION` and `403 APPROVER_AUTHORITY_REQUIRED`; stale version returns
+`403 MAKER_CHECKER_VIOLATION` and `403 APPROVAL_AUTHORITY_REQUIRED`; stale version returns
 `409 STALE_VERSION`; terminal replay returns `409 TRANSITION_CONFLICT`; approval-time lifecycle
 conflicts return `409 CONFIGURATION_CONFLICT` or `409 PROPOSAL_STALE`. Validation uses the standard
 `400 VALIDATION_ERROR` field-error envelope. Approval atomically activates/supersedes and writes
 separate author/approver VersionHistory plus `config.changed`; rejection changes no effective row.
+
+# Approval-case enrichment from appraisal (007B)
+
+`POST /api/v1/loan-applications/{loan_application_id}/approval-cases/` requires an authenticated
+holder of `approvals.case.create` with object access to the application. It accepts exactly the
+source §25.2 fields `approval_type = sanction`, an `amount` equal to the reviewed appraisal's
+recommended amount, a non-blank `reason_for_approval`, and boolean `force_exception_route`.
+When the frozen assessment requires an exception or the caller forces that route, the request also
+requires a distinct non-blank `business_reason` and may include a string `risk_assessment`.
+An assessment-required route has canonical `exception_type = exceeds_loan_limit`; a forced
+within-limit route must explicitly name `stage_bypass` or `waiver` so the register never claims a
+limit breach that did not occur.
+
+The adapter never creates a row. It enriches the unique pending shell created by the §24.5 sanction
+submission or returns `404 NOT_FOUND`. It derives application/appraisal identity from that shell,
+uses the latest immutable review date, and consumes the stored verified loan-limit assessment's
+condition and policy provenance. Missing/stale provenance is `409 INVALID_STATE_TRANSITION`;
+missing or ambiguous effective approved configuration uses the resolver's stable 400 code.
+
+Success returns the existing submission projection plus immutable `approval_type`, amount,
+rule/committee ids and versions, decision date, concrete `required_approvers`, empty
+`excluded_approvers`, related-entity facts, reason, canonical exception condition, complete matrix
+and committee projections, loan-limit provenance, and case `version`. An identical repeat returns
+the same projection without writes. A conflicting repeat or decided case returns 409. Later matrix,
+committee, pending-proposal, or losing-proposal changes never rewrite the stored projection.
+
+# Approval-case queue and detail reads (007C)
+
+`GET /api/v1/approval-cases/` requires `approvals.case.read` and accepts only `current_status`,
+`approval_type`, `assigned_to_me`, `page`, and `page_size`. It returns the standard top-level
+pagination envelope. `assigned_to_me=true` includes only complete version-2-or-later 007B routing
+snapshots where the caller remains in `required_approvers`, is absent from `excluded_approvers`,
+has no immutable `approval_actions` row, and the case is still pending. Missing/default snapshot
+facts never fall back to amount, the current matrix, or the current committee.
+
+`GET /api/v1/approval-cases/{approval_case_id}/` also requires `approvals.case.read`. Any global
+object scope must be persisted separately; the permission alone is not global scope. A complete
+routed case is visible when its immutable `required_approvers` snapshot names the caller (including
+the caller's own acted history), when a Credit Manager owns the case submission or passes the
+existing application object-scope decision, or when the caller's active role has an active persisted approval-case
+read-scope grant. The bounded grant types are `legal_readonly`, `audit_readonly`, and
+`management_readonly`; the default catalogue seeds only Company Secretary legal read-only and
+Internal Auditor audit read-only grants. The broad `management_readonly` permission, role display
+text, and caller query flags never imply a grant. Unassigned Directors, unrelated case makers, and
+arbitrary custom-role permission holders receive an empty scope-filtered collection
+(`total_count = 0`) and direct detail returns `403 OBJECT_ACCESS_DENIED`. A non-reader receives
+`403 FORBIDDEN`; an incomplete or internally contradictory snapshot is not a public case and
+returns `404 NOT_FOUND`. Reads and denials write no audit or workflow evidence.
+
+Object scope is applied before pagination and count calculation. `assigned_to_me=true` is the
+narrower queue filter: the caller must additionally be pending, unexcluded, and without an
+immutable action. The ordinary collection does not bypass object scope and keeps acted cases in
+the assigned actor's readable history. Read-only role grants and Credit Manager ownership never
+create an assignment, enable an action, or bypass its action-specific permission. The collection
+selector narrows candidates in the database by persisted role scope, immutable approver candidacy,
+or Credit Manager ownership before the remaining JSON coherence validation runs.
+
+The selector's indexed `routing_snapshot_is_coherent` and attributable-reader projection are
+updated only through the explicit approval-owned projection interface. Case creation, workflow
+linkage, enrichment, actions/abstention, and owning-appraisal refresh invoke it atomically; an
+ordinary model save has no hidden cross-table side effect. The reader projection contains only
+original routed actors, current effective replacements, and actors with an immutable action. It
+permits exact database count and `LIMIT/OFFSET` before collection serialization; detail and action
+requests still execute the full canonical snapshot-coherence check and never trust the projection
+as action authority.
+
+Detail returns stored authority/provenance (`approval_matrix_rule_id` and version,
+`sanction_committee_id` and version, `decision_date`, ordered required/excluded approvers,
+matrix/committee/loan-limit snapshots, and case `version`). Per-approver `decision`/`acted_at` are
+read from the immutable source §15.4 `approval_actions` ledger; 007C creates no action records.
+
+The nested `review_facts` object is frozen into each enriched approval cycle (007D3). Legacy
+pre-007D3 rows are deterministically backfilled from their owning records during migration:
+
+- `eligibility` and eligible amount come from the appraisal-owned frozen eligibility/loan-limit
+  snapshots.
+- requested amount, purpose, and documentation/completeness status come from the owning loan
+  application.
+- borrowing history and recommendation amount come from the owning appraisal note.
+- risk ratings/mitigation come from the owning risk assessment.
+- `source_references` links the application, appraisal, eligibility, and loan-limit owner APIs.
+
+Changing current matrix/committee rows cannot change queue membership, stored provenance, or
+action assignment for an existing case.
+
+Routability is one approval-owned validation contract shared by list, detail, and later action
+seams. Case/application/type/amount/decision/exception facts must agree with the stored matrix;
+rule and committee ids, versions, and dates must match; the snapshot must contain exactly the
+stored CFO and required distinct Directors with unique ids; required roles/director count and
+joint/register facts must be complete; and the loan-limit assessment/application/exception/policy
+provenance must equal the reviewed credit snapshot. Invalid or contradictory snapshots are hidden
+and non-actionable without writes; live rule, committee, or user membership is never queried to
+repair them.
+
+The §25.2 enrichment success projection now includes source-required `current_status`. Enrichment,
+list, and detail compose the same canonical immutable routing projection (status, rule/committee,
+decision date, required/excluded authority, and loan-limit provenance). Detail adds immutable
+decision history, review read-throughs, and caller-specific actions; existing submission fields
+remain backward-compatible additions.
+
+An enrichment replay is exact only when the locked reviewed decision date and recommended amount,
+assessment/application ids, exception flag, calculation rule, policy id/name, and calculation time
+equal the frozen case provenance. Any changed reviewed or credit fact returns stable
+`409 INVALID_STATE_TRANSITION` and leaves case/action/audit/workflow ledgers unchanged. A later
+effective governed configuration version does not rewrite an otherwise coherent historical case.
+
+# Approval-case actions and sanction decision creation (007D)
+
+`POST /api/v1/approval-cases/{approval_case_id}/approve/`, `reject/`, and
+`return-for-clarification/` accept exactly optimistic integer `version` and optional `comments`;
+comments are mandatory and non-blank for reject/return. The caller must hold the action-specific
+permission and remain a pending, unexcluded actor in the coherent immutable case snapshot.
+Permission failure is `403 FORBIDDEN`, missing object scope is `403 OBJECT_ACCESS_DENIED`, stale
+version is `409 STALE_VERSION`, and acted/closed/excluded state is `409 TRANSITION_CONFLICT`.
+The submitted `version` must be a positive JSON integer; booleans, zero, negative values, strings,
+missing values, and unknown request fields return `400 VALIDATION_ERROR` without writes. Approve
+permits omitted/blank comments; reject and return require a non-blank string.
+
+Success returns the §25.5 action identifiers/status/sanction flags merged with the canonical 007C2
+case detail projection. Collection, detail, and action responses now compose the same history-aware
+projection: route provenance is immutable, while each required approver's `decision`/`acted_at` and
+the caller's `available_actions` reflect the action ledger immediately. Each action increments case `version`, creates one immutable §15.4 row,
+and immediately disables every action for that actor. Partial joint approval remains pending. Final
+approval atomically closes the case, advances the application to `approved_by_sanction_committee`,
+and creates the unique per-application §15.5 sanction decision. Reject advances the application to
+`rejected_by_sanction_committee`; return restores the application to `appraisal_reviewed` and the
+appraisal to editable `draft` so clarification can be supplied.
+Every successful action writes attributable audit/workflow evidence. Each terminal outcome crosses
+the communication-owned internal adapter in the same transaction, persisting one source §24.2
+`pending` email `Communication` snapshot, one linked in-app notification to the persisted
+`credit_assessment` team, and a metadata-only communication audit. Any adapter persistence failure
+rolls back the action, case/application outcome, sanction, register, workflow, communication,
+notification, and audits. Application, appraisal, and case source states are re-evaluated through
+the shared transition guard after locking and before mutation. As delivered by 007H, an approved
+or rejected terminal action also freezes exactly one Credit Sanction Register row in this same
+transaction; partial approval, return, and conflict-blocked outcomes do not.
+
+# Exception approval and generated Exception Register (007F)
+
+An exception-routed §25.2 enrichment requires both `approvals.case.create` and
+`approvals.exception.create`. It atomically creates exactly one
+`exception_register_entries` row for that approval case/cycle. The canonical type is
+`exceeds_loan_limit`; the bounded future-caller vocabulary is `stage_bypass` and `waiver`, and an
+unknown type is rejected. The entry copies the request's distinct `business_reason` and optional
+`risk_assessment`, links the loan application and approval case, and begins `pending`. An ordinary
+within-limit route creates no entry. Exact enrichment replay creates no duplicate or evidence.
+
+Inside the locked approval-action transaction, partial approval leaves the entry pending. Final
+approval changes it to `approved`; rejection changes it to `rejected`; both copy the case
+`closed_at`. Return-for-clarification and `blocked_by_conflict` also copy the case closure time but
+remain `pending`, because source data-model §15.7 defines no additional status. Denied conflicted
+actions never mutate the entry. Creation and outcome projection write attributable
+`exception_register.*` audit plus `exception_register` workflow evidence.
+
+`GET /api/v1/exception-register/?status=&exception_type=&page=&page_size=` requires
+`approvals.exception_register.read`, accepts only the source status/type vocabulary, and returns
+the standard pagination envelope. It is generated/read-only: mutation methods are not routed.
+Object scope delegates to the canonical approval-case selector before count and pagination. Each
+row includes register/application/case ids, `cycle_number`, type, description, business/risk facts,
+entry/case statuses, conflict reason, timestamps, `authority_applied_summary`, and canonical
+`route_approvers`, `required_approvers`, and complete `approval_actions`. Reads never re-run
+conflict replacement or consult live committee membership.
+
+The nullable `loan_account_id` is currently a UUID reference, not a foreign key to the tracer app's
+synthetic demo account. A protected FK is deferred to the production finance loan-account owner
+(A-084); exception entries created before sanction naturally carry no loan account.
+
+# Returned approval cycles and resubmission (007D3)
+
+Every sanction approval case now carries positive `cycle_number`, immutable
+`appraisal_review_decision_id`/`appraisal_revision`, and frozen `review_facts`. The database enforces
+unique `(loan_application, cycle_number)` and at most one pending cycle per application. Existing
+cases migrate to cycle 1; collection, detail, submission, enrichment, and action success projections
+all expose `cycle_number`.
+
+A returned case is closed history and never becomes assigned or actionable again. Its case,
+approver/action snapshot, frozen appraisal/configuration facts, audit/workflow, and communication
+evidence remain attached to that exact cycle. The maker may PATCH the returned draft through the
+existing appraisal boundary; only a non-empty `appraisal.updated` changed-field ledger after the
+return counts as correction. A no-op PATCH does not create revision authority.
+
+The existing `POST /api/v1/loan-applications/{loan_application_id}/submit-to-sanction-committee/`
+boundary creates cycle N+1 only when the latest prior cycle is `returned_for_clarification`, the
+appraisal has a later attributable correction ledger, and the latest immutable Credit Manager
+`reviewed` decision follows that correction. Pending, approved, rejected,
+uncorrected, stale-review, or otherwise incompatible submissions return
+`409 INVALID_STATE_TRANSITION` without a new case or sanction-submission evidence. The standard
+application -> appraisal -> approval-case lock order plus database uniqueness serializes competing
+resubmissions to one new shell/evidence set.
+
+Cycle N+1 is enriched from its own current reviewed appraisal/configuration facts. Its action ledger
+starts empty, so a user who acted in cycle N may independently act again when snapshotted in cycle
+N+1. Final approval creates the application-unique sanction decision only from the latest pending
+cycle; prior returned actions never count toward joint approval.
+
+# Conflict-of-interest exclusions and abstention (007E)
+
+Approval enrichment evaluates source conflict declarations plus frozen application/appraisal maker
+facts for that exact `cycle_number`. It leaves ordered `required_approvers` unchanged and writes
+unique `excluded_approvers` objects containing `user_id`, `conflict_code`, and non-blank `reason`.
+Director/relative declarations set `general_meeting_evidence_required = true`. A frozen same-role
+committee alternate may fill an excluded Director slot; the stored matrix role/count never shrinks.
+If no frozen alternate can preserve required CFO/Director authority, the case becomes
+`blocked_by_conflict`, closes without a sanction decision, and exposes `conflict_block_reason`.
+
+An excluded actor has limited case-detail/history access only: they never enter
+`assigned_to_me`, never receive an enabled action, and no permission or live committee membership
+widens that scope. Every attempted approve/reject/return returns `409` with the exact source body:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "CONFLICTED_APPROVER_NOT_ALLOWED",
+    "message": "This user is marked as conflicted for the approval case and cannot approve it.",
+    "details": {
+      "approval_case_id": "uuid",
+      "conflict_reason": "Borrower is relative of Director."
+    },
+    "field_errors": {}
+  }
+}
+```
+
+The denial adds one `approval_case.conflicted_action_denied` audit row naming the exact case,
+cycle, attempted action, reason, actor, request, IP, and user agent. It creates no ApprovalAction and
+changes no case/application/appraisal/sanction/workflow/communication ledger.
+
+`POST /api/v1/approval-cases/{approval_case_id}/abstain/` accepts exactly positive integer
+`version` and mandatory non-blank `comments`. It uses the existing approval authority permission
+and immutable action ledger with decision `abstained`, increments case version, and adds a
+`self_declared_abstention` exclusion. The case stays pending when frozen alternate authority can
+satisfy the matrix; otherwise it closes as `blocked_by_conflict` and notifies the Credit Assessment
+team through the communication adapter. Prior-cycle exclusions/abstentions never populate a later
+cycle; every enrichment recomputes from that cycle's frozen facts.
+
+# Conflict authority, history projection, and scope closure (007E2)
+
+Conflict replacement fills frozen role slots with distinct users. A user can occupy at most one
+effective CFO/Director slot; a two-Director route with either Director excluded therefore blocks
+when the frozen committee has only one remaining distinct Director. `conflict_block_reason` names
+the exact missing CFO or Director authority, the case closes atomically, and no sanction is
+created. `required_approvers_json` remains immutable route provenance.
+
+Collection, detail, action success, and historical-cycle reads share these authority facts (the
+§25.2 enrichment response preserves its backward-compatible raw `required_approvers` shape):
+
+- `route_approvers`: the unchanged ordered matrix/committee route snapshot.
+- `required_approvers`: the currently executable distinct actors with `role_code`, `user_id`,
+  `full_name`, nullable `decision`/`acted_at`, and `replacement_for_user_id` only when the actor
+  replaces an excluded original.
+- `approval_actions`: every immutable action with `approval_action_id`, role/user/name, decision,
+  comments, acted time, and replacement attribution when applicable.
+
+These three fields are identical in collection, detail, and the case portion of action responses;
+only caller-specific `available_actions` and the action endpoint's top-level result fields differ.
+An excluded original may retain COI-005 history access only because it is an original, effective,
+or already-acted cycle participant. Frozen committee candidacy, an unused-alternate declaration,
+or action permission alone grants no row, count, detail, queue, or write scope. An unused alternate
+therefore receives `total_count: 0` and direct `403 OBJECT_ACCESS_DENIED`.
+
+Active borrower and Director-relative declarations set
+`general_meeting_evidence_required = true` even when the related Director/committee member is not
+assigned to this case. Material-interest and maker-checker facts alone do not set the flag.
+Exclusions remain limited to frozen authority candidates, and database validation rejects empty or
+whitespace-only declaration reasons.
+
+# General-meeting evidence and final-sanction gate (007G)
+
+`POST /api/v1/loan-applications/{loan_application_id}/general-meeting-approval/` requires
+`approvals.general_meeting.record`, `approvals.case.read`, canonical object scope to the latest
+routed approval cycle, and `documents.file.download`. The case's immutable
+`general_meeting_evidence_required` flag must be true. The request accepts only:
+
+```json
+{
+  "related_party_type": "director_relative",
+  "related_party_user_id": "uuid-or-null",
+  "relationship_description": "Borrower is a relative of a Director.",
+  "meeting_date": "2026-07-15",
+  "notice_document_id": "uuid",
+  "minutes_document_id": "uuid",
+  "resolution_document_id": "uuid",
+  "approval_status": "pending | approved | rejected"
+}
+```
+
+`related_party_type` is exactly `director`, `director_relative`, or `committee_member`.
+Description and ISO date are mandatory. Notice, minutes, and resolution must be three distinct,
+existing document files accessible under the recorder's document authority. Missing files return
+`400 VALIDATION_ERROR` on their exact request fields; missing record/document permission returns
+`403 FORBIDDEN`; missing case scope returns `403 OBJECT_ACCESS_DENIED`; a non-related-party cycle
+returns `409 INVALID_STATE`.
+
+Success returns the standard envelope with the request fields plus
+`general_meeting_approval_id`, `recorded_by_user_id`, `recorded_at`, and nullable
+`supersedes_general_meeting_approval_id`. Exact replay returns the existing id with no audit,
+workflow, or row write. A changed payload creates a new immutable row whose `supersedes` link
+names the prior unsuperseded application record; it never updates the prior row. Creation writes
+`general_meeting_approval.recorded`; a changed outcome writes
+`general_meeting_approval.status_changed`; other changed evidence writes
+`general_meeting_approval.superseded`. Each real write has matching
+`general_meeting_approval` workflow evidence.
+
+The locked approval action transaction evaluates this gate only after object scope, version,
+conflict, assignment/action permission, and distinct effective authority establish that an
+`approve` action would be final. Missing, pending, and rejected current evidence return 409 with
+codes `GENERAL_MEETING_EVIDENCE_REQUIRED`, `GENERAL_MEETING_APPROVAL_PENDING`, and
+`GENERAL_MEETING_APPROVAL_REJECTED`. Details contain `approval_case_id`, `cycle_number`, nullable
+`general_meeting_approval_id`, and nullable `approval_status`. These denials insert no action or
+sanction and do not close/project an Exception Register entry. A conflict still returns the earlier
+canonical `CONFLICTED_APPROVER_NOT_ALLOWED` contract.
+
+Successful final approval freezes the current approved record on that case cycle. Return for
+clarification also freezes whichever current record exists without requiring it to be approved;
+no evidence is needed to return. Collection, detail, and action success expose that immutable
+record as nullable `general_meeting_approval`, beside unchanged `route_approvers`,
+`required_approvers`, and `approval_actions`. Later application-level supersession cannot change a
+returned or completed cycle's reference. A later cycle resolves the then-current unsuperseded
+application record independently.
+
+# Sanction decision and Credit Sanction Register reads (007H)
+
+`GET /api/v1/loan-applications/{loan_application_id}/sanction-decision/` requires
+`approvals.sanction.read`. It returns the source §25.8 decision shape: id, decision, sanctioned
+amount/tenure, interest type/value, repayment date, penal rate, `charges`, security summary,
+conditions precedent, and decision reason. It returns `404 NOT_FOUND` when no sanctioned decision
+exists, including before terminal approval and after rejection. A-079 remains binding: numeric
+rates, repayment date, and penal rate are nullable, charges are `{}`, and the blank conditions
+snapshot is projected as `null` until an approved owner supplies those facts.
+
+`GET /api/v1/credit-sanction-register/?financial_year=FY2026-27&decision=sanctioned&page=1&page_size=20`
+requires `approvals.sanction_register.read` and returns the standard list/pagination envelope.
+`decision` is exactly `sanctioned` or `rejected`; `financial_year` is canonical `FYyyyy-yy` and
+uses the April 1 inclusive / following April 1 exclusive window (A-086). Page defaults to 1,
+page size defaults to 20 and is capped at 100. Unknown parameters or invalid filter values return
+`400 VALIDATION_ERROR`. The collection is generated/read-only: POST is method-denied and there is
+no row detail/update/delete route. The slice's named readers—CFO and Director committee members,
+Company Secretary, and Internal Auditor—receive this read grant in the canonical role seed;
+possession of other approval/case permissions does not imply register access.
+
+Every approved or rejected terminal case creates exactly one immutable
+`credit_sanction_register_entries` row in the locked approval action transaction. Approved rows
+link the §15.5 sanction decision; rejected rows deliberately keep that link/amount null rather than
+inventing a sanction decision. The row also stores the exact terminal `sanction_approval` workflow
+event and writes one attributable `credit_sanction_register.created` audit. Stale/closed retries
+cannot duplicate the one-to-one case row. Partial approvals, returns, conflict-blocked cycles, and
+general-meeting gate denials create no row.
+
+The 15 functional-spec fields and their frozen sources are:
+
+| Response field | Frozen source |
+|---|---|
+| `application_number` | terminal case's loan application reference |
+| `borrower_name` | terminal application's member display/legal name |
+| `borrower_type` | terminal application's borrower type |
+| `requested_amount` | terminal application's required loan amount |
+| `eligible_amount` | case appraisal's verified loan-limit snapshot |
+| `recommended_amount` | case appraisal's reviewed recommendation |
+| `sanctioned_amount` | linked sanction decision; null for rejection |
+| `approval_authority` | case's canonical effective required-authority/action snapshot |
+| `approver_names` | ordered immutable actions for that case/cycle |
+| `approval_date` | terminal case closure date |
+| `decision` | terminal case outcome mapped to `sanctioned`/`rejected` |
+| `reasons` | case approval or rejection reason |
+| `exception_reference` | that case's one-to-one 007F row: id/type/business reason/status/cycle |
+| `conflict_abstention_details` | that case's frozen exclusions plus attributable abstention action |
+| `general_meeting_approval_reference` | that case's frozen 007G row: id/outcome/date/party/user/document metadata ids |
+
+The response additionally includes register/case/application/sanction/workflow ids and
+`recorded_at`. Register permission never grants document download: the three general-meeting
+document values are metadata ids only, and the document module retains its own permission and
+sensitivity checks. No template/Annexure code is stored or projected because OC-002 still leaves
+the Annexure K label conflicted (A-087).

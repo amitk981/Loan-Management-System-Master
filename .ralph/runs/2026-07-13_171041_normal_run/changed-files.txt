@@ -1,0 +1,20 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/007E2-conflict-authority-projection-and-scope-closure.md
+ M docs/slices/007F-exception-approval-workflow.md
+ M docs/slices/007G-general-meeting-evidence-for-special-cases.md
+ M docs/working/API_CONTRACTS.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+ M sfpcl_credit/approvals/models.py
+ M sfpcl_credit/approvals/modules/approval_actions.py
+ M sfpcl_credit/approvals/modules/approval_case_engine.py
+ M sfpcl_credit/approvals/modules/conflict_of_interest.py
+ M sfpcl_credit/approvals/modules/read_scope.py
+ M sfpcl_credit/approvals/modules/sanction_handoff.py
+ M sfpcl_credit/approvals/signals.py
+ M sfpcl_credit/tests/test_approval_case_routing_api.py
+ M sfpcl_credit/tests/test_approval_read_scope_migration.py
+?? .ralph/runs/2026-07-13_171041_normal_run/
+?? sfpcl_credit/approvals/migrations/0013_conflict_projection_scope_closure.py
+?? sfpcl_credit/approvals/modules/approval_case_projection.py

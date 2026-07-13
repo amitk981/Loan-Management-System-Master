@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_above_threshold_snapshots_cfo_and_two_directors (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_above_threshold_snapshots_cfo_and_two_directors)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_091510_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 562, in test_above_threshold_snapshots_cfo_and_two_directors
+    self.assertEqual(conflict.status_code, 409, conflict.content)
+AssertionError: 400 != 409 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Approval-case payload failed validation.", "details": {}, "field_errors": {"amount": "Must match the reviewed appraisal recommendation."}}, "meta": {"request_id": null, "timestamp": "2026-07-13T04:02:16.221437Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.034s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

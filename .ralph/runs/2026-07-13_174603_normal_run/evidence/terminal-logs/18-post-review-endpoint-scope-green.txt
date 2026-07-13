@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+F.
+======================================================================
+FAIL: test_forced_within_limit_endpoint_routes_and_registers_truthful_waiver (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_forced_within_limit_endpoint_routes_and_registers_truthful_waiver)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_sanction_submission_api.py", line 700, in test_forced_within_limit_endpoint_routes_and_registers_truthful_waiver
+    self.assertEqual(entry.approval_case_id, data["approval_case_id"])
+AssertionError: UUID('4da36556-7623-4982-b35f-6656dd37ebdc') != '4da36556-7623-4982-b35f-6656dd37ebdc'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.073s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

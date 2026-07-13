@@ -5,7 +5,10 @@ from django.utils import timezone
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.members import services
 from sfpcl_credit.members.models import Member, MemberChangeHistory, MemberIdentityChangeRequest
-from sfpcl_credit.members.modules.member_authority import evaluate_member_authority
+from sfpcl_credit.members.modules.member_authority import (
+    MemberObjectAccessDenied,
+    evaluate_member_authority,
+)
 from sfpcl_credit.members.protected_identity import identity_hash, mask_protected_identity, protected_identity_token
 
 
@@ -26,7 +29,7 @@ class MemberRegistry:
         if not access.allowed:
             if access.reason == "missing_permission":
                 raise PermissionDenied(f"Missing required permission: {permission}.")
-            raise PermissionDenied("You cannot access this member.")
+            raise MemberObjectAccessDenied("You cannot access this member.")
 
     @classmethod
     def get(cls, member_id, actor_user):
@@ -101,6 +104,8 @@ class MemberRegistry:
         member = Member.objects.select_for_update().get(member_id=change.member_id)
         approval = cls.evaluate_identity_approval(member, change, actor_user)
         if not approval["enabled"]:
+            if approval["code"] == "OBJECT_ACCESS_DENIED":
+                raise MemberObjectAccessDenied(approval["disabled_reason"])
             if approval["status"] == 403: raise PermissionDenied(approval["disabled_reason"])
             raise services.MemberWriteConflict(approval["code"], approval["disabled_reason"])
         old_values, new_values, changed = {}, {}, []

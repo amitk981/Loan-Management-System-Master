@@ -1,0 +1,9 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/007F-exception-approval-workflow.md
+ M docs/slices/007G-general-meeting-evidence-for-special-cases.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+?? .ralph/runs/2026-07-13_164911_architecture_review/
+?? docs/slices/007E2-conflict-authority-projection-and-scope-closure.md

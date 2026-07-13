@@ -1,0 +1,30 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_register_freezes_same_case_exception_abstention_and_meeting_references (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_register_freezes_same_case_exception_abstention_and_meeting_references)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2086, in test_register_freezes_same_case_exception_abstention_and_meeting_references
+    self.assertEqual(
+AssertionError: Lists differ: [{'ty[78 chars]me': None, 'conflict_code': 'self_declared_abs[148 chars]8Z'}] != [{'ty[78 chars]me': 'Snapshot Director', 'conflict_code': 'se[163 chars]8Z'}]
+
+First differing element 0:
+{'typ[77 chars]me': None, 'conflict_code': 'self_declared_abs[147 chars]78Z'}
+{'typ[77 chars]me': 'Snapshot Director', 'conflict_code': 'se[162 chars]78Z'}
+
+  [{'acted_at': '2026-07-13T13:39:38.294478Z',
+    'approval_action_id': 'c0b6e197-1e53-44a2-9206-7d74d33452d4',
+    'conflict_code': 'self_declared_abstention',
+-   'full_name': None,
++   'full_name': 'Snapshot Director',
+    'reason': 'Borrower is my relative.',
+    'type': 'abstention',
+    'user_id': '03f2ff6c-a3fc-466b-87f1-82885c4ffe1a'}]
+
+----------------------------------------------------------------------
+Ran 1 test in 0.056s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,7 +1,7 @@
 # Slice 007F: Exception Approval Workflow
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -14,7 +14,7 @@ Implement the exception route: cases that exceed the permissible limit (or are f
 Above-limit or policy-exception lending is possible only through the stricter authority route and always leaves a register trail (M05-FR-006).
 
 ## Depends On
-- 007E
+- 007E2
 
 ## Source References
 - docs/source/data-model.md §15.7 `exception_register_entries` (exception_type: exceeds limit / stage bypass / waiver; business_reason; risk_assessment; status lifecycle)
@@ -40,6 +40,62 @@ Above-limit or policy-exception lending is possible only through the stricter au
 - Register read: filters, pagination, permission negatives; no mutation endpoint exists.
 - Unknown exception_type rejected.
 
+## Run-Ahead Sharpening Review (007D, 2026-07-13)
+
+- Attach exception status changes inside `approval_actions.record_action` after its locked coherent
+  case checks and before canonical serialization. The register row must share the action transaction
+  and never infer outcome from a later polling job.
+- Final approval exposes the created sanction id; reject/return expose no sanction. Exception
+  evidence must therefore reference the persisted action/case outcome and must not claim a sanction
+  or completion artefact absent from the 007D result.
+
+## Run-Ahead Sharpening Review (007D3, 2026-07-13)
+
+- Exception-register identity is case/cycle-specific: enforce at most one entry per approval case,
+  expose the linked case `cycle_number`, and never reuse or rewrite a returned cycle's entry when a
+  corrected appraisal creates cycle N+1.
+- Recompute exception routing from cycle N+1's frozen loan-limit/appraisal facts during enrichment.
+  A prior returned cycle's exception condition, reason, register status, actions, and evidence are
+  immutable history and cannot force or satisfy the later cycle.
+- Keep the application-unique sanction decision linked only to the finally approved latest cycle;
+  register projections may show multiple historical cycle rows but must make the cycle/case linkage
+  unambiguous and preserve object scope before pagination.
+
+## Run-Ahead Sharpening Review (007E, 2026-07-13)
+
+- Consume 007E's canonical case outcome rather than independently interpreting exclusions. A
+  `blocked_by_conflict` exception case has no sanction decision and its register projection must
+  expose the exact case/cycle and conflict-block reason without claiming approval or rejection.
+- Register status transition logic must preserve the COI-006 exception: a denied conflicted write
+  adds only its denial audit and cannot create, close, or mutate an exception-register entry.
+- An abstention that leaves frozen alternate authority satisfiable keeps the exception entry
+  pending; a terminal conflict-blocked abstention and its communication share the existing locked
+  case action transaction. Confirm the source §15.7 status vocabulary before naming that terminal
+  register status; do not infer one from display text.
+
+## Run-Ahead Sharpening Review (Architecture Review 2026-07-13_164911, 2026-07-13)
+
+- Consume 007E2's distinct effective-authority projection. An exception case requiring two
+  Directors must never become approved, close its register as approved, or expose an authority
+  summary when one Director identity has filled two slots.
+- Generate `authority_applied_summary` and conflict/abstention register facts only from the
+  canonical history-aware case projection. Preserve original route authority, replacement mapping,
+  and acted alternate identity; do not reconstruct authority from `required_approvers_json`, live
+  committee membership, display role text, or register-local calculations.
+- Register collection counts and cycle rows must use the corrected approval-case object boundary.
+  An unused or merely conflicted committee candidate cannot learn an exception row or count; an
+  authorised historical actor sees the exact cycle without gaining action authority.
+
+## Run-Ahead Sharpening Review (007E2 delivered contract, 2026-07-13)
+
+- Read authority/action facts only from the canonical `route_approvers`, `required_approvers`, and
+  `approval_actions` projection documented in `API_CONTRACTS.md`. A replacement row carries
+  `replacement_for_user_id`; register code must not re-run conflict replacement.
+- Register selectors must join or delegate to the exact original/effective/acted reader projection
+  before count and pagination. `routing_snapshot_is_coherent` alone is not object scope.
+- `blocked_by_conflict` plus `conflict_block_reason` is the terminal no-sanction outcome for an
+  unsatisfied two-Director route; preserve the immutable action list, including abstentions.
+
 ## Out of Scope
 Loan-limit calculation (006C/006D), general-meeting evidence (007G), register UI (007J), waiver workflows beyond vocabulary.
 
@@ -51,15 +107,15 @@ Medium
 - All gates pass; API examples saved.
 
 ## Done Checklist
-- [ ] Execution plan written
-- [ ] Tests written or updated
-- [ ] Code implemented
-- [ ] API contracts updated
-- [ ] Database rules followed
-- [ ] Permissions tested
-- [ ] Audit events tested
-- [ ] Tests/typecheck/lint/build passed
-- [ ] Risk assessment completed
-- [ ] Handoff updated
-- [ ] State updated
-- [ ] Commit created only after passing gates
+- [x] Execution plan written
+- [x] Tests written or updated
+- [x] Code implemented
+- [x] API contracts updated
+- [x] Database rules followed
+- [x] Permissions tested
+- [x] Audit events tested
+- [x] Tests/typecheck/lint/build passed
+- [x] Risk assessment completed
+- [x] Handoff updated
+- [x] State updated
+- [x] Commit delegated to the Ralph orchestrator after passing gates

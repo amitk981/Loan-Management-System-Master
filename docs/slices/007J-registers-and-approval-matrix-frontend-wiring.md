@@ -43,6 +43,25 @@ The Sanction Committee, CS, and auditors read real registers generated from appr
 - Non-permitted role sees no matrix edit action and receives 403 on direct API call.
 - Matrix edit creates a new version with audit event.
 
+## Run-Ahead Sharpening Review (007H delivered contract, 2026-07-13)
+
+- S23 consumes only `GET /api/v1/credit-sanction-register/` with canonical
+  `FYyyyy-yy`, `sanctioned|rejected`, `page`, and `page_size` query values. Render the server's 15
+  frozen fields and pagination unchanged; do not derive money, authority, names, or references
+  from live application/case/configuration data.
+- Render `exception_reference`, `conflict_abstention_details`, and
+  `general_meeting_approval_reference` as nullable/nested frozen register facts. Meeting document
+  ids are metadata only: register visibility must not create a download affordance unless the
+  existing document resource separately grants it. Annexure K/template code stays absent under
+  OC-002/A-087.
+- S25 continues to consume the 007F `/exception-register/` contract; do not conflate its
+  status/type filters or case-object scope with the global 007H sanction-register filter contract.
+- The §25.8 internal sanction-decision endpoint requires `approvals.sanction.read` and returns 404
+  for rejected outcomes. Before wiring borrower MP12, inspect its cited portal ownership contract;
+  do not grant borrowers the internal approval permission or widen the 007H endpoint merely to
+  satisfy the screen. Preserve rejected outcome copy from the borrower-authorised source the MP12
+  contract names.
+
 ## Out of Scope
 Register file exports (012B/012C), sanction case actions (007D/007I), stamp duty register (008D/011 compliance views).
 

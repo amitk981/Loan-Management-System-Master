@@ -1,0 +1,19 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_open_case_configuration_snapshot_is_immutable_across_governed_decisions (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_open_case_configuration_snapshot_is_immutable_across_governed_decisions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_081756_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 715, in test_open_case_configuration_snapshot_is_immutable_across_governed_decisions
+    case.save(update_fields=[
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/db/models/base.py", line 801, in save
+    raise ValueError(
+ValueError: The following fields do not exist in this model, are m2m fields, or are non-concrete fields: approval_matrix_rule, sanction_committee_version, required_approvers_json, decision_date, approval_matrix_rule_version, sanction_committee, version
+
+----------------------------------------------------------------------
+Ran 1 test in 0.020s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

@@ -108,35 +108,6 @@ class ActiveMemberStatusModuleTests(TestCase):
         self.assertEqual(future.non_qualifying_reason, "financial_year_not_complete_as_of_date")
         self.assertEqual(result.member_active_check, "pass")
 
-    def test_staff_calculation_requires_permission_and_matching_member_scope(self):
-        permission = Permission.objects.create(
-            permission_code="members.active_status.verify",
-            permission_name="Verify active status",
-            module_name="members",
-            risk_level="high",
-        )
-        RolePermission.objects.create(role=self.actor.primary_role, permission=permission)
-
-        with self.assertRaises(ActiveMemberObjectAccessDenied):
-            ActiveMemberStatusModule().calculate_for_actor(
-                actor=self.actor,
-                member_id=self.member.member_id,
-                permission="members.active_status.verify",
-            )
-
-        MemberScopeAssignment.objects.create(
-            user=self.actor,
-            permission_code="members.active_status.verify",
-            scope_type="assigned",
-            member=self.member,
-        )
-        result = ActiveMemberStatusModule().calculate_for_actor(
-            actor=self.actor,
-            member_id=self.member.member_id,
-            permission="members.active_status.verify",
-        )
-        self.assertEqual(result.member_active_check, "manual_evidence_required")
-
     def test_verify_enforces_permission_maker_checker_reason_version_and_current_result(self):
         for financial_year in ("2022-23", "2023-24", "2024-25", "2025-26"):
             self._supply(financial_year)

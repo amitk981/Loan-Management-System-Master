@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_register_filters_pagination_permissions_and_read_only_routes (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_register_filters_pagination_permissions_and_read_only_routes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2173, in test_register_filters_pagination_permissions_and_read_only_routes
+    self.assertIn("financial_year", invalid.json()["error"]["field_errors"])
+AssertionError: 'financial_year' not found in {'decision': 'Unknown sanction decision.'}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.049s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

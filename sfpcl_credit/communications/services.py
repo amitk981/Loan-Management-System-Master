@@ -353,6 +353,62 @@ def send_communication(user, request, payload):
     return serialize_communication(row)
 
 
+def create_internal_team_communication(
+    *, sender, team_code, related_entity_type, related_entity_id, subject, body,
+    action_label, action_url, request_meta=None,
+):
+    """Persist a communication snapshot and its linked internal team notification."""
+    request_meta = request_meta or {}
+    row = Communication.objects.create(
+        related_entity_type=related_entity_type,
+        related_entity_id=related_entity_id,
+        recipient_party_type="team",
+        recipient_address=team_code,
+        channel=Communication.CHANNEL_EMAIL,
+        subject_snapshot=subject,
+        body_snapshot=body,
+        sent_by_user=sender,
+        delivery_status=Communication.DELIVERY_PENDING,
+    )
+    notification = Notification.objects.create(
+        communication=row,
+        notification_type="approval_case_completed",
+        category="Application",
+        severity=Notification.SEVERITY_INFO,
+        title=subject,
+        message=body,
+        related_entity_type=related_entity_type,
+        related_entity_id=related_entity_id,
+        action_label=action_label,
+        action_url=action_url,
+        sender_user=sender,
+        recipient_team_code=team_code,
+    )
+    AuditLog.objects.create(
+        actor_user=sender,
+        actor_type="user",
+        action=COMMUNICATION_CREATED_ACTION,
+        entity_type=COMMUNICATION_ENTITY_TYPE,
+        entity_id=row.communication_id,
+        old_value_json=None,
+        new_value_json={
+            "communication_id": str(row.communication_id),
+            "related_entity_type": row.related_entity_type,
+            "related_entity_id": str(row.related_entity_id),
+            "recipient_party_type": row.recipient_party_type,
+            "recipient_party_id": None,
+            "recipient_address": row.recipient_address,
+            "channel": row.channel,
+            "content_template_id": None,
+            "sent_by_user_id": str(row.sent_by_user_id),
+            "delivery_status": row.delivery_status,
+        },
+        ip_address=request_meta.get("ip_address", ""),
+        user_agent=request_meta.get("user_agent", ""),
+    )
+    return row, notification
+
+
 def mark_notification_read(user, request, notification_id, payload):
     expected_version = _clean_read_state_version(payload)
     with transaction.atomic():

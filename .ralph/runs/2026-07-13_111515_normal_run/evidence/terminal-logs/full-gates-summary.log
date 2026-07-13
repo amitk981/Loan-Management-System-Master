@@ -1,0 +1,31 @@
+Run: 2026-07-13_111515_normal_run
+Slice: 006Z15-member-public-action-authority-matrix-closure
+
+Backend interpreter for every command:
+/Users/amitkallapa/LMS/.ralph/venv/bin/python
+
+PASS focused public action closure
+- 13 member authority matrix/omission tests
+- portal authenticated-member and borrower-limit substitution tests
+- 68 focused member/portal regressions (7 expected PostgreSQL-only skips)
+
+PASS backend configured gates
+- manage.py check: 0 issues
+- makemigrations --check --dry-run: no changes detected
+- coverage run --source=sfpcl_credit manage.py test sfpcl_credit.tests: 568 passed,
+  16 expected PostgreSQL-only skips
+- coverage report --fail-under=85: 93% total (21127 statements, 1569 missed)
+
+PASS frontend configured gates
+- npm run build: Vite build completed (1871 modules)
+- npm run typecheck: completed with no errors
+- npm run lint: completed with no errors
+- npm test: 29 files, 208 tests passed
+
+No localhost browser or PostgreSQL runtime capability is declared by this slice.
+
+PASS repository integrity
+- git diff --check
+- state JSON parse and terminal success fields
+- protected-file diff empty
+- complete slice dependency queue lint
