@@ -6,9 +6,6 @@ from django.core.exceptions import ValidationError
 
 from sfpcl_credit.approvals.models import ApprovalCase, ExceptionRegisterEntry
 from sfpcl_credit.approvals.modules import approval_case_engine
-from sfpcl_credit.approvals.modules.approval_case_selector import (
-    select_approval_case_candidates,
-)
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.workflows.events import record_workflow_event
 
@@ -174,7 +171,7 @@ def list_entries(*, actor, query_params, actor_permissions):
     exception_type = query_params.get("exception_type")
     if exception_type:
         validate_exception_type(exception_type)
-    cases, _ = select_approval_case_candidates(
+    cases, _ = approval_case_engine.select_readable_approval_cases(
         actor=actor, actor_permissions=actor_permissions
     )
     queryset = (

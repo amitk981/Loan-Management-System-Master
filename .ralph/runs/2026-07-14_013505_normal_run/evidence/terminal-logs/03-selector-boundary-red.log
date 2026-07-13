@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_approval_read_dependency_flows_from_engine_to_selector (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_approval_read_dependency_flows_from_engine_to_selector)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1257, in test_approval_read_dependency_flows_from_engine_to_selector
+    self.assertFalse(
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

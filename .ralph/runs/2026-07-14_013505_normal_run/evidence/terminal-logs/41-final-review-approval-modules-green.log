@@ -1,0 +1,39 @@
+Creating test database for alias 'default'...
+Found 143 test(s).
+System check identified no issues (0 silenced).
+........................................................................F..F.F.............................................................ssss
+======================================================================
+FAIL: test_public_director_relative_conflict_matrix (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_public_director_relative_conflict_matrix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 788, in test_public_director_relative_conflict_matrix
+    self._assert_public_conflict_class(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 4803, in _assert_public_conflict_class
+    self.assertEqual(detail.status_code, 200, detail.json())
+AssertionError: 404 != 200 : {'success': False, 'error': {'code': 'NOT_FOUND', 'message': 'Approval case was not found.', 'details': {}, 'field_errors': {}}, 'meta': {'request_id': None, 'timestamp': '2026-07-13T20:47:33.501285Z', 'api_version': 'v1'}}
+
+======================================================================
+FAIL: test_public_maker_checker_conflict_matrix (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_public_maker_checker_conflict_matrix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 812, in test_public_maker_checker_conflict_matrix
+    self._assert_public_conflict_class(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 4803, in _assert_public_conflict_class
+    self.assertEqual(detail.status_code, 200, detail.json())
+AssertionError: 404 != 200 : {'success': False, 'error': {'code': 'NOT_FOUND', 'message': 'Approval case was not found.', 'details': {}, 'field_errors': {}}, 'meta': {'request_id': None, 'timestamp': '2026-07-13T20:47:33.560299Z', 'api_version': 'v1'}}
+
+======================================================================
+FAIL: test_public_own_application_conflict_matrix (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_public_own_application_conflict_matrix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 804, in test_public_own_application_conflict_matrix
+    self._assert_public_conflict_class(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 4803, in _assert_public_conflict_class
+    self.assertEqual(detail.status_code, 200, detail.json())
+AssertionError: 404 != 200 : {'success': False, 'error': {'code': 'NOT_FOUND', 'message': 'Approval case was not found.', 'details': {}, 'field_errors': {}}, 'meta': {'request_id': None, 'timestamp': '2026-07-13T20:47:33.617122Z', 'api_version': 'v1'}}
+
+----------------------------------------------------------------------
+Ran 143 tests in 4.182s
+
+FAILED (failures=3, skipped=4)
+Destroying test database for alias 'default'...

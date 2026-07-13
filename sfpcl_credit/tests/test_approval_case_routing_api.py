@@ -1,6 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
+import ast
+import inspect
 import tempfile
 from unittest import skipUnless
 from unittest.mock import patch
@@ -27,7 +29,13 @@ from sfpcl_credit.approvals.models import (
 from sfpcl_credit.approvals.modules.approval_case_selector import (
     select_approval_case_candidates,
 )
-from sfpcl_credit.approvals.modules import approval_actions, approval_case_engine
+from sfpcl_credit.approvals.modules import (
+    approval_actions,
+    approval_case_engine,
+    approval_case_selector,
+    exception_register,
+    sanction_register,
+)
 from sfpcl_credit.approvals.modules.conflict_of_interest import ConflictOfInterestModule
 from sfpcl_credit.approvals.modules.approval_case_projection import (
     refresh_approval_case_projection,
@@ -39,6 +47,9 @@ from sfpcl_credit.credit.models import (
     RiskAssessment,
 )
 from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow
+from sfpcl_credit.credit.modules.appraisal_workflow import (
+    project_approval_case_review_facts,
+)
 from sfpcl_credit.domain_errors import DomainInvalidStateError
 from sfpcl_credit.communications.models import Communication, Notification
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
@@ -51,6 +62,14 @@ from sfpcl_credit.tests.api_contracts import (
     assert_success_envelope,
 )
 from sfpcl_credit.workflows.models import WorkflowEvent
+
+
+def _project_review_facts(case):
+    return project_approval_case_review_facts(
+        application=case.loan_application,
+        appraisal_note=case.loan_appraisal_note,
+        review=case.appraisal_review_decision,
+    )
 
 
 @override_settings(DOCUMENT_STORAGE_ROOT=tempfile.mkdtemp(prefix="sfpcl-gm-doc-tests-"))
@@ -127,12 +146,19 @@ class ApprovalCaseRoutingApiTests(TestCase):
             eligibility_assessment_id_snapshot="10000000-0000-0000-0000-000000000001",
             loan_limit_assessment_id_snapshot="20000000-0000-0000-0000-000000000002",
             eligibility_snapshot_json={
+                "eligibility_assessment_id": "10000000-0000-0000-0000-000000000001",
+                "loan_application_id": str(self.application.pk),
                 "overall_result": "eligible",
                 "member_active_check": "pass",
                 "default_check": "pass",
                 "document_check": "pass",
                 "terms_acceptance_check": "pass",
                 "purpose_check": "pass",
+                "nominee_check": "pass",
+                "assessment_notes": "Eligible for appraisal.",
+                "active_member_snapshot": {},
+                "assessed_by_user_id": str(self.preparer.pk),
+                "assessed_at": calculated_at.isoformat(),
             },
             loan_limit_snapshot_json={
                 "loan_limit_assessment_id": "20000000-0000-0000-0000-000000000002",
@@ -156,6 +182,15 @@ class ApprovalCaseRoutingApiTests(TestCase):
             risk_assessment=self.risk,
             recommendation="approve",
             appraisal_status=LoanAppraisalNote.STATUS_SUBMITTED_TO_SANCTION,
+        )
+        self.review = AppraisalReviewDecision.objects.create(
+            loan_appraisal_note=self.note,
+            decision="reviewed",
+            review_comments="Initial immutable review.",
+            reviewer_user=self.preparer,
+            decided_at=self.note.reviewed_at,
+            from_state=LoanAppraisalNote.STATUS_REVIEW_PENDING,
+            to_state=LoanAppraisalNote.STATUS_REVIEWED,
         )
         decision_date = timezone.localdate()
         self.rule = ApprovalMatrixRule.objects.create(
@@ -183,6 +218,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.case = ApprovalCase.objects.create(
             loan_application=self.application,
             loan_appraisal_note=self.note,
+            appraisal_review_decision=self.review,
             submitted_by_user=self.preparer,
             submission_remarks="Ready for sanction review.",
             approval_matrix_rule=self.rule,
@@ -239,6 +275,11 @@ class ApprovalCaseRoutingApiTests(TestCase):
             decision_date=decision_date,
             version=2,
         )
+        self.case = ApprovalCase.objects.select_related(
+            "loan_application", "loan_appraisal_note__risk_assessment"
+        ).get(pk=self.case.pk)
+        self.case.appraisal_facts_json = _project_review_facts(self.case)
+        self.case.save(update_fields=["appraisal_facts_json"])
         refresh_approval_case_projection(self.case)
 
     def test_assigned_to_me_returns_the_pending_snapshotted_case(self):
@@ -261,7 +302,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.application.save(update_fields=["created_by_user"])
         self.case.refresh_from_db()
         frozen_facts = {
-            **approval_case_engine.serialize_case_review_facts(self.case),
+            **_project_review_facts(self.case),
             "maker_checker": {
                 "application_created_by_user_id": str(self.cfo.pk),
                 "application_received_by_user_id": str(self.preparer.pk),
@@ -315,15 +356,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertTrue(assessment.general_meeting_evidence_required)
 
     def test_enrichment_freezes_exclusions_without_rewriting_authority_snapshot(self):
-        review = AppraisalReviewDecision.objects.create(
-            loan_appraisal_note=self.note,
-            decision="reviewed",
-            review_comments="Reviewed for conflict enrichment.",
-            reviewer_user=self.preparer,
-            decided_at=self.note.reviewed_at,
-            from_state=LoanAppraisalNote.STATUS_REVIEW_PENDING,
-            to_state=LoanAppraisalNote.STATUS_REVIEWED,
-        )
+        review = self.review
         ApprovalConflictDeclaration.objects.create(
             loan_application=self.application,
             user=self.director,
@@ -1184,7 +1217,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
             ApprovalCase.objects.filter(pk__in=unrelated_ids, version=2).exists()
         )
 
-    def test_persisted_scope_list_query_count_is_bounded_as_repository_grows(self):
+    def test_persisted_scope_list_work_is_bounded_as_repository_grows(self):
         grant_model = apps.get_model("approvals", "ApprovalCaseReadScopeGrant")
         company_secretary = self._user(
             "company_secretary", "Bounded Query Company Secretary", self.read_permission
@@ -1218,25 +1251,25 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(baseline.json()["pagination"]["total_count"], 1)
         self.assertEqual(expanded.json()["pagination"]["total_count"], 1)
         self.assertLessEqual(len(expanded_queries), len(baseline_queries))
-        case_queries = [
-            query["sql"]
-            for query in expanded_queries.captured_queries
-            if 'FROM "approval_cases"' in query["sql"]
-        ]
-        self.assertEqual(len(case_queries), 3)
-        paginated_query = next(query for query in case_queries if " LIMIT " in query)
-        count_query = next(query for query in case_queries if "COUNT(" in query)
-        validation_query = next(
-            query
-            for query in case_queries
-            if " LIMIT " not in query and "COUNT(" not in query
+
+    def test_approval_read_dependency_flows_from_engine_to_selector(self):
+        selector_tree = ast.parse(inspect.getsource(approval_case_selector))
+        imported_modules = {
+            alias.name
+            for node in ast.walk(selector_tree)
+            if isinstance(node, (ast.Import, ast.ImportFrom))
+            for alias in node.names
+        }
+        self.assertFalse(
+            any("approval_case_engine" in module for module in imported_modules)
         )
-        self.assertIn("COUNT(", count_query)
-        self.assertIn('"routing_snapshot_is_coherent"', validation_query)
-        self.assertIn(
-            '"approval_cases"."approval_type" = \'sanction\'', paginated_query
-        )
-        self.assertNotIn('JOIN "approval_actions"', paginated_query)
+        for consumer in (sanction_register, exception_register):
+            source = inspect.getsource(consumer)
+            self.assertIn("approval_case_engine.select_readable_approval_cases", source)
+            self.assertNotIn("select_approval_case_candidates", source)
+        action_source = inspect.getsource(approval_actions)
+        self.assertIn("approval_case_engine.approval_case_is_readable", action_source)
+        self.assertNotIn("approval_case_engine.can_read_approval_case", action_source)
 
     def test_required_approver_selector_uses_exact_user_id_not_json_substring(self):
         reader = self._user("json_substring_reader", "JSON Substring Reader", self.read_permission)
@@ -2374,6 +2407,14 @@ class ApprovalCaseRoutingApiTests(TestCase):
             decision_date=self.case.decision_date,
             version=2,
         )
+        later_cycle.appraisal_facts_json = {
+            **self.case.appraisal_facts_json,
+            "snapshot_provenance": {
+                **self.case.appraisal_facts_json["snapshot_provenance"],
+                "review_decision_id": str(later_review.pk),
+            },
+        }
+        later_cycle.save(update_fields=["appraisal_facts_json"])
         self.assertTrue(refresh_approval_case_projection(later_cycle))
 
         response = self.client.get(
@@ -2661,6 +2702,209 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(register.json()["pagination"]["page"], 1)
         self.assertEqual(self._action_ledgers(), ledgers_before)
 
+    def test_missing_frozen_review_snapshot_fails_closed_before_reads_and_actions(self):
+        self.case = ApprovalCase.objects.select_related(
+            "loan_application", "loan_appraisal_note__risk_assessment"
+        ).get(pk=self.case.pk)
+        self.case.appraisal_facts_json = _project_review_facts(self.case)
+        self.case.save(update_fields=["appraisal_facts_json"])
+        refresh_approval_case_projection(self.case)
+        self.case.refresh_from_db()
+        self.assertTrue(self.case.routing_snapshot_is_coherent)
+
+        ApprovalCase.objects.filter(pk=self.case.pk).update(appraisal_facts_json={})
+        headers = self._auth(self.cfo)
+        before = self._action_ledgers()
+
+        collection = self.client.get("/api/v1/approval-cases/", **headers)
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **headers
+        )
+        action = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": self.case.version, "comments": "Must not use live review."},
+            content_type="application/json",
+            **headers,
+        )
+
+        self.assertEqual(collection.status_code, 200, collection.json())
+        self.assertEqual(collection.json()["data"], [])
+        self.assertEqual(collection.json()["pagination"]["total_count"], 0)
+        self.assertEqual(detail.status_code, 404, detail.json())
+        self.assertEqual(action.status_code, 404, action.json())
+        self.assertEqual(self._action_ledgers(), before)
+
+    def test_marked_review_snapshot_without_persisted_review_link_fails_closed(self):
+        ApprovalCase.objects.filter(pk=self.case.pk).update(
+            appraisal_review_decision=None,
+            routing_snapshot_is_coherent=True,
+        )
+
+        response = self.client.get(
+            "/api/v1/approval-cases/", **self._auth(self.cfo)
+        )
+
+        self.assertEqual(response.status_code, 200, response.json())
+        self.assertEqual(response.json()["data"], [])
+        self.assertEqual(response.json()["pagination"]["total_count"], 0)
+
+    def test_missing_terminal_review_snapshot_is_hidden_from_every_public_boundary(self):
+        sanction_read = self._permission("approvals.sanction.read")
+        sanction_register_read = self._permission(
+            "approvals.sanction_register.read"
+        )
+        exception_register_read = self._permission(
+            "approvals.exception_register.read"
+        )
+        for permission in (
+            sanction_read,
+            sanction_register_read,
+            exception_register_read,
+        ):
+            RolePermission.objects.create(
+                role=self.cfo.primary_role, permission=permission
+            )
+        ExceptionRegisterEntry.objects.create(
+            loan_application=self.application,
+            exception_type=ExceptionRegisterEntry.TYPE_WAIVER,
+            description="A governed policy requirement was waived.",
+            business_reason="Retained terminal evidence for boundary testing.",
+            approval_case=self.case,
+        )
+        cfo_headers = self._auth(self.cfo)
+        first = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2, "comments": "First frozen decision."},
+            content_type="application/json",
+            **cfo_headers,
+        )
+        final = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3, "comments": "Terminal frozen decision."},
+            content_type="application/json",
+            **self._auth(self.director),
+        )
+        self.assertEqual(first.status_code, 200, first.json())
+        self.assertEqual(final.status_code, 200, final.json())
+        self.case.refresh_from_db()
+        self.assertTrue(self.case.routing_snapshot_is_coherent)
+
+        ApprovalCase.objects.filter(pk=self.case.pk).update(appraisal_facts_json={})
+        before = self._action_ledgers()
+
+        collection = self.client.get("/api/v1/approval-cases/", **cfo_headers)
+        detail = self.client.get(
+            f"/api/v1/approval-cases/{self.case.pk}/", **cfo_headers
+        )
+        action = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": self.case.version, "comments": "Must remain hidden."},
+            content_type="application/json",
+            **cfo_headers,
+        )
+        decision = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/sanction-decision/",
+            **cfo_headers,
+        )
+        sanction_register_response = self.client.get(
+            "/api/v1/credit-sanction-register/", **cfo_headers
+        )
+        exception_register_response = self.client.get(
+            "/api/v1/exception-register/", **cfo_headers
+        )
+
+        self.assertEqual(collection.json()["pagination"]["total_count"], 0)
+        self.assertEqual(detail.status_code, 404, detail.json())
+        self.assertEqual(action.status_code, 404, action.json())
+        self.assertEqual(decision.status_code, 403, decision.json())
+        self.assertEqual(
+            sanction_register_response.json()["pagination"]["total_count"], 0
+        )
+        self.assertEqual(
+            exception_register_response.json()["pagination"]["total_count"], 0
+        )
+        self.assertEqual(self._action_ledgers(), before)
+
+    def test_partial_malformed_and_case_inconsistent_review_snapshots_fail_closed(self):
+        review = self.review
+        self.case.appraisal_review_decision = review
+        self.case.save(update_fields=["appraisal_review_decision"])
+        valid = self.case.appraisal_facts_json
+        valid = {
+            **valid,
+            "snapshot_provenance": {
+                **valid["snapshot_provenance"],
+                "review_decision_id": str(review.pk),
+            },
+        }
+        variants = {
+            "legacy_unproven": {
+                key: value
+                for key, value in valid.items()
+                if key not in {"snapshot_schema_version", "snapshot_provenance"}
+            },
+            "partial": {key: value for key, value in valid.items() if key != "risk"},
+            "malformed": {**valid, "risk": ["not", "an", "object"]},
+            "malformed_borrowing_history": {
+                **valid,
+                "borrowing_history": ["not", "text"],
+            },
+            "partial_eligibility": {**valid, "eligibility": {"document_check": "pass"}},
+            "case_inconsistent": {
+                **valid,
+                "loan_amounts": {
+                    **valid["loan_amounts"],
+                    "recommended_amount": "499999.99",
+                },
+            },
+            "review_inconsistent": {
+                **valid,
+                "maker_checker": {
+                    **valid["maker_checker"],
+                    "appraisal_reviewed_by_user_id": str(self.cfo.pk),
+                },
+            },
+            "malformed_maker_id": {
+                **valid,
+                "maker_checker": {
+                    **valid["maker_checker"],
+                    "appraisal_prepared_by_user_id": {"not": "an identifier"},
+                },
+            },
+            "malformed_eligibility_check": {
+                **valid,
+                "eligibility": {
+                    **valid["eligibility"],
+                    "nominee_check": ["not", "a", "scalar"],
+                },
+            },
+            "malformed_assessed_at": {
+                **valid,
+                "eligibility": {
+                    **valid["eligibility"],
+                    "assessed_at": "not-a-timestamp",
+                },
+            },
+            "malformed_risk_rating": {
+                **valid,
+                "risk": {
+                    **valid["risk"],
+                    "overall_risk_rating": ["not", "a", "scalar"],
+                },
+            },
+        }
+        headers = self._auth(self.cfo)
+        for label, snapshot in variants.items():
+            with self.subTest(label=label):
+                ApprovalCase.objects.filter(pk=self.case.pk).update(
+                    appraisal_facts_json=snapshot,
+                    routing_snapshot_is_coherent=True,
+                )
+                response = self.client.get("/api/v1/approval-cases/", **headers)
+                self.assertEqual(response.status_code, 200, response.json())
+                self.assertEqual(response.json()["data"], [])
+                self.assertEqual(response.json()["pagination"]["total_count"], 0)
+
     def test_live_appraisal_change_preserves_terminal_detail_decision_and_register(self):
         sanction_read = self._permission("approvals.sanction.read")
         register_read = self._permission("approvals.sanction_register.read")
@@ -2695,7 +2939,19 @@ class ApprovalCaseRoutingApiTests(TestCase):
         live_snapshot = dict(self.note.loan_limit_snapshot_json)
         live_snapshot["policy_name"] = "Policy amended after terminal decision"
         self.note.loan_limit_snapshot_json = live_snapshot
-        self.note.save(update_fields=["loan_limit_snapshot_json"])
+        self.note.recommended_amount = "1.00"
+        self.note.borrower_summary = "Mutable appraisal changed after terminal decision."
+        self.note.save(
+            update_fields=[
+                "loan_limit_snapshot_json",
+                "recommended_amount",
+                "borrower_summary",
+            ]
+        )
+        self.application.declared_purpose = "Mutable purpose changed after decision"
+        self.application.save(update_fields=["declared_purpose"])
+        self.risk.overall_risk_rating = "high"
+        self.risk.save(update_fields=["overall_risk_rating"])
 
         detail_after = self.client.get(
             f"/api/v1/approval-cases/{self.case.pk}/", **headers
@@ -3153,9 +3409,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
     def test_return_correction_fresh_review_creates_immutable_second_cycle(self):
         self.note.refresh_from_db()
         self.case.refresh_from_db()
-        self.case.appraisal_facts_json = approval_case_engine.serialize_case_review_facts(
-            self.case
-        )
+        self.case.appraisal_facts_json = _project_review_facts(self.case)
         self.case.save(update_fields=["appraisal_facts_json"])
         refresh_approval_case_projection(self.case)
         cycle_one_provenance = dict(self.case.loan_limit_provenance_json)
@@ -4206,8 +4460,16 @@ class ApprovalCaseRoutingApiTests(TestCase):
             **current_provenance,
         }
         shell.loan_appraisal_note.save(
-            update_fields=["reviewed_at", "loan_limit_snapshot_json"]
+            update_fields=[
+                "reviewed_at",
+                "loan_limit_snapshot_json",
+            ]
         )
+        shell = ApprovalCase.objects.select_related(
+            "loan_application", "loan_appraisal_note__risk_assessment"
+        ).get(pk=shell.pk)
+        shell.appraisal_facts_json = _project_review_facts(shell)
+        shell.save(update_fields=["appraisal_facts_json"])
         unprojected_current_queue = self.client.get(
             "/api/v1/approval-cases/?assigned_to_me=true",
             **self._auth(current_cfo),
@@ -4230,7 +4492,8 @@ class ApprovalCaseRoutingApiTests(TestCase):
             [str(shell.pk)],
         )
 
-    def test_review_facts_are_read_through_projections_from_the_owning_records(self):
+    def test_review_facts_remain_frozen_after_live_owning_records_change(self):
+        frozen_facts = dict(self.case.appraisal_facts_json)
         self.application.declared_purpose = "Updated owning application purpose"
         self.application.completeness_status = LoanApplication.COMPLETENESS_INCOMPLETE
         self.application.save(update_fields=["declared_purpose", "completeness_status"])
@@ -4243,9 +4506,10 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
 
         facts = response.json()["data"]["review_facts"]
-        self.assertEqual(facts["purpose"]["description"], "Updated owning application purpose")
-        self.assertEqual(facts["documentation_completeness"]["status"], "incomplete")
-        self.assertEqual(facts["risk"]["overall_risk_rating"], "medium")
+        self.assertEqual(facts, frozen_facts)
+        self.assertEqual(facts["purpose"]["description"], "Crop production")
+        self.assertEqual(facts["documentation_completeness"]["status"], "complete")
+        self.assertEqual(facts["risk"]["overall_risk_rating"], "low")
         self.assertEqual(
             facts["source_references"]["appraisal"],
             f"/api/v1/loan-applications/{self.application.pk}/appraisal-note/",
@@ -4416,15 +4680,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
         ApprovalMatrixRule.objects.exclude(pk=upper_rule.pk).update(status="inactive")
         SanctionCommittee.objects.exclude(pk=self.committee.pk).update(status="inactive")
-        review = AppraisalReviewDecision.objects.create(
-            loan_appraisal_note=self.note,
-            decision="reviewed",
-            review_comments="Reviewed for two-Director conflict acceptance.",
-            reviewer_user=self.preparer,
-            decided_at=self.note.reviewed_at,
-            from_state=LoanAppraisalNote.STATUS_REVIEW_PENDING,
-            to_state=LoanAppraisalNote.STATUS_REVIEWED,
-        )
+        review = self.review
         self._reset_case_to_unrouted(review)
         ApprovalConflictDeclaration.objects.create(
             loan_application=self.application,
@@ -4488,15 +4744,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
         elif source_fact == "appraisal_prepared_by_user":
             self.note.prepared_by_user = actor
             self.note.save(update_fields=["prepared_by_user"])
-        review = AppraisalReviewDecision.objects.create(
-            loan_appraisal_note=self.note,
-            decision="reviewed",
-            review_comments="Reviewed for the public conflict matrix.",
-            reviewer_user=self.preparer,
-            decided_at=self.note.reviewed_at,
-            from_state=LoanAppraisalNote.STATUS_REVIEW_PENDING,
-            to_state=LoanAppraisalNote.STATUS_REVIEWED,
-        )
+        review = self.review
         self._reset_case_to_unrouted(review)
         ApprovalMatrixRule.objects.exclude(pk=self.rule.pk).update(status="inactive")
         SanctionCommittee.objects.exclude(pk=self.committee.pk).update(status="inactive")
@@ -4818,7 +5066,21 @@ class ApprovalCaseRoutingApiTests(TestCase):
             tat_status=LoanAppraisalNote.TAT_WITHIN,
             eligibility_assessment_id_snapshot="40000000-0000-0000-0000-000000000004",
             loan_limit_assessment_id_snapshot="50000000-0000-0000-0000-000000000005",
-            eligibility_snapshot_json={"overall_result": "eligible"},
+            eligibility_snapshot_json={
+                "eligibility_assessment_id": "40000000-0000-0000-0000-000000000004",
+                "loan_application_id": str(application.pk),
+                "member_active_check": "pass",
+                "default_check": "pass",
+                "document_check": "pass",
+                "terms_acceptance_check": "pass",
+                "purpose_check": "pass",
+                "nominee_check": "pass",
+                "overall_result": "eligible",
+                "assessment_notes": "Eligible.",
+                "active_member_snapshot": {},
+                "assessed_by_user_id": str(self.preparer.pk),
+                "assessed_at": timezone.now().isoformat(),
+            },
             loan_limit_snapshot_json={"final_eligible_loan_amount": "500000.00"},
             prerequisite_provenance="verified",
             borrower_summary="Unrouted shell borrower summary.",
@@ -4831,9 +5093,19 @@ class ApprovalCaseRoutingApiTests(TestCase):
             recommendation="approve",
             appraisal_status=LoanAppraisalNote.STATUS_SUBMITTED_TO_SANCTION,
         )
+        review = AppraisalReviewDecision.objects.create(
+            loan_appraisal_note=note,
+            decision="reviewed",
+            review_comments="Immutable review for unrouted shell.",
+            reviewer_user=self.preparer,
+            decided_at=note.reviewed_at,
+            from_state=LoanAppraisalNote.STATUS_REVIEW_PENDING,
+            to_state=LoanAppraisalNote.STATUS_REVIEWED,
+        )
         return ApprovalCase.objects.create(
             loan_application=application,
             loan_appraisal_note=note,
+            appraisal_review_decision=review,
             submitted_by_user=self.preparer,
             submission_remarks="Unrouted version-one shell.",
         )
@@ -4885,12 +5157,19 @@ class ApprovalCaseRoutingApiTests(TestCase):
             eligibility_assessment_id_snapshot="60000000-0000-0000-0000-000000000006",
             loan_limit_assessment_id_snapshot="70000000-0000-0000-0000-000000000007",
             eligibility_snapshot_json={
+                "eligibility_assessment_id": "60000000-0000-0000-0000-000000000006",
+                "loan_application_id": str(application.pk),
                 "overall_result": "eligible",
                 "member_active_check": "pass",
                 "default_check": "pass",
                 "document_check": "pass",
                 "terms_acceptance_check": "pass",
                 "purpose_check": "pass",
+                "nominee_check": "pass",
+                "assessment_notes": "Eligible.",
+                "active_member_snapshot": {},
+                "assessed_by_user_id": str(self.preparer.pk),
+                "assessed_at": calculated_at.isoformat(),
             },
             loan_limit_snapshot_json={
                 "loan_limit_assessment_id": "70000000-0000-0000-0000-000000000007",
@@ -4915,9 +5194,19 @@ class ApprovalCaseRoutingApiTests(TestCase):
             recommendation="approve",
             appraisal_status=LoanAppraisalNote.STATUS_SUBMITTED_TO_SANCTION,
         )
+        review = AppraisalReviewDecision.objects.create(
+            loan_appraisal_note=note,
+            decision="reviewed",
+            review_comments="Immutable review for second scoped case.",
+            reviewer_user=self.preparer,
+            decided_at=note.reviewed_at,
+            from_state=LoanAppraisalNote.STATUS_REVIEW_PENDING,
+            to_state=LoanAppraisalNote.STATUS_REVIEWED,
+        )
         case = ApprovalCase.objects.create(
             loan_application=application,
             loan_appraisal_note=note,
+            appraisal_review_decision=review,
             submitted_by_user=self.preparer,
             submission_remarks="Second scoped case ready for review.",
             approval_matrix_rule=self.rule,
@@ -4959,6 +5248,11 @@ class ApprovalCaseRoutingApiTests(TestCase):
             decision_date=self.case.decision_date,
             version=2,
         )
+        case = ApprovalCase.objects.select_related(
+            "loan_application", "loan_appraisal_note__risk_assessment"
+        ).get(pk=case.pk)
+        case.appraisal_facts_json = _project_review_facts(case)
+        case.save(update_fields=["appraisal_facts_json"])
         refresh_approval_case_projection(case)
         return case
 

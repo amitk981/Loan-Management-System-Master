@@ -296,9 +296,7 @@ class SanctionHandoffModule:
         case.matrix_projection_json = matrix_projection
         case.committee_projection_json = committee_projection
         case.loan_limit_provenance_json = facts.loan_limit_provenance
-        case.appraisal_facts_json = approval_case_engine.serialize_case_review_facts(
-            case
-        )
+        case.appraisal_facts_json = facts.review_facts
         conflict_assessment = ConflictOfInterestModule().evaluate_for_case(case)
         case.excluded_approvers_json = list(conflict_assessment.exclusions)
         case.general_meeting_evidence_required = (

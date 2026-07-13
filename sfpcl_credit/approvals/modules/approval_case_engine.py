@@ -2,6 +2,7 @@
 
 from decimal import Decimal, InvalidOperation
 from math import ceil
+from uuid import UUID
 
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -22,6 +23,49 @@ from sfpcl_credit.identity.modules.object_permissions import ObjectAccessResult
 _LIST_PARAMS = {"page", "page_size", "current_status", "approval_type", "assigned_to_me"}
 
 
+def select_readable_approval_cases(*, actor, actor_permissions=None):
+    """Return canonical frozen-valid, attributable cases before consumer filters."""
+    queryset, persisted_scope_type = select_approval_case_candidates(
+        actor=actor,
+        actor_permissions=actor_permissions,
+    )
+    scoped_ids = [
+        case.pk
+        for case in queryset.iterator(chunk_size=100)
+        if approval_case_is_readable(
+            actor=actor,
+            case=case,
+            persisted_scope_type=persisted_scope_type,
+            persisted_scope_resolved=True,
+            actor_permissions=actor_permissions,
+        )
+    ]
+    return (
+        queryset.filter(pk__in=scoped_ids).order_by(
+            "-submitted_at", "-approval_case_id"
+        ),
+        persisted_scope_type,
+    )
+
+
+def approval_case_is_readable(
+    *,
+    actor,
+    case,
+    persisted_scope_type=None,
+    persisted_scope_resolved=False,
+    actor_permissions=None,
+):
+    """Apply the single canonical frozen-valid and attributable read decision."""
+    return is_routable_approval_case(case) and can_read_approval_case(
+        actor=actor,
+        case=case,
+        persisted_scope_type=persisted_scope_type,
+        persisted_scope_resolved=persisted_scope_resolved,
+        actor_permissions=actor_permissions,
+    ).allowed
+
+
 def list_approval_cases(*, actor, query_params):
     unknown = set(query_params.keys()) - _LIST_PARAMS
     if unknown:
@@ -32,27 +76,26 @@ def list_approval_cases(*, actor, query_params):
     page_size = min(_positive_int("page_size", query_params.get("page_size"), 20), 100)
     assigned_to_me = _boolean("assigned_to_me", query_params.get("assigned_to_me"))
     actor_permissions = effective_permission_codes(actor)
-    queryset, persisted_scope_type = select_approval_case_candidates(
+    queryset, _ = select_readable_approval_cases(
         actor=actor,
-        current_status=query_params.get("current_status"),
-        approval_type=query_params.get("approval_type"),
-        assigned_to_me=assigned_to_me,
         actor_permissions=actor_permissions,
     )
+    current_status = query_params.get("current_status")
+    approval_type = query_params.get("approval_type")
+    if current_status:
+        queryset = queryset.filter(current_status=current_status)
+    if approval_type:
+        queryset = queryset.filter(approval_type=approval_type)
     if assigned_to_me:
+        queryset = queryset.filter(
+            current_status=ApprovalCase.STATUS_PENDING,
+            required_approver_index__user_id=actor.pk,
+        )
         actor_id = str(actor.pk)
         scoped_ids = [
             case.pk
             for case in queryset.iterator(chunk_size=100)
-            if is_routable_approval_case(case)
-            and can_read_approval_case(
-                actor=actor,
-                case=case,
-                persisted_scope_type=persisted_scope_type,
-                persisted_scope_resolved=True,
-                actor_permissions=actor_permissions,
-            ).allowed
-            and is_pending_approval_case_actor(case=case, actor_id=actor_id)
+            if is_pending_approval_case_actor(case=case, actor_id=actor_id)
         ]
         queryset = queryset.filter(pk__in=scoped_ids)
     total_count = queryset.count()
@@ -60,18 +103,6 @@ def list_approval_cases(*, actor, query_params):
     page = min(page, total_pages)
     offset = (page - 1) * page_size
     cases = list(queryset[offset : offset + page_size])
-    cases = [
-        case
-        for case in cases
-        if is_routable_approval_case(case)
-        and can_read_approval_case(
-            actor=actor,
-            case=case,
-            persisted_scope_type=persisted_scope_type,
-            persisted_scope_resolved=True,
-            actor_permissions=actor_permissions,
-        ).allowed
-    ]
     return [
         serialize_case_detail(case, actor, actor_permissions) for case in cases
     ], {
@@ -89,6 +120,7 @@ def get_approval_case(*, actor, case_id, actor_permissions):
         ApprovalCase.objects.select_related(
             "loan_application",
             "loan_appraisal_note__risk_assessment",
+            "appraisal_review_decision",
             "general_meeting_approval",
             "exception_register_entry",
         )
@@ -96,11 +128,13 @@ def get_approval_case(*, actor, case_id, actor_permissions):
         .filter(pk=case_id)
         .first()
     )
-    if case is None or not is_routable_approval_case(case):
+    if case is None:
         raise ApprovalCase.DoesNotExist
-    if not can_read_approval_case(
+    if not approval_case_is_readable(
         actor=actor, case=case, actor_permissions=actor_permissions
-    ).allowed:
+    ):
+        if not is_routable_approval_case(case):
+            raise ApprovalCase.DoesNotExist
         raise DomainObjectAccessDenied(
             ObjectAccessResult(
                 allowed=False,
@@ -163,7 +197,7 @@ def serialize_case_detail(case, actor, actor_permissions):
         )
     snapshot = {
         **serialize_case_snapshot(case),
-        "review_facts": case.appraisal_facts_json or serialize_case_review_facts(case),
+        "review_facts": case.appraisal_facts_json,
         "available_actions": available_actions,
     }
     return snapshot
@@ -250,73 +284,6 @@ def _action_time(action):
     if action is None:
         return None
     return action.acted_at.isoformat().replace("+00:00", "Z")
-
-
-def serialize_case_review_facts(case):
-    application = case.loan_application
-    note = case.loan_appraisal_note
-    risk = note.risk_assessment
-    eligibility = note.eligibility_snapshot_json
-    loan_limit = note.loan_limit_snapshot_json
-    return {
-        "maker_checker": {
-            "application_created_by_user_id": (
-                str(application.created_by_user_id)
-                if application.created_by_user_id else None
-            ),
-            "application_received_by_user_id": str(application.received_by_user_id),
-            "application_submitted_by_user_id": (
-                str(application.submitted_by_user_id)
-                if application.submitted_by_user_id else None
-            ),
-            "appraisal_prepared_by_user_id": str(note.prepared_by_user_id),
-            "appraisal_reviewed_by_user_id": (
-                str(note.reviewed_by_user_id) if note.reviewed_by_user_id else None
-            ),
-        },
-        "eligibility": eligibility,
-        "loan_amounts": {
-            "requested_amount": (
-                f"{application.required_loan_amount:.2f}"
-                if application.required_loan_amount is not None
-                else None
-            ),
-            "eligible_amount": loan_limit.get("final_eligible_loan_amount"),
-            "recommended_amount": f"{note.recommended_amount:.2f}",
-        },
-        "purpose": {
-            "category": application.purpose_category or None,
-            "description": application.declared_purpose or None,
-        },
-        "compliance_checks": {
-            key: eligibility.get(key)
-            for key in (
-                "member_active_check",
-                "default_check",
-                "terms_acceptance_check",
-                "purpose_check",
-            )
-        },
-        "borrowing_history": note.borrower_summary,
-        "risk": {
-            "risk_assessment_id": str(risk.pk),
-            "market_risk_rating": risk.market_risk_rating,
-            "operational_risk_rating": risk.operational_risk_rating,
-            "borrower_risk_rating": risk.borrower_risk_rating,
-            "overall_risk_rating": risk.overall_risk_rating,
-            "risk_mitigation_notes": risk.risk_mitigation_notes,
-        },
-        "documentation_completeness": {
-            "status": application.completeness_status,
-            "document_check": eligibility.get("document_check"),
-        },
-        "source_references": {
-            "application": f"/api/v1/loan-applications/{application.pk}/",
-            "appraisal": f"/api/v1/loan-applications/{application.pk}/appraisal-note/",
-            "eligibility": f"/api/v1/loan-applications/{application.pk}/eligibility-assessment/",
-            "loan_limit": f"/api/v1/loan-applications/{application.pk}/loan-limit-assessment/",
-        },
-    }
 
 
 def _available_actions(case, actor, actor_permissions, action_by_user):
@@ -418,6 +385,7 @@ def is_routable_approval_case(case):
         and _exclusion_snapshot_is_coherent(case.excluded_approvers_json, committee)
         and _conflict_authority_state_is_coherent(case)
         and _loan_limit_provenance_is_complete(case)
+        and _review_snapshot_is_complete(case)
     )
 
 
@@ -448,22 +416,6 @@ def _matrix_projection_is_coherent(case, matrix):
         and matrix.get("joint_approval_required") is True
         and isinstance(matrix.get("register_required"), str)
         and bool(matrix["register_required"].strip())
-        and (
-            (
-                bool(case.appraisal_facts_json)
-                and case.appraisal_facts_json.get("loan_amounts", {}).get(
-                    "recommended_amount"
-                )
-                == f"{case.amount:.2f}"
-            )
-            or (
-                not case.appraisal_facts_json
-                and case.loan_appraisal_note.reviewed_at is not None
-                and case.decision_date
-                == timezone.localdate(case.loan_appraisal_note.reviewed_at)
-                and case.amount == case.loan_appraisal_note.recommended_amount
-            )
-        )
     )
 
 
@@ -636,6 +588,251 @@ def _loan_limit_provenance_is_complete(case):
     except (InvalidOperation, TypeError, ValueError):
         return False
     return final_eligible_amount >= Decimal("0.00") and calculated_at is not None
+
+
+def _review_snapshot_is_complete(case):
+    """Validate mandatory approval-owned review facts without live credit reads."""
+    facts = case.appraisal_facts_json
+    if not isinstance(facts, dict) or not facts:
+        return False
+    required_sections = {
+        "snapshot_schema_version",
+        "snapshot_provenance",
+        "maker_checker",
+        "eligibility",
+        "loan_amounts",
+        "purpose",
+        "compliance_checks",
+        "borrowing_history",
+        "risk",
+        "documentation_completeness",
+        "source_references",
+    }
+    if not required_sections.issubset(facts):
+        return False
+
+    provenance = facts.get("snapshot_provenance")
+    if (
+        facts.get("snapshot_schema_version") != "approval-review-v1"
+        or not isinstance(provenance, dict)
+        or provenance.get("owner") != "credit"
+        or provenance.get("review_decision_id") in (None, "")
+    ):
+        return False
+
+    maker = facts.get("maker_checker")
+    amounts = facts.get("loan_amounts")
+    purpose = facts.get("purpose")
+    compliance = facts.get("compliance_checks")
+    risk = facts.get("risk")
+    documentation = facts.get("documentation_completeness")
+    references = facts.get("source_references")
+    eligibility = facts.get("eligibility")
+    mappings = (maker, amounts, purpose, compliance, risk, documentation, references)
+    if not all(isinstance(item, dict) for item in mappings):
+        return False
+    if not isinstance(eligibility, dict) or not eligibility:
+        return False
+
+    required_keys = (
+        (
+            maker,
+            {
+                "application_created_by_user_id",
+                "application_received_by_user_id",
+                "application_submitted_by_user_id",
+                "appraisal_prepared_by_user_id",
+                "appraisal_reviewed_by_user_id",
+            },
+        ),
+        (amounts, {"requested_amount", "eligible_amount", "recommended_amount"}),
+        (purpose, {"category", "description"}),
+        (
+            compliance,
+            {
+                "member_active_check",
+                "default_check",
+                "terms_acceptance_check",
+                "purpose_check",
+            },
+        ),
+        (
+            risk,
+            {
+                "risk_assessment_id",
+                "market_risk_rating",
+                "operational_risk_rating",
+                "borrower_risk_rating",
+                "overall_risk_rating",
+                "risk_mitigation_notes",
+            },
+        ),
+        (documentation, {"status", "document_check"}),
+        (references, {"application", "appraisal", "eligibility", "loan_limit"}),
+    )
+    if any(not keys.issubset(mapping) for mapping, keys in required_keys):
+        return False
+    def is_uuid_string(value, *, nullable=False):
+        if nullable and value is None:
+            return True
+        if not isinstance(value, str) or not value:
+            return False
+        try:
+            UUID(value)
+        except (TypeError, ValueError):
+            return False
+        return True
+
+    if not all(
+        is_uuid_string(maker.get(key), nullable=key in {
+            "application_created_by_user_id",
+            "application_submitted_by_user_id",
+        })
+        for key in maker
+    ):
+        return False
+    if any(
+        maker.get(key) in (None, "")
+        for key in (
+            "application_received_by_user_id",
+            "appraisal_prepared_by_user_id",
+            "appraisal_reviewed_by_user_id",
+        )
+    ):
+        return False
+    if case.appraisal_review_decision_id is None:
+        return False
+    if str(maker["appraisal_reviewed_by_user_id"]) != str(
+        case.appraisal_review_decision.reviewer_user_id
+    ):
+        return False
+    if str(provenance["review_decision_id"]) != str(
+        case.appraisal_review_decision_id
+    ):
+        return False
+    if not is_uuid_string(provenance["review_decision_id"]):
+        return False
+    if not isinstance(facts.get("borrowing_history"), str):
+        return False
+    if not all(
+        isinstance(purpose.get(key), (str, type(None)))
+        for key in ("category", "description")
+    ):
+        return False
+    if not all(
+        isinstance(compliance.get(key), (str, type(None)))
+        for key in (
+            "member_active_check",
+            "default_check",
+            "terms_acceptance_check",
+            "purpose_check",
+        )
+    ):
+        return False
+    if not isinstance(risk.get("risk_mitigation_notes"), str):
+        return False
+    if not isinstance(documentation.get("document_check"), str):
+        return False
+    eligibility_keys = {
+        "eligibility_assessment_id",
+        "loan_application_id",
+        "member_active_check",
+        "default_check",
+        "document_check",
+        "terms_acceptance_check",
+        "purpose_check",
+        "nominee_check",
+        "overall_result",
+        "assessment_notes",
+        "active_member_snapshot",
+        "assessed_by_user_id",
+        "assessed_at",
+    }
+    if not eligibility_keys.issubset(eligibility):
+        return False
+    if (
+        not isinstance(eligibility.get("overall_result"), str)
+        or str(eligibility.get("loan_application_id")) != str(case.loan_application_id)
+        or not is_uuid_string(eligibility.get("loan_application_id"))
+        or not is_uuid_string(eligibility.get("eligibility_assessment_id"))
+        or not is_uuid_string(eligibility.get("assessed_by_user_id"))
+        or not isinstance(eligibility.get("active_member_snapshot"), dict)
+        or not isinstance(eligibility.get("assessment_notes"), str)
+    ):
+        return False
+    if not all(
+        isinstance(eligibility.get(key), str)
+        for key in (
+            "member_active_check",
+            "default_check",
+            "document_check",
+            "terms_acceptance_check",
+            "purpose_check",
+            "nominee_check",
+        )
+    ):
+        return False
+    try:
+        assessed_at = timezone.datetime.fromisoformat(
+            eligibility.get("assessed_at", "").replace("Z", "+00:00")
+        )
+    except (AttributeError, TypeError, ValueError):
+        return False
+    if assessed_at.tzinfo is None:
+        return False
+    if any(
+        compliance[key] != eligibility[key]
+        for key in (
+            "member_active_check",
+            "default_check",
+            "terms_acceptance_check",
+            "purpose_check",
+        )
+    ) or documentation["document_check"] != eligibility["document_check"]:
+        return False
+    try:
+        requested_amount = amounts.get("requested_amount")
+        if requested_amount is not None and Decimal(str(requested_amount)) < 0:
+            return False
+        if Decimal(str(amounts.get("eligible_amount"))) < 0:
+            return False
+        if Decimal(str(amounts.get("recommended_amount"))) < 0:
+            return False
+    except (InvalidOperation, TypeError, ValueError):
+        return False
+    if (
+        not is_uuid_string(risk.get("risk_assessment_id"))
+        or any(
+            not isinstance(risk.get(key), str) or not risk.get(key)
+            for key in (
+                "market_risk_rating",
+                "operational_risk_rating",
+                "borrower_risk_rating",
+                "overall_risk_rating",
+            )
+        )
+    ):
+        return False
+    if not isinstance(documentation.get("status"), str) or not documentation.get(
+        "status"
+    ):
+        return False
+
+    application_id = str(case.loan_application_id)
+    expected_references = {
+        "application": f"/api/v1/loan-applications/{application_id}/",
+        "appraisal": f"/api/v1/loan-applications/{application_id}/appraisal-note/",
+        "eligibility": f"/api/v1/loan-applications/{application_id}/eligibility-assessment/",
+        "loan_limit": f"/api/v1/loan-applications/{application_id}/loan-limit-assessment/",
+    }
+    return (
+        references == expected_references
+        and _same_amount(amounts.get("recommended_amount"), case.amount)
+        and _same_amount(
+            amounts.get("eligible_amount"),
+            case.loan_limit_provenance_json.get("final_eligible_loan_amount"),
+        )
+    )
 
 
 def is_pending_approval_case_actor(*, case, actor_id):

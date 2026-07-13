@@ -1,5 +1,24 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007K Frozen Review Snapshot and Selector Boundary Closure
+
+- Credit now assembles the complete sanction review package while holding the application,
+  appraisal, review-history, and risk rows used for enrichment. Approvals persists that returned
+  object byte-for-byte and never regenerates detail facts from mutable live records.
+- Canonical validity requires the complete typed review schema, a persisted immutable review link,
+  exact reviewer/provenance consistency, UUID-shaped nested identifiers, a timezone-aware assessed
+  timestamp, exact application references, and amount/provenance agreement. Empty, partial,
+  malformed, unlinked, or inconsistent facts nondisclose before case/register filters, counts,
+  pagination, serialization, or writes even when stored projections remain stale-true.
+- `approval_case_selector` now only shapes coarse actor-scoped queries. The approval engine owns
+  the single frozen-valid/read-scope decision used by collection, detail, actions, sanction
+  decision, Exception Register, and Credit Sanction Register; selector-to-engine imports and
+  literal-SQL tests are gone.
+- New credit-owned packages carry an exact schema version and immutable review-decision provenance.
+  Legacy 0011/0012 reconstructions were populated partly from then-current mutable rows and carry no
+  such proof, so the canonical boundary deliberately leaves them nondisclosing. This isolated
+  worktree has no migrated application database to inspect; no unproven backfill was invented.
+
 ## Architecture Review 2026-07-14 01:17 - Frozen Review and Frontend Contract Closure
 
 - 007H3 removed live loan-limit comparison, but an empty `appraisal_facts_json` still makes

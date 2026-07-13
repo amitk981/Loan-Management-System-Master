@@ -1,0 +1,45 @@
+Creating test database for alias 'default'...
+Found 109 test(s).
+System check identified no issues (0 silenced).
+................................................................................................F.E........ss
+======================================================================
+ERROR: test_sanction_decision_uses_its_frozen_case_when_a_newer_cycle_exists (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_sanction_decision_uses_its_frozen_case_when_a_newer_cycle_exists)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2410, in test_sanction_decision_uses_its_frozen_case_when_a_newer_cycle_exists
+    self.assertTrue(refresh_approval_case_projection(later_cycle))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/approvals/modules/approval_case_projection.py", line 26, in refresh_approval_case_projection
+    coherent = is_routable_approval_case(case)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 424, in is_routable_approval_case
+    and _matrix_projection_is_coherent(case, matrix)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/approvals/modules/approval_case_engine.py", line 471, in _matrix_projection_is_coherent
+    == f"{case.amount:.2f}"
+       ^^^^^^^^^^^^^^^^^^^^
+ValueError: Unknown format code 'f' for object of type 'str'
+
+======================================================================
+FAIL: test_routed_historical_case_wins_over_same_amount_unrouted_shell_after_live_change (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_routed_historical_case_wins_over_same_amount_unrouted_shell_after_live_change)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 4302, in test_routed_historical_case_wins_over_same_amount_unrouted_shell_after_live_change
+    self.assertEqual(
+AssertionError: Lists differ: [] != ['d3470f13-2832-4418-9809-f4a36e4d78fe']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'d3470f13-2832-4418-9809-f4a36e4d78fe'
+
+- []
++ ['d3470f13-2832-4418-9809-f4a36e4d78fe']
+
+----------------------------------------------------------------------
+Ran 109 tests in 3.104s
+
+FAILED (failures=1, errors=1, skipped=2)
+Destroying test database for alias 'default'...

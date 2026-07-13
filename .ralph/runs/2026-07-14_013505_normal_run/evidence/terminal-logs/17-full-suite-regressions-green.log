@@ -1,0 +1,20 @@
+Creating test database for alias 'default'...
+Found 4 test(s).
+System check identified no issues (0 silenced).
+F...
+======================================================================
+FAIL: test_above_limit_exception_completes_public_three_approver_and_register_workflow (sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionApiTests.test_above_limit_exception_completes_public_three_approver_and_register_workflow)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 842, in test_above_limit_exception_completes_public_three_approver_and_register_workflow
+    ordinary_case, ordinary_application = self._create_scoped_ordinary_terminal_case(
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/sfpcl_credit/tests/test_sanction_submission_api.py", line 2036, in _create_scoped_ordinary_terminal_case
+    self.assertTrue(refresh_approval_case_projection(case))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.297s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

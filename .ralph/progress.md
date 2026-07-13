@@ -5886,3 +5886,28 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_013505_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007K-frozen-review-snapshot-and-selector-boundary-closure
+- Summary: Made the locked credit-owned review package mandatory immutable approval truth; removed
+  live appraisal fallback and the selector/engine cycle; unified pre-filter actor-scoped validity
+  across cases, actions, decisions, and both approval registers.
+- Tests run: retained backend RED/GREEN cycles and two-axis review fixes; backend check/migration
+  sync and 685 tests with 19 expected SQLite skips at 93% coverage; frontend build/typecheck/lint
+  and 251 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_013505_normal_run/evidence/`
+- Result: Success
+- Risk level: High under standing approval; no schema migration or external side effect.
+- Next action: Independent orchestrator validation/commit/merge/push, then run 007L.
+
+## 2026-07-14 02:31:21 - 2026-07-14_013505_normal_run
+- Agent tool used: codex
+- Slice attempted: 007K-frozen-review-snapshot-and-selector-boundary-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/.ralph/runs/2026-07-14_013505_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_013505_normal_run/.ralph/runs/2026-07-14_013505_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

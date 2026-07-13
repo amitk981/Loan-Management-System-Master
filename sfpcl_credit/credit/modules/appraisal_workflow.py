@@ -195,6 +195,76 @@ class ApprovalCaseEnrichmentFacts:
     recommended_amount: Decimal
     exception_required_flag: bool
     loan_limit_provenance: dict
+    review_facts: dict
+
+
+def project_approval_case_review_facts(*, application, appraisal_note, review):
+    """Project the credit-owned immutable review package consumed by approvals."""
+    eligibility = appraisal_note.eligibility_snapshot_json
+    loan_limit = appraisal_note.loan_limit_snapshot_json
+    risk = appraisal_note.risk_assessment
+    application_id = str(application.pk)
+    return {
+        "snapshot_schema_version": "approval-review-v1",
+        "snapshot_provenance": {
+            "owner": "credit",
+            "review_decision_id": str(review.pk),
+        },
+        "maker_checker": {
+            "application_created_by_user_id": (
+                str(application.created_by_user_id)
+                if application.created_by_user_id else None
+            ),
+            "application_received_by_user_id": str(application.received_by_user_id),
+            "application_submitted_by_user_id": (
+                str(application.submitted_by_user_id)
+                if application.submitted_by_user_id else None
+            ),
+            "appraisal_prepared_by_user_id": str(appraisal_note.prepared_by_user_id),
+            "appraisal_reviewed_by_user_id": str(review.reviewer_user_id),
+        },
+        "eligibility": eligibility,
+        "loan_amounts": {
+            "requested_amount": (
+                f"{application.required_loan_amount:.2f}"
+                if application.required_loan_amount is not None else None
+            ),
+            "eligible_amount": loan_limit.get("final_eligible_loan_amount"),
+            "recommended_amount": f"{appraisal_note.recommended_amount:.2f}",
+        },
+        "purpose": {
+            "category": application.purpose_category or None,
+            "description": application.declared_purpose or None,
+        },
+        "compliance_checks": {
+            key: eligibility.get(key)
+            for key in (
+                "member_active_check",
+                "default_check",
+                "terms_acceptance_check",
+                "purpose_check",
+            )
+        },
+        "borrowing_history": appraisal_note.borrower_summary,
+        "risk": {
+            "risk_assessment_id": str(risk.pk),
+            "market_risk_rating": risk.market_risk_rating,
+            "operational_risk_rating": risk.operational_risk_rating,
+            "borrower_risk_rating": risk.borrower_risk_rating,
+            "overall_risk_rating": risk.overall_risk_rating,
+            "risk_mitigation_notes": risk.risk_mitigation_notes,
+        },
+        "documentation_completeness": {
+            "status": application.completeness_status,
+            "document_check": eligibility.get("document_check"),
+        },
+        "source_references": {
+            "application": f"/api/v1/loan-applications/{application_id}/",
+            "appraisal": f"/api/v1/loan-applications/{application_id}/appraisal-note/",
+            "eligibility": f"/api/v1/loan-applications/{application_id}/eligibility-assessment/",
+            "loan_limit": f"/api/v1/loan-applications/{application_id}/loan-limit-assessment/",
+        },
+    }
 
 
 class AppraisalWorkflow:
@@ -878,8 +948,9 @@ class AppraisalWorkflow:
             permissions,
         )
         note = (
-            LoanAppraisalNote.objects.select_for_update(of=("self",))
-            .select_related(
+            LoanAppraisalNote.objects.select_for_update(
+                of=("self", "risk_assessment")
+            ).select_related(
                 "risk_assessment",
                 "prepared_by_user",
                 "reviewed_by_user",
@@ -1007,6 +1078,11 @@ class AppraisalWorkflow:
             recommended_amount=note.recommended_amount,
             exception_required_flag=snapshot["exception_required_flag"],
             loan_limit_provenance={key: snapshot[key] for key in required},
+            review_facts=project_approval_case_review_facts(
+                application=application,
+                appraisal_note=note,
+                review=latest_review,
+            ),
         )
 
 

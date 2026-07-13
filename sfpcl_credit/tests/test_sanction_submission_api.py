@@ -35,6 +35,9 @@ from sfpcl_credit.credit.models import (
     LoanAppraisalNote,
     RiskAssessment,
 )
+from sfpcl_credit.credit.modules.appraisal_workflow import (
+    project_approval_case_review_facts,
+)
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.members.models import Member
@@ -165,7 +168,17 @@ class SanctionSubmissionApiTests(TestCase):
             eligibility_snapshot_json={
                 "eligibility_assessment_id": "10000000-0000-0000-0000-000000000001",
                 "loan_application_id": str(self.application.pk),
+                "member_active_check": "pass",
+                "default_check": "pass",
+                "document_check": "pass",
+                "terms_acceptance_check": "pass",
+                "purpose_check": "pass",
+                "nominee_check": "pass",
                 "overall_result": "eligible",
+                "assessment_notes": "Eligible.",
+                "active_member_snapshot": {},
+                "assessed_by_user_id": str(self.preparer.pk),
+                "assessed_at": self.reviewed_at.isoformat(),
             },
             loan_limit_snapshot_json={
                 "loan_limit_assessment_id": "20000000-0000-0000-0000-000000000002",
@@ -1959,7 +1972,21 @@ from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow as 
             tat_status=LoanAppraisalNote.TAT_WITHIN,
             eligibility_assessment_id_snapshot="80000000-0000-0000-0000-000000000008",
             loan_limit_assessment_id_snapshot="90000000-0000-0000-0000-000000000009",
-            eligibility_snapshot_json={"overall_result": "eligible"},
+            eligibility_snapshot_json={
+                "eligibility_assessment_id": "80000000-0000-0000-0000-000000000008",
+                "loan_application_id": str(application.pk),
+                "member_active_check": "pass",
+                "default_check": "pass",
+                "document_check": "pass",
+                "terms_acceptance_check": "pass",
+                "purpose_check": "pass",
+                "nominee_check": "pass",
+                "overall_result": "eligible",
+                "assessment_notes": "Eligible.",
+                "active_member_snapshot": {},
+                "assessed_by_user_id": str(self.preparer.pk),
+                "assessed_at": calculated_at.isoformat(),
+            },
             loan_limit_snapshot_json={
                 "loan_limit_assessment_id": "90000000-0000-0000-0000-000000000009",
                 "loan_application_id": str(application.pk),
@@ -1983,9 +2010,19 @@ from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow as 
             recommendation="approve",
             appraisal_status=LoanAppraisalNote.STATUS_SUBMITTED_TO_SANCTION,
         )
+        review = AppraisalReviewDecision.objects.create(
+            loan_appraisal_note=note,
+            decision="reviewed",
+            review_comments="Immutable ordinary-case review.",
+            reviewer_user=self.reviewer,
+            decided_at=note.reviewed_at,
+            from_state=LoanAppraisalNote.STATUS_REVIEW_PENDING,
+            to_state=LoanAppraisalNote.STATUS_REVIEWED,
+        )
         case = apps.get_model("approvals", "ApprovalCase").objects.create(
             loan_application=application,
             loan_appraisal_note=note,
+            appraisal_review_decision=review,
             submitted_by_user=self.reviewer,
             submission_remarks="Ordinary case ready for scoped approval.",
             approval_matrix_rule=rule,
@@ -2033,6 +2070,15 @@ from sfpcl_credit.credit.modules.appraisal_workflow import AppraisalWorkflow as 
             decision_date=decision_date,
             version=2,
         )
+        case = apps.get_model("approvals", "ApprovalCase").objects.select_related(
+            "loan_application", "loan_appraisal_note__risk_assessment"
+        ).get(pk=case.pk)
+        case.appraisal_facts_json = project_approval_case_review_facts(
+            application=case.loan_application,
+            appraisal_note=case.loan_appraisal_note,
+            review=case.appraisal_review_decision,
+        )
+        case.save(update_fields=["appraisal_facts_json"])
         self.assertTrue(refresh_approval_case_projection(case))
         return case, application
 

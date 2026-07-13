@@ -141,11 +141,11 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         .prefetch_related("actions")
         .get(pk=case_id)
     )
-    if not approval_case_engine.is_routable_approval_case(case):
-        raise ApprovalCase.DoesNotExist
-    if not approval_case_engine.can_read_approval_case(
+    if not approval_case_engine.approval_case_is_readable(
         actor=actor, case=case, actor_permissions=actor_permissions
-    ).allowed:
+    ):
+        if not approval_case_engine.is_routable_approval_case(case):
+            raise ApprovalCase.DoesNotExist
         raise ApprovalActionConflict(
             "You cannot access this approval case.",
             code="OBJECT_ACCESS_DENIED",

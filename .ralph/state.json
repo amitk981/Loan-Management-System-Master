@@ -179,14 +179,15 @@
     "007H3-frozen-case-provenance-and-read-scope-parity-closure",
     "007I-sanction-workbench-ui",
     "007J-registers-and-approval-matrix-frontend-wiring",
-    "007J2-settings-hub-panels-wiring-or-lockdown"
+    "007J2-settings-hub-panels-wiring-or-lockdown",
+    "007K-frozen-review-snapshot-and-selector-boundary-closure"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "6c6a4da",
-  "last_run_id": "2026-07-14_010536_architecture_review",
+  "last_run_id": "2026-07-14_013505_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 0,
+  "slices_completed_since_architecture_review": 1,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

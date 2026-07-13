@@ -1,7 +1,7 @@
 # Slice 007K: Frozen Review Snapshot and Selector Boundary Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -69,4 +69,3 @@ High
 - Missing frozen review truth cannot be repaired or authorised from mutable live appraisal rows.
 - Approval read dependency flow is acyclic and all pre-pagination consumers share one deep seam.
 - Backend RED/GREEN evidence and all configured gates pass.
-
