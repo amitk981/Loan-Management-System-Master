@@ -1,5 +1,17 @@
 # Ralph Progress Log
 
+# Run 2026-07-13_073549_normal_run
+
+- Completed CR-002 by replacing per-character complete-form fixture entry with synchronous DOM
+  change events while retaining real route navigation, submit clicks, one typed ordinary update,
+  exact create/PATCH bodies, and canonical create/update readbacks.
+- Added a regression assertion limiting `userEvent.type` to the one deliberately human-like update
+  interaction. The routed journey fell from the archived 3103 ms to 1604-1836 ms across the full
+  and five repeated focused runs; the following parameterized test passed each time.
+- Frontend typecheck, lint, 207 tests, and build pass. Backend check/migration sync and 531 tests
+  pass with 16 expected PostgreSQL-only skips and 93% coverage.
+- Evidence: `.ralph/runs/2026-07-13_073549_normal_run/`. Next: already-concrete 007A4, then 007B.
+
 # Run 2026-07-13_055322_architecture_review
 
 - Reviewed 006Z11, 006Z12, 007A2, and 007A3 independently across standards and spec fidelity;
@@ -4992,6 +5004,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_061140_normal_run/.ralph/runs/2026-07-13_061140_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_061140_normal_run/.ralph/runs/2026-07-13_061140_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-13 07:45:23 - 2026-07-13_073549_normal_run
+- Agent tool used: codex
+- Slice attempted: CR-002-member-governance-container-ci-timeout
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_073549_normal_run/.ralph/runs/2026-07-13_073549_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-13_073549_normal_run/.ralph/runs/2026-07-13_073549_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

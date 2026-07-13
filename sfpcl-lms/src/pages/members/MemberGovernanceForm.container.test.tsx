@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearStoredAuthSession, storedAuthSession } from '../../services/authSession';
@@ -24,6 +24,7 @@ afterEach(() => {
 
 describe('MemberGovernanceForm production container', () => {
   it('routes Directory registration into canonical Profile readback before an ordinary update readback', async () => {
+    const typeSpy = vi.spyOn(userEvent, 'type');
     const mutationCreate = { ...profile, member_id: 'member-routed', display_name: 'Mutation create leak', pan: { masked: '******LEAK', can_view_full: false } };
     const canonicalCreate = { ...profile, member_id: 'member-routed', display_name: 'Canonical created member', mobile_number: '********3210', available_actions: [updateAction] };
     const mutationUpdate = { ...canonicalCreate, version: 8, display_name: 'Mutation update leak' };
@@ -69,6 +70,7 @@ describe('MemberGovernanceForm production container', () => {
       registered_address: canonicalCreate.registered_address,
       email: canonicalCreate.email,
     });
+    expect(typeSpy).toHaveBeenCalledTimes(1);
   });
 
   it.each(['individual_farmer', 'fpc', 'producer_institution'] as const)(
@@ -186,6 +188,10 @@ async function replace(label: string, value: string) {
   await userEvent.type(input, value);
 }
 
+function replaceFixture(label: string, value: string) {
+  fireEvent.change(screen.getByLabelText(label), { target: { value } });
+}
+
 async function fillCompleteCreate(memberType: 'individual_farmer' | 'fpc' | 'producer_institution') {
   if (memberType !== 'individual_farmer') await userEvent.selectOptions(screen.getByLabelText('Member Type'), memberType);
   const common = completeBody(memberType);
@@ -195,13 +201,13 @@ async function fillCompleteCreate(memberType: 'individual_farmer' | 'fpc' | 'pro
     ['Membership Start Date', common.membership_start_date], ['Mobile Number', common.mobile_number], ['Email', common.email], ['PAN', common.pan],
     ['Address Line 1', address.line1], ['Address Line 2', address.line2], ['Village / City', address.village_city],
     ['District', address.district], ['State', address.state], ['Pincode', address.pincode],
-  ]) await replace(label, value);
+  ]) replaceFixture(label, value);
   if (memberType === 'individual_farmer') {
     const individual = common.individual_profile!;
-    for (const [label, value] of [['First Name', individual.first_name], ['Middle Name', individual.middle_name], ['Last Name', individual.last_name], ['Gender', individual.gender], ['Date of Birth', individual.date_of_birth], ['Occupation', individual.occupation], ['Cultivation Area (acres)', individual.land_area_under_cultivation_acres], ['Primary Crop', individual.primary_crop], ['Services Availed', 'true'], ['Employment / Service Years', individual.employment_or_service_years], ['Aadhaar', common.aadhaar!]]) await replace(label, String(value));
+    for (const [label, value] of [['First Name', individual.first_name], ['Middle Name', individual.middle_name], ['Last Name', individual.last_name], ['Gender', individual.gender], ['Date of Birth', individual.date_of_birth], ['Occupation', individual.occupation], ['Cultivation Area (acres)', individual.land_area_under_cultivation_acres], ['Primary Crop', individual.primary_crop], ['Services Availed', 'true'], ['Employment / Service Years', individual.employment_or_service_years], ['Aadhaar', common.aadhaar!]]) replaceFixture(label, String(value));
   } else {
     const institution = common.producer_institution_profile!;
-    for (const [label, value] of [['Institution Type', institution.institution_type], ['Registration Number', institution.registration_number], ['Authorised Signatory', institution.authorised_signatory_name], ['Signatory PAN', institution.authorised_signatory_pan], ['Signatory Aadhaar', institution.authorised_signatory_aadhaar], ['Board Resolution Required', 'true'], ['Services Availed', 'true'], ['Produce Supply Years', institution.produce_supply_years]]) await replace(label, String(value));
+    for (const [label, value] of [['Institution Type', institution.institution_type], ['Registration Number', institution.registration_number], ['Authorised Signatory', institution.authorised_signatory_name], ['Signatory PAN', institution.authorised_signatory_pan], ['Signatory Aadhaar', institution.authorised_signatory_aadhaar], ['Board Resolution Required', 'true'], ['Services Availed', 'true'], ['Produce Supply Years', institution.produce_supply_years]]) replaceFixture(label, String(value));
   }
 }
 

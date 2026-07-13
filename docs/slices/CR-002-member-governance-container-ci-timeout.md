@@ -1,7 +1,7 @@
 # Slice CR-002: Member governance container test repeatedly times out in GitHub CI
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Change request (maintenance stage), accepted 2026-07-13 from docs/change-requests/accepted/CR-002-member-governance-container-ci-timeout.md.

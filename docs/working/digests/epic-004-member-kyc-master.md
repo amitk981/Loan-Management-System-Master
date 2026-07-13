@@ -1,5 +1,14 @@
 # Digest — Epic 004: Member, KYC, Nominee, Witness, and Profile Master
 
+## CR-002 Member Governance Container CI Timeout
+
+- Complete registration fixture entry uses synchronous labeled-control change events, eliminating
+  avoidable per-character scheduling while retaining real navigation, submit, canonical readback,
+  exact request bodies, and one typed ordinary update.
+- A regression assertion permits exactly that one deliberate `userEvent.type` call. The affected
+  routed journey passes at 1604-1836 ms across the full suite and five repeated focused sequences,
+  leaving the following parameterized journey clean.
+
 ## 006Y16 Witness Parent Scope Contract Closure
 
 - Credit Manager authority remains stage-bound: an existing Credit Assessment application is in

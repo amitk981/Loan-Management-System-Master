@@ -1,23 +1,21 @@
 # Ralph Handoff
 
 ## Last Run
-2026-07-13_061140_normal_run
+2026-07-13_073549_normal_run
 
 ## Current Status
 
-006Z13 is complete. Persisted member scope now has database-enforced shape and conditional
-uniqueness across global, created-by, assigned, and team grants, with a non-destructive exact-
-duplicate cleanup migration. Real evaluator coverage includes inactive team membership and scoped
-list totals. Staff calculation has an explicit actor/scope boundary, while dependency proof limits
-actorless domain calculation to application-scoped eligibility and authenticated portal-owned
-member paths. Existing public member action and maker-provenance suites remain green.
+CR-002 is complete. Complete member-registration fixtures now enter through synchronous observable
+change events rather than queued per-character typing. Real navigation, submits, canonical profile
+readbacks, the exact POST/PATCH ledger, and one ordinary typed update remain asserted. The regression
+also fixes the expected user-event typing count, preventing the costly interaction from returning.
 
 ## Validation
 
-Evidence is under `.ralph/runs/2026-07-13_061140_normal_run/`. The database and staff-calculation
-tracer bullets retain RED/GREEN logs; the focused public matrix passes 85 tests. Frontend build,
-typecheck, lint, and 207 tests pass. Backend check/migration sync and 531 tests pass with 16 expected
-PostgreSQL-only skips and 93% coverage.
+Evidence is under `.ralph/runs/2026-07-13_073549_normal_run/`. RED proves the routed journey made 25
+per-character typing calls; GREEN makes exactly one and completes in 1604-1836 ms across the full
+and five repeated focused runs. Frontend build, typecheck, lint, and 207 tests pass. Backend check,
+migration sync, and 531 tests pass with 16 expected PostgreSQL-only skips and 93% coverage.
 
 ## Next Run
 
