@@ -14,6 +14,28 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## Architecture Review 2026-07-14 23:49 - Security Owner, Read, Stamp, and Sensitive Seams
+
+- 008F2's `security_instruments` PoA module remains a six-line forwarding shell over the
+  `legal_documents` implementation, while PoA/SH-4/CDSL modules import legal and approval owners in
+  the opposite direction to codebase-design §36.2. `008I2` moves real PoA policy and restores the
+  source read-role matrix; `008I3` removes the remaining reverse imports through a narrow top-level
+  process/evidence seam and executable dependency guards.
+- Functional M06-FR-008 and V10 p.14 §4.3 require exactly ₹500 plus notarisation for PoA, but an
+  independent public-path regression activated an otherwise adequate ₹1 stamp. `008I2` adds the
+  PoA-specific exact-amount guard without inventing the separate Loan Agreement duty rule.
+- Data-model §17.4 permits pending CDSL evidence to be null; the serializer unconditionally
+  dereferences it and returned an internal error in an independent regression. `008I4` restores the
+  nullable pending contract while keeping terminal acceptance evidence mandatory.
+- Reversible BO values currently use a custom `SECRET_KEY`-derived construction and the CDSL module
+  owns reveal policy/audit directly. `008I4` replaces both with the source-defined independently
+  keyed/versioned `shared.encryption` and central sensitive-data access seams, then 012E3 extends
+  that single owner for repository-wide rotation. `008J` now waits for 008I4.
+- Race tests preserve substantive locking but do not always prove exactly one different-payload
+  material winner and zero loser success identities. `008I3` closes the PoA/tri-party/SH-4/CDSL
+  ledger and twice-run PostgreSQL assertions. M06-FR-007/008 and security reads remain partial until
+  I2; M06-FR-010/011/012 remain partial across the owner/evidence seams until I3/I4.
+
 ## 008I CDSL Pledge Closure (2026-07-14)
 
 The `security_instruments` owner now retains one protected §17.4 CDSL pledge beneath the locked

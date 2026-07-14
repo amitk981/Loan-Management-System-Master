@@ -2,6 +2,122 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-14 23:49 - Architecture Review 2026-07-14_234031_architecture_review
+
+Reviewed completed work since architecture-review commit `e046a9d3`:
+- `008G2-stage4-maker-and-verification-contract-closure` (`095d846d`)
+- `008F2-security-instrument-boundary-and-poa-lifecycle-closure` (`ef2f5900`)
+- `008H-sh-4-physical-share-security-workflow` (`ad62bdf2`)
+- `008I-cdsl-pledge-workflow` (`bacc285d`)
+
+The review checked `git diff e046a9d3...bacc285d`, every production/test hunk, the four slice
+contracts, retained review/evidence packets, the Epic 008 digest, M06 requirement ids, and cited
+API, data-model, functional, auth, deployment, SOP, and codebase-design sections. Standards and Spec
+ran as isolated independent passes. Two additional public-path regressions failed against the
+merged code. No production code changed.
+
+### Standards
+
+#### Finding 1 - High - The security app dependency direction is reversed and PoA is a forwarding shell
+
+`security_instruments/modules/power_of_attorney.py` is six lines that imports the implementation
+from `legal_documents`, mutates its module globals through `bind_security_owner`, and forwards every
+attribute through `__getattr__`. `security_package.py`, `sh4.py`, and `cdsl_share_pledge.py` likewise
+import approval/legal models or selectors. Codebase-design §36.2 permits `legal_documents` to depend
+on security and limits security to members/applications/documents/audit; §28.1 rejects pass-through
+modules. The F2 boundary test asserts only that legal does not import security, which is the opposite
+of the documented direction, and the F2 review packet therefore overstates the ownership result.
+`008I2` moves the real PoA implementation; `008I3` establishes one top-level cross-owner process/
+fact interface and executable dependency guards for PoA, SH-4, and CDSL.
+
+#### Finding 2 - High - Reversible BO data bypasses the central encryption and reveal modules
+
+`members/protected_identity.py:22-65` adds a repository-local XOR/HMAC counter-mode construction
+derived from Django `SECRET_KEY`; `cdsl_share_pledge.py:41-110` directly checks roles, decrypts, and
+writes reveal audit rows. Codebase-design §§9.4/39 require `shared.encryption` to hide provider/key
+version/rotation and `documents.modules.sensitive_data_access` to own masking, permission, scope,
+reason, timeout, and audit. A-115 honestly admits this is temporary, but 008J would otherwise copy
+the wrong seam for cheque data. `008I4` installs the central independently keyed/versioned adapter,
+migrates CDSL rows, and makes 012E3 extend rather than duplicate it.
+
+#### Finding 3 - High - Package reads reject source-authorised read-only roles
+
+`security_package.require_actor` requires every caller, including GET readers, to be Compliance or
+Company Secretary. Auth §§12.8/14.1/19.2-19.4 grants scoped security reads to Credit Manager, Senior
+Manager Finance, CFC, CFO, Director/approver, and Auditor roles. The catalogue and tests cover only
+Compliance/CS, so a valid read permission does not work for the documented read matrix. `008I2`
+separates canonical masked read authority from mutation/reveal/download/invocation authority.
+
+#### Finding 4 - Medium - Evidence ledgers remain shallow and race assertions are incomplete
+
+PoA, SH-4, CDSL, and legal workflows duplicate audit/version/workflow snapshot writers rather than
+using the deep recorder described by codebase-design §9.3. The concurrency tests mostly count rows:
+CDSL acceptance allows any number of `returned` calls and does not assert one material winner, while
+tri-party does not prove the promised workflow attribution. `008I3` deepens the recorder and requires
+different-payload, exact-winner, zero-success-loser identity assertions twice on PostgreSQL.
+
+No additional transaction, indexing, action-envelope, or financial-idempotency violation was found.
+008G2's latest-maker transfer, strict request contracts, consumed-signature guard, public generation
+tracer, and named mismatch error are substantive. SH-4/CDSL terminal locking, masked projections,
+and invocation/readiness exclusions are also substantive.
+
+### Spec
+
+#### Finding 1 - High - PoA activation does not enforce the mandatory ₹500 stamp
+
+Functional M06-FR-008 and the Epic digest's V10 p.14 §4.3 require a ₹500 stamp plus notarisation.
+`legal_documents/modules/power_of_attorney.py:271-290` checks only `adequate` status and distinct
+stamp maker/checker. Existing tests always supply ₹500 but have no adverse amount assertion. The
+independent public-path regression replaced the adequate amount with ₹1 and still received HTTP
+200/active. `008I2` adds PoA-specific exact amount validation without inventing the unresolved Loan
+Agreement/ad-valorem rule.
+
+#### Finding 2 - High - A valid pending CDSL request with nullable evidence raises an internal error
+
+Data-model §17.4 makes `evidence_document_id` nullable, and 008I requires evidence only before
+acceptance. `cdsl_share_pledge.create_pledge:152` nevertheless calls `.document` on the nullable
+selector result. The independent public POST with pending states and `evidence_document_id: null`
+raised `AttributeError` instead of returning a valid pending row. `008I4` restores null pending
+create/change while keeping submitted/terminal evidence fail-closed.
+
+#### Finding 3 - High - The implemented owner and sensitive-data seams contradict the slice contracts
+
+008F2 requires the security module to own PoA policy, but the dynamic wrapper leaves the
+implementation in legal. 008I explicitly says to reuse the existing masking/reveal/audit module,
+yet it adds direct custom cryptography and local reveal authorization. These are not cosmetic paths:
+tests import the forwarding module and the CDSL public reveal crosses the local helpers. `008I2` and
+`008I4` close the two contracts; `008I3` prevents a new inverse dependency while doing so.
+
+#### Finding 4 - Medium - Promised complete winner/loser race evidence is only partial
+
+008G2/H/I require exact winner/loser audit, version, workflow, and request attribution. SH-4 has a
+genuine distinct-custody winner test, but tri-party omits workflow identity and CDSL acceptance does
+not assert exactly one material returned winner. This could let several replay-like successes pass
+the test without proving the changed-submission contract. `008I3` owns the complete matrix.
+
+No unrelated scope creep was found. M06-FR-009/016/017 now have substantive current-maker,
+tri-party, mismatch, and consumed-evidence behavior. M06-FR-007/008 remain partial until 008I2 closes
+the real owner and ₹500 rule. M06-FR-010/011/012 have substantive SH-4/CDSL/future-share tracking,
+subject to the seam and null correction. M06-FR-015 remains partial and A-101/A-107 continue to
+record the governed-term/signed-copy limits; no epic completed in this four-slice window.
+
+### Corrective queue, state, and context
+
+`008I2-security-poa-owner-and-read-contract-closure` depends on completed 008I. `008I3-security-
+legal-evidence-seam-and-race-closure` depends on I2. `008I4-sensitive-field-encryption-and-cdsl-null-
+contract-closure` depends on I3, and 008J now depends on I4 before adding another protected physical
+instrument. 008J and 008K were sharpened against the corrected seams; 008J now declares its promised
+PostgreSQL capability. 012E3 was sharpened to extend I4's central encryption interface. No slice is
+Blocked, so no stale prerequisite status required reopening.
+
+`CONTEXT.md`, the Epic 008 digest, state, progress, handoff, and architecture-review descriptor are
+refreshed. No ADR was added: source codebase-design, auth, data-model, and functional documents
+already decide module direction, read roles, encryption ownership, nullability, and PoA stamp amount.
+
+Summary: Standards found 3 High and 1 Medium issues; the worst are the reversed security dependency
+and local reversible cryptography. Spec found 3 High and 1 Medium issues; the worst are the missing
+₹500 enforcement and valid nullable CDSL request crashing.
+
 ## 2026-07-14 19:20 - Architecture Review 2026-07-14_185927_architecture_review
 
 Reviewed completed work since architecture-review commit `7e119610`:

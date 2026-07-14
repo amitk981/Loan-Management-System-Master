@@ -2,36 +2,35 @@
 
 ## Last Run
 
-2026-07-14_225031_normal_run
+2026-07-14_234031_architecture_review
 
 ## Current Status
 
-008I is complete. `security_instruments` owns one CDSL pledge per retained package and the exact
-§28.5 POST/GET/PATCH routes. The pledge is available only for canonical frozen `demat` packages;
-`physical`, `mixed`, and missing applicability remain fail-closed. Ordinary reads expose masked BO
-accounts, while an explicit Company Secretary reveal permission records a separate audit event.
+The independent architecture review covered 008G2, 008F2, 008H, and 008I from `e046a9d3` through
+`bacc285d`. Standards found three High and one Medium issue; Spec found three High and one Medium
+issue. The principal defects are a forwarding-shell/reversed security dependency, missing source
+read roles, missing exact ₹500 PoA validation, nullable CDSL evidence causing a 500, custom
+`SECRET_KEY`-derived reversible crypto/direct reveal policy, and incomplete exact-winner race
+evidence. Focused public-path regressions reproduced the ₹1 PoA activation and null-evidence CDSL
+failure. No production code changed.
 
-Compliance owns preparation and real pending changes. A distinct Company Secretary records the
-terminal accepted/rejected result only with retained PSN, SFPCL pledgee identity, active sanctioned
-borrower demat holding, source-required future-shares obligation, and genuine current-renderer
-same-application evidence. Acceptance freezes its evidence and returns one durable action. Exact
-replays are zero-write. Invocation, unpledge, balance changes, checklist completion, package
-readiness, file authority, and loan-account creation remain excluded.
-
-Checklist/package reads project pledge milestones without changing earlier PoA/tri-party/SH-4 or
-completion-owned facts. 008K was sharpened from source material without implementation; 008J was
-already concrete. Four slices have completed since the last architecture review, so review is due.
+Corrective slices are queued in strict order: 008I2 moves real PoA ownership and fixes stamp/read
+contracts; 008I3 restores the legal/security dependency seam and complete race evidence; 008I4
+installs central independently keyed encryption/sensitive access and fixes nullable CDSL evidence.
+008J now depends on I4 so cheque custody cannot copy the wrong sensitive-data seam. 008K and 012E3
+were sharpened from already-opened source material. No ADR was needed because the source architecture
+already decides these ownership boundaries.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-14_225031_normal_run/evidence/`: four retained TDD red/green
-cycles, focused and impacted suites, two successful executions of both PostgreSQL five-worker race
-contracts, Django check/migration sync, 826 backend tests with 36 expected SQLite skips at 92%
-coverage, and frontend build/typecheck/lint plus 293 tests.
+Review evidence is in `.ralph/runs/2026-07-14_234031_architecture_review/evidence/`. It contains
+separate Standards and Spec reports, both failing regression reproductions, queue/protected-path
+checks, and configured frontend/backend gate results. The review packet is the authoritative compact
+summary.
 
 ## Next Run
 
-Run the due architecture review. If it produces no corrective priority, run 008J blank-cheque
-custody. Preserve the security-package lock, current renderer/evidence selectors, package/checklist
-truth, and strict exclusion of invocation/disbursement authority. A-101 still blocks a complete real
+Run 008I2, then 008I3, then 008I4 before 008J. Preserve retained ids/tables/routes, terminal legal
+evidence, package locks, masked projections, and strict exclusion of invocation, unpledge,
+disbursement, file authority, balance changes, and readiness. A-101 still blocks the complete real
 Term-Sheet path.

@@ -1,0 +1,14 @@
+All backend commands used exactly:
+`/Users/amitkallapa/LMS/.ralph/venv/bin/python`
+
+1. `manage.py check`
+   PASS — system check identified no issues.
+2. `manage.py makemigrations --check --dry-run`
+   PASS — no changes detected.
+3. `-m coverage run --source=sfpcl_credit manage.py test sfpcl_credit.tests`
+   PASS — 826 tests in 281.281s; 36 expected PostgreSQL-only skips.
+4. `-m coverage report --fail-under=85`
+   PASS — 92% total coverage, above the 85% floor.
+
+Working directory: `sfpcl_credit/`
+Exit code for every configured gate: 0

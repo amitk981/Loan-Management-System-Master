@@ -1,0 +1,14 @@
+Commands and results:
+
+1. `npm run build`
+   PASS — Vite 5.4.21 transformed 1,877 modules and completed the production build.
+   Existing informational warning: main bundle exceeds 500 kB.
+2. `npm run typecheck`
+   PASS — `tsc --noEmit`.
+3. `npm run lint`
+   PASS — `eslint src`.
+4. `npm test`
+   PASS — 33 files, 293 tests; duration 9.05s.
+
+Working directory: `sfpcl-lms/`
+Exit code for every command: 0

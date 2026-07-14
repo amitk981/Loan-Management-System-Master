@@ -16,7 +16,11 @@ and retain maker-checker custody without presenting or returning it.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 008I
+- 008I4
+
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
 
 ## Source References
 - docs/source/implementation-roadmap.md section 13
@@ -119,6 +123,16 @@ writes.
 - Keep plaintext cheque values out of serializers, audit/version/workflow JSON, exception text, and
   test snapshots. Invocation/presentment and closure return remain later owners even when a caller
   supplies those fields.
+
+## Architecture-Review Sharpening (2026-07-14 23:49)
+
+- Depend on 008I4 so cheque-number protection reuses the central independently keyed
+  `shared.encryption` and `documents.modules.sensitive_data_access` interfaces; do not copy CDSL's
+  legacy sealed-token construction or implement local reveal/audit policy.
+- Consume legal/cancelled-cheque facts through the corrected 008I3 cross-owner process/interface;
+  `security_instruments` must retain no direct `legal_documents` or approvals import.
+- The declared PostgreSQL gate must run changed create/custody payloads twice and assert exact
+  winner plus zero-success-loser audit/version/workflow/request identities.
 
 ## Visual Acceptance Criteria
 None.

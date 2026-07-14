@@ -140,6 +140,17 @@ Test output, API response examples, and screenshots when frontend is touched.
   loan/disbursement fact. Preserve the null-only loan-account constraint and record the handoff to
   the first real disbursement owner.
 
+## Architecture-Review Sharpening (2026-07-14 23:49)
+
+- Consume PoA/SH-4/CDSL/cheque terminal facts only through the 008I3 corrected owner interfaces;
+  `legal_documents` may depend on security metadata, while `security_instruments` must not be
+  imported back into a legal callback that recreates either owner's policy.
+- Checklist readers include the source §14.1/§19 Credit, finance-approver, and Auditor roles under
+  canonical object scope. Read authority remains distinct from item completion and each ordered
+  approval action.
+- Race assertions must identify the sole material winner and prove every losing request produced no
+  audit/version/workflow success evidence; do not count exact replay as a changed-payload winner.
+
 ## Risk Level
 High
 
