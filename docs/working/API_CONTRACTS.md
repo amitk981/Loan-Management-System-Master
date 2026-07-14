@@ -3489,6 +3489,9 @@ accounts, both DP names, `prepared`/`submitted` PRF status, nullable unique PSN,
 `pending`/`accepted`/`rejected` acceptance, nullable positive share count, nullable agreement
 reference, bounded `pending`/`created` pledge status, and nullable evidence-document id. Invocation,
 unpledge, and their timestamps are neither accepted nor persisted; 011I owns those actions.
+Pending POST/PATCH may retain and return `evidence_document_id: null` and project a null checklist
+loan-document link. Accepted/rejected terminal verification still requires the exact current
+same-application evidence and returns `400 VALIDATION_ERROR` with no terminal write when it is null.
 
 GET requires `security.package.read`. POST/PATCH require `security.cdsl_pledge.manage` and the same
 canonical latest-cycle Stage-4 package scope. Only frozen `demat` mode is applicable; `physical`,
@@ -3513,8 +3516,13 @@ masked BO values. `POST /api/v1/cdsl-share-pledges/{cdsl_share_pledge_id}/reveal
 accepts exactly `{ "reason": "..." }`, requires the dedicated
 `security.cdsl_pledge.reveal` permission, package-read/object scope, and active Company Secretary
 authority, and returns both full values with a five-minute expiry under A-114. Each permitted reveal
-and denial is separately audited without plaintext. New BO values use the versioned authenticated
-sealed-token convention in A-115; hashes support equality/duplicate checks but are never returned.
+and denial is separately audited without plaintext. The response is `Cache-Control: no-store` and
+`Pragma: no-cache`; one success per actor/pledge in that five-minute window is allowed, with repeated
+requests returning `429 RATE_LIMITED` under A-116. BO sensitivity does not require re-authentication,
+and that policy decision is retained in the central sensitive-access audit. New BO values use the
+independently keyed/versioned AES-GCM `shared.encryption` convention in A-115; field-specific lookup
+hashes support equality/replay checks but are never returned. Retained `seal:v1` rows migrate with
+row-count/hash/last-four reconciliation and no plaintext response or ledger exposure.
 
 Package/checklist reads project only masked pledge existence, PRF/PSN/acceptance/created milestones,
 share count, maker, checker, and current legal-document linkage. They preserve PoA/SH-4 facts,

@@ -5,21 +5,30 @@ Security modules decide security policy; this process supplies only locked canon
 """
 
 from sfpcl_credit.approvals.models import ApprovalCase
+from django.core.exceptions import ValidationError
+from django.db import transaction
 from sfpcl_credit.approvals.modules.document_checklist_facts import resolve_approved_facts
 from sfpcl_credit.approvals.modules.read_scope import evaluate_approval_case_read_scope
 from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.documents.modules import sensitive_data_access
 from sfpcl_credit.legal_documents.models import ChecklistItem, DocumentChecklist
 from sfpcl_credit.legal_documents import selectors
 from sfpcl_credit.security_instruments.evidence_contract import (
     UncoordinatedEvidence,
     _issue_security_evidence_access,
 )
+from sfpcl_credit.security_instruments.models import CDSLSharePledge
 from sfpcl_credit.security_instruments.modules import (
     cdsl_share_pledge,
     power_of_attorney,
     security_package,
     sh4,
 )
+
+SensitiveAccessDenied = sensitive_data_access.SensitiveAccessDenied
+SensitiveObjectNotFound = sensitive_data_access.SensitiveObjectNotFound
+SensitiveRateLimited = sensitive_data_access.SensitiveRateLimited
+SensitiveValueUnavailable = sensitive_data_access.SensitiveValueUnavailable
 
 
 def _canonical_stage4_scope(application_id):
@@ -86,6 +95,7 @@ def _access():
         sh4_evidence=selectors.sh4_evidence_for_update,
         cdsl_evidence=selectors.cdsl_pledge_evidence_for_update,
         project_checklist_item=_project_checklist_item,
+        mask_sensitive=sensitive_data_access.mask_value,
     )
 
 
@@ -140,4 +150,67 @@ def update_pledge(**kwargs):
 
 
 def reveal_bo_accounts(**kwargs):
-    return _call_with_canonical_evidence(cdsl_share_pledge.reveal_bo_accounts, kwargs)
+    if "evidence_access" in kwargs:
+        raise UncoordinatedEvidence("Caller-supplied evidence authority is forbidden.")
+    actor = kwargs["actor"]
+    pledge_id = kwargs["cdsl_share_pledge_id"]
+    access = _access()
+
+    def resolve_entity(resolving_actor):
+        package_id = (
+            CDSLSharePledge.objects.filter(pk=pledge_id)
+            .values_list("security_package_id", flat=True)
+            .first()
+        )
+        if package_id is None:
+            return None
+        try:
+            security_package.resolve_package(
+                resolving_actor,
+                package_id,
+                security_package.READ_PERMISSION,
+                evidence_access=access,
+            )
+        except security_package.AccessDenied as exc:
+            raise sensitive_data_access.SensitiveAccessDenied from exc
+        pledge = (
+            CDSLSharePledge.objects.select_for_update()
+            .select_related("security_package")
+            .filter(pk=pledge_id, security_package_id=package_id)
+            .first()
+        )
+        if pledge is None:
+            return None
+        facts = cdsl_share_pledge.sensitive_entity_facts(pledge)
+        return sensitive_data_access.SensitiveEntity(**facts)
+
+    denied = None
+    with transaction.atomic():
+        try:
+            revealed = sensitive_data_access.reveal_cdsl_bo_accounts(
+                actor=actor,
+                cdsl_share_pledge_id=pledge_id,
+                payload=kwargs["payload"],
+                metadata=sensitive_data_access.RequestMetadata(
+                    request_id=kwargs["metadata"].request_id,
+                    ip_address=kwargs["metadata"].ip_address,
+                    user_agent=kwargs["metadata"].user_agent,
+                ),
+                resolve_entity=resolve_entity,
+            )
+        except (
+            ValidationError,
+            SensitiveAccessDenied,
+            SensitiveRateLimited,
+            SensitiveValueUnavailable,
+        ) as exc:
+            # The central policy has already written its denial evidence. Leave the
+            # lock transaction normally so that evidence commits, then preserve the
+            # same transport/domain exception for the HTTP adapter.
+            denied = exc
+    if denied is not None:
+        raise denied
+    return {
+        "cdsl_share_pledge_id": str(pledge_id),
+        **revealed,
+    }

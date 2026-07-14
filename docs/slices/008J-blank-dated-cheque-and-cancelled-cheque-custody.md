@@ -162,6 +162,22 @@ High
 - The twice-run PostgreSQL create/custody matrix asserts one material winner, the exact retained
   workflow id/actor, winner request in audit and version, and no loser request in success evidence.
 
+## 008I4 Completion Sharpening (2026-07-15)
+
+- Encrypt `blank_cheque.cheque_number` only through `shared.encryption.FieldEncryption`; use its
+  field-specific lookup hash for replay/duplicate checks and the coordinator-issued central masker
+  for every ordinary response/evidence snapshot. Never use `SECRET_KEY`, `members.protected_identity`,
+  CDSL token parsing, or a cheque-local crypto adapter.
+- Route reason parsing, `security.blank_cheque.reveal`, role/object scope, expiry, rate/re-auth
+  decision, decryption, no-store response, and success/denial audit through
+  `documents.modules.sensitive_data_access`. The security owner supplies encrypted entity facts;
+  the process resolves canonical package/bank/cancelled-cheque scope and serialises concurrent
+  reveals under the retained cheque lock.
+- Extend the immutable evidence contract with bank/cancelled-cheque/scan callbacks and keep the
+  existing `mask_sensitive` callback; tests must reject caller-issued access and any executable
+  security import of documents/legal/approvals. Retain 008I4's missing-key, tamper, rotation,
+  plaintext-scan, and repeated-reveal regressions for the cheque field.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

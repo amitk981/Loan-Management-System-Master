@@ -151,6 +151,18 @@ Test output, API response examples, and screenshots when frontend is touched.
 - Race assertions must identify the sole material winner and prove every losing request produced no
   audit/version/workflow success evidence; do not count exact replay as a changed-payload winner.
 
+## 008I4 Completion Sharpening (2026-07-15)
+
+- Consume CDSL/cheque terminal readiness through masked owner facts issued by the top-level process;
+  checklist completion must never call the sensitive reveal interface, receive ciphertext/hash,
+  or make object existence/decryption equal terminal security truth.
+- A pending CDSL row with null evidence remains valid metadata but cannot complete the checklist.
+  Require the exact accepted/created terminal snapshot and its frozen current-renderer evidence;
+  preserve null linkage until that terminal evidence exists.
+- Checklist audit/version/workflow snapshots must remain recursively plaintext-free. Add a
+  regression that the fake BO/cheque fixtures appear in neither checklist projections nor any
+  success/denial evidence while preserving the central sensitive ledger as a separate owner.
+
 ## Risk Level
 High
 

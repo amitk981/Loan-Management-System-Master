@@ -37,7 +37,11 @@ class SecurityInstrumentBoundaryTests(SimpleTestCase):
 
     def test_source_dependency_graph_uses_only_top_level_cross_owner_process(self):
         backend = Path(__file__).parents[1]
-        forbidden = ("sfpcl_credit.approvals", "sfpcl_credit.legal_documents")
+        forbidden = (
+            "sfpcl_credit.approvals",
+            "sfpcl_credit.documents",
+            "sfpcl_credit.legal_documents",
+        )
         offenders = []
         for path in (backend / "security_instruments").rglob("*.py"):
             if "migrations" in path.parts:

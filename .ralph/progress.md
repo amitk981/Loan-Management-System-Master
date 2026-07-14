@@ -6955,3 +6955,46 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_011600_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008I4-sensitive-field-encryption-and-cdsl-null-contract-closure
+- Summary: Added independently keyed/versioned AES-GCM field encryption, central sensitive reveal/
+  masking policy, retained CDSL token reconciliation, and safe nullable pending evidence while
+  preserving terminal evidence and the I3 dependency boundary.
+- Tests run: nullable and rate-limit RED tracers; Python compile/dependency/plaintext scans;
+  frontend lint/typecheck/build and all 293 tests. Backend focused/full/migration/PostgreSQL gates
+  are dependency-pending because the sandbox lacks newly pinned `cryptography==46.0.3`; the
+  orchestrator installs it before independent validation.
+- Evidence saved: `.ralph/runs/2026-07-15_011600_normal_run/evidence/`
+- Result: Complete pending orchestrator dependency installation and independent validation.
+- Risk level: High; reversible security data, reveal authority/audit, migration, and nullable legal
+  evidence changed fail-closed with no invocation/unpledge/balance/readiness side effects.
+- Next action: Run sharpened 008J, then 008K.
+
+## 2026-07-15 - 2026-07-15_014532_repair
+
+- Agent tool used: codex
+- Slice repaired: 008I4-sensitive-field-encryption-and-cdsl-null-contract-closure
+- Summary: Corrected three CDSL test fixtures to generate the canonical evidence type, preserved
+  centrally owned reveal-denial audit rows by committing them before re-raising the same API error,
+  and made the fresh-process dependency probe use Ralph's architecture-preserving virtualenv entry.
+- Tests run: focused four-failure RED/GREEN; dependency-probe RED/GREEN; Django check and migration
+  sync; all 841 backend tests with 36 expected SQLite skips at 92% coverage; frontend lint,
+  typecheck, all 293 tests, and build; 10 PoA/tri-party/SH-4/CDSL PostgreSQL races twice.
+- Evidence saved: `.ralph/runs/2026-07-15_014532_repair/evidence/`
+- Result: Repair complete pending independent orchestrator validation/commit/merge/push.
+- Risk level: High inherited security/migration risk; the repair is narrowly bounded to denial
+  transaction semantics and test execution/fixture correctness. No new schema or product rule.
+- Next action: Run sharpened 008J, then 008K.
+
+## 2026-07-15 02:14:38 - 2026-07-15_014532_repair
+- Agent tool used: codex
+- Slice attempted: 008I4-sensitive-field-encryption-and-cdsl-null-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_011600_normal_run/.ralph/runs/2026-07-15_014532_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_011600_normal_run/.ralph/runs/2026-07-15_014532_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

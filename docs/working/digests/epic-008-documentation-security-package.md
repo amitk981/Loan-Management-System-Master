@@ -14,6 +14,23 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008I4 Sensitive Field and Nullable CDSL Closure (2026-07-15)
+
+CDSL BO accounts now cross the source-defined `shared.encryption` contract: pinned AES-256-GCM,
+random nonces, authenticated field/version/length/last-four metadata, explicit current/previous key
+versions, and a separately configured field-specific lookup HMAC. No reversible adapter falls back
+to Django `SECRET_KEY`; the former `seal:v1` implementation survives only inside one historical
+data migration with row-count/hash/last-four reconciliation. Whole-repository identity-field
+rotation and production secret-store boot enforcement remain 012E3.
+
+Masking and CDSL reveal now execute through `documents.modules.sensitive_data_access`, issued to
+the security owner only as an immutable coordinator callback. The central owner validates the
+reason, role/permission, canonical object scope, five-minute expiry, one-per-window rate rule,
+High-sensitivity no-re-auth decision, and success/denial audit. CDSL ordinary evidence remains in
+the recursively redacting security recorder and no `security_instruments` executable imports
+documents/legal/approvals. Pending POST/PATCH safely retain/project null evidence; terminal
+acceptance still requires exact current same-application evidence and writes nothing when absent.
+
 ## 008I3 Security / Legal Evidence Seam and Race Closure (2026-07-15)
 
 The executable §36.2 graph now routes every cross-owner security action through

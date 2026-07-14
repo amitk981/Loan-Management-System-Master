@@ -3,6 +3,7 @@
 Django==5.0.6
 PyJWT==2.10.1
 django-cors-headers==4.4.0
+cryptography==46.0.3
 psycopg[binary]==3.3.4
 reportlab==4.4.4
 pypdf==6.1.1

@@ -259,17 +259,3 @@ def _bo_account(value, field, errors, nullable=False):
         errors[field] = "Must be exactly 16 digits." if not nullable else "Must be exactly 16 digits or null."
         return None if nullable else ""
     return value
-@dataclass(frozen=True)
-class CDSLBOAccountRevealRequest:
-    reason: str
-
-    FIELDS = {"reason"}
-
-    @classmethod
-    def parse(cls, payload):
-        _exact_fields(payload, cls.FIELDS)
-        errors = {}
-        reason = _bounded_text(payload.get("reason"), "reason", 500, errors)
-        if errors:
-            raise ValidationError(errors)
-        return cls(reason=reason)

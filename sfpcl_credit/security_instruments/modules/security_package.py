@@ -61,7 +61,7 @@ def read_package(*, actor, application_id, evidence_access):
     package = SecurityPackage.objects.filter(loan_application=application).first()
     if package is None:
         raise NotFound
-    return serialize_package(package)
+    return serialize_package(package, evidence_access)
 
 
 def refresh_package(*, actor, application_id, metadata, evidence_access):
@@ -85,7 +85,7 @@ def refresh_package(*, actor, application_id, metadata, evidence_access):
                 package.physical_share_security_required_flag != physical_required
                 or package.demat_pledge_required_flag != demat_required
             ):
-                old = serialize_package(package)
+                old = serialize_package(package, evidence_access)
                 package.physical_share_security_required_flag = physical_required
                 package.demat_pledge_required_flag = demat_required
                 package.updated_at = timezone.now()
@@ -94,15 +94,15 @@ def refresh_package(*, actor, application_id, metadata, evidence_access):
                     "demat_pledge_required_flag",
                     "updated_at",
                 ])
-                _record_change(actor, package, old, metadata)
-            return serialize_package(package)
+                _record_change(actor, package, old, metadata, evidence_access)
+            return serialize_package(package, evidence_access)
         package = SecurityPackage.objects.create(
             loan_application=application,
             physical_share_security_required_flag=physical_required,
             demat_pledge_required_flag=demat_required,
         )
-        _record_creation(actor, package, metadata)
-        return serialize_package(package)
+        _record_creation(actor, package, metadata, evidence_access)
+        return serialize_package(package, evidence_access)
 
 
 def resolve_package(actor, package_id, permission, for_update=False, evidence_access=None):
@@ -169,7 +169,7 @@ def has_canonical_stage4_scope(application_id, evidence_access):
     return require_coordinated(evidence_access).canonical_stage4_scope(application_id)
 
 
-def serialize_package(package):
+def serialize_package(package, evidence_access):
     from sfpcl_credit.security_instruments.modules.cdsl_share_pledge import serialize_pledge
     from sfpcl_credit.security_instruments.modules.power_of_attorney import serialize_poa
     from sfpcl_credit.security_instruments.modules.sh4 import serialize_sh4
@@ -190,18 +190,20 @@ def serialize_package(package):
         "security_ready_flag": False,
         "power_of_attorney": serialize_poa(poa) if poa else None,
         "sh4_share_transfer_form": serialize_sh4(sh4) if sh4 else None,
-        "cdsl_share_pledge": serialize_pledge(cdsl) if cdsl else None,
+        "cdsl_share_pledge": (
+            serialize_pledge(cdsl, evidence_access) if cdsl else None
+        ),
     }
 
 
-def _record_creation(actor, package, metadata):
+def _record_creation(actor, package, metadata, evidence_access):
     record_security_evidence(
         actor=actor,
         action="security.package.created",
         entity_type="security_package",
         entity_id=package.pk,
         old={},
-        snapshot=serialize_package(package),
+        snapshot=serialize_package(package, evidence_access),
         metadata=metadata,
         workflow_name="security_package",
         from_state=None,
@@ -210,14 +212,14 @@ def _record_creation(actor, package, metadata):
     )
 
 
-def _record_change(actor, package, old, metadata):
+def _record_change(actor, package, old, metadata, evidence_access):
     record_security_evidence(
         actor=actor,
         action="security.package.requirements_changed",
         entity_type="security_package",
         entity_id=package.pk,
         old=old,
-        snapshot=serialize_package(package),
+        snapshot=serialize_package(package, evidence_access),
         metadata=metadata,
         workflow_name="security_package",
         from_state=package.security_status,

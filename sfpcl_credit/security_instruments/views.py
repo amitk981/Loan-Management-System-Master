@@ -10,7 +10,6 @@ from sfpcl_credit.security_instruments.modules import security_package as packag
 from sfpcl_credit.security_instruments.modules import sh4
 from sfpcl_credit.security_instruments.request_contracts import (
     PowerOfAttorneyRequest,
-    CDSLBOAccountRevealRequest,
     CDSLSharePledgeRequest,
     SH4ShareTransferFormRequest,
 )
@@ -207,29 +206,34 @@ def cdsl_share_pledge_reveal(request, cdsl_share_pledge_id):
         return response
     metadata = _metadata(request)
     try:
-        cdsl_share_pledge.require_reveal_actor(
-            user, cdsl_share_pledge_id, metadata
-        )
-        parsed = CDSLBOAccountRevealRequest.parse(parse_json_body(request))
         data = security_instrument_evidence.reveal_bo_accounts(
             actor=user, cdsl_share_pledge_id=cdsl_share_pledge_id,
-            reason=parsed.reason, metadata=metadata,
+            payload=parse_json_body(request), metadata=metadata,
         )
-    except cdsl_share_pledge.AccessDenied as exc:
+    except security_instrument_evidence.SensitiveAccessDenied as exc:
         return error_response(
             request, 403, exc.error_code,
             "You do not have access to reveal these BO accounts.",
         )
-    except cdsl_share_pledge.NotFound:
+    except security_instrument_evidence.SensitiveObjectNotFound:
         return error_response(request, 404, "NOT_FOUND", "CDSL pledge was not found.")
-    except cdsl_share_pledge.Conflict as exc:
-        return error_response(request, 409, "CONFLICT", str(exc))
+    except security_instrument_evidence.SensitiveRateLimited:
+        return error_response(
+            request, 429, "RATE_LIMITED", "BO-account reveal is temporarily rate limited."
+        )
+    except security_instrument_evidence.SensitiveValueUnavailable:
+        return error_response(
+            request, 409, "CONFLICT", "The retained BO account cannot be revealed safely."
+        )
     except ValidationError as exc:
         return error_response(
             request, 400, "VALIDATION_ERROR", "BO-account reveal failed validation.",
             cdsl_share_pledge.validation_field_errors(exc),
         )
-    return success_response(data, request)
+    response = success_response(data, request)
+    response["Cache-Control"] = "no-store"
+    response["Pragma"] = "no-cache"
+    return response
 
 
 @require_GET

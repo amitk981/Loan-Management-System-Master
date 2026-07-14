@@ -1,7 +1,7 @@
 # Slice 008I4: Sensitive Field Encryption and CDSL Null Contract Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 008: Documentation, Legal Documents, and Security Package
@@ -9,6 +9,10 @@ Epic file: `docs/epics/008-documentation-security-package.md`
 
 ## Depends On
 - 008I3
+
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
 
 ## Goal
 
@@ -87,3 +91,12 @@ High
   sensitive-access ledger but must not duplicate ordinary security evidence or weaken redaction.
 - Re-run the I3 CDSL and cross-owner PostgreSQL races twice after encryption migration; reconcile
   ciphertext version/hash/last4 without changing winner request, actor, version, or workflow facts.
+
+## Repair Closure (2026-07-15)
+
+- Canonical CDSL evidence fixtures now assert successful setup before reveal/migration assertions;
+  invalid invented document types remain correctly rejected by the production selector.
+- Central validation, authority, object-scope, rate, and ciphertext denial audit commits before the
+  coordinator re-raises the unchanged domain exception outside the pledge-lock transaction.
+- All 841 backend tests pass at 92% coverage, and all 10 declared PostgreSQL security races pass
+  twice; repair evidence is retained under `.ralph/runs/2026-07-15_014532_repair/evidence/`.

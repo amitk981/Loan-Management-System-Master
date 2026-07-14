@@ -69,8 +69,10 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   scoped masked reader matrix. Corrective 008I3 now removes every executable
   security-to-legal/approval import through one top-level immutable evidence coordinator, deletes
   the legal PoA alias, centralises redacting security ledgers, and proves the PoA/tri-party/SH-4/CDSL
-  races twice on PostgreSQL. 008I4 still owns the remaining central encryption/reveal and nullable
-  pending-CDSL contracts before cheque custody; that reviewed seam is not claimed complete.
+  races twice on PostgreSQL. Corrective 008I4 now provides independently keyed/versioned AES-GCM
+  field encryption, one central sensitive reveal/masking policy owner, retained-token
+  reconciliation, and nullable pending CDSL evidence without weakening terminal acceptance. 008J
+  is next for cheque custody through the same coordinator/encryption/reveal seams.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

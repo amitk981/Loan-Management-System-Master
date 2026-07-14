@@ -68,8 +68,9 @@ import sfpcl_credit.documents.services
 import sfpcl_credit.documents.storage
 from sfpcl_credit.documents.modules import document_templates
 """
+        venv_python = Path(sys.prefix) / "bin" / "python"
         completed = subprocess.run(
-            [sys.executable, "-c", import_probe],
+            [str(venv_python), "-c", import_probe],
             cwd=Path(__file__).resolve().parents[2],
             capture_output=True,
             text=True,

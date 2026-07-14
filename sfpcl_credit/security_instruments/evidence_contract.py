@@ -26,6 +26,7 @@ class SecurityEvidenceAccess:
     sh4_evidence: Callable
     cdsl_evidence: Callable
     project_checklist_item: Callable
+    mask_sensitive: Callable
     _issuer: object
 
     def __post_init__(self):

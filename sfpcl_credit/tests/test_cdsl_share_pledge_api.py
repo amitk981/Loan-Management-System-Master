@@ -1,9 +1,11 @@
 import json
+import importlib
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from unittest import skipUnless
 from django.core.exceptions import ValidationError
+from django.apps import apps
 from django.db import IntegrityError, close_old_connections, connection, transaction
 from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
@@ -117,6 +119,78 @@ class CDSLSharePledgeApiTests(TestCase):
         self.assertEqual(VersionHistory.objects.filter(
             versioned_entity_type="cdsl_share_pledge").count(), 1)
         self.assertEqual(WorkflowEvent.objects.filter(workflow_name="cdsl_share_pledge").count(), 1)
+
+    def test_pending_pledge_accepts_null_evidence_and_projects_null_metadata(self):
+        package = self._refresh_package()
+        payload = {**self._payload(uuid.uuid4()), "evidence_document_id": None}
+        url = (
+            f"/api/v1/security-packages/{package['security_package_id']}"
+            "/cdsl-share-pledge/"
+        )
+
+        response = self.client.post(
+            url,
+            payload,
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        data = response.json()["data"]
+        self.assertIsNone(data["evidence_document_id"])
+        self.assertIsNone(
+            ChecklistItem.objects.get(
+                document_checklist__loan_application=self.application,
+                item_code="cdsl_pledge",
+            ).loan_document_id
+        )
+        retained = CDSLSharePledge.objects.get(pk=data["cdsl_share_pledge_id"])
+        self.assertIsNone(retained.evidence_document_id)
+
+        submitted = {
+            **payload,
+            "pledgor_dp_name": "Corrected Pledgor DP",
+            "pledgee_dp_name": "Pledgee DP",
+            "prf_status": "submitted",
+            "pledge_sequence_number": "PSN-NULL-EVIDENCE",
+            "pledged_share_count": 100,
+            "agreement_number": "LA-NULL-EVIDENCE",
+        }
+        changed = self.client.patch(
+            f"/api/v1/cdsl-share-pledges/{retained.pk}/",
+            submitted,
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(changed.status_code, 200, changed.content)
+        self.assertIsNone(changed.json()["data"]["evidence_document_id"])
+
+        checker = self.fixture.fixture._user(
+            "company_secretary",
+            "CDSL Null Evidence Checker",
+            "security.cdsl_pledge.manage",
+            "security.package.read",
+        )
+        accepted = {
+            **submitted,
+            "pledge_acceptance_status": "accepted",
+            "pledge_status": "created",
+        }
+        terminal = self.client.patch(
+            f"/api/v1/cdsl-share-pledges/{retained.pk}/",
+            accepted,
+            content_type="application/json",
+            **self.fixture._auth(checker),
+        )
+        self.assertEqual(terminal.status_code, 400, terminal.content)
+        retained.refresh_from_db()
+        self.assertEqual(retained.pledge_acceptance_status, "pending")
+        self.assertIsNone(retained.acceptance_workflow_event_id)
+        self.assertFalse(
+            AuditLog.objects.filter(
+                action="security.cdsl_pledge.accepted", entity_id=retained.pk
+            ).exists()
+        )
 
     def test_distinct_company_secretary_accepts_submitted_prf_and_freezes_evidence(self):
         package = self._refresh_package()
@@ -360,6 +434,8 @@ class CDSLSharePledgeApiTests(TestCase):
             **self.fixture._auth(revealer),
         )
         self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response["Cache-Control"], "no-store")
+        self.assertEqual(response["Pragma"], "no-cache")
         data = response.json()["data"]
         self.assertEqual(data["cdsl_share_pledge_id"], pledge_id)
         self.assertEqual(data["pledgor_bo_account"], "1234567890123456")
@@ -368,6 +444,10 @@ class CDSLSharePledgeApiTests(TestCase):
         success = AuditLog.objects.get(action="security.cdsl_pledge.bo_accounts_revealed")
         self.assertEqual(success.new_value_json["reason"], "Verify retained DP instructions.")
         self.assertEqual(success.new_value_json["request_id"], "req-cdsl-reveal")
+        self.assertFalse(success.new_value_json["reauthentication_required"])
+        self.assertTrue(success.new_value_json["reauthentication_satisfied"])
+        self.assertEqual(success.new_value_json["rate_limit_count"], 1)
+        self.assertEqual(success.new_value_json["rate_limit_window_seconds"], 300)
         self.assertNotIn("1234567890123456", json.dumps(success.new_value_json))
         denial = AuditLog.objects.get(action="security.cdsl_pledge.bo_accounts_reveal_denied")
         self.assertEqual(denial.new_value_json["outcome"], "denied")
@@ -377,6 +457,74 @@ class CDSLSharePledgeApiTests(TestCase):
         self.assertNotIn(
             "1234567890123456",
             json.dumps(list(ordinary.values_list("new_value_json", flat=True))),
+        )
+        repeated = self.client.post(
+            reveal_url,
+            {"reason": "Repeat the same DP instruction check."},
+            content_type="application/json",
+            **self.fixture._auth(revealer),
+        )
+        self.assertEqual(repeated.status_code, 429, repeated.content)
+        self.assertEqual(repeated.json()["error"]["code"], "RATE_LIMITED")
+        rate_denial = AuditLog.objects.filter(
+            action="security.cdsl_pledge.bo_accounts_reveal_denied",
+            new_value_json__denial_reason="rate_limited",
+        )
+        self.assertEqual(rate_denial.count(), 1)
+
+    def test_central_reveal_validates_reason_and_denies_lost_object_scope(self):
+        package = self._refresh_package()
+        evidence, _, _ = self.fixture._poa_evidence("cdsl_pledge_evidence")
+        created = self.client.post(
+            f"/api/v1/security-packages/{package['security_package_id']}/cdsl-share-pledge/",
+            self._payload(evidence.document_id),
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(created.status_code, 200, created.content)
+        pledge_id = created.json()["data"]["cdsl_share_pledge_id"]
+        revealer = self.fixture.fixture._user(
+            "company_secretary",
+            "CDSL Scoped Revealer",
+            "security.package.read",
+            "security.cdsl_pledge.reveal",
+        )
+        reveal_url = f"/api/v1/cdsl-share-pledges/{pledge_id}/reveal-bo-accounts/"
+
+        missing_reason = self.client.post(
+            reveal_url,
+            {},
+            content_type="application/json",
+            **self.fixture._auth(revealer),
+        )
+        self.assertEqual(missing_reason.status_code, 400, missing_reason.content)
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="security.cdsl_pledge.bo_accounts_reveal_denied",
+                entity_id=pledge_id,
+                new_value_json__denial_reason="validation_failed",
+            ).count(),
+            1,
+        )
+
+        AuditLog.objects.filter(
+            action="document_checklist.created",
+            entity_type="document_checklist",
+        ).delete()
+        denied = self.client.post(
+            reveal_url,
+            {"reason": "Verify retained DP instructions."},
+            content_type="application/json",
+            **self.fixture._auth(revealer),
+        )
+        self.assertEqual(denied.status_code, 403, denied.content)
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action="security.cdsl_pledge.bo_accounts_reveal_denied",
+                entity_id=pledge_id,
+                new_value_json__denial_reason="object_access_denied",
+            ).count(),
+            1,
         )
 
     def test_role_change_cannot_collapse_maker_checker_or_bypass_database_guard(self):
@@ -427,6 +575,113 @@ class CDSLSharePledgeApiTests(TestCase):
                 acceptance_workflow_event_id=uuid.uuid4(),
                 created_at_cdsl=timezone.now(),
             )
+
+    def test_corrupt_ciphertext_fails_reveal_without_plaintext_or_success_audit(self):
+        package = self._refresh_package()
+        evidence, _, _ = self.fixture._poa_evidence("cdsl_pledge_evidence")
+        created = self.client.post(
+            f"/api/v1/security-packages/{package['security_package_id']}/cdsl-share-pledge/",
+            self._payload(evidence.document_id),
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(created.status_code, 200, created.content)
+        pledge_id = created.json()["data"]["cdsl_share_pledge_id"]
+        retained = CDSLSharePledge.objects.get(pk=pledge_id)
+        replacement = (
+            "A" if retained.pledgor_bo_account_encrypted[-1] != "A" else "B"
+        )
+        retained.pledgor_bo_account_encrypted = (
+            retained.pledgor_bo_account_encrypted[:-1] + replacement
+        )
+        retained.save(update_fields=["pledgor_bo_account_encrypted"])
+        revealer = self.fixture.fixture._user(
+            "company_secretary",
+            "CDSL Corruption Revealer",
+            "security.package.read",
+            "security.cdsl_pledge.reveal",
+        )
+
+        response = self.client.post(
+            f"/api/v1/cdsl-share-pledges/{pledge_id}/reveal-bo-accounts/",
+            {"reason": "Verify retained DP instructions."},
+            content_type="application/json",
+            **self.fixture._auth(revealer),
+        )
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertFalse(
+            AuditLog.objects.filter(
+                action="security.cdsl_pledge.bo_accounts_revealed",
+                entity_id=pledge_id,
+            ).exists()
+        )
+        evidence_json = json.dumps(
+            list(AuditLog.objects.values_list("new_value_json", flat=True))
+        )
+        self.assertNotIn("1234567890123456", evidence_json)
+
+    def test_legacy_ciphertext_migration_reconciles_hash_last4_and_row_count(self):
+        package = self._refresh_package()
+        evidence, _, _ = self.fixture._poa_evidence("cdsl_pledge_evidence")
+        created = self.client.post(
+            f"/api/v1/security-packages/{package['security_package_id']}/cdsl-share-pledge/",
+            self._payload(evidence.document_id),
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(created.status_code, 200, created.content)
+        retained = CDSLSharePledge.objects.get(
+            pk=created.json()["data"]["cdsl_share_pledge_id"]
+        )
+        migration = importlib.import_module(
+            "sfpcl_credit.security_instruments.migrations.0004_migrate_cdsl_field_encryption"
+        )
+        retained.pledgor_bo_account_encrypted = migration._legacy_encrypt(
+            "1234567890123456"
+        )
+        retained.pledgor_bo_account_hash = migration._legacy_hash(
+            "1234567890123456"
+        )
+        retained.pledgee_bo_account_encrypted = migration._legacy_encrypt(
+            "9876543210987654"
+        )
+        retained.pledgee_bo_account_hash = migration._legacy_hash(
+            "9876543210987654"
+        )
+        retained.save(
+            update_fields=[
+                "pledgor_bo_account_encrypted",
+                "pledgor_bo_account_hash",
+                "pledgee_bo_account_encrypted",
+                "pledgee_bo_account_hash",
+            ]
+        )
+
+        migration.migrate_forward(apps, None)
+        migration.migrate_forward(apps, None)
+
+        retained.refresh_from_db()
+        self.assertTrue(retained.pledgor_bo_account_encrypted.startswith("field:v1:"))
+        self.assertTrue(retained.pledgee_bo_account_encrypted.startswith("field:v1:"))
+        self.assertEqual(
+            security_instrument_evidence.read_pledge(
+                actor=self.compliance, security_package_id=package["security_package_id"]
+            )["pledgor_bo_account"],
+            "************3456",
+        )
+        database_values = json.dumps(
+            list(
+                CDSLSharePledge.objects.values(
+                    "pledgor_bo_account_encrypted",
+                    "pledgor_bo_account_hash",
+                    "pledgee_bo_account_encrypted",
+                    "pledgee_bo_account_hash",
+                )
+            )
+        )
+        self.assertNotIn("1234567890123456", database_values)
+        self.assertNotIn("9876543210987654", database_values)
 
     def _payload(self, evidence_document_id):
         return {
@@ -508,7 +763,9 @@ class CDSLSharePledgeConcurrencyTests(TransactionTestCase):
         self.assertEqual([result for result, _ in results].count("conflict"), 4)
         self.assertEqual(CDSLSharePledge.objects.count(), 1)
         retained = CDSLSharePledge.objects.get()
-        data = cdsl_share_pledge.serialize_pledge(retained)
+        data = security_instrument_evidence.read_pledge(
+            actor=self.actor, security_package_id=self.package.pk
+        )
         self.assertEqual(data["pledgor_bo_account"], "************3456")
         self.assertEqual(data["pledgee_bo_account"], "************7654")
         self.assertNotIn("1234567890123456", retained.pledgor_bo_account_encrypted)

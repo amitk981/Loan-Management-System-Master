@@ -1,17 +1,11 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
-from datetime import timedelta
 
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.members.models import Shareholding
-from sfpcl_credit.members.protected_identity import (
-    identity_hash,
-    mask_protected_identity,
-    reveal_sealed_protected_identity,
-    sealed_protected_identity_token,
-)
+from sfpcl_credit.shared.encryption import FieldEncryption
 from sfpcl_credit.security_instruments.models import CDSLSharePledge
 from sfpcl_credit.security_instruments.evidence_contract import require_coordinated
 from sfpcl_credit.security_instruments.modules import security_package
@@ -20,7 +14,6 @@ from sfpcl_credit.workflows.events import record_workflow_event
 
 
 MANAGE_PERMISSION = "security.cdsl_pledge.manage"
-REVEAL_PERMISSION = "security.cdsl_pledge.reveal"
 READ_PERMISSION = security_package.READ_PERMISSION
 SFPCL_ENTITY_NAME = "Sahyadri Farmers Producer Company Limited"
 RequestMetadata = security_package.RequestMetadata
@@ -37,80 +30,20 @@ def read_pledge(*, actor, security_package_id, evidence_access):
     pledge = CDSLSharePledge.objects.filter(security_package=package).first()
     if pledge is None:
         raise NotFound
-    return serialize_pledge(pledge)
-def require_reveal_actor(actor, cdsl_share_pledge_id, metadata):
-    if (
-        not actor.can_authenticate()
-        or REVEAL_PERMISSION not in auth_service.effective_permission_codes(actor)
-        or "company_secretary" not in auth_service.effective_role_codes(actor)
-    ):
-        _record_reveal_denial(
-            actor, cdsl_share_pledge_id, "missing_reveal_authority", metadata
-        )
-        raise AccessDenied("SENSITIVE_FIELD_ACCESS_DENIED")
-def reveal_bo_accounts(
-    *, actor, cdsl_share_pledge_id, reason, metadata, evidence_access
-):
-    require_reveal_actor(actor, cdsl_share_pledge_id, metadata)
-    pledge = (
-        CDSLSharePledge.objects.select_related("security_package")
-        .filter(pk=cdsl_share_pledge_id)
-        .first()
-    )
-    if pledge is None:
-        raise NotFound
-    try:
-        security_package.resolve_package(
-            actor, pledge.security_package_id, READ_PERMISSION,
-            evidence_access=evidence_access,
-        )
-    except AccessDenied:
-        _record_reveal_denial(actor, pledge.pk, "object_access_denied", metadata)
-        raise
-    try:
-        pledgor_value = reveal_sealed_protected_identity(
-            pledge.pledgor_bo_account_encrypted
-        )
-        pledgee_value = (
-            reveal_sealed_protected_identity(pledge.pledgee_bo_account_encrypted)
-            if pledge.pledgee_bo_account_encrypted else None
-        )
-    except ValueError as exc:
-        raise Conflict("The retained BO account token cannot be revealed safely.") from exc
-    expires_at = timezone.now() + timedelta(minutes=5)
-    expires_at_value = expires_at.isoformat().replace("+00:00", "Z")
-    AuditLog.objects.create(
-        actor_user=actor, actor_type="user",
-        action="security.cdsl_pledge.bo_accounts_revealed",
-        entity_type="cdsl_share_pledge", entity_id=pledge.pk,
-        old_value_json={}, new_value_json={
-            "cdsl_share_pledge_id": str(pledge.pk),
+    return serialize_pledge(pledge, evidence_access)
+def sensitive_entity_facts(pledge):
+    return {
+        "entity_type": "cdsl_share_pledge",
+        "entity_id": pledge.pk,
+        "related_ids": {
             "security_package_id": str(pledge.security_package_id),
             "loan_application_id": str(pledge.security_package.loan_application_id),
-            "field_names": ["pledgor_bo_account", "pledgee_bo_account"],
-            "reason": reason, "outcome": "success",
-            "request_id": metadata.request_id, "expires_at": expires_at_value,
-            "actor_role_codes": auth_service.effective_role_codes(actor),
-            "actor_team_codes": actor.team_codes(),
-        }, ip_address=metadata.ip_address, user_agent=metadata.user_agent,
-    )
-    return {
-        "cdsl_share_pledge_id": str(pledge.pk),
-        "pledgor_bo_account": pledgor_value,
-        "pledgee_bo_account": pledgee_value,
-        "expires_at": expires_at_value,
+        },
+        "encrypted_fields": {
+            "pledgor_bo_account": pledge.pledgor_bo_account_encrypted,
+            "pledgee_bo_account": pledge.pledgee_bo_account_encrypted,
+        },
     }
-def _record_reveal_denial(actor, pledge_id, denial_reason, metadata):
-    AuditLog.objects.create(
-        actor_user=actor, actor_type="user",
-        action="security.cdsl_pledge.bo_accounts_reveal_denied",
-        entity_type="cdsl_share_pledge", entity_id=pledge_id,
-        old_value_json={}, new_value_json={
-            "cdsl_share_pledge_id": str(pledge_id),
-            "outcome": "denied", "denial_reason": denial_reason,
-            "request_id": metadata.request_id,
-        }, ip_address=metadata.ip_address, user_agent=metadata.user_agent,
-    )
 def create_pledge(
     *, actor, security_package_id, values, metadata, evidence_access
 ):
@@ -128,7 +61,7 @@ def create_pledge(
         ).first()
         if retained is not None:
             if _matches(retained, cleaned):
-                return serialize_pledge(retained)
+                return serialize_pledge(retained, evidence_access)
             raise Conflict(
                 "A CDSL pledge already exists for this security package; use PATCH."
             )
@@ -155,15 +88,21 @@ def create_pledge(
                 {"pledge_sequence_number": "Prepared PRF cannot carry a PSN yet."}
             )
         _project(package, cleaned["evidence_loan_document"], evidence_access)
-        evidence_document = cleaned.pop("evidence_loan_document").document
+        evidence_loan_document = cleaned.pop("evidence_loan_document")
+        evidence_document = (
+            evidence_loan_document.document if evidence_loan_document else None
+        )
         pledge = CDSLSharePledge.objects.create(
             security_package=package,
             prepared_by_user=actor,
             evidence_document=evidence_document,
             **cleaned,
         )
-        _record_evidence(actor, pledge, "security.cdsl_pledge.created", {}, metadata)
-        return serialize_pledge(pledge)
+        _record_evidence(
+            actor, pledge, "security.cdsl_pledge.created", {}, metadata,
+            evidence_access=evidence_access,
+        )
+        return serialize_pledge(pledge, evidence_access)
 def update_pledge(
     *, actor, cdsl_share_pledge_id, values, metadata, evidence_access
 ):
@@ -183,7 +122,7 @@ def update_pledge(
         if _matches(pledge, cleaned):
             if pledge.pledge_acceptance_status in {"accepted", "rejected"}:
                 return _acceptance_action(pledge)
-            return serialize_pledge(pledge)
+            return serialize_pledge(pledge, evidence_access)
         if pledge.pledge_acceptance_status in {"accepted", "rejected"}:
             raise Conflict(
                 "A checked CDSL pledge is terminal and cannot be changed or downgraded."
@@ -193,7 +132,7 @@ def update_pledge(
             _validate_checker(pledge, cleaned, actor)
         else:
             _validate_preparation(pledge, cleaned, actor)
-        old = serialize_pledge(pledge)
+        old = serialize_pledge(pledge, evidence_access)
         _project(
             pledge.security_package,
             cleaned["evidence_loan_document"],
@@ -207,7 +146,7 @@ def update_pledge(
         acceptance_evidence = {}
         if terminal:
             acceptance_evidence = _acceptance_evidence(
-                pledge, cleaned, evidence_document, actor, metadata
+                pledge, cleaned, evidence_document, actor, metadata, evidence_access
             )
             workflow_event = record_workflow_event(
                 actor=actor, workflow_name="cdsl_share_pledge",
@@ -242,9 +181,13 @@ def update_pledge(
                 }, ip_address=metadata.ip_address, user_agent=metadata.user_agent,
             )
         _record_evidence(
-            actor, pledge, action, old, metadata, record_workflow=not terminal
+            actor, pledge, action, old, metadata, record_workflow=not terminal,
+            evidence_access=evidence_access,
         )
-        return _acceptance_action(pledge) if terminal else serialize_pledge(pledge)
+        return (
+            _acceptance_action(pledge)
+            if terminal else serialize_pledge(pledge, evidence_access)
+        )
 def _validate_preparation(pledge, cleaned, actor):
     errors = {}
     if "compliance_team_member" not in auth_service.effective_role_codes(actor):
@@ -327,16 +270,21 @@ def _validate_checker(pledge, cleaned, actor):
         errors["pledge_status"] = "Rejected acceptance cannot create a pledge."
     if errors:
         raise ValidationError(errors)
-def _acceptance_evidence(pledge, cleaned, evidence_document, actor, metadata):
+def _acceptance_evidence(
+    pledge, cleaned, evidence_document, actor, metadata, evidence_access
+):
     document = cleaned["evidence_loan_document"]
+    mask_sensitive = require_coordinated(evidence_access).mask_sensitive
     return {
         "loan_application_id": str(pledge.security_package.loan_application_id),
         "security_package_id": str(pledge.security_package_id),
         "pledgor_member_id": str(cleaned["pledgor_member_id"]),
-        "pledgor_bo_account": mask_protected_identity(
+        "pledgor_bo_account": mask_sensitive(
+            "cdsl.pledgor_bo_account",
             cleaned["pledgor_bo_account_encrypted"], 16
         ),
-        "pledgee_bo_account": mask_protected_identity(
+        "pledgee_bo_account": mask_sensitive(
+            "cdsl.pledgee_bo_account",
             cleaned["pledgee_bo_account_encrypted"], 16
         ),
         "pledgor_dp_name": cleaned["pledgor_dp_name"],
@@ -401,12 +349,19 @@ def _resolve_values(package, values, evidence_access):
         )
     if values["pledgee_entity_name"] != SFPCL_ENTITY_NAME:
         errors["pledgee_entity_name"] = "Pledgee must be SFPCL."
-    pledgor_hash = identity_hash(values["pledgor_bo_account"])
+    pledgor_hash = FieldEncryption.hash_for_lookup(
+        "cdsl.pledgor_bo_account", values["pledgor_bo_account"]
+    )
     pledgee_hash = (
-        identity_hash(values["pledgee_bo_account"])
+        FieldEncryption.hash_for_lookup(
+            "cdsl.pledgee_bo_account", values["pledgee_bo_account"]
+        )
         if values["pledgee_bo_account"] else None
     )
-    if pledgee_hash and pledgee_hash == pledgor_hash:
+    if (
+        values["pledgee_bo_account"]
+        and values["pledgee_bo_account"] == values["pledgor_bo_account"]
+    ):
         errors["pledgee_bo_account"] = (
             "Pledgor and pledgee BO accounts must be distinct."
         )
@@ -427,12 +382,14 @@ def _resolve_values(package, values, evidence_access):
     return {
         "pledgor_member_id": values["pledgor_member_id"],
         "pledgee_entity_name": values["pledgee_entity_name"],
-        "pledgor_bo_account_encrypted": sealed_protected_identity_token(
-            values["pledgor_bo_account"], 16
+        "pledgor_bo_account_encrypted": FieldEncryption.encrypt(
+            "cdsl.pledgor_bo_account", values["pledgor_bo_account"]
         ),
         "pledgor_bo_account_hash": pledgor_hash,
         "pledgee_bo_account_encrypted": (
-            sealed_protected_identity_token(values["pledgee_bo_account"], 16)
+            FieldEncryption.encrypt(
+                "cdsl.pledgee_bo_account", values["pledgee_bo_account"]
+            )
             if values["pledgee_bo_account"] else None
         ),
         "pledgee_bo_account_hash": pledgee_hash,
@@ -452,16 +409,19 @@ def _project(package, evidence_document, evidence_access):
         item_code="cdsl_pledge",
         document=evidence_document,
     )
-def serialize_pledge(pledge):
+def serialize_pledge(pledge, evidence_access):
+    mask_sensitive = require_coordinated(evidence_access).mask_sensitive
     return {
         "cdsl_share_pledge_id": str(pledge.pk),
         "security_package_id": str(pledge.security_package_id),
         "pledgor_member_id": str(pledge.pledgor_member_id),
         "pledgee_entity_name": pledge.pledgee_entity_name,
-        "pledgor_bo_account": mask_protected_identity(
+        "pledgor_bo_account": mask_sensitive(
+            "cdsl.pledgor_bo_account",
             pledge.pledgor_bo_account_encrypted, 16
         ),
-        "pledgee_bo_account": mask_protected_identity(
+        "pledgee_bo_account": mask_sensitive(
+            "cdsl.pledgee_bo_account",
             pledge.pledgee_bo_account_encrypted, 16
         ),
         "pledgor_dp_name": pledge.pledgor_dp_name,
@@ -503,9 +463,11 @@ def _matches(pledge, values):
         and pledge.pledge_status == values["pledge_status"]
         and pledge.evidence_document_id == (evidence.document_id if evidence else None)
     )
-def _record_evidence(actor, pledge, action, old, metadata, record_workflow=True):
+def _record_evidence(
+    actor, pledge, action, old, metadata, record_workflow=True, *, evidence_access
+):
     snapshot = {
-        **serialize_pledge(pledge),
+        **serialize_pledge(pledge, evidence_access),
         "loan_application_id": str(pledge.security_package.loan_application_id),
     }
     record_security_evidence(
