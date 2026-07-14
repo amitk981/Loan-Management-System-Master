@@ -1,7 +1,7 @@
 # Slice 007T: Register Null Contract and Action Order Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -89,4 +89,3 @@ High
 - A real legacy register response cannot crash or fabricate S23 facts.
 - A stale post-action refresh cannot replace newer S21 authority.
 - All UI pagination fixtures are production-valid and all configured gates pass.
-

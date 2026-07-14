@@ -22,9 +22,9 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   and declared trusted-browser contracts. 007Q restored source-required S23/S25 columns and
   reviewable trusted-browser evidence; 007R/007S then preserved legacy approval/register history,
   froze approver identity, closed final-page/stale-response gaps, and restored the fixed register
-  pattern. Corrective 007T is queued because real legacy S23 rows still return top-level null
-  purpose/risk values that the UI does not safely consume, and a post-action refetch remains
-  outside the newest-request ordering guard.
+  pattern. Corrective 007T now consumes real legacy S23 top-level null purpose/risk values safely,
+  keeps action/detail/decision refreshes behind the same newest-request authority, and uses only
+  production-valid S21 pagination fixtures.
   Epic 008 has started: 008A/008A2 provide a versioned template catalogue with serialized effective
   ranges, retained file-reference provenance, and explicit borrower-template variant resolution;
   008B adds replay-safe generated-document metadata and frozen merge facts. Corrective 008B2/008B3

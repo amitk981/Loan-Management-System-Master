@@ -1,5 +1,23 @@
 # Ralph Progress Log
 
+# Run 2026-07-14_100104_normal_run
+
+- Completed 007T. S23 now consumes the exact retained legacy register shape with top-level null
+  purpose/risk and renders unavailable folio, loan type, purpose, risk, approver, terminal, and
+  communication facts without reconstruction or new visual composition.
+- S21 action submission and its canonical detail/decision refresh share the existing queue/detail
+  generation authority. Newer success, denied, malformed, and empty filter states remain
+  authoritative across delayed POST/detail/decision outcomes.
+- Replaced impossible one-row non-final pagination fixtures with exact 20-row pages. Component tests
+  cover the complete ordering matrix; trusted browser specs retain 007S outputs and add the two
+  declared 007T screenshots. Local collection passes; Chromium hit the expected Mach-port sandbox
+  denial before test execution, leaving the authoritative two runs to the orchestrator.
+- Frontend build/typecheck/lint and all 293 tests pass. Django check/migration sync and all 722
+  backend tests pass with 22 expected skips at 93% coverage; the focused backend legacy serializer
+  test also passes. Evidence: `.ralph/runs/2026-07-14_100104_normal_run/evidence/`.
+- Next: 008B2, then 008B3 before 008C. Both next slices were sharpened with interface-level
+  authority/pagination and genuine DOCX/PDF extraction requirements.
+
 # Run 2026-07-14_093142_architecture_review
 
 - Independently reviewed commits `220f3038...e1698e87`, covering 007R, 007S, 008A2, and 008B,
@@ -6321,6 +6339,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_093142_architecture_review/.ralph/runs/2026-07-14_093142_architecture_review/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_093142_architecture_review/.ralph/runs/2026-07-14_093142_architecture_review/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 10:26:20 - 2026-07-14_100104_normal_run
+- Agent tool used: codex
+- Slice attempted: 007T-register-null-contract-and-action-order-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_100104_normal_run/.ralph/runs/2026-07-14_100104_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_100104_normal_run/.ralph/runs/2026-07-14_100104_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

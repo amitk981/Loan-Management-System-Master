@@ -12,6 +12,8 @@ test('sanction workbench preserves the prototype composition across authoritativ
   let release: (() => void) | undefined;
   let delayPendingPage = false;
   let releaseDelayedPending: (() => void) | undefined;
+  let delayedActionCaseId: string | undefined;
+  let releaseDelayedActionDetail: (() => void) | undefined;
   let hold = true;
   const waiting = new Promise<void>(resolve => { release = resolve; });
   const observedApiPaths: string[] = [];
@@ -26,6 +28,11 @@ test('sanction workbench preserves the prototype composition across authoritativ
   await page.route('**/api/v1/loan-applications/*/sanction-decision/', route => json(route, sanctionDecision));
   await page.route('**/api/v1/approval-cases/**', async route => {
     const url = new URL(route.request().url());
+    if (route.request().method() === 'POST' && /\/approve\/$/.test(url.pathname)) {
+      delayedActionCaseId = url.pathname.split('/').filter(Boolean).at(-2);
+      const acted = currentCases.find(item => item.approval_case_id === delayedActionCaseId) ?? currentCases[0];
+      return json(route, { ...acted, current_status: 'approved', available_actions: [] });
+    }
     if (url.pathname === '/api/v1/approval-cases/') {
       const requestMode = mode;
       expect(url.searchParams.get('approval_type')).toBe('sanction');
@@ -65,6 +72,22 @@ test('sanction workbench preserves the prototype composition across authoritativ
       return paginated(route, currentCases, requestedPage, total);
     }
     const caseId = url.pathname.split('/').filter(Boolean).at(-1);
+    if (caseId === delayedActionCaseId) {
+      const staleActionDetail = {
+        ...(currentCases.find(item => item.approval_case_id === caseId) ?? caseFor('pending')),
+        current_status: 'approved',
+        review_facts: { ...caseFor('pending').review_facts, borrowing_history: 'Stale browser action refresh.' },
+        available_actions: [],
+      };
+      await new Promise<void>(resolve => {
+        releaseDelayedActionDetail = () => {
+          void json(route, staleActionDetail);
+          resolve();
+        };
+      });
+      delayedActionCaseId = undefined;
+      return;
+    }
     return json(route, currentCases.find(item => item.approval_case_id === caseId) ?? currentCases[0]);
   });
 
@@ -78,6 +101,25 @@ test('sanction workbench preserves the prototype composition across authoritativ
   await expect(page.getByText('121 cases from the approval-case service')).toBeVisible();
   await expect(page.getByText('Page 1 of 7')).toBeVisible();
   await capture(page, 'pending-special-conflict');
+
+  await page.getByRole('button', { name: 'Record My Decision' }).click();
+  await page.getByLabel('Decision reason').fill('Approved before changing the browser filter.');
+  await page.getByRole('button', { name: 'Confirm Decision' }).click();
+  await expect.poll(() => Boolean(releaseDelayedActionDetail)).toBe(true);
+  mode = 'approved';
+  await page.getByLabel('Sanction case status').selectOption('approved');
+  await expect(page.getByText('25 cases from the approval-case service')).toBeVisible();
+  await expect(page.getByText('Page 1 of 2')).toBeVisible();
+  releaseDelayedActionDetail?.();
+  await expect(page.getByText('25 cases from the approval-case service')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'LOVIS0101' })).toBeVisible();
+  await expect(page.getByText('Stale browser action refresh.')).toHaveCount(0);
+  await capture(page, 'action-filter-race');
+
+  mode = 'pending';
+  await page.getByLabel('Sanction case status').selectOption('pending');
+  await expect(page.getByText('121 cases from the approval-case service')).toBeVisible();
+  await expect(page.getByText('Page 1 of 7')).toBeVisible();
 
   await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByText('Page 2 of 7')).toBeVisible();

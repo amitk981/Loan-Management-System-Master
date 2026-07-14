@@ -46,8 +46,8 @@ export interface CreditSanctionRegisterRow {
   borrower_type: string;
   folio_number: string | null;
   loan_type: string | null;
-  purpose: { category: string | null; description: string | null };
-  risk: { overall_risk_rating?: string | null; [key: string]: unknown };
+  purpose: { category: string | null; description: string | null } | null;
+  risk: { overall_risk_rating?: string | null; [key: string]: unknown } | null;
   requested_amount: string | null;
   eligible_amount: string | null;
   recommended_amount: string | null;

@@ -66,6 +66,14 @@ const approvalCase = {
   available_actions: [action('approve'), action('reject'), action('return'), action('abstain')],
 };
 
+const fullPage = (first: typeof approvalCase, prefix: string) => Array.from({ length: 20 }, (_, index) => index === 0 ? first : {
+  ...first,
+  approval_case_id: `${prefix}-case-${index + 1}`,
+  loan_application_id: `${prefix}-application-${index + 1}`,
+  related_entity_id: `${prefix}-application-${index + 1}`,
+  application_reference_number: `${prefix.toUpperCase()}-${String(index + 1).padStart(2, '0')}`,
+});
+
 describe('SanctionWorkbench authenticated container', () => {
   beforeEach(() => {
     vi.mocked(authenticatedPaginatedRequest).mockImplementation(async path => {
@@ -78,8 +86,8 @@ describe('SanctionWorkbench authenticated container', () => {
   it('renders the authoritative total and replaces the queue from the next server page', async () => {
     const secondPageCase = { ...approvalCase, approval_case_id: 'case-21', application_reference_number: 'LO000021' };
     vi.mocked(authenticatedPaginatedRequest)
-      .mockResolvedValueOnce(pagination([approvalCase], { total_count: 101, total_pages: 6, has_next: true }) as never)
-      .mockResolvedValueOnce(pagination([secondPageCase], { page: 2, total_count: 101, total_pages: 6, has_next: true, has_previous: true }) as never)
+      .mockResolvedValueOnce(pagination(fullPage(approvalCase, 'page-one'), { total_count: 101, total_pages: 6, has_next: true }) as never)
+      .mockResolvedValueOnce(pagination(fullPage(secondPageCase, 'page-two'), { page: 2, total_count: 101, total_pages: 6, has_next: true, has_previous: true }) as never)
       .mockResolvedValueOnce(pagination([], { total_count: 0 }) as never);
     vi.mocked(authenticatedRequest).mockImplementation(async path => {
       if (path === '/api/v1/approval-cases/case-1/') return approvalCase as never;
@@ -107,7 +115,7 @@ describe('SanctionWorkbench authenticated container', () => {
     [new AuthSessionError('MALFORMED_RESPONSE', 'The server returned an invalid paginated response.', 200), 'Sanction action could not be completed'],
   ])('clears prior rows and totals when a later collection fails with $code', async (error, heading) => {
     vi.mocked(authenticatedPaginatedRequest)
-      .mockResolvedValueOnce(pagination([approvalCase], { total_count: 101, total_pages: 6, has_next: true }) as never)
+      .mockResolvedValueOnce(pagination(fullPage(approvalCase, 'failure-page'), { total_count: 101, total_pages: 6, has_next: true }) as never)
       .mockRejectedValueOnce(error);
     vi.mocked(authenticatedRequest).mockResolvedValue(approvalCase as never);
 
@@ -238,6 +246,164 @@ describe('SanctionWorkbench authenticated container', () => {
     await waitFor(() => expect(screen.queryByText('No prior defaults; repayments timely.')).toBeNull());
     expect(screen.getByText('Sanction queue is clear')).toBeTruthy();
     expect(screen.getByText('0 cases from the approval-case service')).toBeTruthy();
+  });
+
+  it('keeps a newer filter authoritative while an action detail refresh finishes', async () => {
+    let releaseActionDetail: ((value: typeof approvalCase) => void) | undefined;
+    let caseOneReads = 0;
+    const approved = {
+      ...approvalCase,
+      approval_case_id: 'case-approved',
+      application_reference_number: 'LO-ACTION-NEWEST',
+      current_status: 'approved',
+      review_facts: { ...approvalCase.review_facts, borrowing_history: 'Newest post-action filter detail.' },
+      available_actions: [],
+    };
+    const staleActionDetail = {
+      ...approvalCase,
+      current_status: 'approved',
+      review_facts: { ...approvalCase.review_facts, borrowing_history: 'Stale action refresh detail.' },
+      available_actions: [],
+    };
+    vi.mocked(authenticatedPaginatedRequest)
+      .mockResolvedValueOnce(pagination([approvalCase]) as never)
+      .mockResolvedValueOnce(pagination([approved]) as never);
+    vi.mocked(authenticatedRequest).mockImplementation(async (path, options) => {
+      if (path === '/api/v1/approval-cases/case-1/approve/' && options?.method === 'POST') return staleActionDetail as never;
+      if (path === '/api/v1/approval-cases/case-1/' && !options?.method) {
+        caseOneReads += 1;
+        if (caseOneReads === 1) return approvalCase as never;
+        return new Promise(resolve => { releaseActionDetail = resolve; }) as never;
+      }
+      if (path === '/api/v1/approval-cases/case-approved/') return approved as never;
+      if (path.endsWith('/sanction-decision/')) throw new AuthSessionError('NOT_FOUND', 'No sanction decision.', 404);
+      throw new Error(`Unexpected request ${path}`);
+    });
+
+    render(<SanctionWorkbench onOpenApplication={vi.fn()} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Record My Decision' }));
+    await userEvent.type(screen.getByLabelText('Decision reason'), 'Approved before changing filter.');
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Decision' }));
+    await waitFor(() => expect(caseOneReads).toBe(2));
+
+    await userEvent.selectOptions(screen.getByLabelText('Sanction case status'), 'approved');
+    expect(await screen.findByText('Newest post-action filter detail.')).toBeTruthy();
+    releaseActionDetail?.(staleActionDetail);
+
+    await waitFor(() => expect(screen.queryByText('Stale action refresh detail.')).toBeNull());
+    expect(screen.getByText('Newest post-action filter detail.')).toBeTruthy();
+    expect(screen.getAllByText('LO-ACTION-NEWEST')).toHaveLength(2);
+    expect(screen.getByText('1 cases from the approval-case service')).toBeTruthy();
+  });
+
+  it('keeps a newer empty filter authoritative while action submission finishes', async () => {
+    let releaseAction: ((value: typeof approvalCase) => void) | undefined;
+    let caseReads = 0;
+    vi.mocked(authenticatedPaginatedRequest)
+      .mockResolvedValueOnce(pagination([approvalCase]) as never)
+      .mockResolvedValueOnce(pagination([]) as never);
+    vi.mocked(authenticatedRequest).mockImplementation(async (path, options) => {
+      if (path === '/api/v1/approval-cases/case-1/approve/' && options?.method === 'POST') {
+        return new Promise(resolve => { releaseAction = resolve; }) as never;
+      }
+      if (path === '/api/v1/approval-cases/case-1/' && !options?.method) {
+        caseReads += 1;
+        return approvalCase as never;
+      }
+      throw new Error(`Unexpected request ${path}`);
+    });
+
+    render(<SanctionWorkbench onOpenApplication={vi.fn()} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Record My Decision' }));
+    await userEvent.type(screen.getByLabelText('Decision reason'), 'Approved before empty filter.');
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Decision' }));
+    await waitFor(() => expect(releaseAction).toBeTypeOf('function'));
+
+    await userEvent.selectOptions(screen.getByLabelText('Sanction case status'), 'approved');
+    expect(await screen.findByText('Sanction queue is clear')).toBeTruthy();
+    releaseAction?.({ ...approvalCase, current_status: 'approved', available_actions: [] });
+
+    await waitFor(() => expect(screen.getByText('Sanction queue is clear')).toBeTruthy());
+    expect(screen.getByText('0 cases from the approval-case service')).toBeTruthy();
+    expect(caseReads).toBe(1);
+  });
+
+  it.each([
+    ['denied', new AuthSessionError('OBJECT_ACCESS_DENIED', 'Newest action filter denied.', 403), 'Sanction access denied'],
+    ['malformed', new AuthSessionError('MALFORMED_RESPONSE', 'Newest action filter malformed.', 200), 'Sanction action could not be completed'],
+    ['empty', null, 'Sanction queue is clear'],
+  ])('keeps a newer %s state authoritative when an action detail refresh fails later', async (_label, newestError, heading) => {
+    let rejectActionDetail: ((reason: unknown) => void) | undefined;
+    let caseReads = 0;
+    vi.mocked(authenticatedPaginatedRequest).mockResolvedValueOnce(pagination([approvalCase]) as never);
+    if (newestError) vi.mocked(authenticatedPaginatedRequest).mockRejectedValueOnce(newestError);
+    else vi.mocked(authenticatedPaginatedRequest).mockResolvedValueOnce(pagination([]) as never);
+    vi.mocked(authenticatedRequest).mockImplementation(async (path, options) => {
+      if (path === '/api/v1/approval-cases/case-1/approve/' && options?.method === 'POST') return { ...approvalCase, version: 5 } as never;
+      if (path === '/api/v1/approval-cases/case-1/' && !options?.method) {
+        caseReads += 1;
+        if (caseReads === 1) return approvalCase as never;
+        return new Promise((_resolve, reject) => { rejectActionDetail = reject; }) as never;
+      }
+      throw new Error(`Unexpected request ${path}`);
+    });
+
+    render(<SanctionWorkbench onOpenApplication={vi.fn()} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Record My Decision' }));
+    await userEvent.type(screen.getByLabelText('Decision reason'), 'Approved before newest state.');
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Decision' }));
+    await waitFor(() => expect(caseReads).toBe(2));
+
+    await userEvent.selectOptions(screen.getByLabelText('Sanction case status'), 'approved');
+    expect(await screen.findByText(heading)).toBeTruthy();
+    rejectActionDetail?.(new AuthSessionError('OBJECT_ACCESS_DENIED', 'Stale action refresh denied.', 403));
+
+    await waitFor(() => expect(screen.getByText(heading)).toBeTruthy());
+    expect(screen.getByText('0 cases from the approval-case service')).toBeTruthy();
+    expect(screen.queryByText(/Stale action refresh denied/)).toBeNull();
+  });
+
+  it('keeps a newer filter authoritative while an action decision refresh finishes', async () => {
+    let releaseDecision: ((value: { decision_reason: string; sanctioned_amount: string }) => void) | undefined;
+    let caseReads = 0;
+    const actionApproved = { ...approvalCase, current_status: 'approved', available_actions: [] };
+    const rejected = {
+      ...approvalCase,
+      approval_case_id: 'case-rejected-newest',
+      application_reference_number: 'LO-DECISION-NEWEST',
+      current_status: 'rejected',
+      review_facts: { ...approvalCase.review_facts, borrowing_history: 'Newest decision-race detail.' },
+      available_actions: [],
+    };
+    vi.mocked(authenticatedPaginatedRequest)
+      .mockResolvedValueOnce(pagination([approvalCase]) as never)
+      .mockResolvedValueOnce(pagination([rejected]) as never);
+    vi.mocked(authenticatedRequest).mockImplementation(async (path, options) => {
+      if (path === '/api/v1/approval-cases/case-1/approve/' && options?.method === 'POST') return actionApproved as never;
+      if (path === '/api/v1/approval-cases/case-1/' && !options?.method) {
+        caseReads += 1;
+        return (caseReads === 1 ? approvalCase : actionApproved) as never;
+      }
+      if (path === '/api/v1/loan-applications/application-1/sanction-decision/') {
+        return new Promise(resolve => { releaseDecision = resolve as typeof releaseDecision; }) as never;
+      }
+      if (path === '/api/v1/approval-cases/case-rejected-newest/') return rejected as never;
+      throw new Error(`Unexpected request ${path}`);
+    });
+
+    render(<SanctionWorkbench onOpenApplication={vi.fn()} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Record My Decision' }));
+    await userEvent.type(screen.getByLabelText('Decision reason'), 'Approved before decision race.');
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Decision' }));
+    await waitFor(() => expect(releaseDecision).toBeTypeOf('function'));
+
+    await userEvent.selectOptions(screen.getByLabelText('Sanction case status'), 'rejected');
+    expect(await screen.findByText('Newest decision-race detail.')).toBeTruthy();
+    releaseDecision?.({ decision_reason: 'Stale sanction decision reason.', sanctioned_amount: '450000.00' });
+
+    await waitFor(() => expect(screen.queryByText('Stale sanction decision reason.')).toBeNull());
+    expect(screen.getByText('Newest decision-race detail.')).toBeTruthy();
+    expect(screen.queryByText('Sanction decision')).toBeNull();
   });
 
   it('loads frozen case truth and approves through the exact case boundary before canonical refresh', async () => {

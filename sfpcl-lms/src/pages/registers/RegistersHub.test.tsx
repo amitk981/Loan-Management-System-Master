@@ -130,8 +130,8 @@ describe('RegistersHub owned approval register panels', () => {
       application_number: 'LO-LEGACY-001',
       folio_number: null,
       loan_type: null,
-      purpose: { category: null, description: null },
-      risk: { overall_risk_rating: null },
+      purpose: null,
+      risk: null,
       approver_names: [],
       approver_decisions: [],
       reasons: '',
@@ -155,6 +155,7 @@ describe('RegistersHub owned approval register panels', () => {
     expect(evidence).toMatch(/Folio number:\s*—/i);
     expect(evidence).toMatch(/Loan type:\s*—/i);
     expect(evidence).toMatch(/Purpose:\s*—/i);
+    expect(evidence).toMatch(/Risk:\s*—/i);
     expect(evidence).toMatch(/Approver decisions:\s*—/i);
     expect(evidence).toMatch(/Communication:\s*—/i);
   });

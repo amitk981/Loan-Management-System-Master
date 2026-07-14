@@ -1,5 +1,19 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007T Register Null Contract and Action Order Closure
+
+- S23's frontend DTO, component fixture, and trusted-browser route now match the retained backend
+  serializer exactly: legacy `purpose`/`risk` are top-level null, folio/loan type and terminal facts
+  remain nullable, approver arrays remain empty, and the existing detail composition renders the
+  unavailable treatment without reconstruction or live reads.
+- S21 action submission, canonical detail refresh, queue-row replacement, optional sanction-decision
+  refresh, and error projection now share the existing queue/detail generation predicate. A newer
+  success, denial, malformed response, or empty filter state cannot be replaced by a delayed action
+  POST/detail/decision outcome.
+- Component fixtures use exact full non-final pages, all 293 frontend tests pass, and the browser
+  contract retains every 007S output while adding `sanction-action-filter-race.png` and
+  `credit-sanction-register-legacy-null.png` for independent orchestrator execution.
+
 ## Architecture Review 2026-07-14 09:31 - Exact Legacy UI and Action Ordering
 
 - 007R correctly emits top-level null `purpose`/`risk` for historical S23 rows, but 007S's frontend

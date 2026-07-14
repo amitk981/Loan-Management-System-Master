@@ -74,6 +74,18 @@ renderer interface. No external/network conversion service is permitted.
 Backend RED/GREEN output, genuine input/output artifact samples inside the run evidence folder,
 content-extraction assertions, bounded-input matrix, and all configured gates.
 
+## Run-Ahead Sharpening (007T completion, 2026-07-14)
+
+- The positive Word fixture must be a real ZIP/OPC package with retained package parts and visible
+  non-placeholder text; the test must reopen the generated package and extract merged content.
+  UTF-8 bytes with a `.docx` suffix remain explicitly invalid evidence.
+- The PDF proof must parse the stored output bytes and assert exact frozen text, including Unicode
+  and Indian-currency content. HTTP/model metadata, a `%PDF` prefix, checksum, or file name may
+  supplement but cannot replace extracted-content proof.
+- Label the fully populated frozen renderer fixture only as renderer capability. In the same run,
+  exercise the real M05-produced nullable-term decision and prove its explicit zero-write blocker;
+  do not present the fixture as the missing governed M05-to-M06 production path.
+
 ## Risk Level
 High
 
@@ -83,4 +95,3 @@ High
 - Malformed/pathological templates cannot create output or evidence.
 - Tests no longer claim metadata-only PDF creation proves rendered legal content.
 - All configured gates pass.
-

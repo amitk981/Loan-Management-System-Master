@@ -77,6 +77,21 @@ or loss of migration history.
 Backend RED/GREEN output, dependency and authority matrices, fresh-migration evidence, two
 PostgreSQL race passes, sanitised API examples, and all configured gates.
 
+## Run-Ahead Sharpening (007T completion, 2026-07-14)
+
+- Treat the legal-document module as the public test surface: the direct-call denial matrix must
+  cross the same interface as HTTP success and prove denial before template selection, frozen-fact
+  reads, storage writes, model rows, audit events, or workflow events. Do not retain view-only
+  authority tests as a substitute or add a second shallow wrapper over the current module.
+- The selector must return exact bounded pagination facts after actor/application scope and before
+  serialization. Its ordering/page tests must use production-valid first/middle/final/empty pages,
+  following the shared exact-count discipline already closed for S21; an impossible mocked page is
+  not evidence of selector behavior.
+- Dependency proof must exercise the importable public modules and retained database table rather
+  than asserting only source-file spellings. The foundation documents package must remain usable
+  without importing approval/application business owners, while the legal owner must remain usable
+  without importing views or HTTP request types.
+
 ## Risk Level
 High
 
@@ -86,4 +101,3 @@ High
 - Direct callers cannot bypass permission or object scope.
 - Collection reads are selector-owned and relational integrity is honest.
 - All configured gates pass.
-

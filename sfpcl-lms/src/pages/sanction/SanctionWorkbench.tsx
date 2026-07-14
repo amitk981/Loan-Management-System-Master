@@ -122,18 +122,26 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
 
   const act = async (action: ApprovalAvailableAction['action_code'], comments: string) => {
     if (!selected) return false;
+    const expectedQueueGeneration = queueGeneration.current;
+    const expectedDetailGeneration = ++detailGeneration.current;
+    const isCurrent = () => expectedQueueGeneration === queueGeneration.current
+      && expectedDetailGeneration === detailGeneration.current;
     setBusy(true); setMessage(''); setDecisionFieldError('');
     try {
       await recordApprovalAction(selected.approval_case_id, action, selected.version, comments);
+      if (!isCurrent()) return true;
       const refreshed = await fetchApprovalCase(selected.approval_case_id);
+      if (!isCurrent()) return true;
       setSelected(refreshed);
       setQueue(previous => ({ ...previous, items: previous.items.map(item => item.approval_case_id === refreshed.approval_case_id ? refreshed : item) }));
       setStatus('success');
       if (refreshed.current_status === 'approved' && currentUser.permissions.includes('approvals.sanction.read')) {
-        setDecision(await fetchSanctionDecision(refreshed.loan_application_id));
+        const nextDecision = await fetchSanctionDecision(refreshed.loan_application_id);
+        if (isCurrent()) setDecision(nextDecision);
       }
       return true;
     } catch (error) {
+      if (!isCurrent()) return false;
       if (error instanceof AuthSessionError && error.details && Object.prototype.hasOwnProperty.call(error.details, 'general_meeting_approval')) {
         setSelected(previous => previous ? { ...previous, general_meeting_approval: (error.details?.general_meeting_approval ?? null) as ApprovalCase['general_meeting_approval'] } : previous);
       }

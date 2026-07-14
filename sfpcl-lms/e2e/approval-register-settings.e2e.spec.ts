@@ -58,9 +58,11 @@ test('S23/S25/S70/S71 preserve scoped contracts through routed app-shell navigat
   await expect(sanctionEvidence).toContainText('Folio number: —');
   await expect(sanctionEvidence).toContainText('Loan type: —');
   await expect(sanctionEvidence).toContainText('Purpose: — · —');
+  await expect(sanctionEvidence).toContainText('Risk: —');
   await expect(sanctionEvidence).toContainText('Approver decisions: —');
   await expect(sanctionEvidence).toContainText('Communication: —');
   await captureReviewableEvidence(page, sanctionEvidence, evidenceDir, 'credit-sanction-register-source-fields.png');
+  await captureReviewableEvidence(page, sanctionEvidence, evidenceDir, 'credit-sanction-register-legacy-null.png');
 
   await page.getByRole('button', { name: 'Exception register' }).click();
   await page.getByLabel('Exception status').selectOption('approved');
@@ -143,8 +145,8 @@ const legacySanctionRow = {
   entry_number: 'CSR-BROWSER-LEGACY',
   folio_number: null,
   loan_type: null,
-  purpose: { category: null, description: null },
-  risk: { overall_risk_rating: null },
+  purpose: null,
+  risk: null,
   approver_names: [],
   approver_decisions: [],
   reasons: '',
