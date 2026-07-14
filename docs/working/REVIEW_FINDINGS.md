@@ -2,6 +2,125 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-14 16:10 - Architecture Review 2026-07-14_155832_architecture_review
+
+Reviewed completed work since architecture-review commit `329c3b03`:
+- `008B4-renderer-provenance-and-replay-contract-closure` (`a2e541bf`)
+- `008C2-checklist-lifecycle-authority-and-side-effect-closure` (`b80c7a19`)
+- `008D-stamp-duty-and-notarisation-tracking` (`94b3fd1b`)
+- `008E-signature-mismatch-workflow` (`092faf7a`)
+
+The review checked `git diff 329c3b03...092faf7a`, every production/test hunk, all four slice
+contracts, the Epic 008 digest, retained RED/GREEN/full-gate/PostgreSQL evidence, and cited API,
+data-model, functional, auth, and codebase-design sections. Standards and Spec ran as isolated
+independent passes. No production code changed.
+
+### Standards
+
+#### Finding 1 - High - Stage-4 legal evidence policy drifted into the foundation documents app
+
+`documents/services.py:233-271` decides Compliance/Company Secretary roles, legal category,
+application ownership, and Stage-4 evidence purpose. That is legal workflow policy, but codebase-
+design §§36.1-36.2 make `documents` the lower-level file/provenance owner and place legal policy in
+`legal_documents`. `008D2` moves only generic immutable upload provenance below the seam and returns
+application/category/role decisions to the legal-documents deep module.
+
+#### Finding 2 - Medium - HTTP shape validation and action authority are scattered inside modules
+
+`legal_documents/views.py:123-235` passes raw JSON into modules, while `stamp_notary.py:112-177`
+and `signatures.py:203-264` duplicate exact-field, type, date/UUID/text, and enum parsing. Role
+decisions are likewise split between `document_authority.py` and each workflow module. This violates
+codebase-design §§6.3-6.4/9.1: serializers own simple HTTP shape and the permission module hides
+role lookup, while the deep interface still enforces business invariants. `008D2` and `008E2`
+restore those seams without making direct callers trust a view.
+
+#### Finding 3 - Medium - Mismatch resolution does not return the standard action envelope
+
+API-contracts §6.3 requires workflow actions to return entity, previous/new state, workflow-event
+identity, and available actions. The §26.8 route instead returns only serialized signature metadata
+from `legal_documents/views.py:199-235`. `008E2` adds the action contract and keeps evidence identity
+metadata-only.
+
+#### Judgement calls recorded
+
+`signatures.py:311-322` and `document_checklist.py:389-405` duplicate the same application-wide
+signature projection instead of one selector; `008E2` replaces it before 008F/008G consume signature
+truth. `processes/sanction_completion.py` calls the intentionally private
+`approval_actions._approve_case_with_completion` seam. The latter is shallow interface debt, but
+008C2's public process coordinator is the tested caller and no bypass remains, so this review did
+not create another corrective slice solely to rename it. The three legal modules also repeat
+request/evidence helpers; D2/E2 should replace overlapping shallow HTTP/authority code rather than
+layering another public interface.
+
+### Spec
+
+#### Finding 1 - High - Ordinary capture can erase an unresolved mismatch
+
+008E says only the Company Secretary mismatch-resolution action clears the blocker and prior
+mismatch evidence must survive. `signatures.record` blocks changes only after a resolution exists
+(`signatures.py:86-115`); Compliance can change the same unresolved row from `mismatch` to `signed`,
+which removes the active owner fact without §26.8 evidence. A temporary independent regression
+expected 409 but received 200 with `signature_status=signed`. Existing tests protect a mismatch from
+a different nominee's normal signature, not from same-identity overwrite. `008E2` makes unresolved
+mismatch terminal to capture, validates/fixes canonical party snapshots, and preserves the sole
+checker path.
+
+#### Finding 2 - High - Compliance can record Company-Secretary adverse verification outcomes
+
+008D permits Compliance to prepare pending facts and assigns stamp/notary verification to the
+Company Secretary. The code role-gates only `adequate` and `completed`
+(`stamp_notary.py:132-136,164-169`), so Compliance can create or overwrite `insufficient` and
+`rejected` outcomes without a verifier. The independent regression expected denial but received 200
+for an `insufficient` stamp decision. `008D2` makes every positive/adverse outcome checker-owned,
+prevents preparer downgrade, and enforces distinct maker/checker identity.
+
+#### Finding 3 - High - Signature resolution exposes inaccessible record existence
+
+008E requires unrelated application/document scope to be nondisclosing. `resolve_mismatch` fetches
+`SignatureRecord` by raw id before resolving Stage-4 parent authority (`signatures.py:128-140`);
+`views.py:215-218` therefore distinguishes absent 404 from an existing wrong-stage/inaccessible 403.
+The role matrix has no unknown-versus-inaccessible resolution case. `008E2` resolves accessible
+owner scope first and freezes one error contract before signature existence is exposed.
+
+#### Finding 4 - Medium - Required signature concurrency acceptance is absent
+
+008E explicitly requires concurrent duplicate/change attempts to retain one outcome and complete
+history. `test_signature_mismatch_api.py` contains only an ordinary `TestCase`; there is no threaded
+`TransactionTestCase`, barrier, or race assertion. `008E2` adds twice-run PostgreSQL capture and
+resolution races. 008D's genuine five-worker changed-submission race is substantive.
+
+No scope creep was found. 008B4 genuinely binds new output to renderer/file/checksum provenance and
+labels/excludes legacy rows. 008C2 genuinely removes terminal approval bypass, preserves completion,
+centralises checklist reads, separates applicability/linkage evidence, and runs the real final-
+sanction race. 008D/008E tests contain real state/evidence assertions, but both suites fabricate
+`current_validated` metadata instead of crossing the generator; 008F/008G are sharpened to include
+one genuine public tracer while retaining focused fixtures for isolated rules.
+
+### Functional coverage, corrective queue, and state
+
+No epic completed in this four-slice window, so no completed-epic functional matrix required a new
+closure claim. Within ongoing Epic 008, M06-FR-001 is now substantive through 008C2 and the renderer-
+provenance portion of M06-FR-013/M06-FR-015 is substantive through 008B4. Stamp/notary tracking
+advances M06-FR-008/M06-FR-015 but does not complete PoA/Agreement execution. M06-FR-016/017 remain
+partial until 008E2 closes mismatch authority, identity, nondisclosure, and race gaps; A-107 still
+honestly records the missing signed-copy/bank-attestation aggregate. M06-FR-012/014 remain with later
+CDSL/final-approval owners and were not falsely claimed complete.
+
+Corrective `008D2-stamp-notary-verification-authority-closure` is unblocked after 008D.
+`008E2-signature-identity-mismatch-lifecycle-closure` depends on 008D2 and completed 008E; 008F now
+depends on 008E2, and both 008F/008G consume its canonical signature seam. No slice is Blocked, so no
+stale prerequisite status required reopening. `CONTEXT.md`, the Epic 008 digest, state, progress,
+and handoff are refreshed.
+
+No ADR was added: the required app ownership, serializer/permission seams, action envelope, maker-
+checker separation, and nondisclosure rules already exist in source documents. The corrective
+slices implement those decisions rather than introducing a durable new one.
+
+Summary: Standards found 3 hard actionable issues plus 3 documented judgement calls; the worst is
+Stage-4 legal policy reversing the documents/legal-documents dependency direction. Spec found 3
+High and 1 Medium issues; the worst is ordinary capture erasing a mismatch that only Company
+Secretary resolution is authorised to clear.
+
 ## 2026-07-14 12:50 - Architecture Review 2026-07-14_124337_architecture_review
 
 Reviewed completed work since architecture-review commit `7d0106a6`:

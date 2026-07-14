@@ -14,6 +14,24 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## Architecture Review 2026-07-14 16:10 - Verification and Signature Authority
+
+- 008B4's immutable renderer contract/file/checksum provenance and legacy exclusion are substantive.
+  008C2's mandatory terminal coordinator, completion-preserving applicability/linkage lifecycle,
+  owner facts, central read scope, audit attribution, and genuine final-sanction race are substantive.
+- 008D has real locked replay/change/history/projection behavior and a genuine PostgreSQL race, but
+  only positive `adequate`/`completed` states require Company Secretary authority. Compliance can
+  record the checker-owned adverse `insufficient`/`rejected` outcomes or downgrade verification.
+  `008D2` closes positive/adverse authority, maker-checker identity, and legal evidence ownership.
+- 008E's evidence types, atomic Bank Verification Letter projection, and resolved-row immutability
+  are substantive. An unresolved mismatch can nevertheless be overwritten by ordinary capture for
+  the same signer; resolution queries leak absent-versus-inaccessible identity, party UUID/name
+  snapshots are not canonical-owner validated, and the declared concurrency case has no race test.
+  `008E2` closes those lifecycle/identity/nondisclosure/race gaps and the §6.3 action contract.
+- M06-FR-001 is substantive. M06-FR-016/017 remain partial through 008E2; stamp/notary tracking
+  advances M06-FR-008/015 but execution remains with PoA/agreement owners. M06-FR-013 and the full
+  real M05 path remain A-101 configuration-blocked; A-107 remains the signed-copy evidence limit.
+
 ## Architecture Review 2026-07-14 12:50 - Renderer Provenance and Checklist Lifecycle
 
 - 008B2's legal owner, direct authority, selector, retained-table transfer, nullable-only loan link,

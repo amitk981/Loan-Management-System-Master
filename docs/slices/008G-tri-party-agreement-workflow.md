@@ -93,6 +93,18 @@ projection and evidence roll back with the owner mutation.
   signatures, checklist status, file access, and readiness; projection conflict rolls back.
 - Concurrent duplicate verification retains one current outcome and complete attributable history.
 
+## Architecture-Review Sharpening (2026-07-14 16:10)
+
+- Consume only 008E2's canonical current-signature selector. The verifier must not rebuild the
+  application-wide signature query, trust arbitrary party UUIDs/names, or treat a capture-overwritten
+  unresolved mismatch as a signed borrower/nominee fact.
+- Centralise Company Secretary verification authority at the legal-document action seam and enforce
+  distinct preparation/checker identity under auth-permissions §18; direct and HTTP callers must
+  cross the same decision.
+- Prove one public tracer from a genuine current-renderer tri-party output through canonical
+  borrower/nominee signatures to verification, while keeping the subsidiary route boolean-only and
+  every repayment/checklist/readiness side effect absent.
+
 ## Visual Acceptance Criteria
 None.
 

@@ -2,35 +2,36 @@
 
 ## Last Run
 
-2026-07-14_152156_normal_run
+2026-07-14_155832_architecture_review
 
 ## Current Status
 
-008E is complete. The exact §26.7 signature-capture and §26.8 mismatch-resolution POST routes now
-retain one current signature per legal document/signer identity with bounded database facts,
-protected links, immutable name history, exact replay, action-specific Compliance/Company Secretary
-authority, and attributable audit/version/workflow evidence. Resolved rows cannot be reopened by a
-later capture replay or changed capture.
+The architecture review of 008B4, 008C2, 008D, and 008E is complete. 008B4's current renderer
+provenance/legacy exclusion and 008C2's mandatory sanction-checklist coordinator, preserved lifecycle,
+canonical facts, authority, attribution, and real PostgreSQL race are substantive. 008D's locked
+current record/history/projection and race are substantive; 008E's evidence types, resolved-history
+protection, and atomic mismatch projection are substantive.
 
-Verified unresolved mismatches publish through the application-owned fact seam and atomically make
-only the Bank Verification Letter applicable. Resolution with a same-application current-renderer
-bank-letter file or adequately stamped borrower declaration clears that applicability without
-changing checklist completion, verifier/time/remarks, approval signatures, status, file authority,
-or readiness. Completed-evidence reversals conflict and roll back the owner mutation and ledgers.
-A-107 records the conservative evidence-file interpretation until a signed-copy/bank-attestation
-aggregate is governed.
+Independent review reproduced two High authority defects: Compliance receives HTTP 200 when it
+records the Company-Secretary-owned `insufficient` stamp outcome, and receives HTTP 200 when it
+changes the same unresolved mismatch to `signed`, bypassing §26.8 resolution. It also found
+signature absent-versus-inaccessible disclosure, missing canonical party snapshot validation,
+missing signature concurrency acceptance, Stage-4 legal policy in the lower-level documents app,
+and missing serializer/action-response seams. Corrective 008D2 and 008E2 own these gaps. No
+production code changed and no Blocked slice was stale.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-14_152156_normal_run/evidence/`. Focused RED/GREEN logs and API
-examples are saved. Django check and migration sync pass; all 773 backend tests pass with 24 expected
-PostgreSQL-only skips and 93% coverage against the 85% floor. Frontend build, typecheck, lint, and all
-293 tests pass. Final Standards/Spec review found and fixed resolved-history reopening and ordinary-
-signature cancellation of active mismatch truth; the re-review has no open findings.
+Evidence is in `.ralph/runs/2026-07-14_155832_architecture_review/evidence/`. The pinned range,
+parallel Standards/Spec reports, source/functional coverage, and two failing independent regressions
+are recorded. Queue, protected-path, artifact, and status-transition checks pass. Frontend build,
+typecheck, lint, and all 293 tests pass. Django check and migration sync pass; all 773 backend tests
+pass with 24 expected PostgreSQL-only skips and 93% coverage against the 85% floor. The first local
+validator used an incompatible system interpreter; the one allowed repair pinned the mandated
+project interpreter and passed, with the temporary shim removed.
 
 ## Next Run
 
-Run the now-due architecture review, then 008F. 008F now consumes distinct borrower/nominee signed
-rows without treating mismatch resolution as PoA execution. 008G has been sharpened from its stub to
-the source-defined conditional tri-party verification path without inventing a subsidiary identity
-aggregate or repayment authority. A-101 still blocks the real M05-to-full-Term-Sheet path.
+Run 008D2, then 008E2, then 008F. 008F/008G now require the E2 canonical signature selector and one
+genuine generation-to-verification tracer instead of relying solely on metadata fixtures. A-101
+still blocks the real M05-to-full-Term-Sheet path and A-107 still limits signed-copy evidence claims.

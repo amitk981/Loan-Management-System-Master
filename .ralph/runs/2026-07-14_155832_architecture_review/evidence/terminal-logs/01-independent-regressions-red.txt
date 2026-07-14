@@ -1,0 +1,22 @@
+Command:
+PYTHONPATH=/tmp:$PWD /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test \
+  ralph_arch_review_repros.SignatureLifecycleRepro.test_unresolved_mismatch_cannot_be_overwritten_by_capture \
+  ralph_arch_review_repros.StampAuthorityRepro.test_compliance_cannot_record_cs_owned_insufficient_decision \
+  --verbosity 2
+
+System check identified no issues (0 silenced).
+test_unresolved_mismatch_cannot_be_overwritten_by_capture ... FAIL
+test_compliance_cannot_record_cs_owned_insufficient_decision ... FAIL
+
+FAIL: test_unresolved_mismatch_cannot_be_overwritten_by_capture
+AssertionError: 200 != 409. The response persisted the same borrower signature as
+`signature_status: signed`, `signature_mismatch_flag: false`, with no mismatch-resolution evidence.
+
+FAIL: test_compliance_cannot_record_cs_owned_insufficient_decision
+AssertionError: 200 != 403. The response persisted `status: insufficient` for the Compliance actor.
+
+Ran 2 tests in 0.036s
+FAILED (failures=2)
+
+The temporary reproduction module was outside the worktree. These expected failures diagnose merged
+behavior; they are not a failing quality gate and no production/test source was changed.

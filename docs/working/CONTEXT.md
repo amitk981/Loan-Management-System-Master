@@ -38,15 +38,23 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   and closes absent-parent errors. Corrective 008C2 now makes terminal checklist creation
   structurally unavoidable, recomputes canonical frozen approval facts, preserves completion-owned
   evidence, separates applicability/linkage ledgers, consumes application-owned cheque facts, and
-  centralises checklist read scope before stamp/notary work. The full real
-  M05-to-Term-Sheet path remains configuration-blocked until governed owners exist for the missing
-  sanction terms; renderer fixtures must not be presented as that end-to-end path.
+  centralises checklist read scope before stamp/notary work. 008D then added locked stamp/notary
+  current rows, projections, history, and a genuine changed-submission race; 008E added signature
+  capture, mismatch evidence, and atomic Bank Verification Letter applicability. Independent review
+  found that Compliance can still record checker-owned adverse stamp/notary outcomes and can erase
+  an unresolved same-signer mismatch through ordinary capture; signature resolution also leaks
+  absent-versus-inaccessible ids and lacks its promised race. Corrective 008D2 restores legal
+  evidence ownership and maker-checker verification; 008E2 closes signature identity, lifecycle,
+  nondisclosure, action-contract, and concurrency gaps before PoA. The full real M05-to-Term-Sheet
+  path remains configuration-blocked until governed owners exist for the missing sanction terms;
+  renderer fixtures must not be presented as that end-to-end path.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and
   `PROTOTYPE_INVENTORY.md` are the authoritative ledger.
 - Backend: `sfpcl_credit/` — Django modular monolith (identity, members, applications, credit,
-  approvals, documents, workflows, communications, dashboard, configurations, scheduler, tracer)
+  approvals, documents, legal_documents, workflows, communications, dashboard, configurations,
+  scheduler, tracer)
   with JWT auth, role and object-level permissions, audit/workflow events, versioned
   configuration, document storage adapter, and seeded demo users.
 - Quality gates run on every slice: frontend build, typecheck, ESLint, vitest; backend Django

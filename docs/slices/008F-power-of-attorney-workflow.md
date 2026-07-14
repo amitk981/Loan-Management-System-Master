@@ -16,7 +16,7 @@ adequately stamped, completed-notarisation evidence without invoking or releasin
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 008E
+- 008E2
 
 ## Runtime Capabilities
 
@@ -124,6 +124,18 @@ roll back atomically with a failed mutation.
 - If either required signature is pending, mismatched, absent, duplicated/conflicting, or belongs to
   another current-renderer document/application, keep activation blocked with zero package/PoA/
   checklist success evidence. Checklist approval and completion remain owned by 008K.
+
+## Architecture-Review Sharpening (2026-07-14 16:10)
+
+- Depend on 008E2, not raw 008E rows. Consume its canonical signature selector and frozen
+  application-party identity; do not query `SignatureRecord` directly or accept caller-supplied
+  UUID/name pairs as borrower/nominee execution truth.
+- An 008E unresolved mismatch that was later overwritten by capture is not valid historical
+  execution evidence. Activation must use only the post-008E2 current lifecycle and must preserve
+  maker/checker identities across Compliance preparation and Company Secretary activation.
+- Add an end-to-end regression using a genuinely generated current-renderer PoA plus its real 008D2
+  maker/checker stamp/notary and 008E2 borrower/nominee signatures. Metadata-only fixtures may still
+  isolate unit rules but cannot be the sole tracer for activation.
 
 ## Visual Acceptance Criteria
 None.
