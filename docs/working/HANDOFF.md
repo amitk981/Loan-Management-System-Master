@@ -2,35 +2,32 @@
 
 ## Last Run
 
-2026-07-14_064206_architecture_review
+2026-07-14_070825_normal_run
 
 ## Current Status
 
-Architecture review of completed 007O-007Q and 008A is complete with no production-code change.
-Newly created terminal decisions/registers use frozen facts, S21 has authoritative pagination, the
-S23/S25 fields and screenshots are reviewable, and 008A retains immutable template successors with
-metadata-only responses and a passing PostgreSQL exact-successor race.
+007R is complete. New review packages use `approval-review-v3`; exact pre-007O v2 packages remain
+actor-scoped/readable but cannot approve/reject until the existing return -> correction -> fresh
+independent review -> new-cycle path produces complete v3 facts. Unknown/malformed current schemas
+remain nondisclosing and every denied terminal attempt is zero-write with canonical permission,
+assignment, and optimistic-version precedence.
 
-The review found older v2 approval packages lose readability after 007O's unversioned schema
-expansion and older register rows can raise instead of returning legacy nulls. Formal approver names
-also remain live until terminal generation. Corrective 007R owns history/remediation/frozen identity.
-007S owns final-page validation, stale S21 responses, valid UI fixtures, shared screenshot analysis,
-and restoration of an approved register table/detail pattern. 008A2 owns first-version overlap
-races, provenance-aware template-file references, selector/transport locality, and explicit
-borrower-template variant resolution. 008B now depends on 008A2.
+Legacy approved/rejected Credit Sanction Register rows now serialize missing source, terminal,
+approver, and communication facts as explicit null/empty values without live reconstruction.
+Original approver names come from routed immutable facts; replacement names come from an immutable
+action-time field. Legacy unavailable names remain null and user ids remain attributable.
 
 ## Validation
 
-Review/gate evidence is in `.ralph/runs/2026-07-14_064206_architecture_review/evidence/`. Frontend
-build, typecheck, lint, and all 269 tests pass. Django check/migration sync and all 700 backend tests
-pass with 20 expected PostgreSQL-only skips at 93% coverage. Queue lint, state JSON, diff checks, and
-the three reviewed 007Q screenshots pass inspection. This descriptor declares no browser/PostgreSQL
-runtime; retained independent evidence was reviewed rather than fabricated or rerun.
+Evidence is in `.ralph/runs/2026-07-14_070825_normal_run/evidence/`. Frontend build, typecheck,
+lint, and all 269 tests pass. Django check/migration sync and all 707 backend tests pass with 20
+expected PostgreSQL-only skips at 93% coverage. The 124-test approval suite and independent
+standards/spec verification are green. This slice declares no browser or PostgreSQL runtime.
 
 ## Next Run
 
-Run 007R, then 007S; run 008A2 before sharpened 008B. 008B must consume 008A2's race-safe effective
-selection, provenance-aware file reference, and explicit borrower-template variant resolver; it
-must not guess FPC/FPO equivalence or treat template/file metadata as generation/download authority.
-008C and 008D remain concretely sharpened. A-095/A-097/A-098 own the active-vs-approved, borrower-
-variant, and change-rationale source questions.
+Run sharpened 007S next. Its selector/stale-response/register-pattern work must preserve v2
+historical visibility, v3 malformed-package nondisclosure, remediation action availability, and
+nullable legacy identity/register fields. Then run 008A2 before sharpened 008B; generation must
+consume its race-safe effective selector, provenance-aware file reference, and explicit borrower-
+variant resolver without treating metadata as generation/download authority.

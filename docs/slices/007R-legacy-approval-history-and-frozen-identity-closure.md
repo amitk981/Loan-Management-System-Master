@@ -1,7 +1,7 @@
 # Slice 007R: Legacy Approval History and Frozen Identity Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
@@ -77,4 +77,3 @@ High
 - Missing historical terminal facts are never invented from live data.
 - Formal approver identities remain immutable across later user-profile edits.
 - All configured gates pass.
-

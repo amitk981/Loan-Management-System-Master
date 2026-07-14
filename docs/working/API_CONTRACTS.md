@@ -2495,12 +2495,14 @@ matrix/committee/loan-limit snapshots, distinct `reason_for_approval` and `excep
 case `version`). Per-approver `decision`/`acted_at` are
 read from the immutable source §15.4 `approval_actions` ledger; 007C creates no action records.
 
-The nested `review_facts` object is frozen into each enriched approval cycle. The current
-`approval-review-v2` schema includes credit-owned snapshot provenance; borrower member id,
-application reference, name, and type; and the reviewed sanction terms (tenure, interest type,
-and security summary) in addition to the review sections below. Legacy or partial packages without
-the complete terminal copy facts are nondisclosing. Reads and terminal writes never reconstruct
-missing facts from current owning rows:
+The nested `review_facts` object is frozen into each enriched approval cycle. New cycles use
+`approval-review-v3`, which includes credit-owned snapshot provenance; borrower member id,
+application reference, name, and type; and reviewed sanction terms (tenure, interest type, and
+security summary) in addition to the review sections below. The exact pre-007O
+`approval-review-v2` shape remains actor-scoped/readable under its original immutable validation
+rules, but it is historical-only: it is never reinterpreted as carrying v3 terminal facts.
+Unknown schemas and malformed v3 packages remain nondisclosing. Reads and terminal writes never
+reconstruct missing facts from current owning rows:
 
 - `eligibility` and eligible amount come from the appraisal-owned frozen eligibility/loan-limit
   snapshots.
@@ -2513,6 +2515,12 @@ missing facts from current owning rows:
 
 Changing current matrix/committee rows cannot change queue membership, stored provenance, or
 action assignment for an existing case.
+
+Authority history returns formal display names only from the routed immutable approver snapshot or
+the action's immutable action-time display name. User ids remain the attribution identity. A later
+user-profile rename cannot change case history or a generated register; a legacy action whose name
+is unavailable from both immutable owners returns `full_name: null` rather than reading the current
+user profile.
 
 Every list/detail item also returns `workbench_summary`, derived only from the frozen review package,
 frozen matrix/case flags, immutable action ledger, and approval-case timestamps. It contains
@@ -2578,6 +2586,13 @@ version is `409 STALE_VERSION`, and acted/closed/excluded state is `409 TRANSITI
 The submitted `version` must be a positive JSON integer; booleans, zero, negative values, strings,
 missing values, and unknown request fields return `400 VALIDATION_ERROR` without writes. Approve
 permits omitted/blank comments; reject and return require a non-blank string.
+
+For a readable v2 historical case, approve and reject are returned disabled with the reason
+`Frozen terminal facts are unavailable. Return for clarification and complete a new independent
+review cycle.` A direct approve/reject attempt returns
+`409 TERMINAL_FACTS_REMEDIATION_REQUIRED` with exact zero-write semantics. Return remains available
+to an otherwise eligible actor; correction, a fresh independent Credit Manager review, and normal
+resubmission create a new v3 cycle without rewriting the v2 cycle.
 
 Success returns the §25.5 action identifiers/status/sanction flags merged with the canonical 007C2
 case detail projection. Collection, detail, and action responses now compose the same history-aware
@@ -2911,8 +2926,8 @@ The source register fields and their frozen sources are:
 | `recommended_amount` | routed review package's reviewed recommendation |
 | `sanctioned_amount` | linked sanction decision; null for rejection |
 | `approval_authority` | case's canonical effective required-authority/action snapshot |
-| `approver_names` | ordered immutable actions for that case/cycle |
-| `approver_decisions` | each immutable action's actor/role/decision/comment/time |
+| `approver_names` | ordered routed/action-time immutable display identities for that case/cycle |
+| `approver_decisions` | each immutable action's user id, frozen display identity, role, decision, comment, and time |
 | `approval_date` | terminal case closure date |
 | `decision` | terminal case outcome mapped to `sanctioned`/`rejected` |
 | `reasons` | case approval or rejection reason |
@@ -2929,6 +2944,13 @@ register before commit; an adapter or register failure rolls both back. The resp
 document values are metadata ids only, and the document module retains its own permission and
 sensitivity checks. No template/Annexure code is stored or projected because OC-002 still leaves
 the Annexure K label conflicted (A-087).
+
+Pre-007O/pre-007Q register rows remain actor-scoped and readable even when
+`source_review_facts_json`, `terminal_facts_json`, approver arrays, or communication facts are
+empty. Unavailable folio, loan type, purpose, risk, rejection, conditions, and communication values
+are explicit `null`; unavailable approver collections are `[]`. Stored borrower/application/
+amount/reason values remain as recorded. Serialization never repairs an old row from live
+application, member, appraisal, user, or communication records.
 
 # Approval registers and matrix frontend consumption (007J)
 

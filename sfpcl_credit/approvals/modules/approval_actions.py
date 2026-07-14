@@ -175,6 +175,18 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         missing_permission = (
             availability["disabled_reason"] == "Required permission is not granted."
         )
+        terminal_blocker = approval_case_engine.terminal_action_blocker(
+            case,
+            action_code,
+        )
+        if (
+            terminal_blocker
+            and availability["disabled_reason"] == terminal_blocker["message"]
+        ):
+            raise ApprovalActionConflict(
+                terminal_blocker["message"],
+                code=terminal_blocker["code"],
+            )
         raise ApprovalActionConflict(
             availability["disabled_reason"],
             code="FORBIDDEN" if missing_permission else "TRANSITION_CONFLICT",
@@ -262,8 +274,8 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         actor_permissions=actor_permissions,
     )
 
-    role_code = next(
-        item["role_code"]
+    actor_authority = next(
+        item
         for item in effective_approvers
         if str(item["user_id"]) == str(actor.pk)
     )
@@ -271,7 +283,10 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
     action = ApprovalAction.objects.create(
         approval_case=case,
         approver_user=actor,
-        approver_role_code=role_code,
+        approver_role_code=actor_authority["role_code"],
+        approver_display_name=(
+            actor_authority.get("full_name") or actor.full_name
+        ),
         decision={
             "approve": "approved",
             "reject": "rejected",

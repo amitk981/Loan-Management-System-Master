@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_pre_007o_v2_case_remains_actor_scoped_and_readable (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_pre_007o_v2_case_remains_actor_scoped_and_readable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_070825_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2473, in test_pre_007o_v2_case_remains_actor_scoped_and_readable
+    self.assertEqual(detail.status_code, 200, detail.json())
+AssertionError: 404 != 200 : {'success': False, 'error': {'code': 'NOT_FOUND', 'message': 'Approval case was not found.', 'details': {}, 'field_errors': {}}, 'meta': {'request_id': None, 'timestamp': '2026-07-14T01:43:01.991257Z', 'api_version': 'v1'}}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.021s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

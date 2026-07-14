@@ -1,0 +1,4 @@
+PASS: no protected/forbidden path changed.
+PASS: 14 changed paths outside run artifacts (limit 30).
+PASS: 770 changed lines including untracked migration (limit 2000).
+PASS: one migration (limit 1), zero dependencies.

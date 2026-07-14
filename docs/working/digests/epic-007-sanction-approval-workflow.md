@@ -1,5 +1,21 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007R Legacy Approval History and Frozen Identity Closure
+
+- New credit-owned review packages are honestly versioned `approval-review-v3`. Exact pre-007O
+  v2 packages retain canonical actor-scoped list/detail/history reads, but approve/reject are
+  disabled with a remediation-required blocker and exact zero-write conflict. Return, correction,
+  independent review, and resubmission create a new v3 cycle without rewriting v2 history.
+- Unknown schemas and malformed v3 packages remain nondisclosing. Terminal validation still runs
+  under the locked action transaction, and the existing optimistic-version, audit/workflow,
+  communication, register, and race semantics are unchanged.
+- Formal approver names now come only from the immutable route package or a nullable action-time
+  display snapshot. Legacy unavailable names remain null; user ids remain attributable. No approval
+  history or register generation reloads a live user name.
+- Pre-007O/pre-007Q approved/rejected register rows with empty source, terminal, approver, or
+  communication JSON serialize actor-scoped stored facts plus explicit null/empty unavailable
+  values. They neither raise nor reconstruct data from current member/application/appraisal/users.
+
 ## Architecture Review 2026-07-14 06:42 - Schema Evolution and Frontend Contract Closure
 
 - Review range `4b5b4b1..15b8d02` confirms 007O freezes new terminal decisions/registers, 007P

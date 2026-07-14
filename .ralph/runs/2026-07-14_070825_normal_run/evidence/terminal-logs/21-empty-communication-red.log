@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_legacy_approved_and_rejected_register_rows_are_null_safe (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_legacy_approved_and_rejected_register_rows_are_null_safe)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_070825_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2624, in test_legacy_approved_and_rejected_register_rows_are_null_safe
+    self.assertIsNone(row["communication"])
+AssertionError: {} is not None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.028s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

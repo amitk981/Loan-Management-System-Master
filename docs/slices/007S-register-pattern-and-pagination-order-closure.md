@@ -81,6 +81,19 @@ and prove the denied variant contains no download control or opaque rendering ar
   Delete import/source-spelling assertions when the same dependency rule is publicly proven.
 - Trusted specs produce all four reviewable outputs in each independent orchestrator run.
 
+## Run-Ahead Sharpening (007R completion, 2026-07-14)
+
+- Preserve 007R's v2 historical-read contract while moving query mechanics: selector narrowing may
+  not drop a canonically valid v2 cycle, expose an unknown/malformed schema, or count a case before
+  the engine's schema-aware readability and actor-scope decisions pass.
+- S21/S22 stale-response guards must replace `available_actions`, `review_facts`, and immutable
+  authority/action history atomically with the newest detail. A late v3 response must not overwrite
+  a newer v2 remediation blocker (or vice versa), and nullable legacy `full_name` values must render
+  with the existing unavailable-value pattern rather than trigger a live identity lookup.
+- The restored S23 detail composition must keep 007R's explicit legacy null/empty fields and frozen
+  approver ids/names/times. Pagination, selection, and screenshot fixtures must include one null-safe
+  legacy row without fabricating purpose, risk, communication, or approver identity.
+
 ## Evidence Required
 
 Frontend/backend RED/GREEN output, validator-work evidence, trusted-browser collection/two-run

@@ -6186,3 +6186,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_070825_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007R-legacy-approval-history-and-frozen-identity-closure
+- Summary: Versioned new frozen review packages as v3; restored actor-scoped v2 history with a
+  zero-write return/correct/review remediation path; made legacy approved/rejected register rows
+  null-safe; and froze original/replacement approver display identity without live user reads.
+- Tests run: backend RED/GREEN cycles and 124 focused approval regressions; Django check and
+  migration sync; all 707 backend tests with 20 expected PostgreSQL-only skips at 93% coverage;
+  frontend build/typecheck/lint and all 269 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_070825_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High under standing approval; one additive nullable field migration, no backfill,
+  destructive data change, external communication, deployment, commit, merge, or push.
+- Next action: Independent validation, then run sharpened 007S.
+
+## 2026-07-14 07:42:05 - 2026-07-14_070825_normal_run
+- Agent tool used: codex
+- Slice attempted: 007R-legacy-approval-history-and-frozen-identity-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_070825_normal_run/.ralph/runs/2026-07-14_070825_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_070825_normal_run/.ralph/runs/2026-07-14_070825_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

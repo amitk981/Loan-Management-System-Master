@@ -434,6 +434,7 @@ class ApprovalAction(models.Model):
         "identity.User", on_delete=models.PROTECT, related_name="approval_actions"
     )
     approver_role_code = models.CharField(max_length=100, db_index=True)
+    approver_display_name = models.CharField(max_length=255, null=True, blank=True)
     decision = models.CharField(max_length=60, db_index=True)
     comments = models.TextField(null=True, blank=True)
     acted_at = models.DateTimeField(default=timezone.now)

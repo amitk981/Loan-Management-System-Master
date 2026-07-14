@@ -337,14 +337,16 @@ def serialize_case_authority(case):
     actions = list(case.actions.all())
     action_by_user = {str(action.approver_user_id): action for action in actions}
     effective = ConflictOfInterestModule.effective_approvers(case)
-    user_ids = {
-        str(item["user_id"])
-        for item in effective
-        if isinstance(item, dict) and item.get("user_id")
-    } | {str(action.approver_user_id) for action in actions}
-    from sfpcl_credit.identity.models import User
-
-    users = {str(pk): user for pk, user in User.objects.in_bulk(user_ids).items()}
+    routed_names = {
+        str(item["user_id"]): item["full_name"]
+        for item in case.required_approvers_json
+        if (
+            isinstance(item, dict)
+            and item.get("user_id")
+            and isinstance(item.get("full_name"), str)
+            and item["full_name"].strip()
+        )
+    }
     required_approvers = []
     replacement_by_user = {}
     for item in effective:
@@ -353,7 +355,11 @@ def serialize_case_authority(case):
         row = {
             "role_code": item["role_code"],
             "user_id": user_id,
-            "full_name": users[user_id].full_name,
+            "full_name": (
+                item.get("full_name")
+                or (action.approver_display_name if action else None)
+                or routed_names.get(user_id)
+            ),
             "decision": action.decision if action else None,
             "acted_at": _action_time(action),
         }
@@ -370,7 +376,9 @@ def serialize_case_authority(case):
             "approval_action_id": str(action.pk),
             "role_code": action.approver_role_code,
             "user_id": user_id,
-            "full_name": users[user_id].full_name,
+            "full_name": (
+                action.approver_display_name or routed_names.get(user_id)
+            ),
             "decision": action.decision,
             "comments": action.comments,
             "acted_at": _action_time(action),
@@ -407,10 +415,12 @@ def _available_actions(case, actor, actor_permissions, action_by_user):
     )
     actions = []
     for action_code, label, permission in action_specs:
+        terminal_blocker = terminal_action_blocker(case, action_code)
         enabled = (
             case.current_status == ApprovalCase.STATUS_PENDING
             and pending_assignment
             and permission in actor_permissions
+            and terminal_blocker is None
         )
         if case.current_status != ApprovalCase.STATUS_PENDING:
             reason = "Approval case is not pending."
@@ -422,6 +432,8 @@ def _available_actions(case, actor, actor_permissions, action_by_user):
             reason = "Required permission is not granted."
         elif not pending_assignment:
             reason = "You are not a pending approver for this case."
+        elif terminal_blocker:
+            reason = terminal_blocker["message"]
         else:
             reason = None
         actions.append(
@@ -490,13 +502,13 @@ def is_routable_approval_case(case):
         and _exclusion_snapshot_is_coherent(case.excluded_approvers_json, committee)
         and _conflict_authority_state_is_coherent(case)
         and _loan_limit_provenance_is_complete(case)
-        and _review_snapshot_is_complete(case)
+        and _review_snapshot_is_readable(case)
     )
 
 
 def validated_frozen_terminal_facts(case):
     """Return terminal copy facts only after canonical frozen-package validation."""
-    if not is_routable_approval_case(case):
+    if not terminal_facts_are_complete(case):
         raise ValidationError("The frozen approval review package is invalid.")
     facts = case.appraisal_facts_json
     borrower = facts["borrower"]
@@ -524,6 +536,27 @@ def validated_frozen_terminal_facts(case):
             terms.get("recommended_security_summary") or ""
         ),
         "review_facts": facts,
+    }
+
+
+def terminal_facts_are_complete(case):
+    """Return whether terminal writes may consume the declared frozen package."""
+    return (
+        is_routable_approval_case(case)
+        and _terminal_review_snapshot_is_complete(case)
+    )
+
+
+def terminal_action_blocker(case, action_code):
+    """Return the canonical terminal-remediation conflict for an action, if any."""
+    if action_code not in {"approve", "reject"} or terminal_facts_are_complete(case):
+        return None
+    return {
+        "code": "TERMINAL_FACTS_REMEDIATION_REQUIRED",
+        "message": (
+            "Frozen terminal facts are unavailable. Return for clarification "
+            "and complete a new independent review cycle."
+        ),
     }
 
 
@@ -728,11 +761,15 @@ def _loan_limit_provenance_is_complete(case):
     return final_eligible_amount >= Decimal("0.00") and calculated_at is not None
 
 
-def _review_snapshot_is_complete(case):
-    """Validate mandatory approval-owned review facts without live credit reads."""
+def _review_snapshot_is_readable(case):
+    """Validate the immutable review facts for their declared schema version."""
     facts = case.appraisal_facts_json
     if not isinstance(facts, dict) or not facts:
         return False
+    schema_version = facts.get("snapshot_schema_version")
+    if schema_version not in {"approval-review-v2", "approval-review-v3"}:
+        return False
+    terminal_schema = schema_version == "approval-review-v3"
     required_sections = {
         "snapshot_schema_version",
         "snapshot_provenance",
@@ -740,7 +777,6 @@ def _review_snapshot_is_complete(case):
         "borrower",
         "eligibility",
         "loan_amounts",
-        "sanction_terms",
         "purpose",
         "compliance_checks",
         "borrowing_history",
@@ -748,13 +784,14 @@ def _review_snapshot_is_complete(case):
         "documentation_completeness",
         "source_references",
     }
+    if terminal_schema:
+        required_sections.add("sanction_terms")
     if not required_sections.issubset(facts):
         return False
 
     provenance = facts.get("snapshot_provenance")
     if (
-        facts.get("snapshot_schema_version") != "approval-review-v2"
-        or not isinstance(provenance, dict)
+        not isinstance(provenance, dict)
         or provenance.get("owner") != "credit"
         or provenance.get("review_decision_id") in (None, "")
     ):
@@ -763,7 +800,7 @@ def _review_snapshot_is_complete(case):
     maker = facts.get("maker_checker")
     borrower = facts.get("borrower")
     amounts = facts.get("loan_amounts")
-    terms = facts.get("sanction_terms")
+    terms = facts.get("sanction_terms") if terminal_schema else None
     purpose = facts.get("purpose")
     compliance = facts.get("compliance_checks")
     risk = facts.get("risk")
@@ -774,13 +811,14 @@ def _review_snapshot_is_complete(case):
         maker,
         borrower,
         amounts,
-        terms,
         purpose,
         compliance,
         risk,
         documentation,
         references,
     )
+    if terminal_schema:
+        mappings = (*mappings, terms)
     if not all(isinstance(item, dict) for item in mappings):
         return False
     if not isinstance(eligibility, dict) or not eligibility:
@@ -797,24 +835,8 @@ def _review_snapshot_is_complete(case):
                 "appraisal_reviewed_by_user_id",
             },
         ),
-        (
-            borrower,
-            {
-                "member_id",
-                "application_reference_number",
-                "name",
-                "member_type",
-            },
-        ),
+        (borrower, {"name", "member_type"}),
         (amounts, {"requested_amount", "eligible_amount", "recommended_amount"}),
-        (
-            terms,
-            {
-                "recommended_tenure_months",
-                "recommended_interest_type",
-                "recommended_security_summary",
-            },
-        ),
         (purpose, {"category", "description"}),
         (
             compliance,
@@ -839,6 +861,19 @@ def _review_snapshot_is_complete(case):
         (documentation, {"status", "document_check"}),
         (references, {"application", "appraisal", "eligibility", "loan_limit"}),
     )
+    if terminal_schema:
+        required_keys = (
+            *required_keys,
+            (borrower, {"member_id", "application_reference_number"}),
+            (
+                terms,
+                {
+                    "recommended_tenure_months",
+                    "recommended_interest_type",
+                    "recommended_security_summary",
+                },
+            ),
+        )
     if any(not keys.issubset(mapping) for mapping, keys in required_keys):
         return False
     def is_uuid_string(value, *, nullable=False):
@@ -865,34 +900,35 @@ def _review_snapshot_is_complete(case):
         for key in ("name", "member_type")
     ):
         return False
-    if borrower.get("folio_number") is not None and (
-        not isinstance(borrower["folio_number"], str)
-        or not borrower["folio_number"].strip()
-    ):
-        return False
-    if borrower.get("loan_type") is not None and not isinstance(
-        borrower["loan_type"], str
-    ):
-        return False
-    if not is_uuid_string(borrower["member_id"]):
-        return False
-    if (
-        not isinstance(borrower["application_reference_number"], str)
-        or not borrower["application_reference_number"].strip()
-    ):
-        return False
-    if (
-        (
-            terms["recommended_tenure_months"] is not None
-            and (
-                not isinstance(terms["recommended_tenure_months"], int)
-                or terms["recommended_tenure_months"] <= 0
+    if terminal_schema:
+        if borrower.get("folio_number") is not None and (
+            not isinstance(borrower["folio_number"], str)
+            or not borrower["folio_number"].strip()
+        ):
+            return False
+        if borrower.get("loan_type") is not None and not isinstance(
+            borrower["loan_type"], str
+        ):
+            return False
+        if not is_uuid_string(borrower["member_id"]):
+            return False
+        if (
+            not isinstance(borrower["application_reference_number"], str)
+            or not borrower["application_reference_number"].strip()
+        ):
+            return False
+        if (
+            (
+                terms["recommended_tenure_months"] is not None
+                and (
+                    not isinstance(terms["recommended_tenure_months"], int)
+                    or terms["recommended_tenure_months"] <= 0
+                )
             )
-        )
-        or not isinstance(terms["recommended_interest_type"], str)
-        or not isinstance(terms["recommended_security_summary"], str)
-    ):
-        return False
+            or not isinstance(terms["recommended_interest_type"], str)
+            or not isinstance(terms["recommended_security_summary"], str)
+        ):
+            return False
     if any(
         maker.get(key) in (None, "")
         for key in (
@@ -1034,6 +1070,15 @@ def _review_snapshot_is_complete(case):
             amounts.get("eligible_amount"),
             case.loan_limit_provenance_json.get("final_eligible_loan_amount"),
         )
+    )
+
+
+def _terminal_review_snapshot_is_complete(case):
+    facts = case.appraisal_facts_json
+    return (
+        isinstance(facts, dict)
+        and facts.get("snapshot_schema_version") == "approval-review-v3"
+        and _review_snapshot_is_readable(case)
     )
 
 

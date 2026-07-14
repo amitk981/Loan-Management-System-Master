@@ -48,7 +48,7 @@ def generate_for_terminal_case(
         ApprovalCase.objects.select_related(
             "general_meeting_approval",
         )
-        .prefetch_related("actions__approver_user")
+        .prefetch_related("actions")
         .get(pk=case.pk)
     )
     authority = approval_case_engine.serialize_case_authority(case)
@@ -235,6 +235,18 @@ def list_entries(*, actor, query_params, actor_permissions):
 
 
 def serialize_entry(entry):
+    source_facts = (
+        entry.source_review_facts_json
+        if isinstance(entry.source_review_facts_json, dict)
+        else {}
+    )
+    borrower_facts = source_facts.get("borrower")
+    borrower_facts = borrower_facts if isinstance(borrower_facts, dict) else {}
+    terminal_facts = (
+        entry.terminal_facts_json
+        if isinstance(entry.terminal_facts_json, dict)
+        else {}
+    )
     return {
         "credit_sanction_register_entry_id": str(entry.pk),
         "approval_case_id": str(entry.approval_case_id),
@@ -247,23 +259,36 @@ def serialize_entry(entry):
         "entry_number": entry.entry_number,
         "borrower_name": entry.borrower_name,
         "borrower_type": entry.borrower_type,
-        "folio_number": entry.source_review_facts_json["borrower"].get("folio_number"),
-        "loan_type": entry.source_review_facts_json["borrower"].get("loan_type") or None,
-        "purpose": entry.source_review_facts_json["purpose"],
-        "risk": entry.source_review_facts_json["risk"],
+        "folio_number": borrower_facts.get("folio_number"),
+        "loan_type": borrower_facts.get("loan_type") or None,
+        "purpose": source_facts.get("purpose"),
+        "risk": source_facts.get("risk"),
         "requested_amount": _money(entry.requested_amount),
         "eligible_amount": _money(entry.eligible_amount),
         "recommended_amount": _money(entry.recommended_amount),
         "sanctioned_amount": _money(entry.sanctioned_amount),
         "approval_authority": entry.authority_applied_summary,
-        "approver_names": entry.approver_names_json,
-        "approver_decisions": entry.approver_decisions_json,
+        "approver_names": (
+            entry.approver_names_json
+            if isinstance(entry.approver_names_json, list)
+            else []
+        ),
+        "approver_decisions": (
+            entry.approver_decisions_json
+            if isinstance(entry.approver_decisions_json, list)
+            else []
+        ),
         "approval_date": entry.approval_date.isoformat(),
         "decision": entry.decision,
         "reasons": entry.reasons,
-        "rejection_reason": entry.terminal_facts_json.get("rejection_reason"),
-        "conditions": entry.terminal_facts_json.get("conditions"),
-        "communication": entry.communication_json,
+        "rejection_reason": terminal_facts.get("rejection_reason"),
+        "conditions": terminal_facts.get("conditions"),
+        "communication": (
+            entry.communication_json
+            if isinstance(entry.communication_json, dict)
+            and entry.communication_json
+            else None
+        ),
         "exception_reference": entry.exception_reference_json,
         "conflict_abstention_details": entry.conflict_abstention_details_json,
         "general_meeting_approval_reference": (
