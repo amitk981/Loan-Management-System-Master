@@ -318,3 +318,57 @@ class LoanDocumentVerificationRequest:
 
     def as_values(self):
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class ChecklistItemCompletionRequest:
+    loan_document_id: uuid.UUID
+    remarks: str | None
+
+    FIELDS = {"loan_document_id", "remarks"}
+
+    @classmethod
+    def parse(cls, payload):
+        _exact_fields(payload, cls.FIELDS)
+        errors = {}
+        try:
+            document_id = _uuid("loan_document_id", payload.get("loan_document_id"))
+        except ValidationError:
+            errors["loan_document_id"] = "Must be a valid UUID."
+            document_id = None
+        if document_id is None and "loan_document_id" not in errors:
+            errors["loan_document_id"] = "A loan document id is required."
+        try:
+            remarks = _nullable_text("remarks", payload.get("remarks"), 4000)
+        except ValidationError as exc:
+            errors.update(
+                {field: messages[0] for field, messages in exc.message_dict.items()}
+            )
+            remarks = None
+        if errors:
+            raise ValidationError(errors)
+        return cls(document_id, remarks)
+
+    def as_values(self):
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class ChecklistApprovalRequest:
+    comments: str
+
+    FIELDS = {"comments"}
+
+    @classmethod
+    def parse(cls, payload):
+        _exact_fields(payload, cls.FIELDS)
+        comments = payload.get("comments")
+        if not isinstance(comments, str) or not comments.strip():
+            raise ValidationError({"comments": "A non-empty string is required."})
+        comments = comments.strip()
+        if len(comments) > 4000:
+            raise ValidationError({"comments": "Must be at most 4000 characters."})
+        return cls(comments)
+
+    def as_values(self):
+        return asdict(self)

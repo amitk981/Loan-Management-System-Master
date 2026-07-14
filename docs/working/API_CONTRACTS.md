@@ -3581,3 +3581,29 @@ returns the cheque, creates a loan account, changes package status/readiness, or
 download. Twice-run PostgreSQL five-worker changed-create and changed-custody races retain one
 current row, one terminal custodian/workflow, exact winner request/actor evidence, and zero loser
 success evidence.
+
+## Final documentation checklist actions (008K)
+
+The exact §27.3-§27.7 routes are now available:
+
+- `POST /api/v1/checklist-items/{checklist_item_id}/complete/` accepts exactly
+  `loan_document_id` and nullable `remarks` (maximum 4,000 characters).
+- `POST /api/v1/document-checklists/{document_checklist_id}/approve-as-company-secretary/`,
+  `/approve-as-credit-manager/`, `/approve-as-sanction-committee/`, and
+  `/sign-disbursement-complete/` each accept exactly one non-empty `comments` value (maximum
+  4,000 characters).
+
+Successful completion and the first three approvals return the durable §6.3 action shape plus
+`checklist_action_id`. Exact same-actor/same-fact replay returns that identity without writes;
+changed repeats return `409 CHECKLIST_ACTION_CONFLICT`. Wrong approval order returns
+`409 CHECKLIST_APPROVAL_OUT_OF_ORDER`, incomplete terminal evidence returns
+`409 CHECKLIST_EVIDENCE_INCOMPLETE`, and unrelated objects remain nondisclosing.
+
+Completion accepts only the latest current-renderer same-application document of the canonical
+item type and consumes owner-held terminal legal/security evidence. Masked CDSL/cheque ledgers are
+never revealed or decrypted. CS approval requires every applicable required item complete; Credit
+Manager approval requires the canonical frozen limit package; one active non-excluded director from
+the frozen committee may give the final documentation approval. The Senior Manager Finance route is
+intentionally present but returns `409 DISBURSEMENT_EVIDENCE_UNAVAILABLE` with zero writes until an
+Epic 009 owner supplies a real successful-disbursement relation. No route creates a loan account or
+changes package/security readiness.

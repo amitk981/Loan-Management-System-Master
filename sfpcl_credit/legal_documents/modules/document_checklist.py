@@ -187,7 +187,7 @@ _DOCUMENT_TYPE_BY_ITEM = {
     "poa": "power_of_attorney",
     "tri_party_agreement": "tri_party_agreement",
     "sh4": "sh4",
-    "cdsl_pledge": "cdsl_pledge",
+    "cdsl_pledge": "cdsl_pledge_evidence",
     "term_sheet": "term_sheet",
     "loan_agreement": "loan_agreement",
     "bank_verification_letter": "bank_verification_letter",

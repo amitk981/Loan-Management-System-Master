@@ -151,6 +151,14 @@ High
 - Reuse the existing portal session/member-scope module and existing MP07/MP13 markup. Do not grant a
   portal account an internal role/permission or create a second authentication path.
 
+## 008K Completion Sharpening (2026-07-15)
+
+- Portal projections may show the retained checklist status and signer-stage statuses, but must not
+  expose internal `checklist_action_id`, comments, signer identity, audit context, or any §27.3-§27.7
+  mutation route. Borrower uploads never satisfy or replay an internal completion action.
+- Preserve the explicit `not_applicable_until_disbursement` finance state; do not translate the 008K
+  `DISBURSEMENT_EVIDENCE_UNAVAILABLE` blocker into a borrower action or a completed/ready label.
+
 ## Acceptance Criteria
 - The named capability works through the intended backend/API/frontend path, where applicable.
 - Source-doc business rules are enforced or documented as assumptions.

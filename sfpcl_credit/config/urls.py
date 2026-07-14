@@ -250,6 +250,31 @@ urlpatterns = [
         name="loan-application-document-checklist-refresh",
     ),
     path(
+        "api/v1/checklist-items/<uuid:checklist_item_id>/complete/",
+        legal_document_views.complete_checklist_item,
+        name="checklist-item-complete",
+    ),
+    path(
+        "api/v1/document-checklists/<uuid:document_checklist_id>/approve-as-company-secretary/",
+        legal_document_views.approve_checklist_company_secretary,
+        name="document-checklist-approve-company-secretary",
+    ),
+    path(
+        "api/v1/document-checklists/<uuid:document_checklist_id>/approve-as-credit-manager/",
+        legal_document_views.approve_checklist_credit_manager,
+        name="document-checklist-approve-credit-manager",
+    ),
+    path(
+        "api/v1/document-checklists/<uuid:document_checklist_id>/approve-as-sanction-committee/",
+        legal_document_views.approve_checklist_sanction_committee,
+        name="document-checklist-approve-sanction-committee",
+    ),
+    path(
+        "api/v1/document-checklists/<uuid:document_checklist_id>/sign-disbursement-complete/",
+        legal_document_views.sign_checklist_disbursement_complete,
+        name="document-checklist-sign-disbursement-complete",
+    ),
+    path(
         "api/v1/loan-applications/<uuid:loan_application_id>/completeness-check/",
         application_views.loan_application_completeness_check,
         name="loan-application-completeness-check",

@@ -13,6 +13,7 @@ from sfpcl_credit.api import (
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.legal_documents.modules import document_generation
 from sfpcl_credit.legal_documents.modules import document_checklist
+from sfpcl_credit.legal_documents.modules import checklist_actions
 from sfpcl_credit.legal_documents.modules import stamp_notary
 from sfpcl_credit.legal_documents.modules import signatures
 from sfpcl_credit.legal_documents.modules import loan_document_verification
@@ -169,6 +170,97 @@ def legal_document_checklist(request, loan_application_id):
             request, 404, "NOT_FOUND", "Document checklist was not found."
         )
     return success_response(data, request)
+
+
+def _checklist_action_metadata(request):
+    return checklist_actions.RequestMetadata(
+        request_id=request.headers.get("X-Request-ID"),
+        ip_address=request_ip(request),
+        user_agent=request_user_agent(request),
+    )
+
+
+def _run_checklist_action(request, recorder, target_id, label):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data = recorder(
+            actor=user,
+            payload=parse_json_body(request),
+            metadata=_checklist_action_metadata(request),
+            **target_id,
+        )
+    except checklist_actions.AccessDenied as exc:
+        return error_response(
+            request,
+            403,
+            exc.error_code,
+            f"You do not have access to this {label}.",
+        )
+    except checklist_actions.NotFound:
+        return error_response(request, 404, "NOT_FOUND", f"{label.title()} was not found.")
+    except checklist_actions.Conflict as exc:
+        return error_response(request, 409, exc.error_code, str(exc))
+    except ValidationError as exc:
+        return error_response(
+            request,
+            400,
+            "VALIDATION_ERROR",
+            f"{label.title()} action failed validation.",
+            checklist_actions.validation_field_errors(exc),
+        )
+    return success_response(data, request)
+
+
+@require_POST
+def complete_checklist_item(request, checklist_item_id):
+    return _run_checklist_action(
+        request,
+        checklist_actions.complete_item,
+        {"checklist_item_id": checklist_item_id},
+        "checklist item",
+    )
+
+
+@require_POST
+def approve_checklist_company_secretary(request, document_checklist_id):
+    return _run_checklist_action(
+        request,
+        checklist_actions.approve_company_secretary,
+        {"document_checklist_id": document_checklist_id},
+        "document checklist",
+    )
+
+
+@require_POST
+def approve_checklist_credit_manager(request, document_checklist_id):
+    return _run_checklist_action(
+        request,
+        checklist_actions.approve_credit_manager,
+        {"document_checklist_id": document_checklist_id},
+        "document checklist",
+    )
+
+
+@require_POST
+def approve_checklist_sanction_committee(request, document_checklist_id):
+    return _run_checklist_action(
+        request,
+        checklist_actions.approve_sanction_committee,
+        {"document_checklist_id": document_checklist_id},
+        "document checklist",
+    )
+
+
+@require_POST
+def sign_checklist_disbursement_complete(request, document_checklist_id):
+    return _run_checklist_action(
+        request,
+        checklist_actions.sign_disbursement_complete,
+        {"document_checklist_id": document_checklist_id},
+        "document checklist",
+    )
 
 
 def _record_lifecycle(

@@ -46,6 +46,9 @@ This slice is the final owner of these files' mock surface — after it, none of
 - Checklist blockers render from seeded mismatch/stamp-pending fixtures and clear when backend state resolves.
 - Unauthorized role cannot see restricted document contents or actions (frontend + 403 backend assertion).
 - Approval sequence buttons appear only for the role whose turn it is per the source sequence.
+- Exact success stores the returned `checklist_action_id` only as canonical response state and
+  refetches once; changed replay, out-of-order, incomplete-evidence, and disbursement-unavailable
+  conflicts remain visible without optimistic status changes or retries.
 
 ## Out of Scope
 Member portal documentation actions (008L done), disbursement readiness consumption (009D), template admin CRUD beyond what 008A/008B expose.

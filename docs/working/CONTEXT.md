@@ -72,7 +72,11 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   races twice on PostgreSQL. Corrective 008I4 now provides independently keyed/versioned AES-GCM
   field encryption, one central sensitive reveal/masking policy owner, retained-token
   reconciliation, and nullable pending CDSL evidence without weakening terminal acceptance. 008J
-  is next for cheque custody through the same coordinator/encryption/reveal seams.
+  adds protected blank-cheque collection/custody through the same coordinator/encryption/reveal
+  seams. 008K now owns strict terminal item completion plus immutable CS, Credit Manager, and one
+  eligible frozen-committee director approvals; the Senior Manager Finance route remains honestly
+  zero-write blocked until Epic 009 supplies real successful-disbursement evidence. 008L is next
+  for borrower-scoped portal documentation actions.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

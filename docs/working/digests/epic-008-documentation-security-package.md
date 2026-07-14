@@ -529,6 +529,14 @@ Sanction Committee = final approval per matrix; Sr Manager - Finance = loan disb
 Sheet countersignature: CFO if ≤ ₹5,00,000, CFO + 2 Directors above. The sequence is strictly
 ordered — model it with 002H guards; 009D (disbursement readiness) consumes its completion.
 
+008K closure (2026-07-15): §27.3-§27.7 now cross one legal-checklist action owner. Item completion
+requires the exact current-renderer canonical document and terminal owner evidence; ordered CS,
+Credit Manager, and one eligible frozen-committee director approvals retain immutable actor/name/
+role/meaning/comment/request/workflow identities. Exact replay is zero-write and changed repeats
+conflict. CDSL and cheque facts remain masked ledger inputs. The Senior Manager Finance route is
+explicitly zero-write blocked until Epic 009 supplies a real successful-disbursement relation;
+checklist loan-account and finance-signature fields remain null-only.
+
 ### 008L / 008L2 Member Portal Documentation Actions
 Borrower-side obligations and evidence (V10 pp.27-28): what the member must submit, who
 certifies (field officer collects, credit officer verifies KYC; CS & Accounts certify security

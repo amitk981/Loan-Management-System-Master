@@ -5,6 +5,8 @@ contract without any business module depending on this transport adapter.
 """
 
 from sfpcl_credit.legal_documents.request_contracts import (
+    ChecklistApprovalRequest,
+    ChecklistItemCompletionRequest,
     LoanDocumentVerificationRequest,
     NotarisationRecordRequest,
     SignatureMismatchResolutionRequest,
@@ -13,6 +15,8 @@ from sfpcl_credit.legal_documents.request_contracts import (
 )
 
 __all__ = [
+    "ChecklistApprovalRequest",
+    "ChecklistItemCompletionRequest",
     "LoanDocumentVerificationRequest",
     "NotarisationRecordRequest",
     "SignatureMismatchResolutionRequest",

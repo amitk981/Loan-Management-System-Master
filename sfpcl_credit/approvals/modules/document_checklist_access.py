@@ -3,9 +3,6 @@
 from dataclasses import dataclass
 
 from sfpcl_credit.applications.models import LoanApplication
-from sfpcl_credit.applications.modules.application_authority import (
-    evaluate_application_object_access,
-)
 from sfpcl_credit.approvals.modules.read_scope import (
     evaluate_approval_case_read_scope,
 )
@@ -93,7 +90,14 @@ def _evaluate_post_sanction_scope(*, actor, application, case, actor_permissions
     roles = set(actor.role_codes())
     # Source §19.2 defines these roles' application scope as the sanctioned
     # documentation queue itself; the status predicate is their canonical row scope.
-    if roles & {"compliance_team_member", "company_secretary"}:
+    if roles & {
+        "compliance_team_member",
+        "company_secretary",
+        "credit_manager",
+        "senior_manager_finance",
+        "chief_financial_controller",
+        "internal_auditor",
+    }:
         return _PostSanctionScope(True, "sanctioned_documentation_application_scope")
     approval_scope = evaluate_approval_case_read_scope(
         actor=actor,
@@ -102,13 +106,4 @@ def _evaluate_post_sanction_scope(*, actor, application, case, actor_permissions
     )
     if approval_scope.allowed:
         return _PostSanctionScope(True, approval_scope.attribution)
-    if "credit_manager" in roles:
-        application_scope = evaluate_application_object_access(
-            application=application,
-            actor=actor,
-            required_permission="documents.checklist.read",
-            actor_permissions=actor_permissions,
-        )
-        if application_scope.allowed:
-            return _PostSanctionScope(True, application_scope.reason)
     return _PostSanctionScope(False, "no_checklist_object_scope")

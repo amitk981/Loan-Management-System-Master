@@ -340,6 +340,8 @@ ROLE_PERMISSIONS = {
     "credit_manager": [
         "members.witness.read",
         "security.package.read",
+        "documents.checklist.read",
+        "documents.checklist.approve_credit",
         "applications.loan_application.read",
         "applications.loan_application.create",
         "applications.loan_application.complete_check",
@@ -397,6 +399,8 @@ ROLE_PERMISSIONS = {
         "members.witness.update",
         "approvals.case.read",
         "approvals.sanction_register.read",
+        "documents.checklist.read",
+        "documents.checklist.update",
         "documents.checklist.approve_cs",
         "documents.loan_document.verify",
         "documents.signature.resolve_mismatch",
@@ -424,6 +428,7 @@ ROLE_PERMISSIONS = {
     ],
     "senior_manager_finance": [
         "security.package.read",
+        "documents.checklist.read",
         "finance.sap_request.complete",
         "finance.sap_code.read",
         "finance.disbursement.readiness",
@@ -436,6 +441,7 @@ ROLE_PERMISSIONS = {
     ],
     "chief_financial_controller": [
         "security.package.read",
+        "documents.checklist.read",
         "finance.disbursement.readiness",
         "finance.disbursement.authorise",
         "finance.disbursement.mark_success",
@@ -446,6 +452,7 @@ ROLE_PERMISSIONS = {
     ],
     "cfo": [
         "security.package.read",
+        "documents.checklist.read",
         "approvals.case.read",
         "approvals.case.approve",
         "approvals.case.reject",
@@ -465,6 +472,8 @@ ROLE_PERMISSIONS = {
     ],
     "director": [
         "security.package.read",
+        "documents.checklist.read",
+        "documents.checklist.approve_sanction",
         "approvals.case.read",
         "approvals.case.approve",
         "approvals.case.reject",
@@ -489,6 +498,7 @@ ROLE_PERMISSIONS = {
     "internal_auditor": [
         "members.witness.read",
         "security.package.read",
+        "documents.checklist.read",
         "approvals.case.read",
         "approvals.exception_register.read",
         "approvals.sanction_register.read",

@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 5 test(s).
+System check identified no issues (0 silenced).
+.F...
+======================================================================
+FAIL: test_item_completion_is_strict_attributable_and_replay_safe (sfpcl_credit.tests.test_final_documentation_approval_api.FinalDocumentationApprovalApiTests.test_item_completion_is_strict_attributable_and_replay_safe)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_030045_normal_run/sfpcl_credit/tests/test_final_documentation_approval_api.py", line 146, in test_item_completion_is_strict_attributable_and_replay_safe
+    self.assertIn("extra", malformed.json()["error"]["details"])
+AssertionError: 'extra' not found in {}
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.293s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

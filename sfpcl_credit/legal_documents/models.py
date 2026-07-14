@@ -471,8 +471,16 @@ class SignatureRecord(models.Model):
 class DocumentChecklist(models.Model):
     STATUS_IN_PROGRESS = "in_progress"
     STATUS_CS_APPROVED = "cs_approved"
+    STATUS_CREDIT_APPROVED = "credit_approved"
+    STATUS_SANCTION_APPROVED = "sanction_approved"
     STATUS_READY = "ready"
-    STATUSES = {STATUS_IN_PROGRESS, STATUS_CS_APPROVED, STATUS_READY}
+    STATUSES = {
+        STATUS_IN_PROGRESS,
+        STATUS_CS_APPROVED,
+        STATUS_CREDIT_APPROVED,
+        STATUS_SANCTION_APPROVED,
+        STATUS_READY,
+    }
 
     document_checklist_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -486,10 +494,34 @@ class DocumentChecklist(models.Model):
     checklist_status = models.CharField(
         max_length=80, default=STATUS_IN_PROGRESS, db_index=True
     )
-    company_secretary_signature_id = models.UUIDField(blank=True, null=True)
-    credit_manager_signature_id = models.UUIDField(blank=True, null=True)
-    sanction_committee_signature_id = models.UUIDField(blank=True, null=True)
-    senior_manager_finance_signature_id = models.UUIDField(blank=True, null=True)
+    company_secretary_signature = models.ForeignKey(
+        "ChecklistAction",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="company_secretary_checklists",
+    )
+    credit_manager_signature = models.ForeignKey(
+        "ChecklistAction",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="credit_manager_checklists",
+    )
+    sanction_committee_signature = models.ForeignKey(
+        "ChecklistAction",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="sanction_committee_checklists",
+    )
+    senior_manager_finance_signature = models.ForeignKey(
+        "ChecklistAction",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="senior_manager_finance_checklists",
+    )
     remarks = models.TextField(blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(default=timezone.now)
@@ -506,7 +538,13 @@ class DocumentChecklist(models.Model):
         constraints = [
             models.CheckConstraint(
                 check=models.Q(
-                    checklist_status__in=["in_progress", "cs_approved", "ready"]
+                    checklist_status__in=[
+                        "in_progress",
+                        "cs_approved",
+                        "credit_approved",
+                        "sanction_approved",
+                        "ready",
+                    ]
                 ),
                 name="document_checklist_valid_status",
             ),
@@ -516,12 +554,21 @@ class DocumentChecklist(models.Model):
             ),
             models.CheckConstraint(
                 check=(
-                    models.Q(company_secretary_signature_id__isnull=True)
-                    & models.Q(credit_manager_signature_id__isnull=True)
-                    & models.Q(sanction_committee_signature_id__isnull=True)
-                    & models.Q(senior_manager_finance_signature_id__isnull=True)
+                    models.Q(credit_manager_signature_id__isnull=True)
+                    | models.Q(company_secretary_signature_id__isnull=False)
                 ),
-                name="checklist_signatures_require_008k",
+                name="checklist_credit_requires_cs",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(sanction_committee_signature_id__isnull=True)
+                    | models.Q(credit_manager_signature_id__isnull=False)
+                ),
+                name="checklist_sanction_requires_credit",
+            ),
+            models.CheckConstraint(
+                check=models.Q(senior_manager_finance_signature_id__isnull=True),
+                name="checklist_finance_requires_epic_009",
             ),
         ]
 
@@ -701,3 +748,133 @@ class ChecklistItem(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
+
+
+class ChecklistActionQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError({"checklist_action": "Checklist evidence is immutable."})
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValidationError({"checklist_action": "Checklist evidence is immutable."})
+
+    def delete(self):
+        raise ValidationError({"checklist_action": "Checklist evidence is immutable."})
+
+
+class ChecklistAction(models.Model):
+    TYPE_ITEM_COMPLETION = "item_completion"
+    TYPE_COMPANY_SECRETARY_APPROVAL = "company_secretary_approval"
+    TYPE_CREDIT_MANAGER_APPROVAL = "credit_manager_approval"
+    TYPE_SANCTION_COMMITTEE_APPROVAL = "sanction_committee_approval"
+    TYPE_DISBURSEMENT_SIGNATURE = "disbursement_signature"
+    ACTION_TYPES = {
+        TYPE_ITEM_COMPLETION,
+        TYPE_COMPANY_SECRETARY_APPROVAL,
+        TYPE_CREDIT_MANAGER_APPROVAL,
+        TYPE_SANCTION_COMMITTEE_APPROVAL,
+        TYPE_DISBURSEMENT_SIGNATURE,
+    }
+
+    checklist_action_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    document_checklist = models.ForeignKey(
+        DocumentChecklist, on_delete=models.PROTECT, related_name="actions"
+    )
+    checklist_item = models.ForeignKey(
+        ChecklistItem,
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="completion_actions",
+    )
+    loan_document = models.ForeignKey(
+        LoanDocument,
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="checklist_actions",
+    )
+    action_type = models.CharField(max_length=80, db_index=True)
+    meaning = models.CharField(max_length=255)
+    comments = models.TextField(blank=True, null=True)
+    actor_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="checklist_actions"
+    )
+    actor_user_name_snapshot = models.CharField(max_length=200)
+    canonical_role_code = models.CharField(max_length=80)
+    request_id = models.CharField(max_length=255, blank=True, null=True)
+    workflow_event = models.OneToOneField(
+        "workflows.WorkflowEvent",
+        on_delete=models.PROTECT,
+        related_name="checklist_action",
+    )
+    signed_at = models.DateTimeField(default=timezone.now)
+
+    objects = ChecklistActionQuerySet.as_manager()
+
+    class Meta:
+        db_table = "checklist_actions"
+        ordering = ["signed_at", "checklist_action_id"]
+        indexes = [
+            models.Index(
+                fields=["document_checklist", "action_type"],
+                name="idx_check_action_stage",
+            )
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["checklist_item"],
+                condition=models.Q(action_type="item_completion"),
+                name="unique_checklist_item_completion",
+            ),
+            models.UniqueConstraint(
+                fields=["document_checklist", "action_type"],
+                condition=~models.Q(action_type="item_completion"),
+                name="unique_checklist_approval_stage",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    action_type__in=[
+                        "item_completion",
+                        "company_secretary_approval",
+                        "credit_manager_approval",
+                        "sanction_committee_approval",
+                        "disbursement_signature",
+                    ]
+                ),
+                name="checklist_action_valid_type",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        action_type="item_completion",
+                        checklist_item__isnull=False,
+                        loan_document__isnull=False,
+                    )
+                    | (
+                        ~models.Q(action_type="item_completion")
+                        & models.Q(
+                            checklist_item__isnull=True,
+                            loan_document__isnull=True,
+                        )
+                    )
+                ),
+                name="checklist_action_target_consistent",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(action_type="item_completion")
+                    | (models.Q(comments__isnull=False) & ~models.Q(comments=""))
+                ),
+                name="checklist_approval_comments_required",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError({"checklist_action": "Checklist evidence is immutable."})
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError({"checklist_action": "Checklist evidence is immutable."})
