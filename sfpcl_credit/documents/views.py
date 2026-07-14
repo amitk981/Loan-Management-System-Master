@@ -1,8 +1,15 @@
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
-from sfpcl_credit.api import error_response, list_response, parse_json_body, success_response
-from sfpcl_credit.documents import services
+from sfpcl_credit.api import (
+    error_response,
+    list_response,
+    parse_json_body,
+    request_ip,
+    request_user_agent,
+    success_response,
+)
+from sfpcl_credit.documents import selectors, services
 from sfpcl_credit.documents.modules import document_templates
 from sfpcl_credit.identity.modules import http_auth
 
@@ -64,7 +71,8 @@ def document_template_collection(request):
                 request, 403, "FORBIDDEN", "You do not have permission to read document templates."
             )
         try:
-            data, pagination = document_templates.list_templates(request.GET)
+            rows, pagination = selectors.list_document_templates(request.GET)
+            data = [document_templates.serialize(row) for row in rows]
         except ValidationError as exc:
             return error_response(
                 request,
@@ -81,7 +89,9 @@ def document_template_collection(request):
         )
     try:
         data = document_templates.create(
-            actor=user, request=request, payload=parse_json_body(request)
+            actor=user,
+            metadata=_request_metadata(request),
+            payload=parse_json_body(request),
         )
     except ValidationError as exc:
         return error_response(
@@ -106,7 +116,7 @@ def document_template_detail(request, document_template_id):
     try:
         data = document_templates.create_successor(
             actor=user,
-            request=request,
+            metadata=_request_metadata(request),
             document_template_id=document_template_id,
             payload=parse_json_body(request),
         )
@@ -123,3 +133,11 @@ def document_template_detail(request, document_template_id):
             document_templates.validation_field_errors(exc),
         )
     return success_response(data, request)
+
+
+def _request_metadata(request):
+    return document_templates.RequestMetadata(
+        request_id=request.headers.get("X-Request-ID"),
+        ip_address=request_ip(request),
+        user_agent=request_user_agent(request),
+    )

@@ -1,0 +1,97 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 1 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders
+  Apply all migrations: applications, approvals, communications, configurations, contenttypes, credit, documents, identity, members, scheduler, tracer, workflows
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying identity.0001_initial... OK
+  Applying identity.0002_permission_rolepermission_and_more... OK
+  Applying members.0001_initial... OK
+  Applying members.0002_profile_shells... OK
+  Applying members.0003_individual_profile_details... OK
+  Applying members.0004_nominee... OK
+  Applying members.0005_shareholding_and_more... OK
+  Applying members.0006_landholding_cropplan_and_more... OK
+  Applying documents.0001_initial... OK
+  Applying members.0007_kycprofile_kycdocument_and_more... OK
+  Applying members.0008_cancelledcheque_bankaccount_and_more... OK
+  Applying identity.0003_portal_member_auth... OK
+  Applying applications.0001_initial... OK
+  Applying applications.0002_loanapplication_submitted_by_user... OK
+  Applying applications.0003_systemsequence_loanrequestregisterentry... OK
+  Applying applications.0004_applicationdocument_and_more... OK
+  Applying applications.0005_application_deficiency... OK
+  Applying applications.0006_rejection_note... OK
+  Applying applications.0007_eligibilityassessment... OK
+  Applying applications.0008_loanlimitassessment... OK
+  Applying applications.0009_loan_limit_policy_snapshot... OK
+  Applying applications.0010_loanapplication_nominee... OK
+  Applying applications.0011_witness... OK
+  Applying applications.0012_witness_verification_evidence... OK
+  Applying applications.0013_witness_correction... OK
+  Applying applications.0014_witness_contact_fields... OK
+  Applying communications.0001_initial... OK
+  Applying communications.0002_communication... OK
+  Applying communications.0003_notification... OK
+  Applying tracer.0001_initial... OK
+  Applying workflows.0001_canonical_workflow_event... OK
+  Applying credit.0001_credit_assessment_model_ownership... OK
+  Applying credit.0002_riskassessment_loanappraisalnote... OK
+  Applying credit.0003_appraisal_prerequisite_snapshots... OK
+  Applying credit.0004_appraisal_review_facts... OK
+  Applying credit.0005_appraisalreviewdecision... OK
+  Applying credit.0006_legacy_appraisal_history_remediation... OK
+  Applying credit.0007_eligibility_active_member_snapshot... OK
+  Applying approvals.0001_initial... OK
+  Applying approvals.0002_approvalcase_workflow_event... OK
+  Applying approvals.0003_approvalmatrixrule_sanctioncommittee... OK
+  Applying approvals.0004_approval_configuration_history_constraints... OK
+  Applying approvals.0005_approvalconfigurationproposal... OK
+  Applying approvals.0006_approvalcase_configuration_snapshot... OK
+  Applying approvals.0007_approvalcase_enrichment_snapshot... OK
+  Applying approvals.0008_approvalaction... OK
+  Applying approvals.0009_sanction_decision_and_case_closure... OK
+  Applying approvals.0010_approvalcasereadscopegrant_and_more... OK
+  Applying approvals.0011_approvalcase_appraisal_facts_json_and_more... OK
+  Applying approvals.0012_approvalconflictdeclaration_and_more... OK
+  Applying approvals.0013_conflict_projection_scope_closure... OK
+  Applying approvals.0014_exceptionregisterentry_and_more... OK
+  Applying approvals.0015_generalmeetingapproval_and_more... OK
+  Applying approvals.0016_creditsanctionregisterentry... OK
+  Applying approvals.0017_exceptionregisterentry_supporting_documents_json... OK
+  Applying approvals.0018_creditsanctionregisterentry_source_review_facts_json... OK
+  Applying approvals.0019_register_source_facts... OK
+  Applying approvals.0020_approvalaction_approver_display_name... OK
+  Applying configurations.0001_initial... OK
+  Applying configurations.0002_version_history_approval_evidence... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying documents.0002_documenttemplate... OK
+  Applying members.0009_member_identity_governance... OK
+  Applying members.0010_member_identity_change_request... OK
+  Applying members.0011_producesupplyrecord... OK
+  Applying members.0012_memberserviceevidence_activememberstatus_and_more... OK
+  Applying members.0013_memberserviceevidence_maker_users_and_more... OK
+  Applying members.0014_remove_memberscopeassignment_uniq_member_scope_assignment_and_more... OK
+  Applying scheduler.0001_initial... OK
+  Applying tracer.0002_remove_tracer_workflowevent_state... OK
+System check identified no issues (0 silenced).
+test_invalid_template_file_provenance_is_indistinguishable_and_zero_write (sfpcl_credit.tests.test_document_templates_api.DocumentTemplateApiTests.test_invalid_template_file_provenance_is_indistinguishable_and_zero_write) ... 
+  test_invalid_template_file_provenance_is_indistinguishable_and_zero_write (sfpcl_credit.tests.test_document_templates_api.DocumentTemplateApiTests.test_invalid_template_file_provenance_is_indistinguishable_and_zero_write) (file_id=UUID('ffb14ecd-4427-40f0-8d96-17c498abd12e')) ... FAIL
+
+======================================================================
+FAIL: test_invalid_template_file_provenance_is_indistinguishable_and_zero_write (sfpcl_credit.tests.test_document_templates_api.DocumentTemplateApiTests.test_invalid_template_file_provenance_is_indistinguishable_and_zero_write) (file_id=UUID('ffb14ecd-4427-40f0-8d96-17c498abd12e'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_081204_normal_run/sfpcl_credit/tests/test_document_templates_api.py", line 286, in test_invalid_template_file_provenance_is_indistinguishable_and_zero_write
+    self.assertEqual(response.status_code, 400, response.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"document_template_id": "0fec5d21-f532-4b51-9c3d-fa03574e6224", "template_code": "annexure_e_term_sheet_v1", "template_name": "Term Sheet", "document_type": "term_sheet", "borrower_type": "individual_farmer", "template_version": "1.0", "template_file_id": "ffb14ecd-4427-40f0-8d96-17c498abd12e", "template_file_name": "term-sheet.docx", "merge_fields": ["borrower_name", "loan_amount"], "approval_status": "approved", "effective_from": "2026-01-01", "effective_to": "2026-06-30", "created_at": "2026-07-14T02:47:24.163278Z"}, "meta": {"request_id": null, "timestamp": "2026-07-14T02:47:24.163815Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.034s
+
+FAILED (failures=1)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

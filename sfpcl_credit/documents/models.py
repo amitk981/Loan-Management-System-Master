@@ -43,6 +43,25 @@ class DocumentFile(models.Model):
         return self.file_name
 
 
+class DocumentTemplateIdentity(models.Model):
+    GLOBAL_VARIANT_KEY = "__global__"
+
+    document_template_identity_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    document_type = models.CharField(max_length=100)
+    borrower_variant_key = models.CharField(max_length=60)
+
+    class Meta:
+        db_table = "document_template_identities"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["document_type", "borrower_variant_key"],
+                name="unique_document_template_identity",
+            )
+        ]
+
+
 class DocumentTemplate(models.Model):
     STATUS_DRAFT = "draft"
     STATUS_APPROVED = "approved"

@@ -1,5 +1,26 @@
 # Ralph Progress Log
 
+# Run 2026-07-14_081204_normal_run
+
+- Completed 008A2. A unique non-null template-identity row now serializes every create/successor,
+  including first approved versions; five different overlapping PostgreSQL requests retain one
+  template, audit, version-history, and identity row. Exact successor replay remains one-write, and
+  both authoritative races pass twice.
+- Added the documents-owned template-source reference decision. It requires a singular immutable
+  global/template-source upload ledger, matching file metadata/sensitivity, and dedicated
+  `documents.template.file_reference` authority. Bare/corrupt/duplicate/application-owned/invalid-
+  sensitivity/download-only references fail with one nondisclosing zero-write response.
+- Moved catalogue filtering/count/page shaping into `documents/selectors.py`, passed
+  transport-neutral request metadata to writes, and added the explicit borrower-template resolver:
+  only `individual_farmer` resolves while `fpc`/`producer_institution` remain configuration-blocked.
+- Added migration 0003, A-099, API contract notes, and sharpened 008B to consume the public
+  reference/resolver boundaries. No frontend, generation endpoint, rendered document, dependency,
+  or protected/source file changed.
+- Validation: 710 backend tests pass with 21 expected skips and 93% coverage; Django check and
+  migration sync pass. Both PostgreSQL race tests pass twice. Frontend build/typecheck/lint and all
+  287 tests pass. Evidence: `.ralph/runs/2026-07-14_081204_normal_run/evidence/`.
+- Next: independent orchestrator validation/commit/merge/push, then run sharpened 008B.
+
 # Run 2026-07-14_064206_architecture_review
 
 - Independently reviewed commits `4b5b4b1...15b8d02` covering completed slices 007O, 007P, 007Q,
@@ -6235,6 +6256,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_074249_normal_run/.ralph/runs/2026-07-14_074249_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_074249_normal_run/.ralph/runs/2026-07-14_074249_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 08:41:58 - 2026-07-14_081204_normal_run
+- Agent tool used: codex
+- Slice attempted: 008A2-template-effective-integrity-and-file-reference-boundary
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_081204_normal_run/.ralph/runs/2026-07-14_081204_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_081204_normal_run/.ralph/runs/2026-07-14_081204_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

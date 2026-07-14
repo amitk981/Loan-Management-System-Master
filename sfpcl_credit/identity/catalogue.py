@@ -116,6 +116,11 @@ PERMISSIONS = [
     # §12.7 Documentation
     ("documents.template.read", "View templates", "medium"),
     ("documents.template.manage", "Manage templates", "critical"),
+    (
+        "documents.template.file_reference",
+        "Reference globally provenanced template files",
+        "critical",
+    ),
     ("documents.file.upload", "Upload files", "high"),
     # §12.7: "High / Critical depending sensitivity" -> stored at the higher level.
     ("documents.file.download", "Download files", "critical"),
@@ -365,6 +370,7 @@ ROLE_PERMISSIONS = {
         "members.witness.read",
         "members.witness.create",
         "members.witness.update",
+        "documents.template.file_reference",
         "documents.loan_document.generate",
         "documents.loan_document.read",
         "documents.loan_document.verify",

@@ -16,6 +16,9 @@ DOCUMENT_UPLOAD_PERMISSION = "documents.file.upload"
 DOCUMENT_DOWNLOAD_PERMISSION = "documents.file.download"
 DOCUMENT_UPLOAD_AUDIT_ACTION = "documents.file.uploaded"
 DOCUMENT_DOWNLOAD_AUDIT_ACTION = "documents.file.downloaded"
+TEMPLATE_FILE_REFERENCE_PERMISSION = "documents.template.file_reference"
+TEMPLATE_SOURCE_CATEGORY = "template_source"
+TEMPLATE_SOURCE_ENTITY_TYPE = "global"
 ALLOWED_SENSITIVITY_LEVELS = DocumentFile.SENSITIVITY_LEVELS
 GENERAL_MEETING_REFERENCE_PURPOSE = "general_meeting_evidence"
 GENERAL_MEETING_WORKFLOW_SCOPE = "related_party_sanction_case"
@@ -189,6 +192,44 @@ def resolve_referenceable_documents(
     }
 
 
+def resolve_template_source_reference(*, actor_permissions, document_id):
+    """Return a globally uploaded template source only with explicit reference authority."""
+    permissions = set(actor_permissions)
+    document = DocumentFile.objects.filter(document_id=document_id).first()
+    audits = list(
+        AuditLog.objects.filter(
+            action=DOCUMENT_UPLOAD_AUDIT_ACTION,
+            entity_type="document_file",
+            entity_id=document_id,
+        )
+        .order_by("-created_at", "-audit_log_id")
+        [:2]
+    )
+    audit = audits[0] if len(audits) == 1 else None
+    metadata = audit.new_value_json if audit and audit.new_value_json else {}
+    metadata_matches = bool(
+        document
+        and audit
+        and audit.actor_user_id == document.uploaded_by_user_id
+        and metadata.get("document_id") == str(document.document_id)
+        and metadata.get("file_name") == document.file_name
+        and metadata.get("file_extension") == document.file_extension
+        and metadata.get("mime_type") == document.mime_type
+        and metadata.get("file_size_bytes") == document.file_size_bytes
+        and metadata.get("storage_provider") == document.storage_provider
+        and metadata.get("storage_key") == document.storage_key
+        and metadata.get("checksum_sha256") == document.checksum_sha256
+        and metadata.get("sensitivity_level") == document.sensitivity_level
+        and metadata.get("document_category") == TEMPLATE_SOURCE_CATEGORY
+        and metadata.get("related_entity_type") == TEMPLATE_SOURCE_ENTITY_TYPE
+        and metadata.get("related_entity_id") is None
+        and document.sensitivity_level in ALLOWED_SENSITIVITY_LEVELS
+    )
+    if TEMPLATE_FILE_REFERENCE_PERMISSION not in permissions or not metadata_matches:
+        raise ValidationError({"template_file_id": _INACCESSIBLE_REFERENCE_MESSAGE})
+    return document
+
+
 def validate_upload_request(request):
     field_errors = {}
     uploaded_file = request.FILES.get("file")
@@ -258,6 +299,10 @@ __all__ = [
     "GENERAL_MEETING_REFERENCE_PURPOSE",
     "GENERAL_MEETING_WORKFLOW_SCOPE",
     "resolve_referenceable_documents",
+    "resolve_template_source_reference",
+    "TEMPLATE_FILE_REFERENCE_PERMISSION",
+    "TEMPLATE_SOURCE_CATEGORY",
+    "TEMPLATE_SOURCE_ENTITY_TYPE",
     "upload_document_file",
     "user_can_download_documents",
     "user_can_upload_documents",

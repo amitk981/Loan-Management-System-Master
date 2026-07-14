@@ -189,14 +189,15 @@
     "007Q-register-source-fields-and-visual-evidence-closure",
     "008A-document-template-model-and-versioning",
     "007R-legacy-approval-history-and-frozen-identity-closure",
-    "007S-register-pattern-and-pagination-order-closure"
+    "007S-register-pattern-and-pagination-order-closure",
+    "008A2-template-effective-integrity-and-file-reference-boundary"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "7d6f873",
-  "last_run_id": "2026-07-14_074249_normal_run",
+  "last_run_id": "2026-07-14_081204_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 2,
+  "slices_completed_since_architecture_review": 3,
   "architecture_review_due": false,
   "current_tool_preference": "codex",
   "retry_count": 0,

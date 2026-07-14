@@ -3016,10 +3016,21 @@ defaults to 1, page size defaults to 20 and is capped at 100.
 Required values are code, name, document type, version, approval status, and effective-from.
 Merge fields must be a list of unique nonblank names. Effective-to cannot precede effective-from.
 Template code is globally unique; document type, borrower variant, and version are unique together;
-approved effective ranges for the same document type/borrower variant cannot overlap. A non-null
-template file must exist and the actor must independently hold `documents.file.download`; missing
-and inaccessible ids share a nondisclosing validation error. This reference check emits no download
-audit and grants no later download authority.
+approved effective ranges for the same document type/borrower variant cannot overlap. As of 008A2,
+every create/successor locks a unique non-null document-type/borrower-variant identity row before
+checking replay, uniqueness, and effective intervals, including when no template row exists yet.
+Thus concurrent overlapping first versions persist one winner/evidence set; valid non-overlapping
+identities and variants remain independent.
+
+A non-null template file crosses the documents-owned template-source reference decision. The upload
+ledger must be singular and exactly match the immutable file metadata, carry
+`document_category=template_source`, `related_entity_type=global`, no related entity id, and one of
+the source-defined sensitivity values. The actor must independently hold
+`documents.template.file_reference`. Missing rows/ledgers, corrupt or duplicate ledgers,
+application/loan ownership, invalid sensitivity, unrelated actors, manage/read permission, and
+download permission alone all return the same nondisclosing zero-write validation error. Reference,
+template read/manage, upload, and file download remain separate authorities; reference checks emit
+no download audit and responses expose no storage descriptor.
 
 PATCH never updates the addressed row. It locks that row and creates its sole immutable successor;
 the complete payload must carry a new code/version. Exact POST or PATCH replay returns the original
@@ -3032,3 +3043,10 @@ Success data contains `document_template_id`, the request fields, nullable
 `template_file_name`, and `created_at`. It deliberately contains no storage key, download URL,
 enabled/available action, generated document, or Annexure routing fact. The unresolved J/K/L
 lettering remains descriptive source metadata and does not affect identity, selection, or routing.
+
+008A2 also exposes one backend resolver for 008B: repository member type `individual_farmer`
+resolves to the Individual template variant, while `fpc`, `producer_institution`, and unknown member
+types return a configuration-required validation result. No implicit FPO mapping or cross-variant
+selection is permitted until governance confirms it. Catalogue filtering/pagination now lives in
+the documents selector, and write modules receive transport-neutral request metadata rather than a
+raw HTTP request; the public routes, envelopes, fields, strict filters, and page bounds are unchanged.

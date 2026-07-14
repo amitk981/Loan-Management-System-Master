@@ -1,13 +1,13 @@
 import uuid
-from math import ceil
+from dataclasses import dataclass
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.dateparse import parse_date
 
-from sfpcl_credit.api import request_ip, request_user_agent
 from sfpcl_credit.configurations.models import VersionHistory
-from sfpcl_credit.documents.models import DocumentFile, DocumentTemplate
+from sfpcl_credit.documents import services as document_services
+from sfpcl_credit.documents.models import DocumentTemplate, DocumentTemplateIdentity
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
 
@@ -17,8 +17,6 @@ MANAGE_PERMISSION = "documents.template.manage"
 ENTITY_TYPE = "document_template"
 CREATE_ACTION = "documents.template.created"
 SUCCESSOR_ACTION = "documents.template.successor_created"
-_DEFAULT_PAGE_SIZE = 20
-_MAX_PAGE_SIZE = 100
 _FIELDS = {
     "template_code",
     "template_name",
@@ -39,13 +37,13 @@ _REQUIRED_FIELDS = {
     "approval_status",
     "effective_from",
 }
-_LIST_PARAMS = {
-    "page",
-    "page_size",
-    "document_type",
-    "borrower_type",
-    "approval_status",
-}
+
+
+@dataclass(frozen=True)
+class RequestMetadata:
+    request_id: str | None
+    ip_address: str
+    user_agent: str
 
 
 def can_read(user):
@@ -54,6 +52,15 @@ def can_read(user):
 
 def can_manage(user):
     return MANAGE_PERMISSION in auth_service.effective_permission_codes(user)
+
+
+def resolve_borrower_template_variant(member_type):
+    """Resolve only governance-confirmed member-to-template variant mappings."""
+    if member_type == "individual_farmer":
+        return "individual_farmer"
+    raise ValidationError(
+        {"borrower_type": "Template borrower variant mapping requires configuration."}
+    )
 
 
 def serialize(template):
@@ -80,10 +87,11 @@ def serialize(template):
     }
 
 
-def create(*, actor, request, payload):
+def create(*, actor, metadata, payload):
     cleaned = _validate_payload(payload)
     _resolve_template_file(actor, cleaned)
     with transaction.atomic():
+        _lock_identity(cleaned)
         replay = _exact_match(cleaned, supersedes=None)
         if replay is not None:
             return serialize(replay)
@@ -91,7 +99,7 @@ def create(*, actor, request, payload):
         template = DocumentTemplate.objects.create(**cleaned)
         _record_evidence(
             actor=actor,
-            request=request,
+            metadata=metadata,
             action=CREATE_ACTION,
             template=template,
             old_value={},
@@ -99,15 +107,27 @@ def create(*, actor, request, payload):
         return serialize(template)
 
 
-def create_successor(*, actor, request, document_template_id, payload):
+def create_successor(*, actor, metadata, document_template_id, payload):
     cleaned = _validate_payload(payload)
     _resolve_template_file(actor, cleaned)
     with transaction.atomic():
+        _lock_identity(cleaned)
         source = (
             DocumentTemplate.objects.select_for_update(of=("self",))
             .select_related("template_file")
             .get(document_template_id=document_template_id)
         )
+        if (
+            source.document_type != cleaned["document_type"]
+            or source.borrower_type != cleaned["borrower_type"]
+        ):
+            raise ValidationError(
+                {
+                    "non_field_errors": (
+                        "A successor must retain its document type and borrower variant."
+                    )
+                }
+            )
         replay = _exact_match(cleaned, supersedes=source)
         if replay is not None:
             return serialize(replay)
@@ -119,60 +139,12 @@ def create_successor(*, actor, request, document_template_id, payload):
         template = DocumentTemplate.objects.create(**cleaned, supersedes=source)
         _record_evidence(
             actor=actor,
-            request=request,
+            metadata=metadata,
             action=SUCCESSOR_ACTION,
             template=template,
             old_value=serialize(source),
         )
         return serialize(template)
-
-
-def list_templates(query_params):
-    unknown = set(query_params.keys()) - _LIST_PARAMS
-    if unknown:
-        raise ValidationError(
-            {key: "Unknown query parameter." for key in sorted(unknown)}
-        )
-    queryset = DocumentTemplate.objects.select_related("template_file")
-    for field in ("document_type", "approval_status"):
-        value = query_params.get(field)
-        if value:
-            if (
-                field == "approval_status"
-                and value not in DocumentTemplate.APPROVAL_STATUSES
-            ):
-                raise ValidationError(
-                    {"approval_status": "Must be one of draft, approved, retired."}
-                )
-            queryset = queryset.filter(**{field: value})
-    if "borrower_type" in query_params:
-        value = query_params.get("borrower_type")
-        if value in ("", "null"):
-            queryset = queryset.filter(borrower_type__isnull=True)
-        elif value not in DocumentTemplate.BORROWER_TYPES:
-            raise ValidationError(
-                {"borrower_type": "Must be individual_farmer, fpc, fpo, or null."}
-            )
-        else:
-            queryset = queryset.filter(borrower_type=value)
-    page = _positive_int("page", query_params.get("page"), 1)
-    page_size = min(
-        _positive_int("page_size", query_params.get("page_size"), _DEFAULT_PAGE_SIZE),
-        _MAX_PAGE_SIZE,
-    )
-    total_count = queryset.count()
-    total_pages = ceil(total_count / page_size) if total_count else 1
-    page = min(page, total_pages)
-    offset = (page - 1) * page_size
-    rows = [serialize(row) for row in queryset[offset : offset + page_size]]
-    return rows, {
-        "page": page,
-        "page_size": page_size,
-        "total_count": total_count,
-        "total_pages": total_pages,
-        "has_next": page < total_pages,
-        "has_previous": page > 1,
-    }
 
 
 def validation_field_errors(exc):
@@ -265,12 +237,10 @@ def _resolve_template_file(actor, cleaned):
         cleaned["template_file"] = None
         return
     permissions = auth_service.effective_permission_codes(actor)
-    template_file = DocumentFile.objects.filter(document_id=template_file_id).first()
-    if "documents.file.download" not in permissions or template_file is None:
-        raise ValidationError(
-            {"template_file_id": "Document file was not found or is inaccessible."}
-        )
-    cleaned["template_file"] = template_file
+    cleaned["template_file"] = document_services.resolve_template_source_reference(
+        actor_permissions=permissions,
+        document_id=template_file_id,
+    )
 
 
 def _validate_unique_and_effective(cleaned):
@@ -304,6 +274,17 @@ def _validate_unique_and_effective(cleaned):
             )
 
 
+def _lock_identity(cleaned):
+    borrower_variant_key = (
+        cleaned["borrower_type"] or DocumentTemplateIdentity.GLOBAL_VARIANT_KEY
+    )
+    identity, _ = DocumentTemplateIdentity.objects.get_or_create(
+        document_type=cleaned["document_type"],
+        borrower_variant_key=borrower_variant_key,
+    )
+    DocumentTemplateIdentity.objects.select_for_update().get(pk=identity.pk)
+
+
 def _exact_match(cleaned, *, supersedes):
     return (
         DocumentTemplate.objects.select_related("template_file")
@@ -312,13 +293,13 @@ def _exact_match(cleaned, *, supersedes):
     )
 
 
-def _record_evidence(*, actor, request, action, template, old_value):
+def _record_evidence(*, actor, metadata, action, template, old_value):
     new_value = {
         **serialize(template),
         "supersedes_document_template_id": (
             str(template.supersedes_id) if template.supersedes_id else None
         ),
-        "request_id": request.headers.get("X-Request-ID"),
+        "request_id": metadata.request_id,
     }
     AuditLog.objects.create(
         actor_user=actor,
@@ -328,8 +309,8 @@ def _record_evidence(*, actor, request, action, template, old_value):
         entity_id=template.document_template_id,
         old_value_json=old_value,
         new_value_json=new_value,
-        ip_address=request_ip(request),
-        user_agent=request_user_agent(request),
+        ip_address=metadata.ip_address,
+        user_agent=metadata.user_agent,
     )
     VersionHistory.objects.create(
         versioned_entity_type=ENTITY_TYPE,
@@ -349,15 +330,3 @@ def _record_evidence(*, actor, request, action, template, old_value):
         effective_from=template.effective_from,
         effective_to=template.effective_to,
     )
-
-
-def _positive_int(field, value, default):
-    if value in (None, ""):
-        return default
-    try:
-        parsed = int(value)
-    except (TypeError, ValueError) as exc:
-        raise ValidationError({field: "Must be a positive integer."}) from exc
-    if parsed <= 0:
-        raise ValidationError({field: "Must be a positive integer."})
-    return parsed
