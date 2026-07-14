@@ -2,7 +2,10 @@
 
 from dataclasses import dataclass
 
+from django.core.exceptions import ValidationError
+
 from sfpcl_credit.approvals.models import ApprovalCase, SanctionDecision
+from sfpcl_credit.approvals.modules import approval_case_engine
 
 
 @dataclass(frozen=True)
@@ -29,17 +32,28 @@ def resolve_approved_facts(*, application_id):
         or decision is None
         or decision.approval_case_id != latest_case.pk
         or latest_case.current_status != ApprovalCase.STATUS_APPROVED
-        or not latest_case.routing_snapshot_is_coherent
     ):
         return None
-    review = latest_case.appraisal_facts_json or {}
+    try:
+        terminal_facts = approval_case_engine.validated_frozen_terminal_facts(
+            latest_case
+        )
+    except (KeyError, TypeError, ValidationError):
+        return None
+    review = terminal_facts["review_facts"]
     shareholding = review.get("shareholding") or {}
     active_member = ((review.get("eligibility") or {}).get("active_member_snapshot") or {})
     subsidiary_route = None
-    if active_member:
-        subsidiary_route = bool(
-            active_member.get("supplied_to_subsidiary_flag")
-            or active_member.get("supplied_to_stepdown_flag")
+    subsidiary_flags = (
+        "supplied_to_subsidiary_flag",
+        "supplied_to_stepdown_flag",
+    )
+    if all(
+        key in active_member and isinstance(active_member[key], bool)
+        for key in subsidiary_flags
+    ):
+        subsidiary_route = any(
+            active_member[key] for key in subsidiary_flags
         )
     return ApprovedChecklistFacts(
         sanction_decision_id=decision.pk,

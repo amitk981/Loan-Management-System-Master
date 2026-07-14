@@ -35,7 +35,10 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   still lack renderer provenance and that lower-level terminal/refresh seams can bypass creation or
   overwrite later completion. Corrective 008B4 now immutably binds current output to its renderer
   contract/file/checksum, labels legacy rows honestly, excludes them from replay/checklist truth,
-  and closes absent-parent errors; 008C2 remains queued before stamp/notary work. The full real
+  and closes absent-parent errors. Corrective 008C2 now makes terminal checklist creation
+  structurally unavoidable, recomputes canonical frozen approval facts, preserves completion-owned
+  evidence, separates applicability/linkage ledgers, consumes application-owned cheque facts, and
+  centralises checklist read scope before stamp/notary work. The full real
   M05-to-Term-Sheet path remains configuration-blocked until governed owners exist for the missing
   sanction terms; renderer fixtures must not be presented as that end-to-end path.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task

@@ -159,6 +159,18 @@ with a failed mutation.
   source-owned records and existing lifecycle projections; they must never backfill, replace, or
   reinterpret renderer contract/document/checksum snapshots.
 
+## Run-Ahead Sharpening (008C2 completion, 2026-07-14)
+
+- Consume a narrow legal-document lifecycle projection seam for stamp/notary status only. Do not
+  call `refresh_for_approved_sanction`: that seam owns applicability and generated-document linkage,
+  and 008D must not recompute conditional facts or presentation metadata.
+- Preserve checklist/item completion, verifier, verification time, remarks, checklist status, and
+  all signature facts byte-for-byte. If later status projection conflicts with completed evidence,
+  return an explicit atomic conflict instead of reopening or erasing the owning evidence.
+- Keep stamp and notarisation audit deltas action-specific, as 008C2 does for applicability versus
+  linkage. Resolve target authority before stamp/notary/checklist existence or metadata queries and
+  carry request id, IP, user agent, actor role, and actor team through every real mutation ledger.
+
 ## Visual Acceptance Criteria
 None.
 

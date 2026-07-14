@@ -53,14 +53,25 @@ _ACTION_SPECS = {
 }
 
 
-def approve_case(
-    *, actor, case_id, payload, actor_permissions, request_meta=None,
-    sanction_completion_hook=None,
-):
+def approve_case(*, actor, case_id, payload, actor_permissions, request_meta=None):
     return record_action(
         actor=actor, case_id=case_id, action_code="approve", payload=payload,
         actor_permissions=actor_permissions, request_meta=request_meta,
-        sanction_completion_hook=sanction_completion_hook,
+    )
+
+
+def _approve_case_with_completion(
+    *, actor, case_id, payload, actor_permissions, completion, request_meta=None
+):
+    """Private process seam that binds terminal approval to its required completion."""
+    return _record_action_boundary(
+        actor=actor,
+        case_id=case_id,
+        action_code="approve",
+        payload=payload,
+        actor_permissions=actor_permissions,
+        request_meta=request_meta,
+        sanction_completion=completion,
     )
 
 
@@ -86,8 +97,27 @@ def abstain_from_case(*, actor, case_id, payload, actor_permissions, request_met
 
 
 def record_action(
-    *, actor, case_id, action_code, payload, actor_permissions, request_meta=None,
-    sanction_completion_hook=None,
+    *, actor, case_id, action_code, payload, actor_permissions, request_meta=None
+):
+    return _record_action_boundary(
+        actor=actor,
+        case_id=case_id,
+        action_code=action_code,
+        payload=payload,
+        actor_permissions=actor_permissions,
+        request_meta=request_meta,
+    )
+
+
+def _record_action_boundary(
+    *,
+    actor,
+    case_id,
+    action_code,
+    payload,
+    actor_permissions,
+    request_meta=None,
+    sanction_completion=None,
 ):
     try:
         return _record_action(
@@ -97,7 +127,7 @@ def record_action(
             payload=payload,
             actor_permissions=actor_permissions,
             request_meta=request_meta,
-            sanction_completion_hook=sanction_completion_hook,
+            sanction_completion=sanction_completion,
         )
     except ApprovalActionConflict as exc:
         if exc.code == "CONFLICTED_APPROVER_NOT_ALLOWED":
@@ -125,7 +155,7 @@ def record_action(
 @transaction.atomic
 def _record_action(
     *, actor, case_id, action_code, payload, actor_permissions, request_meta=None,
-    sanction_completion_hook=None,
+    sanction_completion=None,
 ):
     version = _submitted_version(payload)
     comments = _comments(payload, required=action_code in {"reject", "return", "abstain"})
@@ -215,6 +245,11 @@ def _record_action(
     completes_approval = action_code == "approve" and (
         approved_ids | {str(actor.pk)}
     ) == required_ids
+    if completes_approval and sanction_completion is None:
+        raise ApprovalActionConflict(
+            "Final approval must run through the sanction completion coordinator.",
+            code="SANCTION_COMPLETION_REQUIRED",
+        )
     terminal_facts = (
         approval_case_engine.validated_frozen_terminal_facts(case)
         if completes_approval or action_code == "reject"
@@ -426,11 +461,12 @@ def _record_action(
             communication=communication,
             request_meta=request_meta,
         )
-    if decision is not None and sanction_completion_hook is not None:
-        sanction_completion_hook(
+    if decision is not None and sanction_completion is not None:
+        sanction_completion(
             actor=actor,
             application_id=application.pk,
             sanction_decision_id=decision.pk,
+            request_meta=request_meta,
         )
     case = (
         ApprovalCase.objects.select_related(

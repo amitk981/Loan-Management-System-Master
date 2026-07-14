@@ -1,6 +1,6 @@
 # API Contracts
 
-## Post-sanction documentation checklist (008C)
+## Post-sanction documentation checklist (008C/008C2)
 
 `GET /api/v1/loan-applications/{loan_application_id}/document-checklist/` returns the persisted
 source §27.1 legal checklist once the application is sanction-approved. Before sanction, the same
@@ -13,6 +13,10 @@ Team and Company Secretary can read sanction-approved documentation applications
 canonical application scope; a sanction approver can read only an attributable approval cycle; an
 auditor requires the retained audit-read scope grant. Permission-only or unrelated actors receive
 `403 OBJECT_ACCESS_DENIED`; missing global permission receives `403 FORBIDDEN`. Reads never write.
+That authority decision now runs before checklist existence, item counts, metadata, or serialization.
+Only a Compliance Team actor holding the legal read permission receives `404 NOT_FOUND` for an
+unknown application; other legal-read roles remain nondisclosing. A-104's pre-sanction compatibility
+continues through the application-owned read boundary.
 
 Success uses the standard envelope and this metadata-only data shape:
 
@@ -49,12 +53,20 @@ Verification Letter, and final checklist. Applicable requirements start `pending
 conditionals start `not_applicable`. Missing/conflicting source facts carry explicit blockers and are
 never guessed. A retained 008B generated-document id may be linked through legal metadata only and
 never changes completion, execution, verification, stamp, notary, signature, or approval state.
+Current renderer-provenance linkage writes `document_checklist.linkage_changed`, not
+`document_checklist.applicability_changed`; legacy-unverified output remains unlinked.
 
 The public sanction-approval route atomically creates one checklist and one row per item through a
-top-level process coordinator. Exact replay/unchanged internal refresh writes nothing. Real creation
-writes attributable `document_checklist.created` audit plus `documentation_checklist` workflow
-evidence; a real applicability change retains old/new item facts and its source reason. PostgreSQL
-application locking and database uniqueness preserve one checklist/item ledger under five workers.
+top-level process coordinator. A terminal approval attempted through the lower-level domain interface
+without that coordinator raises `409 SANCTION_COMPLETION_REQUIRED` and writes nothing. Exact replay/unchanged internal
+refresh writes nothing. Real creation writes attributable `document_checklist.created` audit plus
+`documentation_checklist` workflow evidence; a real applicability change retains old/new item facts
+and its source reason. Request id, IP address, user agent, actor role, and actor team are retained in
+checklist audit evidence. Refresh preserves completion/verifier/time/remarks, checklist status, and
+signature facts. An applicability reversal that contradicts completed evidence returns an internal
+atomic conflict until the owning correction workflow resolves it. PostgreSQL application locking and
+database uniqueness preserve one sanction decision/checklist/item ledger under five final-sanction
+attempts.
 
 ## Credit Sanction Register legacy-null frontend contract (007T)
 

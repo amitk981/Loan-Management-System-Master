@@ -8,15 +8,28 @@ from unittest import skipUnless
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, close_old_connections, connection, connections
 from django.test import Client, TestCase, TransactionTestCase
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.approvals.models import (
     ApprovalCase,
     ApprovalCaseReadScopeGrant,
+    ApprovalMatrixRule,
+    SanctionCommittee,
     SanctionDecision,
 )
-from sfpcl_credit.credit.models import LoanAppraisalNote, RiskAssessment
+from sfpcl_credit.approvals.modules.approval_case_projection import (
+    refresh_approval_case_projection,
+)
+from sfpcl_credit.credit.models import (
+    AppraisalReviewDecision,
+    LoanAppraisalNote,
+    RiskAssessment,
+)
+from sfpcl_credit.credit.modules.appraisal_workflow import (
+    project_approval_case_review_facts,
+)
 from sfpcl_credit.documents.models import DocumentFile, DocumentTemplate
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.legal_documents.models import (
@@ -26,6 +39,7 @@ from sfpcl_credit.legal_documents.models import (
 )
 from sfpcl_credit.legal_documents.modules import document_checklist
 from sfpcl_credit.members.models import CancelledCheque, Member
+from sfpcl_credit.processes import sanction_completion
 from sfpcl_credit.tests.api_contracts import assert_error_envelope, assert_success_envelope
 from sfpcl_credit.workflows.models import WorkflowEvent
 
@@ -40,6 +54,32 @@ class DocumentChecklistApiTests(TestCase):
             "Checklist Compliance",
             "documents.checklist.read",
         )
+        self.cfo = self._user("cfo", "Checklist CFO")
+        self.director = self._user("director", "Checklist Director")
+        self.second_director = self._user("director", "Checklist Second Director")
+        decision_date = timezone.localdate()
+        self.rule = ApprovalMatrixRule.objects.create(
+            decision_type="loan_sanction",
+            amount_min="0.00",
+            amount_max="500000.00",
+            required_approver_roles_json=["cfo", "director"],
+            required_director_count=1,
+            joint_approval_required_flag=True,
+            register_required="credit_sanction_register",
+            effective_from=decision_date,
+            status="active",
+            version_number="checklist-rule-v1",
+        )
+        self.committee = SanctionCommittee.objects.create(
+            committee_name="Checklist Committee",
+            cfo_user=self.cfo,
+            director_1_user=self.director,
+            director_2_user=self.second_director,
+            board_meeting_reference="BM-CHECKLIST-2026",
+            effective_from=decision_date,
+            status="active",
+            version_number="checklist-committee-v1",
+        )
         self.application, self.case = self._approved_application(
             "001", holding_mode="physical", subsidiary=True
         )
@@ -53,6 +93,7 @@ class DocumentChecklistApiTests(TestCase):
             account_number_hash="synthetic-hash-001",
             account_number_last4="0001",
             ifsc="SYNTH000001",
+            verification_status="verified",
             signature_mismatch_flag=True,
         )
 
@@ -145,6 +186,7 @@ class DocumentChecklistApiTests(TestCase):
             account_number_hash="synthetic-hash-002",
             account_number_last4="0002",
             ifsc="SYNTH000002",
+            verification_status="verified",
             signature_mismatch_flag=False,
         )
 
@@ -177,6 +219,24 @@ class DocumentChecklistApiTests(TestCase):
                 self.assertEqual(items[code].completion_status, "not_applicable")
                 self.assertEqual(items[code].applicability_blocker, blocker)
 
+    def test_partial_subsidiary_snapshot_stays_blocked(self):
+        active_member = self.case.appraisal_facts_json["eligibility"][
+            "active_member_snapshot"
+        ]
+        active_member.pop("supplied_to_stepdown_flag")
+        self.case.save(update_fields=["appraisal_facts_json"])
+
+        document_checklist.refresh_for_approved_sanction(
+            actor=self.actor,
+            application_id=self.application.pk,
+            source_reason="partial_subsidiary_snapshot",
+        )
+
+        item = self._items(self.application)["tri_party_agreement"]
+        self.assertFalse(item.applicable_flag)
+        self.assertEqual(item.applicability_source, "subsidiary_route_source_missing")
+        self.assertEqual(item.applicability_blocker, "subsidiary_route_source_missing")
+
     def test_real_applicability_change_records_old_and_new_facts(self):
         checklist = document_checklist.refresh_for_approved_sanction(
             actor=self.actor,
@@ -190,14 +250,28 @@ class DocumentChecklistApiTests(TestCase):
             actor=self.actor,
             application_id=self.application.pk,
             source_reason="retained_shareholding_mode_corrected",
+            request_meta={
+                "request_id": "req-applicability-correction",
+                "ip_address": "203.0.113.44",
+                "user_agent": "Checklist Correction Test",
+            },
         )
 
         changed = AuditLog.objects.get(
             action="document_checklist.applicability_changed", entity_id=checklist.pk
         )
         self.assertEqual(changed.new_value_json["source_reason"], "retained_shareholding_mode_corrected")
+        self.assertEqual(
+            changed.new_value_json["request_id"], "req-applicability-correction"
+        )
+        self.assertEqual(changed.new_value_json["actor_role_codes"], self.actor.role_codes())
+        self.assertEqual(changed.new_value_json["actor_team_codes"], self.actor.team_codes())
+        self.assertEqual(changed.ip_address, "203.0.113.44")
+        self.assertEqual(changed.user_agent, "Checklist Correction Test")
         self.assertEqual(changed.old_value_json["items"]["sh4"]["applicable_flag"], True)
         self.assertEqual(changed.new_value_json["items"]["sh4"]["applicable_flag"], False)
+        self.assertNotIn("loan_document_id", changed.old_value_json["items"]["sh4"])
+        self.assertNotIn("loan_document_id", changed.new_value_json["items"]["sh4"])
         self.assertEqual(changed.old_value_json["items"]["cdsl_pledge"]["applicable_flag"], False)
         self.assertEqual(changed.new_value_json["items"]["cdsl_pledge"]["applicable_flag"], True)
         self.assertEqual(
@@ -206,6 +280,168 @@ class DocumentChecklistApiTests(TestCase):
             ).count(),
             2,
         )
+
+    def test_refresh_does_not_mislabel_presentation_metadata_as_applicability(self):
+        checklist = document_checklist.refresh_for_approved_sanction(
+            actor=self.actor,
+            application_id=self.application.pk,
+            source_reason="sanction_approved",
+        )
+        item = checklist.items.get(item_code="term_sheet")
+        item.item_label = "Retained presentation label"
+        item.display_order = 77
+        item.save(update_fields=["item_label", "display_order"])
+
+        document_checklist.refresh_for_approved_sanction(
+            actor=self.actor,
+            application_id=self.application.pk,
+            source_reason="unchanged_applicability_refresh",
+        )
+
+        item.refresh_from_db()
+        self.assertEqual(item.item_label, "Retained presentation label")
+        self.assertEqual(item.display_order, 77)
+        self.assertFalse(
+            AuditLog.objects.filter(
+                entity_id=checklist.pk,
+                action="document_checklist.applicability_changed",
+            ).exists()
+        )
+
+    def test_cancelled_cheque_owner_fact_matrix_fails_closed(self):
+        cases = {}
+        for index, label in enumerate(
+            ("missing", "pending", "verified_match", "verified_mismatch", "conflict", "malformed"),
+            start=20,
+        ):
+            application, _ = self._approved_application(
+                str(index), holding_mode="physical", subsidiary=False
+            )
+            cases[label] = application
+        for index, (label, status, mismatch) in enumerate(
+            (
+                ("pending", "pending", False),
+                ("verified_match", "verified", False),
+                ("verified_mismatch", "verified", True),
+                ("conflict", "verified", False),
+                ("conflict", "verified", True),
+                ("malformed", "verified", False),
+            ),
+            start=1,
+        ):
+            cheque = CancelledCheque.objects.create(
+                loan_application_id=cases[label].pk,
+                member=cases[label].member,
+                document_id=f"30000000-0000-0000-0000-{index:012d}",
+                account_number_encrypted=f"synthetic-token-{index}",
+                account_number_hash=f"synthetic-hash-{index}",
+                account_number_last4=f"{index:04d}",
+                ifsc=f"SYNTH{index:06d}",
+                verification_status=status,
+                signature_mismatch_flag=mismatch,
+            )
+            if label == "malformed":
+                CancelledCheque.objects.filter(pk=cheque.pk).update(
+                    verification_status="malformed"
+                )
+
+        for application in cases.values():
+            document_checklist.refresh_for_approved_sanction(
+                actor=self.actor,
+                application_id=application.pk,
+                source_reason="cheque_fact_matrix",
+            )
+
+        expected = {
+            "missing": (False, "signature_mismatch_source_missing"),
+            "pending": (False, "signature_mismatch_source_unverified"),
+            "verified_match": (False, None),
+            "verified_mismatch": (True, None),
+            "conflict": (False, "signature_mismatch_conflicting"),
+            "malformed": (False, "signature_mismatch_source_malformed"),
+        }
+        for label, application in cases.items():
+            item = self._items(application)["bank_verification_letter"]
+            applicable, blocker = expected[label]
+            self.assertEqual(item.applicable_flag, applicable, label)
+            self.assertEqual(item.applicability_blocker, blocker, label)
+        source = inspect.getsource(
+            importlib.import_module(
+                "sfpcl_credit.legal_documents.modules.document_checklist"
+            )
+        )
+        self.assertNotIn("members.models", source)
+        self.assertNotIn("CancelledCheque", source)
+
+    def test_refresh_preserves_completion_owner_facts_and_conflicts_atomically(self):
+        checklist = document_checklist.refresh_for_approved_sanction(
+            actor=self.actor,
+            application_id=self.application.pk,
+            source_reason="sanction_approved",
+        )
+        verified_at = timezone.now() - timedelta(minutes=5)
+        sh4 = checklist.items.get(item_code="sh4")
+        sh4.completion_status = ChecklistItem.STATUS_COMPLETE
+        sh4.verified_by_user = self.actor
+        sh4.verified_at = verified_at
+        sh4.remarks = "Physical SH-4 verified by its owning workflow."
+        sh4.save()
+        term_sheet = checklist.items.get(item_code="term_sheet")
+        term_sheet.completion_status = ChecklistItem.STATUS_COMPLETE
+        term_sheet.remarks = "Completed owner evidence without verification yet."
+        term_sheet.save()
+        checklist.checklist_status = DocumentChecklist.STATUS_CS_APPROVED
+        checklist.remarks = "Checklist owner state."
+        checklist.save()
+        retained = {
+            "item": ChecklistItem.objects.filter(pk=sh4.pk).values().get(),
+            "completed_item": ChecklistItem.objects.filter(pk=term_sheet.pk)
+            .values()
+            .get(),
+            "checklist": DocumentChecklist.objects.filter(pk=checklist.pk).values().get(),
+            "audit_count": AuditLog.objects.count(),
+            "workflow_count": WorkflowEvent.objects.count(),
+        }
+
+        document_checklist.refresh_for_approved_sanction(
+            actor=self.actor,
+            application_id=self.application.pk,
+            source_reason="unchanged_replay",
+        )
+        self.assertEqual(
+            ChecklistItem.objects.filter(pk=sh4.pk).values().get(), retained["item"]
+        )
+        self.assertEqual(
+            ChecklistItem.objects.filter(pk=term_sheet.pk).values().get(),
+            retained["completed_item"],
+        )
+        self.assertEqual(
+            DocumentChecklist.objects.filter(pk=checklist.pk).values().get(),
+            retained["checklist"],
+        )
+        self.case.appraisal_facts_json["shareholding"]["holding_mode"] = "demat"
+        self.case.save(update_fields=["appraisal_facts_json"])
+
+        with self.assertRaises(document_checklist.ChecklistApplicabilityConflict):
+            document_checklist.refresh_for_approved_sanction(
+                actor=self.actor,
+                application_id=self.application.pk,
+                source_reason="shareholding_correction",
+            )
+
+        self.assertEqual(
+            ChecklistItem.objects.filter(pk=sh4.pk).values().get(), retained["item"]
+        )
+        self.assertEqual(
+            ChecklistItem.objects.filter(pk=term_sheet.pk).values().get(),
+            retained["completed_item"],
+        )
+        self.assertEqual(
+            DocumentChecklist.objects.filter(pk=checklist.pk).values().get(),
+            retained["checklist"],
+        )
+        self.assertEqual(AuditLog.objects.count(), retained["audit_count"])
+        self.assertEqual(WorkflowEvent.objects.count(), retained["workflow_count"])
 
     def test_legacy_unverified_document_cannot_link_to_checklist_item(self):
         template_file = DocumentFile.objects.create(
@@ -276,6 +512,18 @@ class DocumentChecklistApiTests(TestCase):
             self.assertNotIn(secret, flattened)
 
     def test_current_provenance_document_links_without_completing_item(self):
+        checklist = document_checklist.refresh_for_approved_sanction(
+            actor=self.actor,
+            application_id=self.application.pk,
+            source_reason="sanction_approved",
+        )
+        item = checklist.items.get(item_code="term_sheet")
+        item.completion_status = ChecklistItem.STATUS_COMPLETE
+        item.verified_by_user = self.actor
+        item.verified_at = timezone.now() - timedelta(minutes=3)
+        item.remarks = "Execution owner evidence remains authoritative."
+        item.save()
+        retained_completion = ChecklistItem.objects.filter(pk=item.pk).values().get()
         template_file = DocumentFile.objects.create(
             file_name="current-template.docx",
             storage_provider="local",
@@ -317,17 +565,55 @@ class DocumentChecklistApiTests(TestCase):
             renderer_validated_checksum_sha256=output_file.checksum_sha256,
         )
 
-        checklist = document_checklist.refresh_for_approved_sanction(
+        document_checklist.refresh_for_approved_sanction(
             actor=self.actor,
             application_id=self.application.pk,
-            source_reason="sanction_approved",
+            source_reason="current_renderer_output_available",
+            request_meta={
+                "request_id": "req-current-renderer-link",
+                "ip_address": "203.0.113.45",
+                "user_agent": "Checklist Linkage Test",
+            },
         )
 
-        item = checklist.items.get(item_code="term_sheet")
+        item.refresh_from_db()
         self.assertEqual(item.loan_document, current)
-        self.assertEqual(item.completion_status, "pending")
-        self.assertIsNone(item.verified_by_user_id)
-        self.assertIsNone(item.verified_at)
+        for field in (
+            "completion_status",
+            "verified_by_user_id",
+            "verified_at",
+            "remarks",
+        ):
+            self.assertEqual(getattr(item, field), retained_completion[field])
+        linkage = AuditLog.objects.get(
+            action="document_checklist.linkage_changed", entity_id=checklist.pk
+        )
+        self.assertIsNone(
+            linkage.old_value_json["items"]["term_sheet"]["loan_document_id"]
+        )
+        self.assertEqual(
+            linkage.new_value_json["items"]["term_sheet"]["loan_document_id"],
+            str(current.pk),
+        )
+        self.assertEqual(
+            set(linkage.old_value_json["items"]["term_sheet"]),
+            {"loan_document_id"},
+        )
+        self.assertEqual(
+            set(linkage.new_value_json["items"]["term_sheet"]),
+            {"loan_document_id"},
+        )
+        self.assertEqual(linkage.new_value_json["request_id"], "req-current-renderer-link")
+        self.assertEqual(linkage.new_value_json["actor_role_codes"], self.actor.role_codes())
+        self.assertEqual(linkage.new_value_json["actor_team_codes"], self.actor.team_codes())
+        self.assertEqual(linkage.ip_address, "203.0.113.45")
+        self.assertEqual(linkage.user_agent, "Checklist Linkage Test")
+        self.assertFalse(
+            AuditLog.objects.filter(
+                action="document_checklist.applicability_changed",
+                entity_id=checklist.pk,
+            ).exists()
+        )
 
     def test_get_enforces_permission_and_source_authorised_object_scope(self):
         document_checklist.refresh_for_approved_sanction(
@@ -351,6 +637,12 @@ class DocumentChecklistApiTests(TestCase):
         auditor = self._user(
             "internal_auditor", "Checklist Auditor", "documents.checklist.read"
         )
+        credit_manager = self._user(
+            "credit_manager",
+            "Checklist Credit Manager",
+            "documents.checklist.read",
+            "applications.loan_application.read",
+        )
         ApprovalCaseReadScopeGrant.objects.create(
             role=auditor.primary_role,
             scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
@@ -367,14 +659,26 @@ class DocumentChecklistApiTests(TestCase):
         )
         for user, code in denied:
             with self.subTest(user=user.email):
-                response = self.client.get(
-                    f"/api/v1/loan-applications/{self.application.pk}/document-checklist/",
-                    **self._auth(user),
-                )
+                headers = self._auth(user)
+                with CaptureQueriesContext(connection) as queries:
+                    response = self.client.get(
+                        f"/api/v1/loan-applications/{self.application.pk}/document-checklist/",
+                        **headers,
+                    )
                 self.assertEqual(response.status_code, 403)
                 assert_error_envelope(self, response.json(), code)
+                self.assertFalse(
+                    any('FROM "document_checklists"' in query["sql"] for query in queries),
+                    [query["sql"] for query in queries],
+                )
 
-        for user in (self.actor, committee, company_secretary, auditor):
+        for user in (
+            self.actor,
+            committee,
+            company_secretary,
+            credit_manager,
+            auditor,
+        ):
             with self.subTest(user=user.email):
                 response = self.client.get(
                     f"/api/v1/loan-applications/{self.application.pk}/document-checklist/",
@@ -390,6 +694,31 @@ class DocumentChecklistApiTests(TestCase):
                         "senior_manager_finance": "not_applicable_until_disbursement",
                     },
                 )
+
+        unknown_id = "ffffffff-ffff-ffff-ffff-ffffffffffff"
+        unknown_compliance = self.client.get(
+            f"/api/v1/loan-applications/{unknown_id}/document-checklist/",
+            **self._auth(self.actor),
+        )
+        self.assertEqual(unknown_compliance.status_code, 404)
+        assert_error_envelope(self, unknown_compliance.json(), "NOT_FOUND")
+        unknown_permission_only = self.client.get(
+            f"/api/v1/loan-applications/{unknown_id}/document-checklist/",
+            **self._auth(permission_only),
+        )
+        self.assertEqual(unknown_permission_only.status_code, 403)
+        assert_error_envelope(
+            self, unknown_permission_only.json(), "OBJECT_ACCESS_DENIED"
+        )
+
+        inactive_headers = self._auth(credit_manager)
+        credit_manager.status = "inactive"
+        credit_manager.save(update_fields=["status"])
+        inactive = self.client.get(
+            f"/api/v1/loan-applications/{self.application.pk}/document-checklist/",
+            **inactive_headers,
+        )
+        self.assertEqual(inactive.status_code, 401)
 
         self.assertEqual(AuditLog.objects.filter(entity_type="document_checklist").count(), 1)
         self.assertEqual(WorkflowEvent.objects.filter(entity_type="document_checklist").count(), 1)
@@ -445,10 +774,17 @@ class DocumentChecklistApiTests(TestCase):
         approval_actions = importlib.import_module(
             "sfpcl_credit.approvals.modules.approval_actions"
         )
+        legal_checklist = importlib.import_module(
+            "sfpcl_credit.legal_documents.modules.document_checklist"
+        )
         completion = importlib.import_module(
             "sfpcl_credit.processes.sanction_completion"
         )
         self.assertNotIn("legal_documents", inspect.getsource(approval_actions))
+        legal_read_source = inspect.getsource(legal_checklist.read_for_application)
+        self.assertIn("document_checklist_access.resolve_read_access", legal_read_source)
+        self.assertNotIn("role_codes", legal_read_source)
+        self.assertNotIn("auth_service", legal_read_source)
         self.assertIn("document_checklist", inspect.getsource(completion))
 
     def _items(self, application):
@@ -506,6 +842,7 @@ class DocumentChecklistApiTests(TestCase):
             overall_risk_rating="low",
             assessed_by_user=self.actor,
         )
+        calculated_at = timezone.now() - timedelta(hours=1)
         note = LoanAppraisalNote.objects.create(
             loan_application=application,
             prepared_by_user=self.actor,
@@ -516,8 +853,34 @@ class DocumentChecklistApiTests(TestCase):
             tat_status=LoanAppraisalNote.TAT_WITHIN,
             eligibility_assessment_id_snapshot="10000000-0000-0000-0000-000000000001",
             loan_limit_assessment_id_snapshot="20000000-0000-0000-0000-000000000002",
-            eligibility_snapshot_json={"overall_result": "eligible"},
-            loan_limit_snapshot_json={"final_eligible_loan_amount": "400000.00"},
+            eligibility_snapshot_json={
+                "eligibility_assessment_id": "10000000-0000-0000-0000-000000000001",
+                "loan_application_id": str(application.pk),
+                "overall_result": "eligible",
+                "member_active_check": "pass",
+                "default_check": "pass",
+                "document_check": "pass",
+                "terms_acceptance_check": "pass",
+                "purpose_check": "pass",
+                "nominee_check": "pass",
+                "assessment_notes": "Eligible for checklist fixture.",
+                "active_member_snapshot": {
+                    "supplied_to_subsidiary_flag": subsidiary,
+                    "supplied_to_stepdown_flag": False,
+                },
+                "assessed_by_user_id": str(self.actor.pk),
+                "assessed_at": calculated_at.isoformat(),
+            },
+            loan_limit_snapshot_json={
+                "loan_limit_assessment_id": "20000000-0000-0000-0000-000000000002",
+                "loan_application_id": str(application.pk),
+                "final_eligible_loan_amount": "400000.00",
+                "exception_required_flag": False,
+                "calculation_rule_version": "checklist-limit-v1",
+                "policy_config_id": "30000000-0000-0000-0000-000000000003",
+                "policy_name": "Checklist Test Policy",
+                "calculated_at": calculated_at.isoformat(),
+            },
             prerequisite_provenance="verified",
             borrower_summary="No prior borrowing.",
             eligibility_summary="Eligible.",
@@ -531,29 +894,100 @@ class DocumentChecklistApiTests(TestCase):
             recommendation="approve",
             appraisal_status=LoanAppraisalNote.STATUS_SUBMITTED_TO_SANCTION,
         )
+        review = AppraisalReviewDecision.objects.create(
+            loan_appraisal_note=note,
+            decision="reviewed",
+            review_comments="Immutable checklist test review.",
+            reviewer_user=self.actor,
+            decided_at=note.reviewed_at,
+            from_state=LoanAppraisalNote.STATUS_REVIEW_PENDING,
+            to_state=LoanAppraisalNote.STATUS_REVIEWED,
+        )
+        note = LoanAppraisalNote.objects.select_related("risk_assessment").get(
+            pk=note.pk
+        )
+        decision_date = timezone.localdate()
         case = ApprovalCase.objects.create(
             loan_application=application,
             loan_appraisal_note=note,
+            appraisal_review_decision=review,
             submitted_by_user=self.actor,
             submission_remarks="Checklist facts.",
+            approval_matrix_rule=self.rule,
+            approval_matrix_rule_version=self.rule.version_number,
+            sanction_committee=self.committee,
+            sanction_committee_version=self.committee.version_number,
+            required_approvers_json=[
+                {
+                    "role_code": "cfo",
+                    "user_id": str(self.cfo.pk),
+                    "full_name": self.cfo.full_name,
+                },
+                {
+                    "role_code": "director",
+                    "user_id": str(self.director.pk),
+                    "full_name": self.director.full_name,
+                },
+            ],
+            excluded_approvers_json=[],
             current_status=case_status,
             amount="400000.00",
             related_entity_type="loan_application",
             related_entity_id=application.pk,
             reason_for_approval="Approved for checklist.",
-            routing_snapshot_is_coherent=coherent,
             closed_at=(timezone.now() if case_status != ApprovalCase.STATUS_PENDING else None),
-            appraisal_facts_json={
-                "snapshot_schema_version": "approval-review-v3",
-                "shareholding": {"holding_mode": holding_mode},
-                "eligibility": {
-                    "active_member_snapshot": {
-                        "supplied_to_subsidiary_flag": subsidiary,
-                        "supplied_to_stepdown_flag": False,
-                    }
-                },
+            matrix_projection_json={
+                "approval_matrix_rule_id": str(self.rule.pk),
+                "version_number": self.rule.version_number,
+                "decision_type": "loan_sanction",
+                "amount": "400000.00",
+                "amount_min": "0.00",
+                "amount_max": "500000.00",
+                "condition_code": None,
+                "decision_date": decision_date.isoformat(),
+                "required_approver_roles": ["cfo", "director"],
+                "required_director_count": 1,
+                "joint_approval_required": True,
+                "register_required": "credit_sanction_register",
             },
+            committee_projection_json={
+                "sanction_committee_id": str(self.committee.pk),
+                "version_number": self.committee.version_number,
+                "decision_date": decision_date.isoformat(),
+                "cfo_user_id": str(self.cfo.pk),
+                "director_user_ids": [
+                    str(self.director.pk),
+                    str(self.second_director.pk),
+                ],
+            },
+            loan_limit_provenance_json={
+                **note.loan_limit_snapshot_json,
+                "loan_limit_assessment_id": str(
+                    note.loan_limit_assessment_id_snapshot
+                ),
+            },
+            decision_date=decision_date,
+            version=2,
         )
+        case = ApprovalCase.objects.select_related(
+            "loan_application", "loan_appraisal_note__risk_assessment"
+        ).get(pk=case.pk)
+        case.appraisal_facts_json = project_approval_case_review_facts(
+            application=application,
+            appraisal_note=note,
+            review=review,
+        )
+        case.appraisal_facts_json["shareholding"] = {"holding_mode": holding_mode}
+        case.save(update_fields=["appraisal_facts_json"])
+        refresh_approval_case_projection(case)
+        if not coherent:
+            malformed = case.appraisal_facts_json
+            malformed["borrower"].pop("name")
+            case.appraisal_facts_json = malformed
+            case.routing_snapshot_is_coherent = True
+            case.save(
+                update_fields=["appraisal_facts_json", "routing_snapshot_is_coherent"]
+            )
         return application, case
 
     @staticmethod
@@ -609,40 +1043,91 @@ class DocumentChecklistApiTests(TestCase):
 class DocumentChecklistConcurrencyTests(TransactionTestCase):
     reset_sequences = True
 
-    def test_five_refreshes_persist_one_checklist_and_item_ledger(self):
+    def test_five_final_sanction_attempts_persist_one_atomic_checklist_ledger(self):
         fixture = DocumentChecklistApiTests(methodName="test_approved_sanction_creates_ordered_applicability_once_with_evidence")
         fixture.setUp()
-        application_id = fixture.application.pk
-        actor_id = fixture.actor.pk
+        application, case = fixture._application_case(
+            "final-race",
+            case_status=ApprovalCase.STATUS_PENDING,
+            coherent=True,
+            holding_mode="physical",
+            subsidiary=True,
+        )
+        sanction_completion.approve_case(
+            actor=fixture.cfo,
+            case_id=case.pk,
+            payload={"version": 2, "comments": "Seed first joint approval."},
+            actor_permissions={"approvals.case.approve", "approvals.case.read"},
+            request_meta={"request_id": "final-race-seed"},
+        )
+        actor_id = fixture.director.pk
         gate = Barrier(5)
 
-        def refresh(index):
+        def approve(index):
             close_old_connections()
             try:
                 actor = User.objects.get(pk=actor_id)
                 gate.wait(timeout=10)
-                checklist = document_checklist.refresh_for_approved_sanction(
-                    actor=actor,
-                    application_id=application_id,
-                    source_reason=f"race-{index}",
-                )
-                return checklist.pk
+                try:
+                    result = sanction_completion.approve_case(
+                        actor=actor,
+                        case_id=case.pk,
+                        payload={
+                            "version": 3,
+                            "comments": f"Concurrent final sanction {index}.",
+                        },
+                        actor_permissions={
+                            "approvals.case.approve",
+                            "approvals.case.read",
+                        },
+                        request_meta={
+                            "request_id": f"final-sanction-race-{index}",
+                            "ip_address": f"203.0.113.{index + 1}",
+                            "user_agent": "Checklist Final Race",
+                        },
+                    )
+                    return "won", index, result["sanction_decision_id"]
+                except Exception as exc:
+                    from sfpcl_credit.approvals.modules import approval_actions
+
+                    if isinstance(exc, approval_actions.ApprovalActionConflict):
+                        return exc.code, index, None
+                    raise
             finally:
                 connections["default"].close()
 
         with ThreadPoolExecutor(max_workers=5) as pool:
-            futures = [pool.submit(refresh, index) for index in range(5)]
-            ids = [future.result(timeout=20) for future in futures]
+            futures = [pool.submit(approve, index) for index in range(5)]
+            results = [future.result(timeout=30) for future in futures]
 
-        self.assertEqual(len(set(ids)), 1)
-        self.assertEqual(DocumentChecklist.objects.count(), 1)
-        self.assertEqual(ChecklistItem.objects.count(), 11)
+        self.assertEqual([code for code, _, _ in results].count("won"), 1)
+        self.assertEqual([code for code, _, _ in results].count("STALE_VERSION"), 4)
         self.assertEqual(
-            AuditLog.objects.filter(action="document_checklist.created").count(), 1
+            SanctionDecision.objects.filter(loan_application=application).count(), 1
+        )
+        checklist = DocumentChecklist.objects.get(loan_application=application)
+        self.assertEqual(
+            ChecklistItem.objects.filter(document_checklist=checklist).count(), 11
         )
         self.assertEqual(
             AuditLog.objects.filter(
-                action="document_checklist.applicability_changed"
+                action="document_checklist.created", entity_id=checklist.pk
             ).count(),
-            0,
+            1,
         )
+        winner_code, winner_index, winner_decision_id = next(
+            result for result in results if result[0] == "won"
+        )
+        self.assertEqual(winner_code, "won")
+        creation = AuditLog.objects.get(
+            action="document_checklist.created", entity_id=checklist.pk
+        )
+        self.assertEqual(
+            creation.new_value_json["request_id"],
+            f"final-sanction-race-{winner_index}",
+        )
+        self.assertEqual(
+            creation.new_value_json["sanction_decision_id"], winner_decision_id
+        )
+        self.assertEqual(creation.ip_address, f"203.0.113.{winner_index + 1}")
+        self.assertEqual(creation.user_agent, "Checklist Final Race")

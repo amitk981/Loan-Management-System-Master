@@ -59,6 +59,23 @@ access. Checklist loan/signature ids remain database-null until 009C/008K instal
 The declared five-worker PostgreSQL race passed twice with one checklist, eleven unique ordered items,
 one creation audit, and no false applicability-change evidence.
 
+## 008C2 Checklist Lifecycle and Authority Closure (2026-07-14)
+
+The public approval writer can no longer accept a caller-supplied completion callback. Direct
+terminal approval fails zero-write; the private top-level sanction-completion seam binds the legal
+checklist in the same transaction. Canonical latest-cycle frozen terminal facts replace the cached
+coherence flag, and the genuine five-worker final-sanction race passes twice with one decision, one
+checklist, eleven items, and one creation ledger.
+
+Refresh now owns only applicability and current-provenance linkage. It preserves checklist status,
+signature facts, item completion/verifier/time/remarks, and creation-time label/order; a completed-
+evidence applicability reversal conflicts atomically. Applicability and linkage have disjoint audit
+snapshots/actions and full request/network/role/team attribution. Cancelled-cheque mismatch truth
+comes through an application-owned seam: only unanimous verified boolean rows are authoritative;
+missing, pending, malformed, or conflicting facts remain visibly blocked. Complete exact subsidiary
+flags are likewise required. One approval-owned read resolver now handles permission, A-104 routing,
+absent-parent disclosure, and sanctioned application/case scope before any checklist/item query.
+
 ## 008B2 Boundary Closure (2026-07-14)
 
 `legal_documents` now owns the retained `loan_documents` model/table, authoritative generation

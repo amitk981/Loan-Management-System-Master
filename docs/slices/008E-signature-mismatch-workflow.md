@@ -92,6 +92,19 @@ must roll back with the owner mutation.
   completion, checklist approval, file access, or disbursement readiness.
 - Concurrent duplicate/change attempts retain one current outcome and complete attributable history.
 
+## Run-Ahead Sharpening (008C2 completion, 2026-07-14)
+
+- Publish signature mismatch truth through the application-owned fact seam introduced by 008C2;
+  legal checklist code must continue to avoid `members` ORM imports. Only the real verified owner
+  decision may replace missing/unverified/malformed/conflicting blockers.
+- Reconcile only the Bank Verification Letter applicability facts through the internal checklist
+  owner. Preserve completion, verifier, time, remarks, checklist status, presentation metadata, and
+  signature approvals; an applicability reversal against completed evidence is an explicit atomic
+  conflict for the owning correction workflow.
+- Mismatch resolution and checklist projection must share one transaction and carry request/network/
+  role/team attribution. Replay writes zero ledgers; owner mutation, fact publication, projection,
+  and action-specific audit evidence all roll back together on conflict.
+
 ## Visual Acceptance Criteria
 None.
 

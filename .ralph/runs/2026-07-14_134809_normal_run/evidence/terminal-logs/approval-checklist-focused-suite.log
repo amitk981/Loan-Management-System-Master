@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 142 test(s).
+System check identified no issues (0 silenced).
+.............................................................................................................E.............................sss
+======================================================================
+ERROR: test_return_correction_fresh_review_creates_immutable_second_cycle (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_return_correction_fresh_review_creates_immutable_second_cycle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_134809_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 4482, in test_return_correction_fresh_review_creates_immutable_second_cycle
+    first_approval = sanction_completion.approve_case(
+                     ^^^^^^^^^^^^^^^^^^^
+NameError: name 'sanction_completion' is not defined
+
+----------------------------------------------------------------------
+Ran 142 tests in 4.904s
+
+FAILED (errors=1, skipped=3)
+Destroying test database for alias 'default'...

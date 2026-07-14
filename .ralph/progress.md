@@ -1,5 +1,23 @@
 # Ralph Progress Log
 
+# Run 2026-07-14_134809_normal_run
+
+- Completed 008C2. Public approval actions can no longer inject a terminal completion hook; direct
+  terminal calls fail zero-write while the private sanction-completion coordinator atomically owns
+  the decision, checklist, eleven items, and evidence.
+- Replaced cached checklist coherence with canonical frozen latest-cycle facts. Refresh preserves
+  completion/verification/checklist/signature ownership, conflicts on completed-evidence reversals,
+  and records disjoint applicability versus current-provenance linkage ledgers with full request,
+  network, role, and team context.
+- Added application-owned cancelled-cheque mismatch facts, complete subsidiary-route validation,
+  and one approval-owned checklist read resolver for permission, A-104 compatibility, nondisclosure,
+  and application/case scope before checklist queries.
+- The genuine PostgreSQL five-worker final-sanction race passed twice. All 758 backend tests pass
+  with 23 expected PostgreSQL-only skips and 93% coverage; frontend build/typecheck/lint and all 293
+  tests pass. Independent Standards and Spec reviews report no remaining findings.
+- Next: 008D uses the sharpened narrow lifecycle/status seam for stamp duty and notarisation; 008E
+  consumes the application-owned mismatch fact seam afterward.
+
 # Run 2026-07-14_102642_normal_run
 
 - Completed 008B2 by moving the retained `loan_documents` model/table, generation orchestration,
@@ -6505,6 +6523,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_130857_normal_run/.ralph/runs/2026-07-14_130857_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_130857_normal_run/.ralph/runs/2026-07-14_130857_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 14:35:28 - 2026-07-14_134809_normal_run
+- Agent tool used: codex
+- Slice attempted: 008C2-checklist-lifecycle-authority-and-side-effect-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_134809_normal_run/.ralph/runs/2026-07-14_134809_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_134809_normal_run/.ralph/runs/2026-07-14_134809_normal_run/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

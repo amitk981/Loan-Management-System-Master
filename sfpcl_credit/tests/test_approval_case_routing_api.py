@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from datetime import timedelta
+import inspect
 from threading import Barrier
 import tempfile
 from unittest import skipUnless
@@ -31,6 +32,7 @@ from sfpcl_credit.approvals.modules import (
     approval_actions,
     approval_case_engine,
     approval_case_selector,
+    document_checklist_facts,
     exception_register,
     general_meeting,
     sanction_register,
@@ -55,6 +57,7 @@ from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermiss
 from sfpcl_credit.identity.modules.auth_service import effective_permission_codes
 from sfpcl_credit.legal_documents.models import ChecklistItem, DocumentChecklist
 from sfpcl_credit.members.models import Member
+from sfpcl_credit.processes import sanction_completion
 from sfpcl_credit.tests.api_contracts import (
     assert_available_actions_shape,
     assert_error_envelope,
@@ -2302,6 +2305,17 @@ class ApprovalCaseRoutingApiTests(TestCase):
             checklist_audit.new_value_json["sanction_decision_id"],
             data["sanction_decision_id"],
         )
+        self.assertEqual(checklist_audit.new_value_json["request_id"], "req-approval-final")
+        self.assertEqual(
+            checklist_audit.new_value_json["actor_role_codes"],
+            self.director.role_codes(),
+        )
+        self.assertEqual(
+            checklist_audit.new_value_json["actor_team_codes"],
+            self.director.team_codes(),
+        )
+        self.assertEqual(checklist_audit.ip_address, "203.0.113.18")
+        self.assertEqual(checklist_audit.user_agent, "Final Approval Contract Test")
 
         SanctionDecision = apps.get_model("approvals", "SanctionDecision")
         decision = SanctionDecision.objects.get(approval_case=self.case)
@@ -2408,6 +2422,72 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(ApprovalAction.objects.filter(approval_case=self.case).count(), 1)
         self.assertFalse(hasattr(self.case, "sanction_decision"))
         self.assertFalse(DocumentChecklist.objects.filter(loan_application=self.application).exists())
+
+    def test_direct_final_approval_without_completion_coordinator_is_zero_write(self):
+        self.assertNotIn(
+            "sanction_completion_hook",
+            inspect.signature(approval_actions.approve_case).parameters,
+        )
+        self.assertNotIn(
+            "completion",
+            inspect.signature(approval_actions.approve_case).parameters,
+        )
+        first = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2, "comments": "CFO approval through the process boundary."},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        self.assertEqual(first.status_code, 200, first.json())
+        before = self._action_ledgers()
+
+        with self.assertRaises(approval_actions.ApprovalActionConflict) as raised:
+            approval_actions.approve_case(
+                actor=self.director,
+                case_id=self.case.pk,
+                payload={"version": 3, "comments": "Bypass the completion coordinator."},
+                actor_permissions={"approvals.case.approve", "approvals.case.read"},
+                request_meta={"request_id": "req-direct-terminal-bypass"},
+            )
+
+        self.assertEqual(raised.exception.code, "SANCTION_COMPLETION_REQUIRED")
+        self.assertEqual(raised.exception.status, 409)
+        self.assertEqual(self._action_ledgers(), before)
+        self.assertFalse(
+            DocumentChecklist.objects.filter(loan_application=self.application).exists()
+        )
+
+    def test_checklist_facts_recompute_canonical_terminal_package_not_cached_flag(self):
+        for actor, version in ((self.cfo, 2), (self.director, 3)):
+            response = self.client.post(
+                f"/api/v1/approval-cases/{self.case.pk}/approve/",
+                {"version": version, "comments": "Canonical checklist fact test."},
+                content_type="application/json",
+                **self._auth(actor),
+            )
+            self.assertEqual(response.status_code, 200, response.json())
+
+        self.case.refresh_from_db()
+        self.case.routing_snapshot_is_coherent = False
+        self.case.save(update_fields=["routing_snapshot_is_coherent"])
+        facts = document_checklist_facts.resolve_approved_facts(
+            application_id=self.application.pk
+        )
+        self.assertEqual(facts.approval_case_id, self.case.pk)
+        self.assertEqual(facts.sanction_decision_id, self.case.sanction_decision.pk)
+
+        malformed = deepcopy(self.case.appraisal_facts_json)
+        malformed["borrower"].pop("name")
+        self.case.appraisal_facts_json = malformed
+        self.case.routing_snapshot_is_coherent = True
+        self.case.save(
+            update_fields=["appraisal_facts_json", "routing_snapshot_is_coherent"]
+        )
+        self.assertIsNone(
+            document_checklist_facts.resolve_approved_facts(
+                application_id=self.application.pk
+            )
+        )
 
     def test_final_approval_uses_routed_review_package_after_live_owner_mutation(self):
         frozen_review = self.case.appraisal_facts_json
@@ -4409,7 +4489,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
             "/api/v1/approval-cases/", **self._auth(permission_only)
         )
         self.assertEqual(excluded.json()["pagination"]["total_count"], 0)
-        first_approval = approval_actions.approve_case(
+        first_approval = sanction_completion.approve_case(
             actor=self.cfo,
             case_id=cycle_two.pk,
             payload={"version": 2, "comments": "Corrected cycle approved."},
@@ -4417,7 +4497,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
         )
         self.assertEqual(first_approval["current_status"], "pending")
         self.assertEqual(first_approval["cycle_number"], 2)
-        final_approval = approval_actions.approve_case(
+        final_approval = sanction_completion.approve_case(
             actor=self.director,
             case_id=cycle_two.pk,
             payload={"version": 3, "comments": "Fresh cycle jointly approved."},
@@ -5807,7 +5887,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self._assert_single_attributable_action_delta(before, after)
 
     def _postgres_final_remaining_approver_duplicate_submission_has_one_serial_winner(self):
-        approval_actions.approve_case(
+        sanction_completion.approve_case(
             actor=self.cfo,
             case_id=self.case.pk,
             payload={"version": 2, "comments": "Seed the final approval race."},
@@ -5846,7 +5926,7 @@ class ApprovalCaseRoutingApiTests(TestCase):
             try:
                 actor = User.objects.get(pk=actor_id)
                 gate.wait(timeout=10)
-                result = approval_actions.approve_case(
+                result = sanction_completion.approve_case(
                     actor=actor,
                     case_id=self.case.pk,
                     payload={"version": version, "comments": "Concurrent approval."},

@@ -6,22 +6,18 @@ from django.db import transaction
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import LoanApplication
-from sfpcl_credit.applications.modules.application_authority import (
-    evaluate_application_object_access,
-)
+from sfpcl_credit.applications.modules import document_checklist_facts as application_facts
 from sfpcl_credit.approvals.modules import document_checklist_facts
-from sfpcl_credit.approvals.modules.read_scope import evaluate_approval_case_read_scope
+from sfpcl_credit.approvals.modules import document_checklist_access
 from sfpcl_credit.identity.models import AuditLog
-from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.legal_documents import selectors
 from sfpcl_credit.legal_documents.models import ChecklistItem, DocumentChecklist
-from sfpcl_credit.members.models import CancelledCheque
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
-READ_PERMISSION = "documents.checklist.read"
 CREATED_ACTION = "document_checklist.created"
 CHANGED_ACTION = "document_checklist.applicability_changed"
+LINKED_ACTION = "document_checklist.linkage_changed"
 
 
 class ChecklistAccessDenied(Exception):
@@ -34,7 +30,15 @@ class ChecklistNotFound(Exception):
     pass
 
 
+class PreSanctionChecklist(Exception):
+    pass
+
+
 class InvalidChecklistState(Exception):
+    pass
+
+
+class ChecklistApplicabilityConflict(Exception):
     pass
 
 
@@ -46,6 +50,12 @@ class ItemSpec:
     applicable: bool
     source: str
     blocker: str | None = None
+
+
+@dataclass(frozen=True)
+class SynchronisationResult:
+    applicability_changed: bool = False
+    linkage_changed: bool = False
 
 
 _BASE_ITEMS = (
@@ -69,7 +79,9 @@ _DOCUMENT_TYPE_BY_ITEM = {
 
 
 @transaction.atomic
-def refresh_for_approved_sanction(*, actor, application_id, source_reason):
+def refresh_for_approved_sanction(
+    *, actor, application_id, source_reason, request_meta=None
+):
     application = (
         LoanApplication.objects.select_for_update(of=("self",))
         .filter(pk=application_id)
@@ -99,43 +111,56 @@ def refresh_for_approved_sanction(*, actor, application_id, source_reason):
     if created:
         checklist = DocumentChecklist.objects.create(loan_application=application)
     old_snapshot = _item_snapshot(checklist)
-    changed = _synchronise_items(checklist, specs, document_ids)
+    changes = _synchronise_items(checklist, specs, document_ids)
     new_snapshot = _item_snapshot(checklist)
     if created:
-        _record_creation(actor, checklist, facts, new_snapshot, source_reason)
-    elif changed:
+        _record_creation(
+            actor, checklist, facts, new_snapshot, source_reason, request_meta
+        )
+    elif changes.applicability_changed or changes.linkage_changed:
         checklist.updated_at = timezone.now()
         checklist.save(update_fields=["updated_at"])
-        _record_change(
-            actor, checklist, facts, old_snapshot, new_snapshot, source_reason
-        )
+        if changes.applicability_changed:
+            _record_change(
+                actor,
+                checklist,
+                facts,
+                old_snapshot,
+                new_snapshot,
+                source_reason,
+                request_meta,
+            )
+        if changes.linkage_changed:
+            _record_linkage_change(
+                actor,
+                checklist,
+                facts,
+                old_snapshot,
+                new_snapshot,
+                source_reason,
+                request_meta,
+            )
     return checklist
 
 
 def read_for_application(*, actor, application_id):
-    permissions = auth_service.effective_permission_codes(actor)
-    if not actor.can_authenticate() or READ_PERMISSION not in permissions:
-        raise ChecklistAccessDenied("FORBIDDEN")
+    resolution = document_checklist_access.resolve_read_access(
+        actor=actor, application_id=application_id
+    )
+    if resolution.route == document_checklist_access.ROUTE_PRE_SANCTION:
+        raise PreSanctionChecklist
+    if resolution.error_code == "NOT_FOUND":
+        raise ChecklistNotFound
+    if resolution.error_code:
+        raise ChecklistAccessDenied(resolution.error_code)
+    application = resolution.application
     checklist = (
-        DocumentChecklist.objects.select_related("loan_application")
-        .prefetch_related("items")
-        .filter(loan_application_id=application_id)
+        DocumentChecklist.objects.prefetch_related("items")
+        .filter(loan_application=application)
         .first()
     )
     if checklist is None:
         raise ChecklistNotFound
-    case = (
-        checklist.loan_application.sanction_approval_cases.prefetch_related("actions")
-        .order_by("-cycle_number", "-submitted_at")
-        .first()
-    )
-    if case is None or not _can_read(
-        actor=actor,
-        application=checklist.loan_application,
-        case=case,
-        permissions=permissions,
-    ):
-        raise ChecklistAccessDenied("OBJECT_ACCESS_DENIED")
     return serialize(checklist)
 
 
@@ -177,27 +202,6 @@ def serialize(checklist):
             ),
         },
     }
-
-
-def _can_read(*, actor, application, case, permissions):
-    roles = set(actor.role_codes())
-    if roles & {"compliance_team_member", "company_secretary"}:
-        return application.application_status == LoanApplication.STATUS_APPROVED_BY_SANCTION
-    scope = evaluate_approval_case_read_scope(
-        actor=actor,
-        case=case,
-        actor_permissions=permissions,
-    )
-    if scope.allowed:
-        return True
-    if "credit_manager" in roles:
-        return evaluate_application_object_access(
-            application=application,
-            actor=actor,
-            required_permission=READ_PERMISSION,
-            actor_permissions=permissions,
-        ).allowed
-    return False
 
 
 def _applicability_specs(application, facts):
@@ -264,20 +268,11 @@ def _applicability_specs(application, facts):
 
 
 def _signature_mismatch(application):
-    flags = list(
-        CancelledCheque.objects.filter(
-            loan_application_id=application.pk,
-            member_id=application.member_id,
-        ).values_list("signature_mismatch_flag", flat=True)
+    fact = application_facts.resolve_cancelled_cheque_signature_fact(
+        application_id=application.pk,
+        member_id=application.member_id,
     )
-    distinct = set(flags)
-    if distinct == {True}:
-        return True, "persisted_signature_mismatch", None
-    if distinct == {False}:
-        return False, "persisted_signature_match", None
-    if distinct == {False, True}:
-        return False, "persisted_signature_mismatch_conflict", "signature_mismatch_conflicting"
-    return False, "signature_mismatch_source_missing", "signature_mismatch_source_missing"
+    return fact.mismatch is True, fact.source, fact.blocker
 
 
 def _generated_document_ids(application_id):
@@ -296,40 +291,66 @@ def _synchronise_items(checklist, specs, document_ids):
         item.item_code: item
         for item in checklist.items.select_for_update().order_by("display_order")
     }
-    changed = False
+    applicability_changed = False
+    linkage_changed = False
     for spec in specs:
-        values = {
-            "item_label": spec.label,
-            "display_order": spec.order,
+        applicability_values = {
             "required_flag": spec.applicable,
             "applicable_flag": spec.applicable,
-            "completion_status": (
-                ChecklistItem.STATUS_PENDING
-                if spec.applicable
-                else ChecklistItem.STATUS_NOT_APPLICABLE
-            ),
             "applicability_source": spec.source,
             "applicability_blocker": spec.blocker,
-            "loan_document_id": document_ids.get(spec.code),
         }
         item = existing.get(spec.code)
         if item is None:
             ChecklistItem.objects.create(
                 document_checklist=checklist,
                 item_code=spec.code,
-                **values,
+                completion_status=(
+                    ChecklistItem.STATUS_PENDING
+                    if spec.applicable
+                    else ChecklistItem.STATUS_NOT_APPLICABLE
+                ),
+                item_label=spec.label,
+                display_order=spec.order,
+                loan_document_id=document_ids.get(spec.code),
+                **applicability_values,
             )
-            changed = True
+            applicability_changed = True
             continue
-        changed_fields = [
-            field for field, value in values.items() if getattr(item, field) != value
+        changed_applicability_fields = [
+            field
+            for field, value in applicability_values.items()
+            if getattr(item, field) != value
         ]
-        if changed_fields:
-            for field, value in values.items():
+        applicability_flipped = item.applicable_flag != spec.applicable
+        if (
+            applicability_flipped
+            and item.completion_status == ChecklistItem.STATUS_COMPLETE
+        ):
+            raise ChecklistApplicabilityConflict(
+                f"Completed checklist item '{item.item_code}' conflicts with corrected applicability."
+            )
+        if changed_applicability_fields:
+            for field, value in applicability_values.items():
                 setattr(item, field, value)
-            item.save(update_fields=changed_fields)
-            changed = True
-    return changed
+            if applicability_flipped:
+                item.completion_status = (
+                    ChecklistItem.STATUS_PENDING
+                    if spec.applicable
+                    else ChecklistItem.STATUS_NOT_APPLICABLE
+                )
+                changed_applicability_fields.append("completion_status")
+            item.save(update_fields=changed_applicability_fields)
+            applicability_changed = True
+        loan_document_id = document_ids.get(spec.code)
+        if item.loan_document_id != loan_document_id:
+            item.loan_document_id = loan_document_id
+            item.save(update_fields=["loan_document"])
+            linkage_changed = True
+    return SynchronisationResult(
+        applicability_changed=applicability_changed,
+        linkage_changed=linkage_changed,
+    )
 
 
 def _item_snapshot(checklist):
@@ -348,13 +369,37 @@ def _item_snapshot(checklist):
     }
 
 
-def _record_creation(actor, checklist, facts, snapshot, source_reason):
+def _applicability_snapshot(snapshot):
+    """Project only facts owned by applicability synchronisation."""
+    return {
+        code: {
+            key: value
+            for key, value in facts.items()
+            if key != "loan_document_id"
+        }
+        for code, facts in snapshot.items()
+    }
+
+
+def _linkage_snapshot(snapshot):
+    """Project only the generated-document relationship owned by linkage."""
+    return {
+        code: {"loan_document_id": facts["loan_document_id"]}
+        for code, facts in snapshot.items()
+    }
+
+
+def _record_creation(
+    actor, checklist, facts, snapshot, source_reason, request_meta=None
+):
+    context = _audit_context(actor, request_meta)
     evidence = {
         "loan_application_id": str(checklist.loan_application_id),
         "approval_case_id": str(facts.approval_case_id),
         "sanction_decision_id": str(facts.sanction_decision_id),
         "source_reason": source_reason,
         "items": snapshot,
+        **context,
     }
     AuditLog.objects.create(
         actor_user=actor,
@@ -364,6 +409,8 @@ def _record_creation(actor, checklist, facts, snapshot, source_reason):
         entity_id=checklist.pk,
         old_value_json={},
         new_value_json=evidence,
+        ip_address=(request_meta or {}).get("ip_address", ""),
+        user_agent=(request_meta or {}).get("user_agent", ""),
     )
     record_workflow_event(
         actor=actor,
@@ -378,7 +425,24 @@ def _record_creation(actor, checklist, facts, snapshot, source_reason):
     )
 
 
-def _record_change(actor, checklist, facts, old_snapshot, new_snapshot, source_reason):
+def _record_change(
+    actor,
+    checklist,
+    facts,
+    old_snapshot,
+    new_snapshot,
+    source_reason,
+    request_meta=None,
+):
+    old_snapshot = _applicability_snapshot(old_snapshot)
+    new_snapshot = _applicability_snapshot(new_snapshot)
+    context = _audit_context(actor, request_meta)
+    evidence = {
+        "source_reason": source_reason,
+        "approval_case_id": str(facts.approval_case_id),
+        "sanction_decision_id": str(facts.sanction_decision_id),
+        **context,
+    }
     AuditLog.objects.create(
         actor_user=actor,
         actor_type="user",
@@ -388,10 +452,10 @@ def _record_change(actor, checklist, facts, old_snapshot, new_snapshot, source_r
         old_value_json={"items": old_snapshot},
         new_value_json={
             "items": new_snapshot,
-            "source_reason": source_reason,
-            "approval_case_id": str(facts.approval_case_id),
-            "sanction_decision_id": str(facts.sanction_decision_id),
+            **evidence,
         },
+        ip_address=(request_meta or {}).get("ip_address", ""),
+        user_agent=(request_meta or {}).get("user_agent", ""),
     )
     record_workflow_event(
         actor=actor,
@@ -402,4 +466,59 @@ def _record_change(actor, checklist, facts, old_snapshot, new_snapshot, source_r
         to_state=checklist.checklist_status,
         trigger_reason=f"Applicability refreshed: {source_reason}.",
         action_code=CHANGED_ACTION,
+        metadata=evidence,
     )
+
+
+def _record_linkage_change(
+    actor,
+    checklist,
+    facts,
+    old_snapshot,
+    new_snapshot,
+    source_reason,
+    request_meta=None,
+):
+    old_snapshot = _linkage_snapshot(old_snapshot)
+    new_snapshot = _linkage_snapshot(new_snapshot)
+    context = _audit_context(actor, request_meta)
+    evidence = {
+        "source_reason": source_reason,
+        "approval_case_id": str(facts.approval_case_id),
+        "sanction_decision_id": str(facts.sanction_decision_id),
+        **context,
+    }
+    AuditLog.objects.create(
+        actor_user=actor,
+        actor_type="user",
+        action=LINKED_ACTION,
+        entity_type="document_checklist",
+        entity_id=checklist.pk,
+        old_value_json={"items": old_snapshot},
+        new_value_json={
+            "items": new_snapshot,
+            **evidence,
+        },
+        ip_address=(request_meta or {}).get("ip_address", ""),
+        user_agent=(request_meta or {}).get("user_agent", ""),
+    )
+    record_workflow_event(
+        actor=actor,
+        workflow_name="documentation_checklist",
+        entity_type="document_checklist",
+        entity_id=checklist.pk,
+        from_state=checklist.checklist_status,
+        to_state=checklist.checklist_status,
+        trigger_reason=f"Generated-document metadata linked: {source_reason}.",
+        action_code=LINKED_ACTION,
+        metadata=evidence,
+    )
+
+
+def _audit_context(actor, request_meta):
+    request_meta = request_meta or {}
+    return {
+        "request_id": request_meta.get("request_id"),
+        "actor_role_codes": actor.role_codes(),
+        "actor_team_codes": actor.team_codes(),
+    }

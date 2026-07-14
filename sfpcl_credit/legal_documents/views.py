@@ -2,7 +2,6 @@ from django.core.exceptions import ValidationError
 from django.views.decorators.http import require_GET, require_POST
 
 from sfpcl_credit.applications import views as application_views
-from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.api import (
     error_response,
     list_response,
@@ -98,25 +97,14 @@ def legal_document_checklist(request, loan_application_id):
     user, response = http_auth.authenticated_user(request)
     if response is not None:
         return response
-    application_status = (
-        LoanApplication.objects.filter(pk=loan_application_id)
-        .values_list("application_status", flat=True)
-        .first()
-    )
-    if application_status is None:
-        return application_views.loan_application_document_checklist(
-            request, loan_application_id
-        )
-    if (
-        application_status != LoanApplication.STATUS_APPROVED_BY_SANCTION
-    ):
-        return application_views.loan_application_document_checklist(
-            request, loan_application_id
-        )
     try:
         data = document_checklist.read_for_application(
             actor=user,
             application_id=loan_application_id,
+        )
+    except document_checklist.PreSanctionChecklist:
+        return application_views.loan_application_document_checklist(
+            request, loan_application_id
         )
     except document_checklist.ChecklistAccessDenied as exc:
         return error_response(
