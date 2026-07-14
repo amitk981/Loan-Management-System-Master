@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from unittest import skipUnless
 
+from django.core.exceptions import ValidationError
 from django.db import close_old_connections, connection
 from django.test import Client, TestCase
 from django.test import TransactionTestCase
@@ -9,8 +10,21 @@ from django.test import TransactionTestCase
 from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.documents.models import DocumentFile, DocumentTemplate
-from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
-from sfpcl_credit.legal_documents.models import ChecklistItem, DocumentChecklist, LoanDocument
+from sfpcl_credit.documents import services as document_services
+from sfpcl_credit.identity.models import (
+    AuditLog,
+    Permission,
+    Role,
+    RolePermission,
+    User,
+)
+from sfpcl_credit.legal_documents.models import (
+    ChecklistItem,
+    DocumentChecklist,
+    LoanDocument,
+    NotarisationRecord,
+    StampDutyRecord,
+)
 from sfpcl_credit.legal_documents.modules import document_checklist
 from sfpcl_credit.legal_documents.modules import stamp_notary
 from sfpcl_credit.members.models import Member
@@ -26,6 +40,7 @@ class StampDutyAndNotarisationApiTests(TestCase):
         self.actor = self._user(
             "compliance_team_member",
             "documents.stamp.record",
+            "documents.notary.record",
             "documents.loan_document.read",
             "documents.checklist.read",
         )
@@ -135,12 +150,414 @@ class StampDutyAndNotarisationApiTests(TestCase):
         audit = AuditLog.objects.get(action="documents.stamp.created")
         self.assertEqual(audit.actor_user, self.actor)
         self.assertEqual(audit.new_value_json["request_id"], "req-stamp-create")
-        self.assertEqual(audit.new_value_json["actor_role_codes"], ["compliance_team_member"])
+        self.assertEqual(
+            audit.new_value_json["actor_role_codes"], ["compliance_team_member"]
+        )
         self.assertEqual(audit.ip_address, "203.0.113.20")
         self.assertEqual(audit.user_agent, "Stamp Test Agent")
         self.assertEqual(
             WorkflowEvent.objects.get(workflow_name="loan_document_stamping").to_state,
             "pending",
+        )
+
+    def test_compliance_cannot_record_adverse_stamp_verification(self):
+        response = self.client.post(
+            f"/api/v1/loan-documents/{self.loan_document.pk}/stamp-duty-record/",
+            {
+                "stamp_paper_amount": "500.00",
+                "stamp_type": "physical",
+                "stamp_number": "MH-ADVERSE-001",
+                "stamp_purchase_date": "2026-06-20",
+                "executed_date": "2026-06-22",
+                "status": "insufficient",
+                "remarks": "Checker-owned adverse decision.",
+            },
+            content_type="application/json",
+            **self._auth(self.actor),
+        )
+
+        self.assertEqual(response.status_code, 400, response.content)
+        self.assertEqual(
+            response.json()["error"]["field_errors"],
+            {
+                "status": "Only Company Secretary authority may record a verification outcome."
+            },
+        )
+        self.assertFalse(hasattr(self.loan_document, "stamp_duty_record"))
+        self.assertEqual(
+            AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 0
+        )
+        self.assertEqual(
+            VersionHistory.objects.filter(versioned_entity_type="stamp_record").count(),
+            0,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                workflow_name="loan_document_stamping"
+            ).count(),
+            0,
+        )
+
+    def test_stamp_verification_requires_distinct_retained_preparer_and_verifier(self):
+        url = f"/api/v1/loan-documents/{self.loan_document.pk}/stamp-duty-record/"
+        pending = {
+            "stamp_paper_amount": "500.00",
+            "stamp_type": "physical",
+            "stamp_number": "MH-MC-001",
+            "stamp_purchase_date": "2026-06-20",
+            "executed_date": None,
+            "status": "pending",
+            "remarks": "Prepared by Compliance.",
+        }
+        prepared = self.client.post(
+            url, pending, content_type="application/json", **self._auth(self.actor)
+        )
+        self.assertEqual(prepared.status_code, 200, prepared.content)
+
+        cs = self._user("company_secretary", "documents.stamp.record")
+        self.actor.primary_role = cs.primary_role
+        self.actor.save(update_fields=["primary_role"])
+        same_person = self.client.post(
+            url,
+            {
+                **pending,
+                "executed_date": "2026-06-22",
+                "status": "adequate",
+                "remarks": "Same identity changed role.",
+            },
+            content_type="application/json",
+            **self._auth(self.actor),
+        )
+        self.assertEqual(same_person.status_code, 400, same_person.content)
+        self.assertEqual(
+            same_person.json()["error"]["field_errors"],
+            {"status": "The preparer and verifier must be different users."},
+        )
+
+        verified = self.client.post(
+            url,
+            {
+                **pending,
+                "executed_date": "2026-06-22",
+                "status": "adequate",
+                "remarks": "Verified by a distinct Company Secretary.",
+            },
+            content_type="application/json",
+            **self._auth(cs),
+        )
+        self.assertEqual(verified.status_code, 200, verified.content)
+        record = StampDutyRecord.objects.get(loan_document=self.loan_document)
+        self.assertEqual(record.prepared_by_user_id, self.actor.pk)
+        self.assertEqual(record.verified_by_user_id, cs.pk)
+        history = list(
+            VersionHistory.objects.filter(versioned_entity_type="stamp_record")
+            .order_by("created_at")
+            .values_list("new_value_json", flat=True)
+        )
+        self.assertEqual(history[0]["prepared_by_user_id"], str(self.actor.pk))
+        self.assertIsNone(history[0]["verified_by_user_id"])
+        self.assertEqual(history[1]["prepared_by_user_id"], str(self.actor.pk))
+        self.assertEqual(history[1]["verified_by_user_id"], str(cs.pk))
+
+    def test_notary_adverse_correction_and_downgrade_follow_maker_checker(self):
+        compliance = self.actor
+        url = f"/api/v1/loan-documents/{self.loan_document.pk}/notarisation-record/"
+        pending = {
+            "notary_name": None,
+            "notary_registration_number": None,
+            "notarised_date": None,
+            "status": "pending",
+            "evidence_document_id": None,
+            "remarks": "Prepared for verification.",
+        }
+        prepared = self.client.post(
+            url, pending, content_type="application/json", **self._auth(compliance)
+        )
+        self.assertEqual(prepared.status_code, 200, prepared.content)
+
+        rejected_by_maker = self.client.post(
+            url,
+            {**pending, "status": "rejected", "remarks": "Maker adverse decision."},
+            content_type="application/json",
+            **self._auth(compliance),
+        )
+        self.assertEqual(rejected_by_maker.status_code, 400, rejected_by_maker.content)
+
+        cs = self._user("company_secretary", "documents.notary.record")
+        rejected = self.client.post(
+            url,
+            {**pending, "status": "rejected", "remarks": "Checker adverse decision."},
+            content_type="application/json",
+            **self._auth(cs),
+        )
+        self.assertEqual(rejected.status_code, 200, rejected.content)
+        record = NotarisationRecord.objects.get(loan_document=self.loan_document)
+        self.assertEqual(record.prepared_by_user_id, compliance.pk)
+        self.assertEqual(record.verified_by_user_id, cs.pk)
+
+        ledger_counts = (
+            AuditLog.objects.filter(action__startswith="documents.notary.").count(),
+            VersionHistory.objects.filter(
+                versioned_entity_type="notary_record"
+            ).count(),
+            WorkflowEvent.objects.filter(
+                workflow_name="loan_document_notarisation"
+            ).count(),
+        )
+        downgrade = self.client.post(
+            url, pending, content_type="application/json", **self._auth(compliance)
+        )
+        self.assertEqual(downgrade.status_code, 400, downgrade.content)
+        self.assertEqual(
+            downgrade.json()["error"]["field_errors"],
+            {"status": "Compliance cannot replace or erase a verification outcome."},
+        )
+        self.assertEqual(
+            (
+                AuditLog.objects.filter(action__startswith="documents.notary.").count(),
+                VersionHistory.objects.filter(
+                    versioned_entity_type="notary_record"
+                ).count(),
+                WorkflowEvent.objects.filter(
+                    workflow_name="loan_document_notarisation"
+                ).count(),
+            ),
+            ledger_counts,
+        )
+
+        evidence = self._evidence_file(cs, self.application.pk, "corrected-notary.pdf")
+        completed = self.client.post(
+            url,
+            {
+                "notary_name": "Correcting Notary",
+                "notary_registration_number": "NOT-CORRECTED",
+                "notarised_date": "2026-06-23",
+                "status": "completed",
+                "evidence_document_id": str(evidence.pk),
+                "remarks": "Checker correction.",
+            },
+            content_type="application/json",
+            **self._auth(cs),
+        )
+        self.assertEqual(completed.status_code, 200, completed.content)
+        record.refresh_from_db()
+        self.assertEqual(record.status, "completed")
+        self.assertEqual(record.prepared_by_user_id, compliance.pk)
+        self.assertEqual(record.verified_by_user_id, cs.pk)
+        correction_history = list(
+            VersionHistory.objects.filter(versioned_entity_type="notary_record")
+            .order_by("created_at")
+            .values_list("old_value_json", "new_value_json")
+        )
+        self.assertEqual(correction_history[-1][0]["status"], "rejected")
+        self.assertEqual(correction_history[-1][1]["status"], "completed")
+
+        replacement = self._evidence_file(
+            compliance, self.application.pk, "maker-replacement.pdf"
+        )
+        replacement_attempt = self.client.post(
+            url,
+            {
+                "notary_name": "Maker Replacement",
+                "notary_registration_number": "NOT-MAKER",
+                "notarised_date": "2026-06-24",
+                "status": "completed",
+                "evidence_document_id": str(replacement.pk),
+                "remarks": "Maker must not replace checker evidence.",
+            },
+            content_type="application/json",
+            **self._auth(compliance),
+        )
+        self.assertEqual(replacement_attempt.status_code, 400)
+        record.refresh_from_db()
+        self.assertEqual(record.evidence_document_id, evidence.pk)
+        self.assertEqual(
+            VersionHistory.objects.filter(
+                versioned_entity_type="notary_record"
+            ).count(),
+            len(correction_history),
+        )
+
+    def test_legal_http_serializers_parse_strict_stamp_and_notary_shapes(self):
+        from sfpcl_credit.legal_documents.serializers import (
+            NotarisationRecordRequest,
+            StampDutyRecordRequest,
+        )
+
+        stamp = StampDutyRecordRequest.parse(
+            {
+                "stamp_paper_amount": "500.00",
+                "stamp_type": "electronic",
+                "stamp_number": None,
+                "stamp_purchase_date": "2026-06-20",
+                "executed_date": None,
+                "status": "pending",
+                "remarks": None,
+            }
+        )
+        self.assertEqual(str(stamp.stamp_paper_amount), "500.00")
+        self.assertEqual(stamp.stamp_purchase_date.isoformat(), "2026-06-20")
+
+        notary = NotarisationRecordRequest.parse(
+            {
+                "notary_name": None,
+                "notary_registration_number": None,
+                "notarised_date": None,
+                "status": "pending",
+                "evidence_document_id": None,
+                "remarks": None,
+            }
+        )
+        self.assertIsNone(notary.evidence_document_id)
+        with self.assertRaisesMessage(ValidationError, "Unknown field"):
+            StampDutyRecordRequest.parse(
+                {
+                    **stamp.as_values(),
+                    "stamp_paper_amount": "500.00",
+                    "stamp_purchase_date": "2026-06-20",
+                    "unexpected": True,
+                }
+            )
+
+    def test_documents_exposes_only_generic_immutable_upload_provenance(self):
+        evidence = self._evidence_file(
+            self.actor, self.application.pk, "generic-provenance.pdf"
+        )
+
+        provenance = document_services.resolve_immutable_upload_provenance(
+            document_id=evidence.pk
+        )
+
+        self.assertEqual(provenance.document, evidence)
+        self.assertEqual(provenance.document_category, "legal")
+        self.assertEqual(provenance.related_entity_type, "application")
+        self.assertEqual(provenance.related_entity_id, self.application.pk)
+        self.assertFalse(
+            hasattr(document_services, "resolve_legal_application_evidence_reference")
+        )
+
+        upload = AuditLog.objects.get(
+            action="documents.file.uploaded", entity_id=evidence.pk
+        )
+        upload.new_value_json = {
+            **upload.new_value_json,
+            "checksum_sha256": "changed-after-upload",
+        }
+        upload.save(update_fields=["new_value_json"])
+        with self.assertRaises(ValidationError):
+            document_services.resolve_immutable_upload_provenance(
+                document_id=evidence.pk
+            )
+
+    def test_http_and_direct_module_enforce_identical_shape_and_authority(self):
+        payload = {
+            "stamp_paper_amount": 500,
+            "stamp_type": "physical",
+            "stamp_number": None,
+            "stamp_purchase_date": None,
+            "executed_date": None,
+            "status": "pending",
+            "remarks": None,
+        }
+        http_response = self.client.post(
+            f"/api/v1/loan-documents/{self.loan_document.pk}/stamp-duty-record/",
+            payload,
+            content_type="application/json",
+            **self._auth(self.actor),
+        )
+        self.assertEqual(http_response.status_code, 400, http_response.content)
+        with self.assertRaises(ValidationError) as direct_error:
+            stamp_notary.record_stamp(
+                actor=self.actor,
+                loan_document_id=self.loan_document.pk,
+                payload=payload,
+                metadata=stamp_notary.RequestMetadata(None, "", ""),
+            )
+        self.assertEqual(
+            http_response.json()["error"]["field_errors"],
+            stamp_notary.validation_field_errors(direct_error.exception),
+        )
+
+        adverse = {
+            **payload,
+            "stamp_paper_amount": "500.00",
+            "status": "insufficient",
+        }
+        adverse_http = self.client.post(
+            f"/api/v1/loan-documents/{self.loan_document.pk}/stamp-duty-record/",
+            adverse,
+            content_type="application/json",
+            **self._auth(self.actor),
+        )
+        with self.assertRaises(ValidationError) as adverse_direct:
+            stamp_notary.record_stamp(
+                actor=self.actor,
+                loan_document_id=self.loan_document.pk,
+                payload=adverse,
+                metadata=stamp_notary.RequestMetadata(None, "", ""),
+            )
+        self.assertEqual(
+            adverse_http.json()["error"]["field_errors"],
+            stamp_notary.validation_field_errors(adverse_direct.exception),
+        )
+
+    def test_checker_role_permission_activity_and_unknown_target_matrix_is_zero_write(
+        self,
+    ):
+        payload = {
+            "stamp_paper_amount": "500.00",
+            "stamp_type": "physical",
+            "stamp_number": None,
+            "stamp_purchase_date": None,
+            "executed_date": "2026-06-22",
+            "status": "adequate",
+            "remarks": None,
+        }
+        url = f"/api/v1/loan-documents/{self.loan_document.pk}/stamp-duty-record/"
+        preparer = self.client.post(
+            url,
+            {**payload, "executed_date": None, "status": "pending"},
+            content_type="application/json",
+            **self._auth(self.actor),
+        )
+        self.assertEqual(preparer.status_code, 200, preparer.content)
+
+        permission_only = self._user("credit_manager", "documents.stamp.record")
+        denied_permission_only = self.client.post(
+            url,
+            payload,
+            content_type="application/json",
+            **self._auth(permission_only),
+        )
+        self.assertEqual(denied_permission_only.status_code, 403)
+
+        checker = self._user("company_secretary")
+        denied_role_only = self.client.post(
+            url, payload, content_type="application/json", **self._auth(checker)
+        )
+        self.assertEqual(denied_role_only.status_code, 403)
+        permission = Permission.objects.get(permission_code="documents.stamp.record")
+        RolePermission.objects.create(role=checker.primary_role, permission=permission)
+        checker.status = "suspended"
+        checker.save(update_fields=["status"])
+        with self.assertRaises(stamp_notary.AccessDenied):
+            stamp_notary.record_stamp(
+                actor=checker,
+                loan_document_id=self.loan_document.pk,
+                payload=payload,
+                metadata=stamp_notary.RequestMetadata(None, "", ""),
+            )
+        checker.status = "active"
+        checker.save(update_fields=["status"])
+        unknown = self.client.post(
+            "/api/v1/loan-documents/10000000-0000-0000-0000-000000000097/stamp-duty-record/",
+            payload,
+            content_type="application/json",
+            **self._auth(checker),
+        )
+        self.assertEqual(unknown.status_code, 404, unknown.content)
+        self.assertEqual(
+            AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 1
         )
 
     def test_exact_stamp_replay_is_zero_write_and_change_retains_history_in_reads(self):
@@ -154,20 +571,40 @@ class StampDutyAndNotarisationApiTests(TestCase):
             "remarks": None,
         }
         url = f"/api/v1/loan-documents/{self.loan_document.pk}/stamp-duty-record/"
-        first = self.client.post(url, payload, content_type="application/json", **self._auth(self.actor))
-        replay = self.client.post(url, payload, content_type="application/json", **self._auth(self.actor))
+        first = self.client.post(
+            url, payload, content_type="application/json", **self._auth(self.actor)
+        )
+        replay = self.client.post(
+            url, payload, content_type="application/json", **self._auth(self.actor)
+        )
         self.assertEqual(first.status_code, 200, first.content)
         self.assertEqual(replay.status_code, 200, replay.content)
         self.assertEqual(first.json()["data"], replay.json()["data"])
-        self.assertEqual(AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 1)
-        self.assertEqual(VersionHistory.objects.filter(versioned_entity_type="stamp_record").count(), 1)
-        self.assertEqual(WorkflowEvent.objects.filter(workflow_name="loan_document_stamping").count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 1
+        )
+        self.assertEqual(
+            VersionHistory.objects.filter(versioned_entity_type="stamp_record").count(),
+            1,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                workflow_name="loan_document_stamping"
+            ).count(),
+            1,
+        )
 
         payload["stamp_number"] = "MH-E-456"
         payload["remarks"] = "Number received."
-        changed = self.client.post(url, payload, content_type="application/json", **self._auth(self.actor))
+        changed = self.client.post(
+            url, payload, content_type="application/json", **self._auth(self.actor)
+        )
         self.assertEqual(changed.status_code, 200, changed.content)
-        history = list(VersionHistory.objects.filter(versioned_entity_type="stamp_record").order_by("created_at"))
+        history = list(
+            VersionHistory.objects.filter(
+                versioned_entity_type="stamp_record"
+            ).order_by("created_at")
+        )
         self.assertEqual(len(history), 2)
         self.assertIsNone(history[1].old_value_json["stamp_number"])
         self.assertEqual(history[1].new_value_json["stamp_number"], "MH-E-456")
@@ -179,11 +616,15 @@ class StampDutyAndNotarisationApiTests(TestCase):
         self.assertEqual(listed.status_code, 200, listed.content)
         self.assertEqual(listed.json()["data"][0]["stamp_status"], "pending")
         checklist_data = document_checklist.serialize(self.item.document_checklist)
-        poa = next(item for item in checklist_data["items"] if item["item_code"] == "poa")
+        poa = next(
+            item for item in checklist_data["items"] if item["item_code"] == "poa"
+        )
         self.assertEqual(poa["stamp_status"], "pending")
         self.assertEqual(poa["completion_status"], "pending")
 
-    def test_only_company_secretary_verifies_and_notary_evidence_is_application_provenanced(self):
+    def test_only_company_secretary_verifies_and_notary_evidence_is_application_provenanced(
+        self,
+    ):
         stamp_url = f"/api/v1/loan-documents/{self.loan_document.pk}/stamp-duty-record/"
         adequate = {
             "stamp_paper_amount": "500.00",
@@ -194,17 +635,57 @@ class StampDutyAndNotarisationApiTests(TestCase):
             "status": "adequate",
             "remarks": "Verified by CS.",
         }
-        denied = self.client.post(stamp_url, adequate, content_type="application/json", **self._auth(self.actor))
+        denied = self.client.post(
+            stamp_url,
+            adequate,
+            content_type="application/json",
+            **self._auth(self.actor),
+        )
         self.assertEqual(denied.status_code, 400, denied.content)
-        self.assertEqual(AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 0)
+        self.assertEqual(
+            AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 0
+        )
 
-        cs = self._user("company_secretary", "documents.stamp.record", "documents.notary.record")
-        accepted = self.client.post(stamp_url, adequate, content_type="application/json", **self._auth(cs))
+        pending_stamp = self.client.post(
+            stamp_url,
+            {
+                **adequate,
+                "executed_date": None,
+                "status": "pending",
+                "remarks": "Prepared for Company Secretary verification.",
+            },
+            content_type="application/json",
+            **self._auth(self.actor),
+        )
+        self.assertEqual(pending_stamp.status_code, 200, pending_stamp.content)
+
+        cs = self._user(
+            "company_secretary", "documents.stamp.record", "documents.notary.record"
+        )
+        accepted = self.client.post(
+            stamp_url, adequate, content_type="application/json", **self._auth(cs)
+        )
         self.assertEqual(accepted.status_code, 200, accepted.content)
         self.assertEqual(accepted.json()["data"]["status"], "adequate")
 
         evidence = self._evidence_file(cs, self.application.pk, "notary-proof.pdf")
-        notary_url = f"/api/v1/loan-documents/{self.loan_document.pk}/notarisation-record/"
+        notary_url = (
+            f"/api/v1/loan-documents/{self.loan_document.pk}/notarisation-record/"
+        )
+        pending_notary = self.client.post(
+            notary_url,
+            {
+                "notary_name": None,
+                "notary_registration_number": None,
+                "notarised_date": None,
+                "status": "pending",
+                "evidence_document_id": None,
+                "remarks": "Prepared for Company Secretary verification.",
+            },
+            content_type="application/json",
+            **self._auth(self.actor),
+        )
+        self.assertEqual(pending_notary.status_code, 200, pending_notary.content)
         completed = {
             "notary_name": "Test Notary",
             "notary_registration_number": "NOT-123",
@@ -213,24 +694,79 @@ class StampDutyAndNotarisationApiTests(TestCase):
             "evidence_document_id": str(evidence.pk),
             "remarks": "Original inspected.",
         }
-        response = self.client.post(notary_url, completed, content_type="application/json", **self._auth(cs))
+        response = self.client.post(
+            notary_url, completed, content_type="application/json", **self._auth(cs)
+        )
         self.assertEqual(response.status_code, 200, response.content)
-        self.assertEqual(response.json()["data"]["evidence_document_id"], str(evidence.pk))
-        self.assertEqual(response.json()["data"]["evidence_document_name"], "notary-proof.pdf")
+        self.assertEqual(
+            response.json()["data"]["evidence_document_id"], str(evidence.pk)
+        )
+        self.assertEqual(
+            response.json()["data"]["evidence_document_name"], "notary-proof.pdf"
+        )
         self.loan_document.refresh_from_db()
         self.item.refresh_from_db()
         self.assertEqual(self.loan_document.notarisation_status, "completed")
         self.assertEqual(self.item.notarisation_status, "completed")
         self.assertEqual(self.item.completion_status, "pending")
 
-        unrelated = self._evidence_file(cs, "10000000-0000-0000-0000-000000000099", "wrong-app.pdf")
+        unrelated = self._evidence_file(
+            cs, "10000000-0000-0000-0000-000000000099", "wrong-app.pdf"
+        )
         completed["evidence_document_id"] = str(unrelated.pk)
         completed["notary_registration_number"] = "NOT-999"
-        rejected = self.client.post(notary_url, completed, content_type="application/json", **self._auth(cs))
+        rejected = self.client.post(
+            notary_url, completed, content_type="application/json", **self._auth(cs)
+        )
         self.assertEqual(rejected.status_code, 400, rejected.content)
-        self.assertEqual(rejected.json()["error"]["field_errors"], {
-            "evidence_document_id": "Document file was not found or is inaccessible."
-        })
+        self.assertEqual(
+            rejected.json()["error"]["field_errors"],
+            {"evidence_document_id": "Document file was not found or is inaccessible."},
+        )
+
+        wrong_category = self._evidence_file(
+            cs, self.application.pk, "wrong-category.pdf"
+        )
+        wrong_upload = AuditLog.objects.get(
+            action="documents.file.uploaded", entity_id=wrong_category.pk
+        )
+        wrong_upload.new_value_json = {
+            **wrong_upload.new_value_json,
+            "document_category": "finance",
+        }
+        wrong_upload.save(update_fields=["new_value_json"])
+        completed["evidence_document_id"] = str(wrong_category.pk)
+        wrong_category_response = self.client.post(
+            notary_url,
+            completed,
+            content_type="application/json",
+            **self._auth(cs),
+        )
+        self.assertEqual(wrong_category_response.status_code, 400)
+
+        duplicate = self._evidence_file(cs, self.application.pk, "duplicate-ledger.pdf")
+        original_upload = AuditLog.objects.get(
+            action="documents.file.uploaded", entity_id=duplicate.pk
+        )
+        AuditLog.objects.create(
+            actor_user=cs,
+            actor_type="user",
+            action="documents.file.uploaded",
+            entity_type="document_file",
+            entity_id=duplicate.pk,
+            new_value_json=original_upload.new_value_json,
+        )
+        completed["evidence_document_id"] = str(duplicate.pk)
+        duplicate_response = self.client.post(
+            notary_url,
+            completed,
+            content_type="application/json",
+            **self._auth(cs),
+        )
+        self.assertEqual(duplicate_response.status_code, 400)
+        self.assertEqual(
+            AuditLog.objects.filter(action="documents.file.downloaded").count(), 0
+        )
 
     def test_invalid_denied_legacy_and_completion_conflicts_are_zero_write(self):
         url = f"/api/v1/loan-documents/{self.loan_document.pk}/stamp-duty-record/"
@@ -243,39 +779,93 @@ class StampDutyAndNotarisationApiTests(TestCase):
             "status": "pending",
             "remarks": None,
         }
-        invalid = self.client.post(url, {**base, "unexpected": True}, content_type="application/json", **self._auth(self.actor))
-        self.assertEqual(invalid.status_code, 400, invalid.content)
-        invalid_date = self.client.post(url, base, content_type="application/json", **self._auth(self.actor))
-        self.assertEqual(invalid_date.status_code, 400, invalid_date.content)
-        invalid_money = self.client.post(url, {**base, "stamp_purchase_date": None, "stamp_paper_amount": "500"}, content_type="application/json", **self._auth(self.actor))
-        self.assertEqual(invalid_money.status_code, 400, invalid_money.content)
-
-        reader = self._user("credit_manager", "documents.stamp.record")
-        denied = self.client.post(url, {**base, "stamp_purchase_date": None}, content_type="application/json", **self._auth(reader))
-        self.assertEqual(denied.status_code, 403, denied.content)
-        self.assertEqual(AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 0)
-
-        LoanDocument.objects.filter(pk=self.loan_document.pk).update(document_id=None)
-        legacy = self.client.post(url, {**base, "stamp_purchase_date": None}, content_type="application/json", **self._auth(self.actor))
-        self.assertEqual(legacy.status_code, 409, legacy.content)
-        LoanDocument.objects.filter(pk=self.loan_document.pk).update(document_id=self.loan_document.document_id)
-
-        created = self.client.post(url, {**base, "stamp_purchase_date": None}, content_type="application/json", **self._auth(self.actor))
-        self.assertEqual(created.status_code, 200, created.content)
-        self.item.completion_status = ChecklistItem.STATUS_COMPLETE
-        self.item.save(update_fields=["completion_status"])
-        conflict = self.client.post(
+        invalid = self.client.post(
             url,
-            {**base, "stamp_purchase_date": None, "stamp_number": "LATE-CHANGE", "status": "insufficient"},
+            {**base, "unexpected": True},
             content_type="application/json",
             **self._auth(self.actor),
         )
+        self.assertEqual(invalid.status_code, 400, invalid.content)
+        invalid_date = self.client.post(
+            url, base, content_type="application/json", **self._auth(self.actor)
+        )
+        self.assertEqual(invalid_date.status_code, 400, invalid_date.content)
+        invalid_money = self.client.post(
+            url,
+            {**base, "stamp_purchase_date": None, "stamp_paper_amount": "500"},
+            content_type="application/json",
+            **self._auth(self.actor),
+        )
+        self.assertEqual(invalid_money.status_code, 400, invalid_money.content)
+
+        reader = self._user("credit_manager", "documents.stamp.record")
+        denied = self.client.post(
+            url,
+            {**base, "stamp_purchase_date": None},
+            content_type="application/json",
+            **self._auth(reader),
+        )
+        self.assertEqual(denied.status_code, 403, denied.content)
+        self.assertEqual(
+            AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 0
+        )
+
+        LoanDocument.objects.filter(pk=self.loan_document.pk).update(document_id=None)
+        legacy = self.client.post(
+            url,
+            {**base, "stamp_purchase_date": None},
+            content_type="application/json",
+            **self._auth(self.actor),
+        )
+        self.assertEqual(legacy.status_code, 409, legacy.content)
+        LoanDocument.objects.filter(pk=self.loan_document.pk).update(
+            document_id=self.loan_document.document_id
+        )
+
+        created = self.client.post(
+            url,
+            {**base, "stamp_purchase_date": None},
+            content_type="application/json",
+            **self._auth(self.actor),
+        )
+        self.assertEqual(created.status_code, 200, created.content)
+        self.item.completion_status = ChecklistItem.STATUS_COMPLETE
+        self.item.save(update_fields=["completion_status"])
+        cs = self._user("company_secretary", "documents.stamp.record")
+        conflict = self.client.post(
+            url,
+            {
+                **base,
+                "stamp_purchase_date": None,
+                "stamp_number": "LATE-CHANGE",
+                "status": "insufficient",
+            },
+            content_type="application/json",
+            **self._auth(cs),
+        )
         self.assertEqual(conflict.status_code, 409, conflict.content)
-        self.assertEqual(AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 1
+        )
 
     def test_exact_notarisation_replay_is_zero_write(self):
         cs = self._user("company_secretary", "documents.notary.record")
         evidence = self._evidence_file(cs, self.application.pk, "replay-notary.pdf")
+        url = f"/api/v1/loan-documents/{self.loan_document.pk}/notarisation-record/"
+        preparation = self.client.post(
+            url,
+            {
+                "notary_name": None,
+                "notary_registration_number": None,
+                "notarised_date": None,
+                "status": "pending",
+                "evidence_document_id": None,
+                "remarks": None,
+            },
+            content_type="application/json",
+            **self._auth(self.actor),
+        )
+        self.assertEqual(preparation.status_code, 200, preparation.content)
         payload = {
             "notary_name": "Replay Notary",
             "notary_registration_number": "NOT-REPLAY",
@@ -284,14 +874,24 @@ class StampDutyAndNotarisationApiTests(TestCase):
             "evidence_document_id": str(evidence.pk),
             "remarks": None,
         }
-        url = f"/api/v1/loan-documents/{self.loan_document.pk}/notarisation-record/"
-        first = self.client.post(url, payload, content_type="application/json", **self._auth(cs))
-        replay = self.client.post(url, payload, content_type="application/json", **self._auth(cs))
+        first = self.client.post(
+            url, payload, content_type="application/json", **self._auth(cs)
+        )
+        replay = self.client.post(
+            url, payload, content_type="application/json", **self._auth(cs)
+        )
         self.assertEqual(first.status_code, 200, first.content)
         self.assertEqual(replay.status_code, 200, replay.content)
         self.assertEqual(first.json()["data"], replay.json()["data"])
-        self.assertEqual(AuditLog.objects.filter(action__startswith="documents.notary.").count(), 1)
-        self.assertEqual(VersionHistory.objects.filter(versioned_entity_type="notary_record").count(), 1)
+        self.assertEqual(
+            AuditLog.objects.filter(action__startswith="documents.notary.").count(), 2
+        )
+        self.assertEqual(
+            VersionHistory.objects.filter(
+                versioned_entity_type="notary_record"
+            ).count(),
+            2,
+        )
 
     def test_remaining_contract_denials_are_fielded_and_zero_write(self):
         stamp_url = f"/api/v1/loan-documents/{self.loan_document.pk}/stamp-duty-record/"
@@ -304,12 +904,18 @@ class StampDutyAndNotarisationApiTests(TestCase):
             "status": "unknown",
             "remarks": None,
         }
-        invalid_stamp = self.client.post(stamp_url, stamp, content_type="application/json", **self._auth(self.actor))
+        invalid_stamp = self.client.post(
+            stamp_url, stamp, content_type="application/json", **self._auth(self.actor)
+        )
         self.assertEqual(invalid_stamp.status_code, 400, invalid_stamp.content)
-        self.assertEqual(set(invalid_stamp.json()["error"]["field_errors"]), {"stamp_type", "status"})
+        self.assertEqual(
+            set(invalid_stamp.json()["error"]["field_errors"]), {"stamp_type", "status"}
+        )
 
         cs = self._user("company_secretary", "documents.notary.record")
-        notary_url = f"/api/v1/loan-documents/{self.loan_document.pk}/notarisation-record/"
+        notary_url = (
+            f"/api/v1/loan-documents/{self.loan_document.pk}/notarisation-record/"
+        )
         incomplete = self.client.post(
             notary_url,
             {
@@ -360,10 +966,14 @@ class StampDutyAndNotarisationApiTests(TestCase):
             "evidence_document_id": str(inaccessible.pk),
             "remarks": None,
         }
-        denied_evidence = self.client.post(notary_url, pending, content_type="application/json", **self._auth(cs))
+        denied_evidence = self.client.post(
+            notary_url, pending, content_type="application/json", **self._auth(cs)
+        )
         self.assertEqual(denied_evidence.status_code, 400, denied_evidence.content)
         pending["evidence_document_id"] = "10000000-0000-0000-0000-000000000098"
-        nonexistent = self.client.post(notary_url, pending, content_type="application/json", **self._auth(cs))
+        nonexistent = self.client.post(
+            notary_url, pending, content_type="application/json", **self._auth(cs)
+        )
         self.assertEqual(nonexistent.status_code, 400, nonexistent.content)
 
         missing = self.client.post(
@@ -374,7 +984,9 @@ class StampDutyAndNotarisationApiTests(TestCase):
         )
         self.assertEqual(missing.status_code, 404, missing.content)
 
-        self.application.application_status = LoanApplication.STATUS_SUBMITTED_TO_SANCTION
+        self.application.application_status = (
+            LoanApplication.STATUS_SUBMITTED_TO_SANCTION
+        )
         self.application.save(update_fields=["application_status"])
         wrong_stage = self.client.post(
             stamp_url,
@@ -383,8 +995,12 @@ class StampDutyAndNotarisationApiTests(TestCase):
             **self._auth(self.actor),
         )
         self.assertEqual(wrong_stage.status_code, 403, wrong_stage.content)
-        self.assertEqual(AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 0)
-        self.assertEqual(AuditLog.objects.filter(action__startswith="documents.notary.").count(), 0)
+        self.assertEqual(
+            AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 0
+        )
+        self.assertEqual(
+            AuditLog.objects.filter(action__startswith="documents.notary.").count(), 0
+        )
 
     def test_loan_agreement_statuses_do_not_complete_checklist_or_calculate_rate(self):
         agreement_file = DocumentFile.objects.create(
@@ -446,7 +1062,6 @@ class StampDutyAndNotarisationApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(response.json()["data"]["stamp_paper_amount"], "731.25")
-        cs = self._user("company_secretary", "documents.notary.record")
         notary = self.client.post(
             f"/api/v1/loan-documents/{agreement.pk}/notarisation-record/",
             {
@@ -458,7 +1073,7 @@ class StampDutyAndNotarisationApiTests(TestCase):
                 "remarks": "Prepared separately from stamp facts.",
             },
             content_type="application/json",
-            **self._auth(cs),
+            **self._auth(self.actor),
         )
         self.assertEqual(notary.status_code, 200, notary.content)
         item.refresh_from_db()
@@ -523,7 +1138,9 @@ class StampDutyAndNotarisationApiTests(TestCase):
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200, response.content)
-        return {"HTTP_AUTHORIZATION": f"Bearer {response.json()['data']['access_token']}"}
+        return {
+            "HTTP_AUTHORIZATION": f"Bearer {response.json()['data']['access_token']}"
+        }
 
     @staticmethod
     def _evidence_file(actor, application_id, file_name):
@@ -562,17 +1179,23 @@ class StampDutyAndNotarisationApiTests(TestCase):
         return document
 
 
-@skipUnless(connection.vendor == "postgresql", "Authoritative stamp five-race requires PostgreSQL.")
+@skipUnless(
+    connection.vendor == "postgresql",
+    "Authoritative stamp five-race requires PostgreSQL.",
+)
 class StampDutyConcurrencyTests(TransactionTestCase):
     reset_sequences = True
 
     def setUp(self):
-        fixture = StampDutyAndNotarisationApiTests(methodName="test_compliance_records_pending_stamp_with_atomic_status_and_evidence")
+        fixture = StampDutyAndNotarisationApiTests(
+            methodName="test_compliance_records_pending_stamp_with_atomic_status_and_evidence"
+        )
         fixture.setUp()
         self.fixture = fixture
 
     def test_five_changed_submissions_keep_one_current_record_and_complete_ledger(self):
-        actor = self.fixture.actor
+        preparer = self.fixture.actor
+        verifier = self.fixture._user("company_secretary", "documents.stamp.record")
         loan_document = self.fixture.loan_document
         base = {
             "stamp_paper_amount": "500.00",
@@ -584,7 +1207,7 @@ class StampDutyConcurrencyTests(TransactionTestCase):
             "remarks": "seed",
         }
         stamp_notary.record_stamp(
-            actor=actor,
+            actor=preparer,
             loan_document_id=loan_document.pk,
             payload=base,
             metadata=stamp_notary.RequestMetadata("race-seed", "203.0.113.1", "race"),
@@ -594,14 +1217,22 @@ class StampDutyConcurrencyTests(TransactionTestCase):
         def submit(index):
             close_old_connections()
             try:
-                thread_actor = User.objects.get(pk=actor.pk)
+                thread_actor = User.objects.get(pk=verifier.pk)
                 barrier.wait()
                 return stamp_notary.record_stamp(
                     actor=thread_actor,
                     loan_document_id=loan_document.pk,
-                    payload={**base, "stamp_number": f"RACE-{index}", "remarks": f"worker-{index}"},
+                    payload={
+                        **base,
+                        "stamp_number": f"RACE-{index}",
+                        "executed_date": "2026-06-22",
+                        "status": "adequate" if index % 2 == 0 else "insufficient",
+                        "remarks": f"checker-worker-{index}",
+                    },
                     metadata=stamp_notary.RequestMetadata(
-                        f"race-{index}", f"203.0.113.{index + 10}", f"race-worker-{index}"
+                        f"race-{index}",
+                        f"203.0.113.{index + 10}",
+                        f"race-worker-{index}",
                     ),
                 )
             finally:
@@ -613,6 +1244,26 @@ class StampDutyConcurrencyTests(TransactionTestCase):
         self.assertEqual(len({result["stamp_record_id"] for result in results}), 1)
         current = LoanDocument.objects.get(pk=loan_document.pk).stamp_duty_record
         self.assertIn(current.stamp_number, {f"RACE-{index}" for index in range(5)})
-        self.assertEqual(AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 6)
-        self.assertEqual(VersionHistory.objects.filter(versioned_entity_type="stamp_record").count(), 6)
-        self.assertEqual(WorkflowEvent.objects.filter(workflow_name="loan_document_stamping").count(), 6)
+        self.assertEqual(current.prepared_by_user_id, preparer.pk)
+        self.assertEqual(current.verified_by_user_id, verifier.pk)
+        self.assertEqual(
+            AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 6
+        )
+        self.assertEqual(
+            VersionHistory.objects.filter(versioned_entity_type="stamp_record").count(),
+            6,
+        )
+        self.assertEqual(
+            WorkflowEvent.objects.filter(
+                workflow_name="loan_document_stamping"
+            ).count(),
+            6,
+        )
+        request_ids = {
+            audit.new_value_json["request_id"]
+            for audit in AuditLog.objects.filter(action__startswith="documents.stamp.")
+        }
+        self.assertEqual(
+            request_ids,
+            {"race-seed", *(f"race-{index}" for index in range(5))},
+        )

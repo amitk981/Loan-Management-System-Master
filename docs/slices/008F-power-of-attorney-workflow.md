@@ -137,6 +137,19 @@ roll back atomically with a failed mutation.
   maker/checker stamp/notary and 008E2 borrower/nominee signatures. Metadata-only fixtures may still
   isolate unit rules but cannot be the sole tracer for activation.
 
+## Run-Ahead Sharpening (008D2 completion, 2026-07-14)
+
+- PoA activation may consume only stamp/notary rows with non-null, distinct retained
+  `prepared_by_user_id` and `verified_by_user_id`, plus `adequate`/`completed` current outcomes on
+  the exact PoA loan document. A-108 legacy rows with missing maker attribution are history, not new
+  activation evidence.
+- Resolve 008D2 evidence through a legal-documents-owned selector; do not query foundation upload
+  ledgers, recompute category/application policy, or infer verification from `LoanDocument` status
+  projections alone.
+- Preserve Company Secretary checker identity separately from the PoA attorney identity even when
+  the same canonical Company Secretary user legitimately fills both roles; Compliance preparation
+  must still be a different user and every downstream audit must retain all identities.
+
 ## Visual Acceptance Criteria
 None.
 

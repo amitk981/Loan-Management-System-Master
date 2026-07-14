@@ -15,6 +15,10 @@ from sfpcl_credit.legal_documents.modules import document_generation
 from sfpcl_credit.legal_documents.modules import document_checklist
 from sfpcl_credit.legal_documents.modules import stamp_notary
 from sfpcl_credit.legal_documents.modules import signatures
+from sfpcl_credit.legal_documents.serializers import (
+    NotarisationRecordRequest,
+    StampDutyRecordRequest,
+)
 
 
 @require_GET
@@ -36,7 +40,9 @@ def loan_document_collection(request, loan_application_id):
             "You do not have access to this loan application.",
         )
     except document_generation.LegalDocumentNotFound:
-        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+        return error_response(
+            request, 404, "NOT_FOUND", "Loan application was not found."
+        )
     except ValidationError as exc:
         return error_response(
             request,
@@ -72,7 +78,9 @@ def generate_loan_document(request, loan_application_id):
             "You do not have access to this loan application.",
         )
     except document_generation.LegalDocumentNotFound:
-        return error_response(request, 404, "NOT_FOUND", "Loan application was not found.")
+        return error_response(
+            request, 404, "NOT_FOUND", "Loan application was not found."
+        )
     except document_generation.InvalidGenerationState as exc:
         return error_response(request, 409, "INVALID_STATE_TRANSITION", str(exc))
     except document_generation.RendererProvenanceConflict as exc:
@@ -116,19 +124,22 @@ def legal_document_checklist(request, loan_application_id):
             "You do not have access to this document checklist.",
         )
     except document_checklist.ChecklistNotFound:
-        return error_response(request, 404, "NOT_FOUND", "Document checklist was not found.")
+        return error_response(
+            request, 404, "NOT_FOUND", "Document checklist was not found."
+        )
     return success_response(data, request)
 
 
-def _record_lifecycle(request, loan_document_id, recorder, label):
+def _record_lifecycle(request, loan_document_id, recorder, request_type, label):
     user, response = http_auth.authenticated_user(request)
     if response is not None:
         return response
     try:
+        parsed_request = request_type.parse(parse_json_body(request))
         data = recorder(
             actor=user,
             loan_document_id=loan_document_id,
-            payload=parse_json_body(request),
+            payload=parsed_request,
             metadata=stamp_notary.RequestMetadata(
                 request_id=request.headers.get("X-Request-ID"),
                 ip_address=request_ip(request),
@@ -136,16 +147,29 @@ def _record_lifecycle(request, loan_document_id, recorder, label):
             ),
         )
     except stamp_notary.AccessDenied as exc:
-        return error_response(request, 403, exc.error_code, "You do not have access to this loan document.")
+        return error_response(
+            request,
+            403,
+            exc.error_code,
+            "You do not have access to this loan document.",
+        )
     except stamp_notary.NotFound:
         return error_response(request, 404, "NOT_FOUND", "Loan document was not found.")
     except stamp_notary.ProvenanceConflict:
-        return error_response(request, 409, "CONFLICT", "Retained output is not bound to the current renderer contract.")
+        return error_response(
+            request,
+            409,
+            "CONFLICT",
+            "Retained output is not bound to the current renderer contract.",
+        )
     except stamp_notary.ProjectionConflict as exc:
         return error_response(request, 409, "CONFLICT", str(exc))
     except ValidationError as exc:
         return error_response(
-            request, 400, "VALIDATION_ERROR", f"{label} failed validation.",
+            request,
+            400,
+            "VALIDATION_ERROR",
+            f"{label} failed validation.",
             stamp_notary.validation_field_errors(exc),
         )
     return success_response(data, request)
@@ -153,12 +177,24 @@ def _record_lifecycle(request, loan_document_id, recorder, label):
 
 @require_POST
 def stamp_duty_record(request, loan_document_id):
-    return _record_lifecycle(request, loan_document_id, stamp_notary.record_stamp, "Stamp duty record")
+    return _record_lifecycle(
+        request,
+        loan_document_id,
+        stamp_notary.record_stamp,
+        StampDutyRecordRequest,
+        "Stamp duty record",
+    )
 
 
 @require_POST
 def notarisation_record(request, loan_document_id):
-    return _record_lifecycle(request, loan_document_id, stamp_notary.record_notary, "Notarisation record")
+    return _record_lifecycle(
+        request,
+        loan_document_id,
+        stamp_notary.record_notary,
+        NotarisationRecordRequest,
+        "Notarisation record",
+    )
 
 
 @require_POST
@@ -178,11 +214,21 @@ def signature_record(request, loan_document_id):
             ),
         )
     except signatures.AccessDenied as exc:
-        return error_response(request, 403, exc.error_code, "You do not have access to this loan document.")
+        return error_response(
+            request,
+            403,
+            exc.error_code,
+            "You do not have access to this loan document.",
+        )
     except signatures.NotFound:
         return error_response(request, 404, "NOT_FOUND", "Loan document was not found.")
     except signatures.ProvenanceConflict:
-        return error_response(request, 409, "CONFLICT", "Retained output is not bound to the current renderer contract.")
+        return error_response(
+            request,
+            409,
+            "CONFLICT",
+            "Retained output is not bound to the current renderer contract.",
+        )
     except signatures.InvalidState as exc:
         return error_response(request, 409, "CONFLICT", str(exc))
     except ValidationError as exc:
@@ -213,11 +259,23 @@ def resolve_signature_mismatch(request, signature_record_id):
             ),
         )
     except signatures.AccessDenied as exc:
-        return error_response(request, 403, exc.error_code, "You do not have access to this signature record.")
+        return error_response(
+            request,
+            403,
+            exc.error_code,
+            "You do not have access to this signature record.",
+        )
     except signatures.NotFound:
-        return error_response(request, 404, "NOT_FOUND", "Signature record was not found.")
+        return error_response(
+            request, 404, "NOT_FOUND", "Signature record was not found."
+        )
     except signatures.ProvenanceConflict:
-        return error_response(request, 409, "CONFLICT", "Retained output is not bound to the current renderer contract.")
+        return error_response(
+            request,
+            409,
+            "CONFLICT",
+            "Retained output is not bound to the current renderer contract.",
+        )
     except (
         signatures.InvalidState,
         signatures.EvidenceConflict,

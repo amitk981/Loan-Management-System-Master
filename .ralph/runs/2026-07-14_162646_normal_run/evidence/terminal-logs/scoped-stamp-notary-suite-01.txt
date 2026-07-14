@@ -1,0 +1,41 @@
+Creating test database for alias 'default'...
+Found 13 test(s).
+System check identified no issues (0 silenced).
+...F.F.F.F..s
+======================================================================
+FAIL: test_exact_notarisation_replay_is_zero_write (sfpcl_credit.tests.test_stamp_notary_api.StampDutyAndNotarisationApiTests.test_exact_notarisation_replay_is_zero_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_162646_normal_run/sfpcl_credit/tests/test_stamp_notary_api.py", line 543, in test_exact_notarisation_replay_is_zero_write
+    self.assertEqual(first.status_code, 200, first.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Notarisation record failed validation.", "details": {}, "field_errors": {"status": "A retained Compliance preparation is required before verification."}}, "meta": {"request_id": null, "timestamp": "2026-07-14T11:07:41.173811Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_invalid_denied_legacy_and_completion_conflicts_are_zero_write (sfpcl_credit.tests.test_stamp_notary_api.StampDutyAndNotarisationApiTests.test_invalid_denied_legacy_and_completion_conflicts_are_zero_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_162646_normal_run/sfpcl_credit/tests/test_stamp_notary_api.py", line 526, in test_invalid_denied_legacy_and_completion_conflicts_are_zero_write
+    self.assertEqual(conflict.status_code, 409, conflict.content)
+AssertionError: 400 != 409 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Stamp duty record failed validation.", "details": {}, "field_errors": {"status": "Only Company Secretary authority may record a verification outcome."}}, "meta": {"request_id": null, "timestamp": "2026-07-14T11:07:41.243961Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_loan_agreement_statuses_do_not_complete_checklist_or_calculate_rate (sfpcl_credit.tests.test_stamp_notary_api.StampDutyAndNotarisationApiTests.test_loan_agreement_statuses_do_not_complete_checklist_or_calculate_rate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_162646_normal_run/sfpcl_credit/tests/test_stamp_notary_api.py", line 716, in test_loan_agreement_statuses_do_not_complete_checklist_or_calculate_rate
+    self.assertEqual(notary.status_code, 200, notary.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Notarisation record failed validation.", "details": {}, "field_errors": {"status": "Only Compliance authority may prepare pending facts."}}, "meta": {"request_id": null, "timestamp": "2026-07-14T11:07:41.269270Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_only_company_secretary_verifies_and_notary_evidence_is_application_provenanced (sfpcl_credit.tests.test_stamp_notary_api.StampDutyAndNotarisationApiTests.test_only_company_secretary_verifies_and_notary_evidence_is_application_provenanced)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_162646_normal_run/sfpcl_credit/tests/test_stamp_notary_api.py", line 456, in test_only_company_secretary_verifies_and_notary_evidence_is_application_provenanced
+    self.assertEqual(accepted.status_code, 200, accepted.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Stamp duty record failed validation.", "details": {}, "field_errors": {"status": "A retained Compliance preparation is required before verification."}}, "meta": {"request_id": null, "timestamp": "2026-07-14T11:07:41.351624Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.287s
+
+FAILED (failures=4, skipped=1)
+Destroying test database for alias 'default'...

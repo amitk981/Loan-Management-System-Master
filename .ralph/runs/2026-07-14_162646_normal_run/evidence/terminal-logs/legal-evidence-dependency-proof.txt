@@ -1,0 +1,12 @@
+41:class ImmutableUploadProvenance:
+241:def resolve_immutable_upload_provenance(*, document_id):
+legal_documents/modules/stamp_notary.py:143:            document_authority.require_company_secretary(actor)
+legal_documents/modules/stamp_notary.py:150:            document_authority.require_compliance_preparer(actor)
+legal_documents/modules/stamp_notary.py:173:            document_authority.require_company_secretary(actor)
+legal_documents/modules/stamp_notary.py:180:            document_authority.require_compliance_preparer(actor)
+legal_documents/modules/stamp_notary.py:193:        provenance = document_services.resolve_immutable_upload_provenance(
+legal_documents/modules/stamp_notary.py:205:        and provenance.document_category == "legal"
+legal_documents/modules/stamp_notary.py:206:        and provenance.related_entity_type == "application"
+legal_documents/modules/document_authority.py:38:def require_company_secretary(actor):
+legal_documents/modules/document_authority.py:43:def require_compliance_preparer(actor):
+PASS: documents app has no Stage-4 legal-application evidence resolver

@@ -14,6 +14,22 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008D2 Verification Authority Closure (2026-07-14)
+
+Compliance now owns only pending stamp/notary preparation, while Company Secretary owns every
+positive or adverse verification outcome (`adequate`/`insufficient`, `completed`/`rejected`). New
+verification requires a retained Compliance preparer with a different immutable user id; role
+changes cannot collapse maker/checker identity. Exact maker/checker replay remains zero-write,
+checker corrections retain both identities and full old/new ledgers, and preparers cannot downgrade
+or replace verified evidence. Legacy rows with no truthful maker remain nullable history under
+A-108 and cannot be changed without real preparation.
+
+The documents app now exposes only a generic exact immutable-upload-provenance fact. Legal category,
+Stage-4 role, same-application, and notary-purpose decisions live in `legal_documents`; metadata
+never grants download. §26.9-§26.10 shape parsing uses a legal HTTP serializer seam while raw direct
+module callers cross the same strict parser and business rules. The five-checker changed-outcome
+PostgreSQL race passed twice with one current row and six attributable ledger entries.
+
 ## Architecture Review 2026-07-14 16:10 - Verification and Signature Authority
 
 - 008B4's immutable renderer contract/file/checksum provenance and legacy exclusion are substantive.

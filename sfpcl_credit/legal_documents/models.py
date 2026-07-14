@@ -140,8 +140,7 @@ class LoanDocument(models.Model):
             and self.renderer_validated_document_id == self.document_id
             and self.renderer_validated_checksum_sha256
             and self.document_id
-            and self.document.checksum_sha256
-            == self.renderer_validated_checksum_sha256
+            and self.document.checksum_sha256 == self.renderer_validated_checksum_sha256
         ):
             return self.RENDERER_CURRENT_VALIDATED
         return self.RENDERER_LEGACY_UNVERIFIED
@@ -172,17 +171,32 @@ class StampDutyRecord(models.Model):
     STATUSES = {"pending", "adequate", "insufficient"}
     TYPES = {"physical", "electronic"}
 
-    stamp_duty_record_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    stamp_duty_record_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
     loan_document = models.OneToOneField(
         LoanDocument, on_delete=models.PROTECT, related_name="stamp_duty_record"
     )
     stamp_paper_amount = models.DecimalField(max_digits=18, decimal_places=2)
     stamp_type = models.CharField(max_length=60)
-    stamp_number = models.CharField(max_length=120, blank=True, null=True, db_index=True)
+    stamp_number = models.CharField(
+        max_length=120, blank=True, null=True, db_index=True
+    )
     stamp_purchase_date = models.DateField(blank=True, null=True)
     executed_date = models.DateField(blank=True, null=True)
+    prepared_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="prepared_stamp_duty_records",
+    )
     verified_by_user = models.ForeignKey(
-        "identity.User", blank=True, null=True, on_delete=models.PROTECT
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="verified_stamp_duty_records",
     )
     status = models.CharField(max_length=60, db_index=True)
     remarks = models.TextField(blank=True, null=True)
@@ -192,9 +206,18 @@ class StampDutyRecord(models.Model):
     class Meta:
         db_table = "stamp_duty_records"
         constraints = [
-            models.CheckConstraint(check=models.Q(stamp_paper_amount__gte=0), name="stamp_amount_non_negative"),
-            models.CheckConstraint(check=models.Q(stamp_type__in=["physical", "electronic"]), name="stamp_type_bounded"),
-            models.CheckConstraint(check=models.Q(status__in=["pending", "adequate", "insufficient"]), name="stamp_status_bounded"),
+            models.CheckConstraint(
+                check=models.Q(stamp_paper_amount__gte=0),
+                name="stamp_amount_non_negative",
+            ),
+            models.CheckConstraint(
+                check=models.Q(stamp_type__in=["physical", "electronic"]),
+                name="stamp_type_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(status__in=["pending", "adequate", "insufficient"]),
+                name="stamp_status_bounded",
+            ),
             models.CheckConstraint(
                 check=models.Q(stamp_purchase_date__isnull=True)
                 | models.Q(executed_date__isnull=True)
@@ -202,7 +225,8 @@ class StampDutyRecord(models.Model):
                 name="stamp_purchase_not_after_execution",
             ),
             models.CheckConstraint(
-                check=~models.Q(status="adequate") | models.Q(executed_date__isnull=False, verified_by_user__isnull=False),
+                check=~models.Q(status="adequate")
+                | models.Q(executed_date__isnull=False, verified_by_user__isnull=False),
                 name="adequate_stamp_has_execution_verifier",
             ),
         ]
@@ -211,19 +235,34 @@ class StampDutyRecord(models.Model):
 class NotarisationRecord(models.Model):
     STATUSES = {"pending", "completed", "rejected"}
 
-    notarisation_record_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    notarisation_record_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
     loan_document = models.OneToOneField(
         LoanDocument, on_delete=models.PROTECT, related_name="notarisation_record"
     )
     notary_name = models.CharField(max_length=255, blank=True, null=True)
-    notary_registration_number = models.CharField(max_length=120, blank=True, null=True, db_index=True)
+    notary_registration_number = models.CharField(
+        max_length=120, blank=True, null=True, db_index=True
+    )
     notarised_date = models.DateField(blank=True, null=True)
     status = models.CharField(max_length=60, db_index=True)
     evidence_document = models.ForeignKey(
         "documents.DocumentFile", blank=True, null=True, on_delete=models.PROTECT
     )
+    prepared_by_user = models.ForeignKey(
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="prepared_notarisation_records",
+    )
     verified_by_user = models.ForeignKey(
-        "identity.User", blank=True, null=True, on_delete=models.PROTECT
+        "identity.User",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="verified_notarisation_records",
     )
     remarks = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -232,9 +271,13 @@ class NotarisationRecord(models.Model):
     class Meta:
         db_table = "notarisation_records"
         constraints = [
-            models.CheckConstraint(check=models.Q(status__in=["pending", "completed", "rejected"]), name="notary_status_bounded"),
             models.CheckConstraint(
-                check=~models.Q(status="completed") | models.Q(
+                check=models.Q(status__in=["pending", "completed", "rejected"]),
+                name="notary_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(status="completed")
+                | models.Q(
                     notary_name__isnull=False,
                     notary_registration_number__isnull=False,
                     notarised_date__isnull=False,
@@ -482,7 +525,9 @@ class ChecklistItem(models.Model):
     verified_at = models.DateTimeField(blank=True, null=True)
     remarks = models.TextField(blank=True)
     stamp_status = models.CharField(max_length=60, blank=True, null=True, db_index=True)
-    notarisation_status = models.CharField(max_length=60, blank=True, null=True, db_index=True)
+    notarisation_status = models.CharField(
+        max_length=60, blank=True, null=True, db_index=True
+    )
 
     class Meta:
         db_table = "checklist_items"
@@ -573,14 +618,18 @@ class ChecklistItem(models.Model):
         if self.completion_status != self.STATUS_COMPLETE and (
             self.verified_by_user_id is not None or self.verified_at is not None
         ):
-            errors["completion_status"] = "Pending items cannot carry verification facts."
+            errors["completion_status"] = (
+                "Pending items cannot carry verification facts."
+            )
         if (
             self.loan_document_id
             and self.document_checklist_id
             and self.loan_document.loan_application_id
             != self.document_checklist.loan_application_id
         ):
-            errors["loan_document"] = "Loan document must belong to the checklist application."
+            errors["loan_document"] = (
+                "Loan document must belong to the checklist application."
+            )
         if errors:
             raise ValidationError(errors)
 

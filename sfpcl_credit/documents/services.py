@@ -37,6 +37,14 @@ class DocumentReferenceContext:
     actor_is_related_case_approver: bool
 
 
+@dataclass(frozen=True)
+class ImmutableUploadProvenance:
+    document: DocumentFile
+    document_category: str
+    related_entity_type: str | None
+    related_entity_id: uuid.UUID | None
+
+
 def user_can_upload_documents(user):
     return DOCUMENT_UPLOAD_PERMISSION in auth_service.effective_permission_codes(user)
 
@@ -134,10 +142,7 @@ def resolve_referenceable_documents(
     permissions = set(actor_permissions)
     if DOCUMENT_DOWNLOAD_PERMISSION not in permissions:
         raise ValidationError(
-            {
-                field: _INACCESSIBLE_REFERENCE_MESSAGE
-                for field in document_ids_by_field
-            }
+            {field: _INACCESSIBLE_REFERENCE_MESSAGE for field in document_ids_by_field}
         )
     general_meeting_context = (
         purpose == GENERAL_MEETING_REFERENCE_PURPOSE
@@ -156,14 +161,11 @@ def resolve_referenceable_documents(
     )
     documents = DocumentFile.objects.in_bulk(document_ids_by_field.values())
     upload_metadata = {}
-    for audit in (
-        AuditLog.objects.filter(
-            action=DOCUMENT_UPLOAD_AUDIT_ACTION,
-            entity_type="document_file",
-            entity_id__in=document_ids_by_field.values(),
-        )
-        .order_by("-created_at", "-audit_log_id")
-    ):
+    for audit in AuditLog.objects.filter(
+        action=DOCUMENT_UPLOAD_AUDIT_ACTION,
+        entity_type="document_file",
+        entity_id__in=document_ids_by_field.values(),
+    ).order_by("-created_at", "-audit_log_id"):
         upload_metadata.setdefault(str(audit.entity_id), audit.new_value_json or {})
 
     denied_fields = {}
@@ -201,9 +203,7 @@ def resolve_template_source_reference(*, actor_permissions, document_id):
             action=DOCUMENT_UPLOAD_AUDIT_ACTION,
             entity_type="document_file",
             entity_id=document_id,
-        )
-        .order_by("-created_at", "-audit_log_id")
-        [:2]
+        ).order_by("-created_at", "-audit_log_id")[:2]
     )
     audit = audits[0] if len(audits) == 1 else None
     metadata = audit.new_value_json if audit and audit.new_value_json else {}
@@ -230,11 +230,8 @@ def resolve_template_source_reference(*, actor_permissions, document_id):
     return document
 
 
-def resolve_legal_application_evidence_reference(
-    *, actor_role_codes, application_id, document_id
-):
-    """Resolve metadata reference authority without granting file download."""
-    roles = set(actor_role_codes)
+def resolve_immutable_upload_provenance(*, document_id):
+    """Return exact immutable upload facts without making workflow-policy decisions."""
     document = DocumentFile.objects.filter(document_id=document_id).first()
     audits = list(
         AuditLog.objects.filter(
@@ -245,9 +242,15 @@ def resolve_legal_application_evidence_reference(
     )
     audit = audits[0] if len(audits) == 1 else None
     metadata = audit.new_value_json if audit and audit.new_value_json else {}
+    related_entity_id = None
+    raw_related_entity_id = metadata.get("related_entity_id")
+    if raw_related_entity_id is not None:
+        try:
+            related_entity_id = uuid.UUID(str(raw_related_entity_id))
+        except (TypeError, ValueError, AttributeError):
+            related_entity_id = None
     valid = bool(
-        roles & {"compliance_team_member", "company_secretary"}
-        and document
+        document
         and audit
         and audit.actor_user_id == document.uploaded_by_user_id
         and metadata.get("document_id") == str(document.pk)
@@ -259,19 +262,24 @@ def resolve_legal_application_evidence_reference(
         and metadata.get("storage_key") == document.storage_key
         and metadata.get("checksum_sha256") == document.checksum_sha256
         and metadata.get("sensitivity_level") == document.sensitivity_level
-        and metadata.get("document_category") == "legal"
-        and metadata.get("related_entity_type") == "application"
-        and metadata.get("related_entity_id") == str(application_id)
+        and isinstance(metadata.get("document_category"), str)
+        and bool(metadata.get("document_category"))
+        and (raw_related_entity_id is None or related_entity_id is not None)
         and document.sensitivity_level in ALLOWED_SENSITIVITY_LEVELS
     )
     if not valid:
-        raise ValidationError(
-            {"evidence_document_id": _INACCESSIBLE_REFERENCE_MESSAGE}
-        )
-    return document
+        raise ValidationError({"document_id": _INACCESSIBLE_REFERENCE_MESSAGE})
+    return ImmutableUploadProvenance(
+        document=document,
+        document_category=metadata["document_category"],
+        related_entity_type=metadata.get("related_entity_type"),
+        related_entity_id=related_entity_id,
+    )
 
 
-def resolve_generated_legal_evidence_reference(*, document_id, expected_checksum_sha256):
+def resolve_generated_legal_evidence_reference(
+    *, document_id, expected_checksum_sha256
+):
     """Resolve a generated legal file only when its retained document facts still agree."""
     document = DocumentFile.objects.filter(pk=document_id).first()
     if (
@@ -358,7 +366,8 @@ __all__ = [
     "GENERAL_MEETING_REFERENCE_PURPOSE",
     "GENERAL_MEETING_WORKFLOW_SCOPE",
     "resolve_referenceable_documents",
-    "resolve_legal_application_evidence_reference",
+    "ImmutableUploadProvenance",
+    "resolve_immutable_upload_provenance",
     "resolve_template_source_reference",
     "TEMPLATE_FILE_REFERENCE_PERMISSION",
     "TEMPLATE_SOURCE_CATEGORY",

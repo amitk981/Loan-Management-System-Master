@@ -6615,3 +6615,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_162646_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008D2-stamp-notary-verification-authority-closure
+- Summary: Closed stamp/notary positive and adverse outcome authority, retained distinct maker and
+  checker identities, blocked preparer downgrade/evidence replacement, added strict legal HTTP
+  serializers, and moved Stage-4 evidence policy behind a generic documents provenance fact.
+- Tests run: staged RED/GREEN authority and seam tracers; 43 focused legal regressions; two final
+  PostgreSQL five-checker race passes; Django check/migration sync; all 780 backend tests with 24
+  expected skips and 93% coverage; frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_162646_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; additive attribution migration and legal authority changes are fail-closed,
+  fully audited, race-tested, and have no external effects.
+- Next action: Run 008E2, then 008F.
+
+## 2026-07-14 17:01:43 - 2026-07-14_162646_normal_run
+- Agent tool used: codex
+- Slice attempted: 008D2-stamp-notary-verification-authority-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_162646_normal_run/.ralph/runs/2026-07-14_162646_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_162646_normal_run/.ralph/runs/2026-07-14_162646_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

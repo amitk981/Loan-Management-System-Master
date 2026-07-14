@@ -1,7 +1,7 @@
 # Slice 008D2: Stamp and Notary Verification Authority Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 008: Documentation, Legal Documents, and Security Package

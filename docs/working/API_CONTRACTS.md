@@ -3206,7 +3206,7 @@ and application scope. The retained `loan_documents` table and rows have one Dja
 `legal_documents`. Its nullable `loan_account_id` is database-constrained to `NULL` under A-102 until
 009C can replace that transition with the source-required protected nullable FK.
 
-## Stamp duty and notarisation records (008D)
+## Stamp duty and notarisation records (008D/008D2)
 
 `POST /api/v1/loan-documents/{loan_document_id}/stamp-duty-record/` requires
 `documents.stamp.record`, an active Compliance Team or Company Secretary role, an approved Stage 4
@@ -3226,26 +3226,33 @@ application, and an 008B4 current-renderer-provenance loan document. It accepts 
 
 Amount is a required non-negative two-decimal string; type is `physical` or `electronic`; status is
 `pending`, `adequate`, or `insufficient`; nullable dates use ISO `YYYY-MM-DD`, and purchase cannot
-follow execution. Only Company Secretary authority may submit `adequate`, which also requires an
-execution date. The platform persists the supplied amount and verification outcome but performs no
-hard-coded ₹500 or ad-valorem adequacy calculation.
+follow execution. Only Compliance Team authority may create or change `pending` preparation facts.
+Both `adequate` and `insufficient` are Company Secretary verification outcomes; `adequate`
+additionally requires an execution date. A checker outcome requires a retained pending preparation
+by a different user. The platform persists the supplied amount and verification outcome but
+performs no hard-coded ₹500 or ad-valorem adequacy calculation.
 
 `POST /api/v1/loan-documents/{loan_document_id}/notarisation-record/` similarly requires
 `documents.notary.record` and accepts exactly nullable notary name/registration/date, bounded
 `pending`/`completed`/`rejected` status, nullable `evidence_document_id`, and nullable remarks.
-Only Company Secretary authority may submit `completed`; completed requires every notary identity,
-date, and evidence field. Non-null evidence must have one exact retained `documents.file.uploaded`
+Only Compliance Team authority may create or change `pending` preparation facts. Both `completed`
+and `rejected` are Company Secretary verification outcomes, require a retained preparation by a
+different user, and cannot be erased or replaced by a preparer; completed additionally requires
+every notary identity, date, and evidence field. Non-null evidence must have one exact retained `documents.file.uploaded`
 provenance ledger matching the current file metadata, `legal` category, and the same application.
 The response returns evidence id/name metadata only and never grants download. The documents-owned
-reference interface verifies the exact retained upload ledger, metadata, sensitivity, legal
-category, documentation role, and same-application relationship.
+interface returns only generic immutable upload provenance. The legal-documents module owns legal
+category, Stage-4 role, notary purpose, and same-application decisions.
 
 Both routes cross one legal-documents-owned authority interface for action permission, sanctioned
 Stage 4 queue scope, and current renderer provenance, then lock only the owning `LoanDocument`.
-Exact replay returns the current response with zero
+Request shape and simple decimal/date/UUID/enum parsing live at the legal HTTP serializer seam; raw
+direct-module callers cross the same parser and business interface. Exact replay returns the current response with zero
 writes; a changed POST updates the one-to-one current record and appends attributable audit,
 version-history, and workflow evidence. The existing loan-document/checklist reads project only
-current stamp/notary statuses. Execution/verification states, renderer/template/file provenance,
+current stamp/notary statuses. Current responses and every real history snapshot include nullable
+`prepared_by_user_id` and `verified_by_user_id`; new checker outcomes require both and require them
+to differ. Execution/verification states, renderer/template/file provenance,
 checklist applicability/linkage/completion/verifier/remarks/signatures/status, and disbursement
 readiness remain untouched. A changed status conflicting with completed checklist evidence returns
 atomic `409 CONFLICT`; legacy/mismatched renderer provenance also returns zero-write `409 CONFLICT`.

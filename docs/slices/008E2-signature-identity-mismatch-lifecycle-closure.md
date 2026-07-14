@@ -86,3 +86,16 @@ High
 - Signature identities and snapshots come from canonical owners and remain immutable.
 - Resolution is nondisclosing, maker-checker safe, contract-shaped, and concurrency-proven.
 - All configured gates pass.
+
+## Run-Ahead Sharpening (008D2 completion, 2026-07-14)
+
+- Reuse the legal HTTP serializer seam and `document_authority` action-role helpers established by
+  008D2; do not restore raw JSON parsing or direct role checks inside signature views/modules.
+- Mismatch-resolution evidence must consume the documents-owned generic immutable upload-provenance
+  fact, then apply signature type/current-renderer/same-application/purpose policy locally in
+  `legal_documents`. File metadata remains separate from download authority.
+- Freeze a distinct Compliance capture identity and Company Secretary resolver identity. A user who
+  changes primary role after capture remains the same maker and must fail checker separation by
+  immutable user id, exactly as stamp/notary verification does.
+- Treat pre-attribution signature rows honestly: exact replay may remain zero-write, but never infer
+  a missing maker/resolver or allow an ordinary capture to remediate an unresolved mismatch.
