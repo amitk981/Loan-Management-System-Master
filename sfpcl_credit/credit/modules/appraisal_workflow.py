@@ -203,6 +203,9 @@ def project_approval_case_review_facts(*, application, appraisal_note, review):
     eligibility = appraisal_note.eligibility_snapshot_json
     loan_limit = appraisal_note.loan_limit_snapshot_json
     risk = appraisal_note.risk_assessment
+    witness = application.witnesses.filter(
+        verification_status="verified", shareholder_verified_flag=True
+    ).order_by("created_at", "witness_id").first()
     application_id = str(application.pk)
     return {
         "snapshot_schema_version": "approval-review-v3",
@@ -230,6 +233,27 @@ def project_approval_case_review_facts(*, application, appraisal_note, review):
             "member_type": application.borrower_type,
             "folio_number": application.member.folio_number,
             "loan_type": application.loan_type_requested or "",
+        },
+        "nominee": (
+            {
+                "nominee_id": str(application.nominee_id),
+                "name": application.nominee.nominee_name,
+            }
+            if application.nominee_id
+            else None
+        ),
+        "witness": (
+            {
+                "witness_id": str(witness.pk),
+                "name": witness.witness_name,
+                "version": witness.version,
+            }
+            if witness
+            else None
+        ),
+        "shareholding": {
+            "shareholding_id": loan_limit.get("shareholding_id"),
+            "number_of_shares": loan_limit.get("number_of_shares"),
         },
         "eligibility": eligibility,
         "loan_amounts": {

@@ -2,29 +2,28 @@
 
 ## Last Run
 
-2026-07-14_081204_normal_run
+2026-07-14_084216_normal_run
 
 ## Current Status
 
-008A2 is complete. A database-backed identity row serializes every template create/successor before
-effective-range checks, so concurrent overlapping first approved versions retain one winner and
-one evidence set. The documents-owned template-source boundary now requires singular immutable
-global upload provenance, matching sensitivity/metadata, and dedicated reference authority;
-template read/manage and file download do not imply reference or expose storage actions.
+008B is complete. The backend now generates PDF or Word loan documents from retained, checksum-
+verified approved template bytes and approval-owned frozen borrower/review/sanction facts. It
+retains immutable §16.3 metadata, returns exact replay results, and exposes an object-scoped,
+metadata-only list. Loan Agreement generation remains guarded until an executed Term Sheet exists.
 
-Catalogue reads are selector-owned and writes receive transport-neutral request metadata. The
-public borrower-template resolver maps only `individual_farmer`; `fpc`, `producer_institution`, and
-unknown values fail configuration-required until governance confirms the source FPO mapping.
+Generation requires its dedicated permission, canonical application scope, template-file reference
+authority, approved/effective/type/variant eligibility, and complete declared placeholders. It
+creates one audit and workflow record without rendered content. PostgreSQL application locking plus
+a database replay constraint retained one result under five concurrent identical requests.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-14_081204_normal_run/evidence/`. Frontend build, typecheck,
-lint, and all 287 tests pass. Django check/migration sync and all 710 backend tests pass with 21
-expected skips at 93% coverage. The focused 39-test documents/catalogue suite passes, and both
-PostgreSQL template races pass twice.
+Evidence is in `.ralph/runs/2026-07-14_084216_normal_run/evidence/`. Frontend build, typecheck,
+lint, and all 287 tests pass. Django check/migration sync and all 722 backend tests pass with 22
+expected PostgreSQL-only skips at 93% coverage. Focused generation/frozen-snapshot regressions and
+the authoritative PostgreSQL five-request replay race pass.
 
 ## Next Run
 
-Run sharpened 008B. Generation must consume the public template-source reference decision and
-borrower-variant resolver, require the dedicated reference permission alongside generation/object
-scope, and implement its own replay identity without duplicating the catalogue lock.
+Run the due architecture review before further normal slices. After review, run sharpened 008C;
+008D is also sharpened from the same Epic 008 digest for the subsequent queue position.

@@ -92,6 +92,14 @@ output, later signed-copy upload, and verification status. Generation must use a
 source facts and the exact approved/effective template; it must not fabricate missing nominee,
 witness, appraisal, sanction, or repayment facts.
 
+Implementation extract added 2026-07-14: §26.4 exact replay is retained by application, exact
+template version, and output format. Generated legal metadata begins generated/pending/pending and
+never implies execution, verification, checklist completion, or download. The source does not name
+merge identifiers or a distinct persisted dispute-clause field; A-100 records the conservative
+vocabulary and requires explicitly stored sanctioned text rather than generated legal wording.
+Template upload provenance alone is insufficient: generation also verifies retained source-object
+size/checksum before producing PDF/Word bytes.
+
 ### 008C Documentation Checklist Applicability
 Applicability rules above: SH-4 iff physical shares; CDSL pledge iff demat; tri-party when a
 subsidiary relationship exists; bank-verification letter iff mismatch; everything else always.

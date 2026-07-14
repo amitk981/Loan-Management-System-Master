@@ -49,6 +49,24 @@ class LocalDocumentStorage:
             checksum_sha256=checksum.hexdigest(),
         )
 
+    def delete(self, stored_file):
+        target_path = self.root / stored_file.storage_key
+        target_path.unlink(missing_ok=True)
+        parent = target_path.parent
+        if parent.exists() and not any(parent.iterdir()):
+            parent.rmdir()
+
+    def read_verified(self, document):
+        root = self.root.resolve()
+        target_path = (root / document.storage_key).resolve()
+        if root not in target_path.parents:
+            raise ValueError("Document storage key escapes the configured root.")
+        content = target_path.read_bytes()
+        checksum = hashlib.sha256(content).hexdigest()
+        if checksum != document.checksum_sha256 or len(content) != document.file_size_bytes:
+            raise ValueError("Document bytes do not match retained metadata.")
+        return content
+
     def download_descriptor(self, document):
         ttl_minutes = getattr(settings, "DOCUMENT_DOWNLOAD_URL_TTL_MINUTES", 15)
         expires_at = timezone.now() + timezone.timedelta(minutes=ttl_minutes)

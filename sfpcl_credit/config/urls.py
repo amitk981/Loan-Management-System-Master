@@ -27,6 +27,16 @@ from sfpcl_credit.workflows import event_views
 
 urlpatterns = [
     path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/loan-documents/generate/",
+        document_views.generate_loan_document,
+        name="loan-document-generate",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/loan-documents/",
+        document_views.loan_document_collection,
+        name="loan-document-list",
+    ),
+    path(
         "api/v1/loan-applications/<uuid:loan_application_id>/sanction-decision/",
         approval_views.loan_application_sanction_decision,
         name="loan-application-sanction-decision",

@@ -101,6 +101,18 @@ with a failed mutation.
 - Evidence metadata never grants document download, and stamp/notary completion alone never grants
   checklist approval or disbursement readiness.
 
+## Run-Ahead Sharpening Review (008B completion, 2026-07-14)
+
+- Resolve the target through a documents-owned loan-document authority interface that returns the
+  retained application/type/current owner states. A generated-document id or list visibility is
+  not stamp/notary mutation authority and must not expose the generated or template-source bytes.
+- Lock the `LoanDocument` row before one-to-one stamp/notary replay/update decisions. Do not mutate
+  008B's immutable application/template/generated-file/output-format linkage or reuse its generation
+  replay identity for changed legal evidence.
+- Project only stamp/notary owner states onto the existing nullable 008B fields. Preserve
+  `execution_status=pending` and `verification_status=pending` until their owning slices produce
+  separate source-required evidence.
+
 ## Visual Acceptance Criteria
 None.
 

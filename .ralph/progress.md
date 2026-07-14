@@ -6269,3 +6269,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_084216_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008B-document-generation-shell
+- Summary: Added retained-template PDF/Word generation, immutable loan-document metadata,
+  object-scoped metadata listing, frozen reviewed/sanctioned merge projections, exact replay, and
+  content-free audit/workflow evidence. Loan Agreement remains guarded by executed Term Sheet state.
+- Tests run: backend RED/GREEN cycles; focused generation and frozen-snapshot regressions; repeated
+  PostgreSQL five-request replay race; Django check/migration sync; all 722 backend tests with 22
+  expected PostgreSQL-only skips at 93% coverage; frontend build/typecheck/lint and all 287 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_084216_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Medium; one additive migration and confidential generated-document path, with no
+  destructive data change, external communication, deployment, commit, merge, or push.
+- Next action: Independent validation, then the due architecture review before sharpened 008C.
+
+## 2026-07-14 09:30:17 - 2026-07-14_084216_normal_run
+- Agent tool used: codex
+- Slice attempted: 008B-document-generation-shell
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_084216_normal_run/.ralph/runs/2026-07-14_084216_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_084216_normal_run/.ralph/runs/2026-07-14_084216_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

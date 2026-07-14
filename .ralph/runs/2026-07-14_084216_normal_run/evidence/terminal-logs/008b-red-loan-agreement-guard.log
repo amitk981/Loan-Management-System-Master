@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_loan_agreement_requires_executed_term_sheet_for_same_application (sfpcl_credit.tests.test_loan_document_generation_api.LoanDocumentGenerationApiTests.test_loan_agreement_requires_executed_term_sheet_for_same_application)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_084216_normal_run/sfpcl_credit/tests/test_loan_document_generation_api.py", line 200, in test_loan_agreement_requires_executed_term_sheet_for_same_application
+    self.assertEqual(response.status_code, 409, response.content)
+AssertionError: 200 != 409 : b'{"success": true, "data": {"loan_document_id": "2fa430ab-22af-42ab-b075-b8550ec7e450", "document_type": "loan_agreement", "generation_status": "generated", "document_id": "6a38fd5d-a893-4f8a-9aa8-b11c5781c89a", "file_name": "loan-agreement-LO00000801.pdf"}, "meta": {"request_id": null, "timestamp": "2026-07-14T03:21:41.330108Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.022s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -103,6 +103,18 @@ refresh write nothing. A real applicability change records old/new item facts an
 - Do not let the checklist compute or confer document-file access, final documentation approval, or
   disbursement readiness. Those remain separate permissioned owner modules.
 
+## Run-Ahead Sharpening Review (008B completion, 2026-07-14)
+
+- Consume 008B loan-document metadata through a documents-owned application-scoped selector. Do
+  not query generated `DocumentFile` rows, storage keys, template source files, or generation audit
+  payloads to infer checklist authority.
+- A retained 008B row begins `generation_status=generated`, `execution_status=pending`, and
+  `verification_status=pending`. Linking its id never marks a checklist item complete; later owners
+  must provide the source-required executed/verified evidence.
+- Checklist replay identity remains one checklist per application and one item code per checklist.
+  Do not reuse 008B's application/template/output-format replay key or its application row lock as
+  checklist creation authority.
+
 ## Visual Acceptance Criteria
 None.
 
