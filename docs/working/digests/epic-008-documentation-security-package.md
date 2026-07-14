@@ -14,6 +14,30 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## Architecture Review 2026-07-15 04:03 - Sensitive Security and Checklist Evidence
+
+- The current `field:v1` encryption token authenticates but also stores plaintext length/last-four
+  metadata. For a six-digit blank cheque this exposes four digits without a key, contradicting the
+  encrypted-column/fixed-mask contract. `008K2` moves metadata inside opaque authenticated
+  protection, migrates CDSL/cheque values with reconciliation, and keeps any separately governed
+  display suffix outside ciphertext. The 008I4 completion paragraph below records what shipped, not
+  the corrected target.
+- Source §19.2 state scope is narrower than the implemented Stage-4 reader shortcut: Senior Manager
+  Finance requires documentation-approved/pending-disbursement truth and CFC requires
+  disbursement-ready truth. `008K2` also restores partial §28.6 PATCH and completes the two-direction
+  owner/forged-access/duplicate-hash proof before a UI consumes these contracts.
+- A checklist completion currently trusts the newest application-labelled cheque `VersionHistory`
+  JSON without resolving a current cheque row or exact package/member/bank/cancelled-cheque ids.
+  An independent test created no cheque, inserted synthetic JSON, and received successful public
+  completion. `008K3` binds the item to current source-owned immutable evidence.
+- Company Secretary approval checks only item status; tests bulk-update every item complete without
+  `item_completion` actions and still approve with an empty completed-action list. `008K3` requires
+  one exact action per current required/applicable item and replaces bypass fixtures with the full
+  public terminal/mismatch/signature matrix plus exact PostgreSQL winner/loser identities.
+- M06-FR-007-012/016-017 remain partial until K2/K3. A-101 still blocks a claimed real end-to-end
+  governed Term-Sheet path; K3 must test the threshold signature rule from source-owned fixtures
+  without presenting that fixture as production readiness.
+
 ## 008I4 Sensitive Field and Nullable CDSL Closure (2026-07-15)
 
 CDSL BO accounts now cross the source-defined `shared.encryption` contract: pinned AES-256-GCM,

@@ -1,0 +1,13 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008L-member-portal-documentation-actions.md
+ M docs/slices/008M-documentation-hub-frontend-wiring.md
+ M docs/slices/architecture-review.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+?? .ralph/runs/2026-07-15_034859_architecture_review/
+?? docs/slices/008K2-sensitive-security-contract-closure.md
+?? docs/slices/008K3-final-checklist-evidence-closure.md

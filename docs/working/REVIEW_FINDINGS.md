@@ -2,6 +2,132 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-15 04:03 - Architecture Review 2026-07-15_034859_architecture_review
+
+Reviewed completed work since architecture-review commit `85f142c2`:
+- `008I2-security-poa-owner-and-read-contract-closure` (`555c148b`)
+- `008I3-security-legal-evidence-seam-and-race-closure` (`11cc0e75`)
+- `008I4-sensitive-field-encryption-and-cdsl-null-contract-closure` (`df0af073`)
+- `008J-blank-dated-cheque-and-cancelled-cheque-custody` (`a3e8c348`)
+- `008K-final-documentation-approval-sequence` (`447e965b`)
+
+The review checked `git diff 85f142c2...447e965b`, every production/test hunk, all five slice
+contracts, the Epic 008 digest/map and M06 traceability matrix, retained completion claims, and the
+cited API, data-model, functional, auth, deployment, roadmap, SOP, and codebase-design sections.
+Standards and Spec ran as isolated independent passes. Three executable review regressions failed
+against the merged code: plaintext suffix confidentiality, synthetic cheque truth, and status-only
+checklist approval. No production code changed.
+
+### Standards
+
+#### Finding 1 - Critical - Versioned ciphertext contains recoverable plaintext
+
+`shared/encryption.py:24-43` embeds `value[-4:]` verbatim in every `field:v1` token. A six-digit
+blank-cheque number therefore exposes four digits from the database value without any key; CDSL BO
+account suffixes are likewise stored outside AES-GCM ciphertext. The shipped encryption test checks
+only that the complete value is absent and depends on the exposed suffix for masking. Data-model
+§§17.4-17.5/29 classify these columns as encrypted, and 008J requires ordinary cheque values to
+remain a fixed mask without recoverable fragments. The independent regression encrypted `123456`,
+expected no `3456`, and failed on a token containing `:6:3456:`. `008K2` makes token metadata opaque,
+migrates retained values, and separates any explicitly authorised display metadata from ciphertext.
+
+#### Finding 2 - High - Finance readers receive every sanctioned Stage-4 security object
+
+`security_package._has_package_read_scope` and `document_checklist_access` treat Stage 4 alone as
+sufficient for Senior Manager Finance and Chief Financial Controller. Auth §19.2 instead limits
+Senior Manager Finance to documentation-approved/pending-disbursement applications and CFC to
+disbursement-ready applications. The PoA test positively expects a pre-approval 200, so permission
+tests fossilise the widened object scope rather than exercise state transitions. `008K2` applies the
+canonical state/object matrix across package, instrument, and checklist reads.
+
+#### Finding 3 - Medium - The blank-cheque PATCH contract is implemented as full replacement
+
+`BlankDatedChequeRequest` requires all seven request fields for both POST and PATCH. API §5.1 defines
+PATCH as partial update; omitted fields should remain unchanged while the locked merged candidate is
+validated. Current tests cover exact full-payload replay but not one-field updates, explicit null,
+empty shape, or stale partial candidates. `008K2` restores partial semantics without weakening
+terminal custody or exact replay.
+
+#### Finding 4 - Medium - Boundary and evidence proof remains narrower than promised
+
+The I3 architecture test scans only security-to-owner imports and its alternate-path check exercises
+only one forged `read_package` callback; it does not prove the promised reverse direction or PoA,
+SH-4, and CDSL public paths. I4 omits its named duplicate-hash regression. In addition, sensitive-key
+redaction policy remains duplicated between the security recorder, checklist actions, and central
+reveal owner. `008K2` adds both-direction fresh-process guards, public forged-callback tests,
+duplicate-hash proof, and one central policy without merging ordinary and reveal ledgers.
+
+No idempotency defect is filed: API §45's enumerated Idempotency-Key actions are financial actions
+and do not include the reviewed §27/§28 routes; their exact-payload replay rules are explicit. The
+Sanction Committee checklist signer remains one eligible director because 008K and the SOP define
+that narrower documentation signature even though CFO is a member of the broader committee.
+
+### Spec
+
+#### Finding 1 - Critical - Synthetic or stale cheque JSON can complete the checklist
+
+008K requires exact application/package/member/bank/blank-cheque/cancelled-cheque identities and the
+current application-owned verified decision. `_terminal_evidence` checks only status, fixed mask,
+verification, preparer/custodian, and workflow fields. Its selector trusts the newest matching
+`VersionHistory.new_value_json`, without resolving a current blank-cheque row or exact ids. The
+shipped test fabricates precisely such a ledger with no cheque row and expects public completion to
+succeed. The independent regression proved the application had no `BlankDatedCheque`, inserted an
+unbound JSON ledger, expected `EVIDENCE_BLOCKED`, and received HTTP 200. `008K3` requires current
+source-owned, exact-id evidence through the immutable cross-owner interface.
+
+#### Finding 2 - High - Checklist approval accepts completion rows with no durable actions
+
+Company Secretary approval checks only that required/applicable item statuses equal `complete`.
+It does not require an `item_completion` action matching each item, document, verifier, cycle, or
+terminal digest. The ordered-success helper bulk-updates every item status/verifier and creates no
+actions, after which all three approvals succeed and freeze an empty `completed_item_action_ids`
+list. That conflicts with 008K's durable-action and strict public-completion contract. The
+independent status-only regression expected a zero-write 409 and received a successful CS action.
+`008K3` reconciles locked item rows to exact retained completion actions before approval.
+
+#### Finding 3 - High - The required terminal completion matrix is largely bypassed by tests
+
+008K promises public completion for every applicable item and adverse PoA/tri-party/SH-4/CDSL/
+cheque/stamp/notary/signature/mismatch matrix. Tests publicly complete only `final_checklist` and the
+synthetic cheque fixture; all other positive approval prerequisites are bulk-updated. Consequently
+threshold Term-Sheet signature routing, source-owned terminal identities, stale links, and multi-role
+canonical-role attribution receive no end-to-end proof. `_create_action` records the first effective
+role rather than the role that authorised the stage. `008K3` replaces bypass fixtures with public
+completion and covers threshold, identity, terminal, role-intersection, and zero-write blockers.
+
+#### Finding 4 - Medium - Winner/loser and bypass assertions do not establish exact identities
+
+008K's changed-payload race helper asserts one winner, four conflicts, and aggregate row counts but
+does not bind retained payload/request/workflow/action evidence to that winner or prove every loser
+absent from success ledgers. I3's one-direction/one-callback gap and I4's missing duplicate-hash case
+similarly fall short of their slice evidence promises. `008K2` owns boundary/hash proof; `008K3`
+owns exact public action and PostgreSQL winner/loser identities.
+
+No unrelated scope creep was found. The real security owner and top-level coordinator, exact ₹500
+PoA activation, nullable pending CDSL evidence, AES-GCM/key separation, masked ordinary reads,
+central reveal audit, blank-cheque custody, §27/§28 routes, strict approval ordering, and honest
+zero-write finance-signature blocker are substantive. M06-FR-007-012/016-017 have real Stage-4
+behavior but confidentiality and terminal provenance remain partial until 008K2/K3. M06-FR-013-015
+remain constrained by A-101's missing governed Term-Sheet path; the review does not claim a false
+end-to-end completion. No epic completed in this five-slice window.
+
+### Corrective queue, state, and context
+
+`008K2-sensitive-security-contract-closure` depends on completed 008K and closes ciphertext, PATCH,
+read-scope, and executable-boundary contracts. `008K3-final-checklist-evidence-closure` depends on
+K2 and closes exact terminal provenance, action-backed approval, public completion matrices, role
+attribution, and races. 008L now depends on K3; 008L and 008M are sharpened so portal/staff clients
+cannot consume raw version JSON, suffix-bearing ciphertext, permission-only finance scope, or
+status-only completion. No slice is Blocked, so no stale prerequisite needed reopening.
+
+`CONTEXT.md`, the Epic 008 digest, state, progress, handoff, and architecture-review descriptor are
+refreshed. No ADR was added: the source already decides encrypted-at-rest fields, PATCH semantics,
+the §19 object matrix, cross-owner evidence direction, and action-backed completion.
+
+Summary: Standards found 1 Critical, 1 High, and 2 Medium issues; the worst is recoverable plaintext
+inside ciphertext. Spec found 1 Critical, 2 High, and 1 Medium issue; the worst is synthetic cheque
+truth completing a legal checklist.
+
 ## 2026-07-14 23:49 - Architecture Review 2026-07-14_234031_architecture_review
 
 Reviewed completed work since architecture-review commit `e046a9d3`:

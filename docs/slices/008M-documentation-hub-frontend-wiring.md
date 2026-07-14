@@ -50,6 +50,18 @@ This slice is the final owner of these files' mock surface — after it, none of
   refetches once; changed replay, out-of-order, incomplete-evidence, and disbursement-unavailable
   conflicts remain visible without optimistic status changes or retries.
 
+## Architecture-Review Sharpening (2026-07-15 04:00)
+
+- Render completion/approval state only from 008K3's action-backed canonical projection. Never infer
+  success from a complete status, a linked file, local role, prototype count, or raw audit/version
+  data; missing/stale terminal action identity renders the existing blocked pattern.
+- Use 008K2's server-owned role/object projection for restricted states. Senior Manager Finance and
+  CFC controls remain absent until documentation-approved/disbursement-ready scope respectively;
+  the client must not widen access from a permission string or Stage-4 status.
+- Add interaction assertions that synthetic/missing cheque truth and incomplete item-action evidence
+  surface the canonical blocker without exposing cheque/BO suffixes, storage ids, signer evidence,
+  or optimistic approval UI.
+
 ## Out of Scope
 Member portal documentation actions (008L done), disbursement readiness consumption (009D), template admin CRUD beyond what 008A/008B expose.
 

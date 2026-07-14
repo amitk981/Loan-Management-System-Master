@@ -75,8 +75,15 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   adds protected blank-cheque collection/custody through the same coordinator/encryption/reveal
   seams. 008K now owns strict terminal item completion plus immutable CS, Credit Manager, and one
   eligible frozen-committee director approvals; the Senior Manager Finance route remains honestly
-  zero-write blocked until Epic 009 supplies real successful-disbursement evidence. 008L is next
-  for borrower-scoped portal documentation actions.
+  zero-write blocked until Epic 009 supplies real successful-disbursement evidence. Independent
+  review of 008I2-I4/J/K found that encryption tokens expose plaintext suffixes, finance readers
+  receive Stage-4 objects before their source-defined documentation/readiness states, and blank-
+  cheque PATCH uses replacement semantics. More critically, checklist completion trusts synthetic
+  application-labelled version JSON and ordered approvals accept bulk-completed items with no
+  durable completion actions; most promised terminal paths are bypassed in tests. Corrective 008K2
+  closes sensitive ciphertext, partial-update, reader-scope, and executable-boundary contracts;
+  008K3 then binds every completion/approval to current source-owned evidence and proves the full
+  public terminal/race matrix. 008L follows K3 for borrower-scoped portal documentation actions.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

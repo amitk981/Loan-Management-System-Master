@@ -16,7 +16,7 @@ granting internal verification, checklist completion, security custody, or sensi
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 008K
+- 008K3
 
 ## Source References
 - docs/source/implementation-roadmap.md section 13
@@ -158,6 +158,19 @@ High
   mutation route. Borrower uploads never satisfy or replay an internal completion action.
 - Preserve the explicit `not_applicable_until_disbursement` finance state; do not translate the 008K
   `DISBURSEMENT_EVIDENCE_UNAVAILABLE` blocker into a borrower action or a completed/ready label.
+
+## Architecture-Review Sharpening (2026-07-15 04:00)
+
+- Depend on 008K3 so borrower projections never inherit a status-only checklist approval or an
+  unbound synthetic cheque ledger. Consume only the corrected current completion/action projection;
+  never read raw `VersionHistory` JSON as portal business truth.
+- Depend transitively on 008K2's opaque ciphertext and corrected object-scope contract. Portal
+  responses and rendered HTML must not contain ciphertext metadata, suffixes, hashes, security ids,
+  internal reader roles, or evidence-action identities; the blank-cheque display remains status plus
+  physical instruction only.
+- Add a regression that a portal upload, re-upload, or crafted payload cannot create/update a
+  checklist action, supply a terminal security ledger, or make an internally incomplete item appear
+  complete. Canonical refetch must preserve the server's blocked state.
 
 ## Acceptance Criteria
 - The named capability works through the intended backend/API/frontend path, where applicable.
