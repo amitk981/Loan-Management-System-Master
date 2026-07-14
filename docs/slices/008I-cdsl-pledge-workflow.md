@@ -18,6 +18,10 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 ## Depends On
 - 008H
 
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
+
 ## Source References
 - docs/source/implementation-roadmap.md section 13
 - docs/source/api-contracts.md sections 26-28
@@ -109,6 +113,17 @@ replay/denial writes no success evidence. Every permitted BO-account reveal is s
   before implementation rather than silently hard-coding or dropping the SOP obligation.
 - Preserve 008G tri-party verification and every earlier checklist/package projection. CDSL evidence
   is not subsidiary deduction authority and must not start repayment or claim documentation ready.
+
+## Architecture-Review Sharpening (2026-07-14 19:20)
+
+- Implement the pledge only in 008F2's `security_instruments` owner and preserve its canonical
+  sanction/package lock. `legal_documents` may supply exact evidence provenance but must not own
+  BO-account, depository, pledge, invocation, or custody decisions.
+- A real PRF/BO/evidence change transfers current maker attribution before Company Secretary
+  acceptance. Exact replay never transfers maker identity; a multi-role editor cannot approve the
+  facts they changed.
+- The declared PostgreSQL gate must exercise different PSN/acceptance payloads twice and prove one
+  current pledge, unique PSN integrity, masked evidence, and a complete attributable loser ledger.
 
 ## Visual Acceptance Criteria
 None.

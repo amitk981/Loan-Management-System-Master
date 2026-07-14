@@ -14,6 +14,26 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## Architecture Review 2026-07-14 19:20 - Current Maker and Security Ownership
+
+- 008D2/008E2 close their original adverse-authority, canonical-identity, nondisclosure, action,
+  and race gaps, but a second actor can materially change pending stamp/notary/signature facts while
+  the row retains the first maker id, then check their own change through another active role.
+  `008G2` makes current material maker attribution honest, restores transport/domain and §6-§7
+  contracts, freezes consumed tri-party signatures, and runs the missing public/PostgreSQL proof.
+- 008F creates real package/PoA rows and projections, but the source-defined security tables and
+  workflow are owned by `legal_documents`; mutable approved status alone creates a package, and
+  Compliance can downgrade an active PoA to draft. `008F2` establishes the security-instruments
+  owner, consumes canonical terminal sanction truth, and makes exact-draft activation terminal and
+  evidence-bound before SH-4/CDSL extend the module.
+- Independent regressions received HTTP 200 for fake-status package creation, active-PoA downgrade,
+  and post-verification borrower-signature rewrite. 008G retained no PostgreSQL execution because
+  its sole race was skipped and it declared no capability; its positive document was manually
+  provenance-labelled rather than publicly generated.
+- M06-FR-007/008/009 remain partial until F2/G2. M06-FR-016/017 retain substantive E2 identity and
+  resolution behavior but remain current-maker partial until G2. No later checklist/readiness or
+  full Term Sheet claim changes.
+
 ## 008G Tri-party Verification Closure (2026-07-14)
 
 The §26.6 action now verifies only a current-renderer `tri_party_agreement` when the approval-owned

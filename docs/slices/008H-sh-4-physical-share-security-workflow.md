@@ -17,7 +17,11 @@ returning the instrument.
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 008G
+- 008F2
+
+## Runtime Capabilities
+
+- `postgresql-five-race-acceptance`
 
 ## Source References
 - docs/source/implementation-roadmap.md section 13
@@ -114,6 +118,18 @@ and package projections roll back atomically with a failed mutation.
   party snapshots as execution authority.
 - A-110's physical flag is a deferred placeholder in 008F. 008H may set it only from 008C2's frozen
   source; missing/mixed mode remains visibly blocked rather than false-ready.
+
+## Architecture-Review Sharpening (2026-07-14 19:20)
+
+- Depend on 008F2 and add SH-4 only inside its `security_instruments` deep boundary. Do not append
+  another security model/workflow to `legal_documents`; legal selectors may supply immutable
+  document/stamp/signature facts without owning package or custody policy.
+- Consume only canonical final-sanction package scope and 008G2 current-maker evidence. A maker who
+  materially changes a signature or stamp cannot then record custody through another active role,
+  and evidence consumed by a held SH-4 cannot be silently rewritten.
+- The declared PostgreSQL gate must race both create and changed custody submissions twice, retain
+  one current SH-4, and assert every winner/loser audit/version/workflow identity rather than merely
+  counting the row.
 
 ## Visual Acceptance Criteria
 None.

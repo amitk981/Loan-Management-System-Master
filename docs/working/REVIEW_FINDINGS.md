@@ -2,6 +2,126 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-14 19:20 - Architecture Review 2026-07-14_185927_architecture_review
+
+Reviewed completed work since architecture-review commit `7e119610`:
+- `008D2-stamp-notary-verification-authority-closure` (`08356302`)
+- `008E2-signature-identity-mismatch-lifecycle-closure` (`f3abacc7`)
+- `008F-power-of-attorney-workflow` (`3c6a653c`)
+- `008G-tri-party-agreement-workflow` (`12e2dea4`)
+
+The review checked `git diff 7e119610...12e2dea4`, every production/test hunk, all four slice
+contracts, the Epic 008 digest, retained RED/GREEN/full-gate/PostgreSQL evidence, and cited API,
+data-model, functional, auth, SOP, and codebase-design sections. Standards and Spec ran as isolated
+independent passes. Three additional executable regressions failed against the merged code. No
+production code changed.
+
+### Standards
+
+#### Finding 1 - Critical - Security-instrument ownership is in the legal-documents app
+
+`legal_documents/models.py:662-786` and `modules/power_of_attorney.py` own `SecurityPackage`,
+`PowerOfAttorney`, package authorization, and PoA workflow. Data-model §17 classifies these as
+security tables, while codebase-design §§8.2/36.2 assign PoA/SH-4/CDSL/cheque/custody to the
+`security_instruments` business owner and allow `legal_documents` to consume security truth, not
+own it. Continuing 008H/008I on this seam would deepen a reversed dependency. `008F2` establishes
+the source-defined owner while preserving tables, rows, ids, and v1 routes.
+
+#### Finding 2 - High - Domain modules depend on transport serializers
+
+`stamp_notary.py`, `signatures.py`, and `loan_document_verification.py` import request classes from
+`legal_documents/serializers.py` and parse dicts themselves. Codebase-design §§6.3-6.4/36.1 require
+HTTP serializers/views to call domain modules, while domain interfaces independently enforce
+business validation. `008G2` restores that direction and preserves safe direct callers.
+
+#### Finding 3 - High - Permission and evidence helpers are duplicated instead of deepened
+
+`document_authority.py` centralises some legal action roles, but `power_of_attorney.py:46-58`
+reimplements actor/activity/permission/role logic. Request metadata, audit/version/workflow writes,
+snapshots, and validation adapters are copied across four modules and already retain different
+identity shapes. This conflicts with codebase-design §9.1 and the slice requirement to centralise
+role authority. `008G2` deepens the legal action seam; `008F2` gives security actions their owner.
+
+#### Finding 4 - Medium - Workflow/error responses drift from §§6-7
+
+The §26.6 verification route returns serialized loan-document fields rather than the §6.3 action
+response with previous/new state, workflow event id, and available actions. Ordinary capture of an
+unresolved mismatch returns generic `CONFLICT`/409 instead of the §7.2
+`SIGNATURE_MISMATCH_UNRESOLVED` contract. `008G2` closes both contracts.
+
+#### Judgement calls recorded
+
+PoA tests assert row/version/audit counts but do not race activation/checker authority or assert a
+workflow loser ledger. The over-broad purpose regex rejects any clause containing `not`, `never`, or
+`prohibit` anywhere, even when the required affirmative authority is present elsewhere. `008F2`
+owns both because they affect the substantive lifecycle rather than warranting separate polish.
+
+### Spec
+
+#### Finding 1 - High - A later maker can edit evidence and then check it under the first maker's id
+
+008D2/008E2 require immutable-user maker-checker separation, including multi-role users. Stamp,
+notary, and signature update paths change business facts without changing `prepared_by_user` or
+`captured_by_user`; PoA draft changes likewise retain the creator. Every checker guard compares
+only that stale first maker. User B can therefore materially change facts created by A, then verify,
+resolve, or activate as B while the row falsely attributes A as maker. `008G2` makes the latest
+material editor the current maker, retains all earlier makers in history, and adds database-backed
+positive/adverse integrity; `008F2` applies it at PoA activation.
+
+#### Finding 2 - High - Compliance can erase an active Company-Secretary PoA decision
+
+`power_of_attorney.update_poa` permits a Compliance actor to PATCH an `active/executed` PoA back to
+`draft/pending`, clears `verified_by_user`, and returns 200. It also lets the checker alter
+maker-owned purpose/evidence facts during activation. The independent regression expected a
+zero-write conflict but received 200 with `status=draft`. `008F2` makes activation terminal in this
+slice and binds it to the exact retained maker-owned draft.
+
+#### Finding 3 - High - Post-sanction and consumed-signature truth remain mutable shortcuts
+
+Package refresh checks only mutable `application_status=approved_by_sanction`; it created a package
+with HTTP 200 for a fixture with no canonical final sanction/checklist completion path. Separately,
+after §26.6 verified a tri-party agreement, ordinary signature capture changed its consumed borrower
+row from signed to pending with HTTP 200 while the document remained `verified`. `008F2` consumes
+canonical frozen terminal sanction truth; `008G2` freezes/guards exact execution evidence.
+
+#### Finding 4 - Medium - Required 008G PostgreSQL and public-generation proof is absent
+
+008G's only race is PostgreSQL-only, but the slice declares no runtime capability and its retained
+full run reports the test as an expected skip; there is no twice-run PostgreSQL evidence. Its
+positive fixture manually creates a `DocumentFile`, approved template, and `LoanDocument` with
+claimed renderer provenance rather than crossing the public generator, despite the sharpened slice
+requiring a genuine public tracer. `008G2` declares the gate and supplies real exact/changed races
+and generation-to-verification proof. 008F likewise renders bytes but manually inserts the legal
+document; `008F2` supplies the missing public tracer.
+
+No unrelated product scope was added. D2's positive/adverse role checks, E2's canonical identity and
+nondisclosing resolution lookup, F's package/PoA schema/projections, and G's applicability/signature
+checks contain substantive assertions. The gaps are lifecycle ownership, current attribution, and
+missing promised boundary/race evidence rather than empty coverage.
+
+### Functional coverage, corrective queue, and state
+
+No epic completed in this four-slice window. M06-FR-016/017 are substantive for canonical identity,
+mismatch immutability, and resolution action identity, but current-maker handoff remains partial
+until 008G2. M06-FR-007/008 and M06-FR-009 have initial PoA/tri-party paths, but neither is complete
+while active evidence can be invalidated and the promised public/PostgreSQL proof is absent.
+M06-FR-013 remains A-101 configuration-blocked; later M06 requirements remain with 008H-008M.
+
+Corrective `008G2-stage4-maker-and-verification-contract-closure` depends on completed 008G.
+Corrective `008F2-security-instrument-boundary-and-poa-lifecycle-closure` depends on 008G2, and 008H
+now depends on 008F2 before extending the security owner. 008H/008I declare their PostgreSQL gates
+and are sharpened against the corrected boundary/current-maker semantics. No slice is Blocked, so
+no stale prerequisite status required reopening. `CONTEXT.md`, the Epic 008 digest, state,
+progress, and handoff are refreshed.
+
+No ADR was added: source codebase-design already assigns the security owner, auth already defines
+maker-checker identity, and API/data-model documents already fix the action and integrity rules.
+The corrective slices implement existing decisions rather than introducing durable new ones.
+
+Summary: Standards found 4 hard issues plus 2 judgement calls; the worst is security-instrument
+ownership in `legal_documents`. Spec found 3 High and 1 Medium issues; the worst is stale maker
+attribution allowing the material editor to check their own evidence.
+
 ## 2026-07-14 16:10 - Architecture Review 2026-07-14_155832_architecture_review
 
 Reviewed completed work since architecture-review commit `329c3b03`:

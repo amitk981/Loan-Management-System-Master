@@ -50,7 +50,13 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   subsidiary applicability and exact canonical borrower/nominee signatures, while preserving
   checklist, package, repayment, and readiness truth. The full real M05-to-Term-Sheet
   path remains configuration-blocked until governed owners exist for the missing sanction terms;
-  renderer fixtures must not be presented as that end-to-end path.
+  renderer fixtures must not be presented as that end-to-end path. Independent review found that
+  a later Stage-4 editor can retain the first maker id and then check their own facts, verified
+  tri-party signatures can be rewritten, 008G lacks its promised PostgreSQL/public-generation
+  proof, and security-package/PoA ownership sits in `legal_documents` rather than the source-defined
+  security module. Corrective 008G2 closes maker/action/consumed-evidence contracts; 008F2 then
+  establishes the security-instruments boundary and terminal canonical-sanction PoA lifecycle
+  before SH-4/CDSL work.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and
