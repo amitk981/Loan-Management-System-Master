@@ -113,6 +113,14 @@ with a failed mutation.
   `execution_status=pending` and `verification_status=pending` until their owning slices produce
   separate source-required evidence.
 
+## Architecture-Review Sharpening (2026-07-14)
+
+- Implement stamp/notary records in the legal-documents owner established by 008B2 and consume its
+  module-enforced loan-document authority. Do not reintroduce application/approval imports into the
+  foundation storage app or rely on a view-only permission check.
+- Treat 008B3's validated rendered output as document content, not execution evidence. Stamp/notary
+  completion still requires the separate §26.9/§26.10 facts and cannot be inferred from generation.
+
 ## Visual Acceptance Criteria
 None.
 

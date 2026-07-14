@@ -1,5 +1,19 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## Architecture Review 2026-07-14 09:31 - Exact Legacy UI and Action Ordering
+
+- 007R correctly emits top-level null `purpose`/`risk` for historical S23 rows, but 007S's frontend
+  types and fixtures replace those values with objects containing null members. The selected detail
+  dereferences both and can crash on the real response. `007T` uses the exact backend payload and
+  preserves the existing unavailable-value composition without reconstruction.
+- Ordinary S21 list/detail/decision reads are generation-guarded, but the action path performs a
+  separate unguarded detail/decision refresh. `007T` makes a newer page/filter/error/empty state
+  authoritative over a delayed post-action response and replaces impossible one-row/non-final-page
+  component fixtures with exact valid pagination.
+- M05 backend history, decision, register, conflict, and communication behavior remains substantive.
+  M05-FR-002/009 historical UI fidelity is reopened only until 007T; no new business rule or durable
+  architecture decision is introduced.
+
 ## 007S Register Pattern and Pagination Order Closure
 
 - Shared authenticated pagination now accepts only the exact item count implied by a standard

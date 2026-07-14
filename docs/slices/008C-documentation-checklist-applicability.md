@@ -15,7 +15,7 @@ sanction, with backend-owned applicability facts that later execution/security s
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 008B
+- 008B3
 
 ## Runtime Capabilities
 
@@ -114,6 +114,17 @@ refresh write nothing. A real applicability change records old/new item facts an
 - Checklist replay identity remains one checklist per application and one item code per checklist.
   Do not reuse 008B's application/template/output-format replay key or its application row lock as
   checklist creation authority.
+
+## Architecture-Review Sharpening (2026-07-14)
+
+- Build the checklist inside the legal-documents owner established by 008B2. Do not make the
+  foundation document-storage app import approvals/applications, and do not introduce an
+  `approvals -> legal_documents` dependency to obtain automatic creation.
+- Preserve atomic sanction/checklist behavior through an explicit orchestration or transaction hook
+  whose dependency direction is documented and publicly tested. A signal, GET-time lazy write, or
+  second independently committed transaction does not satisfy the source side effect.
+- Consume only structurally valid generated-document metadata proven by 008B3. A file extension,
+  generated status, or document id alone cannot make a checklist item complete/applicable.
 
 ## Visual Acceptance Criteria
 None.

@@ -14,6 +14,23 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## Architecture Review 2026-07-14 09:31 - Generation Boundary and Output Proof
+
+- 008A2's database identity lock, template-source provenance decision, strict selector, and borrower-
+  variant resolver are substantive and its PostgreSQL races are genuine.
+- 008B retains exact replay and frozen facts, but puts legal generation/`LoanDocument` ownership in
+  the foundation `documents` app, whose public module trusts view-only generation/object checks and
+  owns collection queries. `008B2` establishes the source-defined legal-documents deep boundary,
+  direct-call authority, selector ownership, and honest nullable loan-account integrity before 008C.
+- Current PDF acceptance checks only metadata; the Word fixture is plain UTF-8 text named `.docx`.
+  `008B3` adds a bounded renderer adapter plus genuine DOCX/PDF content/Unicode proof and keeps
+  malformed/pathological input zero-write.
+- The real M05 terminal writer has no governed numeric rate, repayment date, penal-rate, fee, or
+  dispute-clause source (A-079). The positive 13-field test inserts those facts directly, so it is a
+  renderer projection test rather than a real M05-to-M06 tracer. A-101 keeps full Term Sheet
+  generation explicitly configuration-blocked until governance identifies the immutable owners;
+  M06-FR-013 remains partial rather than receiving invented legal/financial terms.
+
 ## Architecture Review 2026-07-14 06:42 - 008A Integrity Follow-up
 
 - 008A delivers the exact §26.3 routes, immutable successor rows, metadata-only responses,

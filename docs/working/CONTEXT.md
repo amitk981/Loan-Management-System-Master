@@ -20,12 +20,18 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   corrective slices 007K-007P completed frozen review facts and terminal evidence, S21/S22/S25
   contract evidence, strict shared pagination, full S21 navigation, prototype-layout fidelity,
   and declared trusted-browser contracts. 007Q restored source-required S23/S25 columns and
-  reviewable trusted-browser evidence. The 2026-07-14 architecture review queued 007R/007S to
-  preserve pre-expansion approval/register history, freeze approver identity, close final-page/
-  stale-response gaps, and restore the fixed register design pattern.
-  Epic 008 has started: 008A exposes the versioned document-template catalogue; corrective 008A2
-  is queued before generation to close first-version effective-range races, file-reference
-  provenance, and borrower-template variant resolution.
+  reviewable trusted-browser evidence; 007R/007S then preserved legacy approval/register history,
+  froze approver identity, closed final-page/stale-response gaps, and restored the fixed register
+  pattern. Corrective 007T is queued because real legacy S23 rows still return top-level null
+  purpose/risk values that the UI does not safely consume, and a post-action refetch remains
+  outside the newest-request ordering guard.
+  Epic 008 has started: 008A/008A2 provide a versioned template catalogue with serialized effective
+  ranges, retained file-reference provenance, and explicit borrower-template variant resolution;
+  008B adds replay-safe generated-document metadata and frozen merge facts. Corrective 008B2/008B3
+  are queued before checklist work to restore the source-defined legal-document dependency seam,
+  enforce authority inside the module, and prove genuine DOCX/PDF rendered content. The full real
+  M05-to-Term-Sheet path remains configuration-blocked until governed owners exist for the missing
+  sanction terms; renderer fixtures must not be presented as that end-to-end path.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

@@ -2,6 +2,127 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-14 09:31 - Architecture Review 2026-07-14_093142_architecture_review
+
+Reviewed completed work since architecture-review commit `220f3038`:
+- `007R-legacy-approval-history-and-frozen-identity-closure` (`59095ada`)
+- `007S-register-pattern-and-pagination-order-closure` (`95709705`)
+- `008A2-template-effective-integrity-and-file-reference-boundary` (`d95d5d53`)
+- `008B-document-generation-shell` (`e1698e87`)
+
+The review checked `git diff 220f3038...e1698e87`, every production/test hunk, the four slice
+contracts, Epic 007/008 digests, retained RED/GREEN/full-gate/PostgreSQL/trusted-browser evidence,
+and the cited API/data-model/functional/codebase-design/frontend sections. Standards and Spec ran
+as isolated independent passes. No production code changed and no Blocked slice exists to reopen.
+
+### Standards
+
+#### Finding 1 - High - Legal-document generation reverses the source app dependency direction
+
+`documents/modules/document_generation.py` imports applications, approvals, identity, and workflow
+business owners, while `documents/models.py::LoanDocument` makes the foundation document-storage
+app depend on the application aggregate. Codebase-design §§14.1/36.2 assign generation to the
+`legal_documents` deep module, which may depend on approvals/applications/documents; foundation
+`documents` may depend only on accounts/RBAC/audit/shared. Thin fact façades avoid private-model
+imports but do not repair app ownership. `008B2` establishes the legal-document owner without
+changing the public v1 route or rewriting retained rows.
+
+#### Finding 2 - High - Public generation modules can bypass permission and object authority
+
+The HTTP view checks `documents.loan_document.generate` and application access, but the public
+`document_generation.generate` interface does neither; it checks only template-reference
+permission. A task or future module caller can therefore generate with an actor who lacks generation
+authority or object scope. The parallel issue exists for template mutation: public create/successor
+modules trust the view's manage check. Codebase-design §§6.3/9.1-9.2 require modules to enforce
+workflow, permission, and object access. `008B2` makes direct and HTTP callers cross the same deep
+authority boundary and adds zero-write direct-call matrices.
+
+#### Finding 3 - Medium - Loan-document list query/pagination logic is in the business module
+
+`document_generation.list_for_application` filters/eager-loads/counts/orders/slices rows and
+duplicates `_positive_int` plus pagination calculation already present in `documents/selectors.py`.
+Codebase-design §7.2 assigns collection shaping to selectors and §26.2 says replace, not layer,
+scattered shallow logic. `008B2` moves the legal collection query behind its selector while keeping
+the public response unchanged.
+
+#### Finding 4 - Medium - `loan_account_id` is an unconstrained UUID instead of the specified FK
+
+The new model/migration persists `loan_account_id` as a nullable UUID even though data-model §16.3
+defines a nullable FK and §34 requires relational integrity. The field is dormant today, but later
+code could retain a nonexistent loan id. `008B2` keeps it database-enforced unusable/null until the
+Epic 009 owner exists or introduces the real protected relation without destructive rewriting.
+
+### Spec
+
+#### Finding 1 - High - The exact backend legacy-null row can crash S23
+
+007R correctly serializes missing legacy `source_review_facts_json` as top-level `purpose: null`
+and `risk: null`, and its backend test asserts those exact values. 007S instead types both as objects,
+dereferences `row.purpose.description`/`row.risk.overall_risk_rating`, and supplies
+`{category:null}`/`{overall_risk_rating:null}` in component/browser tests. The claimed null-safe
+proof therefore never exercises the real contract and a valid historical row can throw during
+render. `007T` aligns the DTO/UI/tests/browser fixture to the exact payload and adds a visible
+legacy-null output.
+
+#### Finding 2 - High source gap - The real M05 path cannot produce the required full Term Sheet
+
+008B requires a 13-fact Term Sheet, but the actual terminal writer deliberately persists null
+numeric interest, repayment date, penal rate, empty charges, and blank conditions under A-079
+because no governed frozen source owns those facts. The positive test directly creates a fully
+populated `SanctionDecision`, bypassing M05, so it proves projection capability rather than an
+end-to-end M05/M06 path. Generation correctly blocks missing declared facts; inventing values would
+be worse. A-101 records the unresolved source/configuration owner, `008B3` labels the real-path
+blocker honestly, and M06-FR-013 remains partial until governance supplies those terms.
+
+#### Finding 3 - Medium - PDF/content evidence checks metadata, not a rendered legal document
+
+The PDF test asserts only response/model metadata and never reads the stored bytes. The DOCX test
+uses UTF-8 text named `.docx`, not a genuine Word package. The implementation's one-page minimal
+PDF path discards DOCX structure, has no Unicode/layout/content extraction proof, and raw XML
+replacement does not cover ordinary split Word runs or bounded archive expansion. A corrupt,
+unreadable, or unmerged legal output can satisfy the current test. `008B3` adds a renderer seam,
+genuine DOCX/PDF fixtures, extracted-content assertions, Unicode and bounded-input proof.
+
+#### Finding 4 - Medium - A post-action refetch is outside S21's stale-response guard
+
+007S generation-guards ordinary queue/detail/decision loads, but `act()` performs its own detail and
+sanction-decision refetch and unconditionally replaces selected/queue state. A user who changes
+filter/page while that refresh is pending can see the older action case overwrite the newer server
+state. Existing ordering tests cover `loadDetail`, not this action path. `007T` places the complete
+post-action refresh behind the same generation authority.
+
+#### Finding 5 - Low - S21 component tests still construct impossible pages
+
+`SanctionWorkbench.test.tsx` supplies one item on page 1/2 with `page_size=20`, `total_count=101`,
+and six pages. Those responses would be rejected by the shared transport 007S just hardened, but
+the mocked feature client bypasses it. `007T` uses exact 20-row non-final pages or internally valid
+smaller page metadata so race tests represent producible states.
+
+### Evidence, functional coverage, and state
+
+007R's exact v2 fixtures, remediation cycle, formal identity snapshots, and backend legacy-null
+assertions are substantive. 007S's shared pagination truth table, ordinary list/detail ordering,
+selector behavior, and two-run trusted outputs are substantive for modern rows. 008A2's first-row
+identity lock, provenance/reference matrices, resolver, and twice-run PostgreSQL races are
+substantive. 008B's authority matrix, retained frozen-fact projection, storage cleanup, exact replay,
+and five-request PostgreSQL race are substantive, but rendered-output evidence and real 13-term
+production readiness are partial.
+
+M05-FR-001/003-008/010-012 remain substantive; M05-FR-002/009's historical UI read fidelity is
+reopened only until 007T. Epic 008 is incomplete: M06-FR-013 has a generation mechanism but lacks a
+governed complete real-flow term source and validated legal renderer; M06-FR-015 has only the
+pre-execution generation guard. `CONTEXT.md` is refreshed and 008C/008D are sharpened behind
+008B2/008B3 so later checklist/stamp work does not deepen the wrong boundary.
+
+No ADR was added: codebase-design already fixes app/selector/authority ownership, while the PDF
+strategy and missing sanction-term source remain explicit choices for 008B3/governance rather than
+decisions this review may invent.
+
+Summary: Standards found 2 High and 2 Medium issues; the worst is generation reversing the legal-
+documents dependency boundary and permitting direct authority bypass. Spec found 2 High, 2 Medium,
+and 1 Low issue; the worst is a real legacy S23 response crashing the supposedly null-safe UI, while
+the source-complete Term Sheet remains unavailable through the real workflow.
+
 ## 2026-07-14 06:42 - Architecture Review 2026-07-14_064206_architecture_review
 
 Reviewed completed work since architecture-review commit `4b5b4b1`:
