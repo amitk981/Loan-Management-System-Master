@@ -379,3 +379,95 @@ class CDSLSharePledge(models.Model):
                 name="cdsl_terminal_evidence_consistent",
             ),
         ]
+
+
+class BlankDatedCheque(models.Model):
+    STATUS_COLLECTED = "collected"
+    STATUS_HELD = "held"
+
+    blank_dated_cheque_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    security_package = models.OneToOneField(
+        SecurityPackage, on_delete=models.PROTECT, related_name="blank_dated_cheque"
+    )
+    member = models.ForeignKey(
+        "members.Member", on_delete=models.PROTECT, related_name="blank_dated_cheques"
+    )
+    bank_account = models.ForeignKey(
+        "members.BankAccount", on_delete=models.PROTECT, related_name="blank_dated_cheques"
+    )
+    cancelled_cheque = models.ForeignKey(
+        "members.CancelledCheque", on_delete=models.PROTECT,
+        related_name="blank_dated_security_cheques",
+    )
+    cheque_number_encrypted = models.TextField()
+    cheque_number_hash = models.CharField(max_length=128, unique=True)
+    document = models.ForeignKey(
+        "documents.DocumentFile", blank=True, null=True, on_delete=models.PROTECT,
+        related_name="blank_dated_cheques",
+    )
+    cheque_status = models.CharField(max_length=60, db_index=True)
+    custody_location = models.CharField(max_length=255, blank=True, null=True)
+    collected_at = models.DateField()
+    prepared_by_user = models.ForeignKey(
+        "identity.User", on_delete=models.PROTECT, related_name="prepared_blank_cheques"
+    )
+    custodian_user = models.ForeignKey(
+        "identity.User", blank=True, null=True, on_delete=models.PROTECT,
+        related_name="custodied_blank_cheques",
+    )
+    custody_evidence_json = models.JSONField(default=dict, blank=True)
+    custody_workflow_event_id = models.UUIDField(blank=True, null=True)
+    invocation_approval_case_id = models.UUIDField(blank=True, null=True)
+    presented_date = models.DateField(blank=True, null=True)
+    amount_presented = models.DecimalField(
+        max_digits=18, decimal_places=2, blank=True, null=True
+    )
+    returned_at = models.DateField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "blank_dated_cheques"
+        indexes = [
+            models.Index(fields=["cheque_status", "collected_at"], name="idx_blank_cheque_status"),
+            models.Index(fields=["member", "bank_account"], name="idx_blank_cheque_bank"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(cheque_status__in=["collected", "held"]),
+                name="blank_cheque_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(invocation_approval_case_id__isnull=True),
+                name="blank_cheque_invocation_requires_later",
+            ),
+            models.CheckConstraint(
+                check=models.Q(presented_date__isnull=True)
+                & models.Q(amount_presented__isnull=True),
+                name="blank_cheque_presentment_requires_later",
+            ),
+            models.CheckConstraint(
+                check=models.Q(returned_at__isnull=True),
+                name="blank_cheque_return_requires_later",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        cheque_status="collected", custody_location__isnull=True,
+                        custodian_user__isnull=True, custody_workflow_event_id__isnull=True,
+                    )
+                    | models.Q(
+                        cheque_status="held", custody_location__isnull=False,
+                        custodian_user__isnull=False, custody_workflow_event_id__isnull=False,
+                    )
+                ),
+                name="blank_cheque_custody_consistent",
+            ),
+            models.CheckConstraint(
+                check=models.Q(custodian_user__isnull=True)
+                | ~models.Q(custodian_user=models.F("prepared_by_user")),
+                name="blank_cheque_distinct_maker_checker",
+            ),
+        ]

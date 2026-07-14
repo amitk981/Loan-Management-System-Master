@@ -8,11 +8,114 @@ from sfpcl_credit.security_instruments.modules import power_of_attorney
 from sfpcl_credit.security_instruments.modules import cdsl_share_pledge
 from sfpcl_credit.security_instruments.modules import security_package as package_service
 from sfpcl_credit.security_instruments.modules import sh4
+from sfpcl_credit.security_instruments.modules import blank_dated_cheque
 from sfpcl_credit.security_instruments.request_contracts import (
+    BlankDatedChequeRequest,
     PowerOfAttorneyRequest,
     CDSLSharePledgeRequest,
     SH4ShareTransferFormRequest,
 )
+
+
+@require_http_methods(["GET", "POST"])
+def package_blank_dated_cheque(request, security_package_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        if request.method == "GET":
+            data = security_instrument_evidence.read_blank_cheque(
+                actor=user, security_package_id=security_package_id
+            )
+        else:
+            blank_dated_cheque.require_manage_actor(user)
+            parsed = BlankDatedChequeRequest.parse(parse_json_body(request))
+            data = security_instrument_evidence.create_blank_cheque(
+                actor=user, security_package_id=security_package_id,
+                values=parsed.as_values(), metadata=_metadata(request),
+            )
+    except blank_dated_cheque.AccessDenied as exc:
+        return error_response(
+            request, 403, exc.error_code,
+            "You do not have access to this blank-dated cheque.",
+        )
+    except blank_dated_cheque.NotFound:
+        return error_response(request, 404, "NOT_FOUND", "Blank-dated cheque was not found.")
+    except blank_dated_cheque.Conflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+    except ValidationError as exc:
+        return error_response(
+            request, 400, "VALIDATION_ERROR", "Blank-dated cheque failed validation.",
+            blank_dated_cheque.validation_field_errors(exc),
+        )
+    return success_response(data, request)
+
+
+@require_http_methods(["PATCH"])
+def blank_dated_cheque_detail(request, blank_dated_cheque_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        blank_dated_cheque.require_manage_actor(user)
+        parsed = BlankDatedChequeRequest.parse(parse_json_body(request))
+        data = security_instrument_evidence.update_blank_cheque(
+            actor=user, blank_dated_cheque_id=blank_dated_cheque_id,
+            values=parsed.as_values(), metadata=_metadata(request),
+        )
+    except blank_dated_cheque.AccessDenied as exc:
+        return error_response(
+            request, 403, exc.error_code,
+            "You do not have access to this blank-dated cheque.",
+        )
+    except blank_dated_cheque.NotFound:
+        return error_response(request, 404, "NOT_FOUND", "Blank-dated cheque was not found.")
+    except blank_dated_cheque.Conflict as exc:
+        return error_response(request, 409, "CONFLICT", str(exc))
+    except ValidationError as exc:
+        return error_response(
+            request, 400, "VALIDATION_ERROR", "Blank-dated cheque failed validation.",
+            blank_dated_cheque.validation_field_errors(exc),
+        )
+    return success_response(data, request)
+
+
+@require_POST
+def blank_dated_cheque_reveal(request, blank_dated_cheque_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    try:
+        data = security_instrument_evidence.reveal_blank_cheque(
+            actor=user,
+            blank_dated_cheque_id=blank_dated_cheque_id,
+            payload=parse_json_body(request),
+            metadata=_metadata(request),
+        )
+    except security_instrument_evidence.SensitiveAccessDenied as exc:
+        return error_response(
+            request, 403, exc.error_code,
+            "You do not have access to reveal this cheque number.",
+        )
+    except security_instrument_evidence.SensitiveObjectNotFound:
+        return error_response(request, 404, "NOT_FOUND", "Blank-dated cheque was not found.")
+    except security_instrument_evidence.SensitiveRateLimited:
+        return error_response(
+            request, 429, "RATE_LIMITED", "Cheque-number reveal is temporarily rate limited."
+        )
+    except security_instrument_evidence.SensitiveValueUnavailable:
+        return error_response(
+            request, 409, "CONFLICT", "The retained cheque number cannot be revealed safely."
+        )
+    except ValidationError as exc:
+        return error_response(
+            request, 400, "VALIDATION_ERROR", "Cheque-number reveal failed validation.",
+            blank_dated_cheque.validation_field_errors(exc),
+        )
+    response = success_response(data, request)
+    response["Cache-Control"] = "no-store"
+    response["Pragma"] = "no-cache"
+    return response
 
 
 def _metadata(request):

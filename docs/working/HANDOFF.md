@@ -2,35 +2,36 @@
 
 ## Last Run
 
-2026-07-15_014532_repair
+2026-07-15_021455_normal_run
 
 ## Current Status
 
-008I4 is complete. CDSL BO values now use pinned AES-256-GCM through `shared.encryption`, with
-field-bound authenticated metadata, explicit current/previous versions, a separately configured
-lookup-HMAC key, and no reversible `SECRET_KEY` fallback. The old construction is removed from
-production and retained only in one reconciled historical migration. Pending CDSL POST/PATCH safely
-retains and projects null evidence; terminal verification still requires exact current evidence.
+008J is complete. `security_instruments` now owns one protected blank-dated cheque per retained
+package with application-owned bank/cancelled-cheque authority, six-digit validation, AES-GCM field
+encryption, unique field-specific lookup hash, optional exact-application scan provenance, fixed
+ordinary masking, append-only evidence, and database-null invocation/presentation/return facts.
+Compliance owns collected preparation; a distinct Company Secretary owns terminal held custody.
 
-`documents.modules.sensitive_data_access` now owns masking, reason/authority/object checks, expiry,
-rate/re-auth decisions, decryption, and success/denial audit. The process coordinator supplies the
-central masker to security through immutable access and serialises reveal against the pledge lock;
-all executable security code remains free of documents/legal/approvals imports. Ordinary security
-evidence remains separately recursively redacted. The repair commits central denial evidence before
-re-raising validation/access/rate/ciphertext exceptions outside the lock transaction, so the API
-status and the required denial ledger both survive.
+Public §28.6 POST/GET/PATCH routes cross the top-level evidence coordinator. Package and checklist
+reads project masked cheque/canonical cancelled-cheque custody facts without changing completion,
+linkage, verifier, remarks, signatures, package status/readiness, bank truth, file authority, or loan
+account. The explicit cheque-number reveal crosses the central sensitive-access owner, enforces
+Company Secretary permission/role/object scope, reason, expiry/rate policy, no-store headers, and
+separate plaintext-free success/denial audit. Security executables retain no documents/legal/
+approvals imports.
 
 ## Validation
 
-Original slice evidence is in `.ralph/runs/2026-07-15_011600_normal_run/evidence/`; repair evidence
-is in `.ralph/runs/2026-07-15_014532_repair/evidence/`. The four recorded coverage failures and the
-architecture-preserving dependency probe now pass. Django check and migration sync are clean; all
-841 backend tests pass with 36 expected SQLite skips and 92% coverage. Frontend lint/typecheck/build
-and all 293 tests pass. The 10 PoA/tri-party/SH-4/CDSL PostgreSQL races pass twice against separate
-test databases. No package install, network operation, or git mutation was attempted.
+Evidence is in `.ralph/runs/2026-07-15_021455_normal_run/evidence/`. Three TDD RED/GREEN cycles,
+the 11-test focused API/boundary suite, and the two five-worker PostgreSQL create/custody races pass;
+the PostgreSQL class passed twice with zero skips. Django check and migration sync are clean. All
+849 backend tests pass with 38 expected SQLite skips and 92% coverage. Frontend lint/typecheck/build
+and all 293 tests pass. No frontend production file, package, network service, or git metadata was
+changed.
 
 ## Next Run
 
-Run sharpened 008J through the established coordinator, `shared.encryption`, and central sensitive
-access seams. Then run sharpened 008K without allowing checklist completion to reveal or decrypt
-security values. A-101 still blocks the complete real Term-Sheet path.
+Architecture review is due after four completed slices. Then run sharpened 008K: consume 008J only
+through its masked terminal ledger and canonical bank selector; never reveal/decrypt cheque or BO
+values during checklist completion. 008L is now concretely sharpened for self-scoped portal
+documentation actions. A-101 still blocks the full real Term-Sheet path.

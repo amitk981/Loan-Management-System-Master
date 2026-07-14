@@ -163,6 +163,21 @@ Test output, API response examples, and screenshots when frontend is touched.
   regression that the fake BO/cheque fixtures appear in neither checklist projections nor any
   success/denial evidence while preserving the central sensitive ledger as a separate owner.
 
+## 008J Completion Sharpening (2026-07-15)
+
+- Consume blank-cheque readiness only from the latest masked `blank_dated_cheque` version ledger:
+  require `held`, one retained Compliance preparer, a distinct Company Secretary custodian, a
+  custody workflow id, exact application/package/member/bank/cancelled-cheque ids, and the current
+  application-owned verified bank/cancelled-cheque decision. Never receive the encrypted number,
+  lookup hash, reveal callback, scan download, invocation, presentation, or return authority.
+- The 008J checklist projection intentionally preserves the blank-cheque item's completion,
+  verifier, remarks, and nullable loan-document link. §27.3 still accepts the source-defined
+  `loan_document_id`; do not silently replace an existing link with the cheque scan's
+  `DocumentFile` id or treat masked metadata as a legal `LoanDocument`.
+- Approval/race evidence must preserve 008J's fixed `******` mask and canonical cancelled-cheque
+  metadata, while leaving package status/readiness, bank truth, scan access, and the central
+  sensitive reveal/denial ledger unchanged.
+
 ## Risk Level
 High
 

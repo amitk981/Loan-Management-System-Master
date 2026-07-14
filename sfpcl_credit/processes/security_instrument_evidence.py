@@ -9,7 +9,11 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from sfpcl_credit.approvals.modules.document_checklist_facts import resolve_approved_facts
 from sfpcl_credit.approvals.modules.read_scope import evaluate_approval_case_read_scope
+from sfpcl_credit.applications.modules.document_checklist_facts import (
+    resolve_blank_cheque_bank_fact,
+)
 from sfpcl_credit.identity.models import AuditLog
+from sfpcl_credit.documents.services import resolve_immutable_upload_provenance
 from sfpcl_credit.documents.modules import sensitive_data_access
 from sfpcl_credit.legal_documents.models import ChecklistItem, DocumentChecklist
 from sfpcl_credit.legal_documents import selectors
@@ -17,8 +21,9 @@ from sfpcl_credit.security_instruments.evidence_contract import (
     UncoordinatedEvidence,
     _issue_security_evidence_access,
 )
-from sfpcl_credit.security_instruments.models import CDSLSharePledge
+from sfpcl_credit.security_instruments.models import BlankDatedCheque, CDSLSharePledge
 from sfpcl_credit.security_instruments.modules import (
+    blank_dated_cheque,
     cdsl_share_pledge,
     power_of_attorney,
     security_package,
@@ -77,12 +82,28 @@ def _project_checklist_item(*, application_id, item_code, document, updates=None
     )
     if item is None:
         raise security_package.Conflict(f"The required {item_code} checklist item was not found.")
+    if item_code == "blank_dated_cheque" and document is None and not updates:
+        return
     item.loan_document = document
     update_fields = ["loan_document"]
     for field, value in (updates or {}).items():
         setattr(item, field, value)
         update_fields.append(field)
     item.save(update_fields=update_fields)
+
+
+def _blank_cheque_scan(*, application_id, document_id):
+    try:
+        provenance = resolve_immutable_upload_provenance(document_id=document_id)
+    except ValidationError:
+        return None
+    if (
+        provenance.document_category not in {"legal", "security"}
+        or provenance.related_entity_type != "application"
+        or provenance.related_entity_id != application_id
+    ):
+        return None
+    return provenance.document
 
 
 def _access():
@@ -94,6 +115,8 @@ def _access():
         execution_signatures=selectors.execution_signature_facts_for_document,
         sh4_evidence=selectors.sh4_evidence_for_update,
         cdsl_evidence=selectors.cdsl_pledge_evidence_for_update,
+        blank_cheque_bank_fact=resolve_blank_cheque_bank_fact,
+        blank_cheque_scan=_blank_cheque_scan,
         project_checklist_item=_project_checklist_item,
         mask_sensitive=sensitive_data_access.mask_value,
     )
@@ -147,6 +170,78 @@ def create_pledge(**kwargs):
 
 def update_pledge(**kwargs):
     return _call_with_canonical_evidence(cdsl_share_pledge.update_pledge, kwargs)
+
+
+def read_blank_cheque(**kwargs):
+    return _call_with_canonical_evidence(blank_dated_cheque.read_cheque, kwargs)
+
+
+def create_blank_cheque(**kwargs):
+    return _call_with_canonical_evidence(blank_dated_cheque.create_cheque, kwargs)
+
+
+def update_blank_cheque(**kwargs):
+    return _call_with_canonical_evidence(blank_dated_cheque.update_cheque, kwargs)
+
+
+def reveal_blank_cheque(**kwargs):
+    if "evidence_access" in kwargs:
+        raise UncoordinatedEvidence("Caller-supplied evidence authority is forbidden.")
+    actor = kwargs["actor"]
+    cheque_id = kwargs["blank_dated_cheque_id"]
+    access = _access()
+
+    def resolve_entity(resolving_actor):
+        package_id = (
+            BlankDatedCheque.objects.filter(pk=cheque_id)
+            .values_list("security_package_id", flat=True)
+            .first()
+        )
+        if package_id is None:
+            return None
+        try:
+            security_package.resolve_package(
+                resolving_actor, package_id, security_package.READ_PERMISSION,
+                evidence_access=access,
+            )
+        except security_package.AccessDenied as exc:
+            raise sensitive_data_access.SensitiveAccessDenied from exc
+        cheque = (
+            BlankDatedCheque.objects.select_for_update()
+            .select_related("security_package")
+            .filter(pk=cheque_id, security_package_id=package_id)
+            .first()
+        )
+        if cheque is None:
+            return None
+        return sensitive_data_access.SensitiveEntity(
+            **blank_dated_cheque.sensitive_entity_facts(cheque)
+        )
+
+    denied = None
+    with transaction.atomic():
+        try:
+            revealed = sensitive_data_access.reveal_blank_cheque_number(
+                actor=actor,
+                blank_dated_cheque_id=cheque_id,
+                payload=kwargs["payload"],
+                metadata=sensitive_data_access.RequestMetadata(
+                    request_id=kwargs["metadata"].request_id,
+                    ip_address=kwargs["metadata"].ip_address,
+                    user_agent=kwargs["metadata"].user_agent,
+                ),
+                resolve_entity=resolve_entity,
+            )
+        except (
+            ValidationError,
+            SensitiveAccessDenied,
+            SensitiveRateLimited,
+            SensitiveValueUnavailable,
+        ) as exc:
+            denied = exc
+    if denied is not None:
+        raise denied
+    return {"blank_dated_cheque_id": str(cheque_id), **revealed}
 
 
 def reveal_bo_accounts(**kwargs):

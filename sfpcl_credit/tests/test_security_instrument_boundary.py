@@ -71,15 +71,22 @@ class SecurityInstrumentBoundaryTests(SimpleTestCase):
         package = apps.get_model("security_instruments", "SecurityPackage")
         poa = apps.get_model("security_instruments", "PowerOfAttorney")
         cdsl = apps.get_model("security_instruments", "CDSLSharePledge")
+        blank_cheque = apps.get_model("security_instruments", "BlankDatedCheque")
         self.assertEqual(package._meta.db_table, "security_packages")
         self.assertEqual(poa._meta.db_table, "power_of_attorneys")
         self.assertEqual(cdsl._meta.db_table, "cdsl_share_pledges")
+        self.assertEqual(blank_cheque._meta.db_table, "blank_dated_cheques")
         with self.assertRaises(LookupError):
             apps.get_model("legal_documents", "SecurityPackage")
         from sfpcl_credit.security_instruments.modules import security_package
+        from sfpcl_credit.security_instruments.modules import blank_dated_cheque
         self.assertEqual(
             security_package.read_package.__module__,
             "sfpcl_credit.security_instruments.modules.security_package",
+        )
+        self.assertEqual(
+            blank_dated_cheque.create_cheque.__module__,
+            "sfpcl_credit.security_instruments.modules.blank_dated_cheque",
         )
 
     def test_security_app_is_the_real_power_of_attorney_policy_owner(self):

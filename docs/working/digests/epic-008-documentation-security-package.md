@@ -536,6 +536,15 @@ docs), and cadences (re-KYC every 2 years; annual income/agri evidence refresh).
 must respect the signing rules above (applicant + nominee/witness signatures are wet-ink SOP
 facts — the portal tracks status/uploads, it does not replace signatures; record as assumption).
 
+Run-ahead extract (2026-07-15): screen-spec §6 grants a borrower only own-application view, own
+documents when portal-enabled, and no approve/reject/disburse/compliance authority. Functional MVP
+§22 requires document upload/checklist and permits manual physical-action tracking only with
+evidence upload plus approval controls. The retained MP07/MP13 prototype names borrower-side
+Term Sheet/Loan Agreement/PoA/tri-party/SH-4/cancelled-cheque/mismatch uploads or instructions,
+CDSL status only, and blank-cheque physical custody status without cheque details. These are UI
+labels, not authority or completion truth; 008L must derive action visibility from the server and
+keep internal verification/approval separate.
+
 ### 008M Documentation Hub Frontend Wiring
 Blockers that must be visible before disbursement: unstamped/unnotarised instruments (V10 p.24),
 signature mismatch unresolved (§4.11), missing witness (p.32 #4), incomplete checklist

@@ -25,6 +25,8 @@ class SecurityEvidenceAccess:
     execution_signatures: Callable
     sh4_evidence: Callable
     cdsl_evidence: Callable
+    blank_cheque_bank_fact: Callable
+    blank_cheque_scan: Callable
     project_checklist_item: Callable
     mask_sensitive: Callable
     _issuer: object

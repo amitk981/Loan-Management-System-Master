@@ -80,18 +80,28 @@ def refresh_package(*, actor, application_id, metadata, evidence_access):
         )
         physical_required = facts is not None and facts.holding_mode == "physical"
         demat_required = facts is not None and facts.holding_mode == "demat"
+        cheque_fact = require_coordinated(evidence_access).blank_cheque_bank_fact(
+            application_id=application.pk
+        )
+        cheque_required = cheque_fact.valid
         if package is not None:
             if (
                 package.physical_share_security_required_flag != physical_required
                 or package.demat_pledge_required_flag != demat_required
+                or package.blank_cheque_required_flag != cheque_required
+                or package.cancelled_cheque_required_flag != cheque_required
             ):
                 old = serialize_package(package, evidence_access)
                 package.physical_share_security_required_flag = physical_required
                 package.demat_pledge_required_flag = demat_required
+                package.blank_cheque_required_flag = cheque_required
+                package.cancelled_cheque_required_flag = cheque_required
                 package.updated_at = timezone.now()
                 package.save(update_fields=[
                     "physical_share_security_required_flag",
                     "demat_pledge_required_flag",
+                    "blank_cheque_required_flag",
+                    "cancelled_cheque_required_flag",
                     "updated_at",
                 ])
                 _record_change(actor, package, old, metadata, evidence_access)
@@ -100,6 +110,8 @@ def refresh_package(*, actor, application_id, metadata, evidence_access):
             loan_application=application,
             physical_share_security_required_flag=physical_required,
             demat_pledge_required_flag=demat_required,
+            blank_cheque_required_flag=cheque_required,
+            cancelled_cheque_required_flag=cheque_required,
         )
         _record_creation(actor, package, metadata, evidence_access)
         return serialize_package(package, evidence_access)
@@ -173,10 +185,12 @@ def serialize_package(package, evidence_access):
     from sfpcl_credit.security_instruments.modules.cdsl_share_pledge import serialize_pledge
     from sfpcl_credit.security_instruments.modules.power_of_attorney import serialize_poa
     from sfpcl_credit.security_instruments.modules.sh4 import serialize_sh4
+    from sfpcl_credit.security_instruments.modules.blank_dated_cheque import serialize_cheque
 
     poa = getattr(package, "power_of_attorney", None)
     sh4 = getattr(package, "sh4_share_transfer_form", None)
     cdsl = getattr(package, "cdsl_share_pledge", None)
+    cheque = getattr(package, "blank_dated_cheque", None)
     return {
         "security_package_id": str(package.pk),
         "loan_application_id": str(package.loan_application_id),
@@ -193,6 +207,7 @@ def serialize_package(package, evidence_access):
         "cdsl_share_pledge": (
             serialize_pledge(cdsl, evidence_access) if cdsl else None
         ),
+        "blank_dated_cheque": serialize_cheque(cheque) if cheque else None,
     }
 
 

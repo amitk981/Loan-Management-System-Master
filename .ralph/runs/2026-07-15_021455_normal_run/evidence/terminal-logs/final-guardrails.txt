@@ -1,0 +1,5 @@
+diff-check=pass
+protected-files=none
+additions=1882 deletions=55 total=1937 limit=2000
+changed-files-outside-run=23 limit=30
+new-or-modified-migrations=1 limit=1

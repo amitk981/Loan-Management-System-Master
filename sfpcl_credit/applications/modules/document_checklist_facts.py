@@ -2,7 +2,8 @@
 
 from dataclasses import dataclass
 
-from sfpcl_credit.members.models import CancelledCheque
+from sfpcl_credit.applications.models import LoanApplication
+from sfpcl_credit.members.models import BankAccount, CancelledCheque
 
 
 @dataclass(frozen=True)
@@ -10,6 +11,80 @@ class SignatureMismatchFact:
     mismatch: bool | None
     source: str
     blocker: str | None
+
+
+@dataclass(frozen=True)
+class BlankChequeBankFact:
+    valid: bool
+    blocker: str | None
+    member_id: object | None = None
+    bank_account_id: object | None = None
+    cancelled_cheque_id: object | None = None
+    cancelled_cheque_document_id: object | None = None
+    bank_account_masked: str | None = None
+    ifsc: str | None = None
+    branch_name: str | None = None
+
+
+def resolve_blank_cheque_bank_fact(*, application_id):
+    """Lock and resolve the exact application-retained bank/cancelled-cheque decision."""
+    application = (
+        LoanApplication.objects.select_for_update(of=("self",))
+        .filter(pk=application_id)
+        .first()
+    )
+    if application is None or not application.bank_account_id or not application.cancelled_cheque_id:
+        return BlankChequeBankFact(False, "bank_cancelled_cheque_source_missing")
+    bank = BankAccount.objects.select_for_update().filter(pk=application.bank_account_id).first()
+    cheque = (
+        CancelledCheque.objects.select_for_update()
+        .filter(pk=application.cancelled_cheque_id)
+        .first()
+    )
+    if bank is None or cheque is None:
+        return BlankChequeBankFact(False, "bank_cancelled_cheque_source_missing")
+    related_cheques = list(
+        CancelledCheque.objects.select_for_update()
+        .filter(loan_application_id=application.pk, member_id=application.member_id)
+        .values_list("cancelled_cheque_id", flat=True)
+    )
+    if related_cheques != [cheque.pk]:
+        return BlankChequeBankFact(False, "bank_cancelled_cheque_source_conflicting")
+    same_member = (
+        bank.owner_party_type == "member"
+        and bank.owner_party_id == application.member_id
+        and cheque.member_id == application.member_id
+    )
+    exact_link = bank.cancelled_cheque_id == cheque.pk
+    account_matches = (
+        bool(bank.account_number_hash)
+        and bank.account_number_hash == cheque.account_number_hash
+        and bank.ifsc == cheque.ifsc
+        and bank.account_number_last4 == cheque.account_number_last4
+    )
+    verified = (
+        bank.verification_status == "verified"
+        and bank.status == "active"
+        and cheque.verification_status == "verified"
+        and cheque.loan_application_id == application.pk
+    )
+    if not same_member or not exact_link or not account_matches:
+        return BlankChequeBankFact(False, "bank_cancelled_cheque_source_conflicting")
+    if not verified:
+        return BlankChequeBankFact(False, "bank_cancelled_cheque_source_unverified")
+    return BlankChequeBankFact(
+        True,
+        None,
+        member_id=application.member_id,
+        bank_account_id=bank.pk,
+        cancelled_cheque_id=cheque.pk,
+        cancelled_cheque_document_id=cheque.document_id,
+        bank_account_masked=(
+            f"{'*' * 8}{bank.account_number_last4}" if bank.account_number_last4 else None
+        ),
+        ifsc=bank.ifsc,
+        branch_name=bank.branch_name or cheque.branch_name or None,
+    )
 
 
 def resolve_cancelled_cheque_signature_fact(*, application_id, member_id):

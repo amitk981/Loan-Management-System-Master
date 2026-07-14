@@ -3,6 +3,7 @@ from datetime import date
 import uuid
 
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 
 def _exact_fields(payload, fields):
@@ -238,6 +239,82 @@ class CDSLSharePledgeRequest:
             agreement_number=agreement,
             pledge_status=pledge_status,
             evidence_document_id=evidence_document_id,
+        )
+
+    def as_values(self):
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class BlankDatedChequeRequest:
+    member_id: uuid.UUID
+    bank_account_id: uuid.UUID
+    cheque_number: str
+    document_id: uuid.UUID | None
+    cheque_status: str
+    custody_location: str | None
+    collected_at: date
+
+    FIELDS = {
+        "member_id", "bank_account_id", "cheque_number", "document_id",
+        "cheque_status", "custody_location", "collected_at",
+    }
+
+    @classmethod
+    def parse(cls, payload):
+        _exact_fields(payload, cls.FIELDS)
+        errors = {}
+        ids = {}
+        for field in ("member_id", "bank_account_id"):
+            try:
+                ids[field] = uuid.UUID(str(payload.get(field)))
+            except (TypeError, ValueError, AttributeError):
+                errors[field] = "A valid accessible UUID is required."
+        document_id = payload.get("document_id")
+        if document_id is not None:
+            try:
+                document_id = uuid.UUID(str(document_id))
+            except (TypeError, ValueError, AttributeError):
+                errors["document_id"] = "A valid accessible UUID or null is required."
+                document_id = None
+        cheque_number = payload.get("cheque_number")
+        if not isinstance(cheque_number, str) or not cheque_number.isdigit() or len(cheque_number) != 6:
+            errors["cheque_number"] = "Must be exactly six digits."
+            cheque_number = ""
+        status = payload.get("cheque_status")
+        if status not in {"collected", "held"}:
+            errors["cheque_status"] = (
+                "Must be one of collected, held; invocation and return belong to later workflows."
+            )
+        location = payload.get("custody_location")
+        if location is not None:
+            if not isinstance(location, str) or not location.strip():
+                errors["custody_location"] = "Must be non-empty text or null."
+            else:
+                location = location.strip()
+                if len(location) > 255:
+                    errors["custody_location"] = "Must be at most 255 characters."
+        collected_at = payload.get("collected_at")
+        try:
+            collected_at = date.fromisoformat(collected_at)
+        except (TypeError, ValueError):
+            errors["collected_at"] = "Must be a valid ISO date."
+            collected_at = date.min
+        if collected_at > timezone.localdate():
+            errors["collected_at"] = "Cannot be in the future."
+        if status == "collected" and location is not None:
+            errors["custody_location"] = "Collected preparation cannot record terminal custody."
+        if status == "held" and not location:
+            errors["custody_location"] = "Held custody requires a location."
+        if errors:
+            raise ValidationError(errors)
+        return cls(
+            **ids,
+            cheque_number=cheque_number,
+            document_id=document_id,
+            cheque_status=status,
+            custody_location=location,
+            collected_at=collected_at,
         )
 
     def as_values(self):

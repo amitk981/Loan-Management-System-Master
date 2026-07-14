@@ -79,6 +79,21 @@ urlpatterns = [
         name="cdsl-share-pledge-reveal-bo-accounts",
     ),
     path(
+        "api/v1/security-packages/<uuid:security_package_id>/blank-dated-cheque/",
+        security_instrument_views.package_blank_dated_cheque,
+        name="security-package-blank-dated-cheque",
+    ),
+    path(
+        "api/v1/blank-dated-cheques/<uuid:blank_dated_cheque_id>/",
+        security_instrument_views.blank_dated_cheque_detail,
+        name="blank-dated-cheque-detail",
+    ),
+    path(
+        "api/v1/blank-dated-cheques/<uuid:blank_dated_cheque_id>/reveal-cheque-number/",
+        security_instrument_views.blank_dated_cheque_reveal,
+        name="blank-dated-cheque-reveal",
+    ),
+    path(
         "api/v1/loan-documents/<uuid:loan_document_id>/signatures/",
         legal_document_views.signature_record,
         name="loan-document-signature-record",

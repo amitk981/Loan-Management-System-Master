@@ -1,0 +1,54 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_reveal_fails_closed_and_audits_when_field_key_is_unavailable (sfpcl_credit.tests.test_blank_dated_cheque_api.BlankDatedChequeApiTests.test_reveal_fails_closed_and_audits_when_field_key_is_unavailable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_021455_normal_run/sfpcl_credit/tests/test_blank_dated_cheque_api.py", line 219, in test_reveal_fails_closed_and_audits_when_field_key_is_unavailable
+    response = self.client.post(
+               ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1070, in post
+    response = super().post(
+               ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 490, in post
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 617, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 1013, in request
+    self.check_exception(response)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/client.py", line 743, in check_exception
+    raise exc_value
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_021455_normal_run/sfpcl_credit/security_instruments/views.py", line 89, in blank_dated_cheque_reveal
+    data = security_instrument_evidence.reveal_blank_cheque(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_021455_normal_run/sfpcl_credit/processes/security_instrument_evidence.py", line 224, in reveal_blank_cheque
+    revealed = sensitive_data_access.reveal_blank_cheque_number(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_021455_normal_run/sfpcl_credit/documents/modules/sensitive_data_access.py", line 163, in reveal_blank_cheque_number
+    cheque_number = FieldEncryption.decrypt(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_021455_normal_run/sfpcl_credit/shared/encryption.py", line 56, in decrypt
+    plaintext = AESGCM(cls._key(key_version)).decrypt(
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_021455_normal_run/sfpcl_credit/shared/encryption.py", line 97, in _key
+    raise EncryptionConfigurationError(
+sfpcl_credit.shared.encryption.EncryptionConfigurationError: Field-encryption key version 'local-v1' is unavailable.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.093s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

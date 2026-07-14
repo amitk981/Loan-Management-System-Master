@@ -211,6 +211,22 @@ def cdsl_pledge_projection_for_application(*, application_id):
     return row or None
 
 
+def blank_cheque_projection_for_application(*, application_id):
+    """Project masked retained cheque/custody facts without importing security policy."""
+    from sfpcl_credit.configurations.models import VersionHistory
+
+    row = (
+        VersionHistory.objects.filter(
+            versioned_entity_type="blank_dated_cheque",
+            new_value_json__loan_application_id=str(application_id),
+        )
+        .order_by("-created_at", "-version_history_id")
+        .values_list("new_value_json", flat=True)
+        .first()
+    )
+    return row or None
+
+
 def _positive_int(field, value, default):
     if value in (None, ""):
         return default

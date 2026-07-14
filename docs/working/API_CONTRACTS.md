@@ -3406,8 +3406,11 @@ Refresh remains limited to active Compliance Team or Company Secretary actors. M
 status is insufficient. Refresh locks the application,
 creates at most one package, and replays zero-write; unknown resources return 404 after authority,
 while wrong-stage/stale-cycle resources remain nondisclosing. The narrow package is
-always `pending`, returns `poa_required_flag=true` and `security_ready_flag=false`, and leaves the
-cheque flags false under A-110. Since 008H, refresh sets only the SH-4/CDSL applicability pair from
+always `pending`, returns `poa_required_flag=true` and `security_ready_flag=false`. Since 008J,
+refresh sets both cheque flags true only when the application-owned selector proves one exact active
+verified borrower bank account and its matching verified cancelled-cheque fact; missing, stale,
+conflicting, or mismatched facts keep both false. Since 008H, refresh sets the SH-4/CDSL
+applicability pair from
 the canonical frozen sanction share mode: `physical` is `(true,false)`, `demat` is `(false,true)`,
 and missing/`mixed` is `(false,false)` with the existing checklist blocker retained. It includes
 metadata-only current PoA/SH-4 projections and never grants document download, invocation, release,
@@ -3531,3 +3534,50 @@ loan-account state, and `security_ready_flag=false`. Projection conflict rolls b
 all success evidence. Twice-run PostgreSQL five-worker different-PSN create and changed-acceptance
 races retain one current row, one terminal winner ledger, replay-safe same-payload returns, unique
 PSN integrity, masked history, and no loser success evidence.
+
+## Blank-dated cheque and cancelled-cheque custody (008J)
+
+`POST/GET /api/v1/security-packages/{security_package_id}/blank-dated-cheque/` and
+`PATCH /api/v1/blank-dated-cheques/{blank_dated_cheque_id}/` implement §28.6. Mutation accepts
+exactly `member_id`, `bank_account_id`, write-only six-digit `cheque_number`, nullable `document_id`,
+`cheque_status`, nullable `custody_location`, and non-future ISO `collected_at`. Status is only
+`collected` or `held`; invocation approval, presentation date/amount, return date, `invoked`, and
+`returned` are rejected and database-constrained to later owners.
+
+GET requires `security.package.read`; mutation requires `security.blank_cheque.manage` and canonical
+terminal-sanction/package scope. Active Compliance authority creates or changes collected facts. A
+distinct active Company Secretary may record `held` only with a bounded custody location and the
+exact retained Compliance member, bank, cancelled-cheque, cheque, scan, and collection-date facts.
+Held custody is terminal here. One row per package and one field-specific cheque lookup hash are
+database-enforced. Exact replay is zero-write; real changes append attributable audit/version/
+workflow evidence, while held custody freezes maker, custodian, workflow, request/network, role,
+and team facts.
+
+The member must be the sanctioned borrower. The bank must be the exact application-retained active
+verified member account linked to the exact single same-application verified cancelled cheque with
+matching protected account hash, IFSC, and last-four metadata. Caller text, account numbers,
+cross-member rows, missing/pending/rejected rows, multiple/conflicting rows, and stale ids cannot
+establish authority. A scan requires one exact immutable `documents.file.uploaded` ledger matching
+current file metadata, `legal` or `security` category, and the same application; reference grants no
+download.
+
+New numbers use `shared.encryption.FieldEncryption` AES-GCM and field-specific lookup HMAC.
+Ordinary cheque, package, checklist, audit, version, and workflow data always returns fixed
+`******`; no recoverable fragments or plaintext are logged. Reads also project canonical
+cancelled-cheque id, masked bank, IFSC/branch, status, custody, maker, and custodian metadata while
+preserving checklist completion/linkage/verifier/remarks/signatures, package status,
+`security_ready_flag=false`, and null loan account.
+
+`POST /api/v1/blank-dated-cheques/{blank_dated_cheque_id}/reveal-cheque-number/` accepts exactly
+`{ "reason": "..." }`. It requires `security.blank_cheque.reveal`, package-read/object scope, and
+active Company Secretary authority. The central sensitive-access owner serialises reveal under the
+retained cheque lock, returns the full value with a five-minute expiry and no-store/no-cache headers,
+and permits one success per actor/cheque per five-minute window. Every success and denial is audited
+without plaintext; tampered ciphertext or unavailable keys return `409 CONFLICT`, repeated success
+returns `429 RATE_LIMITED`, and missing authority returns `403 SENSITIVE_FIELD_ACCESS_DENIED`.
+
+Capture/custody never completes the checklist, mutates bank/cancelled-cheque truth, presents or
+returns the cheque, creates a loan account, changes package status/readiness, or grants scan
+download. Twice-run PostgreSQL five-worker changed-create and changed-custody races retain one
+current row, one terminal custodian/workflow, exact winner request/actor evidence, and zero loser
+success evidence.

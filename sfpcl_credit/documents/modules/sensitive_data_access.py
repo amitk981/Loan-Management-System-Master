@@ -8,7 +8,11 @@ from django.utils import timezone
 
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.shared.encryption import FieldEncryption, InvalidCiphertext
+from sfpcl_credit.shared.encryption import (
+    EncryptionConfigurationError,
+    FieldEncryption,
+    InvalidCiphertext,
+)
 
 
 CDSL_REVEAL_PERMISSION = "security.cdsl_pledge.reveal"
@@ -18,6 +22,10 @@ CDSL_DENIED_ACTION = "security.cdsl_pledge.bo_accounts_reveal_denied"
 CDSL_EXPIRY_SECONDS = 300
 CDSL_RATE_LIMIT_COUNT = 1
 CDSL_RATE_LIMIT_SECONDS = 300
+CHEQUE_REVEAL_PERMISSION = "security.blank_cheque.reveal"
+CHEQUE_REVEAL_ROLES = {"company_secretary"}
+CHEQUE_SUCCESS_ACTION = "security.blank_cheque.number_revealed"
+CHEQUE_DENIED_ACTION = "security.blank_cheque.number_reveal_denied"
 
 
 class SensitiveAccessDenied(Exception):
@@ -119,6 +127,120 @@ def reveal_cdsl_bo_accounts(
         user_agent=metadata.user_agent,
     )
     return {**values, "expires_at": expires_at_value}
+
+
+def reveal_blank_cheque_number(
+    *, actor, blank_dated_cheque_id, payload, metadata: RequestMetadata,
+    resolve_entity: Callable,
+):
+    reason = _cheque_reason(payload, actor, blank_dated_cheque_id, metadata)
+    roles = set(auth_service.effective_role_codes(actor)) if actor.can_authenticate() else set()
+    permissions = (
+        set(auth_service.effective_permission_codes(actor))
+        if actor.can_authenticate() else set()
+    )
+    if CHEQUE_REVEAL_PERMISSION not in permissions or not roles.intersection(CHEQUE_REVEAL_ROLES):
+        _audit_cheque_denial(
+            actor, blank_dated_cheque_id, reason, "missing_reveal_authority", metadata
+        )
+        raise SensitiveAccessDenied
+    try:
+        entity = resolve_entity(actor)
+    except SensitiveAccessDenied:
+        _audit_cheque_denial(
+            actor, blank_dated_cheque_id, reason, "object_access_denied", metadata
+        )
+        raise
+    if entity is None:
+        raise SensitiveObjectNotFound
+    since = timezone.now() - timedelta(seconds=CDSL_RATE_LIMIT_SECONDS)
+    if AuditLog.objects.filter(
+        actor_user=actor,
+        action=CHEQUE_SUCCESS_ACTION,
+        entity_type=entity.entity_type,
+        entity_id=entity.entity_id,
+        created_at__gte=since,
+    ).exists():
+        _audit_cheque_denial(actor, entity.entity_id, reason, "rate_limited", metadata)
+        raise SensitiveRateLimited
+    try:
+        cheque_number = FieldEncryption.decrypt(
+            "blank_cheque.cheque_number", entity.encrypted_fields["cheque_number"]
+        )
+    except (EncryptionConfigurationError, InvalidCiphertext, KeyError) as exc:
+        _audit_cheque_denial(
+            actor, entity.entity_id, reason, "ciphertext_unavailable", metadata
+        )
+        raise SensitiveValueUnavailable from exc
+    expires_at = timezone.now() + timedelta(seconds=CDSL_EXPIRY_SECONDS)
+    expires_at_value = expires_at.isoformat().replace("+00:00", "Z")
+    AuditLog.objects.create(
+        actor_user=actor,
+        actor_type="user",
+        action=CHEQUE_SUCCESS_ACTION,
+        entity_type=entity.entity_type,
+        entity_id=entity.entity_id,
+        old_value_json={},
+        new_value_json={
+            "blank_dated_cheque_id": str(entity.entity_id),
+            **entity.related_ids,
+            "field_names": ["cheque_number"],
+            "reason": reason,
+            "outcome": "success",
+            "request_id": metadata.request_id,
+            "expires_at": expires_at_value,
+            "reauthentication_required": False,
+            "reauthentication_satisfied": True,
+            "rate_limit_count": CDSL_RATE_LIMIT_COUNT,
+            "rate_limit_window_seconds": CDSL_RATE_LIMIT_SECONDS,
+            "actor_role_codes": auth_service.effective_role_codes(actor),
+            "actor_team_codes": actor.team_codes(),
+        },
+        ip_address=metadata.ip_address,
+        user_agent=metadata.user_agent,
+    )
+    return {"cheque_number": cheque_number, "expires_at": expires_at_value}
+
+
+def _cheque_reason(payload, actor, entity_id, metadata):
+    errors = {}
+    if not isinstance(payload, dict):
+        payload = {}
+        errors["non_field_errors"] = "A JSON object is required."
+    unknown = set(payload) - {"reason"}
+    missing = {"reason"} - set(payload)
+    errors.update({field: "Unknown field." for field in sorted(unknown)})
+    errors.update({field: "This field is required." for field in sorted(missing)})
+    reason = payload.get("reason")
+    if "reason" not in missing:
+        if not isinstance(reason, str) or not reason.strip():
+            errors["reason"] = "A non-empty reason is required."
+        elif len(reason.strip()) > 500:
+            errors["reason"] = "Must be at most 500 characters."
+    if errors:
+        _audit_cheque_denial(actor, entity_id, None, "validation_failed", metadata)
+        raise ValidationError(errors)
+    return reason.strip()
+
+
+def _audit_cheque_denial(actor, entity_id, reason, denial_reason, metadata):
+    AuditLog.objects.create(
+        actor_user=actor,
+        actor_type="user",
+        action=CHEQUE_DENIED_ACTION,
+        entity_type="blank_dated_cheque",
+        entity_id=entity_id,
+        old_value_json={},
+        new_value_json={
+            "blank_dated_cheque_id": str(entity_id),
+            "outcome": "denied",
+            "denial_reason": denial_reason,
+            "reason": reason,
+            "request_id": metadata.request_id,
+        },
+        ip_address=metadata.ip_address,
+        user_agent=metadata.user_agent,
+    )
 
 
 def _reason(payload, actor, entity_id, metadata):
