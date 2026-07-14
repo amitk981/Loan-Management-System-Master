@@ -36,14 +36,18 @@ preserving exact terminal PoA/SH-4/CDSL evidence and making every promised race 
    `legal_documents` models, selectors, modules, serializers, or views. `legal_documents` may
    consume security metadata. When one atomic action needs both owners, use one top-level process
    coordinator, following `processes.sanction_completion`, that locks owners in a single documented
-   order and passes immutable typed evidence facts through narrow interfaces.
+   order and passes immutable typed evidence facts through narrow interfaces. Remove I2's temporary
+   `legal_documents.modules.power_of_attorney` compatibility import after migrating every retained
+   caller to the security owner; the legal package must contain no PoA alias or policy shell.
 2. Keep policy local: security modules own applicability, member/share, maker-checker, custody,
    pledge, and terminal-state decisions; legal modules own renderer, stamp, notary, signature, and
    checklist truth. The coordinator may compose the two decisions but may not become a duplicate
    workflow engine or let caller-supplied snapshots become authority.
 3. Preserve all public §28 routes, request fields, response/action/error contracts, retained tables,
    checklist/package projections, exact replay, terminal consumed-evidence guards, audit/version/
-   workflow facts, and zero readiness/invocation/disbursement side effects.
+   workflow facts, and zero readiness/invocation/disbursement side effects. Preserve I2's exact
+   ₹500.00 PoA activation rule and its scoped masked reader matrix (including assigned-versus-
+   unrelated approvers); the coordinator must not turn read scope into mutation or evidence access.
 4. Replace the inverted import test with both-direction AST assertions matching §36.2 and executable
    interface tests proving direct security callers cannot bypass legal evidence validation through
    a forged DTO or alternate call path.
@@ -58,6 +62,7 @@ preserving exact terminal PoA/SH-4/CDSL evidence and making every promised race 
 ## Test Cases
 
 - AST dependency graph and top-level coordinator atomic rollback/lock-order tests.
+- No compatibility alias remains; all retained imports resolve directly to the security PoA owner.
 - Forged/missing/stale/cross-application legal evidence DTO denial for PoA, SH-4, and CDSL.
 - Existing public success, replay, maker-checker, terminal immutability, projections, and package
   scope remain unchanged.
@@ -77,4 +82,3 @@ High
 - Cross-owner legal/security actions remain atomic and cannot accept caller-forged truth.
 - Promised race evidence proves exact winner and zero-success-loser identities.
 - All configured and declared capability gates pass.
-

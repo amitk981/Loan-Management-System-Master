@@ -1,0 +1,20 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_security_app_is_the_real_power_of_attorney_policy_owner (sfpcl_credit.tests.test_security_instrument_boundary.SecurityInstrumentBoundaryTests.test_security_app_is_the_real_power_of_attorney_policy_owner)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_001106_normal_run/sfpcl_credit/tests/test_security_instrument_boundary.py", line 26, in test_security_app_is_the_real_power_of_attorney_policy_owner
+    self.assertEqual(
+AssertionError: 'sfpcl_credit.legal_documents.modules.power_of_attorney' != 'sfpcl_credit.security_instruments.modules.power_of_attorney'
+- sfpcl_credit.legal_documents.modules.power_of_attorney
+?              ^ ^^^ ^^^
++ sfpcl_credit.security_instruments.modules.power_of_attorney
+?              ^ ^^^^^^ ^^^^^
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (failures=1)

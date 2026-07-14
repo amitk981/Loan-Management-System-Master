@@ -2,35 +2,34 @@
 
 ## Last Run
 
-2026-07-14_234031_architecture_review
+2026-07-15_001106_normal_run
 
 ## Current Status
 
-The independent architecture review covered 008G2, 008F2, 008H, and 008I from `e046a9d3` through
-`bacc285d`. Standards found three High and one Medium issue; Spec found three High and one Medium
-issue. The principal defects are a forwarding-shell/reversed security dependency, missing source
-read roles, missing exact ₹500 PoA validation, nullable CDSL evidence causing a 500, custom
-`SECRET_KEY`-derived reversible crypto/direct reveal policy, and incomplete exact-winner race
-evidence. Focused public-path regressions reproduced the ₹1 PoA activation and null-evidence CDSL
-failure. No production code changed.
+008I2 is complete. The full retained PoA workflow now executes from
+`security_instruments.modules.power_of_attorney`; `legal_documents` retains only a temporary
+policy-free compatibility import for 008I3 to remove. Activation requires the exact current
+maker/checker stamp amount of ₹500.00 plus completed notarisation and existing exact signatures.
+Missing/null references and ₹1/₹499.99/₹500.01 attempts fail atomically.
 
-Corrective slices are queued in strict order: 008I2 moves real PoA ownership and fixes stamp/read
-contracts; 008I3 restores the legal/security dependency seam and complete race evidence; 008I4
-installs central independently keyed encryption/sensitive access and fixes nullable CDSL evidence.
-008J now depends on I4 so cheque custody cannot copy the wrong sensitive-data seam. 008K and 012E3
-were sharpened from already-opened source material. No ADR was needed because the source architecture
-already decides these ownership boundaries.
+Package reads are separate from mutation authority. Canonically scoped Credit Manager,
+Compliance, Company Secretary, Senior Manager Finance, CFC, assigned CFO/Director approvers, and
+persisted audit-readonly users receive masked metadata only. Unrelated approvers, missing
+permission, inactive identities, and read-only mutation attempts fail closed. No read grants
+reveal, download, invocation, release, refresh, or readiness.
 
 ## Validation
 
-Review evidence is in `.ralph/runs/2026-07-14_234031_architecture_review/evidence/`. It contains
-separate Standards and Spec reports, both failing regression reproductions, queue/protected-path
-checks, and configured frontend/backend gate results. The review packet is the authoritative compact
-summary.
+Evidence is in `.ralph/runs/2026-07-15_001106_normal_run/evidence/`. Retained red/green logs cover
+module ownership, exact stamp amount, and the read matrix. The PoA activation/downgrade races passed
+twice on PostgreSQL with exact winner request/audit/version/workflow identities and zero loser
+success evidence. Backend check/migration sync and 829 tests passed at 92% coverage; frontend lint,
+typecheck, build, and 293 tests passed.
 
 ## Next Run
 
-Run 008I2, then 008I3, then 008I4 before 008J. Preserve retained ids/tables/routes, terminal legal
-evidence, package locks, masked projections, and strict exclusion of invocation, unpledge,
-disbursement, file authority, balance changes, and readiness. A-101 still blocks the complete real
+Run sharpened 008I3, then 008I4 before 008J. I3 must remove the temporary compatibility import and
+remaining source-forbidden security-to-legal/approval dependencies through typed top-level evidence
+coordination while preserving I2's exact ₹500 rule and scoped masked reads. I4 then centralises
+encryption/reveal and fixes nullable pending CDSL evidence. A-101 still blocks the complete real
 Term-Sheet path.

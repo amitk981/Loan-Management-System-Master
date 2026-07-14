@@ -3396,9 +3396,14 @@ same typed legal serializer and business boundary.
 
 `GET /api/v1/loan-applications/{loan_application_id}/security-package/` requires
 `security.package.read`; `POST .../security-package/refresh/` requires
-`security.package.create` and accepts only an empty JSON object. Both require an active Compliance
-Team or Company Secretary actor, canonical latest-cycle frozen terminal sanction, and matching
-Stage-4 checklist scope; mutable approved status is insufficient. Refresh locks the application,
+`security.package.create` and accepts only an empty JSON object. GET permits active, explicitly
+granted Credit Manager, Compliance, Company Secretary, Senior Manager Finance, CFC, scoped CFO/
+Director approvers, and persisted audit-readonly actors against canonical latest-cycle frozen
+terminal sanction and matching Stage-4 checklist scope. Assigned approvers may read only their
+case; an unrelated approver remains `403 OBJECT_ACCESS_DENIED`. Read authority returns masked
+metadata only and never grants refresh, mutation, reveal, download, invocation, or release.
+Refresh remains limited to active Compliance Team or Company Secretary actors. Mutable approved
+status is insufficient. Refresh locks the application,
 creates at most one package, and replays zero-write; unknown resources return 404 after authority,
 while wrong-stage/stale-cycle resources remain nondisclosing. The narrow package is
 always `pending`, returns `poa_required_flag=true` and `security_ready_flag=false`, and leaves the
@@ -3422,11 +3427,14 @@ attorney must be an active Company Secretary. The retained purpose must explicit
 Company Secretary to initiate share sale on default; only a bounded negation of that authority is
 rejected, so unrelated lawful negative clauses remain valid. Creation accepts only a pending draft tied to
 the same application's current-renderer `power_of_attorney` document and that exact document's stamp
-and notary rows. Activation additionally requires executed/effective facts, adequate stamp and
-completed notarisation rows with non-null distinct preparer/verifier identities, plus exactly one
+and notary rows. Activation additionally requires executed/effective facts, an adequate stamp
+retaining exactly `₹500.00`, and completed notarisation rows with non-null distinct preparer/verifier identities, plus exactly one
 current `signed` borrower row and one current `signed` selected-nominee row from the 008E2 legal
 selector. Signature ids/names must match canonical frozen parties, mismatch/resolution facts must be
 absent, signed time and capture maker must be retained, and A-108/A-109 legacy rows are ineligible.
+Missing/null stamp references and adequate amounts below or above `₹500.00` fail atomically with
+`400 VALIDATION_ERROR`; the generic stamp recorder and unresolved Loan Agreement duty rule do not
+change.
 
 Package/PoA/checklist rows are locked in one transaction. One current PoA is database-enforced per
 package. Terminal activation replays the durable §6.3 action (`entity_type`, `entity_id`, prior/new

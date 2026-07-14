@@ -14,6 +14,21 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008I2 Security PoA Owner and Read Contract Closure (2026-07-15)
+
+The complete retained PoA policy now executes from `security_instruments`; the former legal owner
+is only a policy-free compatibility import. PoA activation retains the same atomic terminal
+evidence but additionally requires the current adequate maker/checker stamp to equal exactly
+₹500.00; missing/null references and ₹1/₹499.99/₹500.01 fail without success writes. Package reads
+now separate `security.package.read` from mutation authority: Credit Manager, Compliance, Company
+Secretary, Senior Manager Finance, CFC, assigned CFO/Director approvers, and persisted audit-readonly
+actors can read canonically scoped masked metadata, while unrelated approvers and permission/role
+failures remain nondisclosing. Read grants no refresh, mutation, reveal, download, invocation, or
+release. The retained table/id/route/migration contract and twice-run PostgreSQL winner/loser
+identity evidence remain intact. 008I3 must remove the temporary compatibility import and remaining
+security-to-legal/approval imports through its top-level typed evidence coordinator without changing
+this read matrix or exact PoA stamp rule.
+
 ## Architecture Review 2026-07-14 23:49 - Security Owner, Read, Stamp, and Sensitive Seams
 
 - 008F2's `security_instruments` PoA module remains a six-line forwarding shell over the

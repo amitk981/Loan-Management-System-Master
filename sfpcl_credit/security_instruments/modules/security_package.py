@@ -2,7 +2,9 @@ from dataclasses import dataclass
 from django.db import transaction
 from django.utils import timezone
 from sfpcl_credit.applications.models import LoanApplication
+from sfpcl_credit.approvals.models import ApprovalCase
 from sfpcl_credit.approvals.modules.document_checklist_facts import resolve_approved_facts
+from sfpcl_credit.approvals.modules.read_scope import evaluate_approval_case_read_scope
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
@@ -11,6 +13,14 @@ from sfpcl_credit.security_instruments.models import SecurityPackage
 from sfpcl_credit.workflows.events import record_workflow_event
 READ_PERMISSION = "security.package.read"
 CREATE_PERMISSION = "security.package.create"
+DIRECT_STAGE4_READ_ROLES = {
+    "compliance_team_member",
+    "company_secretary",
+    "credit_manager",
+    "senior_manager_finance",
+    "chief_financial_controller",
+}
+APPROVAL_SCOPED_READ_ROLES = {"cfo", "director", "internal_auditor"}
 @dataclass(frozen=True)
 class RequestMetadata:
     request_id: str | None
@@ -23,11 +33,20 @@ class NotFound(Exception):
     pass
 class Conflict(Exception):
     pass
-def require_actor(actor, permission):
+
+
+def require_permission_actor(actor, permission):
     if (
         not actor.can_authenticate()
         or permission not in auth_service.effective_permission_codes(actor)
-        or not {"compliance_team_member", "company_secretary"}.intersection(
+    ):
+        raise AccessDenied
+
+
+def require_actor(actor, permission):
+    require_permission_actor(actor, permission)
+    if (
+        not {"compliance_team_member", "company_secretary"}.intersection(
             auth_service.effective_role_codes(actor)
         )
     ):
@@ -85,7 +104,7 @@ def refresh_package(*, actor, application_id, metadata):
 
 
 def resolve_package(actor, package_id, permission, for_update=False):
-    require_actor(actor, permission)
+    _require_target_authority(actor, permission)
     queryset = SecurityPackage.objects
     if for_update:
         queryset = queryset.select_for_update()
@@ -94,11 +113,15 @@ def resolve_package(actor, package_id, permission, for_update=False):
         raise NotFound
     if not has_canonical_stage4_scope(package.loan_application_id):
         raise AccessDenied("OBJECT_ACCESS_DENIED")
+    if permission == READ_PERMISSION and not _has_package_read_scope(
+        actor, package.loan_application_id
+    ):
+        raise AccessDenied("OBJECT_ACCESS_DENIED")
     return package
 
 
 def resolve_application(actor, application_id, permission, for_update=False):
-    require_actor(actor, permission)
+    _require_target_authority(actor, permission)
     queryset = LoanApplication.objects
     if for_update:
         queryset = queryset.select_for_update()
@@ -107,7 +130,36 @@ def resolve_application(actor, application_id, permission, for_update=False):
         raise NotFound
     if not has_canonical_stage4_scope(application.pk):
         raise AccessDenied("OBJECT_ACCESS_DENIED")
+    if permission == READ_PERMISSION and not _has_package_read_scope(
+        actor, application.pk
+    ):
+        raise AccessDenied("OBJECT_ACCESS_DENIED")
     return application
+
+
+def _require_target_authority(actor, permission):
+    if permission != READ_PERMISSION:
+        require_actor(actor, permission)
+        return
+    require_permission_actor(actor, permission)
+    roles = set(auth_service.effective_role_codes(actor))
+    if not roles.intersection(DIRECT_STAGE4_READ_ROLES | APPROVAL_SCOPED_READ_ROLES):
+        raise AccessDenied("OBJECT_ACCESS_DENIED")
+
+
+def _has_package_read_scope(actor, application_id):
+    roles = set(auth_service.effective_role_codes(actor))
+    if roles.intersection(DIRECT_STAGE4_READ_ROLES):
+        return True
+    case = (
+        ApprovalCase.objects.filter(loan_application_id=application_id)
+        .prefetch_related("actions")
+        .order_by("-cycle_number", "-submitted_at", "-approval_case_id")
+        .first()
+    )
+    if case is None:
+        return False
+    return evaluate_approval_case_read_scope(actor=actor, case=case).allowed
 
 
 def has_canonical_stage4_scope(application_id):

@@ -11,6 +11,7 @@ from django.test import override_settings
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import LoanApplication
+from sfpcl_credit.approvals.models import ApprovalCaseReadScopeGrant
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.documents.models import DocumentFile, DocumentTemplate
 from sfpcl_credit.documents.storage import LocalDocumentStorage
@@ -127,6 +128,104 @@ class PowerOfAttorneyApiTests(TestCase):
         self.assertEqual(read.status_code, 200, read.content)
         self.assertEqual(read.json()["data"], data)
 
+    def test_package_read_role_and_object_scope_never_grants_mutation_or_reveal(self):
+        package = self._refresh_package()
+        read_permission = Permission.objects.get(
+            permission_code="security.package.read"
+        )
+        assigned_cfo = self.fixture.cfo
+        assigned_director = self.fixture.director
+        unrelated_director = self.fixture.second_director
+        for role in {
+            assigned_cfo.primary_role,
+            assigned_director.primary_role,
+        }:
+            RolePermission.objects.get_or_create(
+                role=role, permission=read_permission
+            )
+        credit_manager = self._user("credit_manager", "security.package.read")
+        senior_finance = self._user(
+            "senior_manager_finance", "security.package.read"
+        )
+        cfc = self._user(
+            "chief_financial_controller", "security.package.read"
+        )
+        auditor = self._user("internal_auditor", "security.package.read")
+        ApprovalCaseReadScopeGrant.objects.create(
+            role=auditor.primary_role,
+            scope_type=ApprovalCaseReadScopeGrant.SCOPE_AUDIT_READONLY,
+        )
+        company_secretary = self._user(
+            "company_secretary", "security.package.read"
+        )
+        url = f"/api/v1/loan-applications/{self.application.pk}/security-package/"
+
+        allowed = (
+            self.compliance,
+            company_secretary,
+            credit_manager,
+            senior_finance,
+            cfc,
+            assigned_cfo,
+            assigned_director,
+            auditor,
+        )
+        for reader in allowed:
+            with self.subTest(reader=reader.email):
+                response = self.client.get(url, **self._auth(reader))
+                self.assertEqual(response.status_code, 200, response.content)
+                serialized = str(response.json()["data"])
+                self.assertNotIn("storage_key", serialized)
+                self.assertNotIn("download", serialized)
+                self.assertNotIn("reveal", serialized)
+
+        unrelated = self.client.get(url, **self._auth(unrelated_director))
+        self.assertEqual(unrelated.status_code, 403, unrelated.content)
+        self.assertEqual(
+            unrelated.json()["error"]["code"], "OBJECT_ACCESS_DENIED"
+        )
+        missing_permission = self._user("security_read_missing_permission")
+        missing = self.client.get(
+            "/api/v1/loan-applications/ffffffff-ffff-ffff-ffff-ffffffffffff/security-package/",
+            **self._auth(missing_permission),
+        )
+        self.assertEqual(missing.status_code, 403, missing.content)
+        self.assertEqual(missing.json()["error"]["code"], "FORBIDDEN")
+
+        inactive = self._user("inactive_security_reader", "security.package.read")
+        inactive.status = "inactive"
+        inactive.save(update_fields=["status"])
+        inactive_response = self.client.get(url, **self._auth_header(inactive))
+        self.assertEqual(inactive_response.status_code, 401, inactive_response.content)
+
+        refresh_url = (
+            f"/api/v1/loan-applications/{self.application.pk}/security-package/refresh/"
+        )
+        mutation = self.client.post(
+            refresh_url,
+            {"unexpected": "must not parse"},
+            content_type="application/json",
+            **self._auth(credit_manager),
+        )
+        self.assertEqual(mutation.status_code, 403, mutation.content)
+        self.assertEqual(mutation.json()["error"]["code"], "FORBIDDEN")
+        poa_mutation = self.client.post(
+            (
+                f"/api/v1/security-packages/{package['security_package_id']}"
+                "/power-of-attorney/"
+            ),
+            {"status": "active", "unexpected": "must not parse"},
+            content_type="application/json",
+            **self._auth(credit_manager),
+        )
+        self.assertEqual(poa_mutation.status_code, 403, poa_mutation.content)
+        self.assertEqual(poa_mutation.json()["error"]["code"], "FORBIDDEN")
+        self.assertEqual(PowerOfAttorney.objects.count(), 0)
+        self.assertEqual(SecurityPackage.objects.count(), 1)
+        self.assertEqual(
+            str(SecurityPackage.objects.get().pk), package["security_package_id"]
+        )
+
     def test_mutable_status_without_frozen_sanction_cannot_create_package(self):
         fake = LoanApplication.objects.create(
             application_reference_number="LO-FAKE-POA",
@@ -161,6 +260,51 @@ class PowerOfAttorneyApiTests(TestCase):
         self.assertEqual(response.status_code, 403, response.content)
         self.assertEqual(PowerOfAttorney.objects.count(), 0)
         self.assertEqual(AuditLog.objects.filter(action__startswith="security.poa.").count(), 0)
+
+    def test_missing_or_null_stamp_reference_cannot_create_poa(self):
+        package = self._refresh_package()
+        attorney = self._user("company_secretary", "security.poa.manage")
+        document, _stamp, notary = self._poa_evidence()
+        payload = {
+            "borrower_member_id": str(self.member.pk),
+            "nominee_id": str(self.nominee.pk),
+            "attorney_user_id": str(attorney.pk),
+            "purpose_summary": (
+                "Authorise Company Secretary to initiate sale of shares on default."
+            ),
+            "loan_document_id": str(document.pk),
+            "notarisation_record_id": str(notary.pk),
+            "execution_status": "pending",
+            "effective_from": None,
+            "status": "draft",
+        }
+        url = (
+            f"/api/v1/security-packages/{package['security_package_id']}"
+            "/power-of-attorney/"
+        )
+        for supplied_value in ("omitted", None):
+            with self.subTest(stamp_reference=supplied_value):
+                candidate = dict(payload)
+                if supplied_value is None:
+                    candidate["stamp_duty_record_id"] = None
+                response = self.client.post(
+                    url,
+                    candidate,
+                    content_type="application/json",
+                    **self._auth(self.compliance),
+                )
+                self.assertEqual(response.status_code, 400, response.content)
+                self.assertIn(
+                    "stamp_duty_record_id",
+                    response.json()["error"]["field_errors"],
+                )
+                self.assertEqual(PowerOfAttorney.objects.count(), 0)
+                self.assertEqual(
+                    AuditLog.objects.filter(
+                        action__startswith="security.poa."
+                    ).count(),
+                    0,
+                )
 
     def test_missing_projection_target_rolls_back_poa_and_success_evidence(self):
         package = self._refresh_package()
@@ -370,6 +514,52 @@ class PowerOfAttorneyApiTests(TestCase):
             row.save(update_fields=["captured_by_user"])
         Member.objects.filter(pk=self.member.pk).update(legal_name="Renamed Borrower")
         Nominee.objects.filter(pk=self.nominee.pk).update(nominee_name="Renamed Nominee")
+        before_counts = {
+            "audit": AuditLog.objects.filter(action="security.poa.activated").count(),
+            "version": VersionHistory.objects.filter(
+                versioned_entity_type="power_of_attorney"
+            ).count(),
+            "workflow": WorkflowEvent.objects.filter(
+                workflow_name="power_of_attorney", to_state="active"
+            ).count(),
+        }
+        for wrong_value in ("1.00", "499.99", "500.01"):
+            with self.subTest(stamp_paper_amount=wrong_value):
+                StampDutyRecord.objects.filter(pk=stamp.pk).update(
+                    stamp_paper_amount=wrong_value
+                )
+                wrong_amount = self.client.patch(
+                    url, active, content_type="application/json",
+                    HTTP_X_REQUEST_ID=f"req-poa-wrong-stamp-{wrong_value}",
+                    **self._auth(attorney),
+                )
+                self.assertEqual(
+                    wrong_amount.status_code, 400, wrong_amount.content
+                )
+                self.assertIn(
+                    "exact ₹500.00",
+                    wrong_amount.json()["error"]["field_errors"][
+                        "stamp_duty_record_id"
+                    ],
+                )
+                self.assertEqual(
+                    PowerOfAttorney.objects.get(pk=poa_id).status, "draft"
+                )
+                self.assertEqual(
+                    {
+                        "audit": AuditLog.objects.filter(
+                            action="security.poa.activated"
+                        ).count(),
+                        "version": VersionHistory.objects.filter(
+                            versioned_entity_type="power_of_attorney"
+                        ).count(),
+                        "workflow": WorkflowEvent.objects.filter(
+                            workflow_name="power_of_attorney", to_state="active"
+                        ).count(),
+                    },
+                    before_counts,
+                )
+        StampDutyRecord.objects.filter(pk=stamp.pk).update(stamp_paper_amount="500.00")
         response = self.client.patch(
             url, active, content_type="application/json",
             HTTP_X_REQUEST_ID="req-poa-active", **self._auth(attorney),
@@ -613,6 +803,19 @@ class PowerOfAttorneyApiTests(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         return {"HTTP_AUTHORIZATION": f"Bearer {response.json()['data']['access_token']}"}
 
+    def _auth_header(self, user):
+        from sfpcl_credit.identity.models import UserSession
+        from sfpcl_credit.identity.modules.tokens import access_claims, encode_token
+
+        session = UserSession.objects.create(
+            user=user,
+            refresh_token_hash="inactive-test",
+            expires_at=timezone.now() + timezone.timedelta(hours=1),
+        )
+        return {
+            "HTTP_AUTHORIZATION": f"Bearer {encode_token(access_claims(user, session))}"
+        }
+
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL row-lock acceptance only")
 class PowerOfAttorneyConcurrencyTests(TransactionTestCase):
@@ -698,18 +901,71 @@ class PowerOfAttorneyConcurrencyTests(TransactionTestCase):
                     actor=actor, power_of_attorney_id=poa.pk, values=values,
                     metadata=power_of_attorney.RequestMetadata(f"race-activate-{index}", "", ""),
                 )
-                return "activated"
+                return f"race-activate-{index}"
             except power_of_attorney.Conflict:
-                return "conflict"
+                return None
             finally:
                 close_old_connections()
 
         with ThreadPoolExecutor(max_workers=5) as pool:
             results = list(pool.map(worker, range(5)))
-        self.assertEqual(results.count("activated"), 1)
+        winner_request_ids = [result for result in results if result is not None]
+        self.assertEqual(len(winner_request_ids), 1)
+        winner_request_id = winner_request_ids[0]
         poa.refresh_from_db()
         self.assertEqual(poa.status, "active")
-        self.assertEqual(AuditLog.objects.filter(action="security.poa.activated").count(), 1)
+        self.assertEqual(
+            poa.activation_evidence_json["request_id"], winner_request_id
+        )
+        activation_audit = AuditLog.objects.get(action="security.poa.activated")
+        activation_version = VersionHistory.objects.get(
+            versioned_entity_type="power_of_attorney",
+            change_summary="security.poa.activated",
+        )
+        activation_event = WorkflowEvent.objects.get(
+            pk=poa.activation_workflow_event_id
+        )
+        consumed_audit = AuditLog.objects.get(
+            action="documents.execution.consumed"
+        )
+        self.assertEqual(
+            activation_audit.new_value_json["activation_evidence"]["request_id"],
+            winner_request_id,
+        )
+        self.assertEqual(
+            activation_version.new_value_json["activation_evidence"]["request_id"],
+            winner_request_id,
+        )
+        self.assertEqual(
+            consumed_audit.new_value_json["request_id"], winner_request_id
+        )
+        self.assertEqual(
+            consumed_audit.new_value_json["workflow_event_id"],
+            str(activation_event.pk),
+        )
+        self.assertEqual(activation_event.from_state, "draft")
+        self.assertEqual(activation_event.to_state, "active")
+        self.assertEqual(activation_event.triggered_by_user_id, self.attorney.pk)
+        success_evidence = str(
+            list(
+                AuditLog.objects.filter(
+                    action__in={
+                        "security.poa.activated",
+                        "documents.execution.consumed",
+                    }
+                ).values_list("new_value_json", flat=True)
+            )
+            + list(
+                VersionHistory.objects.filter(
+                    versioned_entity_type="power_of_attorney"
+                ).values_list("new_value_json", flat=True)
+            )
+        )
+        for index in range(5):
+            request_id = f"race-activate-{index}"
+            self.assertEqual(
+                request_id in success_evidence, request_id == winner_request_id
+            )
 
     def test_five_downgrades_cannot_change_terminal_activation(self):
         poa = self._draft()
@@ -725,6 +981,11 @@ class PowerOfAttorneyConcurrencyTests(TransactionTestCase):
             metadata=power_of_attorney.RequestMetadata("race-activate-seed", "", ""),
         )
         barrier = Barrier(5)
+        baseline = {
+            "audit": AuditLog.objects.count(),
+            "version": VersionHistory.objects.count(),
+            "workflow": WorkflowEvent.objects.count(),
+        }
 
         def worker(index):
             close_old_connections()
@@ -747,3 +1008,17 @@ class PowerOfAttorneyConcurrencyTests(TransactionTestCase):
         poa.refresh_from_db()
         self.assertEqual(poa.status, "active")
         self.assertEqual(AuditLog.objects.filter(action="security.poa.activated").count(), 1)
+        self.assertEqual(
+            {
+                "audit": AuditLog.objects.count(),
+                "version": VersionHistory.objects.count(),
+                "workflow": WorkflowEvent.objects.count(),
+            },
+            baseline,
+        )
+        retained_evidence = str(
+            list(AuditLog.objects.values_list("new_value_json", flat=True))
+            + list(VersionHistory.objects.values_list("new_value_json", flat=True))
+        )
+        for index in range(5):
+            self.assertNotIn(f"race-downgrade-{index}", retained_evidence)

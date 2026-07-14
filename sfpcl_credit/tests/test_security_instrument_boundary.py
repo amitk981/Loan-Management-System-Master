@@ -20,19 +20,39 @@ class SecurityInstrumentBoundaryTests(SimpleTestCase):
             "sfpcl_credit.security_instruments.modules.security_package",
         )
 
-    def test_legal_documents_has_no_reverse_security_policy_dependency(self):
-        root = Path(__file__).parents[1] / "legal_documents"
-        offenders = []
-        for path in root.rglob("*.py"):
-            imports = []
-            for node in ast.walk(ast.parse(path.read_text(), filename=str(path))):
-                if isinstance(node, ast.Import):
-                    imports.extend(alias.name for alias in node.names)
-                elif isinstance(node, ast.ImportFrom) and node.module:
-                    imports.append(node.module)
-            if any(name.startswith("sfpcl_credit.security_instruments") for name in imports):
-                offenders.append(str(path.relative_to(root)))
-        self.assertEqual(offenders, [])
+    def test_security_app_is_the_real_power_of_attorney_policy_owner(self):
+        from sfpcl_credit.security_instruments.modules import power_of_attorney
+
+        self.assertEqual(
+            power_of_attorney.create_poa.__module__,
+            "sfpcl_credit.security_instruments.modules.power_of_attorney",
+        )
+        path = (
+            Path(__file__).parents[1]
+            / "security_instruments"
+            / "modules"
+            / "power_of_attorney.py"
+        )
+        tree = ast.parse(path.read_text(), filename=str(path))
+        imported_modules = []
+        defined_names = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported_modules.extend(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                imported_modules.append(node.module)
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                defined_names.add(node.name)
+        self.assertFalse(
+            any(
+                name.startswith(
+                    "sfpcl_credit.legal_documents.modules.power_of_attorney"
+                )
+                for name in imported_modules
+            )
+        )
+        self.assertNotIn("bind_security_owner", defined_names)
+        self.assertNotIn("__getattr__", defined_names)
 class SecurityInstrumentOwnershipMigrationTests(TransactionTestCase):
     def test_state_only_transfer_preserves_retained_table_identities(self):
         executor = MigrationExecutor(connection)

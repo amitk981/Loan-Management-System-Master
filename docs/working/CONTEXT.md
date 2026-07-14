@@ -64,16 +64,18 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   direction, source-authorised read-only roles cannot read packages, and PoA activation accepts an
   adequate stamp of any amount rather than exactly ₹500. A valid pending CDSL row with null evidence
   also crashes during serialization, while reversible BO values and reveal policy bypass the
-  source-defined central encryption/sensitive-access seams. Corrective 008I2/008I3/008I4 close
-  those contracts in order before cheque custody; none of the reviewed implementation is claimed
-  complete across those seams until the corrections land.
+  source-defined central encryption/sensitive-access seams. Corrective 008I2 now makes
+  `security_instruments` the real PoA policy owner, enforces exact ₹500 activation, restores the
+  scoped masked reader matrix, and proves exact PostgreSQL activation/downgrade identities. 008I3
+  and 008I4 still close the remaining dependency/evidence and encryption/null contracts in order
+  before cheque custody; none of those remaining reviewed seams is claimed complete yet.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and
   `PROTOTYPE_INVENTORY.md` are the authoritative ledger.
 - Backend: `sfpcl_credit/` — Django modular monolith (identity, members, applications, credit,
-  approvals, documents, legal_documents, workflows, communications, dashboard, configurations,
-  scheduler, tracer)
+  approvals, documents, legal_documents, security_instruments, workflows, communications,
+  dashboard, configurations, scheduler, tracer)
   with JWT auth, role and object-level permissions, audit/workflow events, versioned
   configuration, document storage adapter, and seeded demo users.
 - Quality gates run on every slice: frontend build, typecheck, ESLint, vitest; backend Django

@@ -339,6 +339,7 @@ ROLE_PERMISSIONS = {
     ],
     "credit_manager": [
         "members.witness.read",
+        "security.package.read",
         "applications.loan_application.read",
         "applications.loan_application.create",
         "applications.loan_application.complete_check",
@@ -422,6 +423,7 @@ ROLE_PERMISSIONS = {
         "management_readonly",
     ],
     "senior_manager_finance": [
+        "security.package.read",
         "finance.sap_request.complete",
         "finance.sap_code.read",
         "finance.disbursement.readiness",
@@ -433,6 +435,7 @@ ROLE_PERMISSIONS = {
         "management_readonly",
     ],
     "chief_financial_controller": [
+        "security.package.read",
         "finance.disbursement.readiness",
         "finance.disbursement.authorise",
         "finance.disbursement.mark_success",
@@ -442,6 +445,7 @@ ROLE_PERMISSIONS = {
         "management_readonly",
     ],
     "cfo": [
+        "security.package.read",
         "approvals.case.read",
         "approvals.case.approve",
         "approvals.case.reject",
@@ -460,6 +464,7 @@ ROLE_PERMISSIONS = {
         "management_readonly",
     ],
     "director": [
+        "security.package.read",
         "approvals.case.read",
         "approvals.case.approve",
         "approvals.case.reject",
@@ -483,6 +488,7 @@ ROLE_PERMISSIONS = {
     ],
     "internal_auditor": [
         "members.witness.read",
+        "security.package.read",
         "approvals.case.read",
         "approvals.exception_register.read",
         "approvals.sanction_register.read",
