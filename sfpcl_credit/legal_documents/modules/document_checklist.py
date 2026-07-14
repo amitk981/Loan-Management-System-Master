@@ -296,6 +296,8 @@ def serialize(checklist):
                 "completion_status": item.completion_status,
                 "stamp_status": item.stamp_status,
                 "notarisation_status": item.notarisation_status,
+                "poa_execution_status": item.poa_execution_status,
+                "poa_status": item.poa_status,
                 "applicability_source": item.applicability_source,
                 "applicability_blocker": item.applicability_blocker,
                 "loan_document_id": (

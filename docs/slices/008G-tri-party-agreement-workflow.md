@@ -116,6 +116,19 @@ projection and evidence roll back with the owner mutation.
   neither permission implies the other, and unknown/wrong-stage/unrelated ids retain the same
   authority-first nondisclosure contract.
 
+## Run-Ahead Sharpening (008F completion, 2026-07-14)
+
+- Reuse 008F's sanctioned Stage-4 package/application resolution and locked checklist projection
+  conventions, but keep tri-party verification outside `SecurityPackage` instrument readiness: the
+  source §17 security package has no tri-party row and 008G must not add one.
+- Extend `execution_signature_facts_for_document` as the single exact-document legal selector rather
+  than querying `SignatureRecord` directly. Require the same non-null capture-maker, canonical
+  id/name, signed-time, no-mismatch facts used by PoA, substituting the exact current-renderer
+  `tri_party_agreement` document.
+- Projection may set only the tri-party checklist item's current loan-document/verification metadata.
+  Preserve the PoA projections, package status/flags, every completion/verifier/remark/approval fact,
+  and A-110's false readiness outcome.
+
 ## Visual Acceptance Criteria
 None.
 

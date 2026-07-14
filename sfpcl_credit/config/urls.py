@@ -28,6 +28,26 @@ from sfpcl_credit.workflows import event_views
 
 urlpatterns = [
     path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/security-package/",
+        legal_document_views.security_package,
+        name="loan-application-security-package",
+    ),
+    path(
+        "api/v1/loan-applications/<uuid:loan_application_id>/security-package/refresh/",
+        legal_document_views.security_package_refresh,
+        name="loan-application-security-package-refresh",
+    ),
+    path(
+        "api/v1/security-packages/<uuid:security_package_id>/power-of-attorney/",
+        legal_document_views.package_power_of_attorney,
+        name="security-package-power-of-attorney",
+    ),
+    path(
+        "api/v1/power-of-attorneys/<uuid:power_of_attorney_id>/",
+        legal_document_views.power_of_attorney_detail,
+        name="power-of-attorney-detail",
+    ),
+    path(
         "api/v1/loan-documents/<uuid:loan_document_id>/signatures/",
         legal_document_views.signature_record,
         name="loan-document-signature-record",

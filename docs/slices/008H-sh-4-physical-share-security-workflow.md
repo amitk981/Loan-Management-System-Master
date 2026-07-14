@@ -8,7 +8,10 @@ Epic 008: Documentation, Legal Documents, and Security Package
 Epic file: `docs/epics/008-documentation-security-package.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Create and maintain the one source-defined SH-4 instrument for a physical-share security package,
+binding the sanctioned borrower, validated shareholder witness, active physical shareholding,
+current generated form, signatures, stamp verification, and custody metadata without invoking or
+returning the instrument.
 
 ## User Value
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
@@ -32,28 +35,85 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 None directly.
 
 ## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
+None. DocumentationHub/security-package wiring remains owned by 008M; do not add mock or hidden UI
+actions.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+1. Add §28.4 `POST/GET /api/v1/security-packages/{security_package_id}/sh4-share-transfer-form/`
+   and `PATCH /api/v1/sh4-share-transfer-forms/{sh4_share_transfer_form_id}/`, accepting exactly
+   member, witness, shareholding, nullable share count, loan document, form status, custody location,
+   and signed date.
+2. Refresh only the existing 008F package's physical-share requirement from 008C2's frozen share
+   mode. `physical` requires SH-4; `demat` does not; missing or `mixed` remains the existing explicit
+   applicability blocker and must not be guessed into an SH-4 record.
+3. Keep one current SH-4 per package under the locked package row. Exact POST/PATCH replay is
+   zero-write; real changes retain immutable old/new evidence. PATCH must not invoke or return the
+   form.
+4. Project SH-4 existence/signature/custody metadata into linked checklist/security reads without
+   completing the checklist item or changing package/disbursement readiness.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
+Add §17.3 `sh4_share_transfer_forms` with one protected package, borrower member, validated witness,
+active physical shareholding, current-renderer SH-4 loan document, bounded indexed form status,
+nullable positive share count/signed date, required custody text when held, and protected nullable
+invocation/return facts constrained to null until their later owners. Preserve 008F's nullable-only
+loan-account transition and one-package-per-application integrity.
 
 ## API Contracts
 Create or update the API contract for this capability.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Require `security.package.read` for GET and `security.sh4.manage` for mutation plus canonical
+sanctioned application/package/document scope. Compliance Team may prepare pending/signed facts;
+Company Secretary records custody and must remain the retained custodian identity. Document read,
+download, signature capture, PoA, or package-create permissions imply no SH-4 mutation or file
+access. Unrelated scope is nondisclosing.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+Every real create/change writes attributable audit, workflow, and version evidence containing
+application/package/member/witness/shareholding/document/stamp/signature/custodian ids plus request,
+network, role, and team metadata. Exact replay and every denial write no success evidence. Checklist
+and package projections roll back atomically with a failed mutation.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+- SH-4 is applicable only to the frozen `physical` share mode. Member must be the application's
+  retained borrower; witness must be that application's current verified existing-shareholder
+  witness; shareholding must be active, physical, and owned by the borrower. Do not infer identity
+  from names or folio text.
+- Signed/custody status requires a current 008B4 `sh4` loan document plus distinct current 008E2
+  signed borrower and witness rows on that exact document, canonical frozen ids/names, signed time,
+  non-null capture makers, no mismatch, and the document's current 008D2 adequate maker/checker
+  stamp record. Do not hard-code nominal stamp amount.
+- Nullable share count, when supplied, must be a positive integer no greater than the retained active
+  physical shareholding's available shares; the slice does not reserve, transfer, or decrement shares.
+- Held-in-custody requires non-empty bounded custody location and Company Secretary authority.
+  `invoked` requires later Sanction Committee/Board approval and `returned` belongs to closure;
+  reject both with zero writes and keep invocation/return facts null.
+- SH-4 execution/custody never proves checklist completion, document approval, security invocation,
+  package completion, or disbursement readiness.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Physical-package create/read, exact replay, one-SH-4 uniqueness, retained changed history, and
+  strict fields/status/date/share-count constraints.
+- Borrower/witness/shareholding/current-renderer/signature/stamp same-application matrices,
+  including A-108/A-109 null-maker legacy exclusion, wrong share mode, inactive/nonphysical
+  shareholding, wrong witness, and cross-document evidence.
+- Compliance preparation, Company Secretary custody, read-only/unauthorised/unrelated role matrices,
+  and forbidden invoked/returned transitions.
+- Checklist/security projections preserve PoA, completion, verifier, remarks, approval signatures,
+  package status, file access, and readiness; projection conflict rolls back every write.
+- Five concurrent create/change attempts retain one current SH-4 and complete attributable history
+  on PostgreSQL.
+
+## Run-Ahead Sharpening (008F completion, 2026-07-14)
+
+- Extend the 008F security-package serializer and lock owner; do not create a second package module
+  or let SH-4 refresh rewrite PoA, cheque, CDSL, status, loan-account, or readiness facts.
+- Follow 008F's exact replay/history/nondisclosure order and use legal-owned selectors for exact
+  document stamp/signature truth. Never query `SignatureRecord` directly or accept caller-supplied
+  party snapshots as execution authority.
+- A-110's physical flag is a deferred placeholder in 008F. 008H may set it only from 008C2's frozen
+  source; missing/mixed mode remains visibly blocked rather than false-ready.
 
 ## Visual Acceptance Criteria
 None.

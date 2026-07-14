@@ -3,7 +3,12 @@ from math import ceil
 from django.core.exceptions import ValidationError
 from django.db.models import F
 
-from sfpcl_credit.legal_documents.models import LoanDocument, SignatureRecord
+from sfpcl_credit.legal_documents.models import (
+    LoanDocument,
+    NotarisationRecord,
+    SignatureRecord,
+    StampDutyRecord,
+)
 
 
 _DEFAULT_PAGE_SIZE = 20
@@ -74,6 +79,52 @@ def signature_facts_for_application(*, application_id):
         "verified_at",
         "mismatch_resolution_type",
     )
+
+
+def execution_signature_facts_for_document(
+    *, application_id, loan_document_id, for_update=False
+):
+    """Return canonical-at-capture execution facts without exposing file authority."""
+    queryset = SignatureRecord.objects
+    if for_update:
+        queryset = queryset.select_for_update()
+    return list(
+        queryset.filter(
+            loan_document_id=loan_document_id,
+            loan_document__loan_application_id=application_id,
+            signer_party_type__in=["borrower", "nominee"],
+        ).values(
+            "signer_party_type", "signer_party_id", "signer_name_snapshot",
+            "signature_status", "signature_mismatch_flag", "mismatch_resolution_type",
+            "signed_at", "captured_by_user_id",
+        )
+    )
+
+
+def poa_evidence_for_update(
+    *, application_id, loan_document_id, stamp_duty_record_id,
+    notarisation_record_id
+):
+    """Lock and return the exact legal-owner evidence set for a PoA mutation."""
+    document = (
+        LoanDocument.objects.select_for_update(of=("self",))
+        .select_related("document")
+        .filter(
+            pk=loan_document_id,
+            loan_application_id=application_id,
+            document_type="power_of_attorney",
+        )
+        .first()
+    )
+    if document is None:
+        return None, None, None
+    stamp = StampDutyRecord.objects.select_for_update().filter(
+        pk=stamp_duty_record_id, loan_document=document
+    ).first()
+    notary = NotarisationRecord.objects.select_for_update().filter(
+        pk=notarisation_record_id, loan_document=document
+    ).first()
+    return document, stamp, notary
 
 
 def _positive_int(field, value, default):

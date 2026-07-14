@@ -6667,3 +6667,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_173654_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008F-power-of-attorney-workflow
+- Summary: Added the locked §28 security-package parent and one-current-PoA workflow with canonical
+  parties, retained Compliance/Company Secretary maker-checker identity, current renderer and exact
+  stamp/notary/signature selectors, strict draft/active lifecycle, metadata-only projections, and
+  zero-write replay/denial/forbidden invocation-release behavior.
+- Tests run: staged package/draft/activation/review RED-GREEN tracers; 50 legal regressions; repeated
+  PostgreSQL five-worker create/change races; Django check/migration sync; all 796 backend tests with
+  28 expected skips and 93% coverage; frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_173654_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Medium; additive protected legal/security schema, fail-closed activation and
+  concurrency controls, no frontend/external effect.
+- Next action: Run 008G, then 008H.
+
+## 2026-07-14 18:28:46 - 2026-07-14_173654_normal_run
+- Agent tool used: codex
+- Slice attempted: 008F-power-of-attorney-workflow
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_173654_normal_run/.ralph/runs/2026-07-14_173654_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_173654_normal_run/.ralph/runs/2026-07-14_173654_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

@@ -1,0 +1,25 @@
+Creating test database for alias 'default'...
+Found 2 test(s).
+System check identified no issues (0 silenced).
+FF
+======================================================================
+FAIL: test_compliance_prepares_one_replay_safe_draft_from_canonical_facts (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_compliance_prepares_one_replay_safe_draft_from_canonical_facts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_173654_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 156, in test_compliance_prepares_one_replay_safe_draft_from_canonical_facts
+    self.assertEqual(negated.status_code, 400, negated.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"power_of_attorney_id": "e0982558-0ad2-4017-b94d-1884e7ff7337", "security_package_id": "20d07fd2-5e88-4284-ad9e-7654168771b6", "borrower_member_id": "8b747597-2fa8-43f8-8b36-8e91c79442ae", "nominee_id": "07b735d6-9045-41a2-a896-f58ae7d3d32b", "attorney_user_id": "01f28e24-089e-45f8-bc62-ca946809b59d", "purpose_summary": "Company Secretary must not initiate sale of shares on default.", "loan_document_id": "cc1b23ea-8411-43c8-93c4-90564f2bdc5a", "stamp_duty_record_id": "42d4c74e-3a04-43e7-9e22-7840b3f38293", "notarisation_record_id": "e4e1fb4e-065d-441e-a61d-16eaf3b1c4b7", "execution_status": "pending", "effective_from": null, "status": "draft", "prepared_by_user_id": "a64ed8af-9e7d-4145-a344-9bb3efc32180", "verified_by_user_id": null}, "meta": {"request_id": null, "timestamp": "2026-07-14T12:39:20.572883Z", "api_version": "v1"}}'
+
+======================================================================
+FAIL: test_company_secretary_activates_only_with_current_maker_checker_and_signatures (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_company_secretary_activates_only_with_current_maker_checker_and_signatures)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_173654_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 262, in test_company_secretary_activates_only_with_current_maker_checker_and_signatures
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Power of Attorney failed validation.", "details": {}, "field_errors": {"execution_status": "Distinct current borrower and nominee signatures are required."}}, "meta": {"request_id": "req-poa-active", "timestamp": "2026-07-14T12:39:20.614055Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.073s
+
+FAILED (failures=2)
+Destroying test database for alias 'default'...

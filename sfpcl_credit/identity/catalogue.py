@@ -385,6 +385,8 @@ ROLE_PERMISSIONS = {
         "communications.communication.send",
         "security.package.create",
         "security.package.update",
+        "security.package.read",
+        "security.poa.manage",
         "management_readonly",
     ],
     "company_secretary": [
@@ -398,6 +400,8 @@ ROLE_PERMISSIONS = {
         "documents.signature.resolve_mismatch",
         "documents.stamp.record",
         "documents.notary.record",
+        "security.package.read",
+        "security.package.create",
         "security.poa.manage",
         "security.sh4.manage",
         "security.cdsl_pledge.manage",

@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_company_secretary_activates_only_with_current_maker_checker_and_signatures (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_company_secretary_activates_only_with_current_maker_checker_and_signatures)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_173654_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 319, in test_company_secretary_activates_only_with_current_maker_checker_and_signatures
+    self.assertEqual(legacy_denied.status_code, 400, legacy_denied.content)
+AssertionError: 200 != 400 : b'{"success": true, "data": {"power_of_attorney_id": "52ec1de1-f862-4df5-bb1e-b588f3a29d23", "security_package_id": "836d53e0-49da-447d-b89d-119a73cb81e5", "borrower_member_id": "c964ccaf-8271-47e3-b866-7f1ea12fd07b", "nominee_id": "8c59ab3a-a087-47f4-ba1d-2402f6259cb7", "attorney_user_id": "b5d002d6-4dd7-4815-a546-26ba8d500dc8", "purpose_summary": "Authorise Company Secretary to initiate sale of shares on default.", "loan_document_id": "7adf6f54-1e1a-4b15-ae2b-53fc8384f474", "stamp_duty_record_id": "21bcebd4-2a94-4f89-b126-9bb0fbe5fc9c", "notarisation_record_id": "8b00d11a-6b28-44ef-a3b4-69392f418f0b", "execution_status": "executed", "effective_from": "2026-07-14", "status": "active", "prepared_by_user_id": "fc33b47d-73d8-4939-a6d9-4e86d7691b53", "verified_by_user_id": "b5d002d6-4dd7-4815-a546-26ba8d500dc8"}, "meta": {"request_id": null, "timestamp": "2026-07-14T12:51:08.293541Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.075s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

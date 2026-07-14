@@ -14,6 +14,23 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008F Power of Attorney Closure (2026-07-14)
+
+The §28 security package is now one locked, protected parent per sanctioned application with PoA
+always required and later-instrument flags/readiness honestly pending under A-110. One current PoA
+retains canonical borrower, nominee, active Company Secretary attorney, explicit share-sale-on-
+default authority, current renderer document, exact maker/checker stamp/notary, execution/effective
+facts, and immutable Compliance preparer/Company Secretary verifier history. Activation consumes
+locked legal-owner selectors and exact 008E2 frozen signature rows; mutable later names, resolved
+mismatches, and A-108/A-109 null-maker history cannot supply execution. Checklist projection remains
+metadata-only and never completes, approves, invokes, releases, downloads, or makes ready.
+
+008H run-ahead is now concrete from §28.4/§17.3 and V10 §4.5: physical-only SH-4 binds the sanctioned
+borrower, verified shareholder witness, active physical shareholding, current generated form, exact
+borrower/witness signatures, adequate maker/checker stamp, and Company Secretary custody. It must
+reuse the 008F package lock/serializer, reject invoked/returned states, preserve PoA/readiness truth,
+and leave mixed/missing share mode blocked.
+
 ## 008D2 Verification Authority Closure (2026-07-14)
 
 Compliance now owns only pending stamp/notary preparation, while Company Secretary owns every
