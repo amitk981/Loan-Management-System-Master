@@ -2962,3 +2962,51 @@ As of 007Q S23 and S25 render each result as the existing register card/detail c
 complete source facts, approver comments/times, and supporting-file metadata are reviewable without
 horizontal off-screen evidence. Both still use the same strict paginated transport and atomic
 row/pagination replacement. Metadata ids never create a download control.
+
+# Document-template catalogue and immutable successors (008A)
+
+`GET /api/v1/document-templates/` requires `documents.template.read` and returns the standard
+list envelope. It accepts only `document_type`, `borrower_type`, `approval_status`, `page`, and
+`page_size`; unknown parameters return `400 VALIDATION_ERROR`. `borrower_type` is nullable and
+accepts the repository/source variants `individual_farmer`, `fpc`, or `fpo`; the literal `null`
+filters the generic variant. `approval_status` is exactly `draft`, `approved`, or `retired`. Page
+defaults to 1, page size defaults to 20 and is capped at 100.
+
+`POST /api/v1/document-templates/` and
+`PATCH /api/v1/document-templates/{document_template_id}/` require
+`documents.template.manage`. Both accept a complete object:
+
+```json
+{
+  "template_code": "annexure_e_term_sheet_v1",
+  "template_name": "Term Sheet",
+  "document_type": "term_sheet",
+  "borrower_type": "individual_farmer",
+  "template_version": "1.0",
+  "template_file_id": "uuid-or-null",
+  "merge_fields": ["borrower_name", "loan_amount"],
+  "approval_status": "approved",
+  "effective_from": "2026-04-01",
+  "effective_to": null
+}
+```
+
+Required values are code, name, document type, version, approval status, and effective-from.
+Merge fields must be a list of unique nonblank names. Effective-to cannot precede effective-from.
+Template code is globally unique; document type, borrower variant, and version are unique together;
+approved effective ranges for the same document type/borrower variant cannot overlap. A non-null
+template file must exist and the actor must independently hold `documents.file.download`; missing
+and inaccessible ids share a nondisclosing validation error. This reference check emits no download
+audit and grants no later download authority.
+
+PATCH never updates the addressed row. It locks that row and creates its sole immutable successor;
+the complete payload must carry a new code/version. Exact POST or PATCH replay returns the original
+result with no additional template, audit, or version-history write. Each real creation writes one
+attributable `documents.template.created` or `documents.template.successor_created` audit plus one
+`document_template` version-history row containing old/new version, status, effective dates,
+template-file id/name, actor, and request metadata.
+
+Success data contains `document_template_id`, the request fields, nullable
+`template_file_name`, and `created_at`. It deliberately contains no storage key, download URL,
+enabled/available action, generated document, or Annexure routing fact. The unresolved J/K/L
+lettering remains descriptive source metadata and does not affect identity, selection, or routing.

@@ -131,7 +131,7 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         appraisal_id=identifiers["loan_appraisal_note_id"]
     )
     case = (
-        ApprovalCase.objects.select_for_update()
+        ApprovalCase.objects.select_for_update(of=("self",))
         .select_related(
             "loan_application",
             "loan_appraisal_note__risk_assessment",

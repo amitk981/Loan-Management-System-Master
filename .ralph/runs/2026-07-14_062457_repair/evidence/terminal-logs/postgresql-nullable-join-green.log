@@ -1,0 +1,12 @@
+Command:
+SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_repair_green_1_20260714 /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests.test_concurrent_returned_cycle_resubmissions_create_one_cycle_two_ledger --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2
+
+Working directory: sfpcl_credit/
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+test_concurrent_returned_cycle_resubmissions_create_one_cycle_two_ledger ... ok
+
+Ran 1 test in 0.692s
+OK
+Exit code: 0

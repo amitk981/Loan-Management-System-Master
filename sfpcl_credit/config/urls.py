@@ -433,6 +433,16 @@ urlpatterns = [
         document_views.download_document_file,
         name="document-file-download",
     ),
+    path(
+        "api/v1/document-templates/",
+        document_views.document_template_collection,
+        name="document-template-list-create",
+    ),
+    path(
+        "api/v1/document-templates/<uuid:document_template_id>/",
+        document_views.document_template_detail,
+        name="document-template-successor-create",
+    ),
     path("api/v1/tracer/members/", tracer_views.create_member, name="tracer-member-create"),
     path(
         "api/v1/tracer/members/<uuid:member_id>/loan-applications/",

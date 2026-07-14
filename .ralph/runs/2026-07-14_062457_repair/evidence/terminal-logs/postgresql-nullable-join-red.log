@@ -1,0 +1,15 @@
+Command:
+SFPCL_POSTGRES_TEST_DB=test_sfpcl_credit_repair_red_20260714 /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_sanction_submission_api.SanctionSubmissionConcurrencyTests.test_concurrent_returned_cycle_resubmissions_create_one_cycle_two_ledger --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2
+
+Working directory: sfpcl_credit/
+
+Found 1 test(s).
+System check identified no issues (0 silenced).
+test_concurrent_returned_cycle_resubmissions_create_one_cycle_two_ledger ... ERROR
+
+psycopg.errors.FeatureNotSupported: FOR UPDATE cannot be applied to the nullable side of an outer join
+django.db.utils.NotSupportedError: FOR UPDATE cannot be applied to the nullable side of an outer join
+
+Ran 1 test in 0.454s
+FAILED (errors=1)
+Exit code: 1

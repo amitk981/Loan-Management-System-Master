@@ -88,6 +88,14 @@ security documents (SH-4 blank, undated cheque, NACH/ECS mandate, guarantor if r
 ongoing duties (notify address/bank/landholding/shareholding changes). NACH/ECS mandate appears
 only in the p.27 obligations table, not in §4.2 — record as assumption when implementing.
 
+API/model extract added while sharpening 008C (2026-07-14): API §27.1 defines only
+`GET /api/v1/loan-applications/{loan_application_id}/document-checklist/`, returning checklist and
+application ids, checklist status, ordered item code/label/required/applicable/completion facts, and
+CS/Credit Manager/Sanction Committee/Senior Manager signature statuses. Data model §16.4 makes one
+checklist unique per application and retains four signature ids; §16.5 owns item applicability,
+completion, optional loan-document link, verification facts, and remarks. M06-FR-001 requires
+automatic creation after sanction; no public refresh/update/approval route is defined here.
+
 ### 008D Stamp Duty and Notarisation Tracking
 Maharashtra Stamp Act 1958, at execution, owner CS (V10 p.24; Deck p.10): loan agreements
 stamped (₹500 per §4.10; "ad valorem" per p.24 — open decision), PoA and SH-4 nominal duty,
@@ -95,6 +103,14 @@ instruments executed with witnesses. CS maintains an instrument checklist, affix
 stamps, logs into a register, keeps originals securely (V10 p.24). Disbursing before stamping
 completes is a High error (Deck p.11 #5; V10 p.32 #5). Stamp rates vary by state; indicative
 Maharashtra rates in Annexure J (V10 p.26 note 4).
+
+API/model extract added while sharpening 008D (2026-07-14): API §26.9 POST records stamp amount,
+physical/electronic type, nullable stamp number/purchase/execution dates, pending/adequate/
+insufficient status, and remarks. API §26.10 POST records nullable notary identity/date,
+pending/completed/rejected status, evidence document id, and remarks. Data model §16.7-§16.8 makes
+each record one-to-one with a loan document and names CS verification/evidence facts. Auth §26.4
+makes Compliance the recorder and Company Secretary the approver; neither endpoint grants evidence
+download, checklist approval, or disbursement readiness.
 
 ### 008E Signature Mismatch Workflow
 Credit Assessment Team verifies signature consistency across PAN card, cheque, and KYC documents

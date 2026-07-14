@@ -1,0 +1,18 @@
+Command (run twice with isolated databases):
+SFPCL_POSTGRES_TEST_DB=<isolated-db> /Users/amitkallapa/LMS/.ralph/venv/bin/python manage.py test sfpcl_credit.tests.test_document_templates_api.DocumentTemplateConcurrencyTests --settings=sfpcl_credit.config.postgres_test_settings --noinput -v 2
+
+Working directory: sfpcl_credit/
+
+Run 1 database: test_sfpcl_credit_doc_template_race_green_1_20260714
+Found 1 test(s).
+test_five_exact_successor_requests_persist_one_winner_and_evidence_set ... ok
+Ran 1 test in 0.359s
+OK
+Exit code: 0
+
+Run 2 database: test_sfpcl_credit_doc_template_race_green_2_20260714
+Found 1 test(s).
+test_five_exact_successor_requests_persist_one_winner_and_evidence_set ... ok
+Ran 1 test in 0.358s
+OK
+Exit code: 0

@@ -1,5 +1,19 @@
 # Ralph Progress Log
 
+# Repair 2026-07-14_062457_repair
+
+- Preserved the complete 008A implementation and repaired the PostgreSQL `FOR UPDATE` failure by
+  limiting two eager-load queries to locking their owning row: the historical approval action gate
+  locks only `ApprovalCase`, and the 008A successor race locks only `DocumentTemplate`.
+- The exact failing sanction concurrency test now passes; the full historical five-race acceptance
+  command passes twice on PostgreSQL. The 008A five-request successor race also passes twice on
+  PostgreSQL with one successor and one evidence set.
+- Django check/migration sync and all 700 backend tests pass with 20 expected SQLite skips at 93%
+  coverage. Frontend build/typecheck/lint and all 269 tests pass. No schema, API, frontend,
+  permission, template lifecycle, or business rule changed.
+- Evidence: `.ralph/runs/2026-07-14_062457_repair/`. Next: independent full validation, then the
+  due architecture review before sharpened 008B.
+
 # Repair 2026-07-14_050413_repair
 
 - Preserved the complete 007P implementation and repaired only the independently demonstrated
@@ -6110,6 +6124,33 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_051852_normal_run/.ralph/runs/2026-07-14_051852_normal_run/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_051852_normal_run/.ralph/runs/2026-07-14_051852_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_055848_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008A-document-template-model-and-versioning
+- Summary: Added the immutable document-template catalogue, complete successor-version PATCH,
+  bounded/filterable reads, explicit read/manage/file-reference permissions, non-overlapping
+  approved effective periods, and atomic audit/version-history evidence. No generation/download
+  or Annexure routing was introduced.
+- Tests run: retained backend RED/GREEN cycles; Django check/migration sync; all 700 backend tests
+  with 20 expected PostgreSQL-only skips at 93% coverage; frontend build/typecheck/lint and all 269
+  tests.
+- Evidence saved: `.ralph/runs/2026-07-14_055848_normal_run/evidence/`
+- Result: Success pending independent orchestrator PostgreSQL/quality validation.
+- Risk level: Medium; one additive migration and Critical template-manage permission boundary, no
+  destructive data change, generation, download, external communication, or deployment.
+- Next action: Independent validation/commit/merge/push, then the due architecture review before 008B.
+
+## 2026-07-14 06:41:52 - 2026-07-14_062457_repair
+- Agent tool used: codex
+- Slice attempted: 008A-document-template-model-and-versioning
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_055848_normal_run/.ralph/runs/2026-07-14_062457_repair/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_055848_normal_run/.ralph/runs/2026-07-14_062457_repair/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
