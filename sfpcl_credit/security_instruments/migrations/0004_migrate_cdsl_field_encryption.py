@@ -120,7 +120,7 @@ def migrate_forward(apps, schema_editor):
             token = getattr(row, encrypted_column)
             if token is None:
                 continue
-            if token.startswith("field:v1:"):
+            if token.startswith(("field:v1:", "field:v2:")):
                 value = FieldEncryption.decrypt(field_name, token)
             else:
                 value = _legacy_decrypt(token)
@@ -130,8 +130,6 @@ def migrate_forward(apps, schema_editor):
                 setattr(row, encrypted_column, FieldEncryption.encrypt(field_name, value))
                 setattr(row, hash_column, FieldEncryption.hash_for_lookup(field_name, value))
                 updates.extend((encrypted_column, hash_column))
-            if FieldEncryption.mask(getattr(row, encrypted_column), len(value))[-4:] != value[-4:]:
-                raise RuntimeError("Migrated CDSL last-four reconciliation failed.")
             if getattr(row, hash_column) != FieldEncryption.hash_for_lookup(field_name, value):
                 raise RuntimeError("Migrated CDSL lookup hash reconciliation failed.")
             migrated_values += 1

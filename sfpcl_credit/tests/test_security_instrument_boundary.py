@@ -1,14 +1,19 @@
 import ast
+import os
 from pathlib import Path
+import subprocess
+import sys
 from django.apps import apps
 from django.db.migrations.executor import MigrationExecutor
 from django.db import connection
 from django.test import SimpleTestCase, TransactionTestCase
 class SecurityInstrumentBoundaryTests(SimpleTestCase):
     def test_security_evidence_recorder_redacts_sensitive_values_recursively(self):
+        from sfpcl_credit.legal_documents.modules import checklist_actions
         from sfpcl_credit.security_instruments.modules.evidence_recorder import (
             redact_security_evidence,
         )
+        from sfpcl_credit.shared.masking import redact_sensitive_mapping
 
         redacted = redact_security_evidence(
             {
@@ -21,6 +26,8 @@ class SecurityInstrumentBoundaryTests(SimpleTestCase):
         self.assertEqual(redacted["nested"]["bank_account_number"], "[REDACTED]")
         self.assertEqual(redacted["nested"]["request_id"], "req-1")
         self.assertEqual(redacted["already_masked"], "************3456")
+        self.assertIs(redact_security_evidence, redact_sensitive_mapping)
+        self.assertIs(checklist_actions._redact, redact_sensitive_mapping)
 
     def test_top_level_process_rejects_caller_supplied_evidence_authority(self):
         from sfpcl_credit.processes import security_instrument_evidence
@@ -34,6 +41,16 @@ class SecurityInstrumentBoundaryTests(SimpleTestCase):
                 application_id="00000000-0000-0000-0000-000000000000",
                 evidence_access=object(),
             )
+        forged_calls = (
+            (security_instrument_evidence.read_poa, {"security_package_id": "missing"}),
+            (security_instrument_evidence.read_sh4, {"security_package_id": "missing"}),
+            (security_instrument_evidence.read_pledge, {"security_package_id": "missing"}),
+            (security_instrument_evidence.read_blank_cheque, {"security_package_id": "missing"}),
+        )
+        for function, kwargs in forged_calls:
+            with self.subTest(function=function.__name__):
+                with self.assertRaises(UncoordinatedEvidence):
+                    function(actor=None, evidence_access=object(), **kwargs)
 
     def test_source_dependency_graph_uses_only_top_level_cross_owner_process(self):
         backend = Path(__file__).parents[1]
@@ -58,6 +75,25 @@ class SecurityInstrumentBoundaryTests(SimpleTestCase):
                         offenders.append(f"{path.relative_to(backend)}:{node.lineno}:{name}")
         self.assertEqual(offenders, [])
 
+        reverse_offenders = []
+        for owner in (backend / "legal_documents", backend / "approvals"):
+            for path in owner.rglob("*.py"):
+                if "migrations" in path.parts:
+                    continue
+                tree = ast.parse(path.read_text(), filename=str(path))
+                for node in ast.walk(tree):
+                    names = []
+                    if isinstance(node, ast.Import):
+                        names = [alias.name for alias in node.names]
+                    elif isinstance(node, ast.ImportFrom) and node.module:
+                        names = [node.module]
+                    for name in names:
+                        if name.startswith("sfpcl_credit.security_instruments"):
+                            reverse_offenders.append(
+                                f"{path.relative_to(backend)}:{node.lineno}:{name}"
+                            )
+        self.assertEqual(reverse_offenders, [])
+
         coordinator = backend / "processes" / "security_instrument_evidence.py"
         self.assertTrue(coordinator.exists())
         coordinator_source = coordinator.read_text()
@@ -66,6 +102,26 @@ class SecurityInstrumentBoundaryTests(SimpleTestCase):
         self.assertFalse(
             (backend / "legal_documents" / "modules" / "power_of_attorney.py").exists()
         )
+
+    def test_owner_modules_import_cleanly_in_both_orders_in_fresh_processes(self):
+        environment = {
+            **os.environ,
+            "DJANGO_SETTINGS_MODULE": "sfpcl_credit.config.settings",
+        }
+        orders = (
+            ("sfpcl_credit.security_instruments.models", "sfpcl_credit.legal_documents.models", "sfpcl_credit.approvals.models"),
+            ("sfpcl_credit.approvals.models", "sfpcl_credit.legal_documents.models", "sfpcl_credit.security_instruments.models"),
+        )
+        for order in orders:
+            script = (
+                "import django,importlib;django.setup();"
+                + ";".join(f"importlib.import_module({name!r})" for name in order)
+            )
+            completed = subprocess.run(
+                [sys.executable, "-c", script], cwd=Path(__file__).parents[2],
+                env=environment, capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
 
     def test_security_app_owns_retained_tables_and_policy(self):
         package = apps.get_model("security_instruments", "SecurityPackage")

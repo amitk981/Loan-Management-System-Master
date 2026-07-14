@@ -1,0 +1,33 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFF
+======================================================================
+FAIL: test_package_read_role_and_object_scope_never_grants_mutation_or_reveal (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_package_read_role_and_object_scope_never_grants_mutation_or_reveal) (finance_reader_before_readiness='senior_manager_finance@poa.example')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_042336_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 183, in test_package_read_role_and_object_scope_never_grants_mutation_or_reveal
+    self.assertEqual(
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_package_read_role_and_object_scope_never_grants_mutation_or_reveal (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_package_read_role_and_object_scope_never_grants_mutation_or_reveal) (finance_reader_before_readiness='chief_financial_controller@poa.example')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_042336_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 183, in test_package_read_role_and_object_scope_never_grants_mutation_or_reveal
+    self.assertEqual(
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_package_read_role_and_object_scope_never_grants_mutation_or_reveal (sfpcl_credit.tests.test_power_of_attorney_api.PowerOfAttorneyApiTests.test_package_read_role_and_object_scope_never_grants_mutation_or_reveal)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_042336_normal_run/sfpcl_credit/tests/test_power_of_attorney_api.py", line 204, in test_package_read_role_and_object_scope_never_grants_mutation_or_reveal
+    self.assertEqual(self.client.get(url, **self._auth(cfc)).status_code, 403)
+AssertionError: 200 != 403
+
+----------------------------------------------------------------------
+Ran 1 test in 0.132s
+
+FAILED (failures=3)
+Destroying test database for alias 'default'...

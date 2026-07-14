@@ -5,31 +5,11 @@ from django.utils import timezone
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.shared.masking import redact_sensitive_mapping
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
-_SENSITIVE_PARTS = (
-    "aadhaar",
-    "bank_account",
-    "bo_account",
-    "cheque_number",
-    "pan_number",
-)
-
-
-def redact_security_evidence(value, key=""):
-    if isinstance(value, dict):
-        return {
-            item_key: redact_security_evidence(item_value, item_key)
-            for item_key, item_value in value.items()
-        }
-    if isinstance(value, list):
-        return [redact_security_evidence(item, key) for item in value]
-    if any(part in key.lower() for part in _SENSITIVE_PARTS):
-        if isinstance(value, str) and "*" in value:
-            return value
-        return None if value is None else "[REDACTED]"
-    return value
+redact_security_evidence = redact_sensitive_mapping
 
 
 def security_context(*, actor, snapshot, metadata):

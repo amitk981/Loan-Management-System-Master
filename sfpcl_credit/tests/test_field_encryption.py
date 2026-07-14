@@ -22,13 +22,15 @@ class FieldEncryptionTests(SimpleTestCase):
 
         encrypted = FieldEncryption.encrypt("cdsl.pledgor_bo_account", "1234567890123456")
 
-        self.assertTrue(encrypted.startswith("field:v1:k2:"))
+        self.assertTrue(encrypted.startswith("field:v2:k2:"))
         self.assertNotIn("1234567890123456", encrypted)
+        self.assertEqual(len(encrypted.split(":")), 5)
+        self.assertNotIn("3456", encrypted.split(":")[:3])
+        self.assertNotIn("16", encrypted.split(":")[:3])
         self.assertEqual(
             FieldEncryption.decrypt("cdsl.pledgor_bo_account", encrypted),
             "1234567890123456",
         )
-        self.assertEqual(FieldEncryption.mask(encrypted, 16), "************3456")
         first_hash = FieldEncryption.hash_for_lookup(
             "cdsl.pledgor_bo_account", "1234567890123456"
         )
@@ -88,6 +90,17 @@ class FieldEncryptionTests(SimpleTestCase):
         first = FieldEncryption.encrypt("cdsl.pledgor_bo_account", "1234567890123456")
         second = FieldEncryption.encrypt("cdsl.pledgor_bo_account", "1234567890123456")
         self.assertNotEqual(first, second)
+        self.assertEqual(
+            FieldEncryption.hash_for_lookup(
+                "cdsl.pledgor_bo_account", "1234567890123456"
+            ),
+            FieldEncryption.hash_for_lookup(
+                "cdsl.pledgor_bo_account", "1234567890123456"
+            ),
+        )
+        for token in (first, second):
+            self.assertNotIn("1234567890123456", token)
+            self.assertNotIn("3456", token.split(":")[:3])
         self.assertNotEqual(
             FieldEncryption.hash_for_lookup(
                 "cdsl.pledgor_bo_account", "1234567890123456"

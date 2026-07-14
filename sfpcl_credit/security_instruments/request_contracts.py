@@ -259,6 +259,24 @@ class BlankDatedChequeRequest:
         "member_id", "bank_account_id", "cheque_number", "document_id",
         "cheque_status", "custody_location", "collected_at",
     }
+    IMMUTABLE_PATCH_FIELDS = {
+        "invocation_approval_case_id", "presented_date", "amount_presented",
+        "returned_at", "prepared_by_user_id", "custodian_user_id",
+    }
+
+    @classmethod
+    def parse_patch(cls, payload):
+        if not isinstance(payload, dict):
+            raise ValidationError({"non_field_errors": "A JSON object is required."})
+        if not payload:
+            raise ValidationError({"non_field_errors": "At least one mutable field is required."})
+        unknown = set(payload) - cls.FIELDS - cls.IMMUTABLE_PATCH_FIELDS
+        immutable = set(payload) & cls.IMMUTABLE_PATCH_FIELDS
+        errors = {field: "Unknown field." for field in sorted(unknown)}
+        errors.update({field: "This field is immutable." for field in sorted(immutable)})
+        if errors:
+            raise ValidationError(errors)
+        return dict(payload)
 
     @classmethod
     def parse(cls, payload):

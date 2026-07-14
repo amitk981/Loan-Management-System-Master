@@ -2,34 +2,32 @@
 
 ## Last Run
 
-2026-07-15_034859_architecture_review
+2026-07-15_042336_normal_run
 
 ## Current Status
 
-Architecture review independently inspected commits `555c148b..447e965b` (008I2, I3, I4, J, K)
-against separate Standards and Spec axes. No production code changed. Three review regressions
-confirm significant gaps: `field:v1` ciphertext embeds recoverable plaintext suffixes; synthetic
-application-labelled cheque version JSON completes a checklist without a current cheque row; and
-bulk-completed item rows with no durable completion actions still pass Company Secretary approval.
-
-Review also found source-overbroad Senior Manager Finance/CFC Stage-4 reads, replacement semantics
-on blank-cheque PATCH, incomplete boundary/hash proof, public terminal-matrix bypasses, first-role
-rather than authorising-role evidence, and aggregate-only race assertions. The exact findings and
-judgement exclusions are newest-first in `docs/working/REVIEW_FINDINGS.md`. No ADR was needed because
-the source already decides ciphertext confidentiality, partial PATCH, object scope, cross-owner
-evidence, and action-backed completion.
+008K2 is complete. New `field:v2` ciphertext contains no plaintext length/suffix metadata; a frozen
+migration converts retained CDSL and blank-cheque v1 tokens with row/hash/plaintext reconciliation
+and populates a separate CDSL display suffix. Ordinary masking no longer decrypts, while audited
+reveal remains separate. Blank-cheque PATCH is locked, partial, full-candidate validated, replay-
+safe, and terminal-safe. Senior Manager Finance now requires `sanction_approved`; CFC remains
+denied until Epic 009 supplies disbursement readiness. Shared redaction, both-direction dependency
+guards, and forged evidence-contract rejection close the K2 boundary findings.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-15_034859_architecture_review/evidence/`. The review regression
-harness intentionally fails the three defects above and otherwise preserves the inherited 008K
-tests. Review/queue/protected-path checks and proportionate repository gates are recorded in the run
-packet. Only review docs, new corrective slice specs, queue/state/handoff records, and run artifacts
-changed; production code, source docs, protected policy/config/scripts, and git metadata did not.
+Evidence is in `.ralph/runs/2026-07-15_042336_normal_run/evidence/`. TDD RED/GREEN logs, migration
+reconciliation, final focused tests, 859-test full coverage at 92%, frontend lint/typecheck/293
+tests/build, plaintext scans, and the five affected PostgreSQL race classes twice are green. The
+independent Standards/Spec review found ordinary-mask decryption and duplicated redaction policy;
+both were corrected and the focused/full/race gates rerun. Final review also expanded every nested
+finance-read path and a real cross-application PATCH case, and retained canonical URL-safe Base64
+instead of a custom ciphertext alphabet. No frontend product code changed.
 
 ## Next Run
 
-Run `008K2-sensitive-security-contract-closure`, then `008K3-final-checklist-evidence-closure`.
-008L now depends on K3 and is sharpened to consume only corrected action-backed projections; 008M
-is sharpened against permission-only finance scope, synthetic cheque truth, and optimistic/status-
-only completion. A-101 still blocks the full real governed Term-Sheet path. No slice is Blocked.
+Run `008K3-final-checklist-evidence-closure`, then `008L-member-portal-documentation-actions`.
+Both are sharpened with K2's coordinated evidence, opaque-token, fixed-mask, and finance-scope
+contracts. K3 still owns the architecture review's synthetic cheque/status-only completion defects,
+role attribution, and full public terminal/race matrix. A-101 still blocks the full real governed
+Term-Sheet path. No slice is Blocked.

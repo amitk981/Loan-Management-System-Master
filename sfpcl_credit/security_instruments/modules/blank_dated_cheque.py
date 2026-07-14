@@ -5,6 +5,7 @@ from django.utils import timezone
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.security_instruments.evidence_contract import require_coordinated
 from sfpcl_credit.security_instruments.models import BlankDatedCheque
+from sfpcl_credit.security_instruments.request_contracts import BlankDatedChequeRequest
 from sfpcl_credit.security_instruments.modules import security_package
 from sfpcl_credit.security_instruments.modules.evidence_recorder import record_security_evidence
 from sfpcl_credit.shared.encryption import FieldEncryption
@@ -87,7 +88,20 @@ def update_cheque(
             cheque.security_package.loan_application_id, evidence_access
         ):
             raise NotFound
-        cleaned = _resolve_values(cheque.security_package, values, evidence_access)
+        candidate = (
+            values
+            if set(values) == BlankDatedChequeRequest.FIELDS
+            and not isinstance(values.get("collected_at"), str)
+            else BlankDatedChequeRequest.parse(
+                values if set(values) == BlankDatedChequeRequest.FIELDS
+                else _merge_locked_candidate(cheque, values)
+            ).as_values()
+        )
+        cleaned = _resolve_values(
+            cheque.security_package,
+            candidate,
+            evidence_access,
+        )
         if _matches(cheque, cleaned):
             if cheque.cheque_status == BlankDatedCheque.STATUS_HELD:
                 return _custody_action(cheque)
@@ -240,6 +254,22 @@ def _resolve_values(package, values, evidence_access):
         "custody_location": values["custody_location"],
         "collected_at": values["collected_at"],
     }
+
+
+def _merge_locked_candidate(cheque, values):
+    candidate = {
+        "member_id": cheque.member_id,
+        "bank_account_id": cheque.bank_account_id,
+        "cheque_number": FieldEncryption.decrypt(
+            "blank_cheque.cheque_number", cheque.cheque_number_encrypted
+        ),
+        "document_id": cheque.document_id,
+        "cheque_status": cheque.cheque_status,
+        "custody_location": cheque.custody_location,
+        "collected_at": cheque.collected_at.isoformat(),
+    }
+    candidate.update(values)
+    return candidate
 
 
 def _project(package, evidence_access):

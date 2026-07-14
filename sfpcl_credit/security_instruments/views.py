@@ -58,10 +58,10 @@ def blank_dated_cheque_detail(request, blank_dated_cheque_id):
         return response
     try:
         blank_dated_cheque.require_manage_actor(user)
-        parsed = BlankDatedChequeRequest.parse(parse_json_body(request))
+        parsed = BlankDatedChequeRequest.parse_patch(parse_json_body(request))
         data = security_instrument_evidence.update_blank_cheque(
             actor=user, blank_dated_cheque_id=blank_dated_cheque_id,
-            values=parsed.as_values(), metadata=_metadata(request),
+            values=parsed, metadata=_metadata(request),
         )
     except blank_dated_cheque.AccessDenied as exc:
         return error_response(

@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_patch_merges_one_mutable_field_and_preserves_omitted_values (sfpcl_credit.tests.test_blank_dated_cheque_api.BlankDatedChequeApiTests.test_patch_merges_one_mutable_field_and_preserves_omitted_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_042336_normal_run/sfpcl_credit/tests/test_blank_dated_cheque_api.py", line 180, in test_patch_merges_one_mutable_field_and_preserves_omitted_values
+    self.assertEqual(response.status_code, 200, response.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Blank-dated cheque failed validation.", "details": {}, "field_errors": {"bank_account_id": "This field is required.", "cheque_status": "This field is required.", "collected_at": "This field is required.", "custody_location": "This field is required.", "document_id": "This field is required.", "member_id": "This field is required."}}, "meta": {"request_id": "req-partial-cheque-number", "timestamp": "2026-07-14T23:01:00.015209Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.074s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

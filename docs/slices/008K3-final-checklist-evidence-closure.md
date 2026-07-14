@@ -87,6 +87,18 @@ High
 - Role attribution and race winner/loser evidence are complete and immutable.
 - All configured gates pass.
 
+## 008K2 Completion Sharpening (2026-07-15)
+
+- Consume only the coordinated K2 security evidence contract. Checklist completion must not receive
+  encrypted BO/cheque fields, lookup hashes, display suffix storage, reveal callbacks, or caller-
+  constructed evidence adapters; ordinary cheque evidence remains the fixed `******` mask.
+- Reconcile a blank-cheque terminal item against the current locked cheque/package/member/bank/
+  cancelled-cheque/scan/custody identities. K2 partial PATCH and its zero-write replay history are
+  mutation history, not substitutes for the exact current terminal custody action.
+- Preserve K2 finance object scope: Senior Manager Finance sees post-sanction checklist/security
+  metadata only at `sanction_approved`; CFC remains denied until an Epic 009 disbursement-ready
+  owner exists. No approval action may manufacture either read state.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

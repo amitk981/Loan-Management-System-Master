@@ -662,8 +662,30 @@ class CDSLSharePledgeApiTests(TestCase):
         migration.migrate_forward(apps, None)
 
         retained.refresh_from_db()
-        self.assertTrue(retained.pledgor_bo_account_encrypted.startswith("field:v1:"))
-        self.assertTrue(retained.pledgee_bo_account_encrypted.startswith("field:v1:"))
+        opaque_migration = importlib.import_module(
+            "sfpcl_credit.security_instruments.migrations.0006_migrate_opaque_field_tokens"
+        )
+        retained.pledgor_bo_account_encrypted = opaque_migration._encrypt_v1(
+            "cdsl.pledgor_bo_account", "1234567890123456"
+        )
+        retained.pledgee_bo_account_encrypted = opaque_migration._encrypt_v1(
+            "cdsl.pledgee_bo_account", "9876543210987654"
+        )
+        retained.pledgor_bo_account_last4 = "0000"
+        retained.pledgee_bo_account_last4 = "1111"
+        retained.save(update_fields=[
+            "pledgor_bo_account_encrypted", "pledgee_bo_account_encrypted",
+            "pledgor_bo_account_last4", "pledgee_bo_account_last4",
+        ])
+        opaque_migration.migrate_forward(apps, None)
+        opaque_migration.migrate_forward(apps, None)
+        retained.refresh_from_db()
+        self.assertTrue(retained.pledgor_bo_account_encrypted.startswith("field:v2:"))
+        self.assertTrue(retained.pledgee_bo_account_encrypted.startswith("field:v2:"))
+        self.assertNotIn("3456", retained.pledgor_bo_account_encrypted.split(":")[:3])
+        self.assertNotIn("7654", retained.pledgee_bo_account_encrypted.split(":")[:3])
+        self.assertEqual(retained.pledgor_bo_account_last4, "3456")
+        self.assertEqual(retained.pledgee_bo_account_last4, "7654")
         self.assertEqual(
             security_instrument_evidence.read_pledge(
                 actor=self.compliance, security_package_id=package["security_package_id"]

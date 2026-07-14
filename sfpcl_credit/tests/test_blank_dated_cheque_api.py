@@ -1,8 +1,10 @@
+import importlib
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from unittest import skipUnless
 
+from django.apps import apps
 from django.db import close_old_connections, connection
 from django.test import TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
@@ -124,6 +126,18 @@ class BlankDatedChequeApiTests(TestCase):
             ),
             "123456",
         )
+        migration = importlib.import_module(
+            "sfpcl_credit.security_instruments.migrations.0006_migrate_opaque_field_tokens"
+        )
+        retained.cheque_number_encrypted = migration._encrypt_v1(
+            "blank_cheque.cheque_number", "123456"
+        )
+        retained.save(update_fields=["cheque_number_encrypted"])
+        migration.migrate_forward(apps, None)
+        migration.migrate_forward(apps, None)
+        retained.refresh_from_db()
+        self.assertTrue(retained.cheque_number_encrypted.startswith("field:v2:"))
+        self.assertNotIn("3456", retained.cheque_number_encrypted.split(":")[:3])
         self.assertEqual(
             AuditLog.objects.filter(action="security.blank_cheque.collected").count(),
             1,
@@ -144,6 +158,160 @@ class BlankDatedChequeApiTests(TestCase):
         self.assertEqual(evidence["cheque_number"], "******")
         self.assertEqual(evidence["request_id"], "req-blank-cheque-create")
         self.assertNotIn("123456", str(evidence))
+
+    def test_patch_merges_one_mutable_field_and_preserves_omitted_values(self):
+        package = self.fixture._refresh_package()
+        created = self.client.post(
+            f"/api/v1/security-packages/{package['security_package_id']}/blank-dated-cheque/",
+            self._payload(),
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(created.status_code, 200, created.content)
+        cheque_id = created.json()["data"]["blank_dated_cheque_id"]
+
+        response = self.client.patch(
+            f"/api/v1/blank-dated-cheques/{cheque_id}/",
+            {"cheque_number": "654321"},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="req-partial-cheque-number",
+            **self.fixture._auth(self.compliance),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        retained = BlankDatedCheque.objects.get(pk=cheque_id)
+        self.assertEqual(
+            FieldEncryption.decrypt(
+                "blank_cheque.cheque_number", retained.cheque_number_encrypted
+            ),
+            "654321",
+        )
+        self.assertEqual(retained.member_id, self.member.pk)
+        self.assertEqual(retained.bank_account_id, self.bank_account.pk)
+        self.assertEqual(retained.cheque_status, "collected")
+        self.assertIsNone(retained.document_id)
+        self.assertIsNone(retained.custody_location)
+
+        several = self.client.patch(
+            f"/api/v1/blank-dated-cheques/{cheque_id}/",
+            {"cheque_number": "777777", "document_id": None},
+            content_type="application/json",
+            HTTP_X_REQUEST_ID="req-partial-several-fields",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(several.status_code, 200, several.content)
+        retained.refresh_from_db()
+        self.assertEqual(
+            FieldEncryption.decrypt(
+                "blank_cheque.cheque_number", retained.cheque_number_encrypted
+            ),
+            "777777",
+        )
+        self.assertEqual(retained.member_id, self.member.pk)
+        self.assertEqual(retained.bank_account_id, self.bank_account.pk)
+
+    def test_patch_rejects_empty_unknown_immutable_null_and_incomplete_terminal_shapes(self):
+        package = self.fixture._refresh_package()
+        created = self.client.post(
+            f"/api/v1/security-packages/{package['security_package_id']}/blank-dated-cheque/",
+            self._payload(), content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        cheque_id = created.json()["data"]["blank_dated_cheque_id"]
+        url = f"/api/v1/blank-dated-cheques/{cheque_id}/"
+        for payload, field in (
+            ({}, "non_field_errors"),
+            ({"unexpected": "value"}, "unexpected"),
+            ({"presented_date": timezone.localdate().isoformat()}, "presented_date"),
+            ({"member_id": str(uuid.uuid4())}, "member_id"),
+            ({"cheque_number": None}, "cheque_number"),
+            ({"cheque_status": "held"}, "custody_location"),
+        ):
+            with self.subTest(payload=payload):
+                response = self.client.patch(
+                    url, payload, content_type="application/json",
+                    **self.fixture._auth(self.compliance),
+                )
+                self.assertEqual(response.status_code, 400, response.content)
+                self.assertIn(field, response.json()["error"]["field_errors"])
+        retained = BlankDatedCheque.objects.get(pk=cheque_id)
+        self.assertEqual(retained.cheque_status, "collected")
+        self.assertIsNone(retained.document_id)
+
+        replay = self.client.patch(
+            url, {"document_id": None}, content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(
+            AuditLog.objects.filter(action="security.blank_cheque.changed").count(), 0
+        )
+
+    def test_patch_rejects_existing_member_and_bank_from_another_application(self):
+        package = self.fixture._refresh_package()
+        created = self.client.post(
+            f"/api/v1/security-packages/{package['security_package_id']}/blank-dated-cheque/",
+            self._payload(), content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        cheque_id = created.json()["data"]["blank_dated_cheque_id"]
+        other_member = type(self.member).objects.create(
+            member_number="MEM-BLANK-CROSS",
+            member_type="individual_farmer",
+            legal_name="Other Blank Cheque Borrower",
+            display_name="Other Blank Cheque Borrower",
+            folio_number="FOL-BLANK-CROSS",
+            membership_status="active",
+            kyc_status="verified",
+            default_status="no_default",
+        )
+        other_application = type(self.application).objects.create(
+            application_reference_number="LO-BLANK-CROSS",
+            member=other_member,
+            borrower_type="individual_farmer",
+            received_by_user=self.compliance,
+            created_by_user=self.compliance,
+        )
+        other_cancelled = CancelledCheque.objects.create(
+            loan_application_id=other_application.pk,
+            member=other_member,
+            document_id=uuid.uuid4(),
+            account_number_encrypted="protected-other-cancelled-account",
+            account_number_hash="other-retained-bank-hash",
+            account_number_last4="9876",
+            ifsc="HDFC0009876",
+            verification_status="verified",
+        )
+        other_bank = BankAccount.objects.create(
+            owner_party_type="member",
+            owner_party_id=other_member.pk,
+            account_holder_name=other_member.legal_name,
+            account_number_encrypted="protected-other-bank-account",
+            account_number_hash="other-retained-bank-hash",
+            account_number_last4="9876",
+            ifsc="HDFC0009876",
+            bank_name="HDFC Bank",
+            verification_status="verified",
+            cancelled_cheque=other_cancelled,
+            signature_verified_flag=True,
+            status="active",
+        )
+
+        response = self.client.patch(
+            f"/api/v1/blank-dated-cheques/{cheque_id}/",
+            {
+                "member_id": str(other_member.pk),
+                "bank_account_id": str(other_bank.pk),
+            },
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+
+        self.assertEqual(response.status_code, 400, response.content)
+        self.assertIn("member_id", response.json()["error"]["field_errors"])
+        retained = BlankDatedCheque.objects.get(pk=cheque_id)
+        self.assertEqual(retained.member_id, self.member.pk)
+        self.assertEqual(retained.bank_account_id, self.bank_account.pk)
 
     def test_distinct_company_secretary_holds_then_reveals_with_central_audit(self):
         package = self.fixture._refresh_package()
@@ -181,6 +349,21 @@ class BlankDatedChequeApiTests(TestCase):
         held_read = self.client.get(collection_url, **self.fixture._auth(secretary))
         self.assertEqual(held_read.json()["data"]["custodian_user_id"], str(secretary.pk))
         self.assertEqual(held_read.json()["data"]["cheque_number"], "******")
+
+        stale_change = self.client.patch(
+            f"/api/v1/blank-dated-cheques/{cheque_id}/",
+            {"cheque_number": "654321"},
+            content_type="application/json",
+            **self.fixture._auth(self.compliance),
+        )
+        self.assertEqual(stale_change.status_code, 409, stale_change.content)
+        retained = BlankDatedCheque.objects.get(pk=cheque_id)
+        self.assertEqual(
+            FieldEncryption.decrypt(
+                "blank_cheque.cheque_number", retained.cheque_number_encrypted
+            ),
+            "123456",
+        )
 
         revealed = self.client.post(
             f"/api/v1/blank-dated-cheques/{cheque_id}/reveal-cheque-number/",
@@ -529,7 +712,6 @@ class BlankDatedChequeConcurrencyTests(TransactionTestCase):
             close_old_connections()
             actor = type(checker).objects.get(pk=checker.pk)
             payload = {
-                **self.fixture._payload(),
                 "cheque_status": "held",
                 "custody_location": f"CS secure cabinet {index}",
             }
@@ -538,7 +720,7 @@ class BlankDatedChequeConcurrencyTests(TransactionTestCase):
                 security_instrument_evidence.update_blank_cheque(
                     actor=actor,
                     blank_dated_cheque_id=seed["blank_dated_cheque_id"],
-                    values=BlankDatedChequeRequest.parse(payload).as_values(),
+                    values=payload,
                     metadata=blank_dated_cheque.RequestMetadata(
                         f"race-blank-custody-{index}", "", ""
                     ),

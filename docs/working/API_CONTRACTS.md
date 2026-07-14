@@ -3397,9 +3397,13 @@ same typed legal serializer and business boundary.
 `GET /api/v1/loan-applications/{loan_application_id}/security-package/` requires
 `security.package.read`; `POST .../security-package/refresh/` requires
 `security.package.create` and accepts only an empty JSON object. GET permits active, explicitly
-granted Credit Manager, Compliance, Company Secretary, Senior Manager Finance, CFC, scoped CFO/
-Director approvers, and persisted audit-readonly actors against canonical latest-cycle frozen
-terminal sanction and matching Stage-4 checklist scope. Assigned approvers may read only their
+granted Credit Manager, Compliance, Company Secretary, scoped CFO/Director approvers, and persisted
+audit-readonly actors against canonical latest-cycle frozen terminal sanction and matching Stage-4
+checklist scope. Senior Manager Finance additionally requires the current checklist's
+`sanction_approved` documentation truth (the pending-disbursement state). CFC remains denied until
+Epic 009 supplies a canonical disbursement-ready relation; its role or permission alone is not
+readiness. The same finance-state rule applies to package, PoA, SH-4, CDSL, blank-cheque, and
+post-sanction checklist reads. Assigned approvers may read only their
 case; an unrelated approver remains `403 OBJECT_ACCESS_DENIED`. Read authority returns masked
 metadata only and never grants refresh, mutation, reveal, download, invocation, or release.
 Refresh remains limited to active Compliance Team or Company Secretary actors. Mutable approved
@@ -3523,9 +3527,16 @@ and denial is separately audited without plaintext. The response is `Cache-Contr
 `Pragma: no-cache`; one success per actor/pledge in that five-minute window is allowed, with repeated
 requests returning `429 RATE_LIMITED` under A-116. BO sensitivity does not require re-authentication,
 and that policy decision is retained in the central sensitive-access audit. New BO values use the
-independently keyed/versioned AES-GCM `shared.encryption` convention in A-115; field-specific lookup
+independently keyed/versioned AES-GCM `shared.encryption` convention in A-115. Since 008K2,
+`field:v2` tokens contain only format/key identifiers, random nonce, and authenticated ciphertext;
+field name and plaintext byte length are authenticated as associated data but no length or display
+suffix is stored in cleartext. CDSL ordinary masking reads a separately retained, migration-
+reconciled four-digit display projection; it never decrypts the ciphertext. Only the central,
+reason-bearing reveal boundary decrypts. Field-specific lookup
 hashes support equality/replay checks but are never returned. Retained `seal:v1` rows migrate with
-row-count/hash/last-four reconciliation and no plaintext response or ledger exposure.
+row-count/hash/last-four reconciliation, and retained suffix-bearing `field:v1` CDSL/cheque rows
+then migrate through a frozen decrypt/re-encrypt implementation with row-count/hash/plaintext-
+absence reconciliation and no plaintext response or ledger exposure.
 
 Package/checklist reads project only masked pledge existence, PRF/PSN/acceptance/created milestones,
 share count, maker, checker, and current legal-document linkage. They preserve PoA/SH-4 facts,
@@ -3538,9 +3549,13 @@ PSN integrity, masked history, and no loser success evidence.
 ## Blank-dated cheque and cancelled-cheque custody (008J)
 
 `POST/GET /api/v1/security-packages/{security_package_id}/blank-dated-cheque/` and
-`PATCH /api/v1/blank-dated-cheques/{blank_dated_cheque_id}/` implement §28.6. Mutation accepts
-exactly `member_id`, `bank_account_id`, write-only six-digit `cheque_number`, nullable `document_id`,
-`cheque_status`, nullable `custody_location`, and non-future ISO `collected_at`. Status is only
+`PATCH /api/v1/blank-dated-cheques/{blank_dated_cheque_id}/` implement §28.6. POST accepts exactly
+`member_id`, `bank_account_id`, write-only six-digit `cheque_number`, nullable `document_id`,
+`cheque_status`, nullable `custody_location`, and non-future ISO `collected_at`. PATCH accepts any
+non-empty subset of those fields, merges it against the locked current row, and revalidates the
+complete candidate. Omitted fields remain unchanged; explicit null is accepted only for
+`document_id` and `custody_location`. Empty, unknown, and later-owner immutable shapes are rejected.
+Status is only
 `collected` or `held`; invocation approval, presentation date/amount, return date, `invoked`, and
 `returned` are rejected and database-constrained to later owners.
 
@@ -3567,6 +3582,10 @@ Ordinary cheque, package, checklist, audit, version, and workflow data always re
 cancelled-cheque id, masked bank, IFSC/branch, status, custody, maker, and custodian metadata while
 preserving checklist completion/linkage/verifier/remarks/signatures, package status,
 `security_ready_flag=false`, and null loan account.
+
+Security mutation and checklist evidence use one shared recursive sensitive-key redaction policy.
+This ordinary evidence policy preserves already-masked display values but cannot authorize reveal;
+reveal success/denial remains a separate central sensitive-access ledger.
 
 `POST /api/v1/blank-dated-cheques/{blank_dated_cheque_id}/reveal-cheque-number/` accepts exactly
 `{ "reason": "..." }`. It requires `security.blank_cheque.reveal`, package-read/object scope, and

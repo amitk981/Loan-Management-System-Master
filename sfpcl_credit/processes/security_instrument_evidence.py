@@ -69,6 +69,20 @@ def _approval_read_allowed(actor, application_id):
     return bool(case and evaluate_approval_case_read_scope(actor=actor, case=case).allowed)
 
 
+def _finance_read_allowed(actor, application_id):
+    roles = set(actor.role_codes())
+    checklist = DocumentChecklist.objects.filter(
+        loan_application_id=application_id
+    ).values_list("checklist_status", flat=True).first()
+    if "senior_manager_finance" in roles:
+        return checklist == DocumentChecklist.STATUS_SANCTION_APPROVED
+    if "chief_financial_controller" in roles:
+        # Epic 009 owns the first canonical disbursement-ready relation. Until it
+        # exists, a permission or a checklist label cannot manufacture readiness.
+        return False
+    return False
+
+
 def _project_checklist_item(*, application_id, item_code, document, updates=None):
     item = (
         ChecklistItem.objects.select_for_update()
@@ -110,6 +124,7 @@ def _access():
     return _issue_security_evidence_access(
         approved_facts=resolve_approved_facts,
         approval_read_allowed=_approval_read_allowed,
+        finance_read_allowed=_finance_read_allowed,
         canonical_stage4_scope=_canonical_stage4_scope,
         poa_evidence=selectors.poa_evidence_for_update,
         execution_signatures=selectors.execution_signature_facts_for_document,

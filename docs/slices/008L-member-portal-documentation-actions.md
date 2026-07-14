@@ -172,6 +172,16 @@ High
   checklist action, supply a terminal security ledger, or make an internally incomplete item appear
   complete. Canonical refetch must preserve the server's blocked state.
 
+## 008K2 Completion Sharpening (2026-07-15)
+
+- Portal code receives no field-encryption or reveal adapter. CDSL may show only a borrower-safe
+  pledge status/instruction (not the internal last-four projection); blank cheque remains physical
+  status/instruction only with no number, suffix, ciphertext, lookup hash, scan id, or reveal URL.
+- Portal GET/upload scope derives only from the active `PortalAccount.member_id`; K2's internal
+  finance reader roles and `security.package.read` permission must never widen portal object scope.
+- Add response/DOM plaintext scans covering full BO/cheque fixtures, suffixes, token prefixes,
+  lookup hashes, storage keys, and internal evidence identities after load, upload, and refetch.
+
 ## Acceptance Criteria
 - The named capability works through the intended backend/API/frontend path, where applicable.
 - Source-doc business rules are enforced or documented as assumptions.

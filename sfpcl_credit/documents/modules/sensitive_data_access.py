@@ -59,9 +59,14 @@ class SensitiveEntity:
     encrypted_fields: dict[str, str | None]
 
 
-def mask_value(field_name: str, encrypted_value: str | None, default_length=16):
-    del field_name
-    return FieldEncryption.mask(encrypted_value, default_length)
+def mask_value(field_name: str, display_suffix: str | None, default_length=16):
+    if display_suffix is None:
+        return None
+    if field_name not in {"cdsl.pledgor_bo_account", "cdsl.pledgee_bo_account"}:
+        raise ValueError("Sensitive field has no ordinary masked projection policy.")
+    if not isinstance(display_suffix, str) or len(display_suffix) != 4 or not display_suffix.isdigit():
+        raise ValueError("Sensitive display suffix is malformed.")
+    return f"{'*' * max(default_length - 4, 0)}{display_suffix}"
 
 
 def reveal_cdsl_bo_accounts(

@@ -14,6 +14,22 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008K2 Sensitive Security Contract Closure (2026-07-15)
+
+`field:v2` now authenticates field, key version, and plaintext byte length without retaining length
+or suffix in the token. A frozen one-way migration decrypts retained CDSL/blank-cheque `field:v1`
+rows, reconciles lookup hashes and row counts, re-encrypts them, and populates explicit CDSL
+last-four display projections. Ordinary CDSL masking consumes only that projection; fixed cheque
+masking remains `******`; decryption remains exclusive to the audited central reveal boundary.
+
+Blank-cheque PATCH accepts a non-empty documented mutable subset, merges it under the row lock, and
+revalidates the full candidate. Unknown/later-owner fields, invalid nulls, cross-object candidates,
+incomplete custody, and post-custody changes fail closed; exact replay remains zero-write. Senior
+Manager Finance security/checklist reads now require current `sanction_approved` documentation
+truth, while CFC remains denied until Epic 009 supplies canonical disbursement-ready truth. One
+shared evidence redactor, two-direction import guards, forged-access rejection, plaintext scans,
+and twice-run five-worker PostgreSQL races close the executable boundary proof.
+
 ## Architecture Review 2026-07-15 04:03 - Sensitive Security and Checklist Evidence
 
 - The current `field:v1` encryption token authenticates but also stores plaintext length/last-four

@@ -12,6 +12,7 @@ from sfpcl_credit.approvals.modules import document_checklist_facts
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.shared.masking import redact_sensitive_mapping
 from sfpcl_credit.legal_documents import selectors
 from sfpcl_credit.legal_documents.models import (
     ChecklistAction,
@@ -100,16 +101,6 @@ _DOCUMENT_TYPE_BY_ITEM = {
     "bank_verification_letter": "bank_verification_letter",
     "final_checklist": "document_checklist",
 }
-
-_SENSITIVE_KEY_PARTS = (
-    "aadhaar",
-    "account_number",
-    "bo_account",
-    "cheque_hash",
-    "cheque_number",
-    "pan_number",
-)
-
 
 def require_item_completion_actor(actor):
     _require_actor(
@@ -659,20 +650,7 @@ def _action_response(action):
     }
 
 
-def _redact(value, key=""):
-    if isinstance(value, dict):
-        return {item_key: _redact(item_value, item_key) for item_key, item_value in value.items()}
-    if isinstance(value, list):
-        return [_redact(item, key) for item in value]
-    if any(part in key.lower() for part in _SENSITIVE_KEY_PARTS):
-        if isinstance(value, str) and "*" in value:
-            return value
-        return None if value is None else "[REDACTED]"
-    if hasattr(value, "isoformat"):
-        return value.isoformat()
-    if isinstance(value, uuid.UUID):
-        return str(value)
-    return value
+_redact = redact_sensitive_mapping
 
 
 def validation_field_errors(exc):

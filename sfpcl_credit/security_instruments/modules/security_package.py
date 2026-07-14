@@ -14,8 +14,9 @@ DIRECT_STAGE4_READ_ROLES = {
     "compliance_team_member",
     "company_secretary",
     "credit_manager",
-    "senior_manager_finance",
-    "chief_financial_controller",
+}
+FINANCE_STATE_SCOPED_READ_ROLES = {
+    "senior_manager_finance", "chief_financial_controller"
 }
 APPROVAL_SCOPED_READ_ROLES = {"cfo", "director", "internal_auditor"}
 @dataclass(frozen=True)
@@ -159,12 +160,20 @@ def _require_target_authority(actor, permission):
         return
     require_permission_actor(actor, permission)
     roles = set(auth_service.effective_role_codes(actor))
-    if not roles.intersection(DIRECT_STAGE4_READ_ROLES | APPROVAL_SCOPED_READ_ROLES):
+    if not roles.intersection(
+        DIRECT_STAGE4_READ_ROLES
+        | FINANCE_STATE_SCOPED_READ_ROLES
+        | APPROVAL_SCOPED_READ_ROLES
+    ):
         raise AccessDenied("OBJECT_ACCESS_DENIED")
 
 
 def _has_package_read_scope(actor, application_id, evidence_access):
     roles = set(auth_service.effective_role_codes(actor))
+    if roles.intersection(FINANCE_STATE_SCOPED_READ_ROLES):
+        return require_coordinated(evidence_access).finance_read_allowed(
+            actor, application_id
+        )
     if roles.intersection(DIRECT_STAGE4_READ_ROLES):
         return True
     return require_coordinated(evidence_access).approval_read_allowed(

@@ -146,10 +146,10 @@ class PowerOfAttorneyApiTests(TestCase):
             )
         credit_manager = self._user("credit_manager", "security.package.read")
         senior_finance = self._user(
-            "senior_manager_finance", "security.package.read"
+            "senior_manager_finance", "security.package.read", "documents.checklist.read"
         )
         cfc = self._user(
-            "chief_financial_controller", "security.package.read"
+            "chief_financial_controller", "security.package.read", "documents.checklist.read"
         )
         auditor = self._user("internal_auditor", "security.package.read")
         ApprovalCaseReadScopeGrant.objects.create(
@@ -160,13 +160,17 @@ class PowerOfAttorneyApiTests(TestCase):
             "company_secretary", "security.package.read"
         )
         url = f"/api/v1/loan-applications/{self.application.pk}/security-package/"
+        nested_urls = (
+            f"/api/v1/security-packages/{package['security_package_id']}/power-of-attorney/",
+            f"/api/v1/security-packages/{package['security_package_id']}/sh4-share-transfer-form/",
+            f"/api/v1/security-packages/{package['security_package_id']}/cdsl-share-pledge/",
+            f"/api/v1/security-packages/{package['security_package_id']}/blank-dated-cheque/",
+        )
 
         allowed = (
             self.compliance,
             company_secretary,
             credit_manager,
-            senior_finance,
-            cfc,
             assigned_cfo,
             assigned_director,
             auditor,
@@ -179,6 +183,50 @@ class PowerOfAttorneyApiTests(TestCase):
                 self.assertNotIn("storage_key", serialized)
                 self.assertNotIn("download", serialized)
                 self.assertNotIn("reveal", serialized)
+
+        for reader in (senior_finance, cfc):
+            with self.subTest(finance_reader_before_readiness=reader.email):
+                self.assertEqual(
+                    self.client.get(url, **self._auth(reader)).status_code, 403
+                )
+                self.assertEqual(
+                    self.client.get(
+                        f"/api/v1/loan-applications/{self.application.pk}/document-checklist/",
+                        **self._auth(reader),
+                    ).status_code,
+                    403,
+                )
+                for nested_url in nested_urls:
+                    self.assertEqual(
+                        self.client.get(
+                            nested_url, **self._auth(reader)
+                        ).status_code,
+                        403,
+                    )
+
+        self.application.legal_document_checklist.checklist_status = "sanction_approved"
+        self.application.legal_document_checklist.save(update_fields=["checklist_status"])
+        self.assertEqual(self.client.get(url, **self._auth(senior_finance)).status_code, 200)
+        self.assertEqual(
+            self.client.get(
+                f"/api/v1/loan-applications/{self.application.pk}/document-checklist/",
+                **self._auth(senior_finance),
+            ).status_code,
+            200,
+        )
+        for nested_url in nested_urls:
+            self.assertEqual(
+                self.client.get(
+                    nested_url, **self._auth(senior_finance)
+                ).status_code,
+                404,
+            )
+        self.assertEqual(self.client.get(url, **self._auth(cfc)).status_code, 403)
+        for nested_url in nested_urls:
+            self.assertEqual(
+                self.client.get(nested_url, **self._auth(cfc)).status_code,
+                403,
+            )
 
         unrelated = self.client.get(url, **self._auth(unrelated_director))
         self.assertEqual(unrelated.status_code, 403, unrelated.content)

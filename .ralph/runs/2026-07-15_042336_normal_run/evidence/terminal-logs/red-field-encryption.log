@@ -1,0 +1,15 @@
+Found 5 test(s).
+System check identified no issues (0 silenced).
+...F.
+======================================================================
+FAIL: test_round_trip_is_versioned_field_bound_and_lookup_hash_is_stable (sfpcl_credit.tests.test_field_encryption.FieldEncryptionTests.test_round_trip_is_versioned_field_bound_and_lookup_hash_is_stable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_042336_normal_run/sfpcl_credit/tests/test_field_encryption.py", line 25, in test_round_trip_is_versioned_field_bound_and_lookup_hash_is_stable
+    self.assertTrue(encrypted.startswith("field:v2:k2:"))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.008s
+
+FAILED (failures=1)

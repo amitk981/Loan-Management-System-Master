@@ -20,6 +20,7 @@ class UncoordinatedEvidence(Exception):
 class SecurityEvidenceAccess:
     approved_facts: Callable
     approval_read_allowed: Callable
+    finance_read_allowed: Callable
     canonical_stage4_scope: Callable
     poa_evidence: Callable
     execution_signatures: Callable

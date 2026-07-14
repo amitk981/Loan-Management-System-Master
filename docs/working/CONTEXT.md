@@ -81,8 +81,8 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   cheque PATCH uses replacement semantics. More critically, checklist completion trusts synthetic
   application-labelled version JSON and ordered approvals accept bulk-completed items with no
   durable completion actions; most promised terminal paths are bypassed in tests. Corrective 008K2
-  closes sensitive ciphertext, partial-update, reader-scope, and executable-boundary contracts;
-  008K3 then binds every completion/approval to current source-owned evidence and proves the full
+  now closes sensitive ciphertext, partial-update, reader-scope, redaction, and executable-boundary
+  contracts; 008K3 then binds every completion/approval to current source-owned evidence and proves the full
   public terminal/race matrix. 008L follows K3 for borrower-scoped portal documentation actions.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —

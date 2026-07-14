@@ -88,14 +88,20 @@ class _PostSanctionScope:
 def _evaluate_post_sanction_scope(*, actor, application, case, actor_permissions):
     """Return the source-attributed application/case scope for a sanctioned package."""
     roles = set(actor.role_codes())
+    if "senior_manager_finance" in roles:
+        checklist = getattr(application, "legal_document_checklist", None)
+        return _PostSanctionScope(
+            bool(checklist and checklist.checklist_status == "sanction_approved"),
+            "documentation_approved_pending_disbursement_scope",
+        )
+    if "chief_financial_controller" in roles:
+        return _PostSanctionScope(False, "disbursement_readiness_not_yet_available")
     # Source §19.2 defines these roles' application scope as the sanctioned
     # documentation queue itself; the status predicate is their canonical row scope.
     if roles & {
         "compliance_team_member",
         "company_secretary",
         "credit_manager",
-        "senior_manager_finance",
-        "chief_financial_controller",
         "internal_auditor",
     }:
         return _PostSanctionScope(True, "sanctioned_documentation_application_scope")

@@ -281,11 +281,11 @@ def _acceptance_evidence(
         "pledgor_member_id": str(cleaned["pledgor_member_id"]),
         "pledgor_bo_account": mask_sensitive(
             "cdsl.pledgor_bo_account",
-            cleaned["pledgor_bo_account_encrypted"], 16
+            cleaned["pledgor_bo_account_last4"], 16
         ),
         "pledgee_bo_account": mask_sensitive(
             "cdsl.pledgee_bo_account",
-            cleaned["pledgee_bo_account_encrypted"], 16
+            cleaned["pledgee_bo_account_last4"], 16
         ),
         "pledgor_dp_name": cleaned["pledgor_dp_name"],
         "pledgee_dp_name": cleaned["pledgee_dp_name"],
@@ -386,6 +386,7 @@ def _resolve_values(package, values, evidence_access):
             "cdsl.pledgor_bo_account", values["pledgor_bo_account"]
         ),
         "pledgor_bo_account_hash": pledgor_hash,
+        "pledgor_bo_account_last4": values["pledgor_bo_account"][-4:],
         "pledgee_bo_account_encrypted": (
             FieldEncryption.encrypt(
                 "cdsl.pledgee_bo_account", values["pledgee_bo_account"]
@@ -393,6 +394,9 @@ def _resolve_values(package, values, evidence_access):
             if values["pledgee_bo_account"] else None
         ),
         "pledgee_bo_account_hash": pledgee_hash,
+        "pledgee_bo_account_last4": (
+            values["pledgee_bo_account"][-4:] if values["pledgee_bo_account"] else None
+        ),
         "pledgor_dp_name": values["pledgor_dp_name"],
         "pledgee_dp_name": values["pledgee_dp_name"],
         "prf_status": values["prf_status"],
@@ -418,11 +422,11 @@ def serialize_pledge(pledge, evidence_access):
         "pledgee_entity_name": pledge.pledgee_entity_name,
         "pledgor_bo_account": mask_sensitive(
             "cdsl.pledgor_bo_account",
-            pledge.pledgor_bo_account_encrypted, 16
+            pledge.pledgor_bo_account_last4, 16
         ),
         "pledgee_bo_account": mask_sensitive(
             "cdsl.pledgee_bo_account",
-            pledge.pledgee_bo_account_encrypted, 16
+            pledge.pledgee_bo_account_last4, 16
         ),
         "pledgor_dp_name": pledge.pledgor_dp_name,
         "pledgee_dp_name": pledge.pledgee_dp_name,
