@@ -6087,3 +6087,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_051852_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 007Q-register-source-fields-and-visual-evidence-closure
+- Summary: Completed immutable S23/S25 source-field projections, including terminal conditions,
+  approver and communication evidence; restored the established semantic register-table
+  composition; and strengthened the three-output browser contract against blank capture regions.
+- Tests run: backend and frontend RED/GREEN cycles; Django check/migration sync; all 693 backend
+  tests with 19 expected PostgreSQL-only skips at 93% coverage; frontend build/typecheck/lint and
+  all 269 tests; both trusted browser specs collected successfully.
+- Evidence saved: `.ralph/runs/2026-07-14_051852_normal_run/evidence/`
+- Result: Success pending independent orchestrator browser/quality validation.
+- Risk level: High under standing approval; one additive/backfilled migration, no deployment or
+  real external communication.
+- Next action: Independent orchestrator validation/commit/merge/push, then start sharpened 008A.
+
+## 2026-07-14 05:58:34 - 2026-07-14_051852_normal_run
+- Agent tool used: codex
+- Slice attempted: 007Q-register-source-fields-and-visual-evidence-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_051852_normal_run/.ralph/runs/2026-07-14_051852_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_051852_normal_run/.ralph/runs/2026-07-14_051852_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

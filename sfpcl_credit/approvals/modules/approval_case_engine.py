@@ -513,6 +513,8 @@ def validated_frozen_terminal_facts(case):
         "member_id": member_id,
         "borrower_name": borrower["name"],
         "borrower_type": borrower["member_type"],
+        "folio_number": borrower.get("folio_number"),
+        "loan_type": borrower.get("loan_type") or "",
         "requested_amount": amounts["requested_amount"],
         "eligible_amount": amounts["eligible_amount"],
         "recommended_amount": amounts["recommended_amount"],
@@ -861,6 +863,15 @@ def _review_snapshot_is_complete(case):
     if any(
         not isinstance(borrower.get(key), str) or not borrower.get(key).strip()
         for key in ("name", "member_type")
+    ):
+        return False
+    if borrower.get("folio_number") is not None and (
+        not isinstance(borrower["folio_number"], str)
+        or not borrower["folio_number"].strip()
+    ):
+        return False
+    if borrower.get("loan_type") is not None and not isinstance(
+        borrower["loan_type"], str
     ):
         return False
     if not is_uuid_string(borrower["member_id"]):

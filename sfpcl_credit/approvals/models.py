@@ -5,6 +5,10 @@ from django.db import models
 from django.utils import timezone
 
 
+def generate_credit_sanction_register_entry_number():
+    return f"CSR-{uuid.uuid4()}"
+
+
 class ApprovalConfigurationLock(models.Model):
     lock_name = models.CharField(max_length=40, primary_key=True)
 
@@ -516,6 +520,12 @@ class CreditSanctionRegisterEntry(models.Model):
     credit_sanction_register_entry_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
+    entry_number = models.CharField(
+        max_length=40,
+        unique=True,
+        default=generate_credit_sanction_register_entry_number,
+        editable=False,
+    )
     approval_case = models.OneToOneField(
         ApprovalCase,
         on_delete=models.PROTECT,
@@ -550,17 +560,20 @@ class CreditSanctionRegisterEntry(models.Model):
     eligible_amount = models.DecimalField(max_digits=18, decimal_places=2)
     recommended_amount = models.DecimalField(max_digits=18, decimal_places=2)
     source_review_facts_json = models.JSONField(default=dict)
+    terminal_facts_json = models.JSONField(default=dict)
     sanctioned_amount = models.DecimalField(
         max_digits=18, decimal_places=2, null=True, blank=True
     )
     authority_applied_summary = models.TextField()
     approver_names_json = models.JSONField(default=list)
+    approver_decisions_json = models.JSONField(default=list)
     approval_date = models.DateField(db_index=True)
     decision = models.CharField(max_length=60, choices=DECISIONS, db_index=True)
     reasons = models.TextField()
     exception_reference_json = models.JSONField(null=True, blank=True)
     conflict_abstention_details_json = models.JSONField(default=list)
     general_meeting_approval_reference_json = models.JSONField(null=True, blank=True)
+    communication_json = models.JSONField(null=True, blank=True)
     recorded_by_user = models.ForeignKey(
         "identity.User",
         on_delete=models.PROTECT,
@@ -638,6 +651,7 @@ class ExceptionRegisterEntry(models.Model):
     business_reason = models.TextField()
     risk_assessment = models.TextField(null=True, blank=True)
     supporting_documents_json = models.JSONField(default=list)
+    source_facts_json = models.JSONField(default=dict)
     approval_case = models.OneToOneField(
         ApprovalCase,
         on_delete=models.PROTECT,

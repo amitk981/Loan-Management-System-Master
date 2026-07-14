@@ -41,17 +41,33 @@ export interface CreditSanctionRegisterRow {
   sanction_decision_id: string | null;
   workflow_event_id: string;
   application_number: string;
+  entry_number: string;
   borrower_name: string;
   borrower_type: string;
+  folio_number: string | null;
+  loan_type: string | null;
+  purpose: { category: string | null; description: string | null };
+  risk: { overall_risk_rating?: string | null; [key: string]: unknown };
   requested_amount: string | null;
   eligible_amount: string | null;
   recommended_amount: string | null;
   sanctioned_amount: string | null;
   approval_authority: string;
   approver_names: string[];
+  approver_decisions: Array<RegisterApprover & {
+    approval_action_id: string;
+    comments: string;
+  }>;
   approval_date: string;
   decision: 'sanctioned' | 'rejected';
   reasons: string;
+  rejection_reason: string | null;
+  conditions: string | null;
+  communication: {
+    communication_id: string;
+    status: string;
+    sent_at: string | null;
+  } | null;
   exception_reference: SanctionRegisterExceptionReference | null;
   conflict_abstention_details: SanctionRegisterConflictDetail[];
   general_meeting_approval_reference: SanctionRegisterMeetingReference | null;
@@ -76,6 +92,10 @@ export interface ExceptionRegisterRow {
   exception_type: 'exceeds_loan_limit' | 'stage_bypass' | 'waiver';
   description: string;
   business_reason: string;
+  borrower_name: string | null;
+  financial_impact: string | null;
+  requested_by: { user_id: string; full_name: string } | null;
+  decision_date: string | null;
   risk_assessment: string;
   status: 'pending' | 'approved' | 'rejected';
   case_status: string;

@@ -1,12 +1,13 @@
 import fs from 'fs';
 import path from 'path';
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
 
 const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
 if (!evidenceDir) throw new Error('RALPH_EVIDENCE_DIR is required for register/settings visual acceptance');
 fs.mkdirSync(evidenceDir, { recursive: true });
 
 test('S23/S25/S70/S71 preserve scoped contracts through routed app-shell navigation', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
   let actor: 'reader' | 'manager' = 'reader';
   const observedApiRequests: string[] = [];
   page.on('request', request => {
@@ -46,8 +47,11 @@ test('S23/S25/S70/S71 preserve scoped contracts through routed app-shell navigat
   await page.getByRole('button', { name: 'Apply financial year' }).click();
   await page.getByLabel('Sanction decision').selectOption('sanctioned');
   await expect(page.getByText('Browser Scoped Borrower')).toBeVisible();
+  await expect(page.getByText('CSR-BROWSER-001')).toBeVisible();
+  await expect(page.getByText('FOL-BROWSER-001')).toBeVisible();
+  await expect(page.getByText('Browser Director source comment.')).toBeVisible();
   await expect(page.getByText('1 record')).toBeVisible();
-  await capture(page, 'credit-sanction-register-scoped.png');
+  await captureReviewable(page, page.getByTestId('sanction-source-evidence'), 'credit-sanction-register-source-fields.png');
 
   await page.getByRole('button', { name: 'Exception register' }).click();
   await page.getByLabel('Exception status').selectOption('approved');
@@ -111,9 +115,13 @@ const user = (actor: 'reader' | 'manager') => ({
 const sanctionRow = {
   credit_sanction_register_entry_id: 'register-browser-1', approval_case_id: 'case-browser-1', loan_application_id: 'application-browser-1',
   sanction_decision_id: 'decision-browser-1', workflow_event_id: 'event-browser-1', application_number: 'LO-BROWSER-001',
+  entry_number: 'CSR-BROWSER-001', folio_number: 'FOL-BROWSER-001', loan_type: 'short_term',
   borrower_name: 'Browser Scoped Borrower', borrower_type: 'individual_farmer', requested_amount: '500000.00', eligible_amount: '450000.00',
   recommended_amount: '440000.00', sanctioned_amount: '440000.00', approval_authority: 'CFO + one Director',
   approver_names: ['Browser CFO', 'Browser Director'], approval_date: '2026-07-14', decision: 'sanctioned',
+  approver_decisions: [{ approval_action_id: 'action-browser-2', role_code: 'director', user_id: 'director-browser', full_name: 'Browser Director', decision: 'approved', comments: 'Browser Director source comment.', acted_at: '2026-07-14T03:00:00Z' }],
+  purpose: { category: 'crop_production', description: 'Browser crop production' }, risk: { overall_risk_rating: 'medium' },
+  rejection_reason: null, conditions: 'Complete browser legal documents.', communication: { communication_id: 'communication-browser-1', status: 'pending', sent_at: null },
   reasons: 'Browser frozen sanction reason', exception_reference: null, conflict_abstention_details: [],
   general_meeting_approval_reference: null, recorded_at: '2026-07-14T03:00:00Z',
 };
@@ -122,6 +130,7 @@ const exceptionRow = {
   exception_register_entry_id: 'exception-browser-1', loan_application_id: 'application-browser-1', loan_account_id: null,
   approval_case_id: 'case-browser-1', cycle_number: 1, exception_type: 'exceeds_loan_limit',
   description: 'Browser frozen exception description', business_reason: 'Browser exception business reason', risk_assessment: 'Medium',
+  borrower_name: 'Browser Scoped Borrower', financial_impact: '440000.00', requested_by: { user_id: 'requester-browser', full_name: 'Browser Requester' }, decision_date: '2026-07-14',
   status: 'approved', case_status: 'approved', conflict_block_reason: null, authority_applied_summary: 'CFO + two Directors',
   route_approvers: [], required_approvers: [], approval_actions: [{ approval_action_id: 'action-browser-1', role_code: 'cfo', user_id: 'cfo-browser', full_name: 'Browser CFO', decision: 'approved', comments: 'Browser immutable approval comment.', acted_at: '2026-07-14T03:00:00Z' }],
   supporting_documents: [{ document_id: 'document-browser-1', file_name: 'browser-support.pdf', mime_type: 'application/pdf', file_size_bytes: 2048, sensitivity_level: 'restricted', uploaded_at: '2026-07-14T02:00:00Z' }],
@@ -154,3 +163,66 @@ const policyVersions = [{
 const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data }) });
 const paginated = (route: Route, data: unknown[], pageSize: number) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, pagination: { page: 1, page_size: pageSize, total_count: data.length, total_pages: 1, has_next: false, has_previous: false } }) });
 const capture = (page: Page, fileName: string) => page.screenshot({ path: path.join(evidenceDir, fileName), fullPage: true, animations: 'disabled' });
+
+const captureReviewable = async (page: Page, evidence: Locator, fileName: string) => {
+  await evidence.scrollIntoViewIfNeeded();
+  const box = await evidence.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(720);
+  const screenshot = await page.screenshot({ path: path.join(evidenceDir, fileName), animations: 'disabled' });
+  const stats = await page.evaluate(async dataUrl => {
+    const image = new Image();
+    image.src = dataUrl;
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.width; canvas.height = image.height;
+    const context = canvas.getContext('2d')!;
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, image.width, image.height).data;
+    let opaqueDark = 0;
+    const buckets = new Set<number>();
+    for (let index = 0; index < pixels.length; index += 16) {
+      const red = pixels[index]; const green = pixels[index + 1]; const blue = pixels[index + 2];
+      if (red < 12 && green < 12 && blue < 12) opaqueDark += 1;
+      buckets.add((red >> 5) * 64 + (green >> 5) * 8 + (blue >> 5));
+    }
+    const tileSize = 64;
+    const columns = Math.ceil(image.width / tileSize);
+    const rows = Math.ceil(image.height / tileSize);
+    const uniform = Array<boolean>(columns * rows).fill(false);
+    for (let tileY = 0; tileY < rows; tileY += 1) {
+      for (let tileX = 0; tileX < columns; tileX += 1) {
+        let min = 255; let max = 0;
+        for (let y = tileY * tileSize; y < Math.min((tileY + 1) * tileSize, image.height); y += 4) {
+          for (let x = tileX * tileSize; x < Math.min((tileX + 1) * tileSize, image.width); x += 4) {
+            const offset = (y * image.width + x) * 4;
+            for (let channel = 0; channel < 3; channel += 1) {
+              min = Math.min(min, pixels[offset + channel]); max = Math.max(max, pixels[offset + channel]);
+            }
+          }
+        }
+        uniform[tileY * columns + tileX] = max - min <= 4;
+      }
+    }
+    const visited = Array<boolean>(uniform.length).fill(false);
+    let largestUniformRegion = 0;
+    for (let start = 0; start < uniform.length; start += 1) {
+      if (!uniform[start] || visited[start]) continue;
+      const queue = [start]; visited[start] = true; let size = 0;
+      while (queue.length) {
+        const current = queue.pop()!; size += 1;
+        const x = current % columns; const y = Math.floor(current / columns);
+        for (const next of [x > 0 ? current - 1 : -1, x + 1 < columns ? current + 1 : -1, y > 0 ? current - columns : -1, y + 1 < rows ? current + columns : -1]) {
+          if (next >= 0 && uniform[next] && !visited[next]) { visited[next] = true; queue.push(next); }
+        }
+      }
+      largestUniformRegion = Math.max(largestUniformRegion, size);
+    }
+    return { width: image.width, height: image.height, darkRatio: opaqueDark / (pixels.length / 16), colorBuckets: buckets.size, largestUniformRegionRatio: largestUniformRegion / uniform.length };
+  }, `data:image/png;base64,${screenshot.toString('base64')}`);
+  expect(stats).toMatchObject({ width: 1280, height: 720 });
+  expect(stats.darkRatio).toBeLessThan(0.2);
+  expect(stats.colorBuckets).toBeGreaterThan(16);
+  expect(stats.largestUniformRegionRatio).toBeLessThan(0.3);
+};

@@ -2,32 +2,28 @@
 
 ## Last Run
 
-2026-07-14_050413_repair
+2026-07-14_051852_normal_run
 
 ## Current Status
 
-Slice 007P remains complete after repair of the independently demonstrated trusted-browser harness
-failure. The malformed-envelope response mode had incorrectly asserted that `current_status` was
-absent even though the scenario selected `approved`; that assertion aborted mocked fulfillment,
-caused a real 401, and hid the intended strict-pagination error. The mock now expects the exact
-selected status. No production code or business behavior changed during repair.
-
-The underlying 007P implementation remains intact: S21 preserves server pagination and exact
-sanction/status/assignment filters, the shared client rejects malformed pagination, and approval
-collection narrows candidates before canonical per-case validation. 007Q is already concretely
-sharpened to retain those boundaries.
+Slice 007Q is complete. S23 and S25 now expose their missing source-required facts from immutable
+register snapshots, including a formal sanction-register entry number, borrower/loan/purpose/risk,
+per-approver comments and timestamps, frozen terminal rejection/condition facts, communication
+metadata, and exception borrower/impact/requester/date facts. Later live owner mutations do not
+rewrite either projection. Both screens retain the established semantic table composition with
+four grouped columns, strict shared pagination, metadata-only documents, and no inferred download.
 
 ## Validation
 
-Repair evidence is in `.ralph/runs/2026-07-14_050413_repair/evidence/`. Django check/migration sync
-and all 692 backend tests pass with 19 expected PostgreSQL-only skips at 93% coverage. Frontend
-build/typecheck/lint and all 269 tests pass; Playwright collection passes. Local Chromium hit the
-expected macOS Mach-port denial before test execution, so independent validation owns both declared
-post-repair browser runs and the final screenshot verdict.
+Evidence is in `.ralph/runs/2026-07-14_051852_normal_run/evidence/`. Django check/migration sync and
+all 693 backend tests pass with 19 expected PostgreSQL-only skips at 93% coverage. Frontend
+build/typecheck/lint and all 269 tests pass. Both trusted specs collect. Local Chromium hit the
+expected macOS Mach-port denial before test execution; independent validation owns both declared
+browser runs and the three final screenshot verdicts.
 
 ## Next Run
 
-Complete independent full validation and both trusted browser runs for repaired 007P, then run
-`007Q-register-source-fields-and-visual-evidence-closure`. Only after that corrective, start
-sharpened 008A/008B. Their concurrency requirements declare the required PostgreSQL five-race
-capability; A-095 still owns the unresolved S72 active-versus-approved question.
+Complete independent full validation and both trusted browser runs for 007Q, then start sharpened
+008A followed by 008B. Their metadata/action boundary is explicit: stored template/generated
+document metadata never grants file download; only canonical enabled actions may do so. A-095 still
+owns the unresolved S72 active-versus-approved question.

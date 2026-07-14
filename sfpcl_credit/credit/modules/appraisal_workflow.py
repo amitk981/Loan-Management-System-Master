@@ -228,6 +228,8 @@ def project_approval_case_review_facts(*, application, appraisal_note, review):
             "application_reference_number": application.application_reference_number,
             "name": application.member.display_name or application.member.legal_name,
             "member_type": application.borrower_type,
+            "folio_number": application.member.folio_number,
+            "loan_type": application.loan_type_requested or "",
         },
         "eligibility": eligibility,
         "loan_amounts": {

@@ -1,5 +1,20 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007Q Register Source Fields and Visual Evidence Closure
+
+- New credit review packages freeze folio and requested loan type alongside the existing borrower,
+  amount, purpose, and risk facts. S23 retains a formal `CSR-<UUID>` number, immutable per-approver
+  comments/times, explicit rejection/conditions null semantics, and the terminal communication
+  id/status/sent time; legacy facts are null when they cannot be proven.
+- S25 freezes borrower, routed reviewed amount as financial impact, requesting actor identity/name,
+  and terminal decision date beside the existing reason/risk/action/document metadata. Later live
+  profile/application changes cannot rewrite either register.
+- S23/S25 now use the retained register card/detail composition rather than a horizontally hidden
+  evidence table. Both declared browser specs require the evidence block inside a 1280x720 viewport,
+  emit the three 007Q filenames, and reject a high opaque-dark ratio or low-colour capture.
+- Document ids/file names remain metadata only. Neither register visibility nor global document
+  permission creates a download action; strict 007P pagination remains unchanged.
+
 ## 007P Sanction Queue Pagination and Read-Boundary Closure
 
 - The shared authenticated collection interface now rejects non-array data and missing, malformed,

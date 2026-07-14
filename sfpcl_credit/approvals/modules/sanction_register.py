@@ -26,7 +26,7 @@ _FINANCIAL_YEAR = re.compile(r"^FY(?P<start>\d{4})-(?P<end>\d{2})$")
 
 
 def generate_for_terminal_case(
-    *, actor, case, sanction_decision, workflow_event, request_meta=None
+    *, actor, case, sanction_decision, workflow_event, communication, request_meta=None
 ):
     """Freeze the 15-field source projection for one approved/rejected case."""
     if case.current_status not in {
@@ -68,6 +68,17 @@ def generate_for_terminal_case(
         "eligible_amount": terminal_facts["eligible_amount"],
         "recommended_amount": terminal_facts["recommended_amount"],
         "source_review_facts_json": terminal_facts["review_facts"],
+        "terminal_facts_json": {
+            "rejection_reason": (
+                case.reason_for_rejection
+                if decision == CreditSanctionRegisterEntry.DECISION_REJECTED
+                else None
+            ),
+            "conditions": (
+                sanction_decision.conditions_precedent or None
+                if sanction_decision else None
+            ),
+        },
         "sanctioned_amount": (
             sanction_decision.sanctioned_amount if sanction_decision else None
         ),
@@ -76,6 +87,19 @@ def generate_for_terminal_case(
         ),
         "approver_names_json": [
             row["full_name"]
+            for row in action_rows
+            if row["decision"] in {"approved", "rejected"}
+        ],
+        "approver_decisions_json": [
+            {
+                "approval_action_id": row["approval_action_id"],
+                "user_id": row["user_id"],
+                "full_name": row["full_name"],
+                "role_code": row["role_code"],
+                "decision": row["decision"],
+                "comments": row["comments"],
+                "acted_at": row["acted_at"],
+            }
             for row in action_rows
             if row["decision"] in {"approved", "rejected"}
         ],
@@ -89,6 +113,14 @@ def generate_for_terminal_case(
         "exception_reference_json": _exception_reference(exception, case),
         "conflict_abstention_details_json": _conflict_details(case, action_rows),
         "general_meeting_approval_reference_json": _meeting_reference(meeting),
+        "communication_json": {
+            "communication_id": str(communication.pk),
+            "status": communication.delivery_status,
+            "sent_at": (
+                communication.sent_at.isoformat().replace("+00:00", "Z")
+                if communication.sent_at else None
+            ),
+        },
         "recorded_by_user": actor,
     }
     entry, created = CreditSanctionRegisterEntry.objects.get_or_create(
@@ -212,17 +244,26 @@ def serialize_entry(entry):
         ),
         "workflow_event_id": str(entry.workflow_event_id),
         "application_number": entry.application_number,
+        "entry_number": entry.entry_number,
         "borrower_name": entry.borrower_name,
         "borrower_type": entry.borrower_type,
+        "folio_number": entry.source_review_facts_json["borrower"].get("folio_number"),
+        "loan_type": entry.source_review_facts_json["borrower"].get("loan_type") or None,
+        "purpose": entry.source_review_facts_json["purpose"],
+        "risk": entry.source_review_facts_json["risk"],
         "requested_amount": _money(entry.requested_amount),
         "eligible_amount": _money(entry.eligible_amount),
         "recommended_amount": _money(entry.recommended_amount),
         "sanctioned_amount": _money(entry.sanctioned_amount),
         "approval_authority": entry.authority_applied_summary,
         "approver_names": entry.approver_names_json,
+        "approver_decisions": entry.approver_decisions_json,
         "approval_date": entry.approval_date.isoformat(),
         "decision": entry.decision,
         "reasons": entry.reasons,
+        "rejection_reason": entry.terminal_facts_json.get("rejection_reason"),
+        "conditions": entry.terminal_facts_json.get("conditions"),
+        "communication": entry.communication_json,
         "exception_reference": entry.exception_reference_json,
         "conflict_abstention_details": entry.conflict_abstention_details_json,
         "general_meeting_approval_reference": (

@@ -375,6 +375,19 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
         trigger_reason=f"Approver {actor.pk} recorded {action.decision}.",
         action_code="approval_case.action_recorded",
     )
+    communication = None
+    if case.current_status != ApprovalCase.STATUS_PENDING:
+        communication, _ = communication_services.create_internal_team_communication(
+            sender=actor,
+            team_code="credit_assessment",
+            related_entity_type="approval_case",
+            related_entity_id=case.pk,
+            subject="Sanction approval completed",
+            body=f"Approval case {case.pk} was {case.current_status}.",
+            action_label="Open approval case",
+            action_url=f"/sanctions/{case.pk}",
+            request_meta=request_meta,
+        )
     if case.current_status in {
         ApprovalCase.STATUS_APPROVED,
         ApprovalCase.STATUS_REJECTED,
@@ -384,18 +397,7 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
             case=case,
             sanction_decision=decision,
             workflow_event=workflow_event,
-            request_meta=request_meta,
-        )
-    if case.current_status != ApprovalCase.STATUS_PENDING:
-        communication_services.create_internal_team_communication(
-            sender=actor,
-            team_code="credit_assessment",
-            related_entity_type="approval_case",
-            related_entity_id=case.pk,
-            subject="Sanction approval completed",
-            body=f"Approval case {case.pk} was {case.current_status}.",
-            action_label="Open approval case",
-            action_url=f"/sanctions/{case.pk}",
+            communication=communication,
             request_meta=request_meta,
         )
     case = (

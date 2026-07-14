@@ -2636,6 +2636,13 @@ conflict replacement or consult live committee membership. Each row also include
 download; S25 exposes no download control unless a separate document resource independently
 authorises an action.
 
+As of 007Q each new row also freezes `borrower_name`, the routed reviewed amount as nullable
+`financial_impact` (A-096), and `requested_by = {user_id, full_name}` at exception creation.
+`decision_date` is the immutable terminal case closure date or null while pending. Later member,
+application, or requester-profile edits cannot change those response facts. Legacy rows whose
+pre-007Q evidence cannot be proven expose the unavailable fact as null rather than reconstructing
+it from a live owner.
+
 The nullable `loan_account_id` is currently a UUID reference, not a foreign key to the tracer app's
 synthetic demo account. A protected FK is deferred to the production finance loan-account owner
 (A-084); exception entries created before sanction naturally carry no loan account.
@@ -2888,27 +2895,36 @@ purpose and risk), and one attributable `credit_sanction_register.created` audit
 retries cannot duplicate the one-to-one case row. Partial approvals, returns, conflict-blocked
 cycles, malformed frozen packages, and general-meeting gate denials create no row.
 
-The 15 functional-spec fields and their frozen sources are:
+The source register fields and their frozen sources are:
 
 | Response field | Frozen source |
 |---|---|
+| `entry_number` | immutable system-generated `CSR-<UUID>` formal number (A-096) |
 | `application_number` | routed review package's application reference |
 | `borrower_name` | routed review package's borrower name |
 | `borrower_type` | routed review package's borrower type |
+| `folio_number` | routed review package's member folio; null only for unproven legacy packages |
+| `loan_type` | routed review package's requested loan type; null when honestly unavailable |
+| `purpose` / `risk` | byte-for-byte values in the row's immutable `source_review_facts_json` |
 | `requested_amount` | routed review package's requested amount |
 | `eligible_amount` | routed review package's verified eligible amount |
 | `recommended_amount` | routed review package's reviewed recommendation |
 | `sanctioned_amount` | linked sanction decision; null for rejection |
 | `approval_authority` | case's canonical effective required-authority/action snapshot |
 | `approver_names` | ordered immutable actions for that case/cycle |
+| `approver_decisions` | each immutable action's actor/role/decision/comment/time |
 | `approval_date` | terminal case closure date |
 | `decision` | terminal case outcome mapped to `sanctioned`/`rejected` |
 | `reasons` | case approval or rejection reason |
+| `rejection_reason` | rejected terminal reason; null for sanctioned rows |
+| `conditions` | immutable sanction-decision conditions; null under A-079 when unavailable |
+| `communication` | exact terminal team communication id/status/sent time; pending with null sent time until delivered |
 | `exception_reference` | that case's one-to-one 007F row: id/type/business reason/status/cycle |
 | `conflict_abstention_details` | that case's frozen exclusions plus attributable abstention action |
 | `general_meeting_approval_reference` | that case's frozen 007G row: id/outcome/date/party/user/document metadata ids |
 
-The response additionally includes register/case/application/sanction/workflow ids and
+The terminal communication is created first inside the same locked transaction and copied into the
+register before commit; an adapter or register failure rolls both back. The response additionally includes register/case/application/sanction/workflow ids and
 `recorded_at`. Register permission never grants document download: the three general-meeting
 document values are metadata ids only, and the document module retains its own permission and
 sensitivity checks. No template/Annexure code is stored or projected because OC-002 still leaves
@@ -2941,3 +2957,8 @@ As of 007N, the register/matrix feature service delegates bearer/session headers
 standard envelope and field-error parsing, malformed-response handling, and pagination extraction
 to the shared authenticated frontend client. The feature boundary owns only its exact endpoints,
 query filters, successor payload, and typed DTOs.
+
+As of 007Q S23 and S25 render each result as the existing register card/detail composition so the
+complete source facts, approver comments/times, and supporting-file metadata are reviewable without
+horizontal off-screen evidence. Both still use the same strict paginated transport and atomic
+row/pagination replacement. Metadata ids never create a download control.

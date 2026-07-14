@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_source_register_fields_are_frozen_before_live_owner_changes (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_source_register_fields_are_frozen_before_live_owner_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_051852_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 2586, in test_source_register_fields_are_frozen_before_live_owner_changes
+    communication.delivery_status = Communication.DELIVERY_SENT
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'Communication' has no attribute 'DELIVERY_SENT'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.041s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

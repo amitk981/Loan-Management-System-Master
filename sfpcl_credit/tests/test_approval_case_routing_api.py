@@ -2525,6 +2525,107 @@ class ApprovalCaseRoutingApiTests(TestCase):
         with self.assertRaises(ValidationError):
             register_model.objects.filter(pk=entry.pk).delete()
 
+    def test_source_register_fields_are_frozen_before_live_owner_changes(self):
+        sanction_register_read = self._permission(
+            "approvals.sanction_register.read"
+        )
+        exception_register_read = self._permission(
+            "approvals.exception_register.read"
+        )
+        for permission in (sanction_register_read, exception_register_read):
+            RolePermission.objects.create(
+                role=self.cfo.primary_role, permission=permission
+            )
+        self.application.loan_type_requested = "short_term"
+        self.application.save(update_fields=["loan_type_requested"])
+        self.case.refresh_from_db()
+        self.case.appraisal_facts_json = _project_review_facts(self.case)
+        self.case.save(update_fields=["appraisal_facts_json"])
+        refresh_approval_case_projection(self.case)
+        frozen_review = self.case.appraisal_facts_json
+
+        exception_register.create_for_case(
+            actor=self.preparer,
+            case=self.case,
+            exception_type=ExceptionRegisterEntry.TYPE_EXCEEDS_LOAN_LIMIT,
+            business_reason="Frozen source exception reason.",
+            risk_assessment="Medium",
+            actor_permissions={exception_register.CREATE_PERMISSION},
+            related_entity_access_allowed=True,
+        )
+        first = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2, "comments": "CFO frozen source approval."},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        self.assertEqual(first.status_code, 200, first.json())
+
+        self.member.folio_number = "LIVE-MUTATED-FOLIO"
+        self.member.display_name = "Live mutated borrower"
+        self.member.save(update_fields=["folio_number", "display_name"])
+        self.application.loan_type_requested = "long_term"
+        self.application.declared_purpose = "Live mutated purpose"
+        self.application.save(
+            update_fields=["loan_type_requested", "declared_purpose"]
+        )
+        self.preparer.full_name = "Live mutated requester"
+        self.preparer.save(update_fields=["full_name"])
+
+        final = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 3, "comments": "Director frozen source approval."},
+            content_type="application/json",
+            **self._auth(self.director),
+        )
+        self.assertEqual(final.status_code, 200, final.json())
+        decision = self.case.sanction_decision
+        decision.conditions_precedent = "Live mutated conditions"
+        decision.save(update_fields=["conditions_precedent"])
+        communication = Communication.objects.get(related_entity_id=self.case.pk)
+        communication.delivery_status = "sent"
+        communication.sent_at = timezone.now()
+        communication.save(update_fields=["delivery_status", "sent_at"])
+        self.case.loan_appraisal_note.borrower_summary = "Live mutated appraisal"
+        self.case.loan_appraisal_note.save(update_fields=["borrower_summary"])
+        sanction_response = self.client.get(
+            "/api/v1/credit-sanction-register/", **self._auth(self.cfo)
+        )
+        exception_response = self.client.get(
+            "/api/v1/exception-register/", **self._auth(self.cfo)
+        )
+
+        sanction_row = sanction_response.json()["data"][0]
+        self.assertTrue(sanction_row["entry_number"].startswith("CSR-"))
+        self.assertEqual(sanction_row["folio_number"], "FOL-APPROVAL-QUEUE-001")
+        self.assertEqual(sanction_row["loan_type"], "short_term")
+        self.assertEqual(sanction_row["purpose"], frozen_review["purpose"])
+        self.assertEqual(sanction_row["risk"], frozen_review["risk"])
+        self.assertEqual(
+            [item["comments"] for item in sanction_row["approver_decisions"]],
+            ["CFO frozen source approval.", "Director frozen source approval."],
+        )
+        self.assertTrue(
+            all(item["acted_at"] for item in sanction_row["approver_decisions"])
+        )
+        self.assertIsNone(sanction_row["rejection_reason"])
+        self.assertIsNone(sanction_row["conditions"])
+        self.assertEqual(sanction_row["communication"]["status"], "pending")
+        self.assertIsNone(sanction_row["communication"]["sent_at"])
+
+        exception_row = exception_response.json()["data"][0]
+        self.assertEqual(exception_row["borrower_name"], "Approval Queue Member")
+        self.assertEqual(exception_row["financial_impact"], "500000.00")
+        self.assertEqual(
+            exception_row["requested_by"],
+            {"user_id": str(self.preparer.pk), "full_name": "Case Preparer"},
+        )
+        self.case.refresh_from_db()
+        self.assertEqual(
+            exception_row["decision_date"],
+            timezone.localdate(self.case.closed_at).isoformat(),
+        )
+
     def test_same_permission_unassigned_director_cannot_read_sanction_decision(self):
         sanction_read = self._permission("approvals.sanction.read")
         RolePermission.objects.create(
@@ -3261,7 +3362,9 @@ class ApprovalCaseRoutingApiTests(TestCase):
 
     def test_rejection_registers_once_without_inventing_a_sanction_decision(self):
         sanction_read = self._permission("approvals.sanction.read")
+        register_read = self._permission("approvals.sanction_register.read")
         RolePermission.objects.create(role=self.cfo.primary_role, permission=sanction_read)
+        RolePermission.objects.create(role=self.cfo.primary_role, permission=register_read)
 
         rejected = self.client.post(
             f"/api/v1/approval-cases/{self.case.pk}/reject/",
@@ -3293,6 +3396,19 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertIsNone(entry.sanction_decision_id)
         self.assertEqual(entry.sanctioned_amount, None)
         self.assertEqual(entry.reasons, "Repayment capacity is insufficient.")
+        register = self.client.get(
+            "/api/v1/credit-sanction-register/", **self._auth(self.cfo)
+        )
+        row = register.json()["data"][0]
+        self.assertEqual(row["rejection_reason"], "Repayment capacity is insufficient.")
+        self.assertIsNone(row["conditions"])
+        self.assertIsNone(row["sanctioned_amount"])
+        self.assertEqual(
+            [item["decision"] for item in row["approver_decisions"]],
+            ["rejected"],
+        )
+        self.assertEqual(row["communication"]["status"], "pending")
+        self.assertIsNone(row["communication"]["sent_at"])
         audit = AuditLog.objects.get(action="credit_sanction_register.created")
         self.assertEqual(audit.entity_id, entry.pk)
         self.assertEqual(audit.new_value_json["request_id"], "req-register-rejected")

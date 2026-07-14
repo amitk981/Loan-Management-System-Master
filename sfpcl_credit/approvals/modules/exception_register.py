@@ -60,6 +60,15 @@ def create_for_case(
         )
         for index in range(len(supporting_document_ids))
     ]
+    review_facts = case.appraisal_facts_json
+    source_facts = {
+        "borrower_name": review_facts["borrower"]["name"],
+        "financial_impact": review_facts["loan_amounts"]["recommended_amount"],
+        "requested_by": {
+            "user_id": str(actor.pk),
+            "full_name": actor.full_name,
+        },
+    }
     entry, created = ExceptionRegisterEntry.objects.get_or_create(
         approval_case=case,
         defaults={
@@ -69,6 +78,7 @@ def create_for_case(
             "business_reason": reason,
             "risk_assessment": (risk_assessment or "").strip() or None,
             "supporting_documents_json": supporting_documents,
+            "source_facts_json": source_facts,
             "closed_at": case.closed_at,
         },
     )
@@ -79,6 +89,7 @@ def create_for_case(
             or entry.risk_assessment != ((risk_assessment or "").strip() or None)
             or entry.loan_application_id != case.loan_application_id
             or entry.supporting_documents_json != supporting_documents
+            or entry.source_facts_json != source_facts
         ):
             from sfpcl_credit.domain_errors import DomainInvalidStateError
 
@@ -258,6 +269,9 @@ def serialize_entry(entry):
         "business_reason": entry.business_reason,
         "risk_assessment": entry.risk_assessment,
         "supporting_documents": list(entry.supporting_documents_json),
+        "borrower_name": entry.source_facts_json.get("borrower_name"),
+        "financial_impact": entry.source_facts_json.get("financial_impact"),
+        "requested_by": entry.source_facts_json.get("requested_by"),
         "status": entry.status,
         "case_status": case.current_status,
         "conflict_block_reason": case.conflict_block_reason or None,
@@ -268,6 +282,9 @@ def serialize_entry(entry):
             entry.closed_at.isoformat().replace("+00:00", "Z")
             if entry.closed_at
             else None
+        ),
+        "decision_date": (
+            entry.closed_at.date().isoformat() if entry.closed_at else None
         ),
     }
 

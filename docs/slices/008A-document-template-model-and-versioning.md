@@ -104,6 +104,9 @@ must not duplicate business evidence.
 - S72's annexure field must stay descriptive metadata independent of `template_code`. A-087 and the
   Epic 008 digest prohibit routing, generation selection, or register authority from depending on
   disputed J/K/L lettering.
+- 007Q reaffirmed that a retained file id/name is metadata, not an action. The §26.3 template list
+  and successor response must expose no download control or enabled file action unless the documents
+  owner separately returns that exact action; template read/manage permission is insufficient.
 
 ## Visual Acceptance Criteria
 None.

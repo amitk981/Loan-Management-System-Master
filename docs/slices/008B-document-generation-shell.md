@@ -123,6 +123,9 @@ borrower content. Denials and validation failures create no loan document, file,
 - Template selection must use 008A's exact approved/effective retained row and nullable borrower
   variant. S72 “active” display wording is not a second generation-authority state, and Annexure
   lettering is never a selector.
+- 007Q's S23/S25 DTOs are compliance read models, not generation authority. Resolve sanctioned and
+  reviewed merge facts through their canonical immutable owner boundaries; do not import a register
+  serializer or treat register/document/template metadata ids as generation or download authority.
 
 ## Visual Acceptance Criteria
 None.

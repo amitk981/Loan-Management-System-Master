@@ -1,7 +1,7 @@
 # Slice 007Q: Register Source Fields and Visual Evidence Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
