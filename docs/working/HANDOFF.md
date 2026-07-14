@@ -2,35 +2,32 @@
 
 ## Last Run
 
-2026-07-14_114627_repair
+2026-07-14_120956_normal_run
 
 ## Current Status
 
-008B3 is complete. `legal_documents.modules.document_renderer` is the storage-independent deep
-renderer seam: it accepts verified retained DOCX bytes plus validated frozen merge values and
-returns structurally/content-validated DOCX or PDF bytes with content metadata. Genuine OPC parts,
-formatted/table/header/footer content, and split-run placeholders are retained; duplicate,
-undeclared, missing, malformed, oversized, unsafe, or compressed-pathological inputs fail before
-storage. PDF uses pinned ReportLab/uharfbuzz, token-level host-font fallback for complete glyph
-coverage, and pinned pypdf layout extraction before persistence. The repair corrected the exact
-independent-validation failure where shaped Devanagari was split by plain extraction and the
-primary macOS font lacked the Indian-rupee glyph.
+008C is complete. An approved sanction now creates one legal-document checklist and eleven ordered
+applicability items atomically through a top-level process callback, without making `approvals`
+import `legal_documents`. Applicable requirements start pending; conditionals are driven only by
+frozen subsidiary/share-mode facts and persisted application-linked mismatch facts. Missing or
+conflicting sources remain explicit blockers under A-105. Generated-document links are selector-
+owned metadata only and never imply execution, verification, stamping, completion, or file access.
 
-A-101 remains honest: the real M05 writer's absent rate, repayment date, penal rate, fees, and
-dispute clause block a full Term Sheet with zero writes. The fully populated sanction fixture is
-renderer capability proof only. A-102's nullable-only loan-account transition remains unchanged.
+The source §27.1 GET is permissioned by legal checklist authority and object scope. A-104 preserves
+the existing 005D pre-sanction checklist response on the shared route; the old POST refresh cannot
+write legal checklist state. Loan-account and checklist-signature ids remain database-null until
+009C/008K install their real protected targets.
 
 ## Validation
 
-Repair evidence is in `.ralph/runs/2026-07-14_114627_repair/evidence/`; the original DOCX evidence
-remains in `.ralph/runs/2026-07-14_111448_normal_run/evidence/`. The exact two-test PDF loop went
-RED then GREEN, all 20 document-generation tests pass with one expected PostgreSQL skip, and the
-retained PDF artifact reopens strictly with exact Unicode borrower, `₹`, and amount extraction.
-Frontend build/typecheck/lint and all 293 tests pass. Django check and migration sync pass; all 736
-backend tests pass with 22 expected PostgreSQL-only skips and 93% coverage against the 85% floor.
+Evidence is in `.ralph/runs/2026-07-14_120956_normal_run/evidence/`. TDD RED/GREEN and atomic
+rollback regressions pass; the exact five-worker PostgreSQL checklist race passed twice. Django
+check and migration sync pass; all 746 backend tests pass with 23 expected PostgreSQL-only skips and
+93% coverage against the 85% floor. Frontend build/typecheck/lint and all 293 tests pass.
 
 ## Next Run
 
-After independent repair validation/commit, run sharpened 008C. It consumes only legal-selector
-metadata, never reopens bytes or infers checklist completion from rendering, and preserves A-102
-until 009C. Sharpened 008D likewise treats rendered content as neither stamp nor notary evidence.
+The four-slice architecture-review cadence is now due. After that review, run sharpened 008D. It
+must keep stamp/notary projections inside the locked owner transaction, preserve checklist
+applicability/completion, and never infer adequacy from rendered content. 008E is now concretely
+sharpened for signature capture and mismatch resolution.

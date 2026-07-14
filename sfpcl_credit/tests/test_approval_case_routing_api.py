@@ -53,6 +53,7 @@ from sfpcl_credit.domain_errors import DomainInvalidStateError
 from sfpcl_credit.communications.models import Communication, Notification
 from sfpcl_credit.identity.models import AuditLog, Permission, Role, RolePermission, User
 from sfpcl_credit.identity.modules.auth_service import effective_permission_codes
+from sfpcl_credit.legal_documents.models import ChecklistItem, DocumentChecklist
 from sfpcl_credit.members.models import Member
 from sfpcl_credit.tests.api_contracts import (
     assert_available_actions_shape,
@@ -2290,6 +2291,17 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(data["current_status"], "approved")
         self.assertEqual(data["version"], 4)
         self.assertTrue(data["sanction_decision_created"])
+        checklist = DocumentChecklist.objects.get(loan_application=self.application)
+        self.assertEqual(checklist.checklist_status, "in_progress")
+        self.assertEqual(ChecklistItem.objects.filter(document_checklist=checklist).count(), 11)
+        checklist_audit = AuditLog.objects.get(
+            action="document_checklist.created", entity_id=checklist.pk
+        )
+        self.assertEqual(checklist_audit.actor_user, self.director)
+        self.assertEqual(
+            checklist_audit.new_value_json["sanction_decision_id"],
+            data["sanction_decision_id"],
+        )
 
         SanctionDecision = apps.get_model("approvals", "SanctionDecision")
         decision = SanctionDecision.objects.get(approval_case=self.case)
@@ -2363,6 +2375,39 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertEqual(
             communication_audit.new_value_json["delivery_status"], "pending"
         )
+
+    def test_final_approval_rolls_back_when_checklist_side_effect_fails(self):
+        first = self.client.post(
+            f"/api/v1/approval-cases/{self.case.pk}/approve/",
+            {"version": 2, "comments": "CFO approval before rollback test."},
+            content_type="application/json",
+            **self._auth(self.cfo),
+        )
+        self.assertEqual(first.status_code, 200, first.json())
+
+        with patch(
+            "sfpcl_credit.processes.sanction_completion.document_checklist.refresh_for_approved_sanction",
+            side_effect=RuntimeError("checklist side effect failed"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "checklist side effect failed"):
+                self.client.post(
+                    f"/api/v1/approval-cases/{self.case.pk}/approve/",
+                    {"version": 3, "comments": "Director final approval must roll back."},
+                    content_type="application/json",
+                    **self._auth(self.director),
+                )
+
+        self.case.refresh_from_db()
+        self.application.refresh_from_db()
+        self.assertEqual(self.case.current_status, ApprovalCase.STATUS_PENDING)
+        self.assertEqual(self.case.version, 3)
+        self.assertEqual(
+            self.application.application_status,
+            LoanApplication.STATUS_SUBMITTED_TO_SANCTION,
+        )
+        self.assertEqual(ApprovalAction.objects.filter(approval_case=self.case).count(), 1)
+        self.assertFalse(hasattr(self.case, "sanction_decision"))
+        self.assertFalse(DocumentChecklist.objects.filter(loan_application=self.application).exists())
 
     def test_final_approval_uses_routed_review_package_after_live_owner_mutation(self):
         frozen_review = self.case.appraisal_facts_json

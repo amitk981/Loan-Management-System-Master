@@ -6428,3 +6428,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_120956_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008C-documentation-checklist-applicability
+- Summary: Added atomic post-sanction legal checklist creation, eleven ordered applicability items,
+  source-fact blockers, metadata-only generated-document links, object-scoped §27.1 reads, and the
+  pre-sanction 005D compatibility branch. Sharpened 008D and the previously stubbed 008E.
+- Tests run: focused TDD RED/GREEN; final approval creation and rollback; two PostgreSQL five-worker
+  races; Django check/migration sync; all 746 backend tests with 23 expected skips at 93% coverage;
+  frontend build/typecheck/lint and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_120956_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Medium slice with critical sanction-transaction and permission considerations; one
+  additive migration, no destructive data change or external side effect.
+- Next action: Run the now-due architecture review, then sharpened 008D.
+
+## 2026-07-14 12:43:22 - 2026-07-14_120956_normal_run
+- Agent tool used: codex
+- Slice attempted: 008C-documentation-checklist-applicability
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/.ralph/runs/2026-07-14_120956_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_120956_normal_run/.ralph/runs/2026-07-14_120956_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

@@ -1,6 +1,8 @@
 from django.core.exceptions import ValidationError
 from django.views.decorators.http import require_GET, require_POST
 
+from sfpcl_credit.applications import views as application_views
+from sfpcl_credit.applications.models import LoanApplication
 from sfpcl_credit.api import (
     error_response,
     list_response,
@@ -11,6 +13,7 @@ from sfpcl_credit.api import (
 )
 from sfpcl_credit.identity.modules import http_auth
 from sfpcl_credit.legal_documents.modules import document_generation
+from sfpcl_credit.legal_documents.modules import document_checklist
 
 
 @require_GET
@@ -75,4 +78,41 @@ def generate_loan_document(request, loan_application_id):
             "Loan document generation failed validation.",
             document_generation.validation_field_errors(exc),
         )
+    return success_response(data, request)
+
+
+@require_GET
+def legal_document_checklist(request, loan_application_id):
+    user, response = http_auth.authenticated_user(request)
+    if response is not None:
+        return response
+    application_status = (
+        LoanApplication.objects.filter(pk=loan_application_id)
+        .values_list("application_status", flat=True)
+        .first()
+    )
+    if application_status is None:
+        return application_views.loan_application_document_checklist(
+            request, loan_application_id
+        )
+    if (
+        application_status != LoanApplication.STATUS_APPROVED_BY_SANCTION
+    ):
+        return application_views.loan_application_document_checklist(
+            request, loan_application_id
+        )
+    try:
+        data = document_checklist.read_for_application(
+            actor=user,
+            application_id=loan_application_id,
+        )
+    except document_checklist.ChecklistAccessDenied as exc:
+        return error_response(
+            request,
+            403,
+            exc.error_code,
+            "You do not have access to this document checklist.",
+        )
+    except document_checklist.ChecklistNotFound:
+        return error_response(request, 404, "NOT_FOUND", "Document checklist was not found.")
     return success_response(data, request)

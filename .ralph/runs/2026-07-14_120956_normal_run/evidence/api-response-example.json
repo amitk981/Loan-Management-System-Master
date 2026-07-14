@@ -1,0 +1,35 @@
+{
+  "evidence_type": "contract_example_verified_by_test_document_checklist_api",
+  "success": true,
+  "data": {
+    "document_checklist_id": "00000000-0000-0000-0000-000000000001",
+    "loan_application_id": "00000000-0000-0000-0000-000000000002",
+    "checklist_status": "in_progress",
+    "items": [
+      {
+        "checklist_item_id": "00000000-0000-0000-0000-000000000003",
+        "item_code": "term_sheet",
+        "item_label": "Term Sheet",
+        "required_flag": true,
+        "applicable_flag": true,
+        "completion_status": "pending",
+        "applicability_source": "source_always_required",
+        "applicability_blocker": null,
+        "loan_document_id": "00000000-0000-0000-0000-000000000004"
+      }
+    ],
+    "signature_status": {
+      "company_secretary": "pending",
+      "credit_manager": "pending",
+      "sanction_committee": "pending",
+      "senior_manager_finance": "not_applicable_until_disbursement"
+    }
+  },
+  "omitted_by_contract": [
+    "storage_key",
+    "download_url",
+    "available_actions",
+    "completion_mutation",
+    "disbursement_readiness"
+  ]
+}

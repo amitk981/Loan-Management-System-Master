@@ -130,6 +130,16 @@ with a failed mutation.
   reference authority remains a separate documents-owned provenance decision, while renderer
   failures retain 008B3's zero-write guarantee and cannot create owner projections.
 
+## Run-Ahead Sharpening (008C completion, 2026-07-14)
+
+- Update only the linked checklist item's retained loan-document metadata projection; stamp/notary
+  create/change must leave `completion_status=pending`, applicability facts, signature statuses, and
+  checklist status unchanged. An inapplicable or blocked item does not become applicable through a
+  stamp/notary record.
+- Call any checklist projection refresh inside the same locked loan-document transaction. Exact
+  stamp/notary replay must remain zero-write across the owner record, loan-document projection,
+  checklist, audit, version, and workflow ledgers.
+
 ## Visual Acceptance Criteria
 None.
 

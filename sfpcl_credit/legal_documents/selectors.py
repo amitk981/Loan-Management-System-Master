@@ -41,6 +41,25 @@ def list_for_application(*, application_id, query_params):
     }
 
 
+def latest_generated_metadata_by_type(*, application_id, document_types):
+    """Return only retained, renderer-validated generation metadata."""
+    rows = (
+        LoanDocument.objects.filter(
+            loan_application_id=application_id,
+            document_type__in=document_types,
+            generation_status=LoanDocument.GENERATION_GENERATED,
+            document_template__isnull=False,
+            document__isnull=False,
+        )
+        .order_by("document_type", "-created_at", "-loan_document_id")
+        .values_list("document_type", "loan_document_id")
+    )
+    latest = {}
+    for document_type, loan_document_id in rows:
+        latest.setdefault(document_type, loan_document_id)
+    return latest
+
+
 def _positive_int(field, value, default):
     if value in (None, ""):
         return default

@@ -1,5 +1,61 @@
 # API Contracts
 
+## Post-sanction documentation checklist (008C)
+
+`GET /api/v1/loan-applications/{loan_application_id}/document-checklist/` returns the persisted
+source §27.1 legal checklist once the application is sanction-approved. Before sanction, the same
+route retains the 005D application-intake checklist response under A-104 so the existing completeness
+workbench remains compatible. The existing `/document-checklist/refresh/` POST remains a read-derived
+005D compatibility endpoint only; 008C adds no public legal refresh, completion, or approval action.
+
+The legal GET requires `documents.checklist.read` plus source-authorised application scope. Compliance
+Team and Company Secretary can read sanction-approved documentation applications; Credit Manager uses
+canonical application scope; a sanction approver can read only an attributable approval cycle; an
+auditor requires the retained audit-read scope grant. Permission-only or unrelated actors receive
+`403 OBJECT_ACCESS_DENIED`; missing global permission receives `403 FORBIDDEN`. Reads never write.
+
+Success uses the standard envelope and this metadata-only data shape:
+
+```json
+{
+  "document_checklist_id": "uuid",
+  "loan_application_id": "uuid",
+  "checklist_status": "in_progress",
+  "items": [
+    {
+      "checklist_item_id": "uuid",
+      "item_code": "term_sheet",
+      "item_label": "Term Sheet",
+      "required_flag": true,
+      "applicable_flag": true,
+      "completion_status": "pending",
+      "applicability_source": "source_always_required",
+      "applicability_blocker": null,
+      "loan_document_id": "uuid-or-null"
+    }
+  ],
+  "signature_status": {
+    "company_secretary": "pending",
+    "credit_manager": "pending",
+    "sanction_committee": "pending",
+    "senior_manager_finance": "not_applicable_until_disbursement"
+  }
+}
+```
+
+Items are ordered as witness PAN/Aadhaar, cancelled cheque, blank-dated cheque, PoA, conditional
+tri-party, conditional SH-4, conditional CDSL pledge, Term Sheet, Loan Agreement, conditional Bank
+Verification Letter, and final checklist. Applicable requirements start `pending`; inapplicable
+conditionals start `not_applicable`. Missing/conflicting source facts carry explicit blockers and are
+never guessed. A retained 008B generated-document id may be linked through legal metadata only and
+never changes completion, execution, verification, stamp, notary, signature, or approval state.
+
+The public sanction-approval route atomically creates one checklist and one row per item through a
+top-level process coordinator. Exact replay/unchanged internal refresh writes nothing. Real creation
+writes attributable `document_checklist.created` audit plus `documentation_checklist` workflow
+evidence; a real applicability change retains old/new item facts and its source reason. PostgreSQL
+application locking and database uniqueness preserve one checklist/item ledger under five workers.
+
 ## Credit Sanction Register legacy-null frontend contract (007T)
 
 The retained `GET /api/v1/credit-sanction-register/` backend contract is now represented exactly by

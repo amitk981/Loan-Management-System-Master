@@ -14,6 +14,21 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008C Checklist Applicability Closure (2026-07-14)
+
+Approved sanction finalisation now calls the legal checklist owner through a top-level transaction
+coordinator/callback: approval rows, sanction/register evidence, checklist, items, audit, and workflow
+either commit together or all roll back, without an `approvals -> legal_documents` import. New
+approval review packages freeze the selected shareholding mode; existing/missing or repository
+`mixed` modes remain explicit SH-4/CDSL blockers under A-105. Frozen active-member subsidiary flags
+and application-linked cancelled-cheque mismatch flags are the only conditional authorities.
+
+The §27.1 GET is metadata-only and preserves the pre-sanction 005D response on the shared route under
+A-104. Generated-document ids come only from the legal selector and never confer completion or file
+access. Checklist loan/signature ids remain database-null until 009C/008K install real protected FKs.
+The declared five-worker PostgreSQL race passed twice with one checklist, eleven unique ordered items,
+one creation audit, and no false applicability-change evidence.
+
 ## 008B2 Boundary Closure (2026-07-14)
 
 `legal_documents` now owns the retained `loan_documents` model/table, authoritative generation

@@ -5,6 +5,7 @@ from sfpcl_credit.api import error_response, list_response, parse_json_body, suc
 from sfpcl_credit.approvals.modules import approval_matrix_configuration as services
 from sfpcl_credit.approvals.modules import approval_case_engine
 from sfpcl_credit.approvals.modules import approval_actions
+from sfpcl_credit.processes import sanction_completion
 from sfpcl_credit.approvals.modules import exception_register
 from sfpcl_credit.approvals.modules import general_meeting
 from sfpcl_credit.approvals.modules import sanction_register
@@ -233,7 +234,7 @@ def approval_case_detail(request, approval_case_id):
 
 @require_http_methods(["POST"])
 def approval_case_approve(request, approval_case_id):
-    return _approval_case_action(request, approval_case_id, approval_actions.approve_case)
+    return _approval_case_action(request, approval_case_id, sanction_completion.approve_case)
 
 
 @require_http_methods(["POST"])

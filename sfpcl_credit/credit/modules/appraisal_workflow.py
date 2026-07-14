@@ -33,6 +33,7 @@ from sfpcl_credit.credit.modules.eligibility_assessment import EligibilityAssess
 from sfpcl_credit.credit.modules.loan_limit_calculator import LoanLimitCalculator
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
+from sfpcl_credit.members.models import Shareholding
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
@@ -202,6 +203,16 @@ def project_approval_case_review_facts(*, application, appraisal_note, review):
     """Project the credit-owned immutable review package consumed by approvals."""
     eligibility = appraisal_note.eligibility_snapshot_json
     loan_limit = appraisal_note.loan_limit_snapshot_json
+    frozen_shareholding_mode = (
+        Shareholding.objects.filter(
+            pk=loan_limit.get("shareholding_id"),
+            member_id=application.member_id,
+        )
+        .values_list("holding_mode", flat=True)
+        .first()
+        if loan_limit.get("shareholding_id")
+        else None
+    )
     risk = appraisal_note.risk_assessment
     witness = application.witnesses.filter(
         verification_status="verified", shareholder_verified_flag=True
@@ -254,6 +265,7 @@ def project_approval_case_review_facts(*, application, appraisal_note, review):
         "shareholding": {
             "shareholding_id": loan_limit.get("shareholding_id"),
             "number_of_shares": loan_limit.get("number_of_shares"),
+            "holding_mode": frozen_shareholding_mode,
         },
         "eligibility": eligibility,
         "loan_amounts": {

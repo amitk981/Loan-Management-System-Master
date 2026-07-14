@@ -155,7 +155,7 @@ urlpatterns = [
     ),
     path(
         "api/v1/loan-applications/<uuid:loan_application_id>/document-checklist/",
-        application_views.loan_application_document_checklist,
+        legal_document_views.legal_document_checklist,
         name="loan-application-document-checklist",
     ),
     path(

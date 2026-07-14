@@ -53,10 +53,14 @@ _ACTION_SPECS = {
 }
 
 
-def approve_case(*, actor, case_id, payload, actor_permissions, request_meta=None):
+def approve_case(
+    *, actor, case_id, payload, actor_permissions, request_meta=None,
+    sanction_completion_hook=None,
+):
     return record_action(
         actor=actor, case_id=case_id, action_code="approve", payload=payload,
         actor_permissions=actor_permissions, request_meta=request_meta,
+        sanction_completion_hook=sanction_completion_hook,
     )
 
 
@@ -81,7 +85,10 @@ def abstain_from_case(*, actor, case_id, payload, actor_permissions, request_met
     )
 
 
-def record_action(*, actor, case_id, action_code, payload, actor_permissions, request_meta=None):
+def record_action(
+    *, actor, case_id, action_code, payload, actor_permissions, request_meta=None,
+    sanction_completion_hook=None,
+):
     try:
         return _record_action(
             actor=actor,
@@ -90,6 +97,7 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
             payload=payload,
             actor_permissions=actor_permissions,
             request_meta=request_meta,
+            sanction_completion_hook=sanction_completion_hook,
         )
     except ApprovalActionConflict as exc:
         if exc.code == "CONFLICTED_APPROVER_NOT_ALLOWED":
@@ -115,7 +123,10 @@ def record_action(*, actor, case_id, action_code, payload, actor_permissions, re
 
 
 @transaction.atomic
-def _record_action(*, actor, case_id, action_code, payload, actor_permissions, request_meta=None):
+def _record_action(
+    *, actor, case_id, action_code, payload, actor_permissions, request_meta=None,
+    sanction_completion_hook=None,
+):
     version = _submitted_version(payload)
     comments = _comments(payload, required=action_code in {"reject", "return", "abstain"})
     identifiers = ApprovalCase.objects.filter(pk=case_id).values(
@@ -414,6 +425,12 @@ def _record_action(*, actor, case_id, action_code, payload, actor_permissions, r
             workflow_event=workflow_event,
             communication=communication,
             request_meta=request_meta,
+        )
+    if decision is not None and sanction_completion_hook is not None:
+        sanction_completion_hook(
+            actor=actor,
+            application_id=application.pk,
+            sanction_decision_id=decision.pk,
         )
     case = (
         ApprovalCase.objects.select_related(
