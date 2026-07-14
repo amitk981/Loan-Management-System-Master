@@ -1,0 +1,21 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_source_dependency_graph_uses_only_top_level_cross_owner_process (sfpcl_credit.tests.test_security_instrument_boundary.SecurityInstrumentBoundaryTests.test_source_dependency_graph_uses_only_top_level_cross_owner_process)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_004202_normal_run/sfpcl_credit/tests/test_security_instrument_boundary.py", line 25, in test_source_dependency_graph_uses_only_top_level_cross_owner_process
+    self.assertEqual(offenders, [])
+AssertionError: Lists differ: ['security_instruments/modules/sh4.py:10:s[836 chars]els'] != []
+
+First list contains 10 additional elements.
+First extra element 0:
+'security_instruments/modules/sh4.py:10:sfpcl_credit.legal_documents'
+
+Diff is 918 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.017s
+
+FAILED (failures=1)

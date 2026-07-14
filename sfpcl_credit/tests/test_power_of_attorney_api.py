@@ -30,6 +30,7 @@ from sfpcl_credit.workflows.models import WorkflowEvent
 from sfpcl_credit.legal_documents.modules import document_checklist, signatures, stamp_notary
 from sfpcl_credit.security_instruments.models import PowerOfAttorney, SecurityPackage
 from sfpcl_credit.security_instruments.modules import power_of_attorney
+from sfpcl_credit.processes import security_instrument_evidence
 from sfpcl_credit.tests import test_document_checklist_api
 
 
@@ -876,7 +877,7 @@ class PowerOfAttorneyConcurrencyTests(TransactionTestCase):
         }
 
     def _draft(self):
-        power_of_attorney.create_poa(
+        security_instrument_evidence.create_poa(
             actor=self.actor, security_package_id=self.package.pk, values=self.values,
             metadata=power_of_attorney.RequestMetadata("race-seed", "", ""),
         )
@@ -897,7 +898,7 @@ class PowerOfAttorneyConcurrencyTests(TransactionTestCase):
             }
             barrier.wait()
             try:
-                power_of_attorney.update_poa(
+                security_instrument_evidence.update_poa(
                     actor=actor, power_of_attorney_id=poa.pk, values=values,
                     metadata=power_of_attorney.RequestMetadata(f"race-activate-{index}", "", ""),
                 )
@@ -969,7 +970,7 @@ class PowerOfAttorneyConcurrencyTests(TransactionTestCase):
 
     def test_five_downgrades_cannot_change_terminal_activation(self):
         poa = self._draft()
-        power_of_attorney.update_poa(
+        security_instrument_evidence.update_poa(
             actor=self.attorney,
             power_of_attorney_id=poa.pk,
             values={
@@ -992,7 +993,7 @@ class PowerOfAttorneyConcurrencyTests(TransactionTestCase):
             actor = User.objects.get(pk=self.actor.pk)
             barrier.wait()
             try:
-                power_of_attorney.update_poa(
+                security_instrument_evidence.update_poa(
                     actor=actor, power_of_attorney_id=poa.pk, values=self.values,
                     metadata=power_of_attorney.RequestMetadata(f"race-downgrade-{index}", "", ""),
                 )

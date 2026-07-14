@@ -14,6 +14,7 @@ from sfpcl_credit.legal_documents.modules import document_checklist
 from sfpcl_credit.members.models import Member, Shareholding
 from sfpcl_credit.security_instruments.models import CDSLSharePledge, SecurityPackage
 from sfpcl_credit.security_instruments.modules import cdsl_share_pledge
+from sfpcl_credit.processes import security_instrument_evidence
 from sfpcl_credit.security_instruments.request_contracts import CDSLSharePledgeRequest
 from sfpcl_credit.tests.api_contracts import assert_success_envelope
 from sfpcl_credit.tests.test_power_of_attorney_api import PowerOfAttorneyApiTests
@@ -487,7 +488,7 @@ class CDSLSharePledgeConcurrencyTests(TransactionTestCase):
             values = CDSLSharePledgeRequest.parse(payload).as_values()
             barrier.wait()
             try:
-                cdsl_share_pledge.create_pledge(
+                security_instrument_evidence.create_pledge(
                     actor=actor,
                     security_package_id=self.package.pk,
                     values=values,
@@ -512,12 +513,28 @@ class CDSLSharePledgeConcurrencyTests(TransactionTestCase):
         self.assertEqual(data["pledgee_bo_account"], "************7654")
         self.assertNotIn("1234567890123456", retained.pledgor_bo_account_encrypted)
         winning_index = next(index for result, index in results if result == "created")
+        winning_request = f"race-cdsl-create-{winning_index}"
         self.assertEqual(retained.pledge_sequence_number, f"PSN-CDSL-RACE-{winning_index}")
         self.assertEqual(
             AuditLog.objects.get(action="security.cdsl_pledge.created")
             .new_value_json["request_id"],
-            f"race-cdsl-create-{winning_index}",
+            winning_request,
         )
+        version = VersionHistory.objects.get(
+            versioned_entity_type="cdsl_share_pledge"
+        )
+        workflow = WorkflowEvent.objects.get(workflow_name="cdsl_share_pledge")
+        self.assertEqual(version.new_value_json["request_id"], winning_request)
+        self.assertEqual(version.author_user_id, self.actor.pk)
+        self.assertEqual(workflow.triggered_by_user_id, self.actor.pk)
+        evidence = str(
+            list(AuditLog.objects.values_list("new_value_json", flat=True))
+            + list(VersionHistory.objects.values_list("new_value_json", flat=True))
+        )
+        for result, index in results:
+            self.assertEqual(
+                f"race-cdsl-create-{index}" in evidence, result == "created"
+            )
 
     def test_five_changed_acceptance_attempts_retain_one_terminal_winner(self):
         submitted = {
@@ -527,7 +544,7 @@ class CDSLSharePledgeConcurrencyTests(TransactionTestCase):
             "pledged_share_count": 100,
             "agreement_number": "LA-CDSL-ACCEPT-RACE",
         }
-        seed = cdsl_share_pledge.create_pledge(
+        seed = security_instrument_evidence.create_pledge(
             actor=self.actor,
             security_package_id=self.package.pk,
             values=CDSLSharePledgeRequest.parse(submitted).as_values(),
@@ -553,7 +570,7 @@ class CDSLSharePledgeConcurrencyTests(TransactionTestCase):
             values = CDSLSharePledgeRequest.parse(payload).as_values()
             barrier.wait()
             try:
-                cdsl_share_pledge.update_pledge(
+                security_instrument_evidence.update_pledge(
                     actor=actor,
                     cdsl_share_pledge_id=seed["cdsl_share_pledge_id"],
                     values=values,
@@ -561,16 +578,21 @@ class CDSLSharePledgeConcurrencyTests(TransactionTestCase):
                         f"race-cdsl-acceptance-{index}", "", ""
                     ),
                 )
-                return "returned", index
+                return "returned", index, str(
+                    CDSLSharePledge.objects.get(pk=seed["cdsl_share_pledge_id"])
+                    .acceptance_workflow_event_id
+                )
             except cdsl_share_pledge.Conflict:
-                return "conflict", index
+                return "conflict", index, None
             finally:
                 close_old_connections()
 
         with ThreadPoolExecutor(max_workers=5) as pool:
             results = list(pool.map(worker, range(5)))
         self.assertEqual(len(results), 5)
-        self.assertTrue(all(result in {"returned", "conflict"} for result, _ in results))
+        self.assertTrue(
+            all(result in {"returned", "conflict"} for result, _, _ in results)
+        )
         retained = CDSLSharePledge.objects.get()
         self.assertEqual(retained.verified_by_user_id, checker.pk)
         self.assertIsNotNone(retained.acceptance_workflow_event_id)
@@ -581,19 +603,40 @@ class CDSLSharePledgeConcurrencyTests(TransactionTestCase):
             ]
         )
         self.assertEqual(terminal_audits.count(), 1)
-        winning_request = terminal_audits.get().new_value_json["request_id"]
+        terminal_audit = terminal_audits.get()
+        winning_request = terminal_audit.new_value_json["request_id"]
         winning_index = int(winning_request.rsplit("-", 1)[1])
         expected_acceptance = "accepted" if winning_index % 2 == 0 else "rejected"
         self.assertEqual(retained.pledge_acceptance_status, expected_acceptance)
         self.assertEqual(winning_request, f"race-cdsl-acceptance-{winning_index}")
         loser_requests = {
             f"race-cdsl-acceptance-{index}"
-            for _result, index in results if index != winning_index
+            for _result, index, _event_id in results if index != winning_index
         }
         retained_requests = set(
             AuditLog.objects.filter(entity_type="cdsl_share_pledge")
             .values_list("new_value_json__request_id", flat=True)
+        ) | set(
+            VersionHistory.objects.filter(
+                versioned_entity_type="cdsl_share_pledge"
+            ).values_list("new_value_json__request_id", flat=True)
         )
         self.assertTrue(loser_requests.isdisjoint(retained_requests))
         self.assertEqual(VersionHistory.objects.filter(
             versioned_entity_type="cdsl_share_pledge").count(), 2)
+        terminal_version = VersionHistory.objects.get(
+            versioned_entity_type="cdsl_share_pledge",
+            change_summary__in=[
+                "security.cdsl_pledge.accepted",
+                "security.cdsl_pledge.rejected",
+            ],
+        )
+        workflow = WorkflowEvent.objects.get(pk=retained.acceptance_workflow_event_id)
+        self.assertEqual(terminal_audit.actor_user_id, checker.pk)
+        self.assertEqual(terminal_version.author_user_id, checker.pk)
+        self.assertEqual(terminal_version.new_value_json["request_id"], winning_request)
+        self.assertEqual(workflow.triggered_by_user_id, checker.pk)
+        self.assertEqual(
+            {event_id for status, _, event_id in results if status == "returned"},
+            {str(workflow.pk)},
+        )

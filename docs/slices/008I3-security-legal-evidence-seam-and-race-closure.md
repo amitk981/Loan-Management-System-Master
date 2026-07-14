@@ -1,7 +1,7 @@
 # Slice 008I3: Security-Legal Evidence Seam and Race Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 008: Documentation, Legal Documents, and Security Package
@@ -82,3 +82,15 @@ High
 - Cross-owner legal/security actions remain atomic and cannot accept caller-forged truth.
 - Promised race evidence proves exact winner and zero-success-loser identities.
 - All configured and declared capability gates pass.
+
+## Done Checklist
+
+- [x] Execution plan written
+- [x] Dependency and forged-evidence regressions written RED first
+- [x] Top-level evidence coordinator and security-local policy implemented
+- [x] Compatibility alias removed and executable dependency graph enforced
+- [x] Shared redacting audit/version/workflow recorder implemented
+- [x] PoA, tri-party, SH-4, and CDSL PostgreSQL races passed twice
+- [x] Backend/frontend configured gates passed
+- [x] Evidence, risk assessment, review packet, state, progress, and handoff updated
+- [ ] Commit created only after passing independent gates (Ralph orchestrator owned)

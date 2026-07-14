@@ -64,11 +64,13 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   direction, source-authorised read-only roles cannot read packages, and PoA activation accepts an
   adequate stamp of any amount rather than exactly ₹500. A valid pending CDSL row with null evidence
   also crashes during serialization, while reversible BO values and reveal policy bypass the
-  source-defined central encryption/sensitive-access seams. Corrective 008I2 now makes
-  `security_instruments` the real PoA policy owner, enforces exact ₹500 activation, restores the
-  scoped masked reader matrix, and proves exact PostgreSQL activation/downgrade identities. 008I3
-  and 008I4 still close the remaining dependency/evidence and encryption/null contracts in order
-  before cheque custody; none of those remaining reviewed seams is claimed complete yet.
+  source-defined central encryption/sensitive-access seams. Corrective 008I2 makes
+  `security_instruments` the real PoA policy owner, enforces exact ₹500 activation, and restores the
+  scoped masked reader matrix. Corrective 008I3 now removes every executable
+  security-to-legal/approval import through one top-level immutable evidence coordinator, deletes
+  the legal PoA alias, centralises redacting security ledgers, and proves the PoA/tri-party/SH-4/CDSL
+  races twice on PostgreSQL. 008I4 still owns the remaining central encryption/reveal and nullable
+  pending-CDSL contracts before cheque custody; that reviewed seam is not claimed complete.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

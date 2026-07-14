@@ -3,6 +3,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from sfpcl_credit.api import error_response, parse_json_body, request_ip, request_user_agent, success_response
 from sfpcl_credit.identity.modules import http_auth
+from sfpcl_credit.processes import security_instrument_evidence
 from sfpcl_credit.security_instruments.modules import power_of_attorney
 from sfpcl_credit.security_instruments.modules import cdsl_share_pledge
 from sfpcl_credit.security_instruments.modules import security_package as package_service
@@ -37,11 +38,13 @@ def package_power_of_attorney(request, security_package_id):
         return response
     try:
         if request.method == "GET":
-            data = power_of_attorney.read_poa(actor=user, security_package_id=security_package_id)
+            data = security_instrument_evidence.read_poa(
+                actor=user, security_package_id=security_package_id
+            )
         else:
             power_of_attorney.require_manage_actor(user)
             parsed = PowerOfAttorneyRequest.parse(parse_json_body(request))
-            data = power_of_attorney.create_poa(
+            data = security_instrument_evidence.create_poa(
                 actor=user, security_package_id=security_package_id,
                 values=parsed.as_values(), metadata=_metadata(request),
             )
@@ -64,7 +67,7 @@ def power_of_attorney_detail(request, power_of_attorney_id):
     try:
         power_of_attorney.require_manage_actor(user)
         parsed = PowerOfAttorneyRequest.parse(parse_json_body(request))
-        data = power_of_attorney.update_poa(
+        data = security_instrument_evidence.update_poa(
             actor=user, power_of_attorney_id=power_of_attorney_id,
             values=parsed.as_values(), metadata=_metadata(request),
         )
@@ -86,11 +89,13 @@ def package_sh4(request, security_package_id):
         return response
     try:
         if request.method == "GET":
-            data = sh4.read_sh4(actor=user, security_package_id=security_package_id)
+            data = security_instrument_evidence.read_sh4(
+                actor=user, security_package_id=security_package_id
+            )
         else:
             sh4.require_manage_actor(user)
             parsed = SH4ShareTransferFormRequest.parse(parse_json_body(request))
-            data = sh4.create_sh4(
+            data = security_instrument_evidence.create_sh4(
                 actor=user, security_package_id=security_package_id,
                 values=parsed.as_values(), metadata=_metadata(request),
             )
@@ -116,7 +121,7 @@ def sh4_detail(request, sh4_share_transfer_form_id):
     try:
         sh4.require_manage_actor(user)
         parsed = SH4ShareTransferFormRequest.parse(parse_json_body(request))
-        data = sh4.update_sh4(
+        data = security_instrument_evidence.update_sh4(
             actor=user, sh4_share_transfer_form_id=sh4_share_transfer_form_id,
             values=parsed.as_values(), metadata=_metadata(request),
         )
@@ -141,13 +146,13 @@ def package_cdsl_share_pledge(request, security_package_id):
         return response
     try:
         if request.method == "GET":
-            data = cdsl_share_pledge.read_pledge(
+            data = security_instrument_evidence.read_pledge(
                 actor=user, security_package_id=security_package_id
             )
         else:
             cdsl_share_pledge.require_manage_actor(user)
             parsed = CDSLSharePledgeRequest.parse(parse_json_body(request))
-            data = cdsl_share_pledge.create_pledge(
+            data = security_instrument_evidence.create_pledge(
                 actor=user, security_package_id=security_package_id,
                 values=parsed.as_values(), metadata=_metadata(request),
             )
@@ -175,7 +180,7 @@ def cdsl_share_pledge_detail(request, cdsl_share_pledge_id):
     try:
         cdsl_share_pledge.require_manage_actor(user)
         parsed = CDSLSharePledgeRequest.parse(parse_json_body(request))
-        data = cdsl_share_pledge.update_pledge(
+        data = security_instrument_evidence.update_pledge(
             actor=user, cdsl_share_pledge_id=cdsl_share_pledge_id,
             values=parsed.as_values(), metadata=_metadata(request),
         )
@@ -206,7 +211,7 @@ def cdsl_share_pledge_reveal(request, cdsl_share_pledge_id):
             user, cdsl_share_pledge_id, metadata
         )
         parsed = CDSLBOAccountRevealRequest.parse(parse_json_body(request))
-        data = cdsl_share_pledge.reveal_bo_accounts(
+        data = security_instrument_evidence.reveal_bo_accounts(
             actor=user, cdsl_share_pledge_id=cdsl_share_pledge_id,
             reason=parsed.reason, metadata=metadata,
         )
@@ -233,7 +238,9 @@ def security_package(request, loan_application_id):
     if response is not None:
         return response
     try:
-        data = package_service.read_package(actor=user, application_id=loan_application_id)
+        data = security_instrument_evidence.read_package(
+            actor=user, application_id=loan_application_id
+        )
     except package_service.AccessDenied as exc:
         return error_response(request, 403, exc.error_code, "You do not have access to this security package.")
     except package_service.NotFound:
@@ -251,7 +258,7 @@ def security_package_refresh(request, loan_application_id):
         payload = parse_json_body(request)
         if payload != {}:
             raise ValidationError({field: "Unknown field." for field in sorted(payload)})
-        data = package_service.refresh_package(
+        data = security_instrument_evidence.refresh_package(
             actor=user, application_id=loan_application_id, metadata=_metadata(request),
         )
     except package_service.AccessDenied as exc:

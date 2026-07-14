@@ -73,3 +73,17 @@ High
 - Sensitive reveal policy and auditing have one deep owner.
 - Valid pending CDSL requests with null evidence no longer produce an internal error.
 - All configured gates pass.
+
+## 008I3 Completion Sharpening (2026-07-15)
+
+- Extend `processes.security_instrument_evidence`; do not add a security-to-documents/legal import
+  while moving reveal policy. The process remains the sole issuer of cross-owner evidence, and
+  caller-supplied access objects continue to fail before lookup or mutation.
+- CDSL mutations now receive canonical legal evidence through immutable coordinator access. Null
+  pending evidence must project `loan_document=None` safely through that callback, while submitted
+  and accepted facts still resolve and lock the current same-application legal row.
+- Keep ordinary CDSL audit/version/workflow writes behind
+  `security_instruments.modules.evidence_recorder`; the central reveal owner may add its distinct
+  sensitive-access ledger but must not duplicate ordinary security evidence or weaken redaction.
+- Re-run the I3 CDSL and cross-owner PostgreSQL races twice after encryption migration; reconcile
+  ciphertext version/hash/last4 without changing winner request, actor, version, or workflow facts.

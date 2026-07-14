@@ -14,6 +14,24 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## 008I3 Security / Legal Evidence Seam and Race Closure (2026-07-15)
+
+The executable §36.2 graph now routes every cross-owner security action through
+`processes.security_instrument_evidence`. Security modules import neither approvals nor legal
+executables; they retain applicability, exact ₹500 PoA, maker-checker, custody, pledge, replay, and
+terminal policy. The process alone resolves canonical final-sanction/read scope and locked legal
+document/checklist facts, then issues one immutable narrow access contract. Caller-supplied evidence
+authority is rejected before lookup, and the temporary legal PoA compatibility alias is removed.
+
+Package/PoA/SH-4/CDSL ordinary evidence now uses one recursively redacting recorder with mandatory
+role/team/request/network attribution and unchanged retained audit/version/workflow shapes. A
+changed tri-party verification uses an observed-versus-locked conflict guard so one concurrent
+correction wins while exact replay retains its action. PoA, tri-party, SH-4, and CDSL five-worker
+races passed twice on PostgreSQL with material winner, actor/workflow linkage, and zero loser success
+evidence. 008I4 must extend this coordinator for nullable CDSL evidence and keep ordinary recorder
+truth separate from the central sensitive reveal ledger; 008J must add cheque callbacks rather than
+restore a forbidden import.
+
 ## 008I2 Security PoA Owner and Read Contract Closure (2026-07-15)
 
 The complete retained PoA policy now executes from `security_instruments`; the former legal owner

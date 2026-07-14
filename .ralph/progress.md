@@ -6928,3 +6928,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-15 - 2026-07-15_004202_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008I3-security-legal-evidence-seam-and-race-closure
+- Summary: Restored the source §36.2 dependency graph through one immutable top-level evidence
+  coordinator, removed the legal PoA alias, centralised redacting security ledgers, and closed the
+  changed tri-party material-winner race without changing public §28 contracts.
+- Tests run: three TDD RED/GREEN tracers; 39 focused tests; 10 PoA/tri-party/SH-4/CDSL PostgreSQL
+  race tests twice; Django check/migration sync; all 832 backend tests with 36 expected SQLite skips
+  at 92% coverage; frontend lint/typecheck/build and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-15_004202_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; cross-owner legal/security authority, sensitive evidence recording, and terminal
+  concurrency changed fail-closed with routes, table identities, exact ₹500, read scope, and side-
+  effect exclusions preserved.
+- Next action: Run sharpened 008I4, then 008J.
+
+## 2026-07-15 01:15:47 - 2026-07-15_004202_normal_run
+- Agent tool used: codex
+- Slice attempted: 008I3-security-legal-evidence-seam-and-race-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_004202_normal_run/.ralph/runs/2026-07-15_004202_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_004202_normal_run/.ralph/runs/2026-07-15_004202_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

@@ -5,16 +5,12 @@ from django.db import transaction
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import LoanApplication
-from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.legal_documents.models import (
-    ChecklistItem,
-    LoanDocument,
-)
-from sfpcl_credit.legal_documents import selectors
+from sfpcl_credit.security_instruments.evidence_contract import require_coordinated
 from sfpcl_credit.security_instruments.models import PowerOfAttorney
 from sfpcl_credit.security_instruments.modules import security_package
+from sfpcl_credit.security_instruments.modules.evidence_recorder import record_security_evidence
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
@@ -30,23 +26,29 @@ def require_manage_actor(actor):
     security_package.require_actor(actor, MANAGE_PERMISSION)
 
 
-def read_poa(*, actor, security_package_id):
-    package = security_package.resolve_package(actor, security_package_id, READ_PERMISSION)
+def read_poa(*, actor, security_package_id, evidence_access):
+    package = security_package.resolve_package(
+        actor, security_package_id, READ_PERMISSION,
+        evidence_access=evidence_access,
+    )
     poa = PowerOfAttorney.objects.filter(security_package=package).first()
     if poa is None:
         raise NotFound
     return serialize_poa(poa)
 
 
-def create_poa(*, actor, security_package_id, values, metadata):
+def create_poa(*, actor, security_package_id, values, metadata, evidence_access):
     require_manage_actor(actor)
     if "compliance_team_member" not in auth_service.effective_role_codes(actor):
         raise AccessDenied
     with transaction.atomic():
         package = security_package.resolve_package(
-            actor, security_package_id, MANAGE_PERMISSION, for_update=True
+            actor, security_package_id, MANAGE_PERMISSION, for_update=True,
+            evidence_access=evidence_access,
         )
-        cleaned = _resolve_poa_values(package, values, actor, allow_activation=False)
+        cleaned = _resolve_poa_values(
+            package, values, actor, False, evidence_access
+        )
         retained = (
             PowerOfAttorney.objects.select_for_update()
             .filter(security_package=package)
@@ -58,7 +60,7 @@ def create_poa(*, actor, security_package_id, values, metadata):
             raise Conflict(
                 "A Power of Attorney already exists for this security package; use PATCH."
             )
-        _project_poa(package, cleaned["loan_document"], cleaned)
+        _project_poa(package, cleaned["loan_document"], cleaned, evidence_access)
         poa = PowerOfAttorney.objects.create(
             security_package=package,
             prepared_by_user=actor,
@@ -69,7 +71,9 @@ def create_poa(*, actor, security_package_id, values, metadata):
         return serialize_poa(poa)
 
 
-def update_poa(*, actor, power_of_attorney_id, values, metadata):
+def update_poa(
+    *, actor, power_of_attorney_id, values, metadata, evidence_access
+):
     require_manage_actor(actor)
     with transaction.atomic():
         poa = (
@@ -86,9 +90,11 @@ def update_poa(*, actor, power_of_attorney_id, values, metadata):
         if poa is None:
             raise NotFound
         package = poa.security_package
-        if not security_package.has_canonical_stage4_scope(package.loan_application_id):
+        if not security_package.has_canonical_stage4_scope(
+            package.loan_application_id, evidence_access
+        ):
             raise NotFound
-        cleaned = _resolve_poa_values(package, values, actor, allow_activation=True)
+        cleaned = _resolve_poa_values(package, values, actor, True, evidence_access)
         new_snapshot = _values_snapshot(cleaned)
         if _business_snapshot(poa) == new_snapshot:
             if poa.status == "active":
@@ -102,16 +108,18 @@ def update_poa(*, actor, power_of_attorney_id, values, metadata):
             raise Conflict("An active Power of Attorney is terminal and cannot be changed or downgraded.")
         activating = cleaned["status"] == "active"
         if activating:
-            _validate_activation(poa, cleaned, actor)
+            _validate_activation(poa, cleaned, actor, evidence_access)
         elif "compliance_team_member" not in auth_service.effective_role_codes(actor):
             raise _validation_error(
                 {"status": "Only Compliance authority may change draft preparation facts."}
             )
         old = serialize_poa(poa)
-        _project_poa(package, cleaned["loan_document"], cleaned)
+        _project_poa(package, cleaned["loan_document"], cleaned, evidence_access)
         workflow_event = None
         if activating:
-            evidence = _activation_evidence(poa, cleaned, actor, metadata)
+            evidence = _activation_evidence(
+                poa, cleaned, actor, metadata, evidence_access
+            )
             workflow_event = record_workflow_event(
                 actor=actor,
                 workflow_name="power_of_attorney",
@@ -165,7 +173,7 @@ def update_poa(*, actor, power_of_attorney_id, values, metadata):
         return _activation_action(poa) if activating else serialize_poa(poa)
 
 
-def _resolve_poa_values(package, values, actor, allow_activation):
+def _resolve_poa_values(package, values, actor, allow_activation, evidence_access):
     from django.core.exceptions import ValidationError
 
     application = package.loan_application
@@ -195,7 +203,7 @@ def _resolve_poa_values(package, values, actor, allow_activation):
         errors["purpose_summary"] = (
             "Must explicitly authorise the Company Secretary to initiate share sale on default."
         )
-    document, stamp, notary = selectors.poa_evidence_for_update(
+    document, stamp, notary = require_coordinated(evidence_access).poa_evidence(
         application_id=application.pk,
         loan_document_id=values["loan_document_id"],
         stamp_duty_record_id=values["stamp_duty_record_id"],
@@ -204,7 +212,7 @@ def _resolve_poa_values(package, values, actor, allow_activation):
     if (
         document is None
         or document.renderer_validation_status
-        != LoanDocument.RENDERER_CURRENT_VALIDATED
+        != "current_validated"
     ):
         errors["loan_document_id"] = (
             "Current rendered PoA document was not found for this application."
@@ -241,7 +249,7 @@ def _resolve_poa_values(package, values, actor, allow_activation):
     }
 
 
-def _validate_activation(poa, cleaned, actor):
+def _validate_activation(poa, cleaned, actor, evidence_access):
     errors = {}
     if "company_secretary" not in auth_service.effective_role_codes(actor):
         errors["status"] = "Only Company Secretary authority may activate a Power of Attorney."
@@ -285,7 +293,7 @@ def _validate_activation(poa, cleaned, actor):
         errors["notarisation_record_id"] = (
             "Activation requires current completed maker/checker notarisation evidence."
         )
-    rows = selectors.execution_signature_facts_for_document(
+    rows = require_coordinated(evidence_access).execution_signatures(
         application_id=poa.security_package.loan_application_id,
         loan_document_id=cleaned["loan_document"].pk,
         for_update=True,
@@ -329,23 +337,16 @@ def _validation_error(errors):
     return ValidationError(errors)
 
 
-def _project_poa(package, document, values):
-    item = (
-        ChecklistItem.objects.select_for_update()
-        .filter(
-            document_checklist__loan_application_id=package.loan_application_id,
-            item_code="poa",
-            applicable_flag=True,
-            required_flag=True,
-        )
-        .first()
+def _project_poa(package, document, values, evidence_access):
+    require_coordinated(evidence_access).project_checklist_item(
+        application_id=package.loan_application_id,
+        item_code="poa",
+        document=document,
+        updates={
+            "poa_execution_status": values["execution_status"],
+            "poa_status": values["status"],
+        },
     )
-    if item is None:
-        raise Conflict("The required Power of Attorney checklist item was not found.")
-    item.loan_document = document
-    item.poa_execution_status = values["execution_status"]
-    item.poa_status = values["status"]
-    item.save(update_fields=["loan_document", "poa_execution_status", "poa_status"])
 
 
 def _values_snapshot(values):
@@ -399,58 +400,24 @@ def serialize_poa(poa):
 
 
 def _record_poa_evidence(actor, poa, action, old, metadata, record_workflow=True):
-    context = {
-        **serialize_poa(poa),
-        "actor_role_codes": auth_service.effective_role_codes(actor),
-        "actor_team_codes": actor.team_codes(),
-        "request_id": metadata.request_id,
-        "ip_address": metadata.ip_address,
-        "user_agent": metadata.user_agent,
-    }
-    AuditLog.objects.create(
-        actor_user=actor,
-        actor_type="user",
+    record_security_evidence(
+        actor=actor,
         action=action,
         entity_type="power_of_attorney",
         entity_id=poa.pk,
-        old_value_json=old,
-        new_value_json=context,
-        ip_address=metadata.ip_address,
-        user_agent=metadata.user_agent,
+        old=old,
+        snapshot=serialize_poa(poa),
+        metadata=metadata,
+        workflow_name="power_of_attorney",
+        from_state=old.get("status"),
+        to_state=poa.status,
+        record_workflow=record_workflow,
     )
-    VersionHistory.objects.create(
-        versioned_entity_type="power_of_attorney",
-        versioned_entity_id=poa.pk,
-        version_number=str(
-            VersionHistory.objects.filter(
-                versioned_entity_type="power_of_attorney",
-                versioned_entity_id=poa.pk,
-            ).count()
-            + 1
-        ),
-        change_summary=action,
-        author_user=actor,
-        old_value_json=old,
-        new_value_json=context,
-        effective_from=timezone.localdate(),
-    )
-    if record_workflow:
-        record_workflow_event(
-            actor=actor,
-            workflow_name="power_of_attorney",
-            entity_type="power_of_attorney",
-            entity_id=poa.pk,
-            from_state=old.get("status"),
-            to_state=poa.status,
-            trigger_reason=action,
-            action_code=action,
-            metadata=context,
-        )
 
 
-def _activation_evidence(poa, cleaned, actor, metadata):
+def _activation_evidence(poa, cleaned, actor, metadata, evidence_access):
     document = cleaned["loan_document"]
-    signatures = selectors.execution_signature_facts_for_document(
+    signatures = require_coordinated(evidence_access).execution_signatures(
         application_id=poa.security_package.loan_application_id,
         loan_document_id=document.pk,
         for_update=True,

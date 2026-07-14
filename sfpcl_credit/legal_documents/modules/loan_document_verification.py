@@ -8,7 +8,7 @@ from sfpcl_credit.approvals.modules import document_checklist_facts
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.legal_documents import selectors
-from sfpcl_credit.legal_documents.models import ChecklistItem
+from sfpcl_credit.legal_documents.models import ChecklistItem, LoanDocument
 from sfpcl_credit.legal_documents.modules import document_authority
 from sfpcl_credit.legal_documents.request_contracts import LoanDocumentVerificationRequest
 from sfpcl_credit.workflows.events import record_workflow_event
@@ -50,6 +50,16 @@ def verify(*, actor, loan_document_id, payload, metadata):
         else LoanDocumentVerificationRequest.parse(payload)
     )
     values = request.as_values()
+    observed = (
+        LoanDocument.objects.filter(pk=loan_document_id)
+        .values(
+            "verification_status",
+            "verification_remarks",
+            "verified_by_user_id",
+            "verified_at",
+        )
+        .first()
+    )
     with transaction.atomic():
         try:
             document = document_authority.resolve_current_stage4_target(
@@ -62,6 +72,23 @@ def verify(*, actor, loan_document_id, payload, metadata):
             raise Conflict("Retained output is not bound to the current renderer contract.")
         if document.document_type != "tri_party_agreement":
             raise NotFound
+        locked_snapshot = {
+            "verification_status": document.verification_status,
+            "verification_remarks": document.verification_remarks,
+            "verified_by_user_id": document.verified_by_user_id,
+            "verified_at": document.verified_at,
+        }
+        if (
+            observed is not None
+            and observed != locked_snapshot
+            and not (
+                document.verification_status == "verified"
+                and document.verification_remarks == values["remarks"]
+            )
+        ):
+            raise Conflict(
+                "Tri-party verification changed after this request began; reload and retry."
+            )
         facts = document_checklist_facts.resolve_approved_facts(
             application_id=document.loan_application_id
         )

@@ -1,0 +1,15 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_security_evidence_recorder_redacts_sensitive_values_recursively (sfpcl_credit.tests.test_security_instrument_boundary.SecurityInstrumentBoundaryTests.test_security_evidence_recorder_redacts_sensitive_values_recursively)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_004202_normal_run/sfpcl_credit/tests/test_security_instrument_boundary.py", line 9, in test_security_evidence_recorder_redacts_sensitive_values_recursively
+    from sfpcl_credit.security_instruments.modules.evidence_recorder import (
+ModuleNotFoundError: No module named 'sfpcl_credit.security_instruments.modules.evidence_recorder'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

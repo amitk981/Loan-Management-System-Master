@@ -3,11 +3,8 @@ from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta
 
-from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.legal_documents import selectors
-from sfpcl_credit.legal_documents.models import ChecklistItem
 from sfpcl_credit.members.models import Shareholding
 from sfpcl_credit.members.protected_identity import (
     identity_hash,
@@ -16,7 +13,9 @@ from sfpcl_credit.members.protected_identity import (
     sealed_protected_identity_token,
 )
 from sfpcl_credit.security_instruments.models import CDSLSharePledge
+from sfpcl_credit.security_instruments.evidence_contract import require_coordinated
 from sfpcl_credit.security_instruments.modules import security_package
+from sfpcl_credit.security_instruments.modules.evidence_recorder import record_security_evidence
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
@@ -30,9 +29,10 @@ NotFound = security_package.NotFound
 Conflict = security_package.Conflict
 def require_manage_actor(actor):
     security_package.require_actor(actor, MANAGE_PERMISSION)
-def read_pledge(*, actor, security_package_id):
+def read_pledge(*, actor, security_package_id, evidence_access):
     package = security_package.resolve_package(
-        actor, security_package_id, READ_PERMISSION
+        actor, security_package_id, READ_PERMISSION,
+        evidence_access=evidence_access,
     )
     pledge = CDSLSharePledge.objects.filter(security_package=package).first()
     if pledge is None:
@@ -48,7 +48,9 @@ def require_reveal_actor(actor, cdsl_share_pledge_id, metadata):
             actor, cdsl_share_pledge_id, "missing_reveal_authority", metadata
         )
         raise AccessDenied("SENSITIVE_FIELD_ACCESS_DENIED")
-def reveal_bo_accounts(*, actor, cdsl_share_pledge_id, reason, metadata):
+def reveal_bo_accounts(
+    *, actor, cdsl_share_pledge_id, reason, metadata, evidence_access
+):
     require_reveal_actor(actor, cdsl_share_pledge_id, metadata)
     pledge = (
         CDSLSharePledge.objects.select_related("security_package")
@@ -59,7 +61,8 @@ def reveal_bo_accounts(*, actor, cdsl_share_pledge_id, reason, metadata):
         raise NotFound
     try:
         security_package.resolve_package(
-            actor, pledge.security_package_id, READ_PERMISSION
+            actor, pledge.security_package_id, READ_PERMISSION,
+            evidence_access=evidence_access,
         )
     except AccessDenied:
         _record_reveal_denial(actor, pledge.pk, "object_access_denied", metadata)
@@ -108,15 +111,18 @@ def _record_reveal_denial(actor, pledge_id, denial_reason, metadata):
             "request_id": metadata.request_id,
         }, ip_address=metadata.ip_address, user_agent=metadata.user_agent,
     )
-def create_pledge(*, actor, security_package_id, values, metadata):
+def create_pledge(
+    *, actor, security_package_id, values, metadata, evidence_access
+):
     require_manage_actor(actor)
     if "compliance_team_member" not in auth_service.effective_role_codes(actor):
         raise AccessDenied
     with transaction.atomic():
         package = security_package.resolve_package(
-            actor, security_package_id, MANAGE_PERMISSION, for_update=True
+            actor, security_package_id, MANAGE_PERMISSION, for_update=True,
+            evidence_access=evidence_access,
         )
-        cleaned = _resolve_values(package, values)
+        cleaned = _resolve_values(package, values, evidence_access)
         retained = CDSLSharePledge.objects.select_for_update().filter(
             security_package=package
         ).first()
@@ -148,7 +154,7 @@ def create_pledge(*, actor, security_package_id, values, metadata):
             raise ValidationError(
                 {"pledge_sequence_number": "Prepared PRF cannot carry a PSN yet."}
             )
-        _project(package, cleaned["evidence_loan_document"])
+        _project(package, cleaned["evidence_loan_document"], evidence_access)
         evidence_document = cleaned.pop("evidence_loan_document").document
         pledge = CDSLSharePledge.objects.create(
             security_package=package,
@@ -158,7 +164,9 @@ def create_pledge(*, actor, security_package_id, values, metadata):
         )
         _record_evidence(actor, pledge, "security.cdsl_pledge.created", {}, metadata)
         return serialize_pledge(pledge)
-def update_pledge(*, actor, cdsl_share_pledge_id, values, metadata):
+def update_pledge(
+    *, actor, cdsl_share_pledge_id, values, metadata, evidence_access
+):
     require_manage_actor(actor)
     with transaction.atomic():
         pledge = (
@@ -168,10 +176,10 @@ def update_pledge(*, actor, cdsl_share_pledge_id, values, metadata):
             .first()
         )
         if pledge is None or not security_package.has_canonical_stage4_scope(
-            pledge.security_package.loan_application_id
+            pledge.security_package.loan_application_id, evidence_access
         ):
             raise NotFound
-        cleaned = _resolve_values(pledge.security_package, values)
+        cleaned = _resolve_values(pledge.security_package, values, evidence_access)
         if _matches(pledge, cleaned):
             if pledge.pledge_acceptance_status in {"accepted", "rejected"}:
                 return _acceptance_action(pledge)
@@ -186,7 +194,11 @@ def update_pledge(*, actor, cdsl_share_pledge_id, values, metadata):
         else:
             _validate_preparation(pledge, cleaned, actor)
         old = serialize_pledge(pledge)
-        _project(pledge.security_package, cleaned["evidence_loan_document"])
+        _project(
+            pledge.security_package,
+            cleaned["evidence_loan_document"],
+            evidence_access,
+        )
         evidence_loan_document = cleaned["evidence_loan_document"]
         evidence_document = (
             evidence_loan_document.document if evidence_loan_document else None
@@ -354,9 +366,9 @@ def _acceptance_action(pledge):
         "workflow_event_id": str(pledge.acceptance_workflow_event_id),
         "available_actions": [],
     }
-def _resolve_values(package, values):
+def _resolve_values(package, values, evidence_access):
     errors = {}
-    facts = security_package.resolve_approved_facts(
+    facts = require_coordinated(evidence_access).approved_facts(
         application_id=package.loan_application_id
     )
     if facts is None or facts.holding_mode != "demat":
@@ -400,7 +412,7 @@ def _resolve_values(package, values):
         )
     evidence = None
     if values["evidence_document_id"] is not None:
-        evidence = selectors.cdsl_pledge_evidence_for_update(
+        evidence = require_coordinated(evidence_access).cdsl_evidence(
             application_id=package.loan_application_id,
             evidence_document_id=values["evidence_document_id"],
         )
@@ -434,17 +446,12 @@ def _resolve_values(package, values):
         "pledge_status": values["pledge_status"],
         "evidence_loan_document": evidence,
     }
-def _project(package, evidence_document):
-    item = ChecklistItem.objects.select_for_update().filter(
-        document_checklist__loan_application_id=package.loan_application_id,
+def _project(package, evidence_document, evidence_access):
+    require_coordinated(evidence_access).project_checklist_item(
+        application_id=package.loan_application_id,
         item_code="cdsl_pledge",
-        applicable_flag=True,
-        required_flag=True,
-    ).first()
-    if item is None:
-        raise Conflict("The required CDSL pledge checklist item was not found.")
-    item.loan_document = evidence_document
-    item.save(update_fields=["loan_document"])
+        document=evidence_document,
+    )
 def serialize_pledge(pledge):
     return {
         "cdsl_share_pledge_id": str(pledge.pk),
@@ -497,36 +504,23 @@ def _matches(pledge, values):
         and pledge.evidence_document_id == (evidence.document_id if evidence else None)
     )
 def _record_evidence(actor, pledge, action, old, metadata, record_workflow=True):
-    context = {
+    snapshot = {
         **serialize_pledge(pledge),
         "loan_application_id": str(pledge.security_package.loan_application_id),
-        "actor_role_codes": auth_service.effective_role_codes(actor),
-        "actor_team_codes": actor.team_codes(),
-        "request_id": metadata.request_id,
-        "ip_address": metadata.ip_address,
-        "user_agent": metadata.user_agent,
     }
-    AuditLog.objects.create(
-        actor_user=actor, actor_type="user", action=action,
-        entity_type="cdsl_share_pledge", entity_id=pledge.pk,
-        old_value_json=old, new_value_json=context,
-        ip_address=metadata.ip_address, user_agent=metadata.user_agent,
+    record_security_evidence(
+        actor=actor,
+        entity_type="cdsl_share_pledge",
+        entity_id=pledge.pk,
+        action=action,
+        old=old,
+        snapshot=snapshot,
+        metadata=metadata,
+        workflow_name="cdsl_share_pledge",
+        from_state=old.get("pledge_status"),
+        to_state=pledge.pledge_status,
+        record_workflow=record_workflow,
     )
-    VersionHistory.objects.create(
-        versioned_entity_type="cdsl_share_pledge", versioned_entity_id=pledge.pk,
-        version_number=str(VersionHistory.objects.filter(
-            versioned_entity_type="cdsl_share_pledge", versioned_entity_id=pledge.pk,
-        ).count() + 1),
-        change_summary=action, author_user=actor, old_value_json=old,
-        new_value_json=context, effective_from=timezone.localdate(),
-    )
-    if record_workflow:
-        record_workflow_event(
-            actor=actor, workflow_name="cdsl_share_pledge",
-            entity_type="cdsl_share_pledge", entity_id=pledge.pk,
-            from_state=old.get("pledge_status"), to_state=pledge.pledge_status,
-            trigger_reason=action, action_code=action, metadata=context,
-        )
 def validation_field_errors(exc):
     if hasattr(exc, "message_dict"):
         return {field: messages[0] for field, messages in exc.message_dict.items()}

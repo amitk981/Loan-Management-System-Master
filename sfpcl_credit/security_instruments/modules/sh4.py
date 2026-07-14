@@ -4,14 +4,13 @@ from django.db.models import F
 from django.utils import timezone
 
 from sfpcl_credit.applications.models import Witness
-from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.legal_documents import selectors
-from sfpcl_credit.legal_documents.models import ChecklistItem, LoanDocument
 from sfpcl_credit.members.models import Shareholding
+from sfpcl_credit.security_instruments.evidence_contract import require_coordinated
 from sfpcl_credit.security_instruments.models import SH4ShareTransferForm
 from sfpcl_credit.security_instruments.modules import security_package
+from sfpcl_credit.security_instruments.modules.evidence_recorder import record_security_evidence
 from sfpcl_credit.workflows.events import record_workflow_event
 
 
@@ -27,23 +26,27 @@ def require_manage_actor(actor):
     security_package.require_actor(actor, MANAGE_PERMISSION)
 
 
-def read_sh4(*, actor, security_package_id):
-    package = security_package.resolve_package(actor, security_package_id, READ_PERMISSION)
+def read_sh4(*, actor, security_package_id, evidence_access):
+    package = security_package.resolve_package(
+        actor, security_package_id, READ_PERMISSION,
+        evidence_access=evidence_access,
+    )
     form = SH4ShareTransferForm.objects.filter(security_package=package).first()
     if form is None:
         raise NotFound
     return serialize_sh4(form)
 
 
-def create_sh4(*, actor, security_package_id, values, metadata):
+def create_sh4(*, actor, security_package_id, values, metadata, evidence_access):
     require_manage_actor(actor)
     if "compliance_team_member" not in auth_service.effective_role_codes(actor):
         raise AccessDenied
     with transaction.atomic():
         package = security_package.resolve_package(
-            actor, security_package_id, MANAGE_PERMISSION, for_update=True
+            actor, security_package_id, MANAGE_PERMISSION, for_update=True,
+            evidence_access=evidence_access,
         )
-        cleaned = _resolve_values(package, values, allow_custody=False)
+        cleaned = _resolve_values(package, values, False, evidence_access)
         retained = SH4ShareTransferForm.objects.select_for_update().filter(
             security_package=package
         ).first()
@@ -51,15 +54,19 @@ def create_sh4(*, actor, security_package_id, values, metadata):
             if _business_snapshot(retained) == _values_snapshot(cleaned):
                 return serialize_sh4(retained)
             raise Conflict("An SH-4 already exists for this security package; use PATCH.")
-        _project(package, cleaned["loan_document"])
+        _project(package, cleaned["loan_document"], evidence_access)
         form = SH4ShareTransferForm.objects.create(
             security_package=package, prepared_by_user=actor, **cleaned
         )
-        _record_evidence(actor, form, "security.sh4.created", {}, metadata)
+        _record_evidence(
+            actor, form, "security.sh4.created", {}, metadata, evidence_access
+        )
         return serialize_sh4(form)
 
 
-def update_sh4(*, actor, sh4_share_transfer_form_id, values, metadata):
+def update_sh4(
+    *, actor, sh4_share_transfer_form_id, values, metadata, evidence_access
+):
     require_manage_actor(actor)
     with transaction.atomic():
         form = (
@@ -69,10 +76,10 @@ def update_sh4(*, actor, sh4_share_transfer_form_id, values, metadata):
             .first()
         )
         if form is None or not security_package.has_canonical_stage4_scope(
-            form.security_package.loan_application_id
+            form.security_package.loan_application_id, evidence_access
         ):
             raise NotFound
-        cleaned = _resolve_values(form.security_package, values, allow_custody=True)
+        cleaned = _resolve_values(form.security_package, values, True, evidence_access)
         new_snapshot = _values_snapshot(cleaned)
         if _business_snapshot(form) == new_snapshot:
             if form.form_status == "held_in_custody":
@@ -82,7 +89,7 @@ def update_sh4(*, actor, sh4_share_transfer_form_id, values, metadata):
             raise Conflict("A held SH-4 is terminal and cannot be changed or downgraded.")
         taking_custody = cleaned["form_status"] == "held_in_custody"
         if taking_custody:
-            _validate_custody(form, cleaned, actor)
+            _validate_custody(form, cleaned, actor, evidence_access)
         else:
             if "compliance_team_member" not in auth_service.effective_role_codes(actor):
                 raise ValidationError(
@@ -90,13 +97,15 @@ def update_sh4(*, actor, sh4_share_transfer_form_id, values, metadata):
                 )
             if cleaned["form_status"] not in {"pending", "signed"}:
                 raise ValidationError({"form_status": "Unsupported preparation state."})
-            _validate_signed(cleaned)
+            _validate_signed(cleaned, evidence_access)
         old = serialize_sh4(form)
-        _project(form.security_package, cleaned["loan_document"])
+        _project(form.security_package, cleaned["loan_document"], evidence_access)
         workflow_event = None
         evidence = {}
         if taking_custody:
-            evidence = _custody_evidence(form, cleaned, actor, metadata)
+            evidence = _custody_evidence(
+                form, cleaned, actor, metadata, evidence_access
+            )
             workflow_event = record_workflow_event(
                 actor=actor, workflow_name="sh4", entity_type="sh4_share_transfer_form",
                 entity_id=form.pk, from_state=form.form_status, to_state="held_in_custody",
@@ -127,14 +136,14 @@ def update_sh4(*, actor, sh4_share_transfer_form_id, values, metadata):
         _record_evidence(
             actor, form,
             "security.sh4.custodied" if taking_custody else "security.sh4.changed",
-            old, metadata, record_workflow=not taking_custody,
+            old, metadata, evidence_access, record_workflow=not taking_custody,
         )
         return _custody_action(form) if taking_custody else serialize_sh4(form)
 
 
-def _resolve_values(package, values, allow_custody):
+def _resolve_values(package, values, allow_custody, evidence_access):
     errors = {}
-    facts = security_package.resolve_approved_facts(
+    facts = require_coordinated(evidence_access).approved_facts(
         application_id=package.loan_application_id
     )
     if facts is None or facts.holding_mode != "physical":
@@ -166,10 +175,10 @@ def _resolve_values(package, values, allow_custody):
         errors["shareholding_id"] = "Must be the borrower's active physical shareholding."
     elif values["share_count"] is not None and values["share_count"] > shareholding.available_share_count:
         errors["share_count"] = "Cannot exceed the retained available physical shares."
-    document, _stamp, _signatures = selectors.sh4_evidence_for_update(
+    document, _stamp, _signatures = require_coordinated(evidence_access).sh4_evidence(
         application_id=application.pk, loan_document_id=values["loan_document_id"]
     )
-    if document is None or document.renderer_validation_status != LoanDocument.RENDERER_CURRENT_VALIDATED:
+    if document is None or document.renderer_validation_status != "current_validated":
         errors["loan_document_id"] = "Current rendered SH-4 document was not found for this application."
     if not allow_custody and values["form_status"] != "pending":
         errors["form_status"] = "Creation prepares pending SH-4 facts; use PATCH for later states."
@@ -195,9 +204,9 @@ def _resolve_values(package, values, allow_custody):
     }
 
 
-def _validate_signed(cleaned):
+def _validate_signed(cleaned, evidence_access):
     errors = {}
-    _document, stamp, rows = selectors.sh4_evidence_for_update(
+    _document, stamp, rows = require_coordinated(evidence_access).sh4_evidence(
         application_id=cleaned["loan_document"].loan_application_id,
         loan_document_id=cleaned["loan_document"].pk,
     )
@@ -231,7 +240,7 @@ def _validate_signed(cleaned):
         raise ValidationError(errors)
 
 
-def _validate_custody(form, cleaned, actor):
+def _validate_custody(form, cleaned, actor, evidence_access):
     errors = {}
     if "company_secretary" not in auth_service.effective_role_codes(actor):
         errors["form_status"] = "Only Company Secretary authority may record SH-4 custody."
@@ -245,8 +254,8 @@ def _validate_custody(form, cleaned, actor):
             errors[field] = "Custody must consume the exact retained signed SH-4 facts."
     if form.form_status != "signed":
         errors["form_status"] = "Custody requires the exact retained signed SH-4."
-    _validate_signed(cleaned)
-    _document, stamp, rows = selectors.sh4_evidence_for_update(
+    _validate_signed(cleaned, evidence_access)
+    _document, stamp, rows = require_coordinated(evidence_access).sh4_evidence(
         application_id=form.security_package.loan_application_id,
         loan_document_id=cleaned["loan_document"].pk,
     )
@@ -258,8 +267,8 @@ def _validate_custody(form, cleaned, actor):
         raise ValidationError(errors)
 
 
-def _custody_evidence(form, cleaned, actor, metadata):
-    document, stamp, rows = selectors.sh4_evidence_for_update(
+def _custody_evidence(form, cleaned, actor, metadata, evidence_access):
+    document, stamp, rows = require_coordinated(evidence_access).sh4_evidence(
         application_id=form.security_package.loan_application_id,
         loan_document_id=cleaned["loan_document"].pk,
     )
@@ -293,15 +302,12 @@ def _custody_evidence(form, cleaned, actor, metadata):
     }
 
 
-def _project(package, document):
-    item = ChecklistItem.objects.select_for_update().filter(
-        document_checklist__loan_application_id=package.loan_application_id,
-        item_code="sh4", applicable_flag=True, required_flag=True,
-    ).first()
-    if item is None:
-        raise Conflict("The required SH-4 checklist item was not found.")
-    item.loan_document = document
-    item.save(update_fields=["loan_document"])
+def _project(package, document, evidence_access):
+    require_coordinated(evidence_access).project_checklist_item(
+        application_id=package.loan_application_id,
+        item_code="sh4",
+        document=document,
+    )
 
 
 def serialize_sh4(form):
@@ -343,12 +349,16 @@ def _business_snapshot(form):
     return {key: value for key, value in serialize_sh4(form).items() if key not in omitted}
 
 
-def _record_evidence(actor, form, action, old, metadata, record_workflow=True):
-    _document, stamp, signatures = selectors.sh4_evidence_for_update(
+def _record_evidence(
+    actor, form, action, old, metadata, evidence_access, record_workflow=True
+):
+    _document, stamp, signatures = require_coordinated(
+        evidence_access
+    ).sh4_evidence(
         application_id=form.security_package.loan_application_id,
         loan_document_id=form.loan_document_id,
     )
-    context = {
+    snapshot = {
         **serialize_sh4(form),
         "loan_application_id": str(form.security_package.loan_application_id),
         "stamp_duty_record_id": str(stamp.pk) if stamp else None,
@@ -364,30 +374,20 @@ def _record_evidence(actor, form, action, old, metadata, record_workflow=True):
             str(row["captured_by_user_id"])
             for row in signatures if row["captured_by_user_id"]
         ],
-        "actor_role_codes": auth_service.effective_role_codes(actor),
-        "actor_team_codes": actor.team_codes(),
-        "request_id": metadata.request_id, "ip_address": metadata.ip_address,
-        "user_agent": metadata.user_agent,
     }
-    AuditLog.objects.create(
-        actor_user=actor, actor_type="user", action=action,
-        entity_type="sh4_share_transfer_form", entity_id=form.pk,
-        old_value_json=old, new_value_json=context,
-        ip_address=metadata.ip_address, user_agent=metadata.user_agent,
+    record_security_evidence(
+        actor=actor,
+        entity_type="sh4_share_transfer_form",
+        entity_id=form.pk,
+        action=action,
+        old=old,
+        snapshot=snapshot,
+        metadata=metadata,
+        workflow_name="sh4",
+        from_state=old.get("form_status"),
+        to_state=form.form_status,
+        record_workflow=record_workflow,
     )
-    VersionHistory.objects.create(
-        versioned_entity_type="sh4_share_transfer_form", versioned_entity_id=form.pk,
-        version_number=str(VersionHistory.objects.filter(
-            versioned_entity_type="sh4_share_transfer_form", versioned_entity_id=form.pk,
-        ).count() + 1), change_summary=action, author_user=actor,
-        old_value_json=old, new_value_json=context, effective_from=timezone.localdate(),
-    )
-    if record_workflow:
-        record_workflow_event(
-            actor=actor, workflow_name="sh4", entity_type="sh4_share_transfer_form",
-            entity_id=form.pk, from_state=old.get("form_status"), to_state=form.form_status,
-            trigger_reason=action, action_code=action, metadata=context,
-        )
 
 
 def _custody_action(form):

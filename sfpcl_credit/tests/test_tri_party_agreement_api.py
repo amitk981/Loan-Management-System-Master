@@ -533,28 +533,35 @@ class TriPartyAgreementConcurrencyTests(TransactionTestCase):
             try:
                 actor = User.objects.get(pk=actor_id)
                 gate.wait(timeout=10)
-                return loan_document_verification.verify(
-                    actor=actor,
-                    loan_document_id=document_id,
-                    payload={
-                        "verification_status": "verified",
-                        "remarks": (
-                            "Concurrent exact execution verification."
-                            if exact
-                            else f"Concurrent changed execution verification {index}."
+                try:
+                    action = loan_document_verification.verify(
+                        actor=actor,
+                        loan_document_id=document_id,
+                        payload={
+                            "verification_status": "verified",
+                            "remarks": (
+                                "Concurrent exact execution verification."
+                                if exact
+                                else f"Concurrent changed execution verification {index}."
+                            ),
+                        },
+                        metadata=loan_document_verification.RequestMetadata(
+                            f"tri-party-race-{index}", f"203.0.113.{index + 1}", "Race"
                         ),
-                    },
-                    metadata=loan_document_verification.RequestMetadata(
-                        f"tri-party-race-{index}", f"203.0.113.{index + 1}", "Race"
-                    ),
-                )["entity_id"]
+                    )
+                    return "returned", index, action["workflow_event_id"]
+                except loan_document_verification.Conflict:
+                    return "conflict", index, None
             finally:
                 connections["default"].close()
 
         with ThreadPoolExecutor(max_workers=5) as pool:
-            ids = list(pool.map(worker, range(5)))
-        self.assertEqual(set(ids), {str(document_id)})
-        expected = 1 if exact else 6
+            results = list(pool.map(worker, range(5)))
+        returned = [row for row in results if row[0] == "returned"]
+        conflicts = [row for row in results if row[0] == "conflict"]
+        self.assertEqual(len(returned), 5 if exact else 1)
+        self.assertEqual(len(conflicts), 0 if exact else 4)
+        expected = 1 if exact else 2
         audits = AuditLog.objects.filter(action="loan_document.tri_party_verified")
         self.assertEqual(audits.count(), expected)
         self.assertEqual(
@@ -566,6 +573,38 @@ class TriPartyAgreementConcurrencyTests(TransactionTestCase):
             ),
             expected,
         )
+        workflows = WorkflowEvent.objects.filter(
+            workflow_name="loan_document_verification", entity_id=document_id
+        )
+        self.assertEqual(workflows.count(), expected)
+        if not exact:
+            winner_index = returned[0][1]
+            winner_request = f"tri-party-race-{winner_index}"
+            winner = audits.order_by("created_at", "audit_log_id").last()
+            self.assertEqual(winner.new_value_json["request_id"], winner_request)
+            self.assertEqual(winner.actor_user_id, actor_id)
+            winner_version = VersionHistory.objects.filter(
+                versioned_entity_type="loan_document_verification",
+                versioned_entity_id=document_id,
+            ).order_by("created_at", "version_history_id").last()
+            winner_workflow = workflows.order_by(
+                "created_at", "workflow_event_id"
+            ).last()
+            self.assertEqual(winner_version.new_value_json["request_id"], winner_request)
+            self.assertEqual(winner_version.author_user_id, actor_id)
+            self.assertEqual(winner_workflow.triggered_by_user_id, actor_id)
+            self.assertEqual(returned[0][2], str(winner_workflow.pk))
+            retained = str(
+                list(audits.values_list("new_value_json", flat=True))
+                + list(
+                    VersionHistory.objects.filter(
+                        versioned_entity_type="loan_document_verification",
+                        versioned_entity_id=document_id,
+                    ).values_list("new_value_json", flat=True)
+                )
+            )
+            for _status, index, _event_id in conflicts:
+                self.assertNotIn(f"tri-party-race-{index}", retained)
         self.assertEqual(
             VersionHistory.objects.filter(
                 versioned_entity_type="loan_document_verification",

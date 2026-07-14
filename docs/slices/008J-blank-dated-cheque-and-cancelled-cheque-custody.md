@@ -149,6 +149,19 @@ High
 - Permissions and audit expectations are tested when applicable.
 - The implementation stays within one small Ralph slice.
 
+## 008I3 Completion Sharpening (2026-07-15)
+
+- Add cheque/cancelled-cheque callbacks to `processes.security_instrument_evidence` and the immutable
+  evidence contract. `security_instruments` must not import legal, approvals, or application-owned
+  cancelled-cheque selectors; the process resolves those owners after package/security locks.
+- Reuse `security_instruments.modules.evidence_recorder` for ordinary cheque create/change/custody
+  evidence. Raw cheque values are centrally redacted; reveal stays a separate 008I4 sensitive-access
+  action and ledger.
+- Public views call the process coordinator, and tests reject caller-supplied evidence access plus
+  stale/cross-application bank, cancelled-cheque, and scan facts with atomic rollback.
+- The twice-run PostgreSQL create/custody matrix asserts one material winner, the exact retained
+  workflow id/actor, winner request in audit and version, and no loser request in success evidence.
+
 ## Done Checklist
 - [ ] Execution plan written
 - [ ] Tests written or updated

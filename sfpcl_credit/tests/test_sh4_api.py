@@ -16,6 +16,7 @@ from sfpcl_credit.members.models import Member, Shareholding
 from sfpcl_credit.security_instruments.models import SecurityPackage
 from sfpcl_credit.security_instruments.models import SH4ShareTransferForm
 from sfpcl_credit.security_instruments.modules import sh4
+from sfpcl_credit.processes import security_instrument_evidence
 from sfpcl_credit.security_instruments.request_contracts import SH4ShareTransferFormRequest
 from sfpcl_credit.tests.api_contracts import assert_success_envelope
 from sfpcl_credit.tests.test_power_of_attorney_api import PowerOfAttorneyApiTests
@@ -441,7 +442,7 @@ class SH4ConcurrencyTests(TransactionTestCase):
             values = {**self.base_values, "share_count": 70 + index}
             barrier.wait()
             try:
-                sh4.create_sh4(
+                security_instrument_evidence.create_sh4(
                     actor=actor, security_package_id=self.package.pk, values=values,
                     metadata=sh4.RequestMetadata(f"race-sh4-create-{index}", "", ""),
                 )
@@ -469,7 +470,7 @@ class SH4ConcurrencyTests(TransactionTestCase):
         self.assertEqual(workflow.triggered_by_user_id, self.actor.pk)
 
     def test_five_changed_custody_submissions_retain_one_terminal_winner(self):
-        form = sh4.create_sh4(
+        form = security_instrument_evidence.create_sh4(
             actor=self.actor, security_package_id=self.package.pk,
             values=self.base_values,
             metadata=sh4.RequestMetadata("race-sh4-seed", "", ""),
@@ -501,7 +502,7 @@ class SH4ConcurrencyTests(TransactionTestCase):
                 signed_at=timezone.localdate().isoformat(),
             )
         ).as_values()
-        sh4.update_sh4(
+        security_instrument_evidence.update_sh4(
             actor=self.actor,
             sh4_share_transfer_form_id=form["sh4_share_transfer_form_id"],
             values=signed_values,
@@ -518,7 +519,7 @@ class SH4ConcurrencyTests(TransactionTestCase):
             }
             barrier.wait()
             try:
-                sh4.update_sh4(
+                security_instrument_evidence.update_sh4(
                     actor=actor,
                     sh4_share_transfer_form_id=form["sh4_share_transfer_form_id"],
                     values=values,
@@ -541,6 +542,27 @@ class SH4ConcurrencyTests(TransactionTestCase):
         winning_request = f"race-sh4-custody-{winning_index}"
         custody_audit = AuditLog.objects.get(action="security.sh4.custodied")
         self.assertEqual(custody_audit.new_value_json["request_id"], winning_request)
+        self.assertEqual(custody_audit.actor_user_id, custodian.pk)
+        custody_version = VersionHistory.objects.get(
+            versioned_entity_type="sh4_share_transfer_form",
+            change_summary="security.sh4.custodied",
+        )
+        self.assertEqual(custody_version.new_value_json["request_id"], winning_request)
+        self.assertEqual(custody_version.author_user_id, custodian.pk)
+        custody_workflow = WorkflowEvent.objects.get(
+            pk=retained.custody_workflow_event_id
+        )
+        self.assertEqual(custody_workflow.triggered_by_user_id, custodian.pk)
+        self.assertEqual(custody_workflow.from_state, "signed")
+        self.assertEqual(custody_workflow.to_state, "held_in_custody")
+        consumed = AuditLog.objects.get(
+            action="documents.execution.consumed",
+            new_value_json__consumer_entity_type="sh4_share_transfer_form",
+        )
+        self.assertEqual(consumed.new_value_json["request_id"], winning_request)
+        self.assertEqual(
+            consumed.new_value_json["workflow_event_id"], str(custody_workflow.pk)
+        )
         self.assertEqual(
             VersionHistory.objects.filter(
                 versioned_entity_type="sh4_share_transfer_form"
@@ -554,6 +576,10 @@ class SH4ConcurrencyTests(TransactionTestCase):
         retained_requests = set(
             AuditLog.objects.filter(
                 entity_type="sh4_share_transfer_form"
+            ).values_list("new_value_json__request_id", flat=True)
+        ) | set(
+            VersionHistory.objects.filter(
+                versioned_entity_type="sh4_share_transfer_form"
             ).values_list("new_value_json__request_id", flat=True)
         )
         self.assertTrue(loser_requests.isdisjoint(retained_requests))

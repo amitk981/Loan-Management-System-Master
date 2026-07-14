@@ -1,0 +1,18 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_top_level_process_rejects_caller_supplied_evidence_authority (sfpcl_credit.tests.test_security_instrument_boundary.SecurityInstrumentBoundaryTests.test_top_level_process_rejects_caller_supplied_evidence_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_004202_normal_run/sfpcl_credit/tests/test_security_instrument_boundary.py", line 32, in test_top_level_process_rejects_caller_supplied_evidence_authority
+    security_instrument_evidence.read_package(
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-15_004202_normal_run/sfpcl_credit/processes/security_instrument_evidence.py", line 92, in read_package
+    return security_package.read_package(evidence_access=_access(), **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: sfpcl_credit.security_instruments.modules.security_package.read_package() got multiple values for keyword argument 'evidence_access'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
