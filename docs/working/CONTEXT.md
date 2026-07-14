@@ -19,8 +19,13 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   registers, approval matrix, and loan-policy settings use authenticated backend boundaries;
   corrective slices 007K-007P completed frozen review facts and terminal evidence, S21/S22/S25
   contract evidence, strict shared pagination, full S21 navigation, prototype-layout fidelity,
-  and declared trusted-browser contracts. Corrective slice 007Q is queued to close source-required S23/S25
-  columns and reviewable trusted-browser evidence.
+  and declared trusted-browser contracts. 007Q restored source-required S23/S25 columns and
+  reviewable trusted-browser evidence. The 2026-07-14 architecture review queued 007R/007S to
+  preserve pre-expansion approval/register history, freeze approver identity, close final-page/
+  stale-response gaps, and restore the fixed register design pattern.
+  Epic 008 has started: 008A exposes the versioned document-template catalogue; corrective 008A2
+  is queued before generation to close first-version effective-range races, file-reference
+  provenance, and borrower-template variant resolution.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task
   inbox) still render `src/data/mockData.ts` until their owning wiring slices run —
   `docs/working/PROTOTYPE_GAP_REPORT.md` and

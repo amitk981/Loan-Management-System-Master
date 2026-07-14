@@ -2,6 +2,144 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-14 06:42 - Architecture Review 2026-07-14_064206_architecture_review
+
+Reviewed completed work since architecture-review commit `4b5b4b1`:
+- `007O-frozen-terminal-decision-and-register-source-closure` (`7d6f873`)
+- `007P-sanction-queue-pagination-and-read-boundary-closure` (`f101562`)
+- `007Q-register-source-fields-and-visual-evidence-closure` (`53fe9f4`)
+- `008A-document-template-model-and-versioning` (`15b8d02`, including repair)
+
+The review checked `git diff 4b5b4b1...HEAD`, every production/test hunk, the four slice contracts,
+Epic 007/008 files and digests, retained RED/GREEN/full-gate/PostgreSQL/two-run browser evidence,
+and cited screen/API/data-model/functional/codebase-design sections. Standards and Spec ran as
+isolated independent passes. The three 007Q screenshots are now complete and visually reviewable;
+no Blocked slice exists to reopen.
+
+### Standards
+
+#### Finding 1 - High - S23/S25 use a new table layout forbidden by the fixed design rules
+
+`ApprovalRegisterPanels.tsx` replaces the established 15/14-column register tables with a new
+four-column grouped layout, widths, and evidence composition. The screenshots are materially more
+reviewable, but FRONTEND_DESIGN_RULES permits labels/data/visibility and reuse of an existing
+row-detail/card pattern—not a new table/queue layout. `007S` restores the existing register table
+and moves complete evidence into an already-approved detail/card composition while retaining the
+four trusted outputs.
+
+#### Finding 2 - High - Template file reference authority bypasses the documents boundary
+
+`documents/modules/document_templates.py::_resolve_template_file` queries `DocumentFile` directly
+and accepts any existing file whenever the manager also has global `documents.file.download`.
+It does not verify immutable upload provenance, related-entity ownership, sensitivity consistency,
+or a template-source reference decision. The test creates a bare file row without upload evidence,
+so it proves the bypass rather than the required “existing permissioned metadata/storage boundary.”
+`008A2` adds one documents-owned, provenance-aware reference seam and keeps reference, manage,
+read, and download authority separate.
+
+#### Finding 3 - Medium - Query/transport ownership drifts into business modules
+
+`approval_case_engine.list_approval_cases` and `document_templates.list_templates` own filtering,
+permission-scoped queryset shaping, ordering, counting, and pagination that codebase-design §7.2
+assigns to selectors. The template module also accepts raw HTTP requests and imports request helper
+functions, contrary to §36.1's view -> module -> selector/model direction. Canonical Python
+validation of every countable approval case remains necessary; the issue is query and transport
+ownership, not a request to trust stored projection flags. `007S` keeps approval collection state
+at the existing public boundary, while `008A2` extracts template reads and request metadata.
+
+#### Finding 4 - Medium - Several tests encode implementation or impossible states
+
+The approval dependency regression still inspects source/import spellings instead of only public
+behavior. `RegistersHub.test.tsx` deliberately renders impossible `Page 2 of 1` metadata even though
+the shared client must reject it, and two browser specs duplicate nearly identical pixel-quality
+analysers. `007R` adds observable legacy/public matrices; `007S` replaces the impossible fixture
+and consolidates the screenshot helper without weakening assertions.
+
+#### Finding 5 - Medium source gap - Approved-template changes have no governed rationale field
+
+API design §3 says sensitive actions capture a reason, while §26.3's exact template request has no
+change-reason field. 008A records attributable status/effective/file old/new facts and generated
+summaries, but no user-supplied rationale. No corrective invents a required request field absent
+from the source contract; governance must reconcile §3 and §26.3 before that contract is widened.
+
+### Spec
+
+#### Finding 1 - Critical - 007O silently invalidates earlier frozen approval packages
+
+007O adds mandatory `sanction_terms`, `member_id`, and `application_reference_number` fields while
+keeping the schema label `approval-review-v2`. Cases created by the immediately preceding v2
+projector lack those fields, and no migration/remediation exists. They therefore fail canonical
+routability, disappear from actor-scoped detail/history/decision/register reads, and cannot reach a
+safe correction cycle. Tests create only the new shape. This contradicts historical-cycle
+immutability and turns “terminal writes fail closed” into “history vanishes.” `007R` versions the
+expanded package, separates historical read validity from terminal completeness, and provides only
+the existing audited return/correct/review/new-cycle remediation—never a live-row backfill.
+
+#### Finding 2 - Critical - 007Q's promised legacy-null register behavior raises instead
+
+Migration 0018 gives older Credit Sanction Register rows an empty `source_review_facts_json`, but
+007Q serialization indexes `borrower`, `purpose`, and `risk` directly. Once such a row reaches the
+serializer it raises rather than returning the digest's explicit legacy nulls; today 007O often
+hides the row first. No test constructs a pre-007O/007Q row. `007R` adds null-safe actor-scoped
+history and explicit migrated-row regressions without live reconstruction.
+
+#### Finding 3 - High - Approved template effective ranges can overlap under a first-row race
+
+008A locks existing approved candidates, but when none exists two concurrent creates with different
+codes/versions both see an empty set and may commit overlapping approved ranges. The migration has
+no identity lock/exclusion constraint, and the PostgreSQL test races only five identical successor
+requests whose predecessor lock serializes them. This fails 008A's database effective-integrity
+requirement. `008A2` serializes the template identity even before its first version and adds the
+missing different-payload PostgreSQL race.
+
+#### Finding 4 - High - Template references are permission-only rather than provenance-safe
+
+008A says missing or inaccessible file references are zero-write and must cross the existing
+document boundary. Global download permission plus row existence is not object/reference access;
+an application KYC/security file can be attached as a legal template and later become generation
+input. `008A2` fails closed on missing/corrupt upload evidence, related-entity files, invalid
+sensitivity, and unrelated actors while preserving metadata-only responses.
+
+#### Finding 5 - Medium - Formal approver names can still change before terminal generation
+
+Terminal register generation reloads each current `User.full_name` through case-authority
+serialization, then freezes that mutable display value. Renaming an earlier approver after routing
+or action but before the last decision changes the formal record, despite 007Q requiring frozen
+case/action facts. Existing tests rename borrower/requester but not approvers. `007R` takes display
+identity only from immutable route/action-time facts and leaves unavailable legacy names null.
+
+#### Finding 6 - Medium - Pagination accepts stale and internally incomplete success
+
+The shared validator accepts an empty or under-filled final page whose `total_count` claims rows
+should exist. S21 also has no request cancellation/generation guard, so a slow older page/filter
+response can overwrite the latest request even though 007P requires atomic replacement. Sequential
+tests miss both cases. `007S` validates the exact final-page remainder and proves out-of-order list/
+detail responses cannot replace current state.
+
+#### Finding 7 - Medium scope/vocabulary mismatch - Template variants admit uncited `fpc`
+
+Data-model §16.2 and 008A name nullable Individual/FPO variants, while the implementation admits
+`fpc` as a third stored value and the repository member model separately uses `fpc` and
+`producer_institution`. Treating any of those labels as equivalent would invent a generation rule.
+`008A2` centralises the resolver and fails unresolved mappings closed; 008B now depends on it.
+
+### Evidence, functional coverage, and state
+
+007O's between-routing mutation and zero-write tests, 007P's cross-page validator measurements,
+007Q's restored fields and two-run screenshots, and 008A's exact-successor PostgreSQL race are real,
+substantive evidence for newly created rows. M05-FR-002..006 and M05-FR-008/010-012 remain
+substantive. M05-FR-001/007/009 are reopened for pre-existing history until 007R; S21/S23/S25
+frontend contract fidelity remains partial until 007S. Epic 008 is not complete; 008A's catalogue
+shape is substantive but effective concurrency/file provenance remain partial until 008A2.
+
+No ADR was added because existing frozen-cycle, document-boundary, selector, standard-envelope,
+and frontend-design rules already decide the corrections. `CONTEXT.md` is refreshed for 008A and
+the new queue. No slice had `Blocked` status, so none required re-parking.
+
+Summary: Standards found 2 High issues, 2 Medium issues, and 1 Medium source gap; the worst is the
+template file-reference boundary bypass. Spec found 2 Critical, 2 High, and 3 Medium issues; the
+worst is schema evolution erasing or crashing earlier approval/register history.
+
 ## 2026-07-14 04:00 - Architecture Review 2026-07-14_034706_architecture_review
 
 Reviewed completed work since architecture-review commit `d106e16`:

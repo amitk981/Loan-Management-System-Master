@@ -1,5 +1,27 @@
 # Ralph Progress Log
 
+# Run 2026-07-14_064206_architecture_review
+
+- Independently reviewed commits `4b5b4b1...15b8d02` covering completed slices 007O, 007P, 007Q,
+  and 008A through separate Standards and Spec passes; no production code changed.
+- Confirmed substantive new-row frozen terminal/register behavior, authoritative S21 pagination,
+  restored S23/S25 fields, reviewable two-run browser screenshots, immutable template successors,
+  metadata-only template responses, and genuine PostgreSQL successor-race evidence.
+- Found two Critical schema-evolution regressions: older `approval-review-v2` cases become
+  unreadable because new terminal keys reused the old version, and older register rows can raise on
+  empty source JSON instead of returning nulls. Also found mutable approver names and queued 007R.
+- Found High template file-reference and first-version effective-range race gaps; queued 008A2 and
+  made 008B depend on it. Found S21 stale/final-page gaps and a fixed-design register-table
+  violation; queued 007S behind 007R.
+- Added A-097/A-098 for unresolved borrower-template vocabulary and sensitive-change rationale,
+  refreshed CONTEXT plus Epic 007/008 digests, and found no Blocked slice to reopen. No ADR was
+  needed because existing frozen-history, documents-boundary, selector, and frontend rules decide
+  the corrections.
+- Frontend build/typecheck/lint and 269 tests pass. Django check/migration sync and all 700 backend
+  tests pass with 20 expected skips and 93% coverage. Queue lint, JSON validation, and diff checks
+  pass.
+- Next: 007R, then 007S, then 008A2; sharpened 008B follows only after template integrity closes.
+
 # Repair 2026-07-14_062457_repair
 
 - Preserved the complete 008A implementation and repaired the PostgreSQL `FOR UPDATE` failure by
@@ -6151,6 +6173,16 @@ Validation evidence added:
 - Summary: Ralph run completed.
 - Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_055848_normal_run/.ralph/runs/2026-07-14_062457_repair/.
 - Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_055848_normal_run/.ralph/runs/2026-07-14_062457_repair/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
+
+## 2026-07-14 07:07:54 - 2026-07-14_064206_architecture_review
+- Agent tool used: codex
+- Slice attempted: architecture-review
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_064206_architecture_review/.ralph/runs/2026-07-14_064206_architecture_review/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_064206_architecture_review/.ralph/runs/2026-07-14_064206_architecture_review/
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.

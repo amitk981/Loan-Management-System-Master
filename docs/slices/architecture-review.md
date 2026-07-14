@@ -26,6 +26,6 @@ Low
 
 ## Last Review
 
-Run `2026-07-14_034706_architecture_review` independently reviewed completed slices 007K-007N.
-Findings are recorded newest-first in `docs/working/REVIEW_FINDINGS.md`; corrective slices
-007O-007Q are queued. No production code changed.
+Run `2026-07-14_064206_architecture_review` independently reviewed completed slices 007O-007Q and
+008A. Findings are recorded newest-first in `docs/working/REVIEW_FINDINGS.md`; corrective slices
+007R, 007S, and 008A2 are queued, and 008B now depends on 008A2. No production code changed.

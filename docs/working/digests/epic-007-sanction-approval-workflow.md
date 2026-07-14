@@ -1,5 +1,23 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## Architecture Review 2026-07-14 06:42 - Schema Evolution and Frontend Contract Closure
+
+- Review range `4b5b4b1..15b8d02` confirms 007O freezes new terminal decisions/registers, 007P
+  preserves server pagination and narrows candidate validation, and 007Q restores the missing
+  S23/S25 facts with reviewable two-run screenshots.
+- The expanded frozen package remained labelled `approval-review-v2`; immediately older v2 cases
+  lack its new terminal keys and become unreadable/unactionable. Older register rows receive `{}`
+  source JSON but the new serializer indexes nested keys. `007R` versions the schema, preserves
+  actor-scoped history/null semantics, provides only return/correct/review/new-cycle remediation,
+  and freezes approver display identity without live user reads.
+- Shared pagination still accepts an under-filled final page, and S21 has no stale-request guard.
+  The new four-column S23/S25 table makes evidence visible but violates the fixed no-new-table/
+  layout rule. `007S` closes response ordering/remainder validation and restores an existing
+  table-plus-detail composition with the same trusted evidence.
+- M05-FR-001/007/009 are reopened only for pre-existing history until 007R. The other M05
+  requirements remain substantive, and no Blocked slice or new durable architectural decision was
+  found.
+
 ## 007Q Register Source Fields and Visual Evidence Closure
 
 - New credit review packages freeze folio and requested loan type alongside the existing borrower,

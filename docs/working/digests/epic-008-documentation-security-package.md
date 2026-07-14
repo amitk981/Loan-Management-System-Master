@@ -14,6 +14,20 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## Architecture Review 2026-07-14 06:42 - 008A Integrity Follow-up
+
+- 008A delivers the exact §26.3 routes, immutable successor rows, metadata-only responses,
+  attributable evidence, and a genuine five-request PostgreSQL successor race.
+- Effective overlap validation locks only already-existing approved rows. Two different concurrent
+  first versions for the same document/borrower identity can therefore both win; `008A2` adds a
+  database-backed identity lock/constraint and a different-payload five-race test.
+- Template-file resolution currently queries `DocumentFile` directly and treats global download
+  permission plus existence as reference authority. `008A2` adds a documents-owned upload-
+  provenance/sensitivity/permission decision and rejects application/loan-owned or unproven files.
+- Source template variants say Individual/FPO, while repository members use `individual_farmer`,
+  `fpc`, and `producer_institution`. A-097 forbids an implicit mapping; `008A2` owns the resolver and
+  008B must fail unresolved variants closed.
+
 ## The documentation package (what exists and when)
 
 Collected from the borrower at Stage 4 start (V10 p.13 §4.1): witness PAN/Aadhaar — the witness

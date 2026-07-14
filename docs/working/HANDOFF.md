@@ -2,32 +2,35 @@
 
 ## Last Run
 
-2026-07-14_062457_repair
+2026-07-14_064206_architecture_review
 
 ## Current Status
 
-Slice 008A is complete. The documents module now owns a versioned template catalogue at the exact
-§26.3 GET/POST/PATCH endpoints. PATCH creates and links one immutable successor, exact replay is
-zero-write, approved effective ranges cannot overlap for the same document/borrower variant, and
-all real mutations atomically write attributable audit and shared version-history evidence.
-Template-file ids pass the existing permissioned metadata boundary and responses expose only id/name
-metadata—never storage keys, download actions, generation, or disputed Annexure routing.
-The repair limits PostgreSQL row locks to the owning `ApprovalCase`/`DocumentTemplate` rows so
-nullable eager-loaded evidence/file metadata no longer makes `FOR UPDATE` invalid.
+Architecture review of completed 007O-007Q and 008A is complete with no production-code change.
+Newly created terminal decisions/registers use frozen facts, S21 has authoritative pagination, the
+S23/S25 fields and screenshots are reviewable, and 008A retains immutable template successors with
+metadata-only responses and a passing PostgreSQL exact-successor race.
+
+The review found older v2 approval packages lose readability after 007O's unversioned schema
+expansion and older register rows can raise instead of returning legacy nulls. Formal approver names
+also remain live until terminal generation. Corrective 007R owns history/remediation/frozen identity.
+007S owns final-page validation, stale S21 responses, valid UI fixtures, shared screenshot analysis,
+and restoration of an approved register table/detail pattern. 008A2 owns first-version overlap
+races, provenance-aware template-file references, selector/transport locality, and explicit
+borrower-template variant resolution. 008B now depends on 008A2.
 
 ## Validation
 
-Repair evidence is in `.ralph/runs/2026-07-14_062457_repair/evidence/`; the original implementation
-evidence remains in `.ralph/runs/2026-07-14_055848_normal_run/evidence/`. Django check/migration sync and
-all 700 backend tests pass with 20 expected PostgreSQL-only skips at 93% coverage. Frontend build,
-typecheck, lint, and all 269 tests pass. The historical five-race acceptance command passes twice on
-PostgreSQL, and 008A's own five-request successor race passes twice on PostgreSQL. No frontend or
-browser surface changed.
+Review/gate evidence is in `.ralph/runs/2026-07-14_064206_architecture_review/evidence/`. Frontend
+build, typecheck, lint, and all 269 tests pass. Django check/migration sync and all 700 backend tests
+pass with 20 expected PostgreSQL-only skips at 93% coverage. Queue lint, state JSON, diff checks, and
+the three reviewed 007Q screenshots pass inspection. This descriptor declares no browser/PostgreSQL
+runtime; retained independent evidence was reviewed rather than fabricated or rerun.
 
 ## Next Run
 
-Run the due architecture review, then start sharpened 008B. It must generate one immutable loan
-document only from an approved/effective 008A template and authoritative application facts; template
-or file metadata never grants generation/download authority. 008C and 008D are now concretely
-sharpened from the same source sections for the subsequent runs. A-095 still owns the unresolved
-S72 active-versus-approved vocabulary question.
+Run 007R, then 007S; run 008A2 before sharpened 008B. 008B must consume 008A2's race-safe effective
+selection, provenance-aware file reference, and explicit borrower-template variant resolver; it
+must not guess FPC/FPO equivalence or treat template/file metadata as generation/download authority.
+008C and 008D remain concretely sharpened. A-095/A-097/A-098 own the active-vs-approved, borrower-
+variant, and change-rationale source questions.

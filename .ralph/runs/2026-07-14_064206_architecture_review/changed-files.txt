@@ -1,0 +1,14 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/008B-document-generation-shell.md
+ M docs/slices/architecture-review.md
+ M docs/working/ASSUMPTIONS.md
+ M docs/working/CONTEXT.md
+ M docs/working/HANDOFF.md
+ M docs/working/REVIEW_FINDINGS.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+ M docs/working/digests/epic-008-documentation-security-package.md
+?? .ralph/runs/2026-07-14_064206_architecture_review/
+?? docs/slices/007R-legacy-approval-history-and-frozen-identity-closure.md
+?? docs/slices/007S-register-pattern-and-pagination-order-closure.md
+?? docs/slices/008A2-template-effective-integrity-and-file-reference-boundary.md
