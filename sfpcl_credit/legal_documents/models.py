@@ -246,6 +246,121 @@ class NotarisationRecord(models.Model):
         ]
 
 
+class SignatureRecord(models.Model):
+    PARTY_TYPES = {"borrower", "nominee", "witness", "user"}
+    METHODS = {"wet_ink", "digital", "scanned"}
+    STATUSES = {"pending", "signed", "mismatch"}
+    RESOLUTION_TYPES = {"bank_verification_letter", "borrower_declaration"}
+
+    signature_record_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    loan_document = models.ForeignKey(
+        LoanDocument, on_delete=models.PROTECT, related_name="signature_records"
+    )
+    signer_party_type = models.CharField(max_length=80)
+    signer_party_id = models.UUIDField(blank=True, null=True, db_index=True)
+    signer_name_snapshot = models.CharField(max_length=255)
+    signature_method = models.CharField(max_length=60)
+    signature_status = models.CharField(max_length=60, db_index=True)
+    signature_mismatch_flag = models.BooleanField(default=False)
+    mismatch_resolution_type = models.CharField(max_length=80, blank=True, null=True)
+    mismatch_resolution_document = models.ForeignKey(
+        "documents.DocumentFile",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="signature_mismatch_resolutions",
+    )
+    mismatch_resolution_remarks = models.TextField(blank=True, null=True)
+    signed_at = models.DateTimeField(blank=True, null=True)
+    verified_by_user = models.ForeignKey(
+        "identity.User", blank=True, null=True, on_delete=models.PROTECT
+    )
+    verified_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "signature_records"
+        indexes = [
+            models.Index(
+                fields=["loan_document", "signature_status"],
+                name="idx_signature_doc_status",
+            ),
+            models.Index(
+                fields=["signer_party_type", "signer_party_id"],
+                name="idx_signature_signer",
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["loan_document", "signer_party_type", "signer_party_id"],
+                name="unique_signature_document_signer",
+            ),
+            models.UniqueConstraint(
+                fields=["loan_document", "signer_party_type"],
+                condition=models.Q(signer_party_id__isnull=True),
+                name="unique_signature_null_signer",
+            ),
+            models.CheckConstraint(
+                check=models.Q(
+                    signer_party_type__in=["borrower", "nominee", "witness", "user"]
+                ),
+                name="signature_party_type_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(signature_method__in=["wet_ink", "digital", "scanned"]),
+                name="signature_method_bounded",
+            ),
+            models.CheckConstraint(
+                check=models.Q(signature_status__in=["pending", "signed", "mismatch"]),
+                name="signature_status_bounded",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        mismatch_resolution_type__isnull=True,
+                        mismatch_resolution_document__isnull=True,
+                        mismatch_resolution_remarks__isnull=True,
+                    )
+                    | models.Q(
+                        mismatch_resolution_type__in=[
+                            "bank_verification_letter",
+                            "borrower_declaration",
+                        ],
+                        mismatch_resolution_document__isnull=False,
+                        signature_status="mismatch",
+                        signature_mismatch_flag=True,
+                        verified_by_user__isnull=False,
+                        verified_at__isnull=False,
+                    )
+                ),
+                name="signature_resolution_complete",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        signature_status="pending",
+                        signed_at__isnull=True,
+                        signature_mismatch_flag=False,
+                        mismatch_resolution_type__isnull=True,
+                    )
+                    | models.Q(
+                        signature_status="signed",
+                        signed_at__isnull=False,
+                        signature_mismatch_flag=False,
+                    )
+                    | models.Q(
+                        signature_status="mismatch",
+                        signature_mismatch_flag=True,
+                    )
+                ),
+                name="signature_status_facts_consistent",
+            ),
+        ]
+
+
 class DocumentChecklist(models.Model):
     STATUS_IN_PROGRESS = "in_progress"
     STATUS_CS_APPROVED = "cs_approved"

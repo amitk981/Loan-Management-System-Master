@@ -256,6 +256,17 @@ Letter signed and stamped by the bank confirming the cheque signature (Annexure 
 declaration on non-judicial stamp paper affirming the signature. Missing witness signatures on
 agreements/SH-4 is a Critical error (V10 p.32 #4).
 
+Implementation extract added 2026-07-14: §26.7 captures borrower/nominee/witness/user signer
+identity and frozen name, wet-ink/digital/scanned method, pending/signed/mismatch state, signed time,
+and mismatch flag. §26.8 accepts only bank-verification-letter or borrower-declaration resolution,
+one evidence document id, and remarks. The retained evidence file must be linked by a same-
+application current-renderer legal document of the exact type; declaration additionally consumes
+the exact 008D adequate stamp record. Application-owned mismatch semantics prefer unanimous
+verified legal-owner facts over intake cheque uncertainty. Projection owns only Bank Verification
+Letter applicability and rolls back against completed evidence; it never completes or approves the
+checklist or grants file/disbursement authority. A-107 records the absent signed-copy/bank-
+attestation aggregate and the conservative retained-file interpretation.
+
 ### 008F Power of Attorney Workflow
 PoA in favour of the Company Secretary authorising share-sale initiation on default; signed by
 farmer AND nominee; ₹500 stamp; notarised (V10 p.14 §4.3, Annexure C). CS "acts under PoA for

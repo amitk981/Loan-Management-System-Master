@@ -18,6 +18,7 @@ from sfpcl_credit.workflows.events import record_workflow_event
 CREATED_ACTION = "document_checklist.created"
 CHANGED_ACTION = "document_checklist.applicability_changed"
 LINKED_ACTION = "document_checklist.linkage_changed"
+SIGNATURE_ACTION = "document_checklist.signature_mismatch_changed"
 
 
 class ChecklistAccessDenied(Exception):
@@ -73,6 +74,89 @@ def project_lifecycle_status(
             for field in changed:
                 setattr(item, field, updates[field])
             item.save(update_fields=changed)
+
+
+def project_signature_mismatch(*, application, legal_signature_rows, actor, request_meta=None):
+    """Project only Bank Verification Letter applicability from owner-verified facts."""
+    checklist = (
+        DocumentChecklist.objects.select_for_update()
+        .filter(loan_application=application)
+        .first()
+    )
+    if checklist is None:
+        return
+    item = (
+        ChecklistItem.objects.select_for_update()
+        .filter(
+            document_checklist=checklist,
+            item_code="bank_verification_letter",
+        )
+        .first()
+    )
+    if item is None:
+        return
+    fact = application_facts.resolve_signature_mismatch_fact(
+        legal_signature_rows=legal_signature_rows,
+        application_id=application.pk,
+        member_id=application.member_id,
+    )
+    applicable = fact.mismatch is True
+    values = {
+        "required_flag": applicable,
+        "applicable_flag": applicable,
+        "applicability_source": fact.source,
+        "applicability_blocker": fact.blocker,
+    }
+    changed = [field for field, value in values.items() if getattr(item, field) != value]
+    applicability_flipped = item.applicable_flag != applicable
+    if applicability_flipped and item.completion_status == ChecklistItem.STATUS_COMPLETE:
+        raise ChecklistApplicabilityConflict(
+            "Completed Bank Verification Letter evidence conflicts with corrected signature truth."
+        )
+    if not changed:
+        return
+    old = _item_snapshot(checklist)
+    for field, value in values.items():
+        setattr(item, field, value)
+    if applicability_flipped:
+        item.completion_status = (
+            ChecklistItem.STATUS_PENDING
+            if applicable
+            else ChecklistItem.STATUS_NOT_APPLICABLE
+        )
+        changed.append("completion_status")
+    item.save(update_fields=changed)
+    checklist.updated_at = timezone.now()
+    checklist.save(update_fields=["updated_at"])
+    new = _item_snapshot(checklist)
+    context = _audit_context(actor, request_meta)
+    evidence = {
+        "source_reason": "signature_owner_fact_changed",
+        "loan_application_id": str(application.pk),
+        **context,
+    }
+    AuditLog.objects.create(
+        actor_user=actor,
+        actor_type="user",
+        action=SIGNATURE_ACTION,
+        entity_type="document_checklist",
+        entity_id=checklist.pk,
+        old_value_json={"items": _applicability_snapshot(old)},
+        new_value_json={"items": _applicability_snapshot(new), **evidence},
+        ip_address=(request_meta or {}).get("ip_address", ""),
+        user_agent=(request_meta or {}).get("user_agent", ""),
+    )
+    record_workflow_event(
+        actor=actor,
+        workflow_name="documentation_checklist",
+        entity_type="document_checklist",
+        entity_id=checklist.pk,
+        from_state=checklist.checklist_status,
+        to_state=checklist.checklist_status,
+        trigger_reason="Signature owner fact changed Bank Verification Letter applicability.",
+        action_code=SIGNATURE_ACTION,
+        metadata=evidence,
+    )
 
 
 @dataclass(frozen=True)
@@ -303,7 +387,18 @@ def _applicability_specs(application, facts):
 
 
 def _signature_mismatch(application):
-    fact = application_facts.resolve_cancelled_cheque_signature_fact(
+    from sfpcl_credit.legal_documents.models import SignatureRecord
+
+    rows = SignatureRecord.objects.filter(
+        loan_document__loan_application=application
+    ).values(
+        "signature_status",
+        "verified_by_user_id",
+        "verified_at",
+        "mismatch_resolution_type",
+    )
+    fact = application_facts.resolve_signature_mismatch_fact(
+        legal_signature_rows=rows,
         application_id=application.pk,
         member_id=application.member_id,
     )

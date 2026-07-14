@@ -3251,3 +3251,56 @@ readiness remain untouched. A changed status conflicting with completed checklis
 atomic `409 CONFLICT`; legacy/mismatched renderer provenance also returns zero-write `409 CONFLICT`.
 Unknown/malformed fields return `400 VALIDATION_ERROR`; missing role/permission or non-Stage-4 scope
 returns nondisclosing 403; an authorised missing loan-document id returns 404.
+
+## Signature records and mismatch resolution (008E)
+
+`POST /api/v1/loan-documents/{loan_document_id}/signatures/` requires
+`documents.signature.record`, an active Compliance Team role, an approved Stage 4 application, and
+an 008B4 current-renderer loan document. It accepts exactly the §26.7 fields:
+
+```json
+{
+  "signer_party_type": "borrower",
+  "signer_party_id": "uuid-or-null",
+  "signer_name_snapshot": "Ramesh Patil",
+  "signature_method": "wet_ink",
+  "signature_status": "signed",
+  "signed_at": "2026-06-22T10:30:00Z",
+  "signature_mismatch_flag": false
+}
+```
+
+Party type is `borrower`, `nominee`, `witness`, or `user`; method is `wet_ink`, `digital`, or
+`scanned`; status is `pending`, `signed`, or `mismatch`. Pending carries neither signed time nor a
+mismatch; signed requires a timezone-bearing signed time and forbids mismatch; mismatch requires a
+true mismatch flag. One current row is retained per loan-document/party-type/party-id identity,
+including one nullable-id identity. Exact replay is zero-write; changed facts update that current
+row while retaining the prior frozen signer/name/method/status facts in attributable version,
+audit, and workflow history.
+
+`POST /api/v1/signature-records/{signature_record_id}/resolve-mismatch/` requires
+`documents.signature.resolve_mismatch` and active Company Secretary authority. It accepts exactly:
+
+```json
+{
+  "mismatch_resolution_type": "bank_verification_letter",
+  "mismatch_resolution_document_id": "uuid",
+  "remarks": "Signed and stamped bank verification received."
+}
+```
+
+Resolution type is only `bank_verification_letter` or `borrower_declaration`. The evidence id must
+be the retained file of an 008B4 current-renderer legal loan document of the corresponding type for
+the same application. Borrower declaration additionally requires its exact 008D stamp-duty record
+to be `adequate`; file existence or a cross-application/wrong-type/legacy reference is insufficient.
+Only a current unresolved mismatch can be resolved. Exact replay returns the retained result with
+zero writes; a different attempt to replace retained resolution history returns `409 CONFLICT`.
+
+Both responses are metadata-only: ids, frozen signature facts, resolution type, evidence file id
+and name, and remarks. They expose no storage key/download action and grant no file, checklist,
+approval, or disbursement authority. Verified signature truth crosses the application-owned fact
+interface and atomically changes only Bank Verification Letter applicability. Checklist status,
+completion/verifier/time/remarks, display facts, approval signatures, and readiness stay unchanged;
+a reversal against completed evidence returns zero-write `409 CONFLICT`. Missing action authority
+or Stage 4 scope returns nondisclosing 403, authorised missing ids return 404, and malformed fields
+return `400 VALIDATION_ERROR`.

@@ -271,6 +271,24 @@ def resolve_legal_application_evidence_reference(
     return document
 
 
+def resolve_generated_legal_evidence_reference(*, document_id, expected_checksum_sha256):
+    """Resolve a generated legal file only when its retained document facts still agree."""
+    document = DocumentFile.objects.filter(pk=document_id).first()
+    if (
+        document is None
+        or document.checksum_sha256 != expected_checksum_sha256
+        or document.sensitivity_level not in ALLOWED_SENSITIVITY_LEVELS
+    ):
+        raise ValidationError(
+            {
+                "mismatch_resolution_document_id": (
+                    "Document file was not found or is inaccessible."
+                )
+            }
+        )
+    return document
+
+
 def validate_upload_request(request):
     field_errors = {}
     uploaded_file = request.FILES.get("file")

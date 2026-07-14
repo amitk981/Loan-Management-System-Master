@@ -2,36 +2,35 @@
 
 ## Last Run
 
-2026-07-14_143550_normal_run
+2026-07-14_152156_normal_run
 
 ## Current Status
 
-008D is complete. The two source §26.9/§26.10 POST routes now record one current stamp-duty or
-notarisation row for an 008B4 current-renderer legal document under a loan-document row lock. Exact
-replay is zero-write; real changes retain attributable audit, version, and workflow evidence.
-Compliance Team may prepare pending facts, while only Company Secretary authority may record
-adequate/completed verification. Legal evidence references are resolved by the documents owner from
-singular exact upload provenance for the same application and never grant download.
+008E is complete. The exact §26.7 signature-capture and §26.8 mismatch-resolution POST routes now
+retain one current signature per legal document/signer identity with bounded database facts,
+protected links, immutable name history, exact replay, action-specific Compliance/Company Secretary
+authority, and attributable audit/version/workflow evidence. Resolved rows cannot be reopened by a
+later capture replay or changed capture.
 
-The legal-documents owner centralises action permission, role, sanctioned Stage 4 queue scope, and
-renderer provenance. Loan-document and checklist reads project current status only. Checklist
-completion, verifier/time/remarks, applicability/linkage, signatures/status, generation/execution/
-verification, and immutable renderer/template/file provenance remain unchanged; completed-evidence
-status conflicts roll back atomically. The unresolved ₹500-versus-ad-valorem rule remains
-configuration-owned and no rate calculator was invented.
+Verified unresolved mismatches publish through the application-owned fact seam and atomically make
+only the Bank Verification Letter applicable. Resolution with a same-application current-renderer
+bank-letter file or adequately stamped borrower declaration clears that applicability without
+changing checklist completion, verifier/time/remarks, approval signatures, status, file authority,
+or readiness. Completed-evidence reversals conflict and roll back the owner mutation and ledgers.
+A-107 records the conservative evidence-file interpretation until a signed-copy/bank-attestation
+aggregate is governed.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-14_143550_normal_run/evidence/`. Focused RED/GREEN suites pass;
-the genuine five-worker PostgreSQL changed-submission race passes twice. Django check and migration
-sync pass; all 766 backend tests pass with 24 expected PostgreSQL-only skips and 93% coverage against
-the 85% floor. Frontend build,
-typecheck, lint, and all 293 tests pass. Independent Standards and Spec findings were fixed and
-re-reviewed.
+Evidence is in `.ralph/runs/2026-07-14_152156_normal_run/evidence/`. Focused RED/GREEN logs and API
+examples are saved. Django check and migration sync pass; all 773 backend tests pass with 24 expected
+PostgreSQL-only skips and 93% coverage against the 85% floor. Frontend build, typecheck, lint, and all
+293 tests pass. Final Standards/Spec review found and fixed resolved-history reopening and ordinary-
+signature cancellation of active mismatch truth; the re-review has no open findings.
 
 ## Next Run
 
-Run 008E next. It is sharpened to publish verified signature mismatch truth through the
-application-owned seam without changing checklist completion. 008F is now sharpened to bind the PoA
-to 008D/008E evidence without invocation/release authority. The real M05-to-full-Term-Sheet path
-remains configuration-blocked under A-101.
+Run the now-due architecture review, then 008F. 008F now consumes distinct borrower/nominee signed
+rows without treating mismatch resolution as PoA execution. 008G has been sharpened from its stub to
+the source-defined conditional tri-party verification path without inventing a subsidiary identity
+aggregate or repayment authority. A-101 still blocks the real M05-to-full-Term-Sheet path.

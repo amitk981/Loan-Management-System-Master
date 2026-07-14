@@ -113,6 +113,18 @@ roll back atomically with a failed mutation.
 - Preserve 008D's exact replay/current-row/history semantics. PoA changes must never rewrite stamp,
   notary, generated-file, template, renderer, or checklist completion evidence.
 
+## Run-Ahead Sharpening (008E completion, 2026-07-14)
+
+- Resolve borrower and nominee execution only from distinct current `signed` 008E rows on the exact
+  PoA loan document. Match party ids to the frozen application parties and preserve each signer-name
+  snapshot; a resolved signature mismatch is not itself proof that either party executed the PoA.
+- Consume signature facts through a legal-documents-owned selector under the already locked package/
+  loan-document transaction. Do not mutate signature rows, replay their evidence, or treat a
+  metadata id as file/download authority.
+- If either required signature is pending, mismatched, absent, duplicated/conflicting, or belongs to
+  another current-renderer document/application, keep activation blocked with zero package/PoA/
+  checklist success evidence. Checklist approval and completion remain owned by 008K.
+
 ## Visual Acceptance Criteria
 None.
 

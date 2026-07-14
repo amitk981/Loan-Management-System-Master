@@ -8,7 +8,9 @@ Epic 008: Documentation, Legal Documents, and Security Package
 Epic file: `docs/epics/008-documentation-security-package.md`
 
 ## Goal
-Deliver this narrow capability as a small, testable Ralph implementation slice.
+Verify execution of the conditional Declaration / Tri-party Agreement from current generated,
+borrower-signed, nominee-signed evidence without inventing a subsidiary identity aggregate,
+completing the checklist, or starting repayment deductions.
 
 ## User Value
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
@@ -32,28 +34,64 @@ Moves the platform one verifiable step closer to a working end-to-end lending sy
 None directly.
 
 ## Frontend Scope
-None for this slice, except updating frontend documentation or fixtures if required by tests.
+None. DocumentationHub and member-portal wiring remain owned by 008M/008L; do not add mock or hidden
+UI actions.
 
 ## Backend/API Scope
-Implement the named backend/API capability only.
+1. Implement §26.6 `POST /api/v1/loan-documents/{loan_document_id}/verify/` only for the
+   `tri_party_agreement` document type in this slice, accepting exactly `verification_status` and
+   `remarks`; only `verified` is a success transition here.
+2. Resolve applicability from the canonical frozen subsidiary-repayment fact used by 008C2. A
+   verified transition requires `subsidiary_route=true`; false is not applicable and missing/
+   malformed/conflicting truth remains a configuration/data blocker.
+3. Require distinct current 008E `signed` rows for the application's borrower and nominee on the
+   exact current-renderer tri-party loan document. A mismatch resolution does not stand in for an
+   execution signature.
+4. Project verification metadata into existing loan-document/checklist reads only. Do not mark the
+   checklist item complete, identify/start subsidiary deduction, grant download, or claim security/
+   disbursement readiness.
 
 ## Database/Model Impact
-Non-destructive model/migration changes for this capability, if needed.
+Use the retained §16.3 loan-document verification fields and §16.6 signature records. Add only the
+smallest attributable verification-history model if existing audit/version/workflow ledgers cannot
+retain old/new verification facts; do not add an uncited tri-party or subsidiary-company table.
 
 ## API Contracts
 Create or update the API contract for this capability.
 
 ## Permissions
-Apply the role and object-access rules from `docs/source/auth-permissions.md`; classify unknown access as approval-required.
+Require `documents.loan_document.verify`, canonical sanctioned Stage 4 application scope, and the
+current renderer contract. Compliance Team may prepare/submit evidence; only Company Secretary may
+record `verified`. Generate/read/download/signature permissions do not imply verification. Wrong
+type, unrelated application, absent parent, and legacy output follow the established nondisclosing
+008B4/008D authority ordering.
 
 ## Audit Requirements
-Record audit/workflow events for critical create/update/approval/access actions.
+Every real verification transition writes attributable old/new audit, workflow, and version
+evidence containing application/document/borrower/nominee/signature ids and request/network/role/
+team metadata. Exact replay and every denied/invalid attempt write no success evidence. Checklist
+projection and evidence roll back with the owner mutation.
 
 ## Validation Rules
-Enforce source-doc business rules and block invalid state transitions.
+- The agreement is applicable only when the frozen subsidiary repayment route is unanimously true;
+  do not infer a subsidiary entity or repayment account from the boolean.
+- Borrower and nominee ids must match the application's frozen/current governed parties. Both
+  signature records must be `signed`, have `signed_at`, carry no active mismatch, and belong to the
+  exact tri-party loan document.
+- Verification requires 008B4 current renderer provenance and retains existing generation,
+  template, file, stamp/notary, custody, and execution facts. Do not fabricate a third-party
+  subsidiary signature that the source schema/API does not model.
+- Verification alone never completes the checklist item, approves documentation, creates a
+  repayment mandate, invokes security, or makes the loan ready for disbursement.
 
 ## Test Cases
-Unit/service/API/permission tests plus frontend tests where UI is touched.
+- Applicable verified transition, exact replay, retained change history, and strict request fields.
+- False/missing/conflicting subsidiary route; absent/pending/mismatch/wrong-party/cross-document
+  borrower or nominee signature; legacy renderer and wrong document type.
+- Compliance preparer, Company Secretary verifier, read-only/unauthorised/unrelated matrices.
+- Checklist projection preserves applicability, completion, verifier/time/remarks, approval
+  signatures, checklist status, file access, and readiness; projection conflict rolls back.
+- Concurrent duplicate verification retains one current outcome and complete attributable history.
 
 ## Visual Acceptance Criteria
 None.

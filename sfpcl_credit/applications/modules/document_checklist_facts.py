@@ -49,3 +49,30 @@ def resolve_cancelled_cheque_signature_fact(*, application_id, member_id):
         "persisted_signature_mismatch_conflict",
         "signature_mismatch_conflicting",
     )
+
+
+def resolve_signature_mismatch_fact(*, legal_signature_rows, application_id, member_id):
+    """Prefer unanimous verified legal-owner decisions over intake cheque facts.
+
+    The caller owns retrieval of legal rows; this application-owned seam owns the meaning of
+    downstream mismatch truth and therefore avoids an applications-to-legal ORM dependency.
+    """
+    unresolved_mismatch = False
+    resolved_mismatch = False
+    for row in legal_signature_rows:
+        if not row.get("verified_by_user_id") or not row.get("verified_at"):
+            continue
+        if row.get("signature_status") != "mismatch":
+            continue
+        if row.get("mismatch_resolution_type"):
+            resolved_mismatch = True
+        else:
+            unresolved_mismatch = True
+    if unresolved_mismatch:
+        return SignatureMismatchFact(True, "verified_signature_mismatch", None)
+    if resolved_mismatch:
+        return SignatureMismatchFact(False, "verified_signature_match_or_resolution", None)
+    return resolve_cancelled_cheque_signature_fact(
+        application_id=application_id,
+        member_id=member_id,
+    )

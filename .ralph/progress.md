@@ -6562,3 +6562,29 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_152156_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008E-signature-mismatch-workflow
+- Summary: Added bounded signature records, §26.7 capture and §26.8 mismatch resolution, protected
+  bank-letter/declaration evidence, immutable replay/history behavior, and atomic Bank Verification
+  Letter applicability projection through the application-owned fact seam. Sharpened 008F and 008G.
+- Tests run: staged TDD RED/GREEN; 29 focused signature/checklist/stamp regressions; Django check and
+  migration sync; all 773 backend tests with 24 expected skips and 93% coverage; frontend build,
+  typecheck, lint, and all 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_152156_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: Medium implementation risk with a High evidence-model assumption recorded as A-107;
+  one additive migration, no destructive data change, frontend change, or external side effect.
+- Next action: Run the due architecture review, then 008F.
+
+## 2026-07-14 15:57:09 - 2026-07-14_152156_normal_run
+- Agent tool used: codex
+- Slice attempted: 008E-signature-mismatch-workflow
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_152156_normal_run/.ralph/runs/2026-07-14_152156_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_152156_normal_run/.ralph/runs/2026-07-14_152156_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.
