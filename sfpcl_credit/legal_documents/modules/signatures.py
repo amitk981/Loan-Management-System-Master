@@ -13,7 +13,7 @@ from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.legal_documents import selectors
 from sfpcl_credit.legal_documents.models import SignatureRecord
 from sfpcl_credit.legal_documents.modules import document_authority, document_checklist
-from sfpcl_credit.legal_documents.serializers import (
+from sfpcl_credit.legal_documents.request_contracts import (
     SignatureMismatchResolutionRequest,
     SignatureRecordRequest,
 )
@@ -49,6 +49,10 @@ class InvalidState(Exception):
     pass
 
 
+class SignatureMismatchUnresolved(InvalidState):
+    pass
+
+
 class EvidenceConflict(Exception):
     pass
 
@@ -58,11 +62,8 @@ class ProjectionConflict(Exception):
 
 
 def record(*, actor, loan_document_id, payload, metadata):
-    document_authority.require_mutation_actor(actor=actor, permission=RECORD_PERMISSION)
-    try:
-        document_authority.require_compliance_preparer(actor)
-    except document_authority.RoleAuthorityDenied:
-        raise AccessDenied
+    require_record_actor(actor)
+
     cleaned = _validate_capture(payload)
     with transaction.atomic():
         loan_document = document_authority.resolve_current_stage4_target(
@@ -86,6 +87,22 @@ def record(*, actor, loan_document_id, payload, metadata):
         new_capture = {field: new.get(field) for field in CAPTURE_FIELDS}
         if record is not None and old_capture == new_capture:
             return _serialize(record)
+        if record is not None and record.legacy_maker_attribution:
+            raise ValidationError(
+                {
+                    "signature_status": (
+                        "Legacy signature evidence without a retained capture maker cannot be changed."
+                    )
+                }
+            )
+        if (
+            record is not None
+            and loan_document.document_type == "tri_party_agreement"
+            and loan_document.verification_status == "verified"
+        ):
+            raise InvalidState(
+                "A signature consumed by verified tri-party execution cannot be changed."
+            )
         if record is not None:
             if cleaned["signer_name_snapshot"] != record.signer_name_snapshot:
                 raise ValidationError(
@@ -121,7 +138,7 @@ def record(*, actor, loan_document_id, payload, metadata):
             and record.signature_mismatch_flag
             and not record.mismatch_resolution_type
         ):
-            raise InvalidState(
+            raise SignatureMismatchUnresolved(
                 "An unresolved signature mismatch can only be cleared through mismatch resolution."
             )
         if record is not None and record.mismatch_resolution_type:
@@ -158,6 +175,7 @@ def record(*, actor, loan_document_id, payload, metadata):
             )
             action = "documents.signature.created"
         else:
+            values["captured_by_user"] = actor
             for field, value in values.items():
                 setattr(record, field, value)
             record.save(update_fields=list(values))
@@ -168,12 +186,24 @@ def record(*, actor, loan_document_id, payload, metadata):
         return _serialize(record)
 
 
-def resolve_mismatch(*, actor, signature_record_id, payload, metadata):
+def require_record_actor(actor):
+    document_authority.require_mutation_actor(actor=actor, permission=RECORD_PERMISSION)
+    try:
+        document_authority.require_compliance_preparer(actor)
+    except document_authority.RoleAuthorityDenied:
+        raise AccessDenied
+
+
+def require_resolve_actor(actor):
     document_authority.require_mutation_actor(actor=actor, permission=RESOLVE_PERMISSION)
     try:
         document_authority.require_company_secretary(actor)
     except document_authority.RoleAuthorityDenied:
         raise AccessDenied
+
+
+def resolve_mismatch(*, actor, signature_record_id, payload, metadata):
+    require_resolve_actor(actor)
     cleaned = _validate_resolution(payload)
     with transaction.atomic():
         signature_record = document_authority.resolve_current_stage4_signature(
@@ -228,6 +258,14 @@ def resolve_mismatch(*, actor, signature_record_id, payload, metadata):
             if current == requested:
                 return _resolution_action(signature_record)
             raise InvalidState("A resolved mismatch cannot be replaced through this action.")
+        if signature_record.legacy_maker_attribution:
+            raise ValidationError(
+                {
+                    "mismatch_resolution_type": (
+                        "Legacy signature evidence cannot supply new resolution truth."
+                    )
+                }
+            )
 
         old = _snapshot(signature_record)
         signature_record.mismatch_resolution_type = cleaned["mismatch_resolution_type"]

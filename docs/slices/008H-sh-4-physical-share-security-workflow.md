@@ -131,6 +131,17 @@ and package projections roll back atomically with a failed mutation.
   one current SH-4, and assert every winner/loser audit/version/workflow identity rather than merely
   counting the row.
 
+## 008G2 Completion Sharpening (2026-07-14)
+
+- The legal evidence selector must exclude `legacy_maker_attribution=true` rows and expose the
+  current material stamp/signature maker used by SH-4 custody maker-checker checks. Exact replay may
+  reuse retained facts but must never transfer maker identity.
+- Once held-custody evidence consumes an exact signature or adequate stamp row, the SH-4 owner must
+  provide the same upstream mutation protection now used by verified tri-party execution; a failed
+  rewrite preserves custody, checklist/package projections, and every ledger atomically.
+- Use the lower request-contract module behind thin HTTP serializers and return retained §6.3
+  workflow identity for custody actions; do not import transport serializers into security modules.
+
 ## Visual Acceptance Criteria
 None.
 

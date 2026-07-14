@@ -1,26 +1,31 @@
 from concurrent.futures import ThreadPoolExecutor
+import tempfile
 from threading import Barrier
 from unittest import skipUnless
 
+from django.core.files.base import ContentFile
 from django.db import close_old_connections, connection, connections
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 
 from sfpcl_credit.configurations.models import VersionHistory
 from sfpcl_credit.documents.models import DocumentFile, DocumentTemplate
+from sfpcl_credit.documents.storage import LocalDocumentStorage
 from sfpcl_credit.identity.models import AuditLog, User
 from sfpcl_credit.legal_documents.models import (
     LoanDocument,
     SecurityPackage,
     SignatureRecord,
 )
-from sfpcl_credit.legal_documents.modules import document_checklist, signatures
+from sfpcl_credit.legal_documents.modules import document_checklist, document_generation, signatures
 from sfpcl_credit.legal_documents.modules import loan_document_verification
 from sfpcl_credit.members.models import Nominee
 from sfpcl_credit.tests import test_document_checklist_api
+from sfpcl_credit.tests import test_loan_document_generation_api as generation_tests
 from sfpcl_credit.workflows.models import WorkflowEvent
 
 
+@override_settings(DOCUMENT_STORAGE_ROOT=tempfile.mkdtemp(prefix="sfpcl-tri-party-tests-"))
 class TriPartyAgreementApiTests(TestCase):
     def setUp(self):
         fixture = test_document_checklist_api.DocumentChecklistApiTests(
@@ -35,9 +40,11 @@ class TriPartyAgreementApiTests(TestCase):
             "compliance_team_member",
             "Agreement Preparer",
             "documents.signature.record",
+            "documents.loan_document.generate",
             "documents.loan_document.verify",
             "documents.loan_document.read",
             "documents.checklist.read",
+            "documents.template.file_reference",
         )
         self.secretary = fixture._user(
             "company_secretary",
@@ -46,6 +53,9 @@ class TriPartyAgreementApiTests(TestCase):
             "documents.loan_document.read",
             "documents.checklist.read",
         )
+        self.application.created_by_user = self.compliance
+        self.application.received_by_user = self.compliance
+        self.application.save(update_fields=["created_by_user", "received_by_user"])
         self.nominee = Nominee.objects.create(
             member=self.application.member,
             nominee_name="Agreement Nominee",
@@ -63,16 +73,43 @@ class TriPartyAgreementApiTests(TestCase):
             source_reason="tri_party_test_setup",
         )
         self.package = SecurityPackage.objects.create(loan_application=self.application)
-        generated = DocumentFile.objects.create(
-            file_name="tri-party-agreement.pdf",
-            file_extension=".pdf",
-            mime_type="application/pdf",
-            file_size_bytes=128,
-            storage_provider="local",
-            storage_key="tests/tri-party-agreement.pdf",
-            checksum_sha256="8" * 64,
+        stored_template = LocalDocumentStorage().store(
+            ContentFile(
+                generation_tests.LoanDocumentGenerationApiTests._genuine_docx_fixture([]),
+                name="tri-party-agreement.docx",
+            )
+        )
+        template_source = DocumentFile.objects.create(
+            file_name="tri-party-agreement.docx",
+            file_extension=".docx",
+            mime_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            file_size_bytes=stored_template.file_size_bytes,
+            storage_provider=stored_template.storage_provider,
+            storage_key=stored_template.storage_key,
+            checksum_sha256=stored_template.checksum_sha256,
             uploaded_by_user=self.compliance,
-            sensitivity_level="confidential",
+            sensitivity_level="internal",
+        )
+        AuditLog.objects.create(
+            actor_user=self.compliance,
+            actor_type="user",
+            action="documents.file.uploaded",
+            entity_type="document_file",
+            entity_id=template_source.pk,
+            new_value_json={
+                "document_id": str(template_source.pk),
+                "file_name": template_source.file_name,
+                "file_extension": template_source.file_extension,
+                "mime_type": template_source.mime_type,
+                "file_size_bytes": template_source.file_size_bytes,
+                "storage_provider": template_source.storage_provider,
+                "storage_key": template_source.storage_key,
+                "checksum_sha256": template_source.checksum_sha256,
+                "sensitivity_level": template_source.sensitivity_level,
+                "document_category": "template_source",
+                "related_entity_type": "global",
+                "related_entity_id": None,
+            },
         )
         template = DocumentTemplate.objects.create(
             template_code="tri-party-v1",
@@ -80,26 +117,24 @@ class TriPartyAgreementApiTests(TestCase):
             document_type="tri_party_agreement",
             borrower_type="individual_farmer",
             template_version="1.0",
-            template_file=None,
+            template_file=template_source,
             merge_fields_json=[],
             approval_status="approved",
             effective_from="2026-01-01",
         )
-        self.document = LoanDocument.objects.create(
-            loan_application=self.application,
-            document_type="tri_party_agreement",
-            document_category="legal",
-            party_required="borrower_and_nominee",
-            document_template=template,
-            document=generated,
-            output_format="pdf",
-            generation_status="generated",
-            execution_status="pending",
-            verification_status="pending",
-            renderer_contract_version="legal-renderer-v1",
-            renderer_validated_document_id=generated.pk,
-            renderer_validated_checksum_sha256=generated.checksum_sha256,
+        generated = document_generation.generate(
+            actor=self.compliance,
+            application_id=self.application.pk,
+            payload={
+                "document_type": "tri_party_agreement",
+                "template_id": str(template.pk),
+                "output_format": "pdf",
+            },
+            metadata=document_generation.RequestMetadata(
+                "tri-party-public-generation", "203.0.113.79", "Tri-party Test"
+            ),
         )
+        self.document = LoanDocument.objects.get(pk=generated["loan_document_id"])
         item = self.checklist.items.get(item_code="tri_party_agreement")
         item.loan_document = self.document
         item.remarks = "Preserve checklist completion remarks."
@@ -141,10 +176,23 @@ class TriPartyAgreementApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 200, response.content)
         data = response.json()["data"]
-        self.assertEqual(data["loan_document_id"], str(self.document.pk))
-        self.assertEqual(data["verification_status"], "verified")
-        self.assertEqual(data["verified_by_user_id"], str(self.secretary.pk))
-        self.assertEqual(data["remarks"], "Borrower and nominee execution verified.")
+        self.assertEqual(
+            set(data),
+            {
+                "entity_type",
+                "entity_id",
+                "previous_status",
+                "new_status",
+                "workflow_event_id",
+                "available_actions",
+            },
+        )
+        self.assertEqual(data["entity_type"], "loan_document")
+        self.assertEqual(data["entity_id"], str(self.document.pk))
+        self.assertEqual(data["previous_status"], "pending")
+        self.assertEqual(data["new_status"], "verified")
+        self.assertTrue(data["workflow_event_id"])
+        self.assertEqual(data["available_actions"], [])
 
         self.document.refresh_from_db()
         self.assertEqual(self.document.verification_status, "verified")
@@ -174,18 +222,17 @@ class TriPartyAgreementApiTests(TestCase):
             ).count(),
             1,
         )
-        self.assertEqual(
-            WorkflowEvent.objects.filter(
-                workflow_name="loan_document_verification",
-                entity_id=self.document.pk,
-            ).count(),
-            1,
+        workflow = WorkflowEvent.objects.get(
+            workflow_name="loan_document_verification",
+            entity_id=self.document.pk,
         )
+        self.assertEqual(data["workflow_event_id"], str(workflow.pk))
 
     def test_exact_replay_change_history_and_read_projections_preserve_other_truth(self):
         first = self._verify("Initial execution check.")
         self.assertEqual(first.status_code, 200, first.content)
-        retained_at = first.json()["data"]["verified_at"]
+        self.document.refresh_from_db()
+        retained_at = self.document.verified_at
         replay = self._verify("Initial execution check.")
         self.assertEqual(replay.status_code, 200, replay.content)
         self.assertEqual(replay.json()["data"], first.json()["data"])
@@ -195,7 +242,9 @@ class TriPartyAgreementApiTests(TestCase):
 
         changed = self._verify("Corrected retained verification note.")
         self.assertEqual(changed.status_code, 200, changed.content)
-        self.assertNotEqual(changed.json()["data"]["verified_at"], retained_at)
+        self.document.refresh_from_db()
+        self.assertNotEqual(self.document.verified_at, retained_at)
+        self.assertEqual(changed.json()["data"]["previous_status"], "verified")
         self.assertEqual(
             AuditLog.objects.filter(action="loan_document.tri_party_verified").count(), 2
         )
@@ -210,7 +259,7 @@ class TriPartyAgreementApiTests(TestCase):
 
         listed = self.client.get(
             f"/api/v1/loan-applications/{self.application.pk}/loan-documents/",
-            **self._auth(self.fixture.actor),
+            **self._auth(self.compliance),
         )
         self.assertEqual(listed.status_code, 200, listed.content)
         row = next(
@@ -341,6 +390,87 @@ class TriPartyAgreementApiTests(TestCase):
             0,
         )
 
+    def test_verified_tri_party_consumed_signatures_cannot_be_rewritten(self):
+        verified = self._verify("Freeze exact execution evidence.")
+        self.assertEqual(verified.status_code, 200, verified.content)
+        borrower = SignatureRecord.objects.get(
+            loan_document=self.document, signer_party_type="borrower"
+        )
+        counts = (
+            AuditLog.objects.filter(
+                action__in=["documents.signature.changed", "loan_document.tri_party_verified"]
+            ).count(),
+            VersionHistory.objects.filter(
+                versioned_entity_type__in=[
+                    "signature_record", "loan_document_verification"
+                ]
+            ).count(),
+            WorkflowEvent.objects.filter(
+                workflow_name__in=[
+                    "loan_document_signature", "loan_document_verification"
+                ]
+            ).count(),
+        )
+        changed = self.client.post(
+            f"/api/v1/loan-documents/{self.document.pk}/signatures/",
+            {
+                "signer_party_type": "borrower",
+                "signer_party_id": str(self.application.member_id),
+                "signer_name_snapshot": self.application.member.legal_name,
+                "signature_method": "wet_ink",
+                "signature_status": "pending",
+                "signed_at": None,
+                "signature_mismatch_flag": False,
+            },
+            content_type="application/json",
+            **self._auth(self.compliance),
+        )
+        self.assertEqual(changed.status_code, 409, changed.content)
+        borrower.refresh_from_db()
+        self.document.refresh_from_db()
+        self.assertEqual(borrower.signature_status, "signed")
+        self.assertEqual(self.document.verification_status, "verified")
+        self.assertEqual(
+            (
+                AuditLog.objects.filter(
+                    action__in=[
+                        "documents.signature.changed", "loan_document.tri_party_verified"
+                    ]
+                ).count(),
+                VersionHistory.objects.filter(
+                    versioned_entity_type__in=[
+                        "signature_record", "loan_document_verification"
+                    ]
+                ).count(),
+                WorkflowEvent.objects.filter(
+                    workflow_name__in=[
+                        "loan_document_signature", "loan_document_verification"
+                    ]
+                ).count(),
+            ),
+            counts,
+        )
+        verification = VersionHistory.objects.get(
+            versioned_entity_type="loan_document_verification",
+            versioned_entity_id=self.document.pk,
+        )
+        consumed = verification.new_value_json["consumed_signatures"]
+        self.assertEqual(
+            {row["signature_record_id"] for row in consumed},
+            {
+                str(row.pk)
+                for row in SignatureRecord.objects.filter(loan_document=self.document)
+            },
+        )
+        self.assertTrue(
+            all(
+                row["signer_name_snapshot"]
+                and row["captured_by_user_id"]
+                and row["signed_at"]
+                for row in consumed
+            )
+        )
+
     def _verify(self, remarks):
         return self.client.post(
             f"/api/v1/loan-documents/{self.document.pk}/verify/",
@@ -365,13 +495,37 @@ class TriPartyAgreementApiTests(TestCase):
 class TriPartyAgreementConcurrencyTests(TransactionTestCase):
     reset_sequences = True
 
-    def test_five_concurrent_exact_verifications_retain_one_attributable_transition(self):
+    def test_five_concurrent_exact_verifications_run_one(self):
+        self._run_five(exact=True)
+
+    def test_five_concurrent_exact_verifications_run_two(self):
+        self._run_five(exact=True)
+
+    def test_five_concurrent_changed_verifications_run_one(self):
+        self._run_five(exact=False)
+
+    def test_five_concurrent_changed_verifications_run_two(self):
+        self._run_five(exact=False)
+
+    def _run_five(self, *, exact):
         fixture = TriPartyAgreementApiTests(
             methodName="test_company_secretary_verifies_applicable_current_signed_agreement"
         )
         fixture.setUp()
         actor_id = fixture.secretary.pk
         document_id = fixture.document.pk
+        if not exact:
+            loan_document_verification.verify(
+                actor=fixture.secretary,
+                loan_document_id=document_id,
+                payload={
+                    "verification_status": "verified",
+                    "remarks": "Changed-race seed.",
+                },
+                metadata=loan_document_verification.RequestMetadata(
+                    "tri-party-race-seed", "203.0.113.100", "Race"
+                ),
+            )
         gate = Barrier(5)
 
         def worker(index):
@@ -384,25 +538,38 @@ class TriPartyAgreementConcurrencyTests(TransactionTestCase):
                     loan_document_id=document_id,
                     payload={
                         "verification_status": "verified",
-                        "remarks": "Concurrent exact execution verification.",
+                        "remarks": (
+                            "Concurrent exact execution verification."
+                            if exact
+                            else f"Concurrent changed execution verification {index}."
+                        ),
                     },
                     metadata=loan_document_verification.RequestMetadata(
                         f"tri-party-race-{index}", f"203.0.113.{index + 1}", "Race"
                     ),
-                )["loan_document_id"]
+                )["entity_id"]
             finally:
                 connections["default"].close()
 
         with ThreadPoolExecutor(max_workers=5) as pool:
             ids = list(pool.map(worker, range(5)))
         self.assertEqual(set(ids), {str(document_id)})
+        expected = 1 if exact else 6
+        audits = AuditLog.objects.filter(action="loan_document.tri_party_verified")
+        self.assertEqual(audits.count(), expected)
         self.assertEqual(
-            AuditLog.objects.filter(action="loan_document.tri_party_verified").count(), 1
+            len(
+                {
+                    row["request_id"]
+                    for row in audits.values_list("new_value_json", flat=True)
+                }
+            ),
+            expected,
         )
         self.assertEqual(
             VersionHistory.objects.filter(
                 versioned_entity_type="loan_document_verification",
                 versioned_entity_id=document_id,
             ).count(),
-            1,
+            expected,
         )

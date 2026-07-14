@@ -3,7 +3,7 @@ from threading import Barrier
 from unittest import skipUnless
 
 from django.core.exceptions import ValidationError
-from django.db import close_old_connections, connection
+from django.db import IntegrityError, close_old_connections, connection, transaction
 from django.test import Client, TestCase
 from django.test import TransactionTestCase
 
@@ -23,6 +23,7 @@ from sfpcl_credit.legal_documents.models import (
     DocumentChecklist,
     LoanDocument,
     NotarisationRecord,
+    SignatureRecord,
     StampDutyRecord,
 )
 from sfpcl_credit.legal_documents.modules import document_checklist
@@ -258,6 +259,71 @@ class StampDutyAndNotarisationApiTests(TestCase):
         self.assertIsNone(history[0]["verified_by_user_id"])
         self.assertEqual(history[1]["prepared_by_user_id"], str(self.actor.pk))
         self.assertEqual(history[1]["verified_by_user_id"], str(cs.pk))
+
+    def test_latest_material_stamp_editor_becomes_maker_and_cannot_verify(self):
+        url = f"/api/v1/loan-documents/{self.loan_document.pk}/stamp-duty-record/"
+        initial = {
+            "stamp_paper_amount": "500.00",
+            "stamp_type": "physical",
+            "stamp_number": "MH-HANDOFF-001",
+            "stamp_purchase_date": "2026-06-20",
+            "executed_date": None,
+            "status": "pending",
+            "remarks": "First maker preparation.",
+        }
+        first_maker = self.actor
+        second_maker = self._user("compliance_handoff_editor")
+        second_maker.primary_role = first_maker.primary_role
+        second_maker.save(update_fields=["primary_role"])
+        self.assertEqual(
+            self.client.post(
+                url,
+                initial,
+                content_type="application/json",
+                **self._auth(first_maker),
+            ).status_code,
+            200,
+        )
+        changed = self.client.post(
+            url,
+            {**initial, "remarks": "Second maker material correction."},
+            content_type="application/json",
+            **self._auth(second_maker),
+        )
+        self.assertEqual(changed.status_code, 200, changed.content)
+        record = StampDutyRecord.objects.get(loan_document=self.loan_document)
+        self.assertEqual(record.prepared_by_user_id, second_maker.pk)
+
+        company_secretary = self._user(
+            "company_secretary", "documents.stamp.record"
+        )
+        second_maker.primary_role = company_secretary.primary_role
+        second_maker.save(update_fields=["primary_role"])
+        self_check = self.client.post(
+            url,
+            {
+                **initial,
+                "remarks": "Second maker must not check their own facts.",
+                "executed_date": "2026-06-22",
+                "status": "adequate",
+            },
+            content_type="application/json",
+            **self._auth(second_maker),
+        )
+        self.assertEqual(self_check.status_code, 400, self_check.content)
+        self.assertEqual(
+            self_check.json()["error"]["field_errors"],
+            {"status": "The preparer and verifier must be different users."},
+        )
+        history = list(
+            VersionHistory.objects.filter(versioned_entity_type="stamp_record")
+            .order_by("created_at")
+            .values_list("old_value_json", "new_value_json")
+        )
+        self.assertEqual(len(history), 2)
+        self.assertEqual(history[0][1]["prepared_by_user_id"], str(first_maker.pk))
+        self.assertEqual(history[1][0]["prepared_by_user_id"], str(first_maker.pk))
+        self.assertEqual(history[1][1]["prepared_by_user_id"], str(second_maker.pk))
 
     def test_notary_adverse_correction_and_downgrade_follow_maker_checker(self):
         compliance = self.actor
@@ -847,6 +913,40 @@ class StampDutyAndNotarisationApiTests(TestCase):
         self.assertEqual(
             AuditLog.objects.filter(action__startswith="documents.stamp.").count(), 1
         )
+
+    def test_database_rejects_unattributed_or_same_user_checker_outcomes(self):
+        checker = self._user("company_secretary")
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            StampDutyRecord.objects.create(
+                loan_document=self.loan_document,
+                stamp_paper_amount="500.00",
+                stamp_type="physical",
+                executed_date="2026-06-22",
+                status="insufficient",
+                verified_by_user=checker,
+            )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            NotarisationRecord.objects.create(
+                loan_document=self.loan_document,
+                status="rejected",
+                prepared_by_user=checker,
+                verified_by_user=checker,
+            )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            SignatureRecord.objects.create(
+                loan_document=self.loan_document,
+                signer_party_type="borrower",
+                signer_party_id=self.application.member_id,
+                signer_name_snapshot=self.application.member.legal_name,
+                signature_method="wet_ink",
+                signature_status="mismatch",
+                signature_mismatch_flag=True,
+                mismatch_resolution_type="bank_verification_letter",
+                mismatch_resolution_document=self.loan_document.document,
+                captured_by_user=checker,
+                verified_by_user=checker,
+                verified_at="2026-06-22T10:00:00Z",
+            )
 
     def test_exact_notarisation_replay_is_zero_write(self):
         cs = self._user("company_secretary", "documents.notary.record")

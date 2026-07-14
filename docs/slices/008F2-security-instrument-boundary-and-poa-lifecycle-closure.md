@@ -87,3 +87,14 @@ High
 - PoA maker/checker and active-state evidence cannot be bypassed or downgraded.
 - All configured gates pass.
 
+## 008G2 Completion Sharpening (2026-07-14)
+
+- Consume legal execution facts only through the retained legal selector: each current signature
+  now carries the latest material `captured_by_user_id`, while verified tri-party evidence freezes
+  consumed ids/names/makers/times and blocks later capture mutation.
+- Stamp/notary/signature rows migrated from truthful non-null makers remain current; only historical
+  null-maker rows carry `legacy_maker_attribution=true` and are ineligible for changed or new PoA
+  activation truth. Do not treat the legacy flag as remediation authority.
+- Keep security HTTP adapters above the domain seam established by `request_contracts`; permission
+  must be checked before transport parsing, and activation must return a durable §6.3 workflow
+  action identity on success/replay.

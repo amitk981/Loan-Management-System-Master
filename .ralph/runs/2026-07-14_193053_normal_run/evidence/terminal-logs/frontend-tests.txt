@@ -1,0 +1,78 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_193053_normal_run/sfpcl-lms
+
+ ✓ src/pages/applications/WitnessPanel.container.test.tsx (10 tests) 2291ms
+   ✓ mounted witness resource actions > captures with the exact body and refetches the canonical collection once  755ms
+   ✓ mounted witness resource actions > corrects protected identity with an identity-only body  384ms
+ ✓ src/pages/settings/SettingsHub.test.tsx (10 tests) 2759ms
+   ✓ SettingsHub Approval Matrix panel > permits a canonical manager to submit a complete successor version as a pending proposal  1244ms
+   ✓ SettingsHub remaining panels > creates a complete successor as a separate audited draft for a canonical policy manager  756ms
+ ✓ src/pages/borrower/portal/applications/MP05_NewApplication.test.tsx (7 tests) 3468ms
+   ✓ MP05 loan-limit display authority (006Z2 interim regression) > creates, submits exactly once, and canonically refetches the returned amount  931ms
+   ✓ MP05 loan-limit display authority (006Z2 interim regression) > shows independent 400, 403, and 409 errors without retry or projection refetch  2148ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.container.test.tsx (14 tests) 4410ms
+   ✓ default AppraisalWorkbench authenticated HTTP container > renders a stale 409 without retry, synthesis, or refresh  436ms
+   ✓ default AppraisalWorkbench authenticated HTTP container > calculates a limit from entered source IDs and refreshes four reads  1166ms
+   ✓ default AppraisalWorkbench authenticated HTTP container > posts the rejected Credit Manager decision once  512ms
+ ✓ src/pages/members/MemberGovernanceForm.test.tsx (5 tests) 4826ms
+   ✓ MemberGovernanceForm > submits the institution create variant without individual identity/profile fields  2182ms
+   ✓ MemberGovernanceForm > submits every individual registration profile field  2011ms
+ ✓ src/pages/appraisal/AppraisalWorkbench.test.tsx (22 tests) 562ms
+ ✓ src/pages/members/MemberProfile.test.tsx (26 tests) 955ms
+ ✓ src/pages/members/MemberProfile.container.test.tsx (4 tests) 1616ms
+   ✓ MemberProfile container > preserves approval 400 VALIDATION_ERROR after one POST and no canonical refetch  531ms
+   ✓ MemberProfile container > preserves approval 403 MAKER_CHECKER_DENIED after one POST and no canonical refetch  416ms
+   ✓ MemberProfile container > preserves approval 409 STALE_WRITE after one POST and no canonical refetch  390ms
+ ✓ src/pages/members/Borrower360.test.tsx (4 tests) 270ms
+ ✓ src/pages/registers/RegistersHub.test.tsx (8 tests) 2374ms
+   ✓ RegistersHub owned approval register panels > renders only the server-scoped frozen sanction page and replaces pagination after a filter change  820ms
+   ✓ RegistersHub owned approval register panels > applies only canonical financial-year values  917ms
+ ✓ src/pages/applications/ApplicationDetail.test.tsx (9 tests) 287ms
+ ✓ src/pages/applications/CompletenessWorkbench.test.tsx (5 tests) 308ms
+ ✓ src/pages/members/MemberDirectory.test.tsx (5 tests) 40ms
+ ✓ src/services/authSession.test.ts (36 tests) 73ms
+ ✓ src/pages/borrower/portal/PortalMemberViews.test.tsx (4 tests) 160ms
+ ✓ src/pages/Dashboard.test.tsx (13 tests) 51ms
+ ✓ src/services/creditAssessmentApi.test.ts (5 tests) 7ms
+ ✓ src/pages/applications/ApplicationList.test.tsx (2 tests) 52ms
+ ✓ src/services/approvalRegistersApi.test.ts (5 tests) 6ms
+ ✓ src/pages/notifications/NotificationsCenter.test.tsx (6 tests) 56ms
+ ✓ src/services/demoAuthFlag.test.tsx (3 tests) 5505ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > fails closed when the flag is unset  4781ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > fails closed when the flag is explicit false  329ms
+   ✓ VITE_ENABLE_DEMO_AUTH real App/RoleProvider boundary (005FA4) > exposes only approved staff demo controls when the flag is true  395ms
+ ✓ src/services/portalApi.test.ts (4 tests) 10ms
+ ✓ src/pages/borrower/portal/auth/MP00_Login.test.tsx (2 tests) 9ms
+ ✓ src/pages/profile/MyProfile.test.tsx (1 test) 10ms
+ ✓ src/services/navigationPermissions.test.ts (9 tests) 14ms
+ ✓ src/services/applicationIntakeApi.test.ts (5 tests) 38ms
+ ✓ src/services/loanPolicyApi.test.ts (2 tests) 10ms
+ ✓ src/utils/applicationDisplay.test.ts (5 tests) 6ms
+ ✓ src/pages/applications/NomineeSelectionViews.test.tsx (3 tests) 49ms
+ ✓ src/contexts/RoleContext.test.tsx (2 tests) 12ms
+ ✓ src/services/tracerApi.test.ts (2 tests) 13ms
+ ✓ src/pages/sanction/SanctionWorkbench.test.tsx (39 tests) 11421ms
+   ✓ SanctionWorkbench authenticated container > renders the authoritative total and replaces the queue from the next server page  1195ms
+   ✓ SanctionWorkbench authenticated container > keeps a newer filter authoritative while an action detail refresh finishes  1109ms
+   ✓ SanctionWorkbench authenticated container > keeps a newer empty filter authoritative while action submission finishes  534ms
+   ✓ SanctionWorkbench authenticated container > keeps a newer denied state authoritative when an action detail refresh fails later  703ms
+   ✓ SanctionWorkbench authenticated container > keeps a newer malformed state authoritative when an action detail refresh fails later  708ms
+   ✓ SanctionWorkbench authenticated container > keeps a newer empty state authoritative when an action detail refresh fails later  847ms
+   ✓ SanctionWorkbench authenticated container > keeps a newer filter authoritative while an action decision refresh finishes  1008ms
+   ✓ SanctionWorkbench authenticated container > loads frozen case truth and approves through the exact case boundary before canonical refresh  858ms
+   ✓ SanctionWorkbench authenticated container > requires a reason and sends the exact Reject request  694ms
+   ✓ SanctionWorkbench authenticated container > requires a reason and sends the exact Return for Clarification request  671ms
+   ✓ SanctionWorkbench authenticated container > uploads three application-scoped legal files before recording bounded special-case evidence  539ms
+ ✓ src/pages/members/MemberGovernanceForm.container.test.tsx (16 tests) 8893ms
+   ✓ MemberGovernanceForm production container > routes Directory registration into canonical Profile readback with the exact create ledger  7289ms
+
+ Test Files  33 passed (33)
+      Tests  293 passed (293)
+   Start at  19:57:32
+   Duration  15.36s (transform 9.24s, setup 0ms, collect 18.08s, tests 50.56s, environment 7.92s, prepare 3.67s)
+

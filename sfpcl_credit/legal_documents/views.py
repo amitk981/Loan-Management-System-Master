@@ -295,11 +295,14 @@ def legal_document_checklist(request, loan_application_id):
     return success_response(data, request)
 
 
-def _record_lifecycle(request, loan_document_id, recorder, request_type, label):
+def _record_lifecycle(
+    request, loan_document_id, recorder, authorizer, request_type, label
+):
     user, response = http_auth.authenticated_user(request)
     if response is not None:
         return response
     try:
+        authorizer(user)
         parsed_request = request_type.parse(parse_json_body(request))
         data = recorder(
             actor=user,
@@ -346,6 +349,7 @@ def stamp_duty_record(request, loan_document_id):
         request,
         loan_document_id,
         stamp_notary.record_stamp,
+        stamp_notary.require_stamp_actor,
         StampDutyRecordRequest,
         "Stamp duty record",
     )
@@ -357,6 +361,7 @@ def notarisation_record(request, loan_document_id):
         request,
         loan_document_id,
         stamp_notary.record_notary,
+        stamp_notary.require_notary_actor,
         NotarisationRecordRequest,
         "Notarisation record",
     )
@@ -368,6 +373,7 @@ def signature_record(request, loan_document_id):
     if response is not None:
         return response
     try:
+        signatures.require_record_actor(user)
         data = signatures.record(
             actor=user,
             loan_document_id=loan_document_id,
@@ -394,6 +400,10 @@ def signature_record(request, loan_document_id):
             "CONFLICT",
             "Retained output is not bound to the current renderer contract.",
         )
+    except signatures.SignatureMismatchUnresolved as exc:
+        return error_response(
+            request, 400, "SIGNATURE_MISMATCH_UNRESOLVED", str(exc)
+        )
     except signatures.InvalidState as exc:
         return error_response(request, 409, "CONFLICT", str(exc))
     except ValidationError as exc:
@@ -413,6 +423,7 @@ def resolve_signature_mismatch(request, signature_record_id):
     if response is not None:
         return response
     try:
+        signatures.require_resolve_actor(user)
         data = signatures.resolve_mismatch(
             actor=user,
             signature_record_id=signature_record_id,

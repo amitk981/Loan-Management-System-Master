@@ -12,7 +12,7 @@ from sfpcl_credit.legal_documents.models import (
     StampDutyRecord,
 )
 from sfpcl_credit.legal_documents.modules import document_authority, document_checklist
-from sfpcl_credit.legal_documents.serializers import (
+from sfpcl_credit.legal_documents.request_contracts import (
     NotarisationRecordRequest,
     StampDutyRecordRequest,
 )
@@ -40,7 +40,7 @@ class ProjectionConflict(Exception):
 
 
 def record_stamp(*, actor, loan_document_id, payload, metadata):
-    document_authority.require_mutation_actor(actor=actor, permission=STAMP_PERMISSION)
+    require_stamp_actor(actor)
     cleaned = _validate_stamp(payload, actor)
     return _record(
         actor=actor,
@@ -52,7 +52,7 @@ def record_stamp(*, actor, loan_document_id, payload, metadata):
 
 
 def record_notary(*, actor, loan_document_id, payload, metadata):
-    document_authority.require_mutation_actor(actor=actor, permission=NOTARY_PERMISSION)
+    require_notary_actor(actor)
     cleaned = _validate_notary(payload, actor)
     return _record(
         actor=actor,
@@ -61,6 +61,14 @@ def record_notary(*, actor, loan_document_id, payload, metadata):
         metadata=metadata,
         kind="notary",
     )
+
+
+def require_stamp_actor(actor):
+    document_authority.require_mutation_actor(actor=actor, permission=STAMP_PERMISSION)
+
+
+def require_notary_actor(actor):
+    document_authority.require_mutation_actor(actor=actor, permission=NOTARY_PERMISSION)
 
 
 def _record(*, actor, loan_document_id, cleaned, metadata, kind):
@@ -88,6 +96,14 @@ def _record(*, actor, loan_document_id, cleaned, metadata, kind):
         new = _snapshot_values(cleaned, kind)
         if _business_facts(old) == new:
             return _serialize(record, kind)
+        if record is not None and record.legacy_maker_attribution:
+            raise ValidationError(
+                {
+                    "status": (
+                        "Legacy evidence without truthful maker attribution cannot be changed."
+                    )
+                }
+            )
 
         verification_statuses = (
             {"adequate", "insufficient"}
@@ -126,6 +142,8 @@ def _record(*, actor, loan_document_id, cleaned, metadata, kind):
             )
             action = f"documents.{kind}.created"
         else:
+            if not is_verification:
+                values["prepared_by_user"] = actor
             for field, value in values.items():
                 setattr(record, field, value)
             record.save(update_fields=[*values.keys()])

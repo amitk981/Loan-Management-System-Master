@@ -249,7 +249,10 @@ class SignatureMismatchApiTests(TestCase):
             **self._auth(self.actor),
         )
 
-        self.assertEqual(changed.status_code, 409, changed.content)
+        self.assertEqual(changed.status_code, 400, changed.content)
+        self.assertEqual(
+            changed.json()["error"]["code"], "SIGNATURE_MISMATCH_UNRESOLVED"
+        )
         signature = SignatureRecord.objects.get(pk=first.json()["data"]["signature_record_id"])
         bank_item.refresh_from_db()
         self.assertEqual(signature.signature_status, "mismatch")
@@ -502,6 +505,72 @@ class SignatureMismatchApiTests(TestCase):
                 action="documents.signature.mismatch_resolved"
             ).exists()
         )
+
+    def test_latest_material_signature_editor_becomes_maker_and_cannot_resolve(self):
+        url = f"/api/v1/loan-documents/{self.loan_document.pk}/signatures/"
+        pending = {
+            "signer_party_type": "borrower",
+            "signer_party_id": str(self.application.member_id),
+            "signer_name_snapshot": "Signature Test Borrower",
+            "signature_method": "wet_ink",
+            "signature_status": "pending",
+            "signed_at": None,
+            "signature_mismatch_flag": False,
+        }
+        first = self.client.post(
+            url, pending, content_type="application/json", **self._auth(self.actor)
+        )
+        self.assertEqual(first.status_code, 200, first.content)
+        second_maker = self._user("signature_handoff_editor")
+        second_maker.primary_role = self.actor.primary_role
+        second_maker.save(update_fields=["primary_role"])
+        mismatch = self.client.post(
+            url,
+            {
+                **pending,
+                "signature_status": "mismatch",
+                "signature_mismatch_flag": True,
+            },
+            content_type="application/json",
+            **self._auth(second_maker),
+        )
+        self.assertEqual(mismatch.status_code, 200, mismatch.content)
+        record = SignatureRecord.objects.get(pk=first.json()["data"]["signature_record_id"])
+        self.assertEqual(record.captured_by_user_id, second_maker.pk)
+
+        secretary = self._user(
+            "company_secretary", "documents.signature.resolve_mismatch"
+        )
+        second_maker.primary_role = secretary.primary_role
+        second_maker.save(update_fields=["primary_role"])
+        denied = self.client.post(
+            f"/api/v1/signature-records/{record.pk}/resolve-mismatch/",
+            {
+                "mismatch_resolution_type": "bank_verification_letter",
+                "mismatch_resolution_document_id": str(uuid.uuid4()),
+                "remarks": "Must fail before evidence lookup.",
+            },
+            content_type="application/json",
+            **self._auth(second_maker),
+        )
+        self.assertEqual(denied.status_code, 400, denied.content)
+        self.assertEqual(
+            denied.json()["error"]["field_errors"],
+            {
+                "mismatch_resolution_type": (
+                    "The capture maker and resolver must be different users."
+                )
+            },
+        )
+        history = list(
+            VersionHistory.objects.filter(versioned_entity_type="signature_record")
+            .order_by("created_at")
+            .values_list("old_value_json", "new_value_json")
+        )
+        self.assertEqual(len(history), 2)
+        self.assertEqual(history[0][1]["captured_by_user_id"], str(self.actor.pk))
+        self.assertEqual(history[1][0]["captured_by_user_id"], str(self.actor.pk))
+        self.assertEqual(history[1][1]["captured_by_user_id"], str(second_maker.pk))
 
     def test_authorized_resolution_hides_unknown_and_wrong_stage_signature_ids(self):
         signature = SignatureRecord.objects.create(
@@ -794,6 +863,7 @@ class SignatureMismatchApiTests(TestCase):
             stamp_number="DECL-500",
             stamp_purchase_date=date(2026, 6, 20),
             executed_date=date(2026, 6, 22),
+            prepared_by_user=self.actor,
             verified_by_user=resolver,
             status="adequate",
             remarks="Non-judicial stamp verified.",

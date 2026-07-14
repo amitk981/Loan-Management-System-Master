@@ -6748,3 +6748,30 @@ Validation evidence added:
 - Result: Success
 - Risk level: See risk assessment.
 - Next action: Review packet.
+
+## 2026-07-14 - 2026-07-14_193053_normal_run
+
+- Agent tool used: codex
+- Slice attempted: 008G2-stage4-maker-and-verification-contract-closure
+- Summary: Closed actual-current-maker attribution for stamp/notary/signature evidence, added
+  legacy-safe database maker/checker constraints, restored HTTP/domain dependency and authority
+  order, returned §6.3 tri-party action identities, mapped the mismatch-specific error, froze
+  consumed signatures, and replaced manual provenance with a public renderer tracer.
+- Tests run: five retained RED/GREEN cycles; 45 Stage-4 tests on SQLite and PostgreSQL; twice-run
+  exact and changed five-worker tri-party races; Django check/migration sync; all 810 backend tests
+  with 32 expected PostgreSQL skips and 93% coverage; frontend build/typecheck/lint and 293 tests.
+- Evidence saved: `.ralph/runs/2026-07-14_193053_normal_run/evidence/`
+- Result: Success pending independent orchestrator validation/commit/merge/push.
+- Risk level: High; lifecycle authority and database integrity changed fail-closed, with explicit
+  legacy-null compatibility and no frontend/external/checklist/readiness mutation.
+- Next action: Run 008F2, then 008H.
+
+## 2026-07-14 20:11:54 - 2026-07-14_193053_normal_run
+- Agent tool used: codex
+- Slice attempted: 008G2-stage4-maker-and-verification-contract-closure
+- Summary: Ralph run completed.
+- Tests run: See /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_193053_normal_run/.ralph/runs/2026-07-14_193053_normal_run/.
+- Evidence saved: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_193053_normal_run/.ralph/runs/2026-07-14_193053_normal_run/
+- Result: Success
+- Risk level: See risk assessment.
+- Next action: Review packet.

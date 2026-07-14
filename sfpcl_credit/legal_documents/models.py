@@ -192,6 +192,7 @@ class StampDutyRecord(models.Model):
         on_delete=models.PROTECT,
         related_name="prepared_stamp_duty_records",
     )
+    legacy_maker_attribution = models.BooleanField(default=False)
     verified_by_user = models.ForeignKey(
         "identity.User",
         blank=True,
@@ -230,6 +231,20 @@ class StampDutyRecord(models.Model):
                 | models.Q(executed_date__isnull=False, verified_by_user__isnull=False),
                 name="adequate_stamp_has_execution_verifier",
             ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(legacy_maker_attribution=True)
+                    | ~models.Q(status__in=["adequate", "insufficient"])
+                    | (
+                        models.Q(
+                            prepared_by_user__isnull=False,
+                            verified_by_user__isnull=False,
+                        )
+                        & ~models.Q(prepared_by_user=models.F("verified_by_user"))
+                    )
+                ),
+                name="stamp_verification_distinct_maker_checker",
+            ),
         ]
 
 
@@ -258,6 +273,7 @@ class NotarisationRecord(models.Model):
         on_delete=models.PROTECT,
         related_name="prepared_notarisation_records",
     )
+    legacy_maker_attribution = models.BooleanField(default=False)
     verified_by_user = models.ForeignKey(
         "identity.User",
         blank=True,
@@ -286,6 +302,20 @@ class NotarisationRecord(models.Model):
                     verified_by_user__isnull=False,
                 ),
                 name="completed_notary_has_evidence_verifier",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(legacy_maker_attribution=True)
+                    | ~models.Q(status__in=["completed", "rejected"])
+                    | (
+                        models.Q(
+                            prepared_by_user__isnull=False,
+                            verified_by_user__isnull=False,
+                        )
+                        & ~models.Q(prepared_by_user=models.F("verified_by_user"))
+                    )
+                ),
+                name="notary_verification_distinct_maker_checker",
             ),
         ]
 
@@ -332,6 +362,7 @@ class SignatureRecord(models.Model):
         on_delete=models.PROTECT,
         related_name="captured_signature_records",
     )
+    legacy_maker_attribution = models.BooleanField(default=False)
     verified_by_user = models.ForeignKey(
         "identity.User",
         blank=True,
@@ -399,6 +430,20 @@ class SignatureRecord(models.Model):
                     )
                 ),
                 name="signature_resolution_complete",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(legacy_maker_attribution=True)
+                    | models.Q(mismatch_resolution_type__isnull=True)
+                    | (
+                        models.Q(
+                            captured_by_user__isnull=False,
+                            verified_by_user__isnull=False,
+                        )
+                        & ~models.Q(captured_by_user=models.F("verified_by_user"))
+                    )
+                ),
+                name="signature_resolution_distinct_maker_checker",
             ),
             models.CheckConstraint(
                 check=(

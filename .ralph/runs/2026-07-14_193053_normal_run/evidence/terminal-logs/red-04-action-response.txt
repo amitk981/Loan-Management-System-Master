@@ -1,0 +1,31 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_company_secretary_verifies_applicable_current_signed_agreement (sfpcl_credit.tests.test_tri_party_agreement_api.TriPartyAgreementApiTests.test_company_secretary_verifies_applicable_current_signed_agreement)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_193053_normal_run/sfpcl_credit/tests/test_tri_party_agreement_api.py", line 144, in test_company_secretary_verifies_applicable_current_signed_agreement
+    self.assertEqual(
+AssertionError: Items in the first set but not the second:
+'remarks'
+'document_type'
+'verified_by_user_id'
+'verified_at'
+'verification_status'
+'loan_application_id'
+'loan_document_id'
+Items in the second set but not the first:
+'entity_type'
+'workflow_event_id'
+'new_status'
+'previous_status'
+'available_actions'
+'entity_id'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.062s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -10,8 +10,9 @@ from sfpcl_credit.identity.models import AuditLog
 from sfpcl_credit.legal_documents import selectors
 from sfpcl_credit.legal_documents.models import ChecklistItem
 from sfpcl_credit.legal_documents.modules import document_authority
-from sfpcl_credit.legal_documents.serializers import LoanDocumentVerificationRequest
+from sfpcl_credit.legal_documents.request_contracts import LoanDocumentVerificationRequest
 from sfpcl_credit.workflows.events import record_workflow_event
+from sfpcl_credit.workflows.models import WorkflowEvent
 
 
 VERIFY_PERMISSION = "documents.loan_document.verify"
@@ -80,7 +81,17 @@ def verify(*, actor, loan_document_id, payload, metadata):
             document.verification_status == "verified"
             and document.verification_remarks == values["remarks"]
         ):
-            return old
+            workflow_event = (
+                WorkflowEvent.objects.filter(
+                    workflow_name="loan_document_verification",
+                    entity_id=document.pk,
+                )
+                .order_by("-created_at", "-workflow_event_id")
+                .first()
+            )
+            if workflow_event is None:
+                raise Conflict("Verified execution has no retained workflow identity.")
+            return _action_response(document, workflow_event)
         document.verification_status = "verified"
         document.verification_remarks = values["remarks"]
         document.verified_by_user = actor
@@ -94,8 +105,8 @@ def verify(*, actor, loan_document_id, payload, metadata):
             ]
         )
         result = serialize(document)
-        _record_evidence(actor, document, rows, old, result, metadata)
-        return result
+        workflow_event = _record_evidence(actor, document, rows, old, result, metadata)
+        return _action_response(document, workflow_event)
 
 
 def _validate_execution_rows(document, rows, actor):
@@ -162,12 +173,34 @@ def serialize(document):
     }
 
 
+def _action_response(document, workflow_event):
+    return {
+        "entity_type": "loan_document",
+        "entity_id": str(document.pk),
+        "previous_status": workflow_event.from_state,
+        "new_status": workflow_event.to_state,
+        "workflow_event_id": str(workflow_event.pk),
+        "available_actions": [],
+    }
+
+
 def _record_evidence(actor, document, rows, old, new, metadata):
     context = {
         **new,
         "borrower_member_id": str(document.loan_application.member_id),
         "nominee_id": str(document.loan_application.nominee_id),
         "signature_record_ids": [str(row["signature_record_id"]) for row in rows],
+        "consumed_signatures": [
+            {
+                "signature_record_id": str(row["signature_record_id"]),
+                "signer_party_type": row["signer_party_type"],
+                "signer_party_id": str(row["signer_party_id"]),
+                "signer_name_snapshot": row["signer_name_snapshot"],
+                "captured_by_user_id": str(row["captured_by_user_id"]),
+                "signed_at": row["signed_at"].isoformat().replace("+00:00", "Z"),
+            }
+            for row in rows
+        ],
         "actor_role_codes": actor.role_codes(),
         "actor_team_codes": actor.team_codes(),
         "request_id": metadata.request_id,
@@ -201,7 +234,7 @@ def _record_evidence(actor, document, rows, old, new, metadata):
         new_value_json=context,
         effective_from=timezone.localdate(),
     )
-    record_workflow_event(
+    return record_workflow_event(
         actor=actor,
         workflow_name="loan_document_verification",
         entity_type="loan_document",

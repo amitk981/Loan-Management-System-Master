@@ -34,6 +34,19 @@ Sources:
   resolution behavior but remain current-maker partial until G2. No later checklist/readiness or
   full Term Sheet claim changes.
 
+## 008G2 Stage-4 Maker and Verification Contract Closure (2026-07-14)
+
+Every pending stamp/notary/signature material edit now transfers current maker identity and retains
+the prior maker in immutable old/new evidence; replay remains zero-write. New positive/adverse
+stamp/notary and resolved-signature rows are database-constrained to distinct non-null maker/checker
+ids. Migration marks only historical null-maker rows as legacy and leaves them ineligible for
+change/new truth. Thin HTTP adapters check authority before strict request parsing; domain modules
+depend on lower request contracts, not HTTP serializers. §26.6 returns the retained §6.3 action
+identity, unresolved overwrite returns `SIGNATURE_MISMATCH_UNRESOLVED`, and verified tri-party
+evidence freezes/guards exact consumed signature ids, names, makers, and times. The positive tracer
+crosses genuine public DOCX/PDF generation; exact and changed five-worker PostgreSQL races passed
+twice. F2/H sharpening consumes these precise seams.
+
 ## 008G Tri-party Verification Closure (2026-07-14)
 
 The §26.6 action now verifies only a current-renderer `tri_party_agreement` when the approval-owned

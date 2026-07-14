@@ -1,6 +1,6 @@
 # API Contracts
 
-## Tri-party agreement verification (008G)
+## Tri-party agreement verification (008G/008G2)
 
 `POST /api/v1/loan-documents/{loan_document_id}/verify/` implements source §26.6 only for a
 `tri_party_agreement` retained by the current renderer contract. The request contains exactly:
@@ -29,26 +29,37 @@ and no mismatch/resolution; the Company Secretary checker must differ from each 
 Cross-document, wrong-party, duplicate, pending, mismatch, resolved, or legacy null-maker rows do
 not satisfy execution.
 
-Success returns metadata only:
+Success returns the standard §6.3 action response. Exact replay returns the same retained workflow
+identity; a changed remark returns a new verified-to-verified action identity:
 
 ```json
 {
-  "loan_document_id": "uuid",
-  "loan_application_id": "uuid",
-  "document_type": "tri_party_agreement",
-  "verification_status": "verified",
-  "verified_by_user_id": "uuid",
-  "verified_at": "2026-07-14T13:00:00Z",
-  "remarks": "Borrower and nominee execution verified."
+  "entity_type": "loan_document",
+  "entity_id": "uuid",
+  "previous_status": "pending",
+  "new_status": "verified",
+  "workflow_event_id": "uuid",
+  "available_actions": []
 }
 ```
 
 An exact replay is zero-write. A changed retained remark is a new attributable checker correction
-with complete old/new audit, version, and workflow evidence. Loan-document list and legal checklist
+with complete old/new audit, version, and workflow evidence. Verification freezes each consumed
+borrower/nominee signature id, party id/type, canonical name, current capture maker, and signing
+time. Ordinary capture cannot mutate a consumed signature while the agreement remains verified.
+Loan-document list and legal checklist
 reads project the current verification status/verifier/time/remarks, but the action does not change
 execution, generation, stamp/notary, file/download, checklist completion/verifier/remarks/signature,
 package, security, repayment, or disbursement-readiness truth. A missing, inapplicable, or differently
 linked tri-party checklist projection rolls the document mutation and all success ledgers back.
+
+Pending stamp/notary preparation and signature capture now transfer maker identity on every
+material change; replay does not. A later editor therefore cannot verify/resolve their own facts by
+switching roles. New positive/adverse stamp/notary outcomes and mismatch resolutions are also
+database-constrained to non-null, distinct maker/checker ids. Pre-008G2 null-maker rows are marked as
+legacy during migration, remain readable/replayable history, and cannot be changed or supply new
+downstream truth. Unresolved mismatch overwrite returns HTTP 400 with
+`SIGNATURE_MISMATCH_UNRESOLVED`, not generic conflict.
 
 ## Post-sanction documentation checklist (008C/008C2)
 
