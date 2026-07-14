@@ -2,32 +2,31 @@
 
 ## Last Run
 
-2026-07-14_120956_normal_run
+2026-07-14_124337_architecture_review
 
 ## Current Status
 
-008C is complete. An approved sanction now creates one legal-document checklist and eleven ordered
-applicability items atomically through a top-level process callback, without making `approvals`
-import `legal_documents`. Applicable requirements start pending; conditionals are driven only by
-frozen subsidiary/share-mode facts and persisted application-linked mismatch facts. Missing or
-conflicting sources remain explicit blockers under A-105. Generated-document links are selector-
-owned metadata only and never imply execution, verification, stamping, completion, or file access.
+The architecture review of 007T, 008B2, 008B3, and 008C is complete. 007T's legacy-null and
+newest-request UI corrections are substantive. 008B2's legal owner/authority/selector migration and
+008B3's genuine bounded renderer are substantive for new rows. 008C creates the initial ordered
+checklist atomically through the HTTP final-approval path, but independent review found that the
+lower-level approval writer still permits a sanction decision without the optional checklist hook,
+and refresh can overwrite completion owned by later slices.
 
-The source §27.1 GET is permissioned by legal checklist authority and object scope. A-104 preserves
-the existing 005D pre-sanction checklist response on the shared route; the old POST refresh cannot
-write legal checklist state. Loan-account and checklist-signature ids remain database-null until
-009C/008K install their real protected targets.
+Corrective 008B4 now owns immutable renderer provenance, legacy replay/list/checklist exclusion, and
+the unknown-parent 404 contract. Corrective 008C2 owns mandatory terminal coordination, canonical
+frozen facts, completion-preserving refresh, verified cheque/subsidiary facts, owner-facing app
+dependencies, central object authority, complete audit context, and a real final-sanction race.
+008D now depends on 008C2. No Blocked slice was stale and no production code changed.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-14_120956_normal_run/evidence/`. TDD RED/GREEN and atomic
-rollback regressions pass; the exact five-worker PostgreSQL checklist race passed twice. Django
-check and migration sync pass; all 746 backend tests pass with 23 expected PostgreSQL-only skips and
-93% coverage against the 85% floor. Frontend build/typecheck/lint and all 293 tests pass.
+Evidence is in `.ralph/runs/2026-07-14_124337_architecture_review/evidence/`. Queue lint, frontend
+build/typecheck/lint and all 293 tests pass. Django check and migration sync pass; all 746 backend
+tests pass with 23 expected PostgreSQL-only skips and 93% coverage against the 85% floor.
 
 ## Next Run
 
-The four-slice architecture-review cadence is now due. After that review, run sharpened 008D. It
-must keep stamp/notary projections inside the locked owner transaction, preserve checklist
-applicability/completion, and never infer adequacy from rendered content. 008E is now concretely
-sharpened for signature capture and mismatch resolution.
+Run 008B4 next, then 008C2. Only after both corrective boundaries pass should 008D add stamp/notary
+state. The real M05-to-full-Term-Sheet path remains configuration-blocked under A-101; renderer
+fixtures and provenance must not be presented as that governed production path.

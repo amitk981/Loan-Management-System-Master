@@ -29,8 +29,11 @@ monitoring, default/recovery, closure, compliance, reporting, and a member porta
   ranges, retained file-reference provenance, and explicit borrower-template variant resolution;
   008B adds replay-safe generated-document metadata and frozen merge facts. Corrective 008B2 now
   owns generation/reads in the source-defined `legal_documents` boundary, enforces authority inside
-  the module, and retains honest nullable-only loan-account integrity; 008B3 remains queued to prove
-  genuine DOCX/PDF rendered content. The full real
+  the module, and retains honest nullable-only loan-account integrity. 008B3 proves genuine bounded
+  DOCX/PDF rendering for new rows, and 008C creates the initial post-sanction legal checklist
+  atomically through the HTTP completion path. Architecture review found that legacy generated rows
+  still lack renderer provenance and that lower-level terminal/refresh seams can bypass creation or
+  overwrite later completion; corrective 008B4/008C2 are queued before stamp/notary work. The full real
   M05-to-Term-Sheet path remains configuration-blocked until governed owners exist for the missing
   sanction terms; renderer fixtures must not be presented as that end-to-end path.
   Other later module screens (documentation, disbursement, servicing, compliance, reports, task

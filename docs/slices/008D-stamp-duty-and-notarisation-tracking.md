@@ -15,7 +15,7 @@ source §26.9-§26.10 endpoints, without implementing signatures or final checkl
 Moves the platform one verifiable step closer to a working end-to-end lending system without broad module-sized changes.
 
 ## Depends On
-- 008C
+- 008C2
 
 ## Runtime Capabilities
 
@@ -139,6 +139,15 @@ with a failed mutation.
 - Call any checklist projection refresh inside the same locked loan-document transaction. Exact
   stamp/notary replay must remain zero-write across the owner record, loan-document projection,
   checklist, audit, version, and workflow ledgers.
+
+## Architecture-Review Sharpening (2026-07-14 12:50)
+
+- Depend on 008C2's completion-preserving checklist boundary. Stamp/notary projection must call the
+  narrow metadata/status update seam, never the applicability synchroniser that could reopen a
+  completed item or emit a false applicability-change event.
+- Accept only 008B4 current renderer-provenance loan documents as new stamp/notary targets. A legacy-
+  unverified output requires explicit renderer remediation and cannot acquire legal-execution facts
+  merely because its retained metadata says `generated`.
 
 ## Visual Acceptance Criteria
 None.

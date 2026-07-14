@@ -2,6 +2,126 @@
 
 Independent review log, written by architecture-review runs (newest first). Each entry lists: slices reviewed, findings (severity + plain-English description), and the corrective slice or ADR created for each significant finding. The owner can read this file to see what the independent reviewer thought of recent work without reading code.
 
+## 2026-07-14 12:50 - Architecture Review 2026-07-14_124337_architecture_review
+
+Reviewed completed work since architecture-review commit `7d0106a6`:
+- `007T-register-null-contract-and-action-order-closure` (`a9af7867`)
+- `008B2-legal-document-generation-boundary-closure` (`a1e6c5e9`)
+- `008B3-document-renderer-and-output-proof-closure` (`fdc57ece`)
+- `008C-documentation-checklist-applicability` (`87f2e93b`)
+
+The review checked `git diff 7d0106a6...87f2e93b`, every production/test hunk, the four slice
+contracts, Epic 007/008 digests, retained gate/PostgreSQL/trusted-browser evidence, and the cited
+API/data-model/functional/auth/codebase-design/frontend sections. Standards and Spec ran as
+isolated independent passes. No production code changed and no Blocked slice exists to reopen.
+
+### Standards
+
+#### Finding 1 - High - Checklist refresh owns and rewrites another lifecycle's completion state
+
+`legal_documents/modules/document_checklist.py::_synchronise_items` assigns `pending` or
+`not_applicable` on every refresh, including existing rows. A later completed item is silently
+reopened; a completed item with verifier facts instead fails `full_clean()` after the status is
+changed in memory. Tests replay only all-pending rows. This violates the checklist deep-module
+invariant and the §16.5 separation of applicability from completion. `008C2` makes applicability
+synchronisation completion-preserving and conflicts explicitly rather than deleting later evidence.
+
+#### Finding 2 - High - Checklist facts cross the documented app dependency boundary
+
+`legal_documents` imports and queries `members.CancelledCheque` directly even though codebase-design
+§36.2 permits the legal owner to depend on approvals/applications/documents/security/audit, not on
+the members ORM. The same module locally branches on Compliance, Company Secretary, and Credit
+Manager roles instead of consuming one permission/object-scope decision. `008C2` moves cheque facts
+behind an application/member-owned seam and centralises checklist object authority before queries.
+
+#### Finding 3 - Medium - Checklist audits drop mandatory request and actor context
+
+Checklist creation/change audit records omit request id, IP, user agent, actor role, and actor team;
+the new process coordinator receives request metadata at the approval boundary but does not pass it
+to the checklist hook. Auth-permissions §30.2 requires those facts on every audit entry. `008C2`
+threads them through and asserts exact attributable creation/change/rollback ledgers.
+
+#### Finding 4 - Medium - Authorized unknown parents use the validation error contract
+
+Generation and loan-document list modules turn an absent but authorized application into
+`ValidationError`, which their views expose as HTTP 400. API-contracts §7.5 requires `NOT_FOUND`/404;
+denied callers should remain nondisclosing. `008B4` adds the missing authorized-unknown edge matrix
+without weakening permission ordering.
+
+#### Documented deviations retained
+
+The shared checklist view performs state-based routing and exposes the older intake-checklist shape
+before sanction and §27.1 legal shape after sanction. That would ordinarily violate thin-view/stable-
+shape guidance, but A-104 and 008C explicitly require this backward-compatible route until its UI
+owners migrate, so no duplicate corrective slice was created. Likewise, raw nullable loan/signature
+UUIDs remain source-divergent but database-constrained to null under A-102/A-104 until 009C/008K own
+the real FKs. These are visible staged deferrals, not newly accepted live references.
+
+### Spec
+
+#### Finding 1 - High - Automatic checklist creation remains bypassable
+
+M06-FR-001 and 008C requirement 2 require an atomic checklist whenever final approval creates a
+sanction decision. `approval_actions.approve_case(..., sanction_completion_hook=None)` keeps the
+hook optional, so direct callers still create `SanctionDecision` without a checklist; retained tests
+exercise that path. The PostgreSQL acceptance races five refreshes of an already approved fixture,
+not five final sanction completions. `008C2` makes the terminal coordinator unavoidable and adds the
+real twice-run final-sanction race.
+
+#### Finding 2 - High - Refresh can erase later completion evidence
+
+008C requirement 4 says applicability is independent of completion and assigns completion to
+008D-008K. The refresh implementation nevertheless resets every existing item's completion status.
+No test refreshes a completed/verified item. `008C2` owns the missing lifecycle matrix and requires
+zero-write conflict for a changed applicability decision that contradicts retained completion.
+
+#### Finding 3 - High - Legacy outputs can satisfy current replay and checklist linkage
+
+008B3 validates every newly rendered output, but `LoanDocument` stores no renderer-contract
+provenance. A row created by 008B's former plain-text-DOCX/minimal-PDF path is returned by exact
+replay before the renderer runs and satisfies 008C's selector using only generated/template/file
+metadata. The 008C test manually constructs exactly such an unvalidated row and calls it generated.
+`008B4` versions immutable renderer provenance, makes legacy rows explicit/remediation-only, and
+prevents replay/list/checklist code from claiming current validation based on flags or extensions.
+
+#### Finding 4 - Medium - Pending cheque defaults are treated as authoritative matches
+
+008C requires an authoritative mismatch fact and A-105 says missing facts stay blocked. The
+signature-mismatch helper ignores `CancelledCheque.verification_status` and treats a persisted
+default false flag as `persisted_signature_match`; its positive test leaves the cheque in the
+default pending state and codifies that inference. `008C2` requires a verified owner decision and
+keeps pending/missing/malformed/conflicting facts visibly blocked.
+
+No scope creep was found. 007T's exact legacy-null fixture and action/filter ordering matrices are
+substantive. 008B2's model move, direct authority matrices, selector, retained-table migration, and
+PostgreSQL evidence are substantive. 008B3's genuine new DOCX/PDF extraction, Unicode, bounded input,
+and honest M05 blocker are substantive for new rows; the gap is legacy/current provenance. 008C's
+ordered initial ledger, atomic HTTP final-approval rollback, and basic role/read tests are real, but
+they do not establish the public terminal invariant or safe later refresh lifecycle.
+
+### Functional coverage, corrective queue, and state
+
+007T closes the reviewed historical UI gaps for M05-FR-002/M05-FR-009; the remaining previously
+reviewed M05 requirements stay substantive. M06-FR-001 is partial until 008C2 makes checklist
+creation unavoidable. M06-FR-003/005-011/017-018 now have an initial applicability index, not their
+later collection/execution/security/approval workflows. M06-FR-013 has a genuine renderer for new
+rows but the real 13-term path remains configuration-blocked under A-101 and legacy provenance is
+partial until 008B4. M06-FR-015 still has generation ordering only; stamp/notary/signature execution
+remains with 008D onward. No functional requirement was falsely marked complete.
+
+Corrective slices `008B4-renderer-provenance-and-replay-contract-closure` and
+`008C2-checklist-lifecycle-authority-and-side-effect-closure` were created in dependency order.
+`008D` now depends on 008C2 and is sharpened to consume only completion-preserving checklist and
+current renderer-provenance seams. `CONTEXT.md` is refreshed; there are no stale Blocked slices.
+
+No ADR was added: codebase-design already fixes app/authority ownership, A-104/A-105 already record
+the intentional route/applicability deferrals, and the corrective slices must implement provenance
+and lifecycle invariants without inventing a new business rule.
+
+Summary: Standards found 2 High and 2 Medium actionable issues; the worst is checklist refresh
+owning completion state across module lifecycles. Spec found 3 High and 1 Medium issues; the worst
+are bypassable automatic checklist creation and unproven legacy output satisfying current truth.
+
 ## 2026-07-14 09:31 - Architecture Review 2026-07-14_093142_architecture_review
 
 Reviewed completed work since architecture-review commit `220f3038`:

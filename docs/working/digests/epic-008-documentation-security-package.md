@@ -14,6 +14,23 @@ Sources:
   `docs/source/functional-spec.md` §11.6 M06, `docs/source/auth-permissions.md` §12.7/§16.4
   remain the API/model/permission authority; this digest carries the SOP business facts only.
 
+## Architecture Review 2026-07-14 12:50 - Renderer Provenance and Checklist Lifecycle
+
+- 008B2's legal owner, direct authority, selector, retained-table transfer, nullable-only loan link,
+  and PostgreSQL evidence are substantive. 008B3 genuinely validates every new DOCX/PDF, but
+  retained pre-008B3 rows have no renderer-contract provenance and are returned by replay/checklist
+  selectors before rendering. `008B4` makes legacy output explicit and aligns unknown-parent errors.
+- 008C atomically creates the initial ordered checklist through the HTTP final-approval path, but
+  the underlying approval writer still permits a terminal decision without the optional callback.
+  Its PostgreSQL test races refresh after approval rather than final sanction completion.
+- Checklist refresh recomputes completion state, calls the members ORM directly for cheque facts,
+  treats pending false mismatch flags as verified matches, duplicates role authority, and drops
+  request/role/team audit context. `008C2` closes those lifecycle, dependency, authority, fact, audit,
+  and true final-sanction race gaps before 008D.
+- M06-FR-001 remains partial until 008C2; M06-FR-013 remains A-101 configuration-blocked and is also
+  legacy-provenance partial until 008B4. The initial applicability index is not later execution,
+  verification, stamping, notarisation, security, approval, or disbursement readiness.
+
 ## 008C Checklist Applicability Closure (2026-07-14)
 
 Approved sanction finalisation now calls the legal checklist owner through a top-level transaction
