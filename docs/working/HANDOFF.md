@@ -2,32 +2,30 @@
 
 ## Last Run
 
-2026-07-14_070825_normal_run
+2026-07-14_074249_normal_run
 
 ## Current Status
 
-007R is complete. New review packages use `approval-review-v3`; exact pre-007O v2 packages remain
-actor-scoped/readable but cannot approve/reject until the existing return -> correction -> fresh
-independent review -> new-cycle path produces complete v3 facts. Unknown/malformed current schemas
-remain nondisclosing and every denied terminal attempt is zero-write with canonical permission,
-assignment, and optimistic-version precedence.
+007S is complete. The shared paginated client enforces exact page remainders, and S21 generation-
+guards queue/detail/decision work so older page/filter success, denial, malformed, or empty results
+cannot replace newer state. Current failures clear queue totals, selection, detail, and decision
+facts together.
 
-Legacy approved/rejected Credit Sanction Register rows now serialize missing source, terminal,
-approver, and communication facts as explicit null/empty values without live reconstruction.
-Original approver names come from routed immutable facts; replacement names come from an immutable
-action-time field. Legacy unavailable names remain null and user ids remain attributable.
+S23/S25 again use the retained scan tables plus the established loan-page card/detail composition.
+All 007Q source fields remain visible, one trusted S23 fixture proves 007R legacy null semantics,
+and document metadata still grants no download. Selector-owned actor/type/status/assignment/order/
+page shaping narrows candidates before the engine's unchanged canonical validation.
 
 ## Validation
 
-Evidence is in `.ralph/runs/2026-07-14_070825_normal_run/evidence/`. Frontend build, typecheck,
-lint, and all 269 tests pass. Django check/migration sync and all 707 backend tests pass with 20
-expected PostgreSQL-only skips at 93% coverage. The 124-test approval suite and independent
-standards/spec verification are green. This slice declares no browser or PostgreSQL runtime.
+Evidence is in `.ralph/runs/2026-07-14_074249_normal_run/evidence/`. Frontend build, typecheck,
+lint, and all 287 tests pass. Django check/migration sync and all 707 backend tests pass with 20
+expected PostgreSQL-only skips at 93% coverage. The 126-test approval module, 77 focused frontend
+tests, and all three declared browser specs collect successfully. The orchestrator owns the two
+trusted browser executions and four screenshot outputs.
 
 ## Next Run
 
-Run sharpened 007S next. Its selector/stale-response/register-pattern work must preserve v2
-historical visibility, v3 malformed-package nondisclosure, remediation action availability, and
-nullable legacy identity/register fields. Then run 008A2 before sharpened 008B; generation must
-consume its race-safe effective selector, provenance-aware file reference, and explicit borrower-
-variant resolver without treating metadata as generation/download authority.
+Run already-sharpened 008A2 next, then already-sharpened 008B. Generation must consume 008A2's
+race-safe effective selector, provenance-aware file reference, and explicit borrower-variant
+resolver without treating metadata or download permission as generation/reference authority.

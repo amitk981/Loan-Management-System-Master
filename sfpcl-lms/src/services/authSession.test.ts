@@ -121,6 +121,23 @@ describe('auth session API flow', () => {
   });
 
   it.each([
+    ['empty collection', [], { page: 1, page_size: 20, total_count: 0, total_pages: 1, has_next: false, has_previous: false }],
+    ['full first page', Array.from({ length: 10 }, (_, index) => ({ id: index })), { page: 1, page_size: 10, total_count: 21, total_pages: 3, has_next: true, has_previous: false }],
+    ['full middle page', Array.from({ length: 10 }, (_, index) => ({ id: index + 10 })), { page: 2, page_size: 10, total_count: 21, total_pages: 3, has_next: true, has_previous: true }],
+    ['exact final remainder', [{ id: 20 }], { page: 3, page_size: 10, total_count: 21, total_pages: 3, has_next: false, has_previous: true }],
+  ])('accepts a collection envelope with an exact %s page', async (_label, data, pagination) => {
+    storedAuthSession({ accessToken: 'list-access', refreshToken: 'list-refresh' });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(response(200, {
+      success: true, data, pagination, meta: {},
+    })));
+
+    await expect(authenticatedPaginatedRequest('/api/v1/approval-cases/')).resolves.toEqual({
+      items: data,
+      pagination,
+    });
+  });
+
+  it.each([
     ['non-array data', { success: true, data: { approval_matrix_rule_id: 'rule-1' }, pagination: { page: 1, page_size: 20, total_count: 1, total_pages: 1, has_next: false, has_previous: false } }],
     ['missing pagination', { success: true, data: [] }],
     ['missing pagination field', { success: true, data: [], pagination: { page: 1, page_size: 20, total_count: 0, total_pages: 1, has_next: false } }],
@@ -129,6 +146,11 @@ describe('auth session API flow', () => {
     ['inconsistent total pages', { success: true, data: [{ approval_matrix_rule_id: 'rule-1' }], pagination: { page: 1, page_size: 10, total_count: 11, total_pages: 1, has_next: false, has_previous: false } }],
     ['inconsistent navigation flags', { success: true, data: [{ approval_matrix_rule_id: 'rule-1' }], pagination: { page: 1, page_size: 10, total_count: 11, total_pages: 2, has_next: false, has_previous: true } }],
     ['page data beyond the total', { success: true, data: [{ approval_matrix_rule_id: 'rule-1' }], pagination: { page: 2, page_size: 10, total_count: 10, total_pages: 1, has_next: false, has_previous: true } }],
+    ['under-filled first page', { success: true, data: [{ id: 1 }], pagination: { page: 1, page_size: 10, total_count: 11, total_pages: 2, has_next: true, has_previous: false } }],
+    ['under-filled middle page', { success: true, data: [{ id: 11 }], pagination: { page: 2, page_size: 10, total_count: 21, total_pages: 3, has_next: true, has_previous: true } }],
+    ['under-filled final remainder', { success: true, data: [], pagination: { page: 2, page_size: 10, total_count: 11, total_pages: 2, has_next: false, has_previous: true } }],
+    ['over-filled final remainder', { success: true, data: [{ id: 10 }, { id: 11 }], pagination: { page: 2, page_size: 10, total_count: 11, total_pages: 2, has_next: false, has_previous: true } }],
+    ['nonempty zero-total page', { success: true, data: [{ id: 1 }], pagination: { page: 1, page_size: 20, total_count: 0, total_pages: 1, has_next: false, has_previous: false } }],
   ])('rejects a successful collection envelope with %s', async (_label, body) => {
     storedAuthSession({ accessToken: 'list-access', refreshToken: 'list-refresh' });
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(response(200, body)));

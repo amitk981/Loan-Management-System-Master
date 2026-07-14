@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, AlertOctagon, Check, CheckCircle2, ChevronLeft, ChevronRight, FileText, Gavel, RefreshCw, Shield } from 'lucide-react';
 import AlertBanner from '../../components/ui/AlertBanner';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -67,38 +67,54 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
   const [meetingDate, setMeetingDate] = useState('');
   const [meetingStatus, setMeetingStatus] = useState<'pending' | 'approved' | 'rejected'>('approved');
   const [meetingFiles, setMeetingFiles] = useState<{ notice: File | null; minutes: File | null; resolution: File | null }>({ notice: null, minutes: null, resolution: null });
+  const queueGeneration = useRef(0);
+  const detailGeneration = useRef(0);
 
-  const loadDetail = useCallback(async (caseId: string) => {
+  const loadDetail = useCallback(async (caseId: string, expectedQueueGeneration = queueGeneration.current) => {
+    const expectedDetailGeneration = ++detailGeneration.current;
+    const isCurrent = () => expectedQueueGeneration === queueGeneration.current
+      && expectedDetailGeneration === detailGeneration.current;
     try {
       const detail = await fetchApprovalCase(caseId);
+      if (!isCurrent()) return;
       setSelected(detail);
       setSelectedId(detail.approval_case_id);
       setMessage('');
       setStatus('success');
       setDecision(null);
       if (detail.current_status === 'approved' && currentUser.permissions.includes('approvals.sanction.read')) {
-        try { setDecision(await fetchSanctionDecision(detail.loan_application_id)); }
-        catch (error) { setMessage(describeError(error).message); }
+        try {
+          const nextDecision = await fetchSanctionDecision(detail.loan_application_id);
+          if (isCurrent()) setDecision(nextDecision);
+        } catch (error) {
+          if (isCurrent()) setMessage(describeError(error).message);
+        }
       }
     } catch (error) {
+      if (!isCurrent()) return;
       const next = describeError(error);
-      setStatus(next.status); setMessage(next.message); setSelected(null);
+      setQueue(emptyQueue); setSelected(null); setSelectedId(null); setDecision(null);
+      setStatus(next.status); setMessage(next.message);
     }
   }, [currentUser.permissions]);
 
   const loadQueue = useCallback(async (nextFilter = filter, nextPage = page) => {
+    const expectedQueueGeneration = ++queueGeneration.current;
+    ++detailGeneration.current;
     setStatus('loading'); setMessage('');
     try {
       const result = await listApprovalCases(nextFilter, nextPage, 20);
+      if (expectedQueueGeneration !== queueGeneration.current) return;
       const items = result.items;
       setQueue(result);
       const requested = selectedId ? items.find(item => item.approval_case_id === selectedId || item.loan_application_id === selectedId || item.application_reference_number === selectedId) : null;
       const nextId = requested?.approval_case_id ?? items[0]?.approval_case_id ?? null;
-      if (!nextId) { setSelected(null); setSelectedId(null); setStatus('empty'); return; }
-      await loadDetail(nextId);
+      if (!nextId) { setSelected(null); setSelectedId(null); setDecision(null); setStatus('empty'); return; }
+      await loadDetail(nextId, expectedQueueGeneration);
     } catch (error) {
+      if (expectedQueueGeneration !== queueGeneration.current) return;
       const next = describeError(error);
-      setQueue(emptyQueue); setSelected(null); setSelectedId(null); setStatus(next.status); setMessage(next.message);
+      setQueue(emptyQueue); setSelected(null); setSelectedId(null); setDecision(null); setStatus(next.status); setMessage(next.message);
     }
   }, [filter, loadDetail, page, selectedId]);
 
@@ -204,7 +220,7 @@ const SanctionWorkbench: React.FC<SanctionWorkbenchProps> = ({ onOpenApplication
 
             <div className="card"><h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><Gavel size={14} /> Sanction Committee Decision</h3><ApprovalPanel applicationNumber={selected.application_reference_number} amount={selected.amount} authoritySummary={authoritySummary(selected)} approvers={selected.required_approvers} excludedApprovers={selected.excluded_approvers} actions={selected.available_actions} permissions={currentUser.permissions} busy={busy} fieldError={decisionFieldError} onDecision={act} /></div>
 
-            <div className="card"><h3 className="text-sm font-semibold text-slate-700 mb-3">Immutable approval history</h3>{selected.approval_actions.length ? <div className="space-y-2">{selected.approval_actions.map(history => <div key={history.approval_action_id} className="border border-slate-200 rounded-lg p-3"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-slate-900">{history.full_name} · {text(history.role_code)}</p><StatusBadge label={history.decision} size="sm" /></div><p className="text-sm text-slate-700 mt-1">{history.comments}</p><p className="text-xs text-slate-500 mt-1">Confirmed at {history.acted_at}</p></div>)}</div> : <p className="text-sm text-slate-500">No committee action has been recorded for this cycle.</p>}</div>
+            <div className="card"><h3 className="text-sm font-semibold text-slate-700 mb-3">Immutable approval history</h3>{selected.approval_actions.length ? <div className="space-y-2">{selected.approval_actions.map(history => <div key={history.approval_action_id} className="border border-slate-200 rounded-lg p-3"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-slate-900">{text(history.full_name)} · {text(history.role_code)}</p><StatusBadge label={history.decision} size="sm" /></div><p className="text-sm text-slate-700 mt-1">{history.comments}</p><p className="text-xs text-slate-500 mt-1">Confirmed at {history.acted_at}</p></div>)}</div> : <p className="text-sm text-slate-500">No committee action has been recorded for this cycle.</p>}</div>
 
             {decision && <div className="card border border-green-200"><h3 className="text-sm font-semibold text-green-800">Sanction decision</h3><p className="text-sm text-slate-700 mt-2">{decision.decision_reason}</p><p className="text-sm font-semibold text-slate-900 mt-1">{money(decision.sanctioned_amount)}</p></div>}
             {selected.conflict_block_reason && <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 rounded-lg flex gap-2"><AlertCircle size={16} />{selected.conflict_block_reason}</div>}

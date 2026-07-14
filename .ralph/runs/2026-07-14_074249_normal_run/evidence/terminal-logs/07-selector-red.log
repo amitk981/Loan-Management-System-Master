@@ -1,0 +1,18 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_selector_owns_coarse_collection_filters_ordering_and_page_query (sfpcl_credit.tests.test_approval_case_routing_api.ApprovalCaseRoutingApiTests.test_selector_owns_coarse_collection_filters_ordering_and_page_query)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_074249_normal_run/sfpcl_credit/tests/test_approval_case_routing_api.py", line 1337, in test_selector_owns_coarse_collection_filters_ordering_and_page_query
+    candidates, persisted_scope = select_approval_case_candidates(
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: select_approval_case_candidates() got an unexpected keyword argument 'approval_type'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.018s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

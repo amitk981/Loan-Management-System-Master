@@ -1,0 +1,16 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/sanction/SanctionWorkbench.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_074249_normal_run/sfpcl-lms
+
+ ✓ src/pages/sanction/SanctionWorkbench.test.tsx (28 tests) 1728ms
+   ✓ SanctionWorkbench authenticated container > uploads three application-scoped legal files before recording bounded special-case evidence  420ms
+
+ Test Files  1 passed (1)
+      Tests  28 passed (28)
+   Start at  07:48:19
+   Duration  2.76s (transform 226ms, setup 0ms, collect 411ms, tests 1.73s, environment 288ms, prepare 34ms)
+

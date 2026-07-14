@@ -314,13 +314,14 @@ const isValidPagination = (value: unknown, itemCount: number): value is Paginati
   const { page, page_size: pageSize, total_count: totalCount, total_pages: totalPages } = pagination as unknown as Pagination;
   const expectedPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const firstItemOffset = (page - 1) * pageSize;
+  const expectedItemCount = totalCount === 0
+    ? 0
+    : page < totalPages ? pageSize : totalCount - firstItemOffset;
   return totalPages === expectedPages
     && page <= totalPages
     && pagination.has_next === (page < totalPages)
     && pagination.has_previous === (page > 1)
-    && itemCount <= pageSize
-    && firstItemOffset + itemCount <= totalCount
-    && (page === totalPages || itemCount === pageSize);
+    && itemCount === expectedItemCount;
 };
 
 const authenticatedHeaders = (accessToken: string, jsonBody = false): Record<string, string> => ({

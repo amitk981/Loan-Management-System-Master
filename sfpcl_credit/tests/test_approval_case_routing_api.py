@@ -2,8 +2,6 @@ from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from datetime import timedelta
 from threading import Barrier
-import ast
-import inspect
 import tempfile
 from unittest import skipUnless
 from unittest.mock import patch
@@ -1307,36 +1305,61 @@ class ApprovalCaseRoutingApiTests(TestCase):
         self.assertNotIn(other_type.pk, validated_ids)
         self.assertNotIn(other_status.pk, validated_ids)
 
-    def test_approval_read_dependency_flows_from_engine_to_selector(self):
-        selector_tree = ast.parse(inspect.getsource(approval_case_selector))
-        imported_modules = {
-            alias.name
-            for node in ast.walk(selector_tree)
-            if isinstance(node, (ast.Import, ast.ImportFrom))
-            for alias in node.names
-        }
-        self.assertFalse(
-            any("approval_case_engine" in module for module in imported_modules)
+    def test_selector_owns_coarse_collection_filters_ordering_and_page_query(self):
+        second = self._create_second_routed_case(
+            self._user("selector_page_director", "Selector Page Director")
         )
-        for consumer in (sanction_register, exception_register):
-            source = inspect.getsource(consumer)
-            self.assertIn("approval_case_engine.select_readable_approval_cases", source)
-            self.assertNotIn("select_approval_case_candidates", source)
-        action_source = inspect.getsource(approval_actions)
-        self.assertIn("approval_case_engine.approval_case_is_readable", action_source)
-        self.assertNotIn("approval_case_engine.can_read_approval_case", action_source)
-        general_meeting_source = inspect.getsource(general_meeting)
-        self.assertIn(
-            "approval_case_engine.approval_case_is_readable",
-            general_meeting_source,
+        older_time = timezone.now() - timedelta(days=1)
+        self.case.submitted_at = older_time
+        self.case.save(update_fields=["submitted_at"])
+        second.submitted_at = older_time + timedelta(hours=1)
+        second.save(update_fields=["submitted_at"])
+
+        irrelevant_status = self._create_unrouted_shell()
+        ApprovalCase.objects.filter(pk=irrelevant_status.pk).update(
+            approval_matrix_rule=self.rule,
+            sanction_committee=self.committee,
+            decision_date=self.case.decision_date,
+            amount=self.case.amount,
+            related_entity_type="loan_application",
+            related_entity_id=irrelevant_status.loan_application_id,
+            version=2,
+            required_approvers_json=self.case.required_approvers_json,
+            routing_snapshot_is_coherent=True,
+            approval_type=ApprovalCase.TYPE_SANCTION,
+            current_status=ApprovalCase.STATUS_APPROVED,
         )
-        self.assertNotIn(
-            "approval_case_engine.can_read_approval_case",
-            general_meeting_source,
+        ApprovalCaseRequiredApprover.objects.create(
+            approval_case=irrelevant_status,
+            user_id=self.cfo.pk,
         )
-        self.assertNotIn(
-            "approval_case_engine.is_routable_approval_case",
-            general_meeting_source,
+
+        candidates, persisted_scope = select_approval_case_candidates(
+            actor=self.cfo,
+            approval_type=ApprovalCase.TYPE_SANCTION,
+            current_status=ApprovalCase.STATUS_PENDING,
+            assigned_to_me=True,
+        )
+        candidate_ids = list(candidates.values_list("pk", flat=True))
+        page_rows, pagination = approval_case_selector.paginate_approval_case_candidates(
+            candidates.filter(pk__in=[self.case.pk, second.pk]),
+            page=1,
+            page_size=1,
+        )
+
+        self.assertIsNone(persisted_scope)
+        self.assertNotIn(irrelevant_status.pk, candidate_ids)
+        self.assertEqual([row.pk for row in page_rows], [second.pk])
+        self.assertEqual(
+            pagination,
+            {
+                "page": 1,
+                "page_size": 1,
+                "total_count": 2,
+                "total_pages": 2,
+                "has_next": True,
+                "has_previous": False,
+            },
         )
 
     def test_required_approver_selector_uses_exact_user_id_not_json_substring(self):

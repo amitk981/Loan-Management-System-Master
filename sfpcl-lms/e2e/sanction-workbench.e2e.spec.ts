@@ -10,6 +10,8 @@ test('sanction workbench preserves the prototype composition across authoritativ
   let mode: 'pending' | 'approved' | 'rejected' | 'returned_for_clarification' | 'empty' | 'denied' | 'error' | 'malformed' = 'pending';
   let currentCases = [caseFor('pending')];
   let release: (() => void) | undefined;
+  let delayPendingPage = false;
+  let releaseDelayedPending: (() => void) | undefined;
   let hold = true;
   const waiting = new Promise<void>(resolve => { release = resolve; });
   const observedApiPaths: string[] = [];
@@ -25,14 +27,15 @@ test('sanction workbench preserves the prototype composition across authoritativ
   await page.route('**/api/v1/approval-cases/**', async route => {
     const url = new URL(route.request().url());
     if (url.pathname === '/api/v1/approval-cases/') {
+      const requestMode = mode;
       expect(url.searchParams.get('approval_type')).toBe('sanction');
       expect(url.searchParams.get('page_size')).toBe('20');
       expect(url.searchParams.get('page')).toMatch(/^\d+$/);
-      if (mode === 'pending' || mode === 'denied') {
+      if (requestMode === 'pending' || requestMode === 'denied') {
         expect(url.searchParams.get('current_status')).toBe('pending');
         expect(url.searchParams.get('assigned_to_me')).toBe('true');
-      } else if (mode === 'approved' || mode === 'rejected' || mode === 'returned_for_clarification' || mode === 'malformed') {
-        const expectedStatus = mode === 'malformed' ? 'approved' : mode;
+      } else if (requestMode === 'approved' || requestMode === 'rejected' || requestMode === 'returned_for_clarification' || requestMode === 'malformed') {
+        const expectedStatus = requestMode === 'malformed' ? 'approved' : requestMode;
         expect(url.searchParams.get('current_status')).toBe(expectedStatus);
         expect(url.searchParams.has('assigned_to_me')).toBe(false);
       } else {
@@ -40,14 +43,25 @@ test('sanction workbench preserves the prototype composition across authoritativ
         expect(url.searchParams.has('assigned_to_me')).toBe(false);
       }
       if (hold) await waiting;
-      if (mode === 'denied') return failure(route, 403, 'OBJECT_ACCESS_DENIED', 'You cannot access this approval case.');
-      if (mode === 'error') return failure(route, 500, 'SERVICE_UNAVAILABLE', 'Approval-case service unavailable.');
-      if (mode === 'malformed') return json(route, []);
+      if (requestMode === 'denied') return failure(route, 403, 'OBJECT_ACCESS_DENIED', 'You cannot access this approval case.');
+      if (requestMode === 'error') return failure(route, 500, 'SERVICE_UNAVAILABLE', 'Approval-case service unavailable.');
+      if (requestMode === 'malformed') return json(route, []);
       const requestedPage = Number(url.searchParams.get('page'));
-      if (mode === 'empty') return paginated(route, [], requestedPage, 0);
-      const total = mode === 'pending' ? 121 : mode === 'approved' ? 25 : 1;
+      if (requestMode === 'empty') return paginated(route, [], requestedPage, 0);
+      const total = requestMode === 'pending' ? 121 : requestMode === 'approved' ? 25 : 1;
       const pageSize = requestedPage < Math.ceil(total / 20) ? 20 : total - ((requestedPage - 1) * 20);
-      currentCases = Array.from({ length: pageSize }, (_, index) => caseFor(mode, requestedPage, index + 1));
+      const responseCases = Array.from({ length: pageSize }, (_, index) => caseFor(requestMode, requestedPage, index + 1));
+      if (delayPendingPage && requestMode === 'pending') {
+        await new Promise<void>(resolve => {
+          releaseDelayedPending = () => {
+            currentCases = responseCases;
+            void paginated(route, responseCases, requestedPage, total);
+            resolve();
+          };
+        });
+        return;
+      }
+      currentCases = responseCases;
       return paginated(route, currentCases, requestedPage, total);
     }
     const caseId = url.pathname.split('/').filter(Boolean).at(-1);
@@ -69,9 +83,16 @@ test('sanction workbench preserves the prototype composition across authoritativ
   await expect(page.getByText('Page 2 of 7')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'LOVIS0201' })).toBeVisible();
 
-  mode = 'approved';
+  delayPendingPage = true;
+  await page.getByRole('button', { name: 'Previous' }).click();
+  await expect.poll(() => Boolean(releaseDelayedPending)).toBe(true);
+  mode = 'approved'; delayPendingPage = false;
   await page.getByLabel('Sanction case status').selectOption('approved');
   await expect(page.getByText('25 cases from the approval-case service')).toBeVisible();
+  await expect(page.getByText('Page 1 of 2')).toBeVisible();
+  releaseDelayedPending?.();
+  await expect(page.getByText('25 cases from the approval-case service')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'LOVIS0101' })).toBeVisible();
   await expect(page.getByText('Page 1 of 2')).toBeVisible();
   await capture(page, 'paginated-filtered-queue');
   await capture(page, 'approved');

@@ -2,7 +2,6 @@
 
 from datetime import timezone as datetime_timezone
 from decimal import Decimal, InvalidOperation
-from math import ceil
 from uuid import UUID
 
 from django.core.exceptions import ValidationError
@@ -10,6 +9,7 @@ from django.utils import timezone
 
 from sfpcl_credit.approvals.models import ApprovalCase, ExceptionRegisterEntry
 from sfpcl_credit.approvals.modules.approval_case_selector import (
+    paginate_approval_case_candidates,
     select_approval_case_candidates,
 )
 from sfpcl_credit.approvals.modules.read_scope import (
@@ -98,16 +98,10 @@ def list_approval_cases(*, actor, query_params):
     queryset, persisted_scope_type = select_approval_case_candidates(
         actor=actor,
         actor_permissions=actor_permissions,
+        current_status=current_status,
+        approval_type=approval_type,
+        assigned_to_me=assigned_to_me,
     )
-    if current_status:
-        queryset = queryset.filter(current_status=current_status)
-    if approval_type:
-        queryset = queryset.filter(approval_type=approval_type)
-    if assigned_to_me:
-        queryset = queryset.filter(
-            current_status=ApprovalCase.STATUS_PENDING,
-            required_approver_index__user_id=actor.pk,
-        )
     actor_id = str(actor.pk)
     scoped_ids = []
     for case in queryset.iterator(chunk_size=100):
@@ -123,24 +117,14 @@ def list_approval_cases(*, actor, query_params):
             actor_permissions=actor_permissions,
         ):
             scoped_ids.append(case.pk)
-    queryset = queryset.filter(pk__in=scoped_ids).order_by(
-        "-submitted_at", "-approval_case_id"
+    cases, pagination = paginate_approval_case_candidates(
+        queryset.filter(pk__in=scoped_ids),
+        page=page,
+        page_size=page_size,
     )
-    total_count = queryset.count()
-    total_pages = ceil(total_count / page_size) if total_count else 1
-    page = min(page, total_pages)
-    offset = (page - 1) * page_size
-    cases = list(queryset[offset : offset + page_size])
     return [
         serialize_case_detail(case, actor, actor_permissions) for case in cases
-    ], {
-        "page": page,
-        "page_size": page_size,
-        "total_count": total_count,
-        "total_pages": total_pages,
-        "has_next": page < total_pages,
-        "has_previous": page > 1,
-    }
+    ], pagination
 
 
 def get_approval_case(*, actor, case_id, actor_permissions):

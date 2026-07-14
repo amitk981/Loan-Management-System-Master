@@ -1,0 +1,19 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/sanction/SanctionWorkbench.test.tsx -t renders unavailable frozen legacy approver names
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-14_074249_normal_run/sfpcl-lms
+
+ ✓ src/pages/sanction/SanctionWorkbench.test.tsx (29 tests | 28 skipped) 65ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 28 skipped (29)
+   Start at  08:00:49
+   Duration  1.10s (transform 230ms, setup 0ms, collect 421ms, tests 65ms, environment 284ms, prepare 40ms)
+
+
+> sfpcl-lms@1.0.0 typecheck
+> tsc --noEmit
+

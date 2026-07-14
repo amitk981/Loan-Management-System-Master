@@ -1,0 +1,22 @@
+ M .ralph/progress.md
+ M .ralph/state.json
+ M docs/slices/007S-register-pattern-and-pagination-order-closure.md
+ M docs/working/HANDOFF.md
+ M docs/working/digests/epic-007-sanction-approval-workflow.md
+ M sfpcl-lms/e2e/approval-register-settings.e2e.spec.ts
+ M sfpcl-lms/e2e/exception-register-evidence.e2e.spec.ts
+ M sfpcl-lms/e2e/helpers.ts
+ M sfpcl-lms/e2e/sanction-workbench.e2e.spec.ts
+ M sfpcl-lms/src/components/loan/ApprovalPanel.tsx
+ M sfpcl-lms/src/pages/registers/ApprovalRegisterPanels.tsx
+ M sfpcl-lms/src/pages/registers/RegistersHub.test.tsx
+ M sfpcl-lms/src/pages/sanction/SanctionWorkbench.test.tsx
+ M sfpcl-lms/src/pages/sanction/SanctionWorkbench.tsx
+ M sfpcl-lms/src/services/approvalRegistersApi.ts
+ M sfpcl-lms/src/services/authSession.test.ts
+ M sfpcl-lms/src/services/authSession.ts
+ M sfpcl-lms/src/services/sanctionApi.ts
+ M sfpcl_credit/approvals/modules/approval_case_engine.py
+ M sfpcl_credit/approvals/modules/approval_case_selector.py
+ M sfpcl_credit/tests/test_approval_case_routing_api.py
+?? .ralph/runs/2026-07-14_074249_normal_run/

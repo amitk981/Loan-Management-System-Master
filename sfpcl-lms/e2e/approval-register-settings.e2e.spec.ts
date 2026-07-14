@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
+import { expect, test, type Page, type Route } from '@playwright/test';
+import { captureReviewableEvidence } from './helpers';
 
 const evidenceDir = process.env.RALPH_EVIDENCE_DIR;
 if (!evidenceDir) throw new Error('RALPH_EVIDENCE_DIR is required for register/settings visual acceptance');
@@ -23,7 +24,7 @@ test('S23/S25/S70/S71 preserve scoped contracts through routed app-shell navigat
     expect(url.searchParams.get('page')).toBe('1');
     expect(url.searchParams.get('page_size')).toBe('20');
     const fullyFiltered = url.searchParams.get('financial_year') === 'FY2026-27' && url.searchParams.get('decision') === 'sanctioned';
-    return paginated(route, fullyFiltered ? [sanctionRow] : [], 20);
+    return paginated(route, fullyFiltered ? [sanctionRow, legacySanctionRow] : [], 20);
   });
   await page.route('**/api/v1/exception-register/**', route => {
     const url = new URL(route.request().url());
@@ -46,18 +47,27 @@ test('S23/S25/S70/S71 preserve scoped contracts through routed app-shell navigat
   await page.getByLabel('Financial year').fill('FY2026-27');
   await page.getByRole('button', { name: 'Apply financial year' }).click();
   await page.getByLabel('Sanction decision').selectOption('sanctioned');
-  await expect(page.getByText('Browser Scoped Borrower')).toBeVisible();
-  await expect(page.getByText('CSR-BROWSER-001')).toBeVisible();
-  await expect(page.getByText('FOL-BROWSER-001')).toBeVisible();
-  await expect(page.getByText('Browser Director source comment.')).toBeVisible();
-  await expect(page.getByText('1 record')).toBeVisible();
-  await captureReviewable(page, page.getByTestId('sanction-source-evidence'), 'credit-sanction-register-source-fields.png');
+  const sanctionEvidence = page.getByTestId('sanction-source-evidence');
+  await expect(sanctionEvidence).toContainText('Browser Scoped Borrower');
+  await expect(sanctionEvidence).toContainText('CSR-BROWSER-001');
+  await expect(sanctionEvidence).toContainText('FOL-BROWSER-001');
+  await expect(sanctionEvidence).toContainText('Browser Director source comment.');
+  await expect(page.getByText('2 records')).toBeVisible();
+  await page.getByRole('button', { name: 'View CSR-BROWSER-LEGACY' }).click();
+  await expect(sanctionEvidence).toContainText('CSR-BROWSER-LEGACY');
+  await expect(sanctionEvidence).toContainText('Folio number: —');
+  await expect(sanctionEvidence).toContainText('Loan type: —');
+  await expect(sanctionEvidence).toContainText('Purpose: — · —');
+  await expect(sanctionEvidence).toContainText('Approver decisions: —');
+  await expect(sanctionEvidence).toContainText('Communication: —');
+  await captureReviewableEvidence(page, sanctionEvidence, evidenceDir, 'credit-sanction-register-source-fields.png');
 
   await page.getByRole('button', { name: 'Exception register' }).click();
   await page.getByLabel('Exception status').selectOption('approved');
   await page.getByLabel('Exception type').selectOption('exceeds_loan_limit');
-  await expect(page.getByText('Browser exception business reason')).toBeVisible();
-  await expect(page.getByText('browser-support.pdf')).toBeVisible();
+  const exceptionEvidence = page.getByTestId('exception-source-evidence');
+  await expect(exceptionEvidence).toContainText('Browser exception business reason');
+  await expect(exceptionEvidence).toContainText('browser-support.pdf');
   await expect(page.getByRole('button', { name: /download/i })).toHaveCount(0);
   await capture(page, 'exception-register-scoped.png');
 
@@ -126,6 +136,26 @@ const sanctionRow = {
   general_meeting_approval_reference: null, recorded_at: '2026-07-14T03:00:00Z',
 };
 
+const legacySanctionRow = {
+  ...sanctionRow,
+  credit_sanction_register_entry_id: 'register-browser-legacy',
+  application_number: 'LO-BROWSER-LEGACY',
+  entry_number: 'CSR-BROWSER-LEGACY',
+  folio_number: null,
+  loan_type: null,
+  purpose: { category: null, description: null },
+  risk: { overall_risk_rating: null },
+  approver_names: [],
+  approver_decisions: [],
+  reasons: '',
+  rejection_reason: null,
+  conditions: null,
+  communication: null,
+  exception_reference: null,
+  conflict_abstention_details: [],
+  general_meeting_approval_reference: null,
+};
+
 const exceptionRow = {
   exception_register_entry_id: 'exception-browser-1', loan_application_id: 'application-browser-1', loan_account_id: null,
   approval_case_id: 'case-browser-1', cycle_number: 1, exception_type: 'exceeds_loan_limit',
@@ -163,66 +193,3 @@ const policyVersions = [{
 const json = (route: Route, data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data }) });
 const paginated = (route: Route, data: unknown[], pageSize: number) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data, pagination: { page: 1, page_size: pageSize, total_count: data.length, total_pages: 1, has_next: false, has_previous: false } }) });
 const capture = (page: Page, fileName: string) => page.screenshot({ path: path.join(evidenceDir, fileName), fullPage: true, animations: 'disabled' });
-
-const captureReviewable = async (page: Page, evidence: Locator, fileName: string) => {
-  await evidence.scrollIntoViewIfNeeded();
-  const box = await evidence.boundingBox();
-  expect(box).not.toBeNull();
-  expect(box!.y).toBeGreaterThanOrEqual(0);
-  expect(box!.y + box!.height).toBeLessThanOrEqual(720);
-  const screenshot = await page.screenshot({ path: path.join(evidenceDir, fileName), animations: 'disabled' });
-  const stats = await page.evaluate(async dataUrl => {
-    const image = new Image();
-    image.src = dataUrl;
-    await image.decode();
-    const canvas = document.createElement('canvas');
-    canvas.width = image.width; canvas.height = image.height;
-    const context = canvas.getContext('2d')!;
-    context.drawImage(image, 0, 0);
-    const pixels = context.getImageData(0, 0, image.width, image.height).data;
-    let opaqueDark = 0;
-    const buckets = new Set<number>();
-    for (let index = 0; index < pixels.length; index += 16) {
-      const red = pixels[index]; const green = pixels[index + 1]; const blue = pixels[index + 2];
-      if (red < 12 && green < 12 && blue < 12) opaqueDark += 1;
-      buckets.add((red >> 5) * 64 + (green >> 5) * 8 + (blue >> 5));
-    }
-    const tileSize = 64;
-    const columns = Math.ceil(image.width / tileSize);
-    const rows = Math.ceil(image.height / tileSize);
-    const uniform = Array<boolean>(columns * rows).fill(false);
-    for (let tileY = 0; tileY < rows; tileY += 1) {
-      for (let tileX = 0; tileX < columns; tileX += 1) {
-        let min = 255; let max = 0;
-        for (let y = tileY * tileSize; y < Math.min((tileY + 1) * tileSize, image.height); y += 4) {
-          for (let x = tileX * tileSize; x < Math.min((tileX + 1) * tileSize, image.width); x += 4) {
-            const offset = (y * image.width + x) * 4;
-            for (let channel = 0; channel < 3; channel += 1) {
-              min = Math.min(min, pixels[offset + channel]); max = Math.max(max, pixels[offset + channel]);
-            }
-          }
-        }
-        uniform[tileY * columns + tileX] = max - min <= 4;
-      }
-    }
-    const visited = Array<boolean>(uniform.length).fill(false);
-    let largestUniformRegion = 0;
-    for (let start = 0; start < uniform.length; start += 1) {
-      if (!uniform[start] || visited[start]) continue;
-      const queue = [start]; visited[start] = true; let size = 0;
-      while (queue.length) {
-        const current = queue.pop()!; size += 1;
-        const x = current % columns; const y = Math.floor(current / columns);
-        for (const next of [x > 0 ? current - 1 : -1, x + 1 < columns ? current + 1 : -1, y > 0 ? current - columns : -1, y + 1 < rows ? current + columns : -1]) {
-          if (next >= 0 && uniform[next] && !visited[next]) { visited[next] = true; queue.push(next); }
-        }
-      }
-      largestUniformRegion = Math.max(largestUniformRegion, size);
-    }
-    return { width: image.width, height: image.height, darkRatio: opaqueDark / (pixels.length / 16), colorBuckets: buckets.size, largestUniformRegionRatio: largestUniformRegion / uniform.length };
-  }, `data:image/png;base64,${screenshot.toString('base64')}`);
-  expect(stats).toMatchObject({ width: 1280, height: 720 });
-  expect(stats.darkRatio).toBeLessThan(0.2);
-  expect(stats.colorBuckets).toBeGreaterThan(16);
-  expect(stats.largestUniformRegionRatio).toBeLessThan(0.3);
-};

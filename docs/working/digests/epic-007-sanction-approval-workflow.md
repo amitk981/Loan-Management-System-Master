@@ -1,5 +1,22 @@
 # Epic 007 Digest: Sanction Approval Workflow And Registers
 
+## 007S Register Pattern and Pagination Order Closure
+
+- Shared authenticated pagination now accepts only the exact item count implied by a standard
+  empty, first, middle, or final page. Under-filled/excess pages, zero-total rows, impossible page
+  counts, and contradictory navigation flags fail as malformed success responses.
+- S21 generation-guards list, detail, and sanction-decision reads. Older page/filter/detail success,
+  denial, malformed, and empty results cannot replace the latest queue, total, selection, detail,
+  decision, error, or empty state; current denial/error clears all stale facts atomically.
+- S23/S25 restore their pre-007Q scan-table headers and place complete selected-row evidence in the
+  retained loan-page card/detail composition. All 007Q fields remain visible, legacy nulls use the
+  existing unavailable-value pattern, and supporting-document metadata creates no download action.
+- Approval-case actor/type/status/assignment shaping, stable ordering, counting, page normalization,
+  and slicing now live in the selector. The engine remains the only canonical frozen-schema and
+  actor-scope validator, so malformed stale-true candidates create no totals or page holes.
+- The three trusted browser specs retain the four declared outputs, prove delayed S21 ordering and
+  null-safe selected register evidence, and share one screenshot-quality analyser.
+
 ## 007R Legacy Approval History and Frozen Identity Closure
 
 - New credit-owned review packages are honestly versioned `approval-review-v3`. Exact pre-007O

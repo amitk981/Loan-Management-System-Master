@@ -33,17 +33,17 @@ afterEach(() => {
 describe('RegistersHub owned approval register panels', () => {
   it('renders only the server-scoped frozen sanction page and replaces pagination after a filter change', async () => {
     vi.mocked(fetchCreditSanctionRegister)
-      .mockResolvedValueOnce({ items: [sanctionRow], pagination: { ...pagination, page: 2, total_count: 1 } })
+      .mockResolvedValueOnce({ items: [sanctionRow], pagination: { ...pagination, page: 2, total_count: 21, total_pages: 2, has_previous: true } })
       .mockResolvedValueOnce({ items: [{ ...sanctionRow, decision: 'rejected', sanctioned_amount: null, rejection_reason: 'Frozen rejection reason', conditions: null }], pagination: { ...pagination, total_count: 1 } });
 
     render(<RegistersHub />);
     await userEvent.click(screen.getByRole('button', { name: 'Credit sanction register' }));
 
     expect(await screen.findByText('Frozen Borrower')).toBeTruthy();
-    const sanctionEvidence = screen.getByTestId('sanction-source-evidence').textContent ?? '';
-    expect(screen.getByText('CSR-2026-0001')).toBeTruthy();
+    const sanctionEvidence = (await screen.findByTestId('sanction-source-evidence')).textContent ?? '';
+    expect(sanctionEvidence).toContain('CSR-2026-0001');
     expect(screen.getByText('FOL-APPROVAL-QUEUE-001')).toBeTruthy();
-    expect(sanctionEvidence).toMatch(/individual farmer · short term/i);
+    expect(sanctionEvidence).toMatch(/individual farmer.*Loan type: short term/i);
     expect(sanctionEvidence).toMatch(/Crop production · crop production/i);
     expect(sanctionEvidence).toMatch(/Risk: medium/i);
     expect(sanctionEvidence).toContain('Director approved with conditions.');
@@ -57,8 +57,11 @@ describe('RegistersHub owned approval register panels', () => {
     expect(sanctionEvidence).toMatch(/director relative/i);
     expect(sanctionEvidence).toMatch(/Notice: notice-1/i);
     expect(screen.queryByText('Hidden invalid borrower')).toBeNull();
-    expect(screen.getByText('1 record')).toBeTruthy();
-    expect(screen.getByText('Page 2 of 1')).toBeTruthy();
+    expect(screen.getByText('21 records')).toBeTruthy();
+    expect(screen.getByText('Page 2 of 2')).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Application' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Approval authority' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Credit sanction register entry details' })).toBeTruthy();
 
     await userEvent.selectOptions(screen.getByLabelText('Sanction decision'), 'rejected');
     await waitFor(() => expect(fetchCreditSanctionRegister).toHaveBeenLastCalledWith({
@@ -96,9 +99,12 @@ describe('RegistersHub owned approval register panels', () => {
     vi.mocked(fetchExceptionRegister).mockResolvedValue({ items: [exceptionRow], pagination });
     render(<RegistersHub />);
 
-    expect(await screen.findByText('Frozen exception description')).toBeTruthy();
-    const exceptionEvidence = screen.getByTestId('exception-source-evidence').textContent ?? '';
+    expect((await screen.findAllByText('Frozen exception description')).length).toBeGreaterThan(0);
+    const exceptionEvidence = (await screen.findByTestId('exception-source-evidence')).textContent ?? '';
     expect(screen.getByText('Frozen Borrower')).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Exception ID' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Required authority' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Exception register entry details' })).toBeTruthy();
     expect(exceptionEvidence).toContain('₹4,40,000.00');
     expect(exceptionEvidence).toMatch(/Case Preparer/);
     expect(exceptionEvidence).toContain('13 Jul 2026');
@@ -114,6 +120,43 @@ describe('RegistersHub owned approval register panels', () => {
     await waitFor(() => expect(fetchExceptionRegister).toHaveBeenLastCalledWith({
       status: 'approved', exceptionType: undefined, page: 1, pageSize: 20,
     }));
+  });
+
+  it('selects a null-safe legacy S23 row without fabricating unavailable source facts', async () => {
+    const legacyRow = {
+      ...sanctionRow,
+      credit_sanction_register_entry_id: 'register-legacy',
+      entry_number: 'CSR-LEGACY-0001',
+      application_number: 'LO-LEGACY-001',
+      folio_number: null,
+      loan_type: null,
+      purpose: { category: null, description: null },
+      risk: { overall_risk_rating: null },
+      approver_names: [],
+      approver_decisions: [],
+      reasons: '',
+      rejection_reason: null,
+      conditions: null,
+      communication: null,
+      exception_reference: null,
+      conflict_abstention_details: [],
+      general_meeting_approval_reference: null,
+    };
+    vi.mocked(fetchCreditSanctionRegister).mockResolvedValue({
+      items: [sanctionRow, legacyRow],
+      pagination: { ...pagination, total_count: 2 },
+    });
+
+    render(<RegistersHub />);
+    await userEvent.click(await screen.findByRole('button', { name: 'View CSR-LEGACY-0001' }));
+
+    const evidence = screen.getByTestId('sanction-source-evidence').textContent ?? '';
+    expect(evidence).toContain('CSR-LEGACY-0001');
+    expect(evidence).toMatch(/Folio number:\s*—/i);
+    expect(evidence).toMatch(/Loan type:\s*—/i);
+    expect(evidence).toMatch(/Purpose:\s*—/i);
+    expect(evidence).toMatch(/Approver decisions:\s*—/i);
+    expect(evidence).toMatch(/Communication:\s*—/i);
   });
 
   it('hides export without canonical permission and reports its deferred state when permitted', async () => {

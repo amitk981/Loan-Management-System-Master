@@ -77,7 +77,7 @@ export interface CreditSanctionRegisterRow {
 export interface RegisterApprover {
   role_code: string;
   user_id: string;
-  full_name: string;
+  full_name: string | null;
   decision?: string | null;
   acted_at?: string | null;
   replacement_for_user_id?: string;

@@ -1,7 +1,7 @@
 # Slice 007S: Register Pattern and Pagination Order Closure
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 007: Sanction Approval Workflow and Registers
